@@ -1,0 +1,67 @@
+.graphEditor.expanded {
+  height: auto; /* Automatically adjusts based on content */
+}
+
+.turnsBox {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.blueBox {
+  background-color: #e6f0ff;
+  border-color: #2e3192;
+}
+
+.redBox {
+  background-color: #ffe6e6;
+  border-color: #ed1c24;
+}
+
+.pictographContainer {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  aspect-ratio: 1 / 1;
+}
+.graphEditor {
+  position: relative;
+  background-color: #f4f4f4;
+  border-top: 2px solid #ccc;
+  overflow: hidden;
+  width: 100%;
+}
+
+.mainLayout {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+}
+
+/* ToggleTab Styles */
+.toggleTab {
+  position: absolute;
+  bottom: 0; /* Always aligned at the bottom of the container */
+  left: 0; /* Align to the left */
+  width: 20%; /* Set specific width */
+  text-align: center;
+  padding: 5px;
+  background-color: #ccc;
+  cursor: pointer;
+  font-size: 1rem;
+  border: 1px solid #aaa;
+}
+
+.toggleTab:hover {
+  background-color: #ddd;
+}

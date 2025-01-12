@@ -1,0 +1,144 @@
+class ShootingStarManager {
+  constructor() {
+    this.shootingStar = null;
+    this.timer = 0;
+    this.interval = this.randomInt(100, 300); // Random interval between shooting stars
+  }
+
+  randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  randomFloat(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+
+  spawnShootingStar(width, height) {
+    const middleY = height / 2; // Middle of the screen (Y-axis)
+
+    // Initial position: Either left or right
+    const startOptions = [
+      { x: -0.1 * width, y: this.randomFloat(0.2, 0.8) * height }, // From left
+      { x: 1.1 * width, y: this.randomFloat(0.2, 0.8) * height }, // From right
+    ];
+    const startPos = startOptions[Math.floor(Math.random() * startOptions.length)];
+
+    // Direction and speed
+    let dx = this.randomFloat(0.3, 0.5) * (startPos.x > 0 ? -1 : 1); // Left or right
+    let dy;
+
+    // Randomly choose upward or downward angle
+    if (Math.random() < 0.5) {
+      dy = -this.randomFloat(0.05, 0.2); // Slight angle up
+    } else {
+      dy = this.randomFloat(0.05, 0.2); // Slight angle down
+    }
+
+    // Adjust dy to gravitate towards the middle of the screen
+    if (startPos.y > middleY) {
+      dy -= this.randomFloat(0.02, 0.05); // Move upward if starting below the middle
+    } else {
+      dy += this.randomFloat(0.02, 0.05); // Move downward if starting above the middle
+    }
+
+    // Normalize direction vector for consistent speed
+    const norm = Math.sqrt(dx * dx + dy * dy);
+    dx /= norm;
+    dy /= norm;
+
+    this.shootingStar = {
+      x: startPos.x,
+      y: startPos.y,
+      dx: dx,
+      dy: dy,
+      size: this.randomFloat(5, 10),
+      speed: this.randomFloat(0.03, 0.06), // Reduced speed for slower movement
+      tail: [],
+      prevX: startPos.x,
+      prevY: startPos.y,
+      tailLength: 30,
+      opacity: 1.0,
+      offScreen: false,
+    };
+  }
+
+  animateShootingStar(width, height) {
+    if (!this.shootingStar) return;
+
+    const star = this.shootingStar;
+    const newX = star.x + star.dx * star.speed * width;
+    const newY = star.y + star.dy * star.speed * height;
+
+    const steps = 25; // Number of tail segments
+    for (let i = 0; i < steps; i++) {
+      const interpX = star.prevX + (newX - star.prevX) * (i / steps);
+      const interpY = star.prevY + (newY - star.prevY) * (i / steps);
+      star.tail.push({ x: interpX, y: interpY, size: star.size });
+    }
+
+    star.prevX = star.x;
+    star.prevY = star.y;
+    star.x = newX;
+    star.y = newY;
+
+    if (star.x < -width * 0.1 || star.x > width * 1.1 || star.y > height * 1.1 || star.y < -height * 0.1) {
+      star.offScreen = true;
+    }
+
+    if (star.offScreen) {
+      star.opacity -= 0.05;
+      if (star.opacity <= 0) this.shootingStar = null;
+    }
+
+    if (star.tail.length > star.tailLength) {
+      star.tail.shift();
+    }
+  }
+
+  draw(ctx, width, height) {
+    if (!this.shootingStar) return;
+
+    // console.log("Drawing Shooting Star"); // Debug log
+
+    const star = this.shootingStar;
+
+    // Draw tail
+    ctx.save();
+    const tailLength = star.tail.length;
+    star.tail.forEach((segment, index) => {
+      const opacity = ((index + 1) / tailLength) * star.opacity;
+      // console.log(`Tail Segment[${index}] Opacity: ${opacity}`); // Log tail opacity
+      ctx.globalAlpha = opacity;
+      ctx.beginPath();
+      ctx.arc(segment.x, segment.y, segment.size * opacity, 0, Math.PI * 2);
+      ctx.fillStyle = "white";
+      ctx.fill();
+    });
+    ctx.restore();
+
+    // Draw head
+    ctx.save();
+    ctx.globalAlpha = star.opacity;
+    // console.log(`Star Opacity: ${star.opacity}`); // Log star opacity
+    ctx.beginPath();
+    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+    ctx.fillStyle = "white";
+    ctx.fill();
+    ctx.restore();
+
+    ctx.globalAlpha = 1.0; // Reset alpha
+  }
+
+
+
+  manageShootingStar(width, height) {
+    this.timer += 1;
+    if (!this.shootingStar && this.timer >= this.interval) {
+      this.spawnShootingStar(width, height);
+      this.timer = 0;
+      this.interval = this.randomInt(100, 300);
+    }
+  }
+}
+
+export default ShootingStarManager;

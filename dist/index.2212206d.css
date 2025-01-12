@@ -1,0 +1,51 @@
+._0Vb92q_sequenceWidget {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  flex-direction: column;
+  flex: 1;
+  padding: 10px;
+  display: flex;
+}
+
+._0Vb92q_sequenceWidgetLabels {
+  justify-content: space-between;
+  margin-bottom: 10px;
+  display: flex;
+}
+
+._0Vb92q_indicatorLabel, ._0Vb92q_currentWordLabel, ._0Vb92q_difficultyLabel {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 5px;
+}
+
+._0Vb92q_sequenceWidgetMain {
+  flex: 1;
+  display: flex;
+}
+
+._0Vb92q_scrollArea {
+  background-color: #f4f4f4;
+  border: 1px solid #ddd;
+  flex: 4;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+._0Vb92q_buttonPanel {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  flex-direction: column;
+  flex: 1;
+  gap: 10px;
+  padding: 10px;
+  display: flex;
+}
+
+._0Vb92q_graphEditor {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  margin-top: 10px;
+  padding: 10px;
+}
+/*# sourceMappingURL=index.2212206d.css.map */

@@ -1,0 +1,73 @@
+.sequenceWidgetContainer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin: auto;
+  width: 50%;
+  height: 100%; /* Fill parent height */
+}
+
+/* Sequence Widget */
+.sequenceWidget {
+  flex: 1; /* Take up remaining vertical space */
+  display: flex;
+  flex-direction: column;
+  border: none; /* Remove border to ensure complete transparency */
+  background-color: transparent; /* Fully transparent */
+}
+
+/* Labels */
+.sequenceWidgetLabels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  background-color: transparent; /* Ensure labels are transparent */
+  border: none; /* Remove borders */
+}
+
+.indicatorLabel,
+.currentWordLabel,
+.difficultyLabel {
+  padding: 5px;
+  border: none; /* Remove borders */
+  background-color: transparent; /* Fully transparent */
+}
+
+/* Main Content Area */
+.sequenceWidgetMain {
+  display: flex;
+  flex: 1; /* Allow to stretch vertically */
+  background-color: transparent; /* Fully transparent */
+}
+
+.scrollArea {
+  flex: 4;
+  border: none; /* Remove borders */
+  background-color: transparent; /* Fully transparent */
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.buttonPanel {
+  flex: 1;
+  border: none; /* Remove borders */
+  background-color: transparent; /* Fully transparent */
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.buttonPanel button {
+  cursor: pointer;
+  /* background-color: transparent; Fully transparent buttons */
+  border: none; /* Remove button borders */
+  color: inherit; /* Use inherited text color */
+}
+
+/* Option Picker */
+.optionPicker {
+  flex: 1;
+  border-left: none; /* Remove left border */
+  background-color: transparent; /* Fully transparent */
+}
