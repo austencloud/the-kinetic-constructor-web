@@ -1,50 +1,15 @@
 import React, { useState } from "react";
-import DirectSetTurnsDialog from "../DirectSetTurnsDialog";
+import IncrementButton from "./IncrementButton";
+import DirectSetTurnsDialog from "../DirectSetTurnsDialog/DirectSetTurnsDialog";
+import TurnsLabel from "./TurnsLabel";
 
-// Styles specific to TurnsDisplayFrame
 const styles = {
   turnsDisplayFrame: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-  },
-  turnsLabel: {
-    fontSize: "1.5rem",
-    fontWeight: "bold",
-    textAlign: "center",
-    width: "50px",
-    height: "50px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "25px",
-    border: "2px solid",
-  },
-  blue: {
-    color: "#2e3192",
-    borderColor: "#2e3192",
-  },
-  red: {
-    color: "#ed1c24",
-    borderColor: "#ed1c24",
-  },
-  incrementButton: {
-    background: "none",
-    border: "1px solid #ccc",
-    cursor: "pointer",
-    fontSize: "1.5rem",
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-  },
-  decrementButton: {
-    background: "none",
-    border: "1px solid #ccc",
-    cursor: "pointer",
-    fontSize: "1.5rem",
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
+    justifyContent: "space-evenly", // Ensure buttons are spaced evenly
+    width: "100%", // Stretch to full width of the parent container
+    flex: 1, // Allow it to take vertical space if needed
   },
 };
 
@@ -68,22 +33,13 @@ const TurnsDisplayFrame = ({ color }) => {
 
   return (
     <div style={styles.turnsDisplayFrame}>
-      <button style={styles.decrementButton} onClick={decrementTurns}>
-        -
-      </button>
-      <div
-        style={{
-          ...styles.turnsLabel,
-          ...(color === "blue" ? styles.blue : styles.red),
-        }}
+      <IncrementButton type="decrement" onClick={decrementTurns} color={color} />
+      <TurnsLabel
+        turns={turns}
+        color={color}
         onClick={() => setIsDialogOpen(true)}
-      >
-        {turns}
-      </div>
-      <button style={styles.incrementButton} onClick={incrementTurns}>
-        +
-      </button>
-
+      />
+      <IncrementButton type="increment" onClick={incrementTurns} color={color} />
       {isDialogOpen && (
         <DirectSetTurnsDialog
           currentTurns={turns}

@@ -1,35 +1,66 @@
-import React, { useEffect, useState } from "react";
-import styles from "./GraphEditorStyles.module.css";
+import React, { useEffect, useRef, useState } from "react";
 import GraphEditorPictographContainer from "./GraphEditorPictographContainer";
 import TurnsBox from "./TurnsBox/TurnsBox";
 
 const GraphEditor = ({ isExpanded }) => {
   const [isFullyCollapsed, setIsFullyCollapsed] = useState(false);
+  const [editorHeight, setEditorHeight] = useState(0);
+  const editorRef = useRef(null);
 
   useEffect(() => {
     if (!isExpanded) {
-      // Wait for the collapse animation to complete before marking as fully collapsed
       const timer = setTimeout(() => setIsFullyCollapsed(true), 300); // Match animation duration
       return () => clearTimeout(timer);
     } else {
-      // Reset fully collapsed state when expanded
       setIsFullyCollapsed(false);
     }
   }, [isExpanded]);
 
+  useEffect(() => {
+    // Update the height dynamically based on the Graph Editor's height
+    if (editorRef.current) {
+      const resizeObserver = new ResizeObserver(() => {
+        setEditorHeight(editorRef.current.offsetHeight);
+      });
+      resizeObserver.observe(editorRef.current);
+
+      return () => resizeObserver.disconnect();
+    }
+  }, []);
+
+  const styles = {
+    graphEditor: {
+      position: "relative",
+      backgroundColor: "#f4f4f4",
+      borderTop: "2px solid #ccc",
+      overflow: "hidden",
+      width: "100%",
+      height: isExpanded ? "300px" : "0px", // Adjust height dynamically
+      opacity: isFullyCollapsed ? 0 : 1, // Hide when collapsed
+      transition: "height 0.3s ease-in-out, opacity 0.3s ease-in-out",
+    },
+    mainLayout: {
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "stretch", // Ensure children stretch vertically
+      height: "100%",
+    },
+    turnsBox: {
+      flex: 1, // Allow TurnsBox to stretch and take equal width
+      display: "flex",
+    },
+  };
+
   return (
-    <div
-      className={styles.graphEditor}
-      style={{
-        height: isExpanded ? "300px" : "0px", // Collapsed height
-        opacity: isFullyCollapsed ? 0 : 1, // Hide fully collapsed GraphEditor
-        transition: "height 0.3s ease-in-out, opacity 0.3s ease-in-out", // Animate both height and opacity
-      }}
-    >
-      <div className={styles.mainLayout}>
-        <TurnsBox color="blue" label="Left" />
-        <GraphEditorPictographContainer />
-        <TurnsBox color="red" label="Right" />
+    <div style={styles.graphEditor} ref={editorRef}>
+      <div style={styles.mainLayout}>
+        <div style={styles.turnsBox}>
+          <TurnsBox color="blue" />
+        </div>
+        <GraphEditorPictographContainer height={editorHeight} />
+        <div style={styles.turnsBox}>
+          <TurnsBox color="red" />
+        </div>
       </div>
     </div>
   );

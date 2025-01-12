@@ -3,9 +3,10 @@ import React from "react";
 // Styles specific to MotionTypeLabel
 const styles = {
   motionTypeLabel: {
-    fontSize: "1.2rem",
+    fontSize: "1.5rem",
     fontWeight: "bold",
-    textAlign: "center",
+    textAlign: "center", // Center text inside the label
+    marginBottom: "1rem", // Add margin below the label
   },
 };
 

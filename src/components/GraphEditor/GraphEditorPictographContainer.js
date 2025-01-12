@@ -1,9 +1,22 @@
 import React from "react";
-import styles from "./GraphEditorStyles.module.css";
 
-const GraphEditorPictographContainer = () => {
+const GraphEditorPictographContainer = ({ height }) => {
+  const styles = {
+    container: {
+      width: `${height}px`, // Match the height
+      height: `${height}px`,
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      fontSize: "1.2rem",
+      fontWeight: "bold",
+      border: "1px solid #ddd",
+      backgroundColor: "#fff",
+    },
+  };
+
   return (
-    <div className={styles.pictographContainer}>
+    <div style={styles.container}>
       <p>Pictograph Placeholder</p>
     </div>
   );
