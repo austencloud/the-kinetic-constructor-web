@@ -17,31 +17,42 @@ const MainWidget = () => {
     },
     menuBar: {
       flex: "0 0 auto", // Fixed height for the menu bar
-      zIndex: 1, // Ensure it's above other content
+      zIndex: 1, // Stays above other content
     },
     mainContent: {
-      flex: 1, // Fill remaining height
-      display: "flex", // Horizontal layout for children
-      flexDirection: "row", // SequenceWidget and OptionPicker side-by-side
-      overflow: "hidden", // Prevent layout spilling
+      flex: 1, // Fills the remaining height
+      display: "flex", // Horizontal layout
+      flexDirection: "row", // SequenceWidget and OptionPicker side by side
+      overflow: "hidden", // Prevent content overflow
     },
     sequenceWidgetContainer: {
-      flex: 4, // Allocate 4x space compared to the OptionPicker
+      flex: 1, // Allocate more space to SequenceWidget
+      overflow: "hidden", // Avoid scrollbars
     },
     optionPickerContainer: {
-      flex: 1, // Allocate 1x space for the OptionPicker
-      borderLeft: "1px solid #ccc", // Separator
+      flex: 1, // Allocate smaller space to OptionPicker
+      overflowY: "auto", // Enable vertical scrolling
     },
   };
 
   return (
     <div id="app" style={styles.app}>
+      {/* Background */}
       <SnowfallBackground background={background} />
-      <MenuBar onBackgroundChange={setBackground} />
+
+      {/* MenuBar */}
+      <div style={styles.menuBar}>
+        <MenuBar onBackgroundChange={setBackground} />
+      </div>
+
+      {/* Main Content */}
       <div style={styles.mainContent}>
+        {/* SequenceWidget */}
         <div style={styles.sequenceWidgetContainer}>
           <SequenceWidget />
         </div>
+
+        {/* OptionPicker */}
         <div style={styles.optionPickerContainer}>
           <OptionPicker />
         </div>

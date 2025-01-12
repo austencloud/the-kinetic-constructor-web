@@ -14,42 +14,37 @@ const SequenceWidget = () => {
       position: "relative",
       display: "flex",
       flexDirection: "column",
-      margin: "auto",
-      width: "50%",
-      height: "100%", // Fill parent height
+      height: "100%",
+      width: "100%",
     },
     sequenceWidget: {
-      flex: 1, // Take up remaining vertical space
+      flex: 1,
       display: "flex",
       flexDirection: "column",
-      transition: `height ${animationDuration}ms ease-in-out`,
-      height: isGraphEditorExpanded
-        ? "calc(100% - 300px)" // Adjust height for expanded GraphEditor
-        : "calc(100% - 40px)", // Adjust height for collapsed GraphEditor
+      overflow: "hidden",
+    },
+    sequenceWidgetMain: {
+      display: "flex",
+      flexDirection: "row",
+      flex: 1,
     },
     sequenceWidgetLabels: {
       display: "flex",
       justifyContent: "space-around",
       padding: "10px",
     },
-    sequenceWidgetMain: {
-      display: "flex",
-      flexDirection: "row",
-      flex: 1, // Make the main area take up all available space
-    },
     scrollArea: {
-      flex: 10, // Occupy more space than the button panel
+      flex: 10,
       overflowY: "auto",
       padding: "10px",
     },
     buttonPanel: {
-      flex: 1, // Occupy less space than the scroll area
+      flex: 1,
       display: "flex",
-      flexWrap: "wrap", // Allow buttons to wrap to new rows
-      justifyContent: "space-around", // Evenly space buttons
-      alignItems: "center", // Center vertically
+      flexWrap: "wrap",
+      justifyContent: "space-around",
+      alignItems: "center",
       padding: "10px",
-      borderLeft: "1px solid #ccc", // Separate from the scroll area
     },
   };
 
