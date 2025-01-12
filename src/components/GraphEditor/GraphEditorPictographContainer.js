@@ -1,10 +1,10 @@
 import React from "react";
 
-const GraphEditorPictographContainer = ({ height }) => {
+const GraphEditorPictographContainer = ({ maxHeight }) => {
   const styles = {
     container: {
-      width: `${height}px`, // Match the height
-      height: `${height}px`,
+      width: `${maxHeight}px`, // Match the fixed maximum height
+      height: `${maxHeight}px`,
       display: "flex",
       justifyContent: "center",
       alignItems: "center",

@@ -4,7 +4,7 @@ import TurnsBox from "./TurnsBox/TurnsBox";
 
 const GraphEditor = ({ isExpanded }) => {
   const [isFullyCollapsed, setIsFullyCollapsed] = useState(false);
-  const [editorHeight, setEditorHeight] = useState(0);
+  const maxEditorHeight = 300; // Fixed maximum height of the GraphEditor
   const editorRef = useRef(null);
 
   useEffect(() => {
@@ -16,18 +16,6 @@ const GraphEditor = ({ isExpanded }) => {
     }
   }, [isExpanded]);
 
-  useEffect(() => {
-    // Update the height dynamically based on the Graph Editor's height
-    if (editorRef.current) {
-      const resizeObserver = new ResizeObserver(() => {
-        setEditorHeight(editorRef.current.offsetHeight);
-      });
-      resizeObserver.observe(editorRef.current);
-
-      return () => resizeObserver.disconnect();
-    }
-  }, []);
-
   const styles = {
     graphEditor: {
       position: "relative",
@@ -35,7 +23,7 @@ const GraphEditor = ({ isExpanded }) => {
       borderTop: "2px solid #ccc",
       overflow: "hidden",
       width: "100%",
-      height: isExpanded ? "300px" : "0px", // Adjust height dynamically
+      height: isExpanded ? `${maxEditorHeight}px` : "0px", // Adjust height dynamically
       opacity: isFullyCollapsed ? 0 : 1, // Hide when collapsed
       transition: "height 0.3s ease-in-out, opacity 0.3s ease-in-out",
     },
@@ -57,7 +45,8 @@ const GraphEditor = ({ isExpanded }) => {
         <div style={styles.turnsBox}>
           <TurnsBox color="blue" />
         </div>
-        <GraphEditorPictographContainer height={editorHeight} />
+        {/* Pass the maximum height directly */}
+        <GraphEditorPictographContainer maxHeight={maxEditorHeight} />
         <div style={styles.turnsBox}>
           <TurnsBox color="red" />
         </div>
