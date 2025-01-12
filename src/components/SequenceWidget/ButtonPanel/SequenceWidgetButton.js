@@ -27,6 +27,7 @@ const SequenceWidgetButton = ({
     transform: isClicked ? "scale(0.9)" : isHovered ? "scale(1.1)" : "scale(1)",
     boxSizing: "border-box",
     padding: "0",
+
   };
 
   const iconStyles = {

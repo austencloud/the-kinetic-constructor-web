@@ -26,7 +26,9 @@ const TurnsBox = ({ color }) => {
       flexDirection: "column",
       flex: 1, // Ensure it stretches vertically
       alignSelf: "stretch", // Stretch within the parent container
-      backgroundColor: "white",
+      background: color === "blue"
+        ? "linear-gradient(135deg, rgba(46, 49, 146, 0.1), rgba(46, 49, 146, 0.3))"
+        : "linear-gradient(135deg, rgba(237, 28, 36, 0.1), rgba(237, 28, 36, 0.3))",
     },
   };
 

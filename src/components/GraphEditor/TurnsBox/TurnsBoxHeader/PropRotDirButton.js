@@ -5,7 +5,6 @@ const PropRotDirButton = ({ icon, color, onClick, isPressed }) => {
     button: {
       width: "4rem",
       height: "4rem",
-      borderRadius: "50%",
       border: `2px solid ${color}`,
       backgroundColor: isPressed ? "#ccd9ff" : "white",
       cursor: "pointer",
@@ -14,17 +13,27 @@ const PropRotDirButton = ({ icon, color, onClick, isPressed }) => {
       alignItems: "center",
       transition: "background-color 0.3s, transform 0.2s",
       transform: isPressed ? "scale(0.95)" : "scale(1)",
-      overflow: "hidden", // Ensure the icon doesn't overflow the button
+      overflow: "hidden",
+    },
+    buttonHover: {
+      backgroundColor: "#e6f0ff",
     },
     icon: {
       width: "100%",
       height: "100%",
-      objectFit: "contain", // Ensure the icon maintains its aspect ratio
+      objectFit: "contain",
     },
   };
 
+  const [isHovered, setIsHovered] = React.useState(false);
+
   return (
-    <button style={styles.button} onClick={onClick}>
+    <button
+      style={{ ...styles.button, ...(isHovered && !isPressed && styles.buttonHover) }}
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <img src={icon} alt="icon" style={styles.icon} />
     </button>
   );

@@ -9,7 +9,6 @@ const TurnsBoxHeader = ({
   onCCWClick,
   isCWPressed,
   isCCWPressed,
-  iconSize = 40, // Default size
 }) => {
   const headerStyles = {
     container: {
@@ -17,13 +16,13 @@ const TurnsBoxHeader = ({
       justifyContent: "space-between",
       alignItems: "center",
       padding: "5px",
-      backgroundColor: "white",
       borderBottom: `2px solid ${color === "blue" ? "#2e3192" : "#ed1c24"}`,
     },
     headerLabel: {
       fontSize: "1.5rem",
       fontWeight: "bold",
       color: color === "blue" ? "#2e3192" : "#ed1c24",
+      transition: "color 0.3s", // Add transition for color change
     },
   };
 
@@ -39,7 +38,6 @@ const TurnsBoxHeader = ({
         color={color === "blue" ? "#2e3192" : "#ed1c24"}
         onClick={onCCWClick}
         isPressed={isCCWPressed}
-        size={iconSize}
       />
       <span style={headerStyles.headerLabel}>
         {color === "blue" ? "Left" : "Right"}
@@ -49,7 +47,6 @@ const TurnsBoxHeader = ({
         color={color === "blue" ? "#2e3192" : "#ed1c24"}
         onClick={onCWClick}
         isPressed={isCWPressed}
-        size={iconSize}
       />
     </div>
   );

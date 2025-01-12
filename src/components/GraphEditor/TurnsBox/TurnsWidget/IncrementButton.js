@@ -19,11 +19,12 @@ const IncrementButton = ({ type, onClick, color }) => {
       backgroundColor: "white",
     },
     hovered: {
-      backgroundColor: "#f0f0f0",
+      backgroundColor: "#e6f0ff",
     },
     clicked: {
       transform: "scale(0.9)",
     },
+
   };
 
   return (
