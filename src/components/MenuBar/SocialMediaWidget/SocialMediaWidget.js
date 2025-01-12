@@ -24,7 +24,7 @@ const SocialMediaWidget = () => {
     container: {
       display: "grid",
       gridTemplateColumns: "repeat(3, 1fr)", // Two rows, three columns
-      gap: "10px",
+      gap: "5px",
       justifyContent: "center",
       alignItems: "center",
     },
@@ -52,10 +52,26 @@ const SocialMediaWidget = () => {
   const socialLinks = [
     { src: PayPal, alt: "PayPal", url: "https://www.paypal.me/austencloud" },
     { src: Venmo, alt: "Venmo", url: "https://venmo.com/austencloud" },
-    { src: GitHub, alt: "GitHub", url: "https://github.com/austencloud/the-kinetic-constructor-web" },
-    { src: Facebook, alt: "Facebook", url: "https://www.facebook.com/thekineticalphabet" },
-    { src: Instagram, alt: "Instagram", url: "https://www.instagram.com/thekineticalphabet" },
-    { src: YouTube, alt: "YouTube", url: "https://www.youtube.com/channel/UCbLHNRSASZS_gwkmRATH1-A" },
+    {
+      src: GitHub,
+      alt: "GitHub",
+      url: "https://github.com/austencloud/the-kinetic-constructor-web",
+    },
+    {
+      src: Facebook,
+      alt: "Facebook",
+      url: "https://www.facebook.com/thekineticalphabet",
+    },
+    {
+      src: Instagram,
+      alt: "Instagram",
+      url: "https://www.instagram.com/thekineticalphabet",
+    },
+    {
+      src: YouTube,
+      alt: "YouTube",
+      url: "https://www.youtube.com/channel/UCbLHNRSASZS_gwkmRATH1-A",
+    },
   ];
 
   const openLink = (url) => {
@@ -69,8 +85,14 @@ const SocialMediaWidget = () => {
           key={index}
           style={styles.button}
           onClick={() => openLink(link.url)}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = styles.buttonHover.backgroundColor)}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = styles.button.backgroundColor)}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.backgroundColor =
+              styles.buttonHover.backgroundColor)
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.backgroundColor =
+              styles.button.backgroundColor)
+          }
         >
           <img src={link.src} alt={link.alt} style={styles.icon} />
         </div>

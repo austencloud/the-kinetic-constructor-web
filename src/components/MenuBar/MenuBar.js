@@ -1,7 +1,7 @@
 import React from "react";
 import SocialMediaWidget from "./SocialMediaWidget/SocialMediaWidget";
 import NavigationWidget from "./NavigationWidget";
-import SettingsButton from "./SettingsButton";
+import SettingsButton from "./SettingsButton/SettingsButton";
 
 const MenuBar = ({ onTabChange }) => {
   const styles = {

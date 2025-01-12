@@ -1,49 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 
-const BackgroundTab = ({ onBackgroundChange }) => {
-  const styles = {
-    container: {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      padding: "20px",
-    },
-    title: {
-      marginBottom: "10px",
-      fontSize: "1.5rem",
-      fontWeight: "bold",
-    },
-    buttonContainer: {
-      display: "flex",
-      flexWrap: "wrap",
-      gap: "10px",
-    },
-    button: {
-      padding: "10px 20px",
-      borderRadius: "5px",
-      border: "1px solid #ccc",
-      cursor: "pointer",
-      backgroundColor: "#f4f4f4",
-      transition: "background-color 0.3s",
-    },
-    buttonHover: {
-      backgroundColor: "#ddd",
-    },
-  };
-
-  const backgrounds = ["Snowfall", "Stars", "Gradient"];
+const BackgroundTab = () => {
+  const [background, setBackground] = useState("Snowfall");
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.title}>Select Background</h2>
-      <div style={styles.buttonContainer}>
-        {backgrounds.map((background) => (
+    <div>
+      <h3>Background Settings</h3>
+      <div style={{ display: "flex", gap: "10px" }}>
+        {["Snowfall", "Stars", "Gradient"].map((option) => (
           <button
-            key={background}
-            style={styles.button}
-            onClick={() => onBackgroundChange(background)}
+            key={option}
+            style={{
+              padding: "10px",
+              backgroundColor: background === option ? "blue" : "white",
+              color: background === option ? "white" : "black",
+              border: "1px solid gray",
+              borderRadius: "5px",
+              cursor: "pointer",
+            }}
+            onClick={() => setBackground(option)}
           >
-            {background}
+            {option}
           </button>
         ))}
       </div>
