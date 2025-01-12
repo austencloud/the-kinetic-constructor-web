@@ -9,7 +9,8 @@
 		"skipLibCheck": true,
 		"sourceMap": true,
 		"strict": true,
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext"
+		"module": "Preserve",
+		"moduleResolution": "Bundler",
+		    "jsx": "react"
 	}
 }
