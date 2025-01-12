@@ -16,10 +16,22 @@ class SnowflakeManager {
     }
   }
 
+  adjustPositions(widthChange, heightChange) {
+    if (widthChange === 0 && heightChange === 0) return;
+
+    this.snowflakes.forEach((flake) => {
+      // Adjust positions proportionally based on size changes
+      if (widthChange !== 0) {
+        flake.x += (flake.x / (window.innerWidth - widthChange)) * widthChange;
+      }
+      if (heightChange !== 0) {
+        flake.y += (flake.y / (window.innerHeight - heightChange)) * heightChange;
+      }
+    });
+  }
+
   draw(ctx, width, height) {
-    // console.log("Drawing Snowflakes"); // Debug log
-    this.snowflakes.forEach((flake, index) => {
-      // console.log(`Snowflake[${index}] Opacity: ${flake.opacity}`); // Log individual opacity
+    this.snowflakes.forEach((flake) => {
       ctx.globalAlpha = flake.opacity;
       ctx.beginPath();
       ctx.arc(flake.x, flake.y, flake.size, 0, Math.PI * 2);

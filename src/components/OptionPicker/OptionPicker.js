@@ -5,7 +5,6 @@ const OptionPicker = () => {
       flexDirection: "column",
       padding: "10px",
       flex: 1,
-      backgroundColor: "white",
       boxShadow: "0 0 10px rgba(0, 0, 0, 0.1)",
       borderLeft: "1px solid #ccc", // Add separator
     },
@@ -19,7 +18,6 @@ const OptionPicker = () => {
       flex: 1,
       overflowY: "auto",
       padding: "10px",
-      backgroundColor: "#f9f9f9",
     },
     option: {
       padding: "10px",
@@ -28,6 +26,7 @@ const OptionPicker = () => {
       backgroundColor: "#fff",
       cursor: "pointer",
       transition: "background-color 0.3s",
+      width: "25%"
     },
     optionHover: {
       backgroundColor: "#e0e7ff",

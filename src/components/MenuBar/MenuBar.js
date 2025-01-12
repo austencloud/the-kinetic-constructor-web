@@ -1,49 +1,32 @@
-import React from "react";
-import SocialMediaWidget from "./SocialMediaWidget";
+import React, { useState } from "react";
+import SocialMediaWidget from "./SocialMediaWidget/SocialMediaWidget";
 import NavigationWidget from "./NavigationWidget";
 import SettingsButton from "./SettingsButton";
 
-const MenuBar = ({ onBackgroundChange }) => {
-    const menuBarStyle = {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#333',
-        color: 'white',
-        position: 'fixed', /* Stay at the top */
-        top: '0',
-        left: '0',
-        width: '100%', /* Full width */
-        zIndex: 10, /* Layer above other content */
-      };
-      
+const MenuBar = () => {
+  const styles = {
+    menuBar: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+    //   backgroundColor: "#333",
+      color: "white",
+      padding: "10px 20px",
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100%",
+      zIndex: 10,
+    },
+  };
 
-    const menuBarSectionStyle = {
-        flex: 1,
-        textAlign: 'center'
-    };
-
-    const firstChildStyle = {
-        textAlign: 'left'
-    };
-
-    const lastChildStyle = {
-        textAlign: 'right'
-    };
-
-    return (
-        <header style={menuBarStyle}>
-            <div style={{ ...menuBarSectionStyle, ...firstChildStyle }}>
-                <SocialMediaWidget />
-            </div>
-            <div style={menuBarSectionStyle}>
-                <NavigationWidget />
-            </div>
-            <div style={{ ...menuBarSectionStyle, ...lastChildStyle }}>
-                <SettingsButton/>
-            </div>
-        </header>
-    );
+  return (
+    <header style={styles.menuBar}>
+      <SocialMediaWidget />
+      <NavigationWidget />
+      <SettingsButton />
+    </header>
+  );
 };
 
 export default MenuBar;

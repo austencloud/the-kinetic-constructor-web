@@ -15,6 +15,14 @@ const MainWidget = () => {
       width: "100vw", // Full viewport width
       position: "relative", // Ensure background positioning works
     },
+    background: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      zIndex: 0, // Lower z-index for the background
+    },
     menuBar: {
       flex: "0 0 auto", // Fixed height for the menu bar
       zIndex: 1, // Stays above other content
@@ -24,6 +32,8 @@ const MainWidget = () => {
       display: "flex", // Horizontal layout
       flexDirection: "row", // SequenceWidget and OptionPicker side by side
       overflow: "hidden", // Prevent content overflow
+      position: "relative", // Ensure content positioning works
+      zIndex: 1, // Stays above the background
     },
     sequenceWidgetContainer: {
       flex: 1, // Allocate more space to SequenceWidget
@@ -38,7 +48,9 @@ const MainWidget = () => {
   return (
     <div id="app" style={styles.app}>
       {/* Background */}
-      <SnowfallBackground background={background} />
+      <div style={styles.background}>
+        <SnowfallBackground background={background} />
+      </div>
 
       {/* MenuBar */}
       <div style={styles.menuBar}>

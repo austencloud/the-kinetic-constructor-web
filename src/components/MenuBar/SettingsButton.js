@@ -1,21 +1,16 @@
 import React, { useState } from "react";
+import SettingsDialog from "../SettingsDialog/SettingsDialog";
 
 const SettingsButton = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const handleButtonClick = () => {
-    setIsDialogOpen(true);
-  };
+  const handleOpen = () => setIsOpen(true);
+  const handleClose = () => setIsOpen(false);
 
   return (
     <div>
-      <button onClick={handleButtonClick}>Settings</button>
-      {isDialogOpen && (
-        <div className="settings-dialog">
-          <p>Settings dialog content goes here.</p>
-          <button onClick={() => setIsDialogOpen(false)}>Close</button>
-        </div>
-      )}
+      <button onClick={handleOpen}>Settings</button>
+      {isOpen && <SettingsDialog onClose={handleClose} />}
     </div>
   );
 };
