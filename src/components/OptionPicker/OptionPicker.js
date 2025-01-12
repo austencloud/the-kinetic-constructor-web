@@ -6,13 +6,13 @@ const OptionPicker = () => {
       padding: "10px",
       flex: 1,
       boxShadow: "0 0 10px rgba(0, 0, 0, 0.1)",
-      borderLeft: "1px solid #ccc", // Add separator
+      // borderLeft: "1px solid #ccc", // Add separator
     },
     title: {
       marginBottom: "10px",
       fontSize: "1.5rem",
       fontWeight: "bold",
-      color: "#333",
+      color: "white",
     },
     scrollArea: {
       flex: 1,
@@ -22,7 +22,7 @@ const OptionPicker = () => {
     option: {
       padding: "10px",
       marginBottom: "5px",
-      border: "1px solid #ddd",
+      // border: "1px solid #ddd",
       backgroundColor: "#fff",
       cursor: "pointer",
       transition: "background-color 0.3s",
@@ -35,7 +35,7 @@ const OptionPicker = () => {
 
   return (
     <div style={styles.optionPicker}>
-      <h2 style={styles.title}>Options</h2>
+      <h2 style={styles.title}>Options:</h2>
       <div style={styles.scrollArea}>
         <div style={styles.option}>Option 1</div>
         <div style={styles.option}>Option 2</div>

@@ -59,7 +59,7 @@ const SnowfallBackground = () => {
     // Initialize canvas and snowflake manager
     canvas.width = canvasSize.current.width;
     canvas.height = canvasSize.current.height;
-    snowflakeManager.current.initialize(canvas.width, canvas.height, 100);
+    snowflakeManager.current.initialize(canvas.width, canvas.height, 150);
     santaManager.current.initialize(canvas.width, canvas.height);
 
     requestAnimationFrame(animate);
