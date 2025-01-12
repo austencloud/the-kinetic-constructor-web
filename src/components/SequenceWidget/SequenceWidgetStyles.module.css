@@ -17,13 +17,7 @@
 }
 
 /* Labels */
-.sequenceWidgetLabels {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  background-color: transparent; /* Ensure labels are transparent */
-  border: none; /* Remove borders */
-}
+
 
 .indicatorLabel,
 .currentWordLabel,
@@ -65,3 +59,66 @@
   color: inherit; /* Use inherited text color */
 }
 
+
+.sequenceWidgetContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sequenceWidget {
+  display: flex;
+  flex-direction: column;
+  transition: height 0.3s ease-in-out;
+}
+
+.sequenceWidgetLabels {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+}
+
+.sequenceWidgetMain {
+  display: flex;
+  flex-direction: row;
+  flex: 1; /* Make the main area take up all available space */
+}
+
+
+.sequenceWidgetContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sequenceWidget {
+  display: flex;
+  flex-direction: column;
+  transition: height 0.3s ease-in-out;
+}
+
+.sequenceWidgetLabels {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+}
+
+.sequenceWidgetMain {
+  display: flex;
+  flex-direction: row;
+  flex: 1; /* Make the main area take up all available space */
+}
+
+.scrollArea {
+  flex: 9; /* Occupy more space than the button panel */
+  overflow-y: auto;
+}
+
+.buttonPanel {
+  flex: 1; /* Occupy less space than the scroll area */
+  display: flex;
+  flex-wrap: wrap; /* Allow buttons to wrap to new rows */
+  justify-content: space-around; /* Evenly space buttons */
+  align-items: center; /* Center vertically */
+  border-left: 1px solid #ccc; /* Add a border to separate the button panel from the scroll area */
+}

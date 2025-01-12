@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import styles from "./SequenceWidgetStyles.module.css";
 import GraphEditor from "../GraphEditor/GraphEditor";
 import GraphEditorToggleTab from "../GraphEditor/GraphEditorToggleTab";
 import SequenceWidgetButtonPanel from "./ButtonPanel/SequenceWidgetButtonPanel";
@@ -10,48 +9,65 @@ const SequenceWidget = () => {
   const graphEditorHeight = isGraphEditorExpanded ? 300 : 0; // Expanded or collapsed height
   const animationDuration = 300; // Shared animation duration in milliseconds
 
-  // Button handlers
-  const handleAddToDictionary = () => console.log("Added to dictionary");
-  const handleSaveImage = () => console.log("Image saved");
-  const handleViewFullScreen = () => console.log("Viewing full screen");
-  const handleMirrorSequence = () => console.log("Sequence mirrored");
-  const handleSwapColors = () => console.log("Colors swapped");
-  const handleRotateSequence = () => console.log("Sequence rotated");
-  const handleDeleteBeat = () => console.log("Beat deleted");
-  const handleClearSequence = () => console.log("Sequence cleared");
+  const styles = {
+    sequenceWidgetContainer: {
+      position: "relative",
+      display: "flex",
+      flexDirection: "column",
+      margin: "auto",
+      width: "50%",
+      height: "100%", // Fill parent height
+    },
+    sequenceWidget: {
+      flex: 1, // Take up remaining vertical space
+      display: "flex",
+      flexDirection: "column",
+      transition: `height ${animationDuration}ms ease-in-out`,
+      height: isGraphEditorExpanded
+        ? "calc(100% - 300px)" // Adjust height for expanded GraphEditor
+        : "calc(100% - 40px)", // Adjust height for collapsed GraphEditor
+    },
+    sequenceWidgetLabels: {
+      display: "flex",
+      justifyContent: "space-around",
+      padding: "10px",
+    },
+    sequenceWidgetMain: {
+      display: "flex",
+      flexDirection: "row",
+      flex: 1, // Make the main area take up all available space
+    },
+    scrollArea: {
+      flex: 10, // Occupy more space than the button panel
+      overflowY: "auto",
+      padding: "10px",
+    },
+    buttonPanel: {
+      flex: 1, // Occupy less space than the scroll area
+      display: "flex",
+      flexWrap: "wrap", // Allow buttons to wrap to new rows
+      justifyContent: "space-around", // Evenly space buttons
+      alignItems: "center", // Center vertically
+      padding: "10px",
+      borderLeft: "1px solid #ccc", // Separate from the scroll area
+    },
+  };
 
   return (
-    <div className={styles.sequenceWidgetContainer}>
-      <div
-        className={styles.sequenceWidget}
-        style={{
-          height: isGraphEditorExpanded
-            ? "calc(100% - 300px)" // Adjust height for expanded GraphEditor
-            : "calc(100% - 40px)", // Adjust height for collapsed GraphEditor
-          transition: `height ${animationDuration}ms ease-in-out`,
-        }}
-      >
+    <div style={styles.sequenceWidgetContainer}>
+      <div style={styles.sequenceWidget}>
         {/* Labels */}
-        <div className={styles.sequenceWidgetLabels}>
-          <div className={styles.indicatorLabel}>Indicator Label</div>
-          <div className={styles.currentWordLabel}>Current Word</div>
-          <div className={styles.difficultyLabel}>Difficulty</div>
+        <div style={styles.sequenceWidgetLabels}>
+          <div>Indicator Label</div>
+          <div>Current Word</div>
+          <div>Difficulty</div>
         </div>
 
         {/* Main Content Area */}
-        <div className={styles.sequenceWidgetMain}>
-          <div className={styles.scrollArea}>Scroll Area</div>
-          <div className={styles.buttonPanel}>
-            <SequenceWidgetButtonPanel
-              onAddToDictionary={handleAddToDictionary}
-              onSaveImage={handleSaveImage}
-              onViewFullScreen={handleViewFullScreen}
-              onMirrorSequence={handleMirrorSequence}
-              onSwapColors={handleSwapColors}
-              onRotateSequence={handleRotateSequence}
-              onDeleteBeat={handleDeleteBeat}
-              onClearSequence={handleClearSequence}
-            />
+        <div style={styles.sequenceWidgetMain}>
+          <div style={styles.scrollArea}>Scroll Area</div>
+          <div style={styles.buttonPanel}>
+            <SequenceWidgetButtonPanel />
           </div>
         </div>
       </div>

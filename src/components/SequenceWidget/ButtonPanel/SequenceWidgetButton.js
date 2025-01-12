@@ -1,4 +1,4 @@
-const Button = ({
+const SequenceWidgetButton = ({
   icon,
   title,
   onClick,
@@ -21,7 +21,9 @@ const Button = ({
     cursor: "pointer",
     transition: "background-color 0.2s, transform 0.2s",
     border: "1px solid #ccc",
-    boxShadow: isClicked ? "inset 0px 2px 4px rgba(0, 0, 0, 0.2)" : "0px 2px 4px rgba(0, 0, 0, 0.1)",
+    boxShadow: isClicked
+      ? "inset 0px 2px 4px rgba(0, 0, 0, 0.2)"
+      : "0px 2px 4px rgba(0, 0, 0, 0.1)",
     transform: isClicked ? "scale(0.9)" : isHovered ? "scale(1.1)" : "scale(1)",
     boxSizing: "border-box",
     padding: "0",
@@ -48,4 +50,4 @@ const Button = ({
   );
 };
 
-export default Button;
+export default SequenceWidgetButton;

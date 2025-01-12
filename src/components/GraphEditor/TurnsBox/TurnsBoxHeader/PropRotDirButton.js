@@ -14,10 +14,12 @@ const PropRotDirButton = ({ icon, color, onClick, isPressed }) => {
       alignItems: "center",
       transition: "background-color 0.3s, transform 0.2s",
       transform: isPressed ? "scale(0.95)" : "scale(1)",
+      overflow: "hidden", // Ensure the icon doesn't overflow the button
     },
     icon: {
-      width: "24px",
-      height: "24px",
+      width: "100%",
+      height: "100%",
+      objectFit: "contain", // Ensure the icon maintains its aspect ratio
     },
   };
 
