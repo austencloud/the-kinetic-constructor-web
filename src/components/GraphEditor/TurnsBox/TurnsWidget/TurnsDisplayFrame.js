@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import IncrementButton from "./IncrementButton";
-import DirectSetTurnsDialog from "../DirectSetTurnsDialog/DirectSetTurnsDialog";
+import DirectSetTurnsDialog from "../DirectSetTurnsDialog";
 import TurnsLabel from "./TurnsLabel";
 
 const styles = {
