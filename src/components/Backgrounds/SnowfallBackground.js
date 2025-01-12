@@ -36,14 +36,16 @@ const SnowfallBackground = () => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return; // Ensure the canvas exists
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-
+  
     snowflakeManager.initialize(canvas.width, canvas.height, 100);
     santaManager.initialize(canvas.width, canvas.height);
-
-    animate();
+  
+    requestAnimationFrame(animate); // Start animation
   }, []);
+  
 
   return <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0 }} />;
 };

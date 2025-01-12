@@ -29,22 +29,32 @@ const TurnsDisplayFrame = ({ color }) => {
 
   const handleSelectTurns = (value) => {
     setTurns(value === "fl" ? "fl" : parseFloat(value));
+    setIsDialogOpen(false); // Close the dialog after selecting a turn
   };
 
   return (
     <div style={styles.turnsDisplayFrame}>
-      <IncrementButton type="decrement" onClick={decrementTurns} color={color} />
+      <IncrementButton
+        type="decrement"
+        onClick={decrementTurns}
+        color={color}
+      />
       <TurnsLabel
         turns={turns}
         color={color}
         onClick={() => setIsDialogOpen(true)}
       />
-      <IncrementButton type="increment" onClick={incrementTurns} color={color} />
+      <IncrementButton
+        type="increment"
+        onClick={incrementTurns}
+        color={color}
+      />
       {isDialogOpen && (
         <DirectSetTurnsDialog
           currentTurns={turns}
-          onSelectTurns={handleSelectTurns}
-          onClose={() => setIsDialogOpen(false)}
+          onSelectTurns={handleSelectTurns} // Call handleSelectTurns
+          onClose={() => setIsDialogOpen(false)} // Ensure dialog closes properly
+          color={color}
         />
       )}
     </div>
