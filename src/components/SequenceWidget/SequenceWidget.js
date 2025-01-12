@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import styles from "./SequenceWidgetStyles.module.css";
 import GraphEditor from "../GraphEditor/GraphEditor";
 import GraphEditorToggleTab from "../GraphEditor/GraphEditorToggleTab";
+import SequenceWidgetButtonPanel from "./ButtonPanel/SequenceWidgetButtonPanel";
 
 const SequenceWidget = () => {
   const [isGraphEditorExpanded, setIsGraphEditorExpanded] = useState(false);
@@ -10,6 +11,16 @@ const SequenceWidget = () => {
   const toggleTabPosition = isGraphEditorExpanded
     ? -300 // Position relative to expanded GraphEditor
     : 0; // Position at the bottom of the container
+
+  // Button handlers
+  const handleAddToDictionary = () => console.log("Added to dictionary");
+  const handleSaveImage = () => console.log("Image saved");
+  const handleViewFullScreen = () => console.log("Viewing full screen");
+  const handleMirrorSequence = () => console.log("Sequence mirrored");
+  const handleSwapColors = () => console.log("Colors swapped");
+  const handleRotateSequence = () => console.log("Sequence rotated");
+  const handleDeleteBeat = () => console.log("Beat deleted");
+  const handleClearSequence = () => console.log("Sequence cleared");
 
   return (
     <div className={styles.sequenceWidgetContainer}>
@@ -33,11 +44,16 @@ const SequenceWidget = () => {
         <div className={styles.sequenceWidgetMain}>
           <div className={styles.scrollArea}>Scroll Area</div>
           <div className={styles.buttonPanel}>
-            <button>Mirror Sequence</button>
-            <button>Rotate Sequence</button>
-            <button>Swap Colors</button>
-            <button>Save Image</button>
-            <button>Clear Sequence</button>
+            <SequenceWidgetButtonPanel
+              onAddToDictionary={handleAddToDictionary}
+              onSaveImage={handleSaveImage}
+              onViewFullScreen={handleViewFullScreen}
+              onMirrorSequence={handleMirrorSequence}
+              onSwapColors={handleSwapColors}
+              onRotateSequence={handleRotateSequence}
+              onDeleteBeat={handleDeleteBeat}
+              onClearSequence={handleClearSequence}
+            />
           </div>
         </div>
       </div>

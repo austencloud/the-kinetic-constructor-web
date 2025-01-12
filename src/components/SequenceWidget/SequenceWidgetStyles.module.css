@@ -65,9 +65,3 @@
   color: inherit; /* Use inherited text color */
 }
 
-/* Option Picker */
-.optionPicker {
-  flex: 1;
-  border-left: none; /* Remove left border */
-  background-color: transparent; /* Fully transparent */
-}

@@ -1,10 +1,10 @@
 import React from "react";
-import MainApp from "./components/MainApp/MainApp";
+import MainWidget from "./components/MainWidget/MainWidget";
 
 const App = () => {
   return (
     <div>
-      <MainApp />
+      <MainWidget />
     </div>
   );
 };

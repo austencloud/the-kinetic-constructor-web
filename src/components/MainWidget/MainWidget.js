@@ -1,10 +1,10 @@
 import React from "react";
-import "./MainAppStyles.css";
+import "./MainWidgetStyles.css";
 import SequenceWidget from "../SequenceWidget/SequenceWidget";
 import OptionPicker from "../OptionPicker/OptionPicker";
 import SnowfallBackground from "../Backgrounds/SnowfallBackground";
 
-const MainApp = () => {
+const MainWidget = () => {
   return (
     <div id="app">
       <SnowfallBackground />
@@ -24,4 +24,4 @@ const MainApp = () => {
 };
 
 // Ensure this line is present
-export default MainApp;
+export default MainWidget;

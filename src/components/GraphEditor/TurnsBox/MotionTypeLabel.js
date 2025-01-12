@@ -1,8 +1,16 @@
 import React from "react";
-import styles from "./TurnsBoxStyles.module.css"; // Reuse the consolidated styles
+
+// Styles specific to MotionTypeLabel
+const styles = {
+  motionTypeLabel: {
+    fontSize: "1.2rem",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+};
 
 const MotionTypeLabel = () => {
-  return <div className={styles.motionTypeLabel}>Motion Type</div>;
+  return <div style={styles.motionTypeLabel}>Motion Type</div>;
 };
 
 export default MotionTypeLabel;
