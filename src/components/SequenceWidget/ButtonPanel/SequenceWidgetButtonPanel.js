@@ -20,7 +20,7 @@ const SequenceWidgetButtonPanel = () => {
   useEffect(() => {
     const updateButtonSize = () => {
       const containerWidth = window.innerWidth;
-      setButtonSize(Math.max(40, Math.min(80, containerWidth / 34))); // Dynamically adjust size
+      setButtonSize(Math.max(40, Math.min(80, containerWidth / 40))); // Dynamically adjust size
     };
 
     updateButtonSize();

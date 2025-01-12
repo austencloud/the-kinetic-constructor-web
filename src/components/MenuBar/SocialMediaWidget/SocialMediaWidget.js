@@ -11,7 +11,7 @@ const SocialMediaWidget = () => {
 
   useEffect(() => {
     const updateIconSize = () => {
-      const baseSize = Math.min(window.innerWidth, window.innerHeight) / 25;
+      const baseSize = Math.min(window.innerWidth, window.innerHeight) / 50;
       setIconSize(Math.max(24, Math.min(60, baseSize))); // Set a min and max size for usability
     };
 
