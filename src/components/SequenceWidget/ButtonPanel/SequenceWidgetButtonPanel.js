@@ -20,7 +20,7 @@ const SequenceWidgetButtonPanel = () => {
   useEffect(() => {
     const updateButtonSize = () => {
       const containerWidth = window.innerWidth;
-      setButtonSize(Math.max(40, Math.min(80, containerWidth / 34)));
+      setButtonSize(Math.max(40, Math.min(80, containerWidth / 34))); // Dynamically adjust size
     };
 
     updateButtonSize();
@@ -28,23 +28,43 @@ const SequenceWidgetButtonPanel = () => {
     return () => window.removeEventListener("resize", updateButtonSize);
   }, []);
 
+  const styles = {
+    buttonPanel: {
+      flex: 1, // Occupy less space compared to the scroll area
+      display: "flex",
+      flexWrap: "wrap", // Allow buttons to wrap to new rows
+      justifyContent: "center", // Align buttons closer to the center
+      alignItems: "center", // Center vertically
+      gap: "5px", // Tighter spacing between buttons
+      padding: "5px", // Reduce overall padding
+    },
+    buttonContainer: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: `${buttonSize * 0.3}px`, // Dynamically adjust gaps based on button size
+    },
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: `${buttonSize * 0.2}px` }}>
-      {buttons.map((button) => (
-        <SequenceWidgetButton
-          key={button.id}
-          icon={button.icon}
-          title={button.title}
-          onClick={() => console.log(`${button.title} clicked`)}
-          isHovered={hoveredButton === button.id}
-          isClicked={clickedButton === button.id}
-          onMouseEnter={() => setHoveredButton(button.id)}
-          onMouseLeave={() => setHoveredButton(null)}
-          onMouseDown={() => setClickedButton(button.id)}
-          onMouseUp={() => setClickedButton(null)}
-          buttonSize={buttonSize}
-        />
-      ))}
+    <div style={styles.buttonPanel}>
+      <div style={styles.buttonContainer}>
+        {buttons.map((button) => (
+          <SequenceWidgetButton
+            key={button.id}
+            icon={button.icon}
+            title={button.title}
+            onClick={() => console.log(`${button.title} clicked`)}
+            isHovered={hoveredButton === button.id}
+            isClicked={clickedButton === button.id}
+            onMouseEnter={() => setHoveredButton(button.id)}
+            onMouseLeave={() => setHoveredButton(null)}
+            onMouseDown={() => setClickedButton(button.id)}
+            onMouseUp={() => setClickedButton(null)}
+            buttonSize={buttonSize}
+          />
+        ))}
+      </div>
     </div>
   );
 };

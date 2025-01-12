@@ -21,7 +21,7 @@ const SequenceWidget = () => {
       flex: 1,
       display: "flex",
       flexDirection: "column",
-      overflow: "hidden",
+      overflow: "hidden", // Prevent layout spilling
     },
     sequenceWidgetMain: {
       display: "flex",
@@ -36,14 +36,6 @@ const SequenceWidget = () => {
     scrollArea: {
       flex: 10,
       overflowY: "auto",
-      padding: "10px",
-    },
-    buttonPanel: {
-      flex: 1,
-      display: "flex",
-      flexWrap: "wrap",
-      justifyContent: "space-around",
-      alignItems: "center",
       padding: "10px",
     },
   };
@@ -61,9 +53,7 @@ const SequenceWidget = () => {
         {/* Main Content Area */}
         <div style={styles.sequenceWidgetMain}>
           <div style={styles.scrollArea}>Scroll Area</div>
-          <div style={styles.buttonPanel}>
-            <SequenceWidgetButtonPanel />
-          </div>
+          <SequenceWidgetButtonPanel />
         </div>
       </div>
 
