@@ -8,9 +8,7 @@ const SequenceWidget = () => {
   const [isGraphEditorExpanded, setIsGraphEditorExpanded] = useState(false);
 
   const graphEditorHeight = isGraphEditorExpanded ? 300 : 0; // Expanded or collapsed height
-  const toggleTabPosition = isGraphEditorExpanded
-    ? -300 // Position relative to expanded GraphEditor
-    : 0; // Position at the bottom of the container
+  const animationDuration = 300; // Shared animation duration in milliseconds
 
   // Button handlers
   const handleAddToDictionary = () => console.log("Added to dictionary");
@@ -30,7 +28,7 @@ const SequenceWidget = () => {
           height: isGraphEditorExpanded
             ? "calc(100% - 300px)" // Adjust height for expanded GraphEditor
             : "calc(100% - 40px)", // Adjust height for collapsed GraphEditor
-          transition: "height 0.3s ease-in-out",
+          transition: `height ${animationDuration}ms ease-in-out`,
         }}
       >
         {/* Labels */}
@@ -62,7 +60,8 @@ const SequenceWidget = () => {
       <GraphEditorToggleTab
         onToggle={() => setIsGraphEditorExpanded(!isGraphEditorExpanded)}
         isExpanded={isGraphEditorExpanded}
-        position={toggleTabPosition}
+        height={graphEditorHeight} // Dynamically adjust height
+        duration={animationDuration}
       />
 
       {/* GraphEditor */}
