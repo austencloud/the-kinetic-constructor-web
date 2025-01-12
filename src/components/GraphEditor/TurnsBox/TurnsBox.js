@@ -1,55 +1,32 @@
 import React from "react";
 import TurnsWidget from "./TurnsWidget/TurnsWidget";
 
-const styles = {
-  turnsBox: {
-    display: 'flex',
-    flexDirection: 'column',
-    border: '1px solid #ddd',
-    padding: '10px',
-    flex: 1,
-  },
-  blueBox: {
-    borderColor: '#2e3192',
-    backgroundColor: '#e6f0ff',
-  },
-  redBox: {
-    borderColor: '#ed1c24',
-    backgroundColor: '#ffe6e6',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '5px',
-    marginBottom: '10px',
-  },
-  rotateButton: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '1.2rem',
-  },
-  headerLabel: {
-    fontWeight: 'bold',
-    fontSize: '1.2rem',
-  },
-};
-
 const TurnsBox = ({ color }) => {
+  const boxStyles = {
+    display: "flex",
+    flexDirection: "column",
+    border: `2px solid ${color === "blue" ? "#2E3192" : "#ED1C24"}`,
+    backgroundColor: color === "blue" ? "#e6f0ff" : "#ffe6e6",
+    borderRadius: "8px",
+    padding: "10px",
+    margin: "5px",
+    flex: 1,
+  };
+
+  const headerStyles = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    fontWeight: "bold",
+    fontSize: "1.2rem",
+  };
+
   return (
-    <div
-      style={{
-        ...styles.turnsBox,
-        ...(color === "blue" ? styles.blueBox : styles.redBox),
-      }}
-    >
-      <div style={styles.header}>
-        <button style={styles.rotateButton}>⟲</button>
-        <span style={styles.headerLabel}>
-          {color === "blue" ? "Left" : "Right"}
-        </span>
-        <button style={styles.rotateButton}>⟳</button>
+    <div style={boxStyles}>
+      <div style={headerStyles}>
+        <button>⟲</button>
+        <span>{color === "blue" ? "Left" : "Right"}</span>
+        <button>⟳</button>
       </div>
       <TurnsWidget color={color} />
     </div>
