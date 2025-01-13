@@ -16,7 +16,7 @@ export default class SantaManager {
 		// Defer image initialization
 		if (typeof window !== 'undefined') {
 			this.santaImage = new Image();
-			this.santaImage.src = './images/santa.png';
+			this.santaImage.src = 'santa.png';
 			this.santaImage.onload = () => (this.imageLoaded = true);
 			this.santaImage.onerror = () => console.error('Failed to load Santa image');
 		}

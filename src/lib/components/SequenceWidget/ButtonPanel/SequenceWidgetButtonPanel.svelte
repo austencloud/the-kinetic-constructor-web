@@ -36,6 +36,7 @@
     align-items: center;
     gap: 5px;
     padding: 5px;
+    z-index: auto;
   }
 </style>
 

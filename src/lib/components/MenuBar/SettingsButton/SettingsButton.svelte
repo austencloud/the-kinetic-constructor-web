@@ -9,8 +9,10 @@
 	let buttonSize = 50;
 	let iconSize = 38;
 
+	// Toggle dialog visibility
 	const toggleDialog = () => {
 		isOpen = !isOpen;
+		console.log('Dialog toggled:', isOpen); // Debugging
 	};
 
 	onMount(() => {
@@ -28,7 +30,12 @@
 </script>
 
 <div>
-	<button class="settings-button" style="--button-size: {buttonSize}px;" on:click={toggleDialog}>
+	<!-- Settings Button -->
+	<button
+		class="settings-button"
+		style="--button-size: {buttonSize}px;"
+		on:click={toggleDialog}
+	>
 		<img
 			class="settings-icon"
 			style="--icon-size: {iconSize}px;"
@@ -37,8 +44,14 @@
 		/>
 	</button>
 
+	<!-- Settings Dialog -->
 	{#if isOpen}
-		<SettingsDialog {background} {onChangeBackground} onClose={toggleDialog} />
+		<SettingsDialog
+			{background}
+			{onChangeBackground}
+			{isOpen}
+			onClose={toggleDialog}
+		/>
 	{/if}
 </div>
 

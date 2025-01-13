@@ -1,43 +1,54 @@
 <script lang="ts">
-	import BackgroundTab from './BackgroundTab.svelte';
-	import UserProfileTab from './UserProfileTab.svelte';
-	import VisibilityTab from './VisibilityTab.svelte';
-
+	export let isOpen: boolean;
+	export let onClose: () => void;
 	export let background: string;
 	export let onChangeBackground: (newBackground: string) => void;
-	export let onClose: () => void;
 
-	let currentTab = 'Background';
+	import TabsNavigation from './TabsNavigation.svelte';
+	import TabContent from './TabContent.svelte';
+	import DialogActions from './DialogActions.svelte';
 
-	const tabs = ['Background', 'User Profile', 'Visibility'];
+	let activeTab = 'User';
 </script>
 
-<div
-	style="border: 1px solid #ccc; padding: 20px; border-radius: 10px; width: 300px; background-color: white;"
->
-	<div style="margin-bottom: 20px;">
-		{#each tabs as tab}
-			<button
-				on:click={() => (currentTab = tab)}
-				style="margin-right: 5px; padding: 10px; border-radius: 5px; background-color: {currentTab ===
-				tab
-					? '#ddd'
-					: '#fff'};"
-			>
-				{tab}
-			</button>
-		{/each}
+{#if isOpen}
+	<div
+		class="dialog-backdrop"
+		role="button"
+		aria-label="Close settings dialog by clicking outside"
+		on:click|self={onClose}
+		on:keydown|self={(e) => e.key === 'Enter' && onClose()}
+		tabindex="0"
+	>
+		<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+			<h2 id="dialog-title" class="dialog-title">Settings</h2>
+			<TabsNavigation {activeTab} on:changeTab={(e) => (activeTab = e.detail)} />
+			<TabContent {activeTab} {background} {onChangeBackground} />
+			<DialogActions {onClose} />
+		</div>
 	</div>
+{/if}
 
-	<div>
-		{#if currentTab === 'Background'}
-			<BackgroundTab {background} {onChangeBackground} on:changeBackground={(e) => onChangeBackground(e.detail.newBackground)} />
-		{:else if currentTab === 'User Profile'}
-			<UserProfileTab />
-		{:else if currentTab === 'Visibility'}
-			<VisibilityTab />
-		{/if}
-	</div>
+<style>
+	/* Styling remains the same */
+	.dialog-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+		pointer-events: auto;
+	}
 
-	<button on:click={onClose} style="margin-top: 20px; padding: 10px; border-radius: 5px;">Close</button>
-</div>
+	.dialog {
+		background: white;
+		padding: 20px;
+		border-radius: 8px;
+		width: 50%;
+		max-width: 800px;
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+		z-index: 1010;
+	}
+</style>
