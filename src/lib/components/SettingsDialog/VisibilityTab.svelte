@@ -18,10 +18,20 @@
 		option.label === label ? { ...option, isActive: !option.isActive } : option
 	  );
 	};
-  </script>
-  
+</script>
 
-<div>
+<style>
+	.container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-start;
+		height: 100vh;
+		padding-top: 20px; /* Add some padding to the top if needed */
+	}
+</style>
+
+<div class="container">
 	<h3>Visibility Settings</h3>
 	{#each visibilityOptions as option (option.label)}
 		<div style="margin-bottom: 10px;">

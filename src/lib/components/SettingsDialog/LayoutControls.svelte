@@ -49,13 +49,12 @@
 		</select>
 	</div>
 </div>
-
 <style>
 	.controls {
 		display: flex;
 		flex-direction: column;
 		gap: 15px; /* Increase gap for better spacing */
-		align-items: flex-start;
+		align-items: center; /* Center the controls */
 	}
 
 	.sequence-length,
@@ -92,5 +91,6 @@
 		border: 1px solid #ccc;
 		border-radius: 6px;
 		font-size: 1rem;
+		cursor: pointer;
 	}
 </style>

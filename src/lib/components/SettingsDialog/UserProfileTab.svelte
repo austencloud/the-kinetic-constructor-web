@@ -6,9 +6,26 @@
 	  const target = event.target as HTMLInputElement;
 	  username = target.value;
 	};
-  </script>
+</script>
+
+<style>
+  .container {
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+	height: 100vh;
+  }
+
+  .content {
+	margin-top: 20px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+  }
+</style>
   
-  <div>
+<div class="container">
+  <div class="content">
 	<h3>User Profile</h3>
 	<label>
 	  Username:
@@ -20,4 +37,4 @@
 	  />
 	</label>
   </div>
-  
+</div>
