@@ -19,9 +19,6 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		width: 100%;
-		background-color: #333;
-		padding: 10px 20px;
-		color: white;
+		padding: 4px 4px;
 	}
 </style>

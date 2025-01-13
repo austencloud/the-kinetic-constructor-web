@@ -12,8 +12,8 @@
     const windowHeight = window.innerHeight;
 
     const fontSize = Math.max(10, windowWidth / 120);
-    const buttonWidth = Math.max(80, windowWidth / 10);
-    const buttonHeight = Math.max(30, windowHeight / 22);
+    const buttonWidth = Math.max(80, windowWidth / 5);
+    const buttonHeight = Math.max(30, windowHeight / 10);
 
     styles = {
       base: {

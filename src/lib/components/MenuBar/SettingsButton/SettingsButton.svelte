@@ -32,7 +32,7 @@
 		<img
 			class="settings-icon"
 			style="--icon-size: {iconSize}px;"
-			src="settings.png"
+			src="/button_panel_icons/settings.png"
 			alt="Settings"
 		/>
 	</button>

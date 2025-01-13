@@ -1,18 +1,18 @@
 <script>
   import { onMount } from "svelte";
-	import SequenceWidgetButton from "./SequenceWidgetButton.svelte";
+  import SequenceWidgetButton from "./SequenceWidgetButton.svelte";
 
   let buttonSize = 60;
 
   const buttons = [
-    { icon: "icons/add_to_dictionary.png", title: "Add to Dictionary", id: "addToDictionary" },
-    { icon: "icons/save_image.png", title: "Save Image", id: "saveImage" },
-    { icon: "icons/eye.png", title: "View Full Screen", id: "viewFullScreen" },
-    { icon: "icons/mirror.png", title: "Mirror Sequence", id: "mirrorSequence" },
-    { icon: "icons/yinyang1.png", title: "Swap Colors", id: "swapColors" },
-    { icon: "icons/rotate.png", title: "Rotate Sequence", id: "rotateSequence" },
-    { icon: "icons/delete.png", title: "Delete Beat", id: "deleteBeat" },
-    { icon: "icons/clear.png", title: "Clear Sequence", id: "clearSequence" },
+    { icon: "/button_panel_icons/add_to_dictionary.png", title: "Add to Dictionary", id: "addToDictionary" },
+    { icon: "/button_panel_icons/save_image.png", title: "Save Image", id: "saveImage" },
+    { icon: "/button_panel_icons/eye.png", title: "View Full Screen", id: "viewFullScreen" },
+    { icon: "/button_panel_icons/mirror.png", title: "Mirror Sequence", id: "mirrorSequence" },
+    { icon: "/button_panel_icons/yinyang1.png", title: "Swap Colors", id: "swapColors" },
+    { icon: "/button_panel_icons/rotate.png", title: "Rotate Sequence", id: "rotateSequence" },
+    { icon: "/button_panel_icons/delete.png", title: "Delete Beat", id: "deleteBeat" },
+    { icon: "/button_panel_icons/clear.png", title: "Clear Sequence", id: "clearSequence" },
   ];
 
   const updateButtonSize = () => {

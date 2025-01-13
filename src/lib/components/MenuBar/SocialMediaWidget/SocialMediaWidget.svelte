@@ -1,11 +1,11 @@
 <script lang="ts">
     const socialLinks = [
-      { src: 'icons/paypal.png', alt: 'PayPal', url: 'https://www.paypal.me/austencloud' },
-      { src: 'icons/venmo.png', alt: 'Venmo', url: 'https://venmo.com/austencloud' },
-      { src: 'icons/github.png', alt: 'GitHub', url: 'https://github.com/austencloud/the-kinetic-constructor-web' },
-      { src: 'icons/facebook.png', alt: 'Facebook', url: 'https://www.facebook.com/thekineticalphabet' },
-      { src: 'icons/instagram.png', alt: 'Instagram', url: 'https://www.instagram.com/thekineticalphabet' },
-      { src: 'icons/youtube.png', alt: 'YouTube', url: 'https://www.youtube.com/channel/UCbLHNRSASZS_gwkmRATH1-A' },
+      { src: '/social_icons/paypal.png', alt: 'PayPal', url: 'https://www.paypal.me/austencloud' },
+      { src: '/social_icons/venmo.png', alt: 'Venmo', url: 'https://venmo.com/austencloud' },
+      { src: '/social_icons/github.png', alt: 'GitHub', url: 'https://github.com/austencloud/the-kinetic-constructor-web' },
+      { src: '/social_icons/facebook.png', alt: 'Facebook', url: 'https://www.facebook.com/thekineticalphabet' },
+      { src: '/social_icons/instagram.png', alt: 'Instagram', url: 'https://www.instagram.com/thekineticalphabet' },
+      { src: '/social_icons/youtube.png', alt: 'YouTube', url: 'https://www.youtube.com/channel/UCbLHNRSASZS_gwkmRATH1-A' },
     ];
   
     const openLink = (url: string) => window.open(url, '_blank');
