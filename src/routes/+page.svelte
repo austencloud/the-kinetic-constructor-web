@@ -31,7 +31,7 @@
       flex: 1;
       display: flex;
       flex-direction: row;
-      z-index: 1;
+      z-index: 0;
     }
   
     .sequenceWidgetContainer,

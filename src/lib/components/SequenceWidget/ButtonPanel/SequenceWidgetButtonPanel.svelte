@@ -37,6 +37,8 @@
     gap: 5px;
     padding: 5px;
     z-index: auto;
+    position: relative; /* Ensure it’s not affecting stacking context */
+
   }
 </style>
 

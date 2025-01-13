@@ -59,7 +59,7 @@
 
 	.menuBar {
 		flex: 0 0 auto;
-		z-index: 1;
+		/* z-index: 1; */
 	}
 
 	.mainContent {
@@ -68,7 +68,7 @@
 		flex-direction: row;
 		overflow: hidden;
 		position: relative;
-		z-index: 1;
+		/* z-index: 1; */
 	}
 
 	.sequenceWidgetContainer {
