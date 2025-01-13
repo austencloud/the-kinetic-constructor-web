@@ -1,14 +1,44 @@
-<script>
-  import SequenceWidgetButtonPanel from "./ButtonPanel/SequenceWidgetButtonPanel.svelte";
+<script lang="ts">
+  import SequenceWidgetButtonPanel from './ButtonPanel/SequenceWidgetButtonPanel.svelte';
+  import GraphEditor from './GraphEditor/GraphEditor.svelte';
+  import GraphEditorToggleTab from './GraphEditor/GraphEditorToggleTab.svelte';
 
   let isGraphEditorExpanded = false;
-  let graphEditorHeight = 0;
+  const animationDuration = 300; // Animation duration in milliseconds
+  const maxEditorHeight = 300;
 
   const toggleGraphEditor = () => {
     isGraphEditorExpanded = !isGraphEditorExpanded;
-    graphEditorHeight = isGraphEditorExpanded ? 300 : 0;
   };
 </script>
+
+<div class="sequence-widget-container">
+  <div class="sequence-widget">
+    <!-- Labels -->
+    <div class="sequence-widget-labels">
+      <div>Indicator Label</div>
+      <div>Current Word</div>
+      <div>Difficulty</div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="sequence-widget-main">
+      <div class="scroll-area">Scroll Area</div>
+      <SequenceWidgetButtonPanel />
+    </div>
+  </div>
+
+  <!-- GraphEditorToggleTab -->
+  <GraphEditorToggleTab
+    isExpanded={isGraphEditorExpanded}
+    {animationDuration}
+    graphEditorHeight={isGraphEditorExpanded ? maxEditorHeight : 0}
+    on:click={toggleGraphEditor}
+  />
+
+  <!-- GraphEditor -->
+  <GraphEditor isExpanded={isGraphEditorExpanded} {animationDuration} />
+</div>
 
 <style>
   .sequence-widget-container {
@@ -44,34 +74,3 @@
     padding: 10px;
   }
 </style>
-
-<div class="sequence-widget-container">
-  <div class="sequence-widget">
-    <!-- Labels -->
-    <div class="sequence-widget-labels">
-      <div>Indicator Label</div>
-      <div>Current Word</div>
-      <div>Difficulty</div>
-    </div>
-
-    <!-- Main Content Area -->
-    <div class="sequence-widget-main">
-      <div class="scroll-area">Scroll Area</div>
-      <SequenceWidgetButtonPanel />
-    </div>
-  </div>
-
-  <!-- GraphEditor Toggle Tab -->
-  <button
-    on:click={toggleGraphEditor}
-    style="cursor: pointer; text-align: center; padding: 10px; background: lightgray; border: none; width: 100%;"
-    aria-expanded={isGraphEditorExpanded}
-  >
-    {isGraphEditorExpanded ? "Collapse Editor ▲" : "Expand Editor ▼"}
-  </button>
-
-  <!-- GraphEditor (placeholder) -->
-  <div
-    style="background: #f4f4f4; border-top: 2px solid #ccc; height: {graphEditorHeight}px; transition: height 0.3s ease-in-out;"
-  ></div>
-</div>
