@@ -2,6 +2,10 @@
   export let maxHeight: number;
 </script>
 
+<div class="container" style="width: {maxHeight}px; height: {maxHeight}px;">
+  <p>Pictograph</p>
+</div>
+
 <style>
   .container {
     display: flex;
@@ -13,10 +17,3 @@
     background-color: #fff;
   }
 </style>
-
-<div
-  class="container"
-  style="width: {maxHeight}px; height: {maxHeight}px;"
->
-  <p>Pictograph Placeholder</p>
-</div>
