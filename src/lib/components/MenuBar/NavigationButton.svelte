@@ -13,7 +13,7 @@
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
 
-    fontSize = Math.max(10, windowWidth / 120);
+    fontSize = Math.max(10, windowHeight / 50);
     buttonWidth = Math.max(80, windowWidth / 10); // Adjusted width calculation
     buttonHeight = Math.max(30, windowHeight / 20); // Adjusted height calculation
   };

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
 
   export let isExpanded: boolean;
   export let animationDuration: number;
@@ -11,15 +11,30 @@
     dispatch('click');
   };
 
-  // Update the CSS variable for the toggle tab position dynamically
-  $: document.documentElement.style.setProperty(
-    '--graph-editor-offset',
-    `${graphEditorHeight}px`
-  );
-  $: document.documentElement.style.setProperty(
-    '--animation-duration',
-    `${animationDuration}ms`
-  );
+  // Use `onMount` to run code only in the browser
+  onMount(() => {
+    // Update the CSS variables dynamically
+    document.documentElement.style.setProperty(
+      '--graph-editor-offset',
+      `${graphEditorHeight}px`
+    );
+    document.documentElement.style.setProperty(
+      '--animation-duration',
+      `${animationDuration}ms`
+    );
+  });
+
+  // Reactive block to update dynamically after initial mount
+  $: if (typeof window !== 'undefined') {
+    document.documentElement.style.setProperty(
+      '--graph-editor-offset',
+      `${graphEditorHeight}px`
+    );
+    document.documentElement.style.setProperty(
+      '--animation-duration',
+      `${animationDuration}ms`
+    );
+  }
 </script>
 
 <button
