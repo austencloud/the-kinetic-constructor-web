@@ -54,7 +54,7 @@
 	</div>
 
 	<div class="grid-preview">
-		<GridPreview {grid} {numBeats} />
+		<GridPreview {grid} {numBeats} size={{ width: 100, height: 100 }} />
 	</div>
 </div>
 

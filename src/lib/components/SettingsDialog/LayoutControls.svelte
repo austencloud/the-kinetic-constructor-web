@@ -36,7 +36,7 @@
 			class="dropdown"
 			on:change={(e) =>
 				onLayoutChange(
-					new CustomEvent('layoutChange', {
+					new CustomEvent('layoSpelt.utChange', {
 						detail: validLayouts[(e.target as HTMLSelectElement).selectedIndex]
 					})
 				)}
