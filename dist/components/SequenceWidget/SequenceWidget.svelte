@@ -1,0 +1,76 @@
+<script lang="ts">
+  import SequenceWidgetButtonPanel from './ButtonPanel/SequenceWidgetButtonPanel.svelte';
+  import GraphEditor from './GraphEditor/GraphEditor.svelte';
+  import GraphEditorToggleTab from './GraphEditor/GraphEditorToggleTab.svelte';
+
+  let isGraphEditorExpanded = false;
+  const animationDuration = 300; // Animation duration in milliseconds
+  const maxEditorHeight = 300;
+
+  const toggleGraphEditor = () => {
+    isGraphEditorExpanded = !isGraphEditorExpanded;
+  };
+</script>
+
+<div class="sequence-widget-container">
+  <div class="sequence-widget">
+    <!-- Labels -->
+    <div class="sequence-widget-labels">
+      <div>Indicator Label</div>
+      <div>Current Word</div>
+      <div>Difficulty</div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="sequence-widget-main">
+      <div class="scroll-area">Scroll Area</div>
+      <SequenceWidgetButtonPanel />
+    </div>
+  </div>
+
+  <!-- GraphEditorToggleTab -->
+  <GraphEditorToggleTab
+    isExpanded={isGraphEditorExpanded}
+    {animationDuration}
+    graphEditorHeight={isGraphEditorExpanded ? maxEditorHeight : 0}
+    on:click={toggleGraphEditor}
+  />
+
+  <!-- GraphEditor -->
+  <GraphEditor isExpanded={isGraphEditorExpanded} {animationDuration} />
+</div>
+
+<style>
+  .sequence-widget-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+  }
+
+  .sequence-widget {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sequence-widget-main {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+  }
+
+  .sequence-widget-labels {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+  }
+
+  .scroll-area {
+    flex: 10;
+    overflow-y: auto;
+    padding: 10px;
+  }
+</style>
