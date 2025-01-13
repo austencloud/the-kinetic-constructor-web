@@ -1,16 +1,18 @@
 <script lang="ts">
-	import { writable } from 'svelte/store';
 	import MenuBar from '../MenuBar/MenuBar.svelte';
 	import SequenceWidget from '../SequenceWidget/SequenceWidget.svelte';
 	import OptionPicker from '../OptionPicker/OptionPicker.svelte';
 	import SnowfallBackground from '../Backgrounds/SnowfallBackground.svelte';
+	import SettingsDialog from '../SettingsDialog/SettingsDialog.svelte';
+	import { writable } from 'svelte/store';
 
-	export let backgroundStore = writable<string>('Snowfall');
-	let background: string = 'Snowfall';
-	$: backgroundStore.subscribe((value: string) => {
-		background = value;
-	});
-	const updateBackground = (newBackground: string): void => {
+	// State management
+	let isSettingsDialogOpen = false;
+	let background = 'Snowfall';
+	const backgroundStore = writable('Snowfall');
+	backgroundStore.subscribe((value) => (background = value));
+
+	const updateBackground = (newBackground: string) => {
 		backgroundStore.set(newBackground);
 	};
 </script>
@@ -23,8 +25,8 @@
 	<div class="menuBar">
 		<MenuBar
 			{background}
-			onChangeBackground={(e: CustomEvent) => updateBackground(e.detail)}
-			onTabChange={(e: CustomEvent) => {}}
+			onChangeBackground={(e) => updateBackground(e.detail)}
+			onSettingsClick={() => (isSettingsDialogOpen = true)}
 		/>
 	</div>
 
@@ -37,9 +39,20 @@
 			<OptionPicker />
 		</div>
 	</div>
+
+	<!-- Settings Dialog -->
+	{#if isSettingsDialogOpen}
+		<SettingsDialog
+			isOpen={isSettingsDialogOpen}
+			background={background}
+			onChangeBackground={updateBackground}
+			onClose={() => (isSettingsDialogOpen = false)}
+		/>
+	{/if}
 </div>
 
 <style>
+	/* Styling for the app remains the same */
 	#app {
 		display: flex;
 		flex-direction: column;
@@ -59,7 +72,7 @@
 
 	.menuBar {
 		flex: 0 0 auto;
-		/* z-index: 1; */
+		z-index: 1;
 	}
 
 	.mainContent {
@@ -68,7 +81,7 @@
 		flex-direction: row;
 		overflow: hidden;
 		position: relative;
-		/* z-index: 1; */
+		z-index: 0;
 	}
 
 	.sequenceWidgetContainer {
