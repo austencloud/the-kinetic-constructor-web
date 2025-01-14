@@ -1,9 +1,9 @@
 <script lang="ts">
 	import SettingsDialog from '$lib/components/SettingsDialog/SettingsDialog.svelte';
+	import { fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
-
 	export let background: string;
-	export let onChangeBackground: (newBackground: string) => void; // Ensure this is correctly typed.
+	export let onChangeBackground: (newBackground: string) => void;
 
 	let isOpen = false;
 	let buttonSize = 50;
@@ -14,7 +14,6 @@
 		isOpen = !isOpen;
 		console.log('Dialog toggled:', isOpen); // Debugging
 	};
-
 	onMount(() => {
 		const updateSizes = () => {
 			const newSize = Math.max(30, window.innerWidth / 24);
@@ -31,11 +30,7 @@
 
 <div>
 	<!-- Settings Button -->
-	<button
-		class="settings-button"
-		style="--button-size: {buttonSize}px;"
-		on:click={toggleDialog}
-	>
+	<button class="settings-button" style="--button-size: {buttonSize}px;" on:click={toggleDialog}>
 		<img
 			class="settings-icon"
 			style="--icon-size: {iconSize}px;"
@@ -44,16 +39,14 @@
 		/>
 	</button>
 
-	<!-- Settings Dialog -->
+	<!-- Animated Dialog -->
 	{#if isOpen}
-		<SettingsDialog
-			{background}
-			onChangeBackground={onChangeBackground}
-			{isOpen}
-			onClose={toggleDialog}
-		/>
+		<div transition:fade={{ duration: 300 }}>
+			<SettingsDialog {background} {onChangeBackground} {isOpen} onClose={toggleDialog} />
+		</div>
 	{/if}
 </div>
+
 <style>
 	.settings-button {
 		width: var(--button-size);
@@ -64,7 +57,10 @@
 		cursor: pointer;
 		border: none;
 		border-radius: 50%;
-		transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+		transition:
+			transform 0.3s ease,
+			background-color 0.3s ease,
+			box-shadow 0.3s ease;
 		margin: 5px;
 	}
 

@@ -2,14 +2,22 @@
 	import TabsNavigation from './TabsNavigation.svelte';
 	import TabContent from './TabContent.svelte';
 	import DialogActions from './DialogActions.svelte';
-	import { fade } from 'svelte/transition';
+	import { activeTabStore } from './../../stores/settingsStore';
+	import { get } from 'svelte/store';
 
 	export let isOpen: boolean;
 	export let onClose: () => void;
 	export let background: string;
 	export let onChangeBackground: (newBackground: string) => void;
 
-	let activeTab = 'User';
+	let activeTab = get(activeTabStore);
+
+	// Update the store whenever the activeTab changes
+	$: activeTabStore.set(activeTab);
+
+	// Custom transition combining fade and scale
+	// Adjust the dialogTransition function
+
 </script>
 
 {#if isOpen}
@@ -23,7 +31,7 @@
 			if (e.key === 'Enter' || e.key === ' ') onClose();
 		}}
 	>
-		<div class="dialog" role="dialog" transition:fade>
+		<div class="dialog" role="dialog">
 			<h2 class="dialog-title">Settings</h2>
 			<TabsNavigation {activeTab} on:changeTab={(e) => (activeTab = e.detail)} />
 			<TabContent {activeTab} {background} {onChangeBackground} />
@@ -58,21 +66,21 @@
 	}
 
 	.dialog {
-	width: 60vw;
-	height: 80vh;
-	display: flex;
-	flex-direction: column;
-	padding: 20px;
-	background: white;
-	background-size: 400% 400%;
-	animation: gradientBackground 30s ease infinite;
-	font-family: Arial, sans-serif;
-	border-radius: 12px;
-	box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-	overflow: hidden;
-	cursor: default;
-	
-}
+		width: 60vw;
+		height: 80vh;
+		display: flex;
+		flex-direction: column;
+		padding: 20px;
+		background: white;
+		background-size: 400% 400%;
+		animation: gradientBackground 30s ease infinite;
+		font-family: Arial, sans-serif;
+		border-radius: 12px;
+		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+		overflow: hidden;
+		cursor: default;
+		transform-origin: center;
+	}
 
 	.dialog-title {
 		margin: 0;
