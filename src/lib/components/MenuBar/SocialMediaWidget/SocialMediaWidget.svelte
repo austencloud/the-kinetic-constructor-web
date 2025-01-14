@@ -66,6 +66,7 @@
     background-color: #f0f0f0;
     transform: translateY(-5px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transform: scale(1.1);
   }
 
   .button:active {
@@ -74,8 +75,8 @@
   }
 
   .icon {
-    width: 24px;
-    height: 24px;
+    width: 2.5vh;
+    height: 2.5vh;
     transition: transform 0.2s;
   }
 

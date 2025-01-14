@@ -54,6 +54,8 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+		color: white;
+
   }
 
   .sequence-widget-main {
