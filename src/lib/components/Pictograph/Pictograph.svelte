@@ -1,44 +1,57 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import Grid from './Grid/Grid.svelte';
+    import Arrow from './Arrow/Arrow.svelte';
+    import Prop from './Prop/Prop.svelte';
+    import PictographInitializer from './PictographInitializer.svelte';
   
-    export let pictographData: any;
-    export let gridMode: 'diamond' | 'box' = 'diamond';
+    export let pictographData: any; // Data defining the pictograph layout
+    export let settings: any; // Configuration settings
   
-    const gridSize = 650;
-    let svgUrl: string = `/static/${gridMode}_grid.svg`;
+    let grid: any = null;
+    let arrows: any[] = [];
+    let props: any[] = [];
   
-    let arrowPositions: { x: number; y: number; type: string }[] = [];
-  
-    const loadArrowPositions = () => {
-      if (!pictographData) return;
-  
-      const { blue_attributes, red_attributes } = pictographData;
-      arrowPositions = [
-        { x: 325, y: 500, type: 'blue' }, // Example logic for blue arrow
-        { x: 500, y: 325, type: 'red' },  // Example logic for red arrow
-      ];
-  
-      // Extend with dynamic placement based on `pictographData`
-      // Adjust the `x` and `y` positions dynamically based on the actual logic.
+    // Listen to updates from PictographInitializer
+    let onGridUpdate = (event: CustomEvent) => {
+      grid = event.detail;
     };
   
-    onMount(() => {
-      loadArrowPositions();
-    });
+    let onArrowsUpdate = (event: CustomEvent) => {
+      arrows = event.detail;
+    };
+  
+    let onPropsUpdate = (event: CustomEvent) => {
+      props = event.detail;
+    };
   </script>
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${gridSize} ${gridSize}`} class="pictograph">
-    <image href={svgUrl} width={gridSize} height={gridSize} />
-    {#each arrowPositions as { x, y, type }}
-      <circle cx={x} cy={y} r="10" fill={type === 'blue' ? 'blue' : 'red'} />
+  <!-- Use PictographInitializer as a child component -->
+  <PictographInitializer
+    {pictographData}
+    {settings}
+    on:gridUpdate={onGridUpdate}
+    on:arrowsUpdate={onArrowsUpdate}
+    on:propsUpdate={onPropsUpdate}
+  />
+  
+  <div class="pictograph">
+    {#if grid}
+      <Grid {grid} />
+    {/if}
+    {#each arrows as arrow (arrow.id)}
+      <Arrow {arrow} />
     {/each}
-  </svg>
+    {#each props as prop (prop.id)}
+      <Prop {prop} />
+    {/each}
+  </div>
   
   <style>
     .pictograph {
-      border: 1px solid black;
+      position: relative;
       width: 100%;
-      height: auto;
+      height: 100%;
     }
   </style>
   
