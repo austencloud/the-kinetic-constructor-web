@@ -26,7 +26,7 @@
 		<MenuBar
 			{background}
 			onChangeBackground={(e) => updateBackground(e.detail)}
-			onSettingsClick={() => (isSettingsDialogOpen = true)}
+			onTabChange={() => (isSettingsDialogOpen = true)}
 		/>
 	</div>
 
@@ -44,7 +44,7 @@
 	{#if isSettingsDialogOpen}
 		<SettingsDialog
 			isOpen={isSettingsDialogOpen}
-			background={background}
+			{background}
 			onChangeBackground={updateBackground}
 			onClose={() => (isSettingsDialogOpen = false)}
 		/>
@@ -52,6 +52,11 @@
 </div>
 
 <style>
+
+	#app {
+		height: 100%;
+	}
+
 	/* Styling for the app remains the same */
 	#app {
 		display: flex;
@@ -82,15 +87,15 @@
 		overflow: hidden;
 		position: relative;
 		z-index: 0;
+		height: 100%;
+		width: 100%;
 	}
 
 	.sequenceWidgetContainer {
 		flex: 1;
-		overflow: hidden;
 	}
 
 	.optionPickerContainer {
 		flex: 1;
-		overflow-y: auto;
 	}
 </style>

@@ -1,69 +1,96 @@
 <script lang="ts">
 	export let grid: number[][] = [];
-	export let numBeats: number = 16;
-	export let containerWidth: number = 0;
-	export let containerHeight: number = 0;
+	export let numBeats: number = 10;
 
-	let cellSize = 40; // Default size
+	let gridRef: HTMLDivElement | null = null; // Reference to the grid component
+	let gridWidth = 0;
+	let gridHeight = 0;
+	let cellSize = 30; // Default size
 
-	// Calculate the size of each cell based on the container dimensions
+	// Calculate the cell size based on available dimensions
 	const calculateCellSize = () => {
-		// Ensure valid dimensions are available
-		if (containerWidth > 0 && containerHeight > 0 && grid.length > 0) {
+		if (gridWidth > 0 && gridHeight > 0 && grid.length > 0) {
 			const cols = grid[0]?.length || 1; // Number of columns
-			const rows = grid.length || 1; // Number of rows
+			const rows = grid.length || 1;
 			const gap = 5; // Gap between cells
 
-			// Calculate available width and height for cells
-			const availableWidth = containerWidth - gap * (cols - 1);
-			const availableHeight = containerHeight - gap * (rows - 1);
+			// Calculate available dimensions
+			const availableWidth = gridWidth - gap * (cols - 1);
+			const availableHeight = gridHeight - gap * (rows - 1);
 
-			// Calculate max width and height of each cell
-			const maxWidth = availableWidth / cols;
-			const maxHeight = availableHeight / rows;
-
-			// Use the smaller of the two to avoid overflow
-			cellSize = Math.max(10, Math.min(maxWidth, maxHeight)); // Minimum size of 10px
-		} else {
-			cellSize = 10; // Fallback size
-			console.warn('Invalid container dimensions or grid not ready.');
+			// Calculate the max cell size
+			cellSize = Math.max(10, Math.min(availableWidth / cols, availableHeight / rows));
 		}
 	};
 
-	$: calculateCellSize();
+	// Update the size of the grid container
+	const updateGridSize = () => {
+		if (gridRef) {
+			const { width, height } = gridRef.getBoundingClientRect();
+			gridWidth = width;
+			gridHeight = height;
+		}
+	};
+
+	// Call calculateCellSize whenever grid dimensions change
+	$: {
+		if (gridWidth > 0 && gridHeight > 0) calculateCellSize();
+	}
+
+	// Recalculate grid and cell size when the grid changes
+	$: if (grid.length > 0) {
+		updateGridSize();
+		calculateCellSize();
+	}
+
+	// Attach resize listener to update grid size dynamically
+	import { onMount } from 'svelte';
+	onMount(() => {
+		updateGridSize();
+		window.addEventListener('resize', updateGridSize);
+		return () => window.removeEventListener('resize', updateGridSize);
+	});
 </script>
 
-<div class="grid">
-	{#each grid as row}
-		<div class="grid-row">
-			{#each row as beat (beat)}
-				{#if beat <= numBeats}
-					<div
-						class="grid-cell"
-						style="width: {cellSize}px; height: {cellSize}px;"
-					>
-						{beat}
-					</div>
-				{/if}
-			{/each}
-		</div>
-	{/each}
+<div class="grid-container">
+	<div bind:this={gridRef} class="grid">
+		{#each grid as row}
+			<div class="grid-row">
+				{#each row as beat (beat)}
+					{#if beat <= numBeats}
+						<div class="grid-cell" style="width: {cellSize}px; height: {cellSize}px;">
+							{beat}
+						</div>
+					{/if}
+				{/each}
+			</div>
+		{/each}
+	</div>
 </div>
 
 <style>
+	.grid-container {
+		display: flex;
+		width: 100%;
+		height: 100%;
+		justify-content: center;
+		align-items: center;
+		flex-direction: row;
+	}
+
 	.grid {
 		display: flex;
 		flex-direction: column;
-		gap: 5px; /* Gap between rows */
+		gap: 5px;
 		width: 100%;
 		height: 100%;
 	}
 
 	.grid-row {
-		display: flex;
-		gap: 5px; /* Gap between cells in a row */
 		width: 100%;
-		justify-content: center;
+		display: flex;
+		gap: 5px;
+		align-items: left;
 	}
 
 	.grid-cell {
@@ -73,10 +100,6 @@
 		background-color: #f0f0f0;
 		border: 1px solid #ccc;
 		border-radius: 5px;
-		font-size: 1rem;
-		font-weight: bold;
-		text-align: center;
-		box-sizing: border-box; /* Ensures padding/border don't affect size */
-		overflow: hidden; /* Prevents text overflow */
+		box-sizing: border-box;
 	}
 </style>

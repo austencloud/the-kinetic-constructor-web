@@ -2,34 +2,33 @@
 	export let activeTab: string;
 	export let background: string;
 	export let onChangeBackground: (newBackground: string) => void;
-  
+
 	import UserProfileTab from './UserProfileTab.svelte';
 	import PropTypeTab from './PropTypeTab.svelte';
 	import BackgroundTab from './BackgroundTab.svelte';
 	import VisibilityTab from './VisibilityTab.svelte';
 	import BeatLayoutTab from './BeatLayoutTab.svelte';
-  </script>
-  
-  <div class="tab-content">
+</script>
+
+<div class="tab-content">
 	{#if activeTab === 'User'}
-	  <UserProfileTab />
+		<UserProfileTab />
 	{:else if activeTab === 'Prop Type'}
-	  <PropTypeTab />
+		<PropTypeTab />
 	{:else if activeTab === 'Background'}
-	  <BackgroundTab {background} {onChangeBackground} />
+		<BackgroundTab {background} {onChangeBackground} />
 	{:else if activeTab === 'Visibility'}
-	  <VisibilityTab />
+		<VisibilityTab />
 	{:else if activeTab === 'Beat Layouts'}
-	  <BeatLayoutTab />
+		<BeatLayoutTab />
 	{/if}
-  </div>
-  
-  <style>
+</div>
+
+<style>
 	.tab-content {
-	  display: flex;
-	  flex: 1;
-	  flex-direction: column;
-	  overflow: auto;
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		overflow: auto;
 	}
-  </style>
-  
+</style>

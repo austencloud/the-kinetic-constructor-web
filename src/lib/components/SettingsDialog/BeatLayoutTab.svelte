@@ -1,16 +1,14 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
 	import LayoutControls from './LayoutControls.svelte';
 	import GridPreview from './GridPreview.svelte';
+	import { onMount, tick } from 'svelte';
 
 	export let numBeats: number = 16;
 
 	let currentLayout = { rows: 4, cols: 4 };
 	let grid: number[][] = [];
 	let validLayouts: { rows: number; cols: number }[] = [];
-	let containerRef: HTMLDivElement | null = null;
-	let containerWidth = 0;
-	let containerHeight = 0;
+	let dialogRef: HTMLDivElement | null = null;
 
 	// Fetch layouts and transform data
 	const fetchLayouts = async () => {
@@ -34,16 +32,7 @@
 		);
 	};
 
-	// Update container dimensions
-	const updateContainerSize = async () => {
-		await tick(); // Ensure DOM updates are complete before measuring
-		if (containerRef) {
-			const { width, height } = containerRef.getBoundingClientRect();
-			containerWidth = width;
-			containerHeight = height;
-			console.log('Updated container dimensions:', { containerWidth, containerHeight });
-		}
-	};
+
 
 	// Handle layout change
 	const handleLayoutChange = (layout: { rows: number; cols: number }) => {
@@ -59,15 +48,10 @@
 	};
 
 	// Fetch layouts and attach resize listener
-	onMount(() => {
-		fetchLayouts();
-		updateContainerSize();
-		window.addEventListener('resize', updateContainerSize);
-		return () => window.removeEventListener('resize', updateContainerSize);
-	});
+
 </script>
 
-<div class="beat-layout-tab" bind:this={containerRef}>
+<div class="settings-dialog" bind:this={dialogRef}>
 	<div class="layout-controls">
 		<LayoutControls
 			{numBeats}
@@ -79,12 +63,12 @@
 	</div>
 
 	<div class="grid-preview">
-		<GridPreview {grid} {numBeats} {containerWidth} {containerHeight} />
+		<GridPreview {grid} {numBeats} />
 	</div>
 </div>
 
 <style>
-	.beat-layout-tab {
+	.settings-dialog {
 		display: flex;
 		flex-direction: column;
 		gap: 20px;
