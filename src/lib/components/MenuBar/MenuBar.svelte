@@ -2,24 +2,28 @@
 	import NavigationWidget from './NavigationWidget.svelte';
 	import SettingsButton from './SettingsButton/SettingsButton.svelte';
 	import SocialMediaWidget from './SocialMediaWidget/SocialMediaWidget.svelte';
-	
-	export let background: string;
-	export let onTabChange;
-	export let onChangeBackground: (e: CustomEvent) => void;
-
 	import { createEventDispatcher } from 'svelte';
-	const dispatch = createEventDispatcher();
+
+	export let background: string;
+	export let onChangeBackground: (newBackground: string) => void = () => {};
+	export let onTabChange: (index: number) => void = () => {};
+
+	const dispatch = createEventDispatcher<{ tabChange: number; settingsClick: void }>();
+
+	const handleTabChange = (index: number) => {
+		dispatch('tabChange', index);
+		onTabChange(index);
+	};
+
+	const handleSettingsClick = () => {
+		dispatch('settingsClick');
+	};
 </script>
 
 <header class="menu-bar">
 	<SocialMediaWidget />
-	<NavigationWidget {onTabChange} />
-	<SettingsButton
-		{background}
-		{onChangeBackground}
-		on:changeBackground={(e) => onChangeBackground(e.detail)}
-		on:click={() => dispatch('settingsClick')}
-	/>
+	<NavigationWidget on:tabChange={(e) => handleTabChange(e.detail)} />
+	<SettingsButton {background} {onChangeBackground} on:click={handleSettingsClick} />
 </header>
 
 <style>

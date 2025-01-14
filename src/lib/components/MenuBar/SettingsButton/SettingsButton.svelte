@@ -1,9 +1,9 @@
-<script>
+<script lang="ts">
 	import SettingsDialog from '$lib/components/SettingsDialog/SettingsDialog.svelte';
 	import { onMount } from 'svelte';
 
-	export let background;
-	export let onChangeBackground;
+	export let background: string;
+	export let onChangeBackground: (newBackground: string) => void; // Ensure this is correctly typed.
 
 	let isOpen = false;
 	let buttonSize = 50;
@@ -48,13 +48,12 @@
 	{#if isOpen}
 		<SettingsDialog
 			{background}
-			{onChangeBackground}
+			onChangeBackground={onChangeBackground}
 			{isOpen}
 			onClose={toggleDialog}
 		/>
 	{/if}
 </div>
-
 <style>
 	.settings-button {
 		width: var(--button-size);
@@ -64,10 +63,28 @@
 		align-items: center;
 		cursor: pointer;
 		border: none;
+		border-radius: 50%;
+		transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+		margin: 5px;
+	}
+
+	.settings-button:hover {
+		transform: scale(1.2);
+		box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+	}
+
+	.settings-button:active {
+		transform: scale(0.9);
+		box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 	}
 
 	.settings-icon {
 		width: var(--icon-size);
 		height: var(--icon-size);
+		transition: transform 0.3s ease;
+	}
+
+	.settings-button:hover .settings-icon {
+		transform: rotate(90deg);
 	}
 </style>

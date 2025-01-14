@@ -1,48 +1,70 @@
-<script>
-    let options = ['Option 1', 'Option 2', 'Option 3'];
-  </script>
-  
-  <style>
-    .optionPicker {
-      display: flex;
-      flex-direction: column;
-      padding: 10px;
-      flex: 1;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-  
-    .title {
-      margin-bottom: 10px;
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: white;
-    }
-  
-    .scrollArea {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px;
-    }
-  
-    .option {
-      padding: 10px;
-      margin-bottom: 5px;
-      background-color: #fff;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-  
-    .option:hover {
-      background-color: #e0e7ff;
-    }
-  </style>
-  
-  <div class="optionPicker">
-    <h2 class="title">Options:</h2>
-    <div class="scrollArea">
-      {#each options as option}
-        <div class="option">{option}</div>
-      {/each}
-    </div>
+<script lang="ts">
+  import { writable } from 'svelte/store';
+
+  const selectedPictograph = writable(null);
+  import { get } from 'svelte/store';
+
+  export let options: { name: string; pictographData: any }[];
+</script>
+
+<div class="optionPicker">
+  <h2 class="title">Options:</h2>
+  <div class="scrollArea">
+    {#each options as { name, pictographData }}
+      <div
+        class="option"
+        role="option"
+        on:click={() => selectedPictograph.set(pictographData)}
+        on:keydown={(e) => e.key === 'Enter' && selectedPictograph.set(pictographData)}
+        aria-selected={get(selectedPictograph) === pictographData}
+        tabindex="0"
+      >
+        {name}
+      </div>
+    {/each}
   </div>
-  
+</div>
+
+
+<style>
+  .optionPicker {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 700px;
+    margin: auto;
+    background: #f0f0f0;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .scrollArea {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+  }
+
+  .option {
+    padding: 10px;
+    margin-bottom: 5px;
+    background-color: white;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .option:hover {
+    background-color: #dbeafe;
+  }
+
+  .option[aria-selected="true"] {
+    background-color: #93c5fd;
+    font-weight: bold;
+  }
+</style>

@@ -15,6 +15,15 @@
 	const updateBackground = (newBackground: string) => {
 		backgroundStore.set(newBackground);
 	};
+
+	const handleSettingsClick = () => {
+		isSettingsDialogOpen = true;
+	};
+
+	const handleTabChange = (e: CustomEvent<number>) => {
+		const index = e.detail;
+		console.log(`Tab changed to index: ${index}`);
+	};
 </script>
 
 <div id="app">
@@ -25,8 +34,9 @@
 	<div class="menuBar">
 		<MenuBar
 			{background}
-			onChangeBackground={(e) => updateBackground(e.detail)}
-			onTabChange={() => (isSettingsDialogOpen = true)}
+			on:tabChange={handleTabChange}
+			on:settingsClick={handleSettingsClick}
+			on:changeBackground={(e) => updateBackground(e.detail)}
 		/>
 	</div>
 
@@ -36,7 +46,7 @@
 		</div>
 
 		<div class="optionPickerContainer">
-			<OptionPicker />
+			<OptionPicker options={[{ name: 'Option1', pictographData: null }, { name: 'Option2', pictographData: null }]} />
 		</div>
 	</div>
 
@@ -51,14 +61,10 @@
 	{/if}
 </div>
 
-<style>
 
+<style>
 	#app {
 		height: 100%;
-	}
-
-	/* Styling for the app remains the same */
-	#app {
 		display: flex;
 		flex-direction: column;
 		height: 100vh;
