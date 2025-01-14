@@ -5,7 +5,7 @@
 	export let onChangeBackground: (newBackground: string) => void;
 
 	import UserProfileTab from './UserProfileTab.svelte';
-	import PropTypeTab from './PropTypeTab.svelte';
+	import PropTypeTab from './PropTypeTab/PropTypeTab.svelte';
 	import BackgroundTab from './BackgroundTab.svelte';
 	import VisibilityTab from './VisibilityTab.svelte';
 	import BeatLayoutTab from './BeatLayoutTab.svelte';

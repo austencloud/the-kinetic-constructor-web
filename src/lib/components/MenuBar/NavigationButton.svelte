@@ -10,21 +10,27 @@
 	let buttonHeight: number;
 
 	const updateButtonStyles = () => {
-		const windowWidth = window.innerWidth;
-		const windowHeight = window.innerHeight;
+		if (typeof window !== 'undefined') {
+			const windowWidth = window.innerWidth;
+			const windowHeight = window.innerHeight;
 
-		fontSize = Math.max(10, windowHeight / 50);
-		buttonWidth = Math.max(80, windowWidth / 10);
-		buttonHeight = Math.max(30, windowHeight / 20);
+			fontSize = Math.max(10, windowHeight / 50);
+			buttonWidth = Math.max(80, windowWidth / 10);
+			buttonHeight = Math.max(30, windowHeight / 20);
+		}
 	};
 
 	onMount(() => {
 		updateButtonStyles();
-		window.addEventListener('resize', updateButtonStyles);
+		if (typeof window !== 'undefined') {
+			window.addEventListener('resize', updateButtonStyles);
+		}
 	});
 
 	onDestroy(() => {
-		window.removeEventListener('resize', updateButtonStyles);
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('resize', updateButtonStyles);
+		}
 	});
 </script>
 
@@ -32,38 +38,40 @@
 	on:click={onClick}
 	class={isActive ? 'active' : 'inactive'}
 	style="
-    font-size: {fontSize}px;
-    width: {buttonWidth}px;
-    height: {buttonHeight}px;
+  font-size: {fontSize}px;
+  width: {buttonWidth}px;
+  height: {buttonHeight}px;
   "
 >
 	{name}
 </button>
 
 <style>
-  button {
-    font-family: Georgia, serif;
-    padding: 5px 10px;
-    border-radius: 5px;
-    border: 1px solid gray;
-    cursor: pointer;
-    transition: all 0.3s ease, transform 0.2s ease;
-  }
-  button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-  button:active {
-    transform: scale(0.95);
-  }
-  .active {
-    background-color: blue;
-    color: white;
-    font-weight: bold;
-  }
-  .inactive {
-    background-color: white;
-    color: black;
-    font-weight: normal;
-  }
+	button {
+		font-family: Georgia, serif;
+		padding: 5px 10px;
+		border-radius: 5px;
+		border: 1px solid gray;
+		cursor: pointer;
+		transition:
+			all 0.3s ease,
+			transform 0.2s ease;
+	}
+	button:hover {
+		transform: scale(1.05);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+	}
+	button:active {
+		transform: scale(0.95);
+	}
+	.active {
+		background-color: blue;
+		color: white;
+		font-weight: bold;
+	}
+	.inactive {
+		background-color: white;
+		color: black;
+		font-weight: normal;
+	}
 </style>
