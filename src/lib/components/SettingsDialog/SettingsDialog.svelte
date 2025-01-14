@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
 	import TabsNavigation from './TabsNavigation.svelte';
 	import TabContent from './TabContent.svelte';
 	import DialogActions from './DialogActions.svelte';
+	import { fade } from 'svelte/transition';
 
 	export let isOpen: boolean;
 	export let onClose: () => void;
@@ -10,7 +10,6 @@
 	export let onChangeBackground: (newBackground: string) => void;
 
 	let activeTab = 'User';
-	let dialogRef: HTMLDivElement | null = null;
 </script>
 
 {#if isOpen}
@@ -24,7 +23,7 @@
 			if (e.key === 'Enter' || e.key === ' ') onClose();
 		}}
 	>
-		<div class="dialog" bind:this={dialogRef} role="dialog">
+		<div class="dialog" role="dialog" transition:fade>
 			<h2 class="dialog-title">Settings</h2>
 			<TabsNavigation {activeTab} on:changeTab={(e) => (activeTab = e.detail)} />
 			<TabContent {activeTab} {background} {onChangeBackground} />
@@ -34,6 +33,18 @@
 {/if}
 
 <style>
+	@keyframes gradientBackground {
+		0% {
+			background-position: 0% 50%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+		100% {
+			background-position: 0% 50%;
+		}
+	}
+
 	.dialog-backdrop {
 		position: fixed;
 		inset: 0;
@@ -41,27 +52,33 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		height: 100%; /* Ensure full height */
-		width: 100%; /* Ensure full width */
+		height: 100%;
+		width: 100%;
+		cursor: pointer;
 	}
 
 	.dialog {
-		width: 90vw; /* 90% of viewport width */
-		height: 90vh; /* 90% of viewport height */
-		display: flex;
-		flex-direction: column;
-		padding: 20px; /* Grid padding */
-		box-sizing: border-box;
-		background: white;
-		border-radius: 8px;
-		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-	}
+	width: 60vw;
+	height: 80vh;
+	display: flex;
+	flex-direction: column;
+	padding: 20px;
+	background: white;
+	background-size: 400% 400%;
+	animation: gradientBackground 30s ease infinite;
+	font-family: Arial, sans-serif;
+	border-radius: 12px;
+	box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+	overflow: hidden;
+	cursor: default;
+	
+}
 
 	.dialog-title {
 		margin: 0;
-		font-size: 1.5rem;
+		font-size: 1.8rem;
 		text-align: center;
 		padding: 10px 0;
-		border-bottom: 1px solid #ccc;
+		border-bottom: 2px solid rgba(255, 255, 255, 0.2);
 	}
 </style>

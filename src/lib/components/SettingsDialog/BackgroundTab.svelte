@@ -10,6 +10,17 @@
 	};
 </script>
 
+<div class="container">
+	<div class="content">
+		<h3>Background Settings</h3>
+		<select bind:value={background} on:change={selectBackground}>
+			{#each backgrounds as bg}
+				<option value={bg}>{bg}</option>
+			{/each}
+		</select>
+	</div>
+</div>
+
 <style>
 	.container {
 		display: flex;
@@ -22,14 +33,3 @@
 		text-align: center;
 	}
 </style>
-
-<div class="container">
-	<div class="content">
-		<h3>Background Settings</h3>
-		<select bind:value={background} on:change={selectBackground}>
-			{#each backgrounds as bg}
-				<option value={bg}>{bg}</option>
-			{/each}
-		</select>
-	</div>
-</div>

@@ -32,8 +32,6 @@
 		);
 	};
 
-
-
 	// Handle layout change
 	const handleLayoutChange = (layout: { rows: number; cols: number }) => {
 		currentLayout = layout;
@@ -48,7 +46,6 @@
 	};
 
 	// Fetch layouts and attach resize listener
-
 </script>
 
 <div class="settings-dialog" bind:this={dialogRef}>
