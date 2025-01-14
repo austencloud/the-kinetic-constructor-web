@@ -1,15 +1,19 @@
 <script lang="ts">
+	import { numBeatsStore, currentLayoutStore } from '../../../stores/layoutStore';
+
 	import LayoutControls from './LayoutControls.svelte';
 	import GridPreview from './GridPreview.svelte';
 	import { onMount, tick } from 'svelte';
 
-	export let numBeats: number = 16;
+	let numBeats: number = 16;
 
 	let currentLayout = { rows: 4, cols: 4 };
 	let grid: number[][] = [];
 	let validLayouts: { rows: number; cols: number }[] = [];
 	let dialogRef: HTMLDivElement | null = null;
-
+	// Subscribe to stores
+	numBeatsStore.subscribe((value) => (numBeats = value));
+	currentLayoutStore.subscribe((value) => (currentLayout = value));
 	// Fetch layouts and transform data
 	const fetchLayouts = async () => {
 		try {
@@ -33,19 +37,29 @@
 	};
 
 	// Handle layout change
-	const handleLayoutChange = (layout: { rows: number; cols: number }) => {
+	const handleLayoutChange = (event: CustomEvent<{ rows: number; cols: number }>) => {
+		const layout = event.detail;
 		currentLayout = layout;
 		updateGrid();
+		currentLayoutStore.set(layout);
+
 	};
 
 	// Handle sequence length change
-	const handleSequenceLengthChange = async (delta: number) => {
+	const handleSequenceLengthChange = async (event: CustomEvent<number>) => {
+		const delta = event.detail;
 		numBeats = Math.max(1, Math.min(64, numBeats + delta));
 		await fetchLayouts();
 		updateGrid();
+		numBeatsStore.update((n) => Math.max(1, Math.min(64, n + delta)));
+
 	};
 
 	// Fetch layouts and attach resize listener
+	onMount(async () => {
+		await fetchLayouts();
+		updateGrid();
+	});
 </script>
 
 <div class="settings-dialog" bind:this={dialogRef}>
@@ -54,8 +68,8 @@
 			{numBeats}
 			{currentLayout}
 			{validLayouts}
-			onSequenceLengthChange={(e) => handleSequenceLengthChange(e.detail)}
-			onLayoutChange={(e) => handleLayoutChange(e.detail)}
+			onSequenceLengthChange={handleSequenceLengthChange}
+			onLayoutChange={handleLayoutChange}
 		/>
 	</div>
 

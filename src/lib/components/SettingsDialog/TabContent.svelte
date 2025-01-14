@@ -8,7 +8,7 @@
 	import PropTypeTab from './PropTypeTab/PropTypeTab.svelte';
 	import BackgroundTab from './BackgroundTab.svelte';
 	import VisibilityTab from './VisibilityTab.svelte';
-	import BeatLayoutTab from './BeatLayoutTab.svelte';
+	import BeatLayoutTab from './BeatLayoutTab/BeatLayoutTab.svelte';
 
 	let tabs = ['User', 'Prop Type', 'Background', 'Visibility', 'Beat Layouts'];
 	let previousTabIndex = tabs.indexOf(activeTab);
