@@ -1,5 +1,5 @@
 <script>
-  export let type = "Default"; // Default motion type
+  export let type = "Pro"; // Default motion type
 </script>
 
 <style>
@@ -7,10 +7,11 @@
     font-size: 1rem;
     font-style: italic;
     text-align: center;
-    color: gray;
+    color: black;
+    font-size: 1.8em;
   }
 </style>
 
 <div class="motion-type-label">
-  Motion Type: {type}
+  {type}
 </div>

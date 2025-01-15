@@ -1,16 +1,24 @@
-<script>
-  export let turns = 0;
-  export let color = "blue";
+<script lang="ts">
+	export let turns = 0; // Accept turns as a prop
+	export let color = 'blue'; // Accept color as a prop
+
+	// Function to format turns
+	function formatTurns(turns: number) {
+		return Number.isInteger(turns) ? turns : turns.toFixed(1);
+	}
 </script>
 
-<style>
-  .turns-label {
-    font-size: 1.2rem;
-    color: var(--color);
-    font-weight: bold;
-  }
-</style>
-
 <div class="turns-label" style="--color: {color}">
-  {turns}
+	{formatTurns(turns)}
 </div>
+
+<style>
+	.turns-label {
+		color: black;
+		font-weight: bold;
+		font-size: 2.4em;
+		width: 10%;
+		display: flex;
+		justify-content: center;
+	}
+</style>
