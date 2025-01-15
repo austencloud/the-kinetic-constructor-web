@@ -137,7 +137,12 @@
 	/* When the device is in portrait mode */
 	@media (orientation: portrait) {
 		.mainContent {
+			flex: 1;
+			display: flex;
 			flex-direction: column;
+			overflow: hidden;
+			position: relative;
+			z-index: 0;
 		}
 	}
 
@@ -145,6 +150,11 @@
 	@media (orientation: landscape) {
 		.mainContent {
 			flex-direction: row;
+			flex: 1;
+			display: flex;
+			overflow: hidden;
+			position: relative;
+			z-index: 0;
 		}
 	}
 </style>

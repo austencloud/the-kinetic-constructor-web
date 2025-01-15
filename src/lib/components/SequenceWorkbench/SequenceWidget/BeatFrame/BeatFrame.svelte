@@ -103,6 +103,7 @@
 		background-color: transparent;
 		box-sizing: border-box;
 		overflow: hidden;
+		
 	}
 
 	.start-pos {
