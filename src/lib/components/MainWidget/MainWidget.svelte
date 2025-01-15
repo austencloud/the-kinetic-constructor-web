@@ -119,14 +119,5 @@
 		flex: 1;
 	}
 
-	@media (max-width: 768px) {
-		.mainContent {
-			flex-direction: column;
-		}
-		.sequenceWidgetContainer,
-		.optionPickerContainer {
-			width: 100%;
-			height: auto;
-		}
-	}
+
 </style>
