@@ -14,7 +14,6 @@
 
 <div class="sequence-workbench">
   <SequenceWidget
-    labels={["Indicator Label", "Current Word", "Difficulty"]}
   />
 
   <!-- GraphEditorToggleTab -->
@@ -35,7 +34,7 @@
 
 <style>
   .sequence-workbench {
-    position: relative;
+    /* position: relative; */
     display: flex;
     flex-direction: column;
     height: 100%;

@@ -1,41 +1,54 @@
 <script lang="ts">
+	import StartPosBeat from './StartPosBeat.svelte';
 	import Beat from './Beat.svelte';
-	import { writable } from 'svelte/store';
+	import type { BeatData } from './Beat.svelte';
 
-	export let beatCount = writable(16);
+	export let beats: BeatData[] = [];
+	export let visibleCount = 16;
 
-	let beats = Array(64)
-		.fill(null)
-		.map((_, i) => ({
-			id: i + 1,
-			filled: i < $beatCount
-		}));
-
-	$: visibleBeats = beats.slice(0, $beatCount);
+	function handleBeatClick(beat: BeatData) {
+		beat.filled = !beat.filled;
+	}
 </script>
 
 <div class="beat-frame">
-	<div class="start-position">Start Position</div>
-	{#each visibleBeats as beat}
-		<Beat {beat} />
+	<!-- StartPos in row=1, col=1, using your new StartPosBeat -->
+	<div class="start-pos" style="grid-row: 1; grid-column: 1;">
+		<StartPosBeat onClick={() => console.log('Start pos clicked!')}/>
+	</div>
+
+	{#each beats.slice(0, visibleCount) as beat, index (beat.id)}
+		<div
+			class="beat-container"
+			style="grid-row: {Math.floor(index/8) + 2}; grid-column: {(index % 8) + 2};"
+		>
+			<Beat beat={beat} onClick={handleBeatClick} />
+		</div>
 	{/each}
 </div>
+
 
 <style>
 	.beat-frame {
 		display: grid;
-		grid-template-columns: repeat(8, 1fr);
+		grid-template-rows: repeat(9, 1fr);
+		grid-template-columns: repeat(9, 1fr);
 		gap: 10px;
 		padding: 10px;
 		background-color: transparent;
 		border-radius: 8px;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 
-	.start-position {
-		grid-column: span 8;
-		text-align: center;
-		font-weight: bold;
-		margin-bottom: 10px;
+	.start-pos {
+		border: 2px dashed #888;
+		border-radius: 5px;
+		aspect-ratio: 1 / 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.beat-container {
+		aspect-ratio: 1 / 1;
 	}
 </style>
