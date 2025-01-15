@@ -136,4 +136,17 @@
 			height: auto;
 		}
 	}
+	/* When the device is in portrait mode */
+	@media (orientation: portrait) {
+		.mainContent {
+			flex-direction: column;
+		}
+	}
+
+	/* When the device is in landscape mode */
+	@media (orientation: landscape) {
+		.mainContent {
+			flex-direction: row;
+		}
+	}
 </style>
