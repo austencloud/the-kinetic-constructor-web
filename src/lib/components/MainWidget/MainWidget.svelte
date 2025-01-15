@@ -144,8 +144,14 @@
 			position: relative;
 			z-index: 0;
 		}
+		.sequenceWorkbenchContainer,
+		.optionPickerContainer {
+			flex: 1;
+			height: 50%;
+			width: 100%;
+		}
 	}
-
+	
 	/* When the device is in landscape mode */
 	@media (orientation: landscape) {
 		.mainContent {
@@ -155,6 +161,12 @@
 			overflow: hidden;
 			position: relative;
 			z-index: 0;
+		}
+		.sequenceWorkbenchContainer,
+		.optionPickerContainer {
+			flex: 1;
+			height: 100%;
+			width: 50%;
 		}
 	}
 </style>
