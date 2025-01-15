@@ -26,6 +26,7 @@
 					width="100%"
 					height="100%"
 					preserveAspectRatio="xMidYMid meet"
+					style="cursor: pointer;"
 				/>
 			{:else}
 				<text
@@ -54,30 +55,28 @@
 		align-items: center;
 		justify-content: center;
 		cursor: var(--cursor, default); /* Dynamic cursor */
-		border: 1px solid #ccc;
-		border-radius: 5px;
 		transition: transform 0.2s ease;
-		background-color: white;
+		color: white;
 		box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
 		aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
 		transition: transform 0.1s ease-in-out;
 	}
-
+	
 	.pictograph-wrapper:hover {
 		transform: var(--hover-scale, none);
 	}
 	.pictograph-wrapper:active {
 		transform: var(--click-scale, none);
 	}
-
+	
 	.base-pictograph {
+		color: white;
 		width: 100%;
 		height: 100%;
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		background: #f0f0f0;
-		border-radius: 5px;
 		aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
 	}
 

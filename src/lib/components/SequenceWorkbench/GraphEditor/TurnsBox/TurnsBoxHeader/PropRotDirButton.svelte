@@ -41,7 +41,7 @@
 		align-items: center;
 		transition:
 			background-color 0.3s ease,
-			transform 0.2s ease,
+			transform 0.1s ease-in-out,
 			box-shadow 0.3s ease;
 		box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2),
 			inset 0px 1px 3px rgba(255, 255, 255, 0.5); /* Subtle inner shadow */
@@ -53,6 +53,7 @@
 		box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3),
 			inset 0px 1px 3px rgba(255, 255, 255, 0.5),
 			0px 0px 5px rgba(255, 255, 255, 0.8); /* Glow effect */
+		transform: scale(1.05); /* Slight scaling effect */
 	}
 
 	/* Pressed State */
@@ -62,13 +63,14 @@
 			inset 0px 2px 4px rgba(255, 255, 255, 0.3);
 		transform: translateY(2px); /* Slight downward movement */
 	}
-
+	
 	/* Pressed state when toggled */
 	.button[aria-pressed='true'] {
 		background-color: var(--color);
 		box-shadow: inset 0px 4px 6px rgba(0, 0, 0, 0.3),
-			inset 0px 2px 4px rgba(255, 255, 255, 0.3);
+		inset 0px 2px 4px rgba(255, 255, 255, 0.3);
 		transform: translateY(2px);
+		cursor: default; /* Disable pointer cursor when pressed */
 	}
 
 	/* Icon Style */

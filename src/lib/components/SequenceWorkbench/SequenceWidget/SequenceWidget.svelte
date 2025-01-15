@@ -4,6 +4,8 @@
 	import DifficultyLabel from './Labels/DifficultyLabel.svelte';
 	import BeatFrame from './BeatFrame/BeatFrame.svelte';
 	import SequenceWidgetButtonPanel from './ButtonPanel/SequenceWidgetButtonPanel.svelte';
+	import { sampleBeats } from './BeatFrame/BeatFrameExampleData';
+	// 2) Decide how many to show at once
 </script>
 
 <div class="sequence-widget">

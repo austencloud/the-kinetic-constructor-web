@@ -18,7 +18,7 @@
 		width: 20%;
 		background-color: white;
 		color: black;
-		border: 3px solid var(--color);
+		border: 4px solid var(--color);
 		border-radius: 50%;
 		cursor: pointer;
 		transition: transform 0.2s;
