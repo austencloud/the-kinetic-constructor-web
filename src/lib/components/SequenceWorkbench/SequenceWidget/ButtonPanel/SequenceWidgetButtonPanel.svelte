@@ -23,7 +23,7 @@
 	function updateButtonSize(containerHeight: number) {
 		// Example: scale buttonSize to e.g. containerHeight / 6
 		// But also clamp so we don't get too big or too tiny
-		buttonSize = Math.max(40, Math.min(60, containerHeight / 8));
+		buttonSize = containerHeight / 14;
 	}
 
 	onMount(() => {
