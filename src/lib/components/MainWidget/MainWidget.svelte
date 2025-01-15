@@ -119,7 +119,7 @@
 		flex: 1;
 	}
 
-	@media (max-width: 768px) {
+	/* @media (max-width: 768px) {
 		.mainContent {
 			flex: 1;
 			display: flex;
@@ -133,7 +133,7 @@
 			flex: 1;
 			height: auto;
 		}
-	}
+	} */
 	/* When the device is in portrait mode */
 	@media (orientation: portrait) {
 		.mainContent {
