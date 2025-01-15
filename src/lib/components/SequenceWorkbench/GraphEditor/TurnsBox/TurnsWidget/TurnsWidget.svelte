@@ -3,7 +3,7 @@
 	import TurnsDisplayFrame from './TurnsDisplayFrame.svelte';
 	import MotionTypeLabel from './MotionTypeLabel.svelte';
   
-	export let color: string;
+	export let color: 'blue' | 'red' ;
 	export let turns: string | number;
 	export let onOpenDialog: () => void;
   </script>

@@ -50,7 +50,6 @@
 	.graph-editor {
 		position: relative;
 		background-color: #f4f4f4;
-		border-top: 2px solid #ccc;
 		overflow: hidden;
 		transition: height var(--animation-duration) ease-in-out;
 		display: flex;

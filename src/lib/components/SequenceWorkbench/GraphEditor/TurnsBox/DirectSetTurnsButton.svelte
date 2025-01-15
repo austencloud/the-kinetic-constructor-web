@@ -3,20 +3,17 @@
 	export let value: string;
 	export let borderColor: string;
 	export let onClick: () => void;
-	export let size: string = '150px';
 
 	let isHovered: boolean = false;
 	let isActive: boolean = false;
 
 	// Calculate the font size based on button size
-	$: fontSize = `${parseFloat(size) * 0.5}px`;
 </script>
 
 <button
 	class="button {isHovered ? 'hovered' : ''} {isActive ? 'active' : ''}"
 	style="
     border: 4px solid {borderColor};
-    font-size: {fontSize};
   "
 	on:mouseenter={() => (isHovered = true)}
 	on:mouseleave={() => (isHovered = false)}
@@ -42,6 +39,7 @@
 			transform 0.2s,
 			box-shadow 0.2s;
 		aspect-ratio: 1 / 1;
+		font-size: 2em
 	}
 
 	.button.hovered {

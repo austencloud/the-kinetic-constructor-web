@@ -10,6 +10,15 @@
 	let isDialogOpen = false;
 	const turnsStore = writable<string | number>(turns);
 
+	// We compute the box color + gradient
+	const boxColor = color === 'blue' ? '#2e3192' : '#ed1c24';
+	const boxGradient =
+		color === 'blue'
+		? `linear-gradient(135deg, rgba(46,49,146,0.1), rgba(46,49,146,0.8)), #fff`
+		: `linear-gradient(135deg, rgba(237,28,36,0.1), rgba(237,28,36,0.8)), #fff`;
+
+
+
 	const handleOpenDialog = () => {
 		isDialogOpen = true;
 	};
@@ -27,24 +36,29 @@
 
 <div
 	class="turns-box"
-	style="--box-color: {color === 'blue' ? '#2e3192' : '#ed1c24'}; --box-gradient: {color === 'blue'
-		? 'linear-gradient(135deg, rgba(46, 49, 146, 0.1), rgba(46, 49, 146, 0.3))'
-		: 'linear-gradient(135deg, rgba(237, 28, 36, 0.1), rgba(237, 28, 36, 0.3))'};"
+	style="
+		--box-color: {boxColor};
+		--box-gradient: {boxGradient};
+	"
 >
 	<TurnsBoxHeader {color} />
 	<TurnsWidget {color} {turns} onOpenDialog={handleOpenDialog} />
 
 	{#if isDialogOpen}
-		<DirectSetTurnsDialog {color} onSelectTurns={handleSelectTurns} onClose={handleCloseDialog} />
+		<!-- Pass dialogBackground as a prop -->
+		<DirectSetTurnsDialog
+			{color}
+			onSelectTurns={handleSelectTurns}
+			onClose={handleCloseDialog}
+		/>
 	{/if}
 </div>
 
 <style>
 	.turns-box {
-		position: relative; /* Required for absolute positioning of the dialog */
+		position: relative; /* For absolutely positioned dialog */
 		flex: 1;
 		border: 4px solid var(--box-color);
-		border-radius: 5px;
 		display: flex;
 		flex-direction: column;
 		background: var(--box-gradient);

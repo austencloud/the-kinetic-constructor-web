@@ -1,45 +1,33 @@
 <script lang="ts">
+	import { parseTurnsValue, displayTurnsValue } from './turnsUtils';
 	import DirectSetTurnsDialog from '../DirectSetTurnsDialog.svelte';
-	import { writable } from 'svelte/store';
 
 	export let turns: string | number = 0;
-	export let color = 'blue';
+	export let color: 'blue' | 'red' = 'blue';
 
-	let isDialogOpen = false;
-	const turnsStore = writable(turns);
+	// This is how we open the "DirectSetTurnsDialog":
+	export let onClick: () => void;
 
-	// Subscribe to the turnsStore to update the turns variable
-	turnsStore.subscribe(value => {
-		turns = value;
-	});
+	// We'll maintain a numeric version internally
+	let numericTurns = 0;
 
-	const handleLabelClick = () => {
-		isDialogOpen = true;
-	};
+	// Whenever 'turns' changes, parse it into -0.5 for "fl", or else a float
+	$: numericTurns = parseTurnsValue(turns);
 
-	const handleSelectTurns = (value: string | number) => {
-		const newTurns = value === 'fl' ? value : parseFloat(value.toString());
-		turnsStore.set(newTurns);
-		isDialogOpen = false;
-	};
+	function handleClick() {
+		onClick?.();
+	}
 </script>
 
 <button
 	class="turns-label"
 	style="--color: {color}"
-	on:click={handleLabelClick}
-	aria-label="Set turns"
+	on:click={handleClick}
 >
-	{turns}
+	<!-- For display, convert -0.5 => "fl", etc. -->
+	{displayTurnsValue(numericTurns)}
 </button>
 
-{#if isDialogOpen}
-	<DirectSetTurnsDialog
-		{color}
-		onSelectTurns={handleSelectTurns}
-		onClose={() => (isDialogOpen = false)}
-	/>
-{/if}
 <style>
 	.turns-label {
 		color: black;
@@ -56,13 +44,11 @@
 		align-items: center;
 		transition: transform 0.1s, background-color 0.2s;
 	}
-
 	.turns-label:hover {
 		transform: scale(1.1);
 		box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3),
-		inset 0px 1px 3px rgba(255, 255, 255, 0.5);
+			inset 0px 1px 3px rgba(255, 255, 255, 0.5);
 	}
-
 	.turns-label:active {
 		transform: scale(0.9);
 	}
