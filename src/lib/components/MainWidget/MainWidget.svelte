@@ -84,6 +84,7 @@
 		height: 100vh;
 		width: 100vw;
 		position: relative;
+		color: light-dark(black, white);
 	}
 
 	.background {

@@ -45,6 +45,7 @@
 	</div>
 </div>
 
+
 <style>
 	.wrapper {
 		display: flex;
@@ -59,6 +60,10 @@
 		margin-bottom: 10%;
 		font-size: 3vw; /* Font size relative to window width */
 		font-family: 'Monotype Corsiva', cursive;
+		background-color: rgba(255, 255, 255, 0.5); /* Translucent background */
+		border-radius: 40px; /* Adjust as needed */
+		padding: 10px 20px; /* Adjust as needed */
+		text-align: center;
 	}
 
 	.pictograph-container {
