@@ -41,17 +41,7 @@
 {/if}
 
 <style>
-	@keyframes gradientBackground {
-		0% {
-			background-position: 0% 50%;
-		}
-		50% {
-			background-position: 100% 50%;
-		}
-		100% {
-			background-position: 0% 50%;
-		}
-	}
+
 
 	.dialog-backdrop {
 		position: fixed;
@@ -73,7 +63,6 @@
 		padding: 20px;
 		background: white;
 		background-size: 400% 400%;
-		animation: gradientBackground 30s ease infinite;
 		font-family: Arial, sans-serif;
 		border-radius: 12px;
 		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);

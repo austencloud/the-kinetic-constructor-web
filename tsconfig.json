@@ -2,23 +2,22 @@
 	"extends": "./.svelte-kit/tsconfig.json",
 	"compilerOptions": {
 	  "allowJs": true,
-	  "checkJs": true, // Enable this only if you want TypeScript to type-check JavaScript files
+	  "checkJs": true,
 	  "esModuleInterop": true,
 	  "forceConsistentCasingInFileNames": true,
 	  "resolveJsonModule": true,
 	  "skipLibCheck": true,
 	  "sourceMap": true,
-	  "strict": true, // Good for ensuring strict type safety
-	  "module": "ESNext", // Correct for modern ESM-based projects like SvelteKit
-	  "moduleResolution": "Node", // Required for resolving modules in Node.js-style
-	  "paths": {
-		"$lib/*": ["src/lib/*"] // Ensure this matches your SvelteKit configuration
-	  },
-	  "target": "ESNext", // Targets modern JavaScript
-	  "types": ["svelte"], // Ensure TypeScript recognizes Svelte types
-	  "lib": ["DOM", "ESNext"], // Add the DOM library for browser-based projects
-	  "strictNullChecks": true, // Ensures null and undefined are explicitly handled
-	  "noImplicitAny": true, // Disallows implicit `any` types
-	  "noImplicitThis": true // Prevents `this` being implicitly `any`
+	  "strict": true,
+	  "module": "ESNext",
+	  "moduleResolution": "Node",
+	  "baseUrl": "./",
+	  "paths": {"$lib/*": ["src/lib/*"] },
+	  "target": "ESNext",
+	  "types": ["svelte"],
+	  "lib": ["DOM", "ESNext"],
+	  "strictNullChecks": true,
+	  "noImplicitAny": true,
+	  "noImplicitThis": true
 	}
 }

@@ -3,12 +3,12 @@
   import GraphEditor from './GraphEditor/GraphEditor.svelte';
   import GraphEditorToggleTab from './GraphEditor/GraphEditorToggleTab.svelte';
 
-  let isGraphEditorExpanded = false;
+  let isExpanded = false;
   const animationDuration = 300; // Animation duration in milliseconds
   const maxEditorHeight = 300;
 
   const toggleGraphEditor = () => {
-    isGraphEditorExpanded = !isGraphEditorExpanded;
+    isExpanded = !isExpanded;
   };
 </script>
 
@@ -25,28 +25,25 @@
     <div class="sequence-widget-main">
       <div class="scroll-area">Scroll Area</div>
       <SequenceWidgetButtonPanel
-        {isGraphEditorExpanded}
-        {animationDuration}
       />
     </div>
   </div>
 
   <!-- GraphEditorToggleTab -->
   <GraphEditorToggleTab
-    isExpanded={isGraphEditorExpanded}
+    isExpanded={isExpanded}
     {animationDuration}
-    graphEditorHeight={isGraphEditorExpanded ? maxEditorHeight : 0}
+    graphEditorHeight={isExpanded ? maxEditorHeight : 0}
     on:click={toggleGraphEditor}
   />
 
   <!-- GraphEditor -->
-  <GraphEditor 
-    isExpanded={isGraphEditorExpanded} 
-    {animationDuration} 
-    maxEditorHeight={maxEditorHeight} 
+  <GraphEditor
+    isExpanded={isExpanded}
+    {animationDuration}
+    maxEditorHeight={maxEditorHeight}
   />
 </div>
-
 
 <style>
   .sequence-widget-container {
@@ -62,8 +59,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-		color: white;
-
+    color: white;
   }
 
   .sequence-widget-main {
