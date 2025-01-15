@@ -19,7 +19,6 @@
 	};
 </script>
 
-<div>
 	<button
 		class="turns-label"
 		style="--color: {color}"
@@ -36,18 +35,20 @@
 			onClose={() => (isDialogOpen = false)}
 		/>
 	{/if}
-</div>
 
 <style>
 	.turns-label {
 		color: black;
 		font-weight: bold;
-		font-size: 3em;
+		font-size: 3.5em;
 		display: flex;
 		justify-content: center;
 		cursor: pointer;
-		border: 3px solid var(--color);
+		border: 4px solid var(--color);
 		background-color: white;
-		width: 100%;
+		width: 30%;
+		border-radius: 50%;
+		height: 100%;
+		align-items: center;
 }
 </style>

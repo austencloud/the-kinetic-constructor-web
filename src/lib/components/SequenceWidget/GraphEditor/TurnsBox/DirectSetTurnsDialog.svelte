@@ -30,6 +30,7 @@
 		height: 100%;
 		background-color: rgba(0, 0, 0, 0.2);
 		z-index: 0;
+    cursor: pointer;
 	}
 
 	.dialog {
