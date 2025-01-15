@@ -11,24 +11,30 @@
 	}
 </script>
 
-<div class="beat-frame">
-	<!-- StartPos in row=1, col=1, using your new StartPosBeat -->
-	<div class="start-pos" style="grid-row: 1; grid-column: 1;">
-		<StartPosBeat onClick={() => console.log('Start pos clicked!')}/>
+<div class="container">
+	<div class="beat-frame"></div>
+		<!-- StartPos in row=1, col=1, using your new StartPosBeat -->
+		<div class="start-pos" style="grid-row: 1; grid-column: 1;">
+			<StartPosBeat onClick={() => console.log('Start pos clicked!')}/>
+		</div>
+
+		{#each beats.slice(0, visibleCount) as beat, index (beat.id)}
+			<div
+				class="beat-container"
+				style="grid-row: {Math.floor(index/8) + 2}; grid-column: {(index % 8) + 2};"
+			>
+				<Beat beat={beat} onClick={handleBeatClick} />
+			</div>
+		{/each}
 	</div>
 
-	{#each beats.slice(0, visibleCount) as beat, index (beat.id)}
-		<div
-			class="beat-container"
-			style="grid-row: {Math.floor(index/8) + 2}; grid-column: {(index % 8) + 2};"
-		>
-			<Beat beat={beat} onClick={handleBeatClick} />
-		</div>
-	{/each}
-</div>
-
-
 <style>
+	.container {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
 	.beat-frame {
 		display: grid;
 		grid-template-rows: repeat(9, 1fr);
@@ -48,7 +54,5 @@
 		justify-content: center;
 	}
 
-	.beat-container {
-		aspect-ratio: 1 / 1;
-	}
+
 </style>

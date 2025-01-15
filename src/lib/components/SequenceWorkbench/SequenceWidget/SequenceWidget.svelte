@@ -6,23 +6,28 @@
 	import SequenceWidgetButtonPanel from './ButtonPanel/SequenceWidgetButtonPanel.svelte';
 </script>
 
-
 <div class="sequence-widget">
-	<!-- Labels -->
-	<div class="sequence-widget-labels">
-		<IndicatorLabel />
-		<CurrentWordLabel currentWord="Example Word" />
-		<DifficultyLabel difficultyLevel={3} />
-	</div>
-	
-	
-	<!-- Main Content Area -->
-	<div class="sequence-widget-main">
-		<div class="scroll-area">
-			<BeatFrame />
+	<!-- Main Layout -->
+	<div class="main-layout">
+		<!-- VBox on the left -->
+		<div class="left-vbox">
+			<!-- Labels -->
+			<div class="sequence-widget-labels">
+				<CurrentWordLabel currentWord="Word:" />
+				<DifficultyLabel difficultyLevel={3} />
+			</div>
+			<!-- Beat Frame Container -->
+			<div class="beat-frame-container">
+				<BeatFrame />
+			</div>
+			<div class="indicator-label">
+				<IndicatorLabel />
+			</div>
 		</div>
+		<!-- Button Panel on the right -->
 		<SequenceWidgetButtonPanel />
 	</div>
+	<!-- Indicator Label -->
 </div>
 
 <style>
@@ -31,25 +36,39 @@
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-
 	}
 
-	.sequence-widget-labels {
-		display: flex;
-		justify-content: space-around;
-		padding: 10px;
-	}
-
-	.sequence-widget-main {
+	.main-layout {
 		display: flex;
 		flex-direction: row;
 		flex: 1;
 		height: 100%;
 	}
 
-	.scroll-area {
-		flex: 10;
-		flex-direction: row;
-		border-radius: 5px;
+	.left-vbox {
+		display: flex;
+		flex-direction: column;
+		flex: 16;
+		height: 100%;
+	}
+
+	.sequence-widget-labels {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-around;
+		padding: 10px;
+		color: white;
+	}
+
+	.beat-frame-container {
+		flex: 1;
+	}
+
+	.indicator-label {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-around;
+		padding: 10px;
+		color: white;
 	}
 </style>

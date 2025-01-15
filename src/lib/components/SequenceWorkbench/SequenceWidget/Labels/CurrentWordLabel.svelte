@@ -9,7 +9,7 @@
 <style>
 	.current-word-label {
 		text-align: center;
-		font-size: 1.2rem;
+		font-size: 2.5rem;
 		font-weight: bold;
 	}
 </style>
