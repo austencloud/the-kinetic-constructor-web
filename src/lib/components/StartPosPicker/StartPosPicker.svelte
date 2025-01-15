@@ -32,10 +32,12 @@
 	<div class="pictograph-container">
 		{#if startPositions.length > 0}
 			{#each startPositions as position}
-				<div class="pictograph-wrapper" aria-selected={$selectedStartPos?.id === position.id}>
-					<Pictograph pictographData={position} onClick={() => handleSelect(position)} />
-					<span>{position.name}</span>
-				</div>
+				<Pictograph
+					pictographData={position}
+					onClick={() => handleSelect(position)}
+					isSelected={$selectedStartPos?.id === position.id}
+					name={position.name}
+				/>
 			{/each}
 		{:else}
 			<p>No start positions available.</p>
@@ -58,7 +60,7 @@
 		font-size: 3vw; /* Font size relative to window width */
 		font-family: 'Monotype Corsiva', cursive;
 	}
-	
+
 	.pictograph-container {
 		margin-bottom: 10%;
 		display: flex;
@@ -66,28 +68,6 @@
 		width: 75%;
 		height: 20%;
 		flex-wrap: wrap;
-		gap: 1%; /* Add spacing between pictographs */
+		gap: 1%;
 	}
-
-	.pictograph-wrapper {
-		flex: 1; /* Ensures equal width distribution */
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		border: 1px solid #ccc;
-		border-radius: 5px;
-		transition: transform 0.2s ease;
-		background-color: white;
-		box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-		aspect-ratio: 1 / 1; /* Ensure the wrapper is always square */
-	}
-
-	.pictograph-wrapper:hover {
-		transform: scale(1.05);
-	}
-	.pictograph-wrapper:active {
-    transform: scale(0.95);
-  }
 </style>
