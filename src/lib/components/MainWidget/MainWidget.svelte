@@ -123,7 +123,7 @@
 		.mainContent {
 			flex: 1;
 			display: flex;
-			flex-direction: row;
+			flex-direction: column;
 			overflow: hidden;
 			position: relative;
 			z-index: 0;
