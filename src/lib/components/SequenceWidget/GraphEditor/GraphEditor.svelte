@@ -1,11 +1,13 @@
 <script lang="ts">
   import GraphEditorPictographContainer from './GraphEditorPictographContainer.svelte';
   import TurnsBox from './TurnsBox/TurnsBox.svelte';
+  import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 
   export let isExpanded: boolean;
   export let animationDuration: number;
+  export let maxEditorHeight: number; // Declare maxEditorHeight as a prop
 
-  const maxEditorHeight = 300; // Fixed height for the GraphEditor
+  const dummyPictographData = { grid: '/diamond_grid.svg', name: 'Graph Editor' };
 </script>
 
 <div
@@ -17,11 +19,8 @@
   <div class="turns-box">
     <TurnsBox color="blue" />
   </div>
-  <div
-    class="pictograph-container"
-    style="width: {maxEditorHeight}px; height: {maxEditorHeight}px;"
-  >
-    <GraphEditorPictographContainer maxHeight={maxEditorHeight} />
+  <div class="pictograph-container" style="width: {maxEditorHeight}px; height: {maxEditorHeight}px;">
+    <Pictograph pictographData={dummyPictographData} interactive={true} onClick={() => {}} />
   </div>
   <div class="turns-box">
     <TurnsBox color="red" />

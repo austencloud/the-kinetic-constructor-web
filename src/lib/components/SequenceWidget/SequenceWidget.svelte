@@ -24,7 +24,10 @@
     <!-- Main Content Area -->
     <div class="sequence-widget-main">
       <div class="scroll-area">Scroll Area</div>
-      <SequenceWidgetButtonPanel />
+      <SequenceWidgetButtonPanel
+        {isGraphEditorExpanded}
+        {animationDuration}
+      />
     </div>
   </div>
 
@@ -37,8 +40,13 @@
   />
 
   <!-- GraphEditor -->
-  <GraphEditor isExpanded={isGraphEditorExpanded} {animationDuration} />
+  <GraphEditor 
+    isExpanded={isGraphEditorExpanded} 
+    {animationDuration} 
+    maxEditorHeight={maxEditorHeight} 
+  />
 </div>
+
 
 <style>
   .sequence-widget-container {
