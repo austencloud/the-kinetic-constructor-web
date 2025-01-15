@@ -121,8 +121,15 @@
 
 	@media (max-width: 768px) {
 		.mainContent {
-			flex-direction: column;
-		}
+		flex: 1;
+		display: flex;
+		flex-direction: row;
+		overflow: hidden;
+		position: relative;
+		z-index: 0;
+		height: 100%;
+		width: 100%;
+	}
 		.sequenceWorkbenchContainer,
 		.optionPickerContainer {
 			width: 50%;
