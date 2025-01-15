@@ -127,7 +127,6 @@
 			overflow: hidden;
 			position: relative;
 			z-index: 0;
-			height: 100%;
 			width: 100%;
 		}
 		.sequenceWorkbenchContainer,
