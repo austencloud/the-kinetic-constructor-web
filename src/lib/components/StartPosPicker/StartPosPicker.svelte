@@ -58,7 +58,7 @@
 
 	.label {
 		margin-bottom: 10%;
-		font-size: 3vw; /* Font size relative to window width */
+		font-size: 5vh; /* Font size relative to window width */
 		font-family: 'Monotype Corsiva', cursive;
 		background-color: rgba(255, 255, 255, 0.5); /* Translucent background */
 		border-radius: 40px; /* Adjust as needed */
@@ -70,7 +70,7 @@
 		margin-bottom: 10%;
 		display: flex;
 		justify-content: center;
-		width: 75%;
+		width: 70%;
 		height: 20%;
 		flex-wrap: wrap;
 		gap: 3%;

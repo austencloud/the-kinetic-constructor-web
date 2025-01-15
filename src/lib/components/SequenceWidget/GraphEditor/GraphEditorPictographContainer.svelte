@@ -13,7 +13,7 @@
     align-items: center;
     font-size: 1.2rem;
     font-weight: bold;
-    border: 1px solid #ddd;
+    border: 4px solid gold;
     background-color: #fff;
   }
 </style>

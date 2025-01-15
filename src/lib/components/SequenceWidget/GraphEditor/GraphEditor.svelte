@@ -54,10 +54,6 @@
 	}
 
 	.pictograph-container {
-		flex: 0 0 auto; /* Prevent resizing of the PictographContainer */
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		min-width: 0; /* Prevent content overflow issues */
+		border: 4px solid gold;
 	}
 </style>

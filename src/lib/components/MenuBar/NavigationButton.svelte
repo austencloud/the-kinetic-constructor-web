@@ -50,7 +50,7 @@
 	button {
 		font-family: Georgia, serif;
 		padding: 5px 10px;
-		border-radius: 5px;
+		border-radius: 20%;
 		border: 1px solid gray;
 		cursor: pointer;
 		transition:
