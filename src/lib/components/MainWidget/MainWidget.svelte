@@ -1,6 +1,6 @@
 <script lang="ts">
 	import MenuBar from '../MenuBar/MenuBar.svelte';
-	import SequenceWidget from '../SequenceWidget/SequenceWidget.svelte';
+	import SequenceWidget from '../SequenceWorkbench/SequenceWorkbench.svelte';
 	import StartPosPicker from '../StartPosPicker/StartPosPicker.svelte';
 	import OptionPicker from '../OptionPicker/OptionPicker.svelte';
 	import SnowfallBackground from '../Backgrounds/SnowfallBackground.svelte';

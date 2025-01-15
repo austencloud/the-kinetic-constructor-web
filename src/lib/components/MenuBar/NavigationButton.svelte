@@ -49,13 +49,13 @@
 <style>
 	button {
 		font-family: Georgia, serif;
-		padding: 5px 10px;
-		border-radius: 20%;
+		border-radius: 40%;
 		border: 1px solid gray;
 		cursor: pointer;
 		transition:
 			all 0.3s ease,
 			transform 0.2s ease;
+			transition-duration: 0.1s;
 	}
 	button:hover {
 		transform: scale(1.05);
