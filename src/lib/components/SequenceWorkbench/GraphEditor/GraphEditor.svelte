@@ -68,4 +68,8 @@
 		height: 100%;
 		min-width: 0;
 	}
+
+	.pictograph-container {
+		cursor:default
+	}
 </style>

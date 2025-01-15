@@ -1,48 +1,31 @@
 <script lang="ts">
 	import StartPosBeat, { type StartPosBeatData } from './StartPosBeat.svelte';
 	import Beat, { type BeatData } from './Beat.svelte';
-	import { onMount } from 'svelte';
+	import { onMount, afterUpdate } from 'svelte';
 
-	// We'll load default layouts from a JSON file (keyed by beat count -> [rows, cols]).
 	let defaultLayouts: Record<string, [number, number]> = {};
 
-	// Special start pos data
 	const startPosBeatData: StartPosBeatData = {
 		id: 0,
 		filled: false,
 		pictographData: { grid: '/diamond_grid.svg' }
 	};
+	import { sampleBeats } from './BeatFrameExampleData';
 
-	// 16 example beats
-	let beatData: BeatData[] = [
-		{ id: 1, filled: false, pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 2, filled: true,  pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 3, filled: false, pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 4, filled: true,  pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 5, filled: false, pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 6, filled: true,  pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 7, filled: false, pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 8, filled: true,  pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 9, filled: false, pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 10, filled: true, pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 11, filled: false, pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 12, filled: true, pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 13, filled: false, pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 14, filled: true, pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 15, filled: false, pictographData: { grid: '/diamond_grid.svg' } },
-		{ id: 16, filled: true, pictographData: { grid: '/diamond_grid.svg' } },
-	];
+	let beatData: BeatData[] = sampleBeats;
 
-	export let visibleCount = 16;
+	export let visibleCount = beatData.length;
 
-	// These will be set based on default_layouts.json
 	let beatRows = 4;
 	let beatCols = 4;
 
-	/**
-	 * Fetch default_layouts.json (which might contain
-	 * e.g. { "16": [4, 4], "12": [4, 3], ... })
-	 */
+	let frameRef: HTMLDivElement | null = null;
+
+	let frameWidth = 0;
+	let frameHeight = 0;
+	const gap = 10;
+	let cellSize = 50;
+
 	async function fetchDefaultLayouts() {
 		try {
 			const resp = await fetch('/data/default_layouts.json');
@@ -51,16 +34,11 @@
 			applyLayout(visibleCount);
 		} catch (err) {
 			console.error('Error fetching layouts =>', err);
-			// fallback
 			beatRows = 4;
 			beatCols = 4;
 		}
 	}
 
-	/**
-	 * If "16" => [4, 4], then beatRows=4, beatCols=4
-	 * We'll add 1 extra column for the StartPos on the left.
-	 */
 	function applyLayout(beatCount: number) {
 		const key = String(beatCount);
 		if (defaultLayouts[key]) {
@@ -69,6 +47,7 @@
 			beatRows = 4;
 			beatCols = 4;
 		}
+		calculateCellSize();
 	}
 
 	function handleBeatClick(beat: BeatData) {
@@ -76,19 +55,54 @@
 		console.log(`Beat #${beat.id} => filled? ${beat.filled}`);
 	}
 
-	onMount(fetchDefaultLayouts);
+	let ro: ResizeObserver | undefined;
+	onMount(() => {
+		fetchDefaultLayouts();
+
+		if (frameRef) {
+			ro = new ResizeObserver((entries) => {
+				for (const entry of entries) {
+					const { width, height } = entry.contentRect;
+					frameWidth = width;
+					frameHeight = height;
+					calculateCellSize();
+				}
+			});
+			ro.observe(frameRef);
+		}
+
+		return () => {
+			if (ro && frameRef) {
+				ro.unobserve(frameRef);
+			}
+		};
+	});
+
+	function calculateCellSize() {
+		const totalRows = beatRows;
+		const totalCols = beatCols + 1;
+
+		const totalHorizontalGap = (totalCols - 1) * gap;
+		const totalVerticalGap = (totalRows - 1) * gap;
+
+		const availableWidth = Math.max(0, frameWidth - totalHorizontalGap);
+		const availableHeight = Math.max(0, frameHeight - totalVerticalGap);
+
+		const cellWidth = availableWidth / totalCols;
+		const cellHeight = availableHeight / totalRows;
+		cellSize = Math.floor(Math.min(cellWidth, cellHeight));
+
+		cellSize = Math.max(cellSize, 0);
+
+		console.log('New cellSize =>', cellSize);
+	}
 </script>
 
- 
-
 <div
+	bind:this={frameRef}
 	class="beat-frame"
-	style="
-		--total-rows: {beatRows};
-		--total-cols: {beatCols + 1}; 
-	"
+	style="--total-rows: {beatRows}; --total-cols: {beatCols + 1}; --gap: {gap}px;"
 >
-
 	<div class="start-pos" style="grid-row: 1; grid-column: 1;">
 		<StartPosBeat 
 			startPosBeatData={startPosBeatData} 
@@ -96,13 +110,14 @@
 		/>
 	</div>
 
-
 	{#each beatData.slice(0, visibleCount) as beat, index (beat.id)}
 		<div
 			class="beat-container"
 			style="
 				grid-row: {Math.floor(index / beatCols) + 1};
-				grid-column: {(index % beatCols) + 2}; 
+				grid-column: {(index % beatCols) + 2};
+				width: {cellSize}px;
+				height: {cellSize}px;
 			"
 		>
 			<Beat beat={beat} onClick={handleBeatClick} />
@@ -113,9 +128,17 @@
 <style>
 	.beat-frame {
 		display: grid;
-		grid-template-rows: repeat(var(--total-rows, 4), 1fr);
-		grid-template-columns: repeat(var(--total-cols, 5), 1fr);
+		grid-template-rows: repeat(var(--total-rows, 4), auto);
+		grid-template-columns: repeat(var(--total-cols, 5), auto);
+		justify-content: center;
+		align-content: center;
+		width: 100%;
+		height: 100%;
+		padding: 2%;
+		min-height: 0;
 		background-color: transparent;
+		box-sizing: border-box;
+		overflow: hidden;
 	}
 
 	.start-pos {
@@ -126,7 +149,6 @@
 	}
 
 	.beat-container {
-		aspect-ratio: 1 / 1;
 		cursor: pointer;
 	}
 </style>

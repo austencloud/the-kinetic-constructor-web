@@ -82,4 +82,5 @@ export const sampleBeats: BeatData[] = [
     filled: false,
     pictographData: { grid: '/diamond_grid.svg' },
   },
+
 ];

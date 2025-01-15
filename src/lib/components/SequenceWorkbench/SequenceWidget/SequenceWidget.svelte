@@ -9,16 +9,12 @@
 </script>
 
 <div class="sequence-widget">
-	<!-- Main Layout -->
 	<div class="main-layout">
-		<!-- VBox on the left -->
 		<div class="left-vbox">
-			<!-- Labels -->
 			<div class="sequence-widget-labels">
 				<CurrentWordLabel currentWord="Word:" />
 				<DifficultyLabel difficultyLevel={3} />
 			</div>
-			<!-- Beat Frame Container -->
 			<div class="beat-frame-container">
 				<BeatFrame />
 			</div>
@@ -26,10 +22,8 @@
 				<IndicatorLabel />
 			</div>
 		</div>
-		<!-- Button Panel on the right -->
 		<SequenceWidgetButtonPanel />
 	</div>
-	<!-- Indicator Label -->
 </div>
 
 <style>
@@ -52,6 +46,7 @@
 		flex-direction: column;
 		flex: 16;
 		height: 100%;
+		min-height: 0;
 	}
 
 	.sequence-widget-labels {
@@ -64,6 +59,9 @@
 
 	.beat-frame-container {
 		flex: 1;
+		min-height: 0; /* Also important */
+		display: flex; /* So children can expand */
+		flex-direction: column;
 	}
 
 	.indicator-label {
