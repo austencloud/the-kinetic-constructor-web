@@ -1,81 +1,81 @@
 <script lang="ts">
-  export let icon: string;
-  export let color: string;
-  export let onClick: () => void;
-  export let isPressed: boolean = false;
+	export let icon: string;
+	export let color: string;
+	export let onClick: () => void;
+	export let isPressed: boolean = false;
 
-  // Map color strings to hex codes
-  const colorHexMap: Record<string, string> = {
-    blue: '#6a79d1', // Lighter blue
-    red: '#f26d6d',  // Lighter red
-  };
+	// Map color strings to hex codes
+	const colorHexMap: Record<string, string> = {
+		blue: '#6a79d1',
+		red: '#f26d6d',
+	};
 
-  // Fallback to default color if not found
-  $: parsedColor = colorHexMap[color] || '#ffffff';
-
-  let isHovered: boolean = false;
-
-  function handleClick() {
-    isPressed = !isPressed;
-    onClick();
-  }
+	// Fallback to default color if not found
+	$: parsedColor = colorHexMap[color] || '#ffffff';
 </script>
 
 <button
-  class="button"
-  style="
-    --color: {parsedColor};
-    --background-color: white;
-    --pressed-background: {parsedColor};
-    --hover-background: #f5f5f5; /* Light gray hover effect */"
-  on:click={handleClick}
-  on:mouseenter={() => (isHovered = true)}
-  on:mouseleave={() => (isHovered = false)}
-  aria-label="Prop Rotation Button"
+	class="button"
+	style="
+		--color: {parsedColor};
+		--background-color: {isPressed ? parsedColor : 'white'};
+		--hover-background: {isPressed ? parsedColor : '#f5f5f5'};"
+	on:click={onClick}
+	aria-label="Prop Rotation Button"
+	aria-pressed={isPressed}
 >
-  <img class="icon" src={icon} alt="Prop Rotation Icon" />
+	<img class="icon" src={icon} alt="Prop Rotation Icon" />
 </button>
 
 <style>
-  /* Button Base Style */
-  .button {
-    width: 4rem;
-    height: 4rem;
-    border: 2px solid var(--color);
-    border-radius: 10px; /* Slightly rounded corners for a modern look */
-    background-color: var(--background-color);
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition:
-      background-color 0.3s ease,
-      transform 0.2s ease,
-      box-shadow 0.3s ease;
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2),
-      inset 0px 1px 3px rgba(255, 255, 255, 0.5); /* Subtle inner shadow */
-      transition-duration: 0.1s;
-  }
+	/* Button Base Style */
+	.button {
+		width: 4rem;
+		height: 4rem;
+		border: 2px solid var(--color);
+		border-radius: 10px; /* Slightly rounded corners for a modern look */
+		background-color: var(--background-color);
+		cursor: pointer;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		transition:
+			background-color 0.3s ease,
+			transform 0.2s ease,
+			box-shadow 0.3s ease;
+		box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2),
+			inset 0px 1px 3px rgba(255, 255, 255, 0.5); /* Subtle inner shadow */
+	}
 
-  /* Hover Effect */
-  .button:hover {
-    background-color: var(--hover-background);
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3),
-      inset 0px 1px 3px rgba(255, 255, 255, 0.5);
-  }
+	/* Hover Effect */
+	.button:hover {
+		background-color: var(--hover-background);
+		box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3),
+			inset 0px 1px 3px rgba(255, 255, 255, 0.5),
+			0px 0px 5px rgba(255, 255, 255, 0.8); /* Glow effect */
+	}
 
-  /* Pressed State */
-  .button:active {
-    background-color: var(--pressed-background);
-    box-shadow: inset 0px 2px 5px rgba(0, 0, 0, 0.2); /* Emulate pressed button */
-    transform: translateY(2px); /* Slight downward movement */
-  }
+	/* Pressed State */
+	.button:active {
+		background-color: var(--color);
+		box-shadow: inset 0px 4px 6px rgba(0, 0, 0, 0.2),
+			inset 0px 2px 4px rgba(255, 255, 255, 0.3);
+		transform: translateY(2px); /* Slight downward movement */
+	}
 
-  /* Icon Style */
-  .icon {
-    width: 100%; /* Allow the icon to fill most of the button */
-    height: 100%;
-    object-fit: contain;
-    filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));
-  }
+	/* Pressed state when toggled */
+	.button[aria-pressed='true'] {
+		background-color: var(--color);
+		box-shadow: inset 0px 4px 6px rgba(0, 0, 0, 0.3),
+			inset 0px 2px 4px rgba(255, 255, 255, 0.3);
+		transform: translateY(2px);
+	}
+
+	/* Icon Style */
+	.icon {
+		width: 100%; /* Allow the icon to take up most of the button */
+		height: 100%;
+		object-fit: contain;
+		filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));
+	}
 </style>

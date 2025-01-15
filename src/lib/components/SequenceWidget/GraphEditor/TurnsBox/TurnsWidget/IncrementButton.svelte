@@ -28,6 +28,8 @@
   
 	.increment-button:hover {
 	  transform: scale(1.1);
+	  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3),
+      inset 0px 1px 3px rgba(255, 255, 255, 0.5);
 	}
 
 	.increment-button:active {

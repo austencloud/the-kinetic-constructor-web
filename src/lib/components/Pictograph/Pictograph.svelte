@@ -78,6 +78,7 @@
 		align-items: center;
 		background: #f0f0f0;
 		border-radius: 5px;
+		aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
 	}
 
 	.pictograph-label {
