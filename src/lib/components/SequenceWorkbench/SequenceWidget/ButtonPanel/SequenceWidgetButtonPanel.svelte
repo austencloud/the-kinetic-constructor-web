@@ -21,9 +21,8 @@
 	let resizeObserver: ResizeObserver | undefined;
 
 	function updateButtonSize(containerHeight: number) {
-		// Example: scale buttonSize to e.g. containerHeight / 6
-		// But also clamp so we don't get too big or too tiny
-		buttonSize = containerHeight / 14;
+
+		buttonSize = containerHeight / 12;
 	}
 
 	onMount(() => {
