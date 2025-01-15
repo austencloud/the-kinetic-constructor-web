@@ -11,7 +11,8 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check .",
-		"start": "npm run dev"
+		"start": "npm run dev",
+		"clean": "rimraf .svelte-kit && rimraf build"
 	},
 	"files": [
 		"dist",
@@ -43,6 +44,7 @@
 		"prettier": "^3.3.2",
 		"prettier-plugin-svelte": "^3.2.6",
 		"publint": "^0.2.0",
+		"rimraf": "^6.0.1",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
 		"typescript": "^5.0.0",

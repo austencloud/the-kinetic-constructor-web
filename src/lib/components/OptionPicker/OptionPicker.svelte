@@ -1,27 +1,23 @@
 <script lang="ts">
-  import { writable } from 'svelte/store';
+	import { selectedPictograph } from '$lib/stores/selectedPictographStore';
+  import Pictograph from '../Pictograph/Pictograph.svelte';
+  import Option from './Option.svelte';
 
-  const selectedPictograph = writable(null);
-  import { get } from 'svelte/store';
-
-  export let options: { name: string; pictographData: any }[];
+  export let options: { name: string; pictographData: any }[] = [];
 </script>
 
 <div class="optionPicker">
   <h2 class="title">Options:</h2>
   <div class="scrollArea">
     {#each options as { name, pictographData }}
-      <div
-        class="option"
-        role="option"
-        on:click={() => selectedPictograph.set(pictographData)}
-        on:keydown={(e) => e.key === 'Enter' && selectedPictograph.set(pictographData)}
-        aria-selected={get(selectedPictograph) === pictographData}
-        tabindex="0"
-      >
-        {name}
-      </div>
+      <Option {name} {pictographData} selectedPictographStore={selectedPictograph} />
     {/each}
+  </div>
+
+  <div class="pictograph-container">
+    {#if $selectedPictograph}
+      <Pictograph pictographData={$selectedPictograph} />
+    {/if}
   </div>
 </div>
 
@@ -50,21 +46,15 @@
     margin-bottom: 20px;
   }
 
-  .option {
-    padding: 10px;
-    margin-bottom: 5px;
-    background-color: white;
+  .pictograph-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     border: 1px solid #ccc;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .option:hover {
-    background-color: #dbeafe;
-  }
-
-  .option[aria-selected="true"] {
-    background-color: #93c5fd;
-    font-weight: bold;
+    border-radius: 8px;
+    padding: 10px;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   }
 </style>

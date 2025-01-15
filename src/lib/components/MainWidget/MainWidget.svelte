@@ -1,30 +1,41 @@
 <script lang="ts">
 	import MenuBar from '../MenuBar/MenuBar.svelte';
 	import SequenceWidget from '../SequenceWidget/SequenceWidget.svelte';
+	import StartPosPicker from '../StartPosPicker/StartPosPicker.svelte';
 	import OptionPicker from '../OptionPicker/OptionPicker.svelte';
 	import SnowfallBackground from '../Backgrounds/SnowfallBackground.svelte';
 	import SettingsDialog from '../SettingsDialog/SettingsDialog.svelte';
+	
 	import { writable } from 'svelte/store';
-
+	import { selectedStartPos } from '../../stores/constructStores';
+	import { loadPictographData } from '$lib/stores/pictographDataStore';
+	
+	import { onMount } from 'svelte';
+  
+	onMount(() => {
+	  loadPictographData(); // Initialize pictograph data
+	});
+  
 	// State management
 	let isSettingsDialogOpen = false;
 	let background = 'Snowfall';
 	const backgroundStore = writable('Snowfall');
 	backgroundStore.subscribe((value) => (background = value));
-
+  
 	const updateBackground = (newBackground: string) => {
-		backgroundStore.set(newBackground);
+	  backgroundStore.set(newBackground);
 	};
-
+  
 	const handleSettingsClick = () => {
-		isSettingsDialogOpen = true;
+	  isSettingsDialogOpen = true;
 	};
-
+  
 	const handleTabChange = (e: CustomEvent<number>) => {
-		const index = e.detail;
-		console.log(`Tab changed to index: ${index}`);
+	  const index = e.detail;
+	  console.log(`Tab changed to index: ${index}`);
 	};
-</script>
+  </script>
+  
 
 <div id="app">
 	<div class="background">
@@ -46,7 +57,11 @@
 		</div>
 
 		<div class="optionPickerContainer">
-			<OptionPicker options={[{ name: 'Option1', pictographData: null }, { name: 'Option2', pictographData: null }]} />
+			{#if $selectedStartPos}
+				<OptionPicker />
+			{:else}
+				<StartPosPicker />
+			{/if}
 		</div>
 	</div>
 
@@ -60,7 +75,6 @@
 		/>
 	{/if}
 </div>
-
 
 <style>
 	#app {
