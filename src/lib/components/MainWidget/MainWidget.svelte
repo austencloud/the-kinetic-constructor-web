@@ -5,37 +5,36 @@
 	import OptionPicker from '../OptionPicker/OptionPicker.svelte';
 	import SnowfallBackground from '../Backgrounds/SnowfallBackground.svelte';
 	import SettingsDialog from '../SettingsDialog/SettingsDialog.svelte';
-	
+
 	import { writable } from 'svelte/store';
 	import { selectedStartPos } from '../../stores/constructStores';
 	import { loadPictographData } from '$lib/stores/pictographDataStore';
-	
+
 	import { onMount } from 'svelte';
-  
+
 	onMount(() => {
-	  loadPictographData(); // Initialize pictograph data
+		loadPictographData(); // Initialize pictograph data
 	});
-  
+
 	// State management
 	let isSettingsDialogOpen = false;
 	let background = 'Snowfall';
 	const backgroundStore = writable('Snowfall');
 	backgroundStore.subscribe((value) => (background = value));
-  
+
 	const updateBackground = (newBackground: string) => {
-	  backgroundStore.set(newBackground);
+		backgroundStore.set(newBackground);
 	};
-  
+
 	const handleSettingsClick = () => {
-	  isSettingsDialogOpen = true;
+		isSettingsDialogOpen = true;
 	};
-  
+
 	const handleTabChange = (e: CustomEvent<number>) => {
-	  const index = e.detail;
-	  console.log(`Tab changed to index: ${index}`);
+		const index = e.detail;
+		console.log(`Tab changed to index: ${index}`);
 	};
-  </script>
-  
+</script>
 
 <div id="app">
 	<div class="background">
@@ -118,5 +117,16 @@
 
 	.optionPickerContainer {
 		flex: 1;
+	}
+
+	@media (max-width: 768px) {
+		.mainContent {
+			flex-direction: column;
+		}
+		.sequenceWidgetContainer,
+		.optionPickerContainer {
+			width: 100%;
+			height: auto;
+		}
 	}
 </style>
