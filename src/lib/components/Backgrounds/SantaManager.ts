@@ -10,7 +10,7 @@ export default class SantaManager {
 		opacity: number;
 	} = { x: 0, y: 0, speed: 0, active: false, direction: 1, opacity: 1 };
 	santaTimer: number = 0;
-	santaInterval: number = 0;
+	santaInterval = this.randomInt(1200, 1500);
 
 	constructor() {
 		// Defer image initialization
@@ -23,7 +23,7 @@ export default class SantaManager {
 	}
 
 	initialize(width: number, height: number) {
-		this.santa = { x: -0.2, y: 0.2, speed: 0.003, active: false, direction: 1, opacity: 0.8 };
+		this.santa = { x: -0.2, y: 0.2, speed: 0.001, active: false, direction: 1, opacity: 0.8 };
 		this.santaTimer = 0;
 		this.santaInterval = this.randomInt(200, 300);
 	}
@@ -49,8 +49,8 @@ export default class SantaManager {
 				this.santa.direction = Math.random() < 0.5 ? -1 : 1;
 				this.santa.x = this.santa.direction === 1 ? -0.2 : 1.2;
 				this.santa.y = Math.random() * 0.2 + 0.1;
-				this.santa.speed = Math.random() * 0.002 + 0.003;
-				this.santaInterval = this.randomInt(500, 1000);
+				this.santa.speed = Math.random() * 0.001 + 0.001;
+				this.santaInterval = this.randomInt(1200, 1500);
 			}
 		}
 	}

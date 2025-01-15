@@ -8,6 +8,11 @@
 	let isDialogOpen = false;
 	const turnsStore = writable(turns);
 
+	// Subscribe to the turnsStore to update the turns variable
+	turnsStore.subscribe(value => {
+		turns = value;
+	});
+
 	const handleLabelClick = () => {
 		isDialogOpen = true;
 	};
@@ -19,22 +24,22 @@
 	};
 </script>
 
-	<button
-		class="turns-label"
-		style="--color: {color}"
-		on:click={handleLabelClick}
-		aria-label="Set turns"
-	>
-		{turns}
-	</button>
+<button
+	class="turns-label"
+	style="--color: {color}"
+	on:click={handleLabelClick}
+	aria-label="Set turns"
+>
+	{turns}
+</button>
 
-	{#if isDialogOpen}
-		<DirectSetTurnsDialog
-			{color}
-			onSelectTurns={handleSelectTurns}
-			onClose={() => (isDialogOpen = false)}
-		/>
-	{/if}
+{#if isDialogOpen}
+	<DirectSetTurnsDialog
+		{color}
+		onSelectTurns={handleSelectTurns}
+		onClose={() => (isDialogOpen = false)}
+	/>
+{/if}
 
 <style>
 	.turns-label {
@@ -50,5 +55,5 @@
 		border-radius: 50%;
 		height: 100%;
 		align-items: center;
-}
+	}
 </style>

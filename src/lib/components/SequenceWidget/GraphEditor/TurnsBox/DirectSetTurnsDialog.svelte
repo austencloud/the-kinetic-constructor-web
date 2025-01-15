@@ -30,7 +30,7 @@
 		height: 100%;
 		background-color: rgba(0, 0, 0, 0.2);
 		z-index: 0;
-    cursor: pointer;
+		cursor: pointer;
 	}
 
 	.dialog {
@@ -40,15 +40,15 @@
 		transform: translate(-50%, -50%);
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
-		gap: 10px;
+		gap: 3%;
 		border: 3px solid;
-		border-radius: 10px;
-		padding: 15px;
+		border-radius: 5%;
+		padding: 3%;
 		background-color: white;
 		z-index: 1;
-    height: 70%;
-    width: 70%;
-    align-items: center;
-    justify-content: space-evenly;
+		height: 80%;
+		width: 80%;
+		align-items: center;
+		justify-content: space-evenly;
 	}
 </style>

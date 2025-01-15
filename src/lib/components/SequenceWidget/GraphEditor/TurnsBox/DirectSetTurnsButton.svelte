@@ -16,8 +16,6 @@
 	class="button {isHovered ? 'hovered' : ''} {isActive ? 'active' : ''}"
 	style="
     border: 4px solid {borderColor};
-    width: {size};
-    height: {size};
     font-size: {fontSize};
   "
 	on:mouseenter={() => (isHovered = true)}
@@ -38,10 +36,12 @@
 		background-color: white;
 		cursor: pointer;
 		font-weight: bold;
+		width: 100%;
 		transition:
 			background-color 0.3s,
 			transform 0.2s,
 			box-shadow 0.2s;
+		aspect-ratio: 1 / 1;
 	}
 
 	.button.hovered {

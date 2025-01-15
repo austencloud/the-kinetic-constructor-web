@@ -18,7 +18,7 @@ export default class ShootingStarManager {
   interval: number;
 
   constructor() {
-    this.interval = this.randomInt(100, 300);
+    this.interval = this.randomInt(1100, 1500);
   }
 
   private randomInt(min: number, max: number): number {
@@ -140,7 +140,7 @@ export default class ShootingStarManager {
     if (!this.shootingStar && this.timer >= this.interval) {
       this.spawnShootingStar(width, height);
       this.timer = 0;
-      this.interval = this.randomInt(100, 300);
+      this.interval = this.randomInt(1100, 1500);
     }
   }
 }
