@@ -8,8 +8,8 @@ export const loadPictographData = async () => {
 
 	// Combine data from both files
 	const combinedData = [
-		...parseCsvToJson(diamondData, 'DIAMOND'),
-		...parseCsvToJson(boxData, 'BOX'),
+		...parseCsvToJson(diamondData, 'diamond'),
+		...parseCsvToJson(boxData, 'box'),
 	];
 
 	pictographDataStore.set(combinedData);
@@ -19,6 +19,8 @@ function parseCsvToJson(csv: string, gridMode: string) {
 	const lines = csv.split('\n');
 	const headers = lines.shift()?.split(',') || [];
 
+	const gridPath = gridMode === 'diamond' ? '/diamond_grid.svg' : '/box_grid.svg';
+
 	return lines.map((line) => {
 		const values = line.split(',');
 		const record = headers.reduce((acc, header, index) => {
@@ -27,8 +29,10 @@ function parseCsvToJson(csv: string, gridMode: string) {
 		}, {} as Record<string, any>);
 
 		record.grid_mode = gridMode; // Attach grid mode for filtering
+		record.grid = gridPath; // Attach grid path
 		return record;
 	});
 }
+
 
 export default pictographDataStore;

@@ -7,12 +7,12 @@
 	export const selectedStartPos = writable<Record<string, any> | null>(null);
 
 	let startPositions: Record<string, any>[] = [];
-	let gridMode = 'DIAMOND'; // Default grid mode (can be dynamic)
+	let gridMode = 'diamond'; // Default grid mode (can be dynamic)
 
 	// Filter pictographs for start positions based on grid mode
 	pictographDataStore.subscribe((data) => {
 		const startPosKeys =
-			gridMode === 'DIAMOND'
+			gridMode === 'diamond'
 				? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
 				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
 

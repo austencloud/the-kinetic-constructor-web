@@ -7,11 +7,12 @@
 
 <div
 	class="pictograph-wrapper"
-	aria-pressed={isSelected}
+	class:selected={isSelected}
 	on:click={onClick}
 	on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick && onClick()}
 	tabindex="0"
 	role="button"
+	aria-pressed={isSelected}
 >
 	<div class="base-pictograph">
 		<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -63,11 +64,6 @@
 
 	.pictograph-wrapper:active {
 		transform: scale(0.95);
-	}
-
-	.pictograph-wrapper[aria-selected='true'] {
-		outline: 2px solid #007bff;
-		background-color: #e6f7ff;
 	}
 
 	.base-pictograph {
