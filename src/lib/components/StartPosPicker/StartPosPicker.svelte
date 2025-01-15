@@ -11,13 +11,13 @@
 
 	// Filter pictographs for start positions based on grid mode
 	pictographDataStore.subscribe((data) => {
-		const startPosKeys =
+		const defaultStartPosKeys =
 			gridMode === 'diamond'
 				? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
 				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
 
 		startPositions = data.filter((entry) =>
-			startPosKeys.includes(`${entry.start_pos}_${entry.end_pos}`)
+			defaultStartPosKeys.includes(`${entry.start_pos}_${entry.end_pos}`)
 		);
 	});
 
@@ -37,14 +37,14 @@
 					onClick={() => handleSelect(position)}
 					isSelected={$selectedStartPos?.id === position.id}
 					name={position.name}
-					interactive={true} />
+					interactive={true}
+				/>
 			{/each}
 		{:else}
 			<p>No start positions available.</p>
 		{/if}
 	</div>
 </div>
-
 
 <style>
 	.wrapper {
@@ -67,12 +67,20 @@
 	}
 
 	.pictograph-container {
-		margin-bottom: 10%;
 		display: flex;
-		justify-content: center;
+		flex-direction: row; /* force a row layout */
+		justify-content: space-around;
+		align-items: center;
+
+		/* The container’s width is 70% (already in your code).
+     If you want them to be all in one row, make sure the container is wide enough. */
 		width: 70%;
-		height: 20%;
-		flex-wrap: wrap;
+		/* If you always want them to fit horizontally, let height be auto. */
+		height: auto;
+
+		/* If you also want them to wrap on smaller screens, keep flex-wrap. 
+     But if you want EXACTLY one row, remove flex-wrap or set it to nowrap. */
+		flex-wrap: nowrap; /* or remove 'wrap' entirely */
 		gap: 3%;
 	}
 </style>

@@ -57,7 +57,6 @@
 		cursor: var(--cursor, default); /* Dynamic cursor */
 		transition: transform 0.2s ease;
 		color: white;
-		aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
 		transition: transform 0.1s ease-in-out;
 	}
 	

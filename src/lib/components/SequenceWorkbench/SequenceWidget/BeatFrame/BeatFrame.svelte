@@ -70,7 +70,10 @@
 	class="beat-frame"
 	style="--total-rows: {beatRows}; --total-cols: {beatCols + 1}; --gap: {gap}px;"
 >
-	<div class="start-pos" style="grid-row: 1; grid-column: 1;">
+	<div
+		class="start-pos"
+		style="grid-row: 1; grid-column: 1; width: {cellSize}px;height: {cellSize}px;"
+	>
 		<StartPosBeat {startPosBeatData} onClick={(sp) => console.log('Start pos clicked =>', sp)} />
 	</div>
 
@@ -103,7 +106,6 @@
 		background-color: transparent;
 		box-sizing: border-box;
 		overflow: hidden;
-		
 	}
 
 	.start-pos {

@@ -103,7 +103,6 @@
 	.mainContent {
 		flex: 1;
 		display: flex;
-		flex-direction: row;
 		overflow: hidden;
 		position: relative;
 		z-index: 0;
@@ -111,60 +110,28 @@
 		width: 100%;
 	}
 
-	.sequenceWorkbenchContainer {
-		flex: 1;
-	}
-
+	.sequenceWorkbenchContainer,
 	.optionPickerContainer {
 		flex: 1;
 	}
 
-	/* @media (max-width: 768px) {
-		.mainContent {
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-			overflow: hidden;
-			position: relative;
-			z-index: 0;
-		}
-		.sequenceWorkbenchContainer,
-		.optionPickerContainer {
-			flex: 1;
-			height: auto;
-		}
-	} */
-	/* When the device is in portrait mode */
 	@media (orientation: portrait) {
 		.mainContent {
-			flex: 1;
-			display: flex;
 			flex-direction: column;
-			overflow: hidden;
-			position: relative;
-			z-index: 0;
 		}
 		.sequenceWorkbenchContainer,
 		.optionPickerContainer {
-			flex: 1;
 			height: 50%;
 			width: 100%;
 		}
 	}
-	
-	/* When the device is in landscape mode */
+
 	@media (orientation: landscape) {
 		.mainContent {
 			flex-direction: row;
-			flex: 1;
-			display: flex;
-			overflow: hidden;
-			position: relative;
-			z-index: 0;
 		}
 		.sequenceWorkbenchContainer,
 		.optionPickerContainer {
-			flex: 1;
 			height: 100%;
 			width: 50%;
 		}
