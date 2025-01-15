@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	export let icon;
 	export let title;
 	export let buttonSize;
@@ -16,13 +16,13 @@
 <button
 	class="button"
 	style="
-    width: {buttonSize}px;
-    height: {buttonSize}px;
-    background-color: {isHovered ? '#f0f0f0' : 'white'};
-    transform: {isClicked ? 'scale(0.9)' : isHovered ? 'scale(1.1)' : 'scale(1)'};
-    box-shadow: {isClicked
-		? 'inset 0px 2px 4px rgba(0, 0, 0, 0.2)'
-		: '0px 2px 4px rgba(0, 0, 0, 0.1)'};"
+		width: {buttonSize}px;
+		height: {buttonSize}px;
+		background-color: {isHovered ? '#f0f0f0' : 'white'};
+		transform: {isClicked ? 'scale(0.9)' : isHovered ? 'scale(1.1)' : 'scale(1)'};
+		box-shadow: {isClicked
+			? 'inset 0px 2px 4px rgba(0, 0, 0, 0.2)'
+			: '0px 2px 4px rgba(0, 0, 0, 0.1)'};"
 	on:click={onClick}
 	on:mouseenter={handleMouseEnter}
 	on:mouseleave={handleMouseLeave}
@@ -43,11 +43,8 @@
 		cursor: pointer;
 		box-sizing: border-box;
 		padding: 0;
-		transition:
-			background-color 0.2s,
-			transform 0.2s;
-			transition-duration: 0.1s;
-
+		transition: background-color 0.2s, transform 0.2s;
+		transition-duration: 0.1s;
 	}
 
 	.button img {
