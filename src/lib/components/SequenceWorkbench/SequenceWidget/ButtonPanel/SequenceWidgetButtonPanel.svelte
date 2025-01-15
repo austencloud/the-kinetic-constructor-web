@@ -18,7 +18,7 @@
 
 	const updateButtonSize = () => {
 		const containerHeight = window.innerHeight;
-		buttonSize = Math.max(40, Math.min(80, containerHeight / 20));
+		buttonSize = Math.max(40, Math.min(80, containerHeight / 30));
 	};
 
 	onMount(() => {
