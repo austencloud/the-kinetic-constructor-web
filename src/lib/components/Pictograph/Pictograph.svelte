@@ -9,10 +9,13 @@
 <div
 	class="pictograph-wrapper"
 	class:selected={isSelected}
+	style="--cursor: {interactive ? 'pointer' : 'default'}; --hover-scale: {interactive
+		? 'scale(1.05)'
+		: 'none'};, --click-scale: {interactive ? 'scale(0.95)' : 'none'};"
 	on:click={interactive ? onClick : undefined}
 	on:keydown={interactive ? (e) => (e.key === 'Enter' || e.key === ' ') && onClick?.() : undefined}
-	role="button"
-	tabindex={interactive ? 0 : undefined}
+	role={interactive ? 'button' : undefined}
+	{...interactive ? { tabindex: 0 } : {}}
 	aria-pressed={isSelected}
 >
 	<div class="base-pictograph">
@@ -57,10 +60,16 @@
 		background-color: white;
 		box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
 		aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
+		transition: transform 0.1s ease-in-out;
 	}
+
 	.pictograph-wrapper:hover {
 		transform: var(--hover-scale, none);
 	}
+	.pictograph-wrapper:active {
+		transform: var(--click-scale, none);
+	}
+
 	.base-pictograph {
 		width: 100%;
 		height: 100%;
@@ -70,6 +79,7 @@
 		background: #f0f0f0;
 		border-radius: 5px;
 	}
+
 	.pictograph-label {
 		margin-top: 0.5em;
 		text-align: center;

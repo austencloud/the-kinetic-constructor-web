@@ -43,7 +43,7 @@
   aria-expanded={isExpanded}
   aria-label={isExpanded ? 'Collapse Editor' : 'Expand Editor'}
 >
-  <span class="icon {isExpanded ? 'expanded' : ''}">▼</span>
+  <span class="icon {isExpanded ? 'expanded' : ''}">▲</span>
   {isExpanded ? 'Collapse Editor' : 'Expand Editor'}
 </button>
 

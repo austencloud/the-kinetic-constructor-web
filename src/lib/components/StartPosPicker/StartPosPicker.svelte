@@ -37,7 +37,7 @@
 					onClick={() => handleSelect(position)}
 					isSelected={$selectedStartPos?.id === position.id}
 					name={position.name}
-				/>
+					interactive={true} />
 			{/each}
 		{:else}
 			<p>No start positions available.</p>
@@ -68,6 +68,6 @@
 		width: 75%;
 		height: 20%;
 		flex-wrap: wrap;
-		gap: 1%;
+		gap: 3%;
 	}
 </style>
