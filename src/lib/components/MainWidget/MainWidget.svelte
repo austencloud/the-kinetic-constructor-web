@@ -51,7 +51,7 @@
 	</div>
 
 	<div class="mainContent">
-		<div class="sequenceWidgetContainer">
+		<div class="sequenceWorkbenchContainer">
 			<SequenceWidget />
 		</div>
 
@@ -111,7 +111,7 @@
 		width: 100%;
 	}
 
-	.sequenceWidgetContainer {
+	.sequenceWorkbenchContainer {
 		flex: 1;
 	}
 
@@ -119,5 +119,14 @@
 		flex: 1;
 	}
 
-
+	@media (max-width: 768px) {
+		.mainContent {
+			flex-direction: column;
+		}
+		.sequenceWorkbenchContainer,
+		.optionPickerContainer {
+			width: 50%;
+			height: auto;
+		}
+	}
 </style>
