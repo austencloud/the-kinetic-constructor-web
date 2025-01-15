@@ -1,34 +1,43 @@
 <script lang="ts">
 	import IncrementButton from './IncrementButton.svelte';
 	import TurnsLabel from './TurnsLabel.svelte';
-
-	export let color = 'blue'; // Pass color as a prop
-
-	// Centralized turns state
-	let turns = 0;
-
+  
+	export let color = 'blue';
+	export let turns: number | string;
+	export let onOpenDialog: () => void;
+  
 	const adjustTurns = (delta: number) => {
-		turns = Math.max(0, Math.min(turns + delta, 3)); // Clamp turns between 0 and 3
-		if (turns === 1.0 || turns === 2.0 || turns === 3.0) {
-			turns = Math.round(turns);
-		}
+	  if (typeof turns === 'number') {
+		turns = Math.max(0, Math.min(turns + delta, 3));
+	  }
 	};
-
+  
 	const incrementTurns = () => adjustTurns(0.5);
 	const decrementTurns = () => adjustTurns(-0.5);
-</script>
-
-<div class="turns-display-frame">
-	<IncrementButton type="decrement" on:click={decrementTurns} {color} />
-	<TurnsLabel {turns} {color} />
-	<IncrementButton type="increment" on:click={incrementTurns} {color} />
-</div>
-
-<style>
+  </script>
+  
+  <div class="turns-display-frame">
+	<IncrementButton
+	  type="decrement"
+	  on:click={decrementTurns}
+	  {color}
+	  disabled={turns === 0}
+	/>
+	<TurnsLabel {turns} {color} on:click={onOpenDialog} />
+	<IncrementButton
+	  type="increment"
+	  on:click={incrementTurns}
+	  {color}
+	  disabled={turns === 3}
+	/>
+  </div>
+  
+  <style>
 	.turns-display-frame {
-		display: flex;
-		justify-content: space-evenly;
-		align-items: center;
-		width: 100%;
+	  display: flex;
+	  justify-content: space-evenly;
+	  align-items: center;
+	  width: 100%;
 	}
-</style>
+  </style>
+  

@@ -1,58 +1,53 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+	import DirectSetTurnsButton from './DirectSetTurnsButton.svelte';
 
-  // Removed unused `currentTurns` property
-  export let onSelectTurns: (value: string) => void;
-  export let onClose: () => void;
-  export let color: string;
+	export let onSelectTurns: (value: string) => void;
+	export let onClose: () => void;
+	export let color: string;
 
-  const turnsValues = ["fl", "0", "0.5", "1", "1.5", "2", "2.5", "3"];
-  let buttonSize = "80px";
-
-  const borderColor = color === "blue" ? "#2e3192" : "#ed1c24";
-
-  const updateButtonSize = () => {
-    const dialogWidth = window.innerWidth * 0.4;
-    buttonSize = `${Math.min(dialogWidth / 4 - 20, 80)}px`;
-  };
-
-  // Ensure the function is called when the component is mounted
-  onMount(() => {
-    updateButtonSize();
-    window.addEventListener("resize", updateButtonSize);
-    return () => window.removeEventListener("resize", updateButtonSize);
-  });
+	const turnsValues = ['fl', '0', '0.5', '1', '1.5', '2', '2.5', '3'];
+	const borderColor = color === 'blue' ? '#6a79d1' : '#f26d6d';
 </script>
 
-<div
-  style="
-    position: absolute;
-    border: 4px solid {borderColor};
-    border-radius: 10px;
-    background-color: #ffffff;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-    font-size: 18px;
-  "
->
-  {#each turnsValues as value}
-    <button
-      style=" 
-        width: {buttonSize};
-        height: {buttonSize};
-        border: 2px solid {borderColor};
-        border-radius: 50%;
-        background-color: white;
-        cursor: pointer;
-      "
-      on:click={() => {
-        onSelectTurns(value);
-        onClose();
-      }}
-    >
-      {value}
-    </button>
-  {/each}
+<button
+	class="overlay"
+	on:click={onClose}
+	on:keydown={(e) => e.key === 'Enter' && onClose()}
+	aria-label="Close dialog"
+></button>
+<div class="dialog" style="border-color: {borderColor}">
+	{#each turnsValues as value}
+		<DirectSetTurnsButton {value} {borderColor} size="60px" onClick={() => onSelectTurns(value)} />
+	{/each}
 </div>
+
+<style>
+	.overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.2);
+		z-index: 0;
+	}
+
+	.dialog {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 10px;
+		border: 3px solid;
+		border-radius: 10px;
+		padding: 15px;
+		background-color: white;
+		z-index: 1;
+    height: 70%;
+    width: 70%;
+    align-items: center;
+    justify-content: space-evenly;
+	}
+</style>

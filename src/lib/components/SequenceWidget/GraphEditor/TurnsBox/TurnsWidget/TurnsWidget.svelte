@@ -1,24 +1,27 @@
-<script>
+<script lang="ts">
 	import TurnsTextLabel from './TurnsTextLabel.svelte';
 	import TurnsDisplayFrame from './TurnsDisplayFrame.svelte';
 	import MotionTypeLabel from './MotionTypeLabel.svelte';
-
-	export let color; // Prop for passing color
-</script>
-
-<div class="turns-widget">
+  
+	export let color: string;
+	export let turns: string | number;
+	export let onOpenDialog: () => void;
+  </script>
+  
+  <div class="turns-widget">
 	<TurnsTextLabel />
-	<TurnsDisplayFrame {color} />
+	<TurnsDisplayFrame {color} {turns} {onOpenDialog} />
 	<MotionTypeLabel />
-</div>
-
-<style>
+  </div>
+  
+  <style>
 	.turns-widget {
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-		padding: 10px;
-		flex: 1;
-		justify-content: space-evenly;
+	  display: flex;
+	  flex-direction: column;
+	  gap: 10px;
+	  padding: 10px;
+	  flex: 1;
+	  justify-content: space-evenly;
 	}
-</style>
+  </style>
+  
