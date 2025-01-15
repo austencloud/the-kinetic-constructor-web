@@ -16,7 +16,7 @@
 
   <div class="pictograph-container">
     {#if $selectedPictograph}
-      <Pictograph pictographData={$selectedPictograph} />
+      <Pictograph pictographData={$selectedPictograph} onClick={() => {}} />
     {/if}
   </div>
 </div>
