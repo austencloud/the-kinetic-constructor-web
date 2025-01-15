@@ -57,7 +57,6 @@
 		cursor: var(--cursor, default); /* Dynamic cursor */
 		transition: transform 0.2s ease;
 		color: white;
-		box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
 		aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
 		transition: transform 0.1s ease-in-out;
 	}
@@ -80,10 +79,5 @@
 		aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
 	}
 
-	.pictograph-label {
-		margin-top: 0.5em;
-		text-align: center;
-		font-size: 0.9rem;
-		color: #333;
-	}
+
 </style>
