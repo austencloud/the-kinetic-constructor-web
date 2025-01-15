@@ -127,12 +127,10 @@
 			overflow: hidden;
 			position: relative;
 			z-index: 0;
-			width: 100%;
 		}
 		.sequenceWorkbenchContainer,
 		.optionPickerContainer {
 			flex: 1;
-			width: 100%;
 			height: auto;
 		}
 	}
