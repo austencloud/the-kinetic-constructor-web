@@ -5,6 +5,7 @@ const pictographDataStore = writable<Record<string, any>[]>([]);
 export const loadPictographData = async () => {
 	const diamondData = await fetch('/DiamondPictographDataframe.csv').then((res) => res.text());
 	const boxData = await fetch('/BoxPictographDataframe.csv').then((res) => res.text());
+	
 
 	// Combine data from both files
 	const combinedData = [
@@ -19,7 +20,10 @@ function parseCsvToJson(csv: string, gridMode: string) {
 	const lines = csv.split('\n');
 	const headers = lines.shift()?.split(',') || [];
 
-	const gridPath = gridMode === 'diamond' ? '/diamond_grid.svg' : '/box_grid.svg';
+	const gridPath = gridMode === 'diamond' 
+	? `/diamond_grid.svg?${Date.now()}` 
+	: `/box_grid.svg?${Date.now()}`;
+  
 
 	return lines.map((line) => {
 		const values = line.split(',');
