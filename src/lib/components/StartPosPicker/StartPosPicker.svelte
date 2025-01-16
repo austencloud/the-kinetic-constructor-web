@@ -78,29 +78,21 @@
 
 	.label {
 		margin-bottom: 10%;
-		font-size: 4vh; /* Font size relative to window width */
+		font-size: 4vh;
 		font-family: 'Monotype Corsiva', cursive;
-		background-color: rgba(255, 255, 255, 0.5); /* Translucent background */
-		border-radius: 40px; /* Adjust as needed */
-		padding: 10px 20px; /* Adjust as needed */
+		background-color: rgba(255, 255, 255, 0.5);
+		border-radius: 40px;
+		padding: 10px 20px;
 		text-align: center;
 	}
 
 	.pictograph-container {
 		display: flex;
-		flex-direction: row; /* force a row layout */
+		flex-direction: row;
 		justify-content: space-around;
 		align-items: center;
-
-		/* The container’s width is 70% (already in your code).
-	 If you want them to be all in one row, make sure the container is wide enough. */
 		width: 70%;
-		/* If you always want them to fit horizontally, let height be auto. */
 		height: auto;
-
-		/* If you also want them to wrap on smaller screens, keep flex-wrap. 
-	 But if you want EXACTLY one row, remove flex-wrap or set it to nowrap. */
-		flex-wrap: nowrap; /* or remove 'wrap' entirely */
 		gap: 3%;
 	}
 </style>

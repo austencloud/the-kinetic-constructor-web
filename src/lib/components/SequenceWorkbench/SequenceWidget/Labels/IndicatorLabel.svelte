@@ -14,5 +14,6 @@
   .indicator-label {
     text-align: center;
     font-weight: bold;
+    
   }
 </style>

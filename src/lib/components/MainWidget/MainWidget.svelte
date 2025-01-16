@@ -133,11 +133,11 @@
 		}
 		.sequenceWorkbenchContainer {
 			flex:3;
-			height:75%
+			/* height:75% */
 		}
 		.optionPickerContainer {
 			flex:1;
-			height:25%
+			/* height:25% */
 		}
 	}
 	

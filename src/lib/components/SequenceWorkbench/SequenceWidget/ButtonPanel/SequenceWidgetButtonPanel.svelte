@@ -14,10 +14,9 @@
 	// Update button size dynamically
 	function updateButtonSize() {
 		if (isMobile) {
-			// Smaller sizes for mobile
 			buttonSize = Math.max(20, containerWidth / 12); // Reduce size slightly for mobile
 		} else if (isPortrait) {
-			buttonSize = Math.max(25, containerWidth / 10); // Horizontal layout
+			buttonSize = Math.max(60, Math.min(containerWidth / 10, containerHeight / 14)); // Horizontal layout with min size
 		} else {
 			buttonSize = Math.max(25, containerHeight / 14); // Vertical layout
 		}
@@ -95,8 +94,6 @@
 		justify-content: center;
 		align-items: center;
 		gap: 8px;
-		width: 100%;
-		flex: 1;
 	}
 
 	.button-panel.vertical {

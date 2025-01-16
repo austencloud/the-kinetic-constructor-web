@@ -80,7 +80,6 @@
 	.main-layout {
 		display: flex;
 		flex-direction: row;
-		flex: 1;
 		height: 100%;
 	}
 
@@ -91,8 +90,8 @@
 	.left-vbox {
 		display: flex;
 		flex-direction: column;
-		flex: 9;
 		height: 100%;
+		width: 100%;
 		min-height: 0;
 	}
 
@@ -105,7 +104,7 @@
 	}
 
 	.beat-frame-container {
-		flex: 1;
+		flex: 10;
 		min-height: 0;
 		display: flex;
 		flex-direction: column;
@@ -117,5 +116,6 @@
 		justify-content: space-around;
 		padding: 10px;
 		color: white;
+		flex:1
 	}
 </style>
