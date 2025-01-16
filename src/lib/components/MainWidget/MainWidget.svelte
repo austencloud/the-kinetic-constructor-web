@@ -49,44 +49,43 @@
 <div id="main-widget">
 	<FullScreen>
 		<div id="content-wrapper">
-
-		<div class="background">
-			<SnowfallBackground />
-		</div>
-
-		<div class="menuBar">
-			<MenuBar
-				{background}
-				on:tabChange={handleTabChange}
-				on:settingsClick={handleSettingsClick}
-				on:changeBackground={(e) => updateBackground(e.detail)}
-			/>
-		</div>
-
-		<div class="mainContent">
-			<div class="sequenceWorkbenchContainer">
-				<SequenceWidget />
+			<div class="background">
+				<SnowfallBackground />
 			</div>
 
-			<div class="optionPickerContainer">
-				{#if $selectedStartPos}
-					<OptionPicker />
-				{:else}
-					<StartPosPicker />
-				{/if}
+			<div class="menuBar">
+				<MenuBar
+					{background}
+					on:tabChange={handleTabChange}
+					on:settingsClick={handleSettingsClick}
+					on:changeBackground={(e) => updateBackground(e.detail)}
+				/>
 			</div>
-		</div>
 
-		<!-- Settings Dialog -->
-		{#if isSettingsDialogOpen}
-			<SettingsDialog
-				isOpen={isSettingsDialogOpen}
-				{background}
-				onChangeBackground={updateBackground}
-				onClose={() => (isSettingsDialogOpen = false)}
-			/>
-		{/if}
-	</div>
+			<div class="mainContent">
+				<div class="sequenceWorkbenchContainer">
+					<SequenceWidget />
+				</div>
+
+				<div class="optionPickerContainer">
+					{#if $selectedStartPos}
+						<OptionPicker />
+					{:else}
+						<StartPosPicker />
+					{/if}
+				</div>
+			</div>
+
+			<!-- Settings Dialog -->
+			{#if isSettingsDialogOpen}
+				<SettingsDialog
+					isOpen={isSettingsDialogOpen}
+					{background}
+					onChangeBackground={updateBackground}
+					onClose={() => (isSettingsDialogOpen = false)}
+				/>
+			{/if}
+		</div>
 	</FullScreen>
 </div>
 
@@ -118,7 +117,6 @@
 	}
 
 	.mainContent {
-		flex: 1;
 		display: flex;
 		overflow: auto; /* Allow overflow */
 		position: relative;
@@ -127,33 +125,30 @@
 		width: 100%;
 	}
 
-	.sequenceWorkbenchContainer,
-	.optionPickerContainer {
-		flex: 1;
-	}
+
 
 	@media (orientation: portrait) {
 		.mainContent {
 			flex-direction: column;
 		}
 		.sequenceWorkbenchContainer {
-			height: 75%;
-			width: 100%;
+			flex:3
 		}
 		.optionPickerContainer {
-			height: 25%;
-			width: 100%;
+			flex:1
 		}
 	}
-
+	
 	@media (orientation: landscape) {
 		.mainContent {
 			flex-direction: row;
 		}
-		.sequenceWorkbenchContainer,
-		.optionPickerContainer {
-			height: 100%;
-			width: 50%;
+		.sequenceWorkbenchContainer {
+			flex:1
 		}
+		.optionPickerContainer {
+			flex:1
+		}
+
 	}
 </style>
