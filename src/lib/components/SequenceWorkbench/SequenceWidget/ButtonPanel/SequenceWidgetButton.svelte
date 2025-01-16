@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from "svelte";
+
 	export let icon: string;
 	export let title: string;
 	export let buttonSize: number = 50; // Default size
@@ -6,6 +8,22 @@
 
 	let isHovered = false;
 	let isClicked = false;
+	let isMobile = false;
+
+	// Detect mobile devices
+	function updateIsMobile() {
+		isMobile = window.innerWidth <= 768; // Example threshold for mobile
+	}
+
+	// Add event listener for resizing
+	onMount(() => {
+		updateIsMobile();
+		window.addEventListener('resize', updateIsMobile);
+
+		return () => {
+			window.removeEventListener('resize', updateIsMobile);
+		};
+	});
 
 	const handleMouseEnter = () => (isHovered = true);
 	const handleMouseLeave = () => (isHovered = false);
@@ -27,7 +45,11 @@
 	on:mouseup={handleMouseUp}
 	{title}
 >
-	<img src={icon} alt={title} />
+	<img
+		src={icon}
+		alt={title}
+		class:is-mobile={isMobile}
+	/>
 </button>
 
 <style>
@@ -44,8 +66,14 @@
 	}
 
 	.button img {
-		width: 80%; /* Scale up closer to the full button size */
+		width: 80%; /* Default size for icons */
 		height: 80%;
 		object-fit: contain;
+		transition: width 0.2s, height 0.2s;
+	}
+
+	.button img.is-mobile {
+		width: 90%; /* Larger icon size for mobile */
+		height: 90%;
 	}
 </style>

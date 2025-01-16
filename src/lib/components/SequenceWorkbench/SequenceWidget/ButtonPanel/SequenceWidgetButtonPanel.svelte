@@ -9,47 +9,44 @@
 
 	let buttonSize = 60; // Default size
 	let panelRef: HTMLElement | null = null;
-	let isMobile: boolean = false;
+	let isMobile = false;
+
+	// Detect mobile devices
+	function updateIsMobile() {
+		isMobile = window.innerWidth <= 768; // Example threshold for mobile
+	}
 
 	// Update button size dynamically
 	function updateButtonSize() {
 		if (isMobile) {
-			buttonSize = Math.max(20, containerWidth / 12); // Reduce size slightly for mobile
+			buttonSize = Math.max(20, containerWidth / 12); // Smaller size for mobile
 		} else if (isPortrait) {
-			buttonSize = Math.max(60, Math.min(containerWidth / 10, containerHeight / 14)); // Horizontal layout with min size
+			buttonSize = Math.max(40, containerWidth / 10); // Horizontal layout
 		} else {
-			buttonSize = Math.max(25, containerHeight / 14); // Vertical layout
+			buttonSize = Math.max(40, containerHeight / 14); // Vertical layout
 		}
 	}
 
-	function updateIsMobile() {
-		isMobile = window.innerWidth <= 768; // Example threshold for mobile
-	}
-	// ResizeObserver to dynamically track container size
+	// ResizeObserver to track container size
 	let resizeObserver: ResizeObserver | undefined;
 	onMount(() => {
+		updateIsMobile();
+
 		if (panelRef) {
 			resizeObserver = new ResizeObserver((entries) => {
 				for (const entry of entries) {
-					if (entry.contentBoxSize) {
-						const size = Array.isArray(entry.contentBoxSize)
-							? entry.contentBoxSize[0]
-							: entry.contentBoxSize;
-						containerWidth = size.inlineSize;
-						containerHeight = size.blockSize;
-					} else {
-						containerWidth = entry.contentRect.width;
-						containerHeight = entry.contentRect.height;
-					}
-					updateButtonSize(); // Update button size immediately
+					containerWidth = entry.contentRect.width;
+					containerHeight = entry.contentRect.height;
+					updateButtonSize();
 				}
 			});
 			resizeObserver.observe(panelRef);
 		}
-		updateIsMobile();
+
 		window.addEventListener('resize', updateIsMobile);
 
 		return () => {
+			resizeObserver?.disconnect();
 			window.removeEventListener('resize', updateIsMobile);
 		};
 	});
@@ -62,11 +59,7 @@
 	$: updateButtonSize();
 
 	const buttons = [
-		{
-			icon: '/button_panel_icons/add_to_dictionary.png',
-			title: 'Add to Dictionary',
-			id: 'addToDictionary'
-		},
+		{ icon: '/button_panel_icons/add_to_dictionary.png', title: 'Add to Dictionary', id: 'addToDictionary' },
 		{ icon: '/button_panel_icons/save_image.png', title: 'Save Image', id: 'saveImage' },
 		{ icon: '/button_panel_icons/eye.png', title: 'View Full Screen', id: 'viewFullScreen' },
 		{ icon: '/button_panel_icons/mirror.png', title: 'Mirror Sequence', id: 'mirrorSequence' },
