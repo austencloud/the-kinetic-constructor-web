@@ -13,9 +13,9 @@
 	// Update button size dynamically
 	function updateButtonSize() {
 		if (isPortrait) {
-			buttonSize = Math.min(50,Math.max(50, containerWidth / 10)); // Horizontal layout
+			buttonSize = Math.max(25, containerWidth / 10); // Horizontal layout
 		} else {
-			buttonSize =Math.min( 50,Math.max(50, containerHeight / 14)); // Vertical layout
+			buttonSize =Math.max(25, containerHeight / 14); // Vertical layout
 		}
 	}
 
