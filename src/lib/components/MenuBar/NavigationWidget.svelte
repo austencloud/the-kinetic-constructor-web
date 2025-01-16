@@ -2,6 +2,7 @@
 	import NavigationButton from './NavigationButton.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { onMount, onDestroy } from 'svelte';
+	import { browser } from '$app/environment'; // Import browser check from SvelteKit
 
 	const dispatch = createEventDispatcher();
 
@@ -14,16 +15,14 @@
 	let isMobile = false;
 
 	/**
-	 * We'll define "isMobile" as "portrait orientation" or "small device," 
-	 * whichever logic you prefer. 
-	 * For orientation-based: if width < height => portrait => isMobile = true.
+	 * Update `isMobile` based on orientation or viewport size.
+	 * This runs only in the browser.
 	 */
 	function checkMobile() {
-		if (typeof window === 'undefined') return;
+		if (!browser) return; // Only run in the browser
 		const w = window.innerWidth;
 		const h = window.innerHeight;
-		isMobile = (h > w); 
-		// or use: isMobile = window.matchMedia('(max-width: 768px)').matches;
+		isMobile = h > w; // Portrait orientation
 	}
 
 	function handleTabClick(index: number) {
@@ -33,11 +32,13 @@
 	}
 
 	onMount(() => {
+		if (!browser) return; // Skip for SSR
 		checkMobile();
 		window.addEventListener('resize', checkMobile);
 	});
 
 	onDestroy(() => {
+		if (!browser) return; // Skip for SSR
 		window.removeEventListener('resize', checkMobile);
 	});
 </script>

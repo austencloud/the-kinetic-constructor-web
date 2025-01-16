@@ -1,27 +1,26 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { browser } from '$app/environment'; // Import the browser environment check from SvelteKit
 
-	export let isMobile: boolean;   
+	export let isMobile: boolean = false; // Default value for SSR
 	export let isActive: boolean = false;
 	export let onClick: () => void;
 
-	let fontSize: number;
-	let buttonWidth: number;
-	let buttonHeight: number;
+	let fontSize: number = 16;
+	let buttonWidth: number = 120;
+	let buttonHeight: number = 40;
 
+	// Dynamically update button styles
 	function updateButtonStyles() {
-		if (typeof window === 'undefined') return;
-
+		if (!browser) return; // Only run in the browser
 		const w = window.innerWidth;
 		const h = window.innerHeight;
 
 		if (isMobile) {
-			// On mobile => circle
 			buttonWidth = Math.max(50, w / 16);
 			buttonHeight = buttonWidth;
 			fontSize = buttonWidth * 0.5;
 		} else {
-			// Desktop => rectangle
 			buttonWidth = Math.max(120, w / 8);
 			buttonHeight = Math.max(40, h / 20);
 			fontSize = Math.max(16, w / 70);
@@ -29,15 +28,18 @@
 	}
 
 	onMount(() => {
+		if (!browser) return; // Skip this block if running SSR
 		updateButtonStyles();
 		window.addEventListener('resize', updateButtonStyles);
 	});
 
 	onDestroy(() => {
+		if (!browser) return;
 		window.removeEventListener('resize', updateButtonStyles);
 	});
 </script>
 
+<!-- Button component -->
 <button
 	on:click={onClick}
 	class={isActive ? 'active' : 'inactive'}
@@ -50,6 +52,7 @@
 >
 	<slot />
 </button>
+
 <style>
 	button {
 		font-family: Georgia, serif;
