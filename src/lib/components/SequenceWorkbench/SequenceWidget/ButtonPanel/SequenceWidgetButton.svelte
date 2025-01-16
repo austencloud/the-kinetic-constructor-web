@@ -73,7 +73,7 @@
 	}
 
 	.button img.is-mobile {
-		width: 90%; /* Larger icon size for mobile */
-		height: 90%;
+		width: 100%; /* Larger icon size for mobile */
+		height: 100%;
 	}
 </style>
