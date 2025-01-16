@@ -80,14 +80,16 @@
 		/>
 	{/each}
 </div>
-
 <style>
 	.button-panel {
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		gap: 8px;
-		flex:1
+		flex: 1;
+		border: 1px solid red;
+		overflow: visible; /* Allow overflow to be seen */
+		padding: 5px
 	}
 
 	.button-panel.vertical {

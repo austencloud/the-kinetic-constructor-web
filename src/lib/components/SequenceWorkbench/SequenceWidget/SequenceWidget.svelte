@@ -93,14 +93,14 @@
 		height: 100%;
 		width: 100%;
 		min-height: 0;
-		flex:7
+		flex:14
 	}
 
 	.sequence-widget-labels {
 		display: flex;
 		flex-direction: column;
 		justify-content: space-around;
-		padding: 10px;
+		/* padding: 10px; */
 		color: white;
 	}
 
