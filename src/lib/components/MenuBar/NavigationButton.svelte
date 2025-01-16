@@ -22,7 +22,7 @@
 		} else {
 			buttonWidth = Math.max(120, w / 8);
 			buttonHeight = Math.max(40, h / 20);
-			fontSize = Math.max(16, w / 70);
+			fontSize = Math.min(22,Math.max(16, w / 70));
 		}
 	}
 

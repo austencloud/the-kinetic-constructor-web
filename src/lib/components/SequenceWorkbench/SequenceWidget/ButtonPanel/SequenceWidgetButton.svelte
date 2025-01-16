@@ -45,6 +45,7 @@
 		padding: 0;
 		transition: background-color 0.2s, transform 0.2s;
 		transition-duration: 0.1s;
+		
 	}
 
 	.button img {

@@ -7,16 +7,23 @@
 	import SequenceWidgetButtonPanel from './ButtonPanel/SequenceWidgetButtonPanel.svelte';
 
 	let width = 0;
+	let height = 0;
+	let sequenceWorkbenchHeight = 0;
+
 
 	onMount(() => {
 		const resizeObserver = new ResizeObserver(entries => {
 			for (let entry of entries) {
 				width = entry.contentRect.width;
+				height = entry.contentRect.height;
 			}
 		});
 		const element = document.querySelector('.sequence-widget');
 		if (element) {
 			resizeObserver.observe(element);
+		}
+		if (element) {
+			sequenceWorkbenchHeight = element.clientHeight;
 		}
 
 		return () => resizeObserver.disconnect();
@@ -37,7 +44,7 @@
 				<IndicatorLabel width={width} />
 			</div>
 		</div>
-		<SequenceWidgetButtonPanel />
+		<SequenceWidgetButtonPanel {sequenceWorkbenchHeight} />
 	</div>
 </div>
 

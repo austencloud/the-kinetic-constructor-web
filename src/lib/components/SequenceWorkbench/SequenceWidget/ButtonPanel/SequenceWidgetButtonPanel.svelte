@@ -1,13 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, afterUpdate } from 'svelte';
 	import SequenceWidgetButton from './SequenceWidgetButton.svelte';
+
+	export let sequenceWorkbenchHeight: number;
 
 	let panelRef: HTMLDivElement | null = null;
 
-	// We keep a fixed buttonSize if you want or no dynamic logic for the button size.
+	// Initial button size
 	let buttonSize = 60;
-
-	// Here’s the dynamic gap state:
+	let height = 0;
+	// Dynamic gap state
 	let panelGap = 8; // some default (px or so)
 
 	const iconRoot = '/button_panel_icons/';
@@ -32,6 +34,11 @@
 		// panelGap = Math.max(5, Math.min(20, containerHeight / 10));
 	}
 
+	function updateButtonSize() {
+		// Calculate button size based on sequenceWorkbenchHeight
+		buttonSize = Math.floor(sequenceWorkbenchHeight / 18); // Example calculation
+	}
+
 	onMount(() => {
 		if (panelRef) {
 			resizeObserver = new ResizeObserver(entries => {
@@ -54,6 +61,10 @@
 		return () => {
 			resizeObserver?.disconnect();
 		};
+	});
+
+	afterUpdate(() => {
+		updateButtonSize();
 	});
 </script>
 

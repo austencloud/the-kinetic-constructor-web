@@ -2,6 +2,7 @@
 	import SequenceWidget from './SequenceWidget/SequenceWidget.svelte';
 	import GraphEditor from './GraphEditor/GraphEditor.svelte';
 	import GraphEditorToggleTab from './GraphEditor/GraphEditorToggleTab.svelte';
+	import { onMount } from 'svelte';
 
 	let isExpanded = false;
 	const animationDuration = 300; // Animation duration in ms
@@ -11,26 +12,35 @@
 	let editorPercentage = 0.25; // 30% 
 	let computedEditorHeight = 0; // We'll compute this in onMount or with a resize observer.
 
+	let sequenceWorkbenchHeight:number = 0;
+	let sequenceWorkbenchElement: HTMLElement;
+
 	function toggleGraphEditor() {
 		isExpanded = !isExpanded;
 	}
 
-	// A simple approach: compute once onMount:
-	import { onMount } from 'svelte';
 	onMount(() => {
 		computedEditorHeight = Math.floor(window.innerHeight * editorPercentage);
+		updateSequenceWorkbenchHeight();
 
-		// Alternatively, watch for window resize with a "resize" event:
+		// Watch for window resize with a "resize" event:
 		window.addEventListener('resize', updateComputedHeight);
+		window.addEventListener('resize', updateSequenceWorkbenchHeight);
 	});
 
 	function updateComputedHeight() {
 		computedEditorHeight = Math.floor(window.innerHeight * editorPercentage);
 	}
+
+	function updateSequenceWorkbenchHeight() {
+		if (sequenceWorkbenchElement) {
+			sequenceWorkbenchHeight = sequenceWorkbenchElement.offsetHeight;
+		}
+	}
 </script>
 
-<div class="sequence-workbench">
-	<SequenceWidget />
+<div class="sequence-workbench" bind:this={sequenceWorkbenchElement}>
+	<SequenceWidget {sequenceWorkbenchHeight} />
 
 	<!-- GraphEditorToggleTab -->
 	<!-- We pass graphEditorHeight = isExpanded ? computedEditorHeight : 0 -->
