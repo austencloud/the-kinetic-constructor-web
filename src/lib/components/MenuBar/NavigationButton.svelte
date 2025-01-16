@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 
-	export let isMobile: boolean;   // new prop
+	export let isMobile: boolean;   
 	export let isActive: boolean = false;
 	export let onClick: () => void;
 
@@ -9,49 +9,47 @@
 	let buttonWidth: number;
 	let buttonHeight: number;
 
-	// Update button styles dynamically based on window dimensions
 	function updateButtonStyles() {
-		if (typeof window !== 'undefined') { 
-			const w = window.innerWidth;
-			const h = window.innerHeight;
+		if (typeof window === 'undefined') return;
 
-			if (isMobile) {
-				// Mobile: circle shape
-				buttonWidth = Math.max(50, w / 16);
-				buttonHeight = buttonWidth; // Circle => width = height
-				fontSize = buttonWidth * 0.5; // Emoji size
-			} else {
-				// Desktop: rectangle shape
-				buttonWidth = Math.max(120, w / 8);
-				buttonHeight = Math.max(40, h / 20);
-				fontSize = Math.max(16, w / 70);
-			}
+		const w = window.innerWidth;
+		const h = window.innerHeight;
+
+		if (isMobile) {
+			// On mobile => circle
+			buttonWidth = Math.max(50, w / 16);
+			buttonHeight = buttonWidth;
+			fontSize = buttonWidth * 0.5;
+		} else {
+			// Desktop => rectangle
+			buttonWidth = Math.max(120, w / 8);
+			buttonHeight = Math.max(40, h / 20);
+			fontSize = Math.max(16, w / 70);
 		}
 	}
 
-	// Run the updateButtonStyles only in the browser
 	onMount(() => {
 		updateButtonStyles();
-		if (typeof window !== 'undefined') {
-			window.addEventListener('resize', updateButtonStyles);
-		}
-	});
+		// We also want to recalc if orientation changes
+		window.addEventListener('resize', updateButtonStyles);
+		window.addEventListener('orientationchange', updateButtonStyles);
 
-	onDestroy(() => {
-		if (typeof window !== 'undefined') {
+		return () => {
 			window.removeEventListener('resize', updateButtonStyles);
-		}
+			window.removeEventListener('orientationchange', updateButtonStyles);
+		};
 	});
 </script>
 
-<!-- Button component -->
 <button
 	on:click={onClick}
 	class={isActive ? 'active' : 'inactive'}
-	style="font-size: {fontSize}px;
-	       width: {buttonWidth}px;
-	       height: {buttonHeight}px;
-	       {isMobile ? 'border-radius: 50%;' : 'border-radius: 10px;'}"
+	style="
+		font-size: {fontSize}px;
+		width: {buttonWidth}px;
+		height: {buttonHeight}px;
+		{isMobile ? 'border-radius: 50%;' : 'border-radius: 10px;'}
+	"
 >
 	<slot />
 </button>
