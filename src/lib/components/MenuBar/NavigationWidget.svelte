@@ -12,7 +12,7 @@
 	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
 	const tabEmojis = ['⚒️', '🤖', '🔍', '🧠', '✍️'];
 
-	let isMobile = false;
+	let isMobile: boolean;
 
 	/**
 	 * Update `isMobile` based on orientation or viewport size.
