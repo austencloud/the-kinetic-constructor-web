@@ -132,7 +132,7 @@
 			flex-direction: column;
 		}
 		.sequenceWorkbenchContainer {
-			flex:3;
+			flex:2;
 			/* height:75% */
 		}
 		.optionPickerContainer {

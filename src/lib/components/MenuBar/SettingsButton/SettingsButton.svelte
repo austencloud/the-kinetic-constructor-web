@@ -16,7 +16,7 @@
 	};
 	onMount(() => {
 		const updateSizes = () => {
-			const newSize = Math.max(30, window.innerWidth / 24);
+			const newSize = Math.max(50, window.innerWidth / 24);
 			buttonSize = newSize;
 			iconSize = newSize * 0.75;
 		};
