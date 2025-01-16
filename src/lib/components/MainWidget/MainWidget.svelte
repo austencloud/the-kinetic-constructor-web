@@ -36,7 +36,7 @@
 	};
 </script>
 
-<div id="app">
+<div id="main-widget">
 	<div class="background">
 		<SnowfallBackground />
 	</div>
@@ -76,12 +76,10 @@
 </div>
 
 <style>
-	#app {
+	#main-widget {
 		height: 100%;
 		display: flex;
 		flex-direction: column;
-		height: 100vh;
-		width: 100vw;
 		position: relative;
 		color: light-dark(black, white);
 	}

@@ -10,21 +10,23 @@
 	let buttonHeight: number;
 
 	function updateButtonStyles() {
-		const w = window.innerWidth;
-		const h = window.innerHeight;
+		if (typeof window !== 'undefined') {
+			const w = window.innerWidth;
+			const h = window.innerHeight;
 
-		if (isMobile) {
-			// Mobile: circle shape
-			// let’s pick a target diameter
-			buttonWidth = Math.max(60, w / 8);
-			buttonHeight = buttonWidth;     // circle => width = height
-			fontSize = buttonWidth * 0.5;   // large enough for the emoji
-		} else {
-			// Desktop: rectangle shape
-			// let’s pick some logic for a comfortable size
-			buttonWidth = Math.max(120, w / 10);
-			buttonHeight = Math.max(40, h / 20);
-			fontSize = Math.max(14, h / 50);
+			if (isMobile) {
+				// Mobile: circle shape
+				// let’s pick a target diameter
+				buttonWidth = Math.max(60, w / 8);
+				buttonHeight = buttonWidth;     // circle => width = height
+				fontSize = buttonWidth * 0.5;   // large enough for the emoji
+			} else {
+				// Desktop: rectangle shape
+				// let’s pick some logic for a comfortable size
+				buttonWidth = Math.max(120, w / 10);
+				buttonHeight = Math.max(40, h / 20);
+				fontSize = Math.max(14, h / 50);
+			}
 		}
 	}
 
