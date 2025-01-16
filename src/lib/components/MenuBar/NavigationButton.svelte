@@ -43,7 +43,7 @@
   height: {buttonHeight}px;
   "
 >
-	{name}
+	<slot>{name}</slot>
 </button>
 
 <style>
@@ -55,7 +55,7 @@
 		transition:
 			all 0.3s ease,
 			transform 0.2s ease;
-			transition-duration: 0.1s;
+		transition-duration: 0.1s;
 	}
 	button:hover {
 		transform: scale(1.05);
