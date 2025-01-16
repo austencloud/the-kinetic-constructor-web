@@ -1,50 +1,71 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import IndicatorLabel from './Labels/IndicatorLabel.svelte';
 	import CurrentWordLabel from './Labels/CurrentWordLabel.svelte';
 	import DifficultyLabel from './Labels/DifficultyLabel.svelte';
 	import BeatFrame from './BeatFrame/BeatFrame.svelte';
 	import SequenceWidgetButtonPanel from './ButtonPanel/SequenceWidgetButtonPanel.svelte';
+	import { browser } from '$app/environment';
 
 	let width = 0;
 	let height = 0;
-	let sequenceWorkbenchHeight = 0;
+	let isPortrait = true;
 
+	export let sequenceWorkbenchHeight: number;
+	let sequenceWorkbenchElement: HTMLElement | null = null;
+
+	// Dynamically update layout and dimensions
+	function updateLayout() {
+		if (!browser) return;
+		width = window.innerWidth;
+		height = window.innerHeight;
+		isPortrait = height > width;
+
+		// Update sequenceWorkbenchHeight dynamically
+		if (sequenceWorkbenchElement) {
+			sequenceWorkbenchHeight = sequenceWorkbenchElement.offsetHeight;
+		}
+	}
 
 	onMount(() => {
-		const resizeObserver = new ResizeObserver(entries => {
-			for (let entry of entries) {
-				width = entry.contentRect.width;
-				height = entry.contentRect.height;
-			}
-		});
-		const element = document.querySelector('.sequence-widget');
-		if (element) {
-			resizeObserver.observe(element);
-		}
-		if (element) {
-			sequenceWorkbenchHeight = element.clientHeight;
-		}
+		if (!browser) return;
+		updateLayout();
+		window.addEventListener('resize', updateLayout);
 
-		return () => resizeObserver.disconnect();
+		return () => {
+			window.removeEventListener('resize', updateLayout);
+		};
 	});
 </script>
 
-<div class="sequence-widget">
-	<div class="main-layout">
+<div class="sequence-widget" bind:this={sequenceWorkbenchElement}>
+	<div class="main-layout" class:portrait={isPortrait}>
 		<div class="left-vbox">
 			<div class="sequence-widget-labels">
-				<CurrentWordLabel currentWord="Word:" width={width} />
-				<DifficultyLabel difficultyLevel={3} width={width} />
+				<CurrentWordLabel currentWord="Word:" {width} />
+				<DifficultyLabel difficultyLevel={3} {width} />
 			</div>
 			<div class="beat-frame-container">
 				<BeatFrame />
 			</div>
 			<div class="indicator-label-container">
-				<IndicatorLabel width={width} />
+				<IndicatorLabel {width} />
 			</div>
+
+			<!-- Button Panel in portrait mode -->
+			{#if isPortrait}
+				<SequenceWidgetButtonPanel {isPortrait} containerWidth={width} containerHeight={height} />
+			{/if}
 		</div>
-		<SequenceWidgetButtonPanel {sequenceWorkbenchHeight} />
+
+		<!-- Button Panel in landscape mode -->
+		{#if !isPortrait}
+			<SequenceWidgetButtonPanel
+				{isPortrait}
+				containerWidth={width}
+				containerHeight={sequenceWorkbenchHeight}
+			/>
+		{/if}
 	</div>
 </div>
 
@@ -61,6 +82,10 @@
 		flex-direction: row;
 		flex: 1;
 		height: 100%;
+	}
+
+	.main-layout.portrait {
+		flex-direction: column;
 	}
 
 	.left-vbox {
@@ -81,8 +106,8 @@
 
 	.beat-frame-container {
 		flex: 1;
-		min-height: 0; /* Also important */
-		display: flex; /* So children can expand */
+		min-height: 0;
+		display: flex;
 		flex-direction: column;
 	}
 

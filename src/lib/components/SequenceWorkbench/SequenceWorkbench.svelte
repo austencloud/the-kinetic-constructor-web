@@ -9,10 +9,10 @@
 
 	// For example, let’s do 30% of the viewport height
 	// or we can do 30% of the parent's offsetHeight. We’ll show viewport for demonstration.
-	let editorPercentage = 0.25; // 30% 
+	let editorPercentage = 0.25; // 30%
 	let computedEditorHeight = 0; // We'll compute this in onMount or with a resize observer.
 
-	let sequenceWorkbenchHeight:number = 0;
+	let sequenceWorkbenchHeight: number = 0;
 	let sequenceWorkbenchElement: HTMLElement;
 
 	function toggleGraphEditor() {
@@ -45,18 +45,14 @@
 	<!-- GraphEditorToggleTab -->
 	<!-- We pass graphEditorHeight = isExpanded ? computedEditorHeight : 0 -->
 	<GraphEditorToggleTab
-		isExpanded={isExpanded}
+		{isExpanded}
 		{animationDuration}
 		graphEditorHeight={isExpanded ? computedEditorHeight : 0}
 		on:click={toggleGraphEditor}
 	/>
 
 	<!-- GraphEditor -->
-	<GraphEditor
-		isExpanded={isExpanded}
-		{animationDuration}
-		maxEditorHeight={computedEditorHeight}
-	/>
+	<GraphEditor {isExpanded} {animationDuration} maxEditorHeight={computedEditorHeight} />
 </div>
 
 <style>

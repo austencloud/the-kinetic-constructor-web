@@ -136,9 +136,12 @@
 		.mainContent {
 			flex-direction: column;
 		}
-		.sequenceWorkbenchContainer,
+		.sequenceWorkbenchContainer {
+			height: 75%;
+			width: 100%;
+		}
 		.optionPickerContainer {
-			height: 50%;
+			height: 25%;
 			width: 100%;
 		}
 	}

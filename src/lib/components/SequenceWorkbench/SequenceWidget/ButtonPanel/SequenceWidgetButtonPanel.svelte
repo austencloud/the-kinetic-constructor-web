@@ -1,16 +1,23 @@
 <script lang="ts">
-	import { onMount, afterUpdate } from 'svelte';
-	import SequenceWidgetButton from './SequenceWidgetButton.svelte';
+	export let layout: 'vertical' | 'horizontal' = 'vertical';
+	export let containerWidth: number = 0;
+	export let containerHeight: number = 0;
+	export let isPortrait: boolean = true;
 
-	export let sequenceWorkbenchHeight: number;
+	let buttonSize = 0;
 
-	let panelRef: HTMLDivElement | null = null;
+	// Update button size dynamically
+	function updateButtonSize() {
+		if (isPortrait) {
+			buttonSize = Math.max(20, containerWidth / 12); // Horizontal layout
+		} else {
+			buttonSize = Math.max(20, containerHeight / 14); // Vertical layout
+		}
+	}
 
-	// Initial button size
-	let buttonSize = 60;
-	let height = 0;
-	// Dynamic gap state
-	let panelGap = 8; // some default (px or so)
+	// Reactive declarations to ensure `updateButtonSize` is recalculated
+	$: layout = isPortrait ? 'horizontal' : 'vertical';
+	$: updateButtonSize();
 
 	const iconRoot = '/button_panel_icons/';
 	const buttons = [
@@ -23,74 +30,57 @@
 		{ icon: `${iconRoot}delete.png`, title: 'Delete Beat', id: 'deleteBeat' },
 		{ icon: `${iconRoot}clear.png`, title: 'Clear Sequence', id: 'clearSequence' }
 	];
-
-	let resizeObserver: ResizeObserver | undefined;
-
-	function updateGap(containerHeight: number) {
-		// For example: let the gap be 1/10 of container height
-		panelGap = Math.floor(containerHeight / 30);
-
-		// If you want a minimum/maximum clamp:
-		// panelGap = Math.max(5, Math.min(20, containerHeight / 10));
-	}
-
-	function updateButtonSize() {
-		// Calculate button size based on sequenceWorkbenchHeight
-		buttonSize = Math.floor(sequenceWorkbenchHeight / 18); // Example calculation
-	}
-
-	onMount(() => {
-		if (panelRef) {
-			resizeObserver = new ResizeObserver(entries => {
-				for (const entry of entries) {
-					let containerHeight = 0;
-					if (entry.contentBoxSize) {
-						const cs = Array.isArray(entry.contentBoxSize)
-							? entry.contentBoxSize[0]
-							: entry.contentBoxSize;
-						containerHeight = cs.blockSize;
-					} else {
-						const rect = entry.contentRect;
-						containerHeight = rect.height;
-					}
-					updateGap(containerHeight);
-				}
-			});
-			resizeObserver.observe(panelRef);
-		}
-		return () => {
-			resizeObserver?.disconnect();
-		};
-	});
-
-	afterUpdate(() => {
-		updateButtonSize();
-	});
 </script>
 
-<div class="button-panel" bind:this={panelRef} style="--panel-gap: {panelGap}px;">
+<div class="button-panel {layout}">
 	{#each buttons as button}
-		<SequenceWidgetButton
-			icon={button.icon}
+		<button
+			class="button"
+			style="width: {buttonSize}px; height: {buttonSize}px;"
 			title={button.title}
-			buttonSize={buttonSize}
-			onClick={() => console.log(`${button.title} clicked`)}
-		/>
+		>
+			<img src={button.icon} alt={button.title} />
+		</button>
 	{/each}
 </div>
 
 <style>
 	.button-panel {
-		flex: 1;
 		display: flex;
-		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		/* Instead of gap: 3%, we do a dynamic gap from CSS var */
-		gap: var(--panel-gap, 8px);
-		position: relative;
-		z-index: 1;
-		/* ensure some height if needed */
-		min-height: 0;
+		gap: 8px;
+		flex: 1;
+		width: 100%;
+	}
+
+	.button-panel.vertical {
+		flex-direction: column;
+	}
+
+	.button-panel.horizontal {
+		flex-direction: row;
+	}
+
+	.button {
+		border-radius: 50%;
+		border: 1px solid #ccc;
+		cursor: pointer;
+		aspect-ratio: 1 / 1; /* Always maintain circular shape */
+		transition: transform 0.2s;
+	}
+
+	.button img {
+		width: 70%;
+		height: 70%;
+		object-fit: contain;
+	}
+
+	.button:hover {
+		transform: scale(1.1);
+	}
+
+	.button:active {
+		transform: scale(0.9);
 	}
 </style>
