@@ -30,14 +30,11 @@
 
 	onMount(() => {
 		updateButtonStyles();
-		// We also want to recalc if orientation changes
 		window.addEventListener('resize', updateButtonStyles);
-		window.addEventListener('orientationchange', updateButtonStyles);
+	});
 
-		return () => {
-			window.removeEventListener('resize', updateButtonStyles);
-			window.removeEventListener('orientationchange', updateButtonStyles);
-		};
+	onDestroy(() => {
+		window.removeEventListener('resize', updateButtonStyles);
 	});
 </script>
 
@@ -53,36 +50,3 @@
 >
 	<slot />
 </button>
-
-<style>
-	button {
-		font-family: Georgia, serif;
-		border: 1px solid gray;
-		cursor: pointer;
-		transition: all 0.3s ease, transform 0.2s ease;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		box-sizing: border-box;
-	}
-
-	button:hover {
-		transform: scale(1.05);
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-	}
-
-	button:active {
-		transform: scale(0.95);
-	}
-
-	.active {
-		background-color: blue;
-		color: white;
-		font-weight: bold;
-	}
-	.inactive {
-		background-color: white;
-		color: black;
-		font-weight: normal;
-	}
-</style>

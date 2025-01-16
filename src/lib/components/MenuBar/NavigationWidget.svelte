@@ -8,19 +8,22 @@
 	export let onTabChange: (index: number) => void = () => {};
 	let activeTab = 0;
 
-	// We’ll keep the same tabNames, tabEmojis, etc.
 	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
 	const tabEmojis = ['⚒️', '🤖', '🔍', '🧠', '✍️'];
 
-	// If we only want to differentiate “portrait vs. not portrait,” we can
-	// still call it `isMobile` or `isPortrait`.
 	let isMobile = false;
 
+	/**
+	 * We'll define "isMobile" as "portrait orientation" or "small device," 
+	 * whichever logic you prefer. 
+	 * For orientation-based: if width < height => portrait => isMobile = true.
+	 */
 	function checkMobile() {
 		if (typeof window === 'undefined') return;
-		// If orientation: portrait => isMobile = true, else false.
-		// Or your earlier logic: isMobile = window.innerWidth <= 768
-		isMobile = window.matchMedia('(orientation: portrait)').matches;
+		const w = window.innerWidth;
+		const h = window.innerHeight;
+		isMobile = (h > w); 
+		// or use: isMobile = window.matchMedia('(max-width: 768px)').matches;
 	}
 
 	function handleTabClick(index: number) {
@@ -31,14 +34,11 @@
 
 	onMount(() => {
 		checkMobile();
-		// Listen for 'resize' and 'orientationchange'
 		window.addEventListener('resize', checkMobile);
-		window.addEventListener('orientationchange', checkMobile);
+	});
 
-		return () => {
-			window.removeEventListener('resize', checkMobile);
-			window.removeEventListener('orientationchange', checkMobile);
-		};
+	onDestroy(() => {
+		window.removeEventListener('resize', checkMobile);
 	});
 </script>
 
@@ -50,10 +50,8 @@
 			onClick={() => handleTabClick(index)}
 		>
 			{#if isMobile}
-				<!-- On mobile, just the emoji -->
 				{tabEmojis[index]}
 			{:else}
-				<!-- On desktop, word + emoji -->
 				{name} {tabEmojis[index]}
 			{/if}
 		</NavigationButton>
