@@ -8,37 +8,40 @@
 	export let onTabChange: (index: number) => void = () => {};
 	let activeTab = 0;
 
-	// Remove emojis from `tabNames`
+	// We’ll keep the same tabNames, tabEmojis, etc.
 	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
 	const tabEmojis = ['⚒️', '🤖', '🔍', '🧠', '✍️'];
 
+	// If we only want to differentiate “portrait vs. not portrait,” we can
+	// still call it `isMobile` or `isPortrait`.
 	let isMobile = false;
 
 	function checkMobile() {
-		if (typeof window !== 'undefined') {
-			isMobile = window.matchMedia("(orientation: portrait)").matches;
-		}
+		if (typeof window === 'undefined') return;
+		// If orientation: portrait => isMobile = true, else false.
+		// Or your earlier logic: isMobile = window.innerWidth <= 768
+		isMobile = window.matchMedia('(orientation: portrait)').matches;
 	}
-
-	onMount(() => {
-		checkMobile();
-		if (typeof window !== 'undefined') {
-			window.addEventListener('resize', checkMobile);
-		}
-	});
-
-	onDestroy(() => {
-		if (typeof window !== 'undefined') {
-			window.removeEventListener('resize', checkMobile);
-		}
-	});
 
 	function handleTabClick(index: number) {
 		activeTab = index;
 		dispatch('tabChange', index);
 		onTabChange(index);
 	}
+
+	onMount(() => {
+		checkMobile();
+		// Listen for 'resize' and 'orientationchange'
+		window.addEventListener('resize', checkMobile);
+		window.addEventListener('orientationchange', checkMobile);
+
+		return () => {
+			window.removeEventListener('resize', checkMobile);
+			window.removeEventListener('orientationchange', checkMobile);
+		};
+	});
 </script>
+
 <div class="nav-container">
 	{#each tabNames as name, index}
 		<NavigationButton

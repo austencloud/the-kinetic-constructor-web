@@ -11,7 +11,7 @@
 
 	// Update button styles dynamically based on window dimensions
 	function updateButtonStyles() {
-		if (typeof window !== 'undefined') {
+		if (typeof window !== 'undefined') { 
 			const w = window.innerWidth;
 			const h = window.innerHeight;
 
