@@ -1,46 +1,74 @@
 <script lang="ts">
+	import SequenceWidgetButton from './SequenceWidgetButton.svelte';
+	import { onMount, onDestroy } from 'svelte';
+
 	export let layout: 'vertical' | 'horizontal' = 'vertical';
 	export let containerWidth: number = 0;
 	export let containerHeight: number = 0;
 	export let isPortrait: boolean = true;
 
-	let buttonSize = 0;
+	let buttonSize = 60; // Default size
+	let panelRef: HTMLElement | null = null;
 
 	// Update button size dynamically
 	function updateButtonSize() {
 		if (isPortrait) {
-			buttonSize = Math.max(20, containerWidth / 12); // Horizontal layout
+			buttonSize = Math.max(40, containerWidth / 10); // Horizontal layout
 		} else {
-			buttonSize = Math.max(20, containerHeight / 14); // Vertical layout
+			buttonSize = Math.max(40, containerHeight / 14); // Vertical layout
 		}
 	}
 
-	// Reactive declarations to ensure `updateButtonSize` is recalculated
+	// ResizeObserver to dynamically track container size
+	let resizeObserver: ResizeObserver | undefined;
+	onMount(() => {
+		if (panelRef) {
+			resizeObserver = new ResizeObserver(entries => {
+				for (const entry of entries) {
+					if (entry.contentBoxSize) {
+						const size = Array.isArray(entry.contentBoxSize)
+							? entry.contentBoxSize[0]
+							: entry.contentBoxSize;
+						containerWidth = size.inlineSize;
+						containerHeight = size.blockSize;
+					} else {
+						containerWidth = entry.contentRect.width;
+						containerHeight = entry.contentRect.height;
+					}
+					updateButtonSize(); // Update button size immediately
+				}
+			});
+			resizeObserver.observe(panelRef);
+		}
+	});
+
+	onDestroy(() => {
+		resizeObserver?.disconnect();
+	});
+
 	$: layout = isPortrait ? 'horizontal' : 'vertical';
 	$: updateButtonSize();
 
-	const iconRoot = '/button_panel_icons/';
 	const buttons = [
-		{ icon: `${iconRoot}add_to_dictionary.png`, title: 'Add to Dictionary', id: 'addToDictionary' },
-		{ icon: `${iconRoot}save_image.png`, title: 'Save Image', id: 'saveImage' },
-		{ icon: `${iconRoot}eye.png`, title: 'View Full Screen', id: 'viewFullScreen' },
-		{ icon: `${iconRoot}mirror.png`, title: 'Mirror Sequence', id: 'mirrorSequence' },
-		{ icon: `${iconRoot}yinyang1.png`, title: 'Swap Colors', id: 'swapColors' },
-		{ icon: `${iconRoot}rotate.png`, title: 'Rotate Sequence', id: 'rotateSequence' },
-		{ icon: `${iconRoot}delete.png`, title: 'Delete Beat', id: 'deleteBeat' },
-		{ icon: `${iconRoot}clear.png`, title: 'Clear Sequence', id: 'clearSequence' }
+		{ icon: '/button_panel_icons/add_to_dictionary.png', title: 'Add to Dictionary', id: 'addToDictionary' },
+		{ icon: '/button_panel_icons/save_image.png', title: 'Save Image', id: 'saveImage' },
+		{ icon: '/button_panel_icons/eye.png', title: 'View Full Screen', id: 'viewFullScreen' },
+		{ icon: '/button_panel_icons/mirror.png', title: 'Mirror Sequence', id: 'mirrorSequence' },
+		{ icon: '/button_panel_icons/yinyang1.png', title: 'Swap Colors', id: 'swapColors' },
+		{ icon: '/button_panel_icons/rotate.png', title: 'Rotate Sequence', id: 'rotateSequence' },
+		{ icon: '/button_panel_icons/delete.png', title: 'Delete Beat', id: 'deleteBeat' },
+		{ icon: '/button_panel_icons/clear.png', title: 'Clear Sequence', id: 'clearSequence' }
 	];
 </script>
 
-<div class="button-panel {layout}">
+<div class="button-panel {layout}" bind:this={panelRef}>
 	{#each buttons as button}
-		<button
-			class="button"
-			style="width: {buttonSize}px; height: {buttonSize}px;"
+		<SequenceWidgetButton
+			icon={button.icon}
 			title={button.title}
-		>
-			<img src={button.icon} alt={button.title} />
-		</button>
+			{buttonSize}
+			onClick={() => console.log(`${button.title} clicked`)}
+		/>
 	{/each}
 </div>
 
@@ -50,8 +78,8 @@
 		justify-content: center;
 		align-items: center;
 		gap: 8px;
-		flex: 1;
 		width: 100%;
+		flex:1
 	}
 
 	.button-panel.vertical {
@@ -60,27 +88,5 @@
 
 	.button-panel.horizontal {
 		flex-direction: row;
-	}
-
-	.button {
-		border-radius: 50%;
-		border: 1px solid #ccc;
-		cursor: pointer;
-		aspect-ratio: 1 / 1; /* Always maintain circular shape */
-		transition: transform 0.2s;
-	}
-
-	.button img {
-		width: 70%;
-		height: 70%;
-		object-fit: contain;
-	}
-
-	.button:hover {
-		transform: scale(1.1);
-	}
-
-	.button:active {
-		transform: scale(0.9);
 	}
 </style>
