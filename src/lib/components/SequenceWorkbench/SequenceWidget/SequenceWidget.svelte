@@ -43,7 +43,7 @@
 	.left-vbox {
 		display: flex;
 		flex-direction: column;
-		flex: 16;
+		flex: 9;
 		height: 100%;
 		min-height: 0;
 	}

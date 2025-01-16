@@ -96,7 +96,8 @@
 	}
 
 	.menuBar {
-		flex: 0 0 auto;
+		flex: 0 0 auto;   /* or simply "flex: none;" */
+
 		z-index: 1;
 	}
 
