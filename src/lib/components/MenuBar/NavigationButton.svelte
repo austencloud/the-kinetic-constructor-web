@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { browser } from '$app/environment'; // Import the browser environment check from SvelteKit
+	import { browser } from '$app/environment';
 
-	export let isMobile: boolean = false; // Default value for SSR
+	export let isMobile: boolean = false; 
 	export let isActive: boolean = false;
 	export let onClick: () => void;
 
@@ -10,9 +10,8 @@
 	let buttonWidth: number = 120;
 	let buttonHeight: number = 40;
 
-	// Dynamically update button styles
 	function updateButtonStyles() {
-		if (!browser) return; // Only run in the browser
+		if (!browser) return;
 		const w = window.innerWidth;
 		const h = window.innerHeight;
 
@@ -28,7 +27,7 @@
 	}
 
 	onMount(() => {
-		if (!browser) return; // Skip this block if running SSR
+		if (!browser) return;
 		updateButtonStyles();
 		window.addEventListener('resize', updateButtonStyles);
 	});
@@ -39,16 +38,13 @@
 	});
 </script>
 
-<!-- Button component -->
 <button
 	on:click={onClick}
 	class={isActive ? 'active' : 'inactive'}
-	style="
-		font-size: {fontSize}px;
-		width: {buttonWidth}px;
-		height: {buttonHeight}px;
-		{isMobile ? 'border-radius: 50%;' : 'border-radius: 10px;'}
-	"
+	style="font-size: {fontSize}px; 
+	       width: {buttonWidth}px; 
+	       height: {buttonHeight}px; 
+	       {isMobile ? 'border-radius: 50%;' : 'border-radius: 10px;'}"
 >
 	<slot />
 </button>

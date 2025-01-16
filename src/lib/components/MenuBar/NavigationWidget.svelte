@@ -2,7 +2,7 @@
 	import NavigationButton from './NavigationButton.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { onMount, onDestroy } from 'svelte';
-	import { browser } from '$app/environment'; // Import browser check from SvelteKit
+	import { browser } from '$app/environment';
 
 	const dispatch = createEventDispatcher();
 
@@ -12,17 +12,16 @@
 	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
 	const tabEmojis = ['⚒️', '🤖', '🔍', '🧠', '✍️'];
 
-	let isMobile: boolean;
+	let isMobile = false;
 
 	/**
-	 * Update `isMobile` based on orientation or viewport size.
+	 * Update `isMobile` based on screen width.
 	 * This runs only in the browser.
 	 */
 	function checkMobile() {
-		if (!browser) return; // Only run in the browser
+		if (!browser) return;
 		const w = window.innerWidth;
-		const h = window.innerHeight;
-		isMobile = h > w; // Portrait orientation
+		isMobile = w <= 768; // Set a max-width threshold for mobile devices
 	}
 
 	function handleTabClick(index: number) {
@@ -32,13 +31,13 @@
 	}
 
 	onMount(() => {
-		if (!browser) return; // Skip for SSR
+		if (!browser) return;
 		checkMobile();
 		window.addEventListener('resize', checkMobile);
 	});
 
 	onDestroy(() => {
-		if (!browser) return; // Skip for SSR
+		if (!browser) return;
 		window.removeEventListener('resize', checkMobile);
 	});
 </script>
