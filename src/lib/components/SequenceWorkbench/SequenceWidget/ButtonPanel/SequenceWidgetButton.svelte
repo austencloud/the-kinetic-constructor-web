@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { onMount } from 'svelte';
 
 	export let icon: string;
 	export let title: string;
@@ -45,11 +45,7 @@
 	on:mouseup={handleMouseUp}
 	{title}
 >
-	<img
-		src={icon}
-		alt={title}
-		class:is-mobile={isMobile}
-	/>
+	<img src={icon} alt={title} class:is-mobile={isMobile} />
 </button>
 
 <style>
@@ -66,14 +62,14 @@
 	}
 
 	.button img {
-		width: 80%; /* Default size for icons */
-		height: 80%;
-		object-fit: contain;
-		transition: width 0.2s, height 0.2s;
+		width: 70%;
+		height: 70%;
+		max-width: none;
+		max-height: none;
 	}
 
 	.button img.is-mobile {
-		width: 100%; /* Larger icon size for mobile */
-		height: 100%;
+		width: 80%; /* Larger icon size for mobile */
+		height: 80%;
 	}
 </style>
