@@ -87,6 +87,7 @@
 		justify-content: center;
 		align-items: center;
 		gap: 8px;
+		flex:1
 	}
 
 	.button-panel.vertical {

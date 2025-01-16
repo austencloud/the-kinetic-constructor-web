@@ -62,10 +62,11 @@
 	}
 
 	.button img {
-		width: 70%;
-		height: 70%;
-		max-width: none;
-		max-height: none;
+		width: 100%; /* Fully fill the button size */
+		height: 100%;
+		object-fit: contain; /* Prevent distortion */
+		max-width: inherit; /* Ensure scaling doesn't exceed its container */
+		max-height: inherit;
 	}
 
 	.button img.is-mobile {
