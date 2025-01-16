@@ -93,7 +93,7 @@
 		height: 100%;
 		width: 100%;
 		min-height: 0;
-		flex:8
+		flex:7
 	}
 
 	.sequence-widget-labels {

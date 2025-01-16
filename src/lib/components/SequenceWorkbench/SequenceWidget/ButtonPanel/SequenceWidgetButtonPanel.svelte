@@ -59,11 +59,7 @@
 	$: updateButtonSize();
 
 	const buttons = [
-		{
-			icon: '/button_panel_icons/add_to_dictionary.png',
-			title: 'Add to Dictionary',
-			id: 'addToDictionary'
-		},
+		{ icon: '/button_panel_icons/add_to_dictionary.png', title: 'Add to Dictionary', id: 'addToDictionary' },
 		{ icon: '/button_panel_icons/save_image.png', title: 'Save Image', id: 'saveImage' },
 		{ icon: '/button_panel_icons/eye.png', title: 'View Full Screen', id: 'viewFullScreen' },
 		{ icon: '/button_panel_icons/mirror.png', title: 'Mirror Sequence', id: 'mirrorSequence' },
@@ -91,8 +87,7 @@
 		justify-content: center;
 		align-items: center;
 		gap: 8px;
-		flex: 1;
-		width: 100%;
+		flex:1
 	}
 
 	.button-panel.vertical {
