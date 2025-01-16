@@ -1,46 +1,56 @@
 <script lang="ts">
 	import NavigationButton from './NavigationButton.svelte';
 	import { createEventDispatcher } from 'svelte';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	const dispatch = createEventDispatcher();
 
-	export const onTabChange: (index: number) => void = () => {};
+	export let onTabChange: (index: number) => void = () => {};
 	let activeTab = 0;
-	const tabNames = ['Construct ⚒️', 'Generate 🤖', 'Browse 🔍', 'Learn 🧠', 'Write ✍️'];
+
+	// Remove emojis from `tabNames`
+	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
 	const tabEmojis = ['⚒️', '🤖', '🔍', '🧠', '✍️'];
+
 	let isMobile = false;
 
-	onMount(() => {
-		const checkMobile = () => {
-			isMobile = window.innerWidth <= 768;
-		};
+	function checkMobile() {
+		isMobile = window.innerWidth <= 768;
+	}
 
+	onMount(() => {
 		checkMobile();
 		window.addEventListener('resize', checkMobile);
-
-		return () => {
-			window.removeEventListener('resize', checkMobile);
-		};
 	});
 
-	const handleTabClick = (index: number) => {
+	onDestroy(() => {
+		window.removeEventListener('resize', checkMobile);
+	});
+
+	function handleTabClick(index: number) {
 		activeTab = index;
 		dispatch('tabChange', index);
-	};
+		onTabChange(index);
+	}
 </script>
-
 <div class="nav-container">
 	{#each tabNames as name, index}
-		<NavigationButton {name} isActive={index === activeTab} onClick={() => handleTabClick(index)}>
+		<NavigationButton
+			isMobile={isMobile}
+			isActive={index === activeTab}
+			onClick={() => handleTabClick(index)}
+		>
 			{#if isMobile}
+				<!-- On mobile, just the emoji -->
 				{tabEmojis[index]}
 			{:else}
-				{name}
+				<!-- On desktop, word + emoji -->
+				{name} {tabEmojis[index]}
 			{/if}
 		</NavigationButton>
 	{/each}
 </div>
+
 
 <style>
 	.nav-container {
