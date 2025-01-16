@@ -44,8 +44,8 @@
 	}
 
 	.button img {
-		width: 70%;
-		height: 70%;
+		width: 90%; /* Scale up closer to the full button size */
+		height: 90%;
 		object-fit: contain;
 	}
 </style>

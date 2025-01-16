@@ -132,10 +132,12 @@
 			flex-direction: column;
 		}
 		.sequenceWorkbenchContainer {
-			flex:3
+			flex:3;
+			height:75%
 		}
 		.optionPickerContainer {
-			flex:1
+			flex:1;
+			height:25%
 		}
 	}
 	
@@ -144,10 +146,12 @@
 			flex-direction: row;
 		}
 		.sequenceWorkbenchContainer {
-			flex:1
+			flex:1;
+			width:50%
 		}
 		.optionPickerContainer {
-			flex:1
+			flex:1;
+			width:50%
 		}
 
 	}
