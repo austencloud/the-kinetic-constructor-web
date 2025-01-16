@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { parseTurnsValue, displayTurnsValue } from './turnsUtils';
-	import DirectSetTurnsDialog from '../DirectSetTurnsDialog.svelte';
 
 	export let turns: string | number = 0;
 	export let color: 'blue' | 'red' = 'blue';

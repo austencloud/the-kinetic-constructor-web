@@ -1,24 +1,40 @@
-<script>
+<script lang="ts">
+	import { onMount } from 'svelte';
 	import IndicatorLabel from './Labels/IndicatorLabel.svelte';
 	import CurrentWordLabel from './Labels/CurrentWordLabel.svelte';
 	import DifficultyLabel from './Labels/DifficultyLabel.svelte';
 	import BeatFrame from './BeatFrame/BeatFrame.svelte';
 	import SequenceWidgetButtonPanel from './ButtonPanel/SequenceWidgetButtonPanel.svelte';
-	// 2) Decide how many to show at once
+
+	let width = 0;
+
+	onMount(() => {
+		const resizeObserver = new ResizeObserver(entries => {
+			for (let entry of entries) {
+				width = entry.contentRect.width;
+			}
+		});
+		const element = document.querySelector('.sequence-widget');
+		if (element) {
+			resizeObserver.observe(element);
+		}
+
+		return () => resizeObserver.disconnect();
+	});
 </script>
 
 <div class="sequence-widget">
 	<div class="main-layout">
 		<div class="left-vbox">
 			<div class="sequence-widget-labels">
-				<CurrentWordLabel currentWord="Word:" />
-				<DifficultyLabel difficultyLevel={3} />
+				<CurrentWordLabel currentWord="Word:" width={width} />
+				<DifficultyLabel difficultyLevel={3} width={width} />
 			</div>
 			<div class="beat-frame-container">
 				<BeatFrame />
 			</div>
-			<div class="indicator-label">
-				<IndicatorLabel />
+			<div class="indicator-label-container">
+				<IndicatorLabel width={width} />
 			</div>
 		</div>
 		<SequenceWidgetButtonPanel />
@@ -63,7 +79,7 @@
 		flex-direction: column;
 	}
 
-	.indicator-label {
+	.indicator-label-container {
 		display: flex;
 		flex-direction: column;
 		justify-content: space-around;

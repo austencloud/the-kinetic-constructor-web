@@ -1,17 +1,19 @@
 <script>
-  export let type = "Pro"; // Default motion type
+	export let type = 'Pro'; // Default motion type
+	export let width = 100; // Default width
+
+	// Calculate font size based on width with a minimum value of 20px
+	$: fontSize = Math.max(width / 12, 20) + 'px';
 </script>
 
-<style>
-  .motion-type-label {
-    font-size: 1rem;
-    font-style: italic;
-    text-align: center;
-    color: black;
-    font-size: 1.8em;
-  }
-</style>
-
-<div class="motion-type-label">
-  {type}
+<div class="motion-type-label" style="font-size: {fontSize};">
+	{type}
 </div>
+
+<style>
+	.motion-type-label {
+		font-style: italic;
+		text-align: center;
+		color: black;
+	}
+</style>

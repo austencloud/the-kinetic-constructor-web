@@ -6,11 +6,15 @@
 	export let color: 'blue' | 'red' = 'blue';
 	export let turns: number | string;
 	export let onOpenDialog: () => void;
+	export let width: number;
 
 	let numericTurns = 0;
 
 	// Keep the numeric version
 	$: numericTurns = parseTurnsValue(turns);
+
+	// Calculate font size based on width with a minimum value of 20px
+	$: fontSize = Math.min(width / 20, 20) + 'px';
 
 	/**
 	 * adjustTurns: add or subtract 0.5, then clamp to -0.5..3
@@ -28,7 +32,7 @@
 	function decrementTurns() { adjustTurns(-0.5); }
 </script>
 
-<div class="turns-display-frame">
+<div class="turns-display-frame" style="font-size: {fontSize};">
 	<!-- Decrement button: disable if numericTurns <= -0.5 (i.e. "fl") -->
 	<IncrementButton
 		type="decrement"

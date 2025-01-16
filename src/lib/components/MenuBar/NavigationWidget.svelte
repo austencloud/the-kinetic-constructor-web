@@ -16,7 +16,7 @@
 
 	function checkMobile() {
 		if (typeof window !== 'undefined') {
-			isMobile = window.innerWidth <= 768;
+			isMobile = window.matchMedia("(orientation: portrait)").matches;
 		}
 	}
 
