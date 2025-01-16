@@ -3,6 +3,7 @@
 	import pictographDataStore from '$lib/stores/pictographDataStore';
 	import { writable } from 'svelte/store';
 	import { onMount } from 'svelte';
+	import StartPositionLabel from './StartPosLabel.svelte'; // Import the new component
 
 	// Store for selected start position
 	export const selectedStartPos = writable<Record<string, any> | null>(null);
@@ -47,8 +48,8 @@
 	});
 </script>
 
-<div class="wrapper">
-	<div class="label">Choose your start position!</div>
+<div class="start-pos-picker">
+	<StartPositionLabel />
 	<div class="pictograph-container" bind:this={container}>
 		{#if startPositions.length > 0}
 			{#each startPositions as position}
@@ -67,23 +68,14 @@
 </div>
 
 <style>
-	.wrapper {
+	.start-pos-picker {
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
 		height: 100%;
 		width: 100%;
-	}
-
-	.label {
-		margin-bottom: 10%;
-		font-size: 4vh;
-		font-family: 'Monotype Corsiva', cursive;
-		background-color: rgba(255, 255, 255, 0.5);
-		border-radius: 40px;
-		padding: 10px 20px;
-		text-align: center;
+		margin-bottom: 5%
 	}
 
 	.pictograph-container {

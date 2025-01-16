@@ -19,11 +19,11 @@
 	// Update button size dynamically
 	function updateButtonSize() {
 		if (isMobile) {
-			buttonSize = Math.max(20, containerWidth / 12); // Smaller size for mobile
+			buttonSize = Math.max(50, Math.min(60, containerWidth / 10)); // Smaller size for mobile
 		} else if (isPortrait) {
-			buttonSize = Math.max(40, containerWidth / 10); // Horizontal layout
+			buttonSize = Math.max(50, Math.min(60, containerWidth / 10)); // Portrait layout
 		} else {
-			buttonSize = Math.max(40, containerHeight / 14); // Vertical layout
+			buttonSize = Math.max(50, Math.min(60, containerHeight / 14)); // Landscape layout
 		}
 	}
 

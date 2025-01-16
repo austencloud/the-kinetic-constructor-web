@@ -3,7 +3,7 @@
 	export let width = 100; // Default width
 
 	$: difficultyText = `Level ${difficultyLevel}`;
-	$: fontSize = `${width / 80}px`; // Calculate font size based on width
+	$: fontSize = Math.max(width / 80, 16) + 'px'; // Calculate font size based on width with a minimum of 16px (1rem)
 </script>
 
 <div class="difficulty-label" style="font-size: {fontSize};">

@@ -1,29 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-
-	export let icon: string;
-	export let title: string;
-	export let buttonSize: number = 50; // Default size
-	export let onClick: () => void;
+	export let icon;
+	export let title;
+	export let buttonSize;
+	export let onClick;
 
 	let isHovered = false;
 	let isClicked = false;
-	let isMobile = false;
-
-	// Detect mobile devices
-	function updateIsMobile() {
-		isMobile = window.innerWidth <= 768; // Example threshold for mobile
-	}
-
-	// Add event listener for resizing
-	onMount(() => {
-		updateIsMobile();
-		window.addEventListener('resize', updateIsMobile);
-
-		return () => {
-			window.removeEventListener('resize', updateIsMobile);
-		};
-	});
 
 	const handleMouseEnter = () => (isHovered = true);
 	const handleMouseLeave = () => (isHovered = false);
@@ -37,7 +19,10 @@
 		width: {buttonSize}px;
 		height: {buttonSize}px;
 		background-color: {isHovered ? '#f0f0f0' : 'white'};
-		transform: {isClicked ? 'scale(0.9)' : isHovered ? 'scale(1.1)' : 'scale(1)'};"
+		transform: {isClicked ? 'scale(0.9)' : isHovered ? 'scale(1.1)' : 'scale(1)'};
+		box-shadow: {isClicked
+			? 'inset 0px 2px 4px rgba(0, 0, 0, 0.2)'
+			: '0px 2px 4px rgba(0, 0, 0, 0.1)'};"
 	on:click={onClick}
 	on:mouseenter={handleMouseEnter}
 	on:mouseleave={handleMouseLeave}
@@ -45,32 +30,32 @@
 	on:mouseup={handleMouseUp}
 	{title}
 >
-	<img src={icon} alt={title} class:is-mobile={isMobile} />
+	<img src={icon} alt={title} />
 </button>
 
 <style>
 	.button {
-		border-radius: 50%;
-		border: 1px solid #ccc;
-		cursor: pointer;
-		transition: all 0.2s ease;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		aspect-ratio: 1 / 1; /* Always maintain circular shape */
+		border-radius: 50%;
+		border: 1px solid #ccc;
+		cursor: pointer;
 		box-sizing: border-box;
+		padding: 0;
+		transition: background-color 0.2s, transform 0.2s;
+		transition-duration: 0.1s;
+		aspect-ratio: 1 / 1;
+		
 	}
 
 	.button img {
-		width: 100%; /* Fully fill the button size */
-		height: 100%;
-		object-fit: contain; /* Prevent distortion */
-		max-width: inherit; /* Ensure scaling doesn't exceed its container */
-		max-height: inherit;
+		width: 70%;
+		height: 70%;
+		object-fit: contain;
 	}
 
-	.button img.is-mobile {
-		width: 80%; /* Larger icon size for mobile */
-		height: 80%;
+	.button:active {
+		transform: scale(0.9);
 	}
 </style>
