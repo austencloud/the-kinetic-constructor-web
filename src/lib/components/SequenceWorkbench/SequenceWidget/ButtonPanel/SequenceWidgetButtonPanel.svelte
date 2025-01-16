@@ -9,21 +9,28 @@
 
 	let buttonSize = 60; // Default size
 	let panelRef: HTMLElement | null = null;
+	let isMobile: boolean = false;
 
 	// Update button size dynamically
 	function updateButtonSize() {
-		if (isPortrait) {
+		if (isMobile) {
+			// Smaller sizes for mobile
+			buttonSize = Math.max(20, containerWidth / 12); // Reduce size slightly for mobile
+		} else if (isPortrait) {
 			buttonSize = Math.max(25, containerWidth / 10); // Horizontal layout
 		} else {
-			buttonSize =Math.max(25, containerHeight / 14); // Vertical layout
+			buttonSize = Math.max(25, containerHeight / 14); // Vertical layout
 		}
 	}
 
+	function updateIsMobile() {
+		isMobile = window.innerWidth <= 768; // Example threshold for mobile
+	}
 	// ResizeObserver to dynamically track container size
 	let resizeObserver: ResizeObserver | undefined;
 	onMount(() => {
 		if (panelRef) {
-			resizeObserver = new ResizeObserver(entries => {
+			resizeObserver = new ResizeObserver((entries) => {
 				for (const entry of entries) {
 					if (entry.contentBoxSize) {
 						const size = Array.isArray(entry.contentBoxSize)
@@ -40,6 +47,12 @@
 			});
 			resizeObserver.observe(panelRef);
 		}
+		updateIsMobile();
+		window.addEventListener('resize', updateIsMobile);
+
+		return () => {
+			window.removeEventListener('resize', updateIsMobile);
+		};
 	});
 
 	onDestroy(() => {
@@ -50,7 +63,11 @@
 	$: updateButtonSize();
 
 	const buttons = [
-		{ icon: '/button_panel_icons/add_to_dictionary.png', title: 'Add to Dictionary', id: 'addToDictionary' },
+		{
+			icon: '/button_panel_icons/add_to_dictionary.png',
+			title: 'Add to Dictionary',
+			id: 'addToDictionary'
+		},
 		{ icon: '/button_panel_icons/save_image.png', title: 'Save Image', id: 'saveImage' },
 		{ icon: '/button_panel_icons/eye.png', title: 'View Full Screen', id: 'viewFullScreen' },
 		{ icon: '/button_panel_icons/mirror.png', title: 'Mirror Sequence', id: 'mirrorSequence' },
@@ -79,7 +96,7 @@
 		align-items: center;
 		gap: 8px;
 		width: 100%;
-		flex:1
+		flex: 1;
 	}
 
 	.button-panel.vertical {
