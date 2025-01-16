@@ -17,14 +17,14 @@
 
 			if (isMobile) {
 				// Mobile: circle shape
-				buttonWidth = Math.max(60, w / 8);
+				buttonWidth = Math.max(50, w / 16);
 				buttonHeight = buttonWidth; // Circle => width = height
 				fontSize = buttonWidth * 0.5; // Emoji size
 			} else {
 				// Desktop: rectangle shape
-				buttonWidth = Math.max(120, w / 10);
+				buttonWidth = Math.max(120, w / 8);
 				buttonHeight = Math.max(40, h / 20);
-				fontSize = Math.max(14, h / 50);
+				fontSize = Math.max(16, w / 70);
 			}
 		}
 	}

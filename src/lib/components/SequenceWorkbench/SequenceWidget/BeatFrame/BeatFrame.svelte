@@ -101,7 +101,7 @@
 		align-content: center;
 		width: 100%;
 		height: 100%;
-		padding: 2%;
+		padding: 1%;
 		min-height: 0;
 		background-color: transparent;
 		box-sizing: border-box;

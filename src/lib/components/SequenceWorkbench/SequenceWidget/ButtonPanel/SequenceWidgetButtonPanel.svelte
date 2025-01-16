@@ -3,7 +3,12 @@
 	import SequenceWidgetButton from './SequenceWidgetButton.svelte';
 
 	let panelRef: HTMLDivElement | null = null;
+
+	// We keep a fixed buttonSize if you want or no dynamic logic for the button size.
 	let buttonSize = 60;
+
+	// Here’s the dynamic gap state:
+	let panelGap = 8; // some default (px or so)
 
 	const iconRoot = '/button_panel_icons/';
 	const buttons = [
@@ -17,50 +22,47 @@
 		{ icon: `${iconRoot}clear.png`, title: 'Clear Sequence', id: 'clearSequence' }
 	];
 
-	// We'll observe the parent container's size changes
 	let resizeObserver: ResizeObserver | undefined;
 
-	function updateButtonSize(containerHeight: number) {
+	function updateGap(containerHeight: number) {
+		// For example: let the gap be 1/10 of container height
+		panelGap = Math.floor(containerHeight / 30);
 
-		buttonSize = containerHeight / 12;
+		// If you want a minimum/maximum clamp:
+		// panelGap = Math.max(5, Math.min(20, containerHeight / 10));
 	}
 
 	onMount(() => {
-		// If you only want a one-time measurement, you could do:
-		// updateButtonSize(panelRef?.clientHeight || 0);
-
-		// But to adapt to parent resizing, use a ResizeObserver:
 		if (panelRef) {
 			resizeObserver = new ResizeObserver(entries => {
 				for (const entry of entries) {
+					let containerHeight = 0;
 					if (entry.contentBoxSize) {
-						// contentBoxSize might be an array, so handle the first item
-						const cs = Array.isArray(entry.contentBoxSize) ? entry.contentBoxSize[0] : entry.contentBoxSize;
-						const containerHeight = cs.blockSize;
-						updateButtonSize(containerHeight);
+						const cs = Array.isArray(entry.contentBoxSize)
+							? entry.contentBoxSize[0]
+							: entry.contentBoxSize;
+						containerHeight = cs.blockSize;
 					} else {
-						// fallback for older browsers:
 						const rect = entry.contentRect;
-						updateButtonSize(rect.height);
+						containerHeight = rect.height;
 					}
+					updateGap(containerHeight);
 				}
 			});
 			resizeObserver.observe(panelRef);
 		}
-
 		return () => {
-			// Cleanup
 			resizeObserver?.disconnect();
 		};
 	});
 </script>
 
-<div class="button-panel" bind:this={panelRef}>
+<div class="button-panel" bind:this={panelRef} style="--panel-gap: {panelGap}px;">
 	{#each buttons as button}
 		<SequenceWidgetButton
 			icon={button.icon}
 			title={button.title}
-			{buttonSize}
+			buttonSize={buttonSize}
 			onClick={() => console.log(`${button.title} clicked`)}
 		/>
 	{/each}
@@ -73,11 +75,11 @@
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		gap: 3%;
+		/* Instead of gap: 3%, we do a dynamic gap from CSS var */
+		gap: var(--panel-gap, 8px);
 		position: relative;
 		z-index: 1;
-
-		/* If the container is the entire parent, 
-		   ensure it has some defined height or is in a flex layout. */
+		/* ensure some height if needed */
+		min-height: 0;
 	}
 </style>
