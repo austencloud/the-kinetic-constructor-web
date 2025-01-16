@@ -2,12 +2,16 @@
 	import Pictograph from '../Pictograph/Pictograph.svelte';
 	import pictographDataStore from '$lib/stores/pictographDataStore';
 	import { writable } from 'svelte/store';
+	import { onMount } from 'svelte';
 
 	// Store for selected start position
 	export const selectedStartPos = writable<Record<string, any> | null>(null);
 
 	let startPositions: Record<string, any>[] = [];
 	let gridMode = 'diamond'; // Default grid mode (can be dynamic)
+
+	// Store for container width
+	const containerWidth = writable<number>(0);
 
 	// Filter pictographs for start positions based on grid mode
 	pictographDataStore.subscribe((data) => {
@@ -25,11 +29,27 @@
 	const handleSelect = (position: Record<string, any>) => {
 		selectedStartPos.set(position);
 	};
+
+	// Update container width on mount and resize
+	let container: HTMLDivElement;
+	const updateWidth = () => {
+		if (container) {
+			containerWidth.set(container.clientWidth);
+		}
+	};
+
+	onMount(() => {
+		updateWidth();
+		window.addEventListener('resize', updateWidth);
+		return () => {
+			window.removeEventListener('resize', updateWidth);
+		};
+	});
 </script>
 
 <div class="wrapper">
 	<div class="label">Choose your start position!</div>
-	<div class="pictograph-container">
+	<div class="pictograph-container" bind:this={container}>
 		{#if startPositions.length > 0}
 			{#each startPositions as position}
 				<Pictograph
@@ -58,7 +78,7 @@
 
 	.label {
 		margin-bottom: 10%;
-		font-size: 5vh; /* Font size relative to window width */
+		font-size: 4vh; /* Font size relative to window width */
 		font-family: 'Monotype Corsiva', cursive;
 		background-color: rgba(255, 255, 255, 0.5); /* Translucent background */
 		border-radius: 40px; /* Adjust as needed */
@@ -73,13 +93,13 @@
 		align-items: center;
 
 		/* The container’s width is 70% (already in your code).
-     If you want them to be all in one row, make sure the container is wide enough. */
+	 If you want them to be all in one row, make sure the container is wide enough. */
 		width: 70%;
 		/* If you always want them to fit horizontally, let height be auto. */
 		height: auto;
 
 		/* If you also want them to wrap on smaller screens, keep flex-wrap. 
-     But if you want EXACTLY one row, remove flex-wrap or set it to nowrap. */
+	 But if you want EXACTLY one row, remove flex-wrap or set it to nowrap. */
 		flex-wrap: nowrap; /* or remove 'wrap' entirely */
 		gap: 3%;
 	}

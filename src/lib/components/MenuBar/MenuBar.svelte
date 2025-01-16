@@ -22,17 +22,17 @@
   
   <header class="menu-bar">
 	<!-- Left placeholder sized like the SettingsButton -->
-	<SettingsPlaceholder />
+	<SettingsButton
+	{background}
+	{onChangeBackground}
+	on:click={handleSettingsClick}
+	/>
 	
 	<!-- Navigation in the middle -->
 	<NavigationWidget on:tabChange={(e) => handleTabChange(e.detail)} />
+		<SettingsPlaceholder />
 	
 	<!-- Real SettingsButton on the right -->
-	<SettingsButton
-	  {background}
-	  {onChangeBackground}
-	  on:click={handleSettingsClick}
-	/>
   </header>
   
   <style>
