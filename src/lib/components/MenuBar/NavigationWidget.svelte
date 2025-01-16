@@ -15,16 +15,22 @@
 	let isMobile = false;
 
 	function checkMobile() {
-		isMobile = window.innerWidth <= 768;
+		if (typeof window !== 'undefined') {
+			isMobile = window.innerWidth <= 768;
+		}
 	}
 
 	onMount(() => {
 		checkMobile();
-		window.addEventListener('resize', checkMobile);
+		if (typeof window !== 'undefined') {
+			window.addEventListener('resize', checkMobile);
+		}
 	});
 
 	onDestroy(() => {
-		window.removeEventListener('resize', checkMobile);
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('resize', checkMobile);
+		}
 	});
 
 	function handleTabClick(index: number) {
@@ -50,7 +56,6 @@
 		</NavigationButton>
 	{/each}
 </div>
-
 
 <style>
 	.nav-container {

@@ -5,6 +5,7 @@
 	import OptionPicker from '../OptionPicker/OptionPicker.svelte';
 	import SnowfallBackground from '../Backgrounds/SnowfallBackground.svelte';
 	import SettingsDialog from '../SettingsDialog/SettingsDialog.svelte';
+	import FullScreen from '$lib/FullScreen.svelte';
 
 	import { writable } from 'svelte/store';
 	import { selectedStartPos } from '../../stores/constructStores';
@@ -14,8 +15,17 @@
 
 	onMount(() => {
 		loadPictographData(); // Initialize pictograph data
-	});
+		function updateHeight() {
+			dynamicHeight = `${window.innerHeight}px`;
+		}
+		window.addEventListener('resize', updateHeight);
+		updateHeight();
 
+		return () => {
+			window.removeEventListener('resize', updateHeight);
+		};
+	});
+	let dynamicHeight = '100vh';
 	// State management
 	let isSettingsDialogOpen = false;
 	let background = 'Snowfall';
@@ -37,53 +47,62 @@
 </script>
 
 <div id="main-widget">
-	<div class="background">
-		<SnowfallBackground />
-	</div>
+	<FullScreen>
+		<div id="content-wrapper">
 
-	<div class="menuBar">
-		<MenuBar
-			{background}
-			on:tabChange={handleTabChange}
-			on:settingsClick={handleSettingsClick}
-			on:changeBackground={(e) => updateBackground(e.detail)}
-		/>
-	</div>
-
-	<div class="mainContent">
-		<div class="sequenceWorkbenchContainer">
-			<SequenceWidget />
+		<div class="background">
+			<SnowfallBackground />
 		</div>
 
-		<div class="optionPickerContainer">
-			{#if $selectedStartPos}
-				<OptionPicker />
-			{:else}
-				<StartPosPicker />
-			{/if}
+		<div class="menuBar">
+			<MenuBar
+				{background}
+				on:tabChange={handleTabChange}
+				on:settingsClick={handleSettingsClick}
+				on:changeBackground={(e) => updateBackground(e.detail)}
+			/>
 		</div>
-	</div>
 
-	<!-- Settings Dialog -->
-	{#if isSettingsDialogOpen}
-		<SettingsDialog
-			isOpen={isSettingsDialogOpen}
-			{background}
-			onChangeBackground={updateBackground}
-			onClose={() => (isSettingsDialogOpen = false)}
-		/>
-	{/if}
+		<div class="mainContent">
+			<div class="sequenceWorkbenchContainer">
+				<SequenceWidget />
+			</div>
+
+			<div class="optionPickerContainer">
+				{#if $selectedStartPos}
+					<OptionPicker />
+				{:else}
+					<StartPosPicker />
+				{/if}
+			</div>
+		</div>
+
+		<!-- Settings Dialog -->
+		{#if isSettingsDialogOpen}
+			<SettingsDialog
+				isOpen={isSettingsDialogOpen}
+				{background}
+				onChangeBackground={updateBackground}
+				onClose={() => (isSettingsDialogOpen = false)}
+			/>
+		{/if}
+	</div>
+	</FullScreen>
 </div>
 
 <style>
 	#main-widget {
-		height: 100%;
+		height: var(--dynamicHeight, 100vh); /* Fallback to 100vh */
 		display: flex;
 		flex-direction: column;
 		position: relative;
 		color: light-dark(black, white);
 	}
-
+	#content-wrapper {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+	}
 	.background {
 		position: absolute;
 		top: 0;
@@ -94,15 +113,14 @@
 	}
 
 	.menuBar {
-		flex: 0 0 auto;   /* or simply "flex: none;" */
-
+		flex: 0 0 auto; /* or simply "flex: none;" */
 		z-index: 1;
 	}
 
 	.mainContent {
 		flex: 1;
 		display: flex;
-		overflow: hidden;
+		overflow: auto; /* Allow overflow */
 		position: relative;
 		z-index: 0;
 		height: 100%;

@@ -9,6 +9,7 @@
 	let buttonWidth: number;
 	let buttonHeight: number;
 
+	// Update button styles dynamically based on window dimensions
 	function updateButtonStyles() {
 		if (typeof window !== 'undefined') {
 			const w = window.innerWidth;
@@ -16,13 +17,11 @@
 
 			if (isMobile) {
 				// Mobile: circle shape
-				// let’s pick a target diameter
 				buttonWidth = Math.max(60, w / 8);
-				buttonHeight = buttonWidth;     // circle => width = height
-				fontSize = buttonWidth * 0.5;   // large enough for the emoji
+				buttonHeight = buttonWidth; // Circle => width = height
+				fontSize = buttonWidth * 0.5; // Emoji size
 			} else {
 				// Desktop: rectangle shape
-				// let’s pick some logic for a comfortable size
 				buttonWidth = Math.max(120, w / 10);
 				buttonHeight = Math.max(40, h / 20);
 				fontSize = Math.max(14, h / 50);
@@ -30,30 +29,30 @@
 		}
 	}
 
+	// Run the updateButtonStyles only in the browser
 	onMount(() => {
 		updateButtonStyles();
-		window.addEventListener('resize', updateButtonStyles);
+		if (typeof window !== 'undefined') {
+			window.addEventListener('resize', updateButtonStyles);
+		}
 	});
 
 	onDestroy(() => {
-		window.removeEventListener('resize', updateButtonStyles);
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('resize', updateButtonStyles);
+		}
 	});
 </script>
 
+<!-- Button component -->
 <button
 	on:click={onClick}
 	class={isActive ? 'active' : 'inactive'}
-	style="
-		font-size: {fontSize}px;
-		width: {buttonWidth}px;
-		height: {buttonHeight}px;
-		{isMobile
-			? 'border-radius: 50%;'
-			: 'border-radius: 10px;'
-		}
-	"
+	style="font-size: {fontSize}px;
+	       width: {buttonWidth}px;
+	       height: {buttonHeight}px;
+	       {isMobile ? 'border-radius: 50%;' : 'border-radius: 10px;'}"
 >
-	<!-- The slot contains either just the emoji (mobile) or text+emoji (desktop) -->
 	<slot />
 </button>
 
@@ -63,7 +62,6 @@
 		border: 1px solid gray;
 		cursor: pointer;
 		transition: all 0.3s ease, transform 0.2s ease;
-		transition-duration: 0.4s;
 		display: flex;
 		justify-content: center;
 		align-items: center;
