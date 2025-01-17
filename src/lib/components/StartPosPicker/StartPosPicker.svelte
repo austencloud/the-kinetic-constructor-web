@@ -3,19 +3,20 @@
 	import pictographDataStore from '$lib/stores/pictographDataStore';
 	import { writable } from 'svelte/store';
 	import { onMount } from 'svelte';
-	import StartPositionLabel from './StartPosLabel.svelte'; // Import the new component
+	import StartPositionLabel from './StartPosLabel.svelte';
 
-	// Store for selected start position
 	export const selectedStartPos = writable<Record<string, any> | null>(null);
 
 	let startPositions: Record<string, any>[] = [];
-	let gridMode = 'diamond'; // Default grid mode (can be dynamic)
+	let gridMode = 'diamond';
 
-	// Store for container width
 	const containerWidth = writable<number>(0);
 
-	// Filter pictographs for start positions based on grid mode
 	pictographDataStore.subscribe((data) => {
+		if (!Array.isArray(data)) {
+			console.error('Invalid pictograph data:', data);
+			return;
+		}
 		const defaultStartPosKeys =
 			gridMode === 'diamond'
 				? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
@@ -24,14 +25,13 @@
 		startPositions = data.filter((entry) =>
 			defaultStartPosKeys.includes(`${entry.start_pos}_${entry.end_pos}`)
 		);
+		console.log('Filtered start positions:', startPositions);
 	});
 
-	// Handle user selection
 	const handleSelect = (position: Record<string, any>) => {
 		selectedStartPos.set(position);
 	};
 
-	// Update container width on mount and resize
 	let container: HTMLDivElement;
 	const updateWidth = () => {
 		if (container) {

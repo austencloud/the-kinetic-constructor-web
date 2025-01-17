@@ -55,12 +55,10 @@
 
 	function updateCellSize() {
 		cellSize = calculateCellSize(frameWidth, frameHeight, beatRows, beatCols + 1, gap);
-		console.log('new cellSize =>', cellSize);
 	}
 
 	function handleBeatClick(beat: BeatData) {
 		beat.filled = !beat.filled;
-		console.log(`Beat #${beat.id} => filled? ${beat.filled}`);
 	}
 </script>
 

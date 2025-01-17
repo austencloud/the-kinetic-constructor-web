@@ -16,11 +16,24 @@
 	let isSettingsDialogOpen = false;
 	let isFullScreen = false;
 	let background = 'Snowfall';
+
+	// Placeholder for pictograph data
+	let pictographData: any;
+
 	onMount(() => {
-		loadPictographData(); // Initialize pictograph data
+		loadPictographData()
+			.then((data) => {
+				pictographData = data;
+				console.log('Loaded Pictograph Data:', pictographData); // Debug output
+			})
+			.catch((err) => {
+				console.error('Error loading pictograph data:', err);
+			});
+
 		function updateHeight() {
 			dynamicHeight = `${window.innerHeight}px`;
 		}
+
 		window.addEventListener('resize', updateHeight);
 		updateHeight();
 
@@ -28,6 +41,7 @@
 			window.removeEventListener('resize', updateHeight);
 		};
 	});
+
 	const backgroundStore = writable('Snowfall');
 	backgroundStore.subscribe((value) => (background = value));
 
@@ -93,6 +107,7 @@
 		</div>
 	</FullScreen>
 </div>
+
 <style>
 	#main-widget {
 		height: var(--dynamicHeight, 100vh); /* Fallback to 100vh */
