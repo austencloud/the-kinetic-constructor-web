@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 
-	export let isMobile: boolean = false; 
+	export let isMobile: boolean = false;
 	export let isActive: boolean = false;
 	export let onClick: () => void;
 
@@ -10,28 +10,35 @@
 	let buttonWidth: number = 120;
 	let buttonHeight: number = 40;
 
+	// Update button styles dynamically
 	function updateButtonStyles() {
 		if (!browser) return;
-		const w = window.innerWidth;
-		const h = window.innerHeight;
 
 		if (isMobile) {
-			buttonWidth = Math.max(50, w / 16);
+			// Mobile: Round buttons
+			buttonWidth = Math.max(50, window.innerWidth / 16);
 			buttonHeight = buttonWidth;
 			fontSize = buttonWidth * 0.5;
 		} else {
-			buttonWidth = Math.max(120, w / 8);
-			buttonHeight = Math.max(40, h / 20);
-			fontSize = Math.min(22,Math.max(16, w / 70));
+			// Desktop: Rectangular buttons
+			buttonWidth = Math.max(120, window.innerWidth / 8);
+			buttonHeight = Math.max(40, window.innerHeight / 20);
+			fontSize = Math.min(22, Math.max(16, window.innerWidth / 70));
 		}
 	}
 
+	// Initialize styles immediately
+	if (browser) {
+		updateButtonStyles();
+	}
+
+	// Update styles on mount and resize
 	onMount(() => {
 		if (!browser) return;
-		updateButtonStyles();
 		window.addEventListener('resize', updateButtonStyles);
 	});
 
+	// Clean up event listener
 	onDestroy(() => {
 		if (!browser) return;
 		window.removeEventListener('resize', updateButtonStyles);
@@ -40,7 +47,7 @@
 
 <button
 	on:click={onClick}
-	class={isActive ? 'active' : 'inactive'}
+	class={`nav-button ${isActive ? 'active' : 'inactive'}`}
 	style="font-size: {fontSize}px; 
 	       width: {buttonWidth}px; 
 	       height: {buttonHeight}px; 
@@ -50,7 +57,7 @@
 </button>
 
 <style>
-	button {
+	.nav-button {
 		font-family: Georgia, serif;
 		border: 1px solid gray;
 		cursor: pointer;
@@ -61,21 +68,21 @@
 		box-sizing: border-box;
 	}
 
-	button:hover {
+	.nav-button:hover {
 		transform: scale(1.05);
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 	}
 
-	button:active {
+	.nav-button:active {
 		transform: scale(0.95);
 	}
 
-	.active {
+	.nav-button.active {
 		background-color: blue;
 		color: white;
 		font-weight: bold;
 	}
-	.inactive {
+	.nav-button.inactive {
 		background-color: white;
 		color: black;
 		font-weight: normal;

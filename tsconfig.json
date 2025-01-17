@@ -18,6 +18,8 @@
 	  "lib": ["DOM", "ESNext"],
 	  "strictNullChecks": true,
 	  "noImplicitAny": true,
-	  "noImplicitThis": true
+	  "noImplicitThis": true,
+	  "allowArbitraryExtensions": true
+
 	}
 }

@@ -125,34 +125,31 @@
 		width: 100%;
 	}
 
-
-
 	@media (orientation: portrait) {
 		.mainContent {
 			flex-direction: column;
 		}
 		.sequenceWorkbenchContainer {
-			flex:2;
+			flex: 2;
 			/* height:75% */
 		}
 		.optionPickerContainer {
-			flex:1;
+			flex: 1;
 			/* height:25% */
 		}
 	}
-	
+
 	@media (orientation: landscape) {
 		.mainContent {
 			flex-direction: row;
 		}
 		.sequenceWorkbenchContainer {
-			flex:1;
-			width:50%
+			flex: 1;
+			width: 50%;
 		}
 		.optionPickerContainer {
-			flex:1;
-			width:50%
+			flex: 1;
+			width: 50%;
 		}
-
 	}
 </style>

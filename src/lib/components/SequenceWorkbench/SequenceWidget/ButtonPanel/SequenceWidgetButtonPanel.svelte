@@ -87,8 +87,6 @@
 		align-items: center;
 		gap: 8px;
 		flex: 1;
-		border: 1px solid red;
-		overflow: visible; /* Allow overflow to be seen */
 		padding: 5px
 	}
 

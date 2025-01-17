@@ -1,7 +1,7 @@
 <script lang="ts">
-	import NavigationWidget from './NavigationWidget.svelte';
+	import NavWidget from './NavWidget/NavWidget.svelte';
 	import SettingsButton from './SettingsButton/SettingsButton.svelte';
-	import SettingsPlaceholder from './SettingsPlaceholder.svelte';
+	import SettingsPlaceholder from './SettingsButton/SettingsPlaceholder.svelte';
 	import { createEventDispatcher } from 'svelte';
   
 	export let background: string;
@@ -29,7 +29,7 @@
 	/>
 	
 	<!-- Navigation in the middle -->
-	<NavigationWidget on:tabChange={(e) => handleTabChange(e.detail)} />
+	<NavWidget on:tabChange={(e) => handleTabChange(e.detail)} />
 		<SettingsPlaceholder />
 	
 	<!-- Real SettingsButton on the right -->

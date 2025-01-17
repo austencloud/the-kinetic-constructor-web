@@ -41,12 +41,14 @@
 <div class="sequence-widget" bind:this={sequenceWorkbenchElement}>
 	<div class="main-layout" class:portrait={isPortrait}>
 		<div class="left-vbox">
-			<div class="sequence-widget-labels">
-				<CurrentWordLabel currentWord="Word:" {width} />
-				<DifficultyLabel difficultyLevel={3} {width} />
-			</div>
-			<div class="beat-frame-container">
-				<BeatFrame />
+			<div class="centered-group">
+				<div class="sequence-widget-labels">
+					<CurrentWordLabel currentWord="Word:" {width} />
+					<DifficultyLabel difficultyLevel={3} {width} />
+				</div>
+				<div class="beat-frame-container">
+					<BeatFrame />
+				</div>
 			</div>
 			<div class="indicator-label-container">
 				<IndicatorLabel {width} />
@@ -71,10 +73,9 @@
 
 <style>
 	.sequence-widget {
-		flex: 1;
 		display: flex;
 		flex-direction: column;
-		overflow: hidden;
+		height: 100%; /* Full height for the widget */
 	}
 
 	.main-layout {
@@ -93,30 +94,43 @@
 		height: 100%;
 		width: 100%;
 		min-height: 0;
-		flex:14
+		flex: 14;
+	}
+
+	.centered-group {
+		display: flex;
+		flex-direction: column;
+		align-items: center; /* Center horizontally */
+		justify-content: center; /* Center vertically */
+		height: 100%; /* Ensure it takes full height */
+		width: 100%;
+	}
+
+	.beat-frame-container {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex: 1; /* Allow it to grow and take available space */
+		min-height: 0; /* Prevent collapsing */
+		width: 100%;
 	}
 
 	.sequence-widget-labels {
 		display: flex;
 		flex-direction: column;
-		justify-content: space-around;
-		/* padding: 10px; */
+		align-items: center;
+		justify-content: center;
+		gap: 10px; /* Add spacing between the labels */
 		color: white;
-	}
-
-	.beat-frame-container {
-		flex: 10;
-		min-height: 0;
-		display: flex;
-		flex-direction: column;
 	}
 
 	.indicator-label-container {
 		display: flex;
 		flex-direction: column;
-		justify-content: space-around;
+		align-items: center;
+		justify-content: center;
 		padding: 10px;
 		color: white;
-		flex:1
+		flex: 1;
 	}
 </style>
