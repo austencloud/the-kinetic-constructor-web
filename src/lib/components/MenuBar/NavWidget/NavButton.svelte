@@ -31,7 +31,7 @@
 			// Default Desktop: Rectangular buttons
 			buttonWidth = Math.max(120, window.innerWidth / 8);
 			buttonHeight = Math.max(40, window.innerHeight / 20);
-			fontSize = Math.min(28, Math.max(18, window.innerWidth / 70));
+			fontSize = Math.min(26, Math.max(18, window.innerWidth / 70));
 		}
 	}
 

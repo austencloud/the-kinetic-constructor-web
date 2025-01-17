@@ -16,7 +16,18 @@
 	let isSettingsDialogOpen = false;
 	let isFullScreen = false;
 	let background = 'Snowfall';
+	onMount(() => {
+		loadPictographData(); // Initialize pictograph data
+		function updateHeight() {
+			dynamicHeight = `${window.innerHeight}px`;
+		}
+		window.addEventListener('resize', updateHeight);
+		updateHeight();
 
+		return () => {
+			window.removeEventListener('resize', updateHeight);
+		};
+	});
 	const backgroundStore = writable('Snowfall');
 	backgroundStore.subscribe((value) => (background = value));
 
