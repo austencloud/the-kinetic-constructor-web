@@ -1,6 +1,6 @@
-import StaticLocationCalculator from './StaticLocationCalculator';
-import ShiftLocationCalculator from './ShiftLocationCalculator';
-import DashLocationCalculator from './DashLocationCalculator';
+import StaticLocationCalculator from './ArrowLocationManager/StaticLocationCalculator';
+import ShiftLocationCalculator from './ArrowLocationManager/ShiftLocationCalculator';
+import DashLocationCalculator from './ArrowLocationManager/DashLocationCalculator';
 
 export default class ArrowLocationManager {
 	arrowProps: {

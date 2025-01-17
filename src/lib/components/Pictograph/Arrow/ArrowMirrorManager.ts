@@ -1,4 +1,4 @@
-class ArrowMirrorManager {
+export default class ArrowMirrorManager {
 	constructor(private arrowProps: any) {}
 
 	updateMirror() {

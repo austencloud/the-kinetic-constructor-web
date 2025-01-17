@@ -1,4 +1,4 @@
-import Arrow from './Arrow.svelte';
+import Arrow from '../Arrow.svelte';
 
 export default class DashLocationCalculator {
     arrow: Arrow;

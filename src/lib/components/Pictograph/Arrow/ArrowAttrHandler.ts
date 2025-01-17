@@ -1,4 +1,4 @@
-class ArrowAttrHandler {
+export default class ArrowAttrHandler {
 	color: string;
 	motion: {
 		startLoc: string;
