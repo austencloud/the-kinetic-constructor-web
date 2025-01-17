@@ -74,7 +74,6 @@
 			<div class="menuBar">
 				<MenuBar
 					{background}
-					{isFullScreen}
 					on:tabChange={handleTabChange}
 					on:settingsClick={handleSettingsClick}
 					on:changeBackground={(e) => updateBackground(e.detail)}

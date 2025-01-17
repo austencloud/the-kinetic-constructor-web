@@ -1,80 +1,78 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { isMobile, isPortrait } from '../../../utils/deviceUtils';
 
-	export let isPortrait: boolean = false;
-	export let isFullScreen: boolean = false; // Receive fullscreen state
 	export let isActive: boolean = false;
 	export let onClick: () => void;
 
-	let fontSize: number = 16;
-	let buttonWidth: number = 120;
-	let buttonHeight: number = 40;
+	let fontSize: number;
+	let buttonWidth: number;
+	let buttonHeight: number;
 
-	// Update button styles dynamically
-	function updateButtonStyles() {
-		if (typeof window === 'undefined') return;
+	let isMobileDevice = false;
+	let isPortraitMode = false;
 
-		// Detect portrait mode explicitly
+	const updateStyles = () => {
+		isMobileDevice = isMobile();
+		isPortraitMode = isPortrait();
 
-		if (isPortrait) {
-			// Portrait Mobile: Round buttons
+		if (isMobileDevice) {
+			// Mobile: Always round buttons
+			buttonWidth = Math.max(30, Math.min(60, window.innerWidth / 10));
+			buttonHeight = buttonWidth;
+			fontSize = buttonWidth * 0.5;
+		} else if (isPortraitMode) {
+			// Desktop Portrait: Round buttons
 			buttonWidth = Math.max(30, Math.min(60, window.innerWidth / 10));
 			buttonHeight = buttonWidth;
 			fontSize = buttonWidth * 0.5;
 		} else {
-			// Default Desktop: Rectangular buttons
+			// Desktop Landscape: Rectangular buttons
 			buttonWidth = Math.max(120, window.innerWidth / 8);
 			buttonHeight = Math.max(40, window.innerHeight / 20);
 			fontSize = Math.min(26, Math.max(18, window.innerWidth / 70));
 		}
-	}
+	};
 
-	// Initialize styles immediately
-	if (typeof window !== 'undefined') {
-		updateButtonStyles();
-	}
-
-	// Update styles on mount and resize
 	onMount(() => {
+		updateStyles();
 		if (typeof window !== 'undefined') {
-			window.addEventListener('resize', updateButtonStyles);
+			window.addEventListener('resize', updateStyles);
 		}
 	});
 
-	// Clean up event listener
 	onDestroy(() => {
 		if (typeof window !== 'undefined') {
-			window.removeEventListener('resize', updateButtonStyles);
+			window.removeEventListener('resize', updateStyles);
 		}
 	});
 
-	// Recalculate styles whenever `isMobile` or `isFullScreen` changes
-	$: updateButtonStyles();
+	$: if (typeof window !== 'undefined') {
+		updateStyles(); // Ensure updates on reactivity
+	}
 </script>
 
 <button
 	on:click={onClick}
 	class={`nav-button ${isActive ? 'active' : 'inactive'}`}
 	style="font-size: {fontSize}px; 
-	       width: {buttonWidth}px; 
-	       height: {buttonHeight}px; 
-	       {isPortrait && !isFullScreen ? 'border-radius: 50%;' : 'border-radius: 10px;'}"
+		   width: {buttonWidth}px; 
+		   height: {buttonHeight}px; 
+		   border-radius: {isMobileDevice || isPortraitMode ? '50%' : '10px'};"
 >
 	<slot />
 </button>
 
 <style>
 	.nav-button {
-		font-family: Georgia, serif;
-		border: 1px solid gray;
-		cursor: pointer;
-		transition:
-			all 0.3s ease,
-			transform 0.2s ease;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		box-sizing: border-box;
+		border: 1px solid gray;
+		transition: all 0.3s ease, transform 0.2s ease;
+		cursor: pointer;
+		background-color: white;
+		color: black;
 	}
 
 	.nav-button:hover {
@@ -93,8 +91,6 @@
 	}
 
 	.nav-button.inactive {
-		background-color: white;
-		color: black;
 		font-weight: normal;
 	}
 </style>

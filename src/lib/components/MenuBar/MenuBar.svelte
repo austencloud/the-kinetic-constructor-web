@@ -5,7 +5,6 @@
 	import { createEventDispatcher } from 'svelte';
 
 	export let background: string;
-	export let isFullScreen: boolean = false; // Receive fullscreen state
 	export let onChangeBackground: (newBackground: string) => void = () => {};
 	export let onTabChange: (index: number) => void = () => {};
 
@@ -30,7 +29,7 @@
 	/>
 
 	<!-- Pass isFullScreen to NavWidget -->
-	<NavWidget {isFullScreen} on:tabChange={handleTabChange} />
+	<NavWidget  on:tabChange={handleTabChange} />
 	<SettingsPlaceholder />
 </header>
 

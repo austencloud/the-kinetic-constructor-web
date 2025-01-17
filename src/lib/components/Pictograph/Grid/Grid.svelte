@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { parseCircleCoords } from './utils/coordinateUtils'; // Import utilities
-    import type { CircleCoords } from './types/CircleCoords'; // Import types
+    import { parseCircleCoords } from '../../../utils/gridCoordinateUtils'; // Import utilities
+    import type { CircleCoords } from '../../../types/CircleCoords'; // Import types
 
     export let onPointsReady: (points: CircleCoords[keyof CircleCoords]) => void;
     export let gridMode: 'diamond' | 'box' = 'diamond'; // Default grid mode

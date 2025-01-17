@@ -1,54 +1,47 @@
 <script lang="ts">
 	import NavButton from './NavButton.svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { isMobile, isPortrait } from '../../../utils/deviceUtils';
+	let isMobileDevice = false;
+	let isPortraitMode = false;
 
-	export let isFullScreen: boolean = false; // Receive fullscreen state
 	export let onTabChange: (index: number) => void = () => {};
 	let activeTab = 0;
-
+	
 	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
 	const tabEmojis = ['⚒️', '🤖', '🔍', '🧠', '✍️'];
-
-	let isPortrait = false;
-
-	// Determine layout dynamically based on orientation
-	function checkLayout() {
-		if (typeof window !== 'undefined') {
-			isPortrait = window.matchMedia('(orientation: portrait)').matches;
-		}
-	}
-
+	
+	
+	
+	
 	function handleTabClick(index: number) {
 		activeTab = index;
 		onTabChange(index);
 	}
-
+	
+	
+	const updateModes = () => {
+		isMobileDevice = isMobile();
+		isPortraitMode = isPortrait();
+		
+	};
 	onMount(() => {
+		updateModes();
 		if (typeof window !== 'undefined') {
-			checkLayout(); // Initial check
-			window.addEventListener('resize', checkLayout);
+			window.addEventListener('resize', updateModes);
 		}
-		return () => {
-			if (typeof window !== 'undefined') {
-				window.removeEventListener('resize', checkLayout);
-			}
-		};
 	});
-
-	$: checkLayout(); // Update layout on `isFullScreen` change
 </script>
 
 <div class="nav-widget">
 	{#each tabNames as name, index}
 		<NavButton
-			{isPortrait}
-			{isFullScreen}
 			isActive={index === activeTab}
 			onClick={() => handleTabClick(index)}
 		>
-			{#if !isPortrait}
+			{#if !isPortraitMode}
 				{name} {tabEmojis[index]} <!-- Fullscreen: Full Label -->
-			{:else if isPortrait}
+			{:else if isPortraitMode}
 				{tabEmojis[index]} <!-- Mobile: Emoji only -->
 			{:else}
 				{name} {tabEmojis[index]} <!-- Desktop: Full Label -->
