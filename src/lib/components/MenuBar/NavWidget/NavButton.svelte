@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 
-	export let isMobile: boolean = false;
+	export let isPortrait: boolean = false;
 	export let isFullScreen: boolean = false; // Receive fullscreen state
 	export let isActive: boolean = false;
 	export let onClick: () => void;
@@ -15,18 +15,12 @@
 		if (typeof window === 'undefined') return;
 
 		// Detect portrait mode explicitly
-		const isPortrait = window.matchMedia("(orientation: portrait)").matches;
 
-		if (isMobile && isPortrait && !isFullScreen) {
+		if (isPortrait) {
 			// Portrait Mobile: Round buttons
 			buttonWidth = Math.max(30, Math.min(60, window.innerWidth / 10));
 			buttonHeight = buttonWidth;
 			fontSize = buttonWidth * 0.5;
-		} else if (isFullScreen) {
-			// Fullscreen: Rectangular buttons with wider widths
-			buttonWidth = Math.max(120, window.innerWidth / 8);
-			buttonHeight = Math.max(40, window.innerHeight / 20);
-			fontSize = Math.min(28, Math.max(18, window.innerWidth / 70));
 		} else {
 			// Default Desktop: Rectangular buttons
 			buttonWidth = Math.max(120, window.innerWidth / 8);
@@ -64,7 +58,7 @@
 	style="font-size: {fontSize}px; 
 	       width: {buttonWidth}px; 
 	       height: {buttonHeight}px; 
-	       {isMobile && !isFullScreen ? 'border-radius: 50%;' : 'border-radius: 10px;'}"
+	       {isPortrait && !isFullScreen ? 'border-radius: 50%;' : 'border-radius: 10px;'}"
 >
 	<slot />
 </button>
@@ -74,7 +68,9 @@
 		font-family: Georgia, serif;
 		border: 1px solid gray;
 		cursor: pointer;
-		transition: all 0.3s ease, transform 0.2s ease;
+		transition:
+			all 0.3s ease,
+			transform 0.2s ease;
 		display: flex;
 		justify-content: center;
 		align-items: center;

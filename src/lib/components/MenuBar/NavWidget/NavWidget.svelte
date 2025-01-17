@@ -9,12 +9,12 @@
 	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
 	const tabEmojis = ['⚒️', '🤖', '🔍', '🧠', '✍️'];
 
-	let isMobile = false;
+	let isPortrait = false;
 
 	// Determine layout dynamically based on orientation
 	function checkLayout() {
 		if (typeof window !== 'undefined') {
-			isMobile = window.matchMedia("(orientation: portrait)").matches;
+			isPortrait = window.matchMedia('(orientation: portrait)').matches;
 		}
 	}
 
@@ -41,14 +41,14 @@
 <div class="nav-widget">
 	{#each tabNames as name, index}
 		<NavButton
-			isMobile={isMobile}
-			isFullScreen={isFullScreen}
+			{isPortrait}
+			{isFullScreen}
 			isActive={index === activeTab}
 			onClick={() => handleTabClick(index)}
 		>
 			{#if isFullScreen}
 				{name} {tabEmojis[index]} <!-- Fullscreen: Full Label -->
-			{:else if isMobile}
+			{:else if isPortrait}
 				{tabEmojis[index]} <!-- Mobile: Emoji only -->
 			{:else}
 				{name} {tabEmojis[index]} <!-- Desktop: Full Label -->
