@@ -10,8 +10,10 @@ export default class SnowflakeManager {
     color: string;
   }> = [];
 
-  windStrength = 0; // Adjusted dynamically
-  density = 0.0001; // Snowflake density per pixel
+  windStrength = 0; // Base wind strength
+  windChangeTimer = 0; // Timer to trigger wind changes
+  windChangeInterval = 200; // Interval for wind changes
+  density = 0.0004; // Snowflake density per pixel
 
   initialize(width: number, height: number) {
     const count = Math.floor(width * height * this.density);
@@ -69,6 +71,14 @@ export default class SnowflakeManager {
 
   draw(ctx: CanvasRenderingContext2D, width: number, height: number) {
     ctx.globalAlpha = 1.0;
+
+    // Update wind strength over time
+    this.windChangeTimer++;
+    if (this.windChangeTimer >= this.windChangeInterval) {
+      this.windChangeTimer = 0;
+      this.windStrength = (Math.random() * 0.5 - 0.25) * width * 0.00005; // Random gusts
+    }
+
     this.snowflakes.forEach(flake => {
       ctx.save();
       ctx.translate(flake.x, flake.y);
@@ -77,11 +87,20 @@ export default class SnowflakeManager {
       ctx.fill(flake.shape);
       ctx.restore();
 
+      // Update positions
       flake.x += flake.sway + this.windStrength;
       flake.y += flake.speed;
 
-      if (flake.y > height) flake.y = Math.random() * -height; // Re-enter at the top when falling out
-      if (flake.x > width || flake.x < 0) flake.x = Math.random() * width;
+      // Re-enter from the top with a new random x-position if it falls below the bottom
+      if (flake.y > height) {
+        flake.y = Math.random() * -height; // Random negative y to create staggered re-entry
+        flake.x = Math.random() * width;  // Random x position
+      }
+
+      // Re-wrap horizontally if the snowflake moves out of bounds
+      if (flake.x > width || flake.x < 0) {
+        flake.x = Math.random() * width; // New random x position
+      }
     });
   }
 }
