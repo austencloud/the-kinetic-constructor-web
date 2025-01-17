@@ -46,7 +46,7 @@
 			isActive={index === activeTab}
 			onClick={() => handleTabClick(index)}
 		>
-			{#if isFullScreen}
+			{#if !isPortrait}
 				{name} {tabEmojis[index]} <!-- Fullscreen: Full Label -->
 			{:else if isPortrait}
 				{tabEmojis[index]} <!-- Mobile: Emoji only -->
