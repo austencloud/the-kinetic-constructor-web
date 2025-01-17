@@ -16,7 +16,7 @@
 
 		if (isMobile) {
 			// Mobile: Round buttons
-			buttonWidth = Math.max(50, window.innerWidth / 16);
+			buttonWidth = Math.max(30, Math.min(60, window.innerWidth / 10));
 			buttonHeight = buttonWidth;
 			fontSize = buttonWidth * 0.5;
 		} else {
@@ -61,7 +61,9 @@
 		font-family: Georgia, serif;
 		border: 1px solid gray;
 		cursor: pointer;
-		transition: all 0.3s ease, transform 0.2s ease;
+		transition:
+			all 0.3s ease,
+			transform 0.2s ease;
 		display: flex;
 		justify-content: center;
 		align-items: center;
