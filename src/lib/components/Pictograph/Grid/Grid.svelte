@@ -1,16 +1,57 @@
 <script lang="ts">
-	export let grid: any;
+    import { onMount } from 'svelte';
+    import { parseCircleCoords } from './utils/coordinateUtils'; // Import utilities
+    import type { CircleCoords } from './types/CircleCoords'; // Import types
+
+    export let onPointsReady: (points: CircleCoords[keyof CircleCoords]) => void;
+    export let gridMode: 'diamond' | 'box' = 'diamond'; // Default grid mode
+
+    let gridImagePath: string = '';
+    let points: CircleCoords[keyof CircleCoords] | null = null;
+
+    const loadCircleCoords = async () => {
+        try {
+            const response = await fetch('/circle_coords.json');
+            if (!response.ok) {
+                throw new Error('Failed to load circle_coords.json');
+            }
+
+            const data: CircleCoords = await response.json();
+            points = parseCircleCoords(data, gridMode); // Use utility function to parse
+
+            console.log('Loaded circle coordinates:', points);
+
+            if (onPointsReady && points) {
+                onPointsReady(points);
+            }
+        } catch (error) {
+            console.error('Error loading circle coordinates:', error);
+        }
+    };
+
+    // Update the grid image path when gridMode changes
+    $: gridImagePath = gridMode === 'diamond' ? '/diamond_grid.png' : '/box_grid.png';
+
+    onMount(() => {
+        loadCircleCoords();
+    });
 </script>
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 650 650" class="grid">
-	{#each grid.points as { x, y }}
-		<circle cx={x} cy={y} r="5" fill="black" />
-	{/each}
-</svg>
+<div class="grid-container">
+    <img src={gridImagePath} alt="Grid Background" />
+</div>
 
 <style>
-	.grid {
-		width: 100%;
-		height: 100%;
-	}
+    .grid-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        cursor: pointer;
+    }
 </style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Grid from './Grid.svelte';
+	import Grid from './Grid/Grid.svelte';
     let gridPoints: Record<string, { x: number; y: number }> = {};
 
 	export let pictographData: any; // Pictograph data passed in
