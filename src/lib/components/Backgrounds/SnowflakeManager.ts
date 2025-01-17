@@ -8,6 +8,7 @@ export default class SnowflakeManager {
     opacity: number;
     shape: Path2D;
     color: string;
+    superSpiky: boolean;
   }> = [];
 
   windStrength = 0; // Base wind strength
@@ -22,6 +23,7 @@ export default class SnowflakeManager {
 
   createSnowflake(width: number, height: number) {
     const size = Math.random() * 5 + 2;
+    const superSpiky = Math.random() > 0.5; // 50% chance to be super spiky
     return {
       x: Math.random() * width,
       y: Math.random() * height, // Start within the visible height of the canvas
@@ -29,15 +31,15 @@ export default class SnowflakeManager {
       size,
       sway: Math.random() * 1 - 0.5,
       opacity: Math.random() * 0.8 + 0.2,
-      shape: this.generateSpikySnowflake(size),
+      shape: this.generateSnowflake(size, superSpiky),
       color: this.randomSnowflakeColor(),
+      superSpiky,
     };
   }
 
-  generateSpikySnowflake(size: number): Path2D {
+  generateSnowflake(size: number, superSpiky: boolean): Path2D {
     const path = new Path2D();
     const spikes = 6 + Math.floor(Math.random() * 4); // 6–10 spikes
-    const superSpiky = Math.random() > 0.5; // 50% chance to be super spiky
 
     for (let i = 0; i < spikes; i++) {
       const angle = (i * Math.PI * 2) / spikes;
