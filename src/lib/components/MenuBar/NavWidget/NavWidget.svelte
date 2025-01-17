@@ -7,23 +7,18 @@
 
 	export let onTabChange: (index: number) => void = () => {};
 	let activeTab = 0;
-	
+
 	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
 	const tabEmojis = ['⚒️', '🤖', '🔍', '🧠', '✍️'];
-	
-	
-	
-	
+
 	function handleTabClick(index: number) {
 		activeTab = index;
 		onTabChange(index);
 	}
-	
-	
+
 	const updateModes = () => {
 		isMobileDevice = isMobile();
 		isPortraitMode = isPortrait();
-		
 	};
 	onMount(() => {
 		updateModes();
@@ -35,16 +30,13 @@
 
 <div class="nav-widget">
 	{#each tabNames as name, index}
-		<NavButton
-			isActive={index === activeTab}
-			onClick={() => handleTabClick(index)}
-		>
-			{#if !isPortraitMode}
+		<NavButton isActive={index === activeTab} onClick={() => handleTabClick(index)}>
+			{#if !isPortraitMode && !isMobileDevice}
 				{name} {tabEmojis[index]} <!-- Fullscreen: Full Label -->
 			{:else if isPortraitMode}
 				{tabEmojis[index]} <!-- Mobile: Emoji only -->
-			{:else}
-				{name} {tabEmojis[index]} <!-- Desktop: Full Label -->
+			{:else if isMobileDevice}
+				{tabEmojis[index]} <!-- Desktop: Full Label -->
 			{/if}
 		</NavButton>
 	{/each}

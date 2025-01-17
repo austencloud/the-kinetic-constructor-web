@@ -65,14 +65,14 @@
 
 <style>
 	.nav-button {
+		font-family: Georgia, serif;
+		border: 1px solid gray;
+		cursor: pointer;
+		transition: all 0.3s ease, transform 0.2s ease;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		border: 1px solid gray;
-		transition: all 0.3s ease, transform 0.2s ease;
-		cursor: pointer;
-		background-color: white;
-		color: black;
+		box-sizing: border-box;
 	}
 
 	.nav-button:hover {
@@ -91,6 +91,8 @@
 	}
 
 	.nav-button.inactive {
+		background-color: white;
+		color: black;
 		font-weight: normal;
 	}
 </style>
