@@ -6,29 +6,17 @@
 	import SnowfallBackground from '../Backgrounds/SnowfallBackground.svelte';
 	import SettingsDialog from '../SettingsDialog/SettingsDialog.svelte';
 	import FullScreen from '$lib/FullScreen.svelte';
-
 	import { writable } from 'svelte/store';
 	import { selectedStartPos } from '../../stores/constructStores';
 	import { loadPictographData } from '$lib/stores/pictographDataStore';
-
 	import { onMount } from 'svelte';
 
-	onMount(() => {
-		loadPictographData(); // Initialize pictograph data
-		function updateHeight() {
-			dynamicHeight = `${window.innerHeight}px`;
-		}
-		window.addEventListener('resize', updateHeight);
-		updateHeight();
-
-		return () => {
-			window.removeEventListener('resize', updateHeight);
-		};
-	});
-	let dynamicHeight = '100vh';
 	// State management
+	let dynamicHeight = '100vh';
 	let isSettingsDialogOpen = false;
+	let isFullScreen = false;
 	let background = 'Snowfall';
+
 	const backgroundStore = writable('Snowfall');
 	backgroundStore.subscribe((value) => (background = value));
 
@@ -44,10 +32,15 @@
 		const index = e.detail;
 		console.log(`Tab changed to index: ${index}`);
 	};
+
+	// Listen for fullscreen toggle
+	function handleFullscreenToggle(e: CustomEvent<boolean>) {
+		isFullScreen = e.detail;
+	}
 </script>
 
 <div id="main-widget">
-	<FullScreen>
+	<FullScreen on:toggleFullscreen={handleFullscreenToggle}>
 		<div id="content-wrapper">
 			<div class="background">
 				<SnowfallBackground />
@@ -56,6 +49,7 @@
 			<div class="menuBar">
 				<MenuBar
 					{background}
+					{isFullScreen}
 					on:tabChange={handleTabChange}
 					on:settingsClick={handleSettingsClick}
 					on:changeBackground={(e) => updateBackground(e.detail)}
@@ -88,7 +82,6 @@
 		</div>
 	</FullScreen>
 </div>
-
 <style>
 	#main-widget {
 		height: var(--dynamicHeight, 100vh); /* Fallback to 100vh */

@@ -3,45 +3,42 @@
 	import SettingsButton from './SettingsButton/SettingsButton.svelte';
 	import SettingsPlaceholder from './SettingsButton/SettingsPlaceholder.svelte';
 	import { createEventDispatcher } from 'svelte';
-  
+
 	export let background: string;
+	export let isFullScreen: boolean = false; // Receive fullscreen state
 	export let onChangeBackground: (newBackground: string) => void = () => {};
 	export let onTabChange: (index: number) => void = () => {};
-  
-	const dispatch = createEventDispatcher<{ tabChange: number; settingsClick: void }>();
-  
-	function handleTabChange(index: number) {
-	  dispatch('tabChange', index);
-	  onTabChange(index);
+
+	const dispatch = createEventDispatcher();
+
+	function handleTabChange(event: CustomEvent) {
+		const index = event.detail;
+		dispatch('tabChange', index);
+		onTabChange(index);
 	}
-  
+
 	function handleSettingsClick() {
-	  dispatch('settingsClick');
+		dispatch('settingsClick');
 	}
-  </script>
-  
-  <header class="menu-bar">
-	<!-- Left placeholder sized like the SettingsButton -->
+</script>
+
+<header class="menu-bar">
 	<SettingsButton
-	{background}
-	{onChangeBackground}
-	on:click={handleSettingsClick}
+		{background}
+		{onChangeBackground}
+		on:click={handleSettingsClick}
 	/>
-	
-	<!-- Navigation in the middle -->
-	<NavWidget on:tabChange={(e) => handleTabChange(e.detail)} />
-		<SettingsPlaceholder />
-	
-	<!-- Real SettingsButton on the right -->
-  </header>
-  
-  <style>
+
+	<!-- Pass isFullScreen to NavWidget -->
+	<NavWidget {isFullScreen} on:tabChange={handleTabChange} />
+	<SettingsPlaceholder />
+</header>
+
+<style>
 	.menu-bar {
-	  display: flex;
-	  justify-content: space-between; /* space between left placeholder & right button */
-	  align-items: center;
-	  padding: 4px;
-	  /* you might also do max-height or clamp here if you want a fixed bar height */
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 4px;
 	}
-  </style>
-  
+</style>

@@ -1,17 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-
 	export let customStyles: string = ''; // Optional additional styles
-	let isMobile: boolean = false;
-
-	onMount(() => {
-		isMobile = /Mobi|Android/i.test(navigator.userAgent);
-	});
 </script>
 
-<div class="label {isMobile ? 'mobile' : ''}" style={customStyles}>
-	{isMobile ? "Start:" : "Choose your start position!"}
-</div>
+<div class="label" style={customStyles}>Choose your start position!</div>
 
 <style>
 	.label {
@@ -22,11 +13,6 @@
 		border-radius: 40px;
 		padding: 10px 20px;
 		text-align: center;
-	}
-	
-	.label.mobile {
-		margin-bottom: 5%; /* Reduced margin for mobile */
-		font-size: 3vh;
 	}
 
 	@media (orientation: portrait) {

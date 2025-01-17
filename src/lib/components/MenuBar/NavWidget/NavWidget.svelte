@@ -1,10 +1,8 @@
 <script lang="ts">
 	import NavButton from './NavButton.svelte';
-	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-	import { browser } from '$app/environment';
+	import { createEventDispatcher, onMount } from 'svelte';
 
-	const dispatch = createEventDispatcher();
-
+	export let isFullScreen: boolean = false; // Receive fullscreen state
 	export let onTabChange: (index: number) => void = () => {};
 	let activeTab = 0;
 
@@ -12,54 +10,52 @@
 	const tabEmojis = ['⚒️', '🤖', '🔍', '🧠', '✍️'];
 
 	let isMobile = false;
-	let hydrated = false;
 
-	// Synchronously set `isMobile` before the first render
-	if (browser) {
-		isMobile = window.innerWidth <= 768; // Example threshold for mobile
-		hydrated = true; // Mark the component as ready to render
-	}
-
-	// Handle screen resizing
-	function checkMobile() {
-		if (!browser) return;
-		isMobile = window.innerWidth <= 768;
+	// Determine layout dynamically based on orientation
+	function checkLayout() {
+		if (typeof window !== 'undefined') {
+			isMobile = window.matchMedia("(orientation: portrait)").matches;
+		}
 	}
 
 	function handleTabClick(index: number) {
 		activeTab = index;
-		dispatch('tabChange', index);
 		onTabChange(index);
 	}
 
 	onMount(() => {
-		if (!browser) return;
-		window.addEventListener('resize', checkMobile);
+		if (typeof window !== 'undefined') {
+			checkLayout(); // Initial check
+			window.addEventListener('resize', checkLayout);
+		}
+		return () => {
+			if (typeof window !== 'undefined') {
+				window.removeEventListener('resize', checkLayout);
+			}
+		};
 	});
 
-	onDestroy(() => {
-		if (!browser) return;
-		window.removeEventListener('resize', checkMobile);
-	});
+	$: checkLayout(); // Update layout on `isFullScreen` change
 </script>
 
-{#if hydrated}
-	<div class="nav-widget">
-		{#each tabNames as name, index}
-			<NavButton
-				isMobile={isMobile}
-				isActive={index === activeTab}
-				onClick={() => handleTabClick(index)}
-			>
-				{#if isMobile}
-					{tabEmojis[index]} <!-- Mobile: Emoji only -->
-				{:else}
-					{name} {tabEmojis[index]} <!-- Desktop: Name + Emoji -->
-				{/if}
-			</NavButton>
-		{/each}
-	</div>
-{/if}
+<div class="nav-widget">
+	{#each tabNames as name, index}
+		<NavButton
+			isMobile={isMobile}
+			isFullScreen={isFullScreen}
+			isActive={index === activeTab}
+			onClick={() => handleTabClick(index)}
+		>
+			{#if isFullScreen}
+				{name} {tabEmojis[index]} <!-- Fullscreen: Full Label -->
+			{:else if isMobile}
+				{tabEmojis[index]} <!-- Mobile: Emoji only -->
+			{:else}
+				{name} {tabEmojis[index]} <!-- Desktop: Full Label -->
+			{/if}
+		</NavButton>
+	{/each}
+</div>
 
 <style>
 	.nav-widget {

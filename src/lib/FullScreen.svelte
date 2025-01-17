@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 
-	// We track if we are currently in fullscreen or not
 	let isFull = false;
 	let fsContainer: HTMLDivElement | null = null;
 	let fullscreenSupport = false;
 	let exitFullscreen: () => void = () => {};
 	let requestFullscreen: () => void = () => {};
 
+	const dispatch = createEventDispatcher<{ toggleFullscreen: boolean }>();
+
 	onMount(() => {
-		// Check for browser API
 		fullscreenSupport = !!(
 			document.fullscreenEnabled ||
 			(document as any).webkitFullscreenEnabled ||
@@ -17,7 +17,6 @@
 			(document as any).msFullscreenEnabled
 		);
 
-		// "Exit" and "Request" utility
 		exitFullscreen =
 			document.exitFullscreen ||
 			(document as any).mozCancelFullScreen ||
@@ -36,19 +35,8 @@
 				(() => {});
 			req.call(el);
 		};
-
-		// Optional: Insert icon font for a material "fullscreen" icon
-		const link = document.createElement('link');
-		link.rel = 'stylesheet';
-		link.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
-		document.head.appendChild(link);
-
-		return () => {
-			link.parentNode?.removeChild(link);
-		};
 	});
 
-	// Toggling
 	function fsToggle() {
 		if (!fullscreenSupport) return;
 		if (isFull) {
@@ -57,35 +45,33 @@
 			requestFullscreen();
 		}
 		isFull = !isFull;
+
+		// Emit the fullscreen state
+		dispatch('toggleFullscreen', isFull);
+
+		// Trigger a resize event to ensure all components adjust their layout
+		const resizeEvent = new Event('resize');
+		window.dispatchEvent(resizeEvent);
 	}
 </script>
 
-<!-- 
-     The 'fsContainer' is where we attach the fullscreen. 
-     We put a slot inside, so the parent can place anything within.
--->
 <div class="fullscreen-container {isFull ? 'isFull' : ''}" bind:this={fsContainer}>
-	<!-- Expose isFull to the slot for convenience 
-             so parent can do <slot {isFull}> if desired. -->
 	<slot {isFull} />
 	{#if fullscreenSupport}
-		<button class="fs-btn" on:click={fsToggle}>
-			<i class="material-icons">
-				{#if isFull}fullscreen_exit{:else}fullscreen{/if}
-			</i>
+		<button class="fs-btn" on:click={fsToggle} aria-label={isFull ? 'Exit fullscreen' : 'Enter fullscreen'}>
+			<i class="fa {isFull ? 'fa-compress' : 'fa-expand'}"></i>
 		</button>
 	{/if}
 </div>
-
 <style>
+	@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
 	.fullscreen-container {
 		position: relative;
 		width: 100%;
-		height: 100%; /* Ensure it matches the parent's height */
-		overflow: hidden; /* Prevent scrollbars inside the container */
+		height: 100%;
+		overflow: hidden;
 	}
-
-	/* If you want a special look when in FS, optional: */
 
 	.fs-btn {
 		position: absolute;
@@ -99,8 +85,16 @@
 		border-radius: 50%;
 		width: 48px;
 		height: 48px;
+		transition: transform 0.2s, box-shadow 0.2s;
 	}
-	.material-icons {
-		font-size: 28px;
+
+	.fs-btn:hover {
+		transform: scale(1.1);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+	}
+
+	.fs-btn:active {
+		transform: scale(0.9);
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 	}
 </style>

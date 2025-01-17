@@ -76,6 +76,7 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%; /* Full height for the widget */
+		flex: 1;
 	}
 
 	.main-layout {

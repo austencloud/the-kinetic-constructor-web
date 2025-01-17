@@ -6,14 +6,11 @@
 	export let animationDuration: number;
 	export let maxEditorHeight: number; // e.g. 300
 
-	// Example: a 5% border
 	const BORDER_PERCENTAGE = 0.02;
 
-	// We'll calculate the border in pixels:
 	$: borderSize = Math.floor(maxEditorHeight * BORDER_PERCENTAGE);
 
-	// We'll subtract left+right from the width (2 * borderSize),
-	// so the "inner content" fits exactly.
+
 	$: contentWidth = maxEditorHeight - 2 * borderSize;
 
 	// Pictograph data
