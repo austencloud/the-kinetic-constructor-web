@@ -11,14 +11,12 @@
 		dispatch('click');
 	};
 
-	// Use `onMount` to run code only in the browser
 	onMount(() => {
 		// Update the CSS variables dynamically
 		document.documentElement.style.setProperty('--graph-editor-offset', `${graphEditorHeight}px`);
 		document.documentElement.style.setProperty('--animation-duration', `${animationDuration}ms`);
 	});
 
-	// Reactive block to update dynamically after initial mount
 	$: if (typeof window !== 'undefined') {
 		document.documentElement.style.setProperty('--graph-editor-offset', `${graphEditorHeight}px`);
 		document.documentElement.style.setProperty('--animation-duration', `${animationDuration}ms`);
