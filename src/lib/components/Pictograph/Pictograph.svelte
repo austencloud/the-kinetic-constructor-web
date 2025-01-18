@@ -7,25 +7,16 @@
 	import type { Orientation, PropType } from './Prop/PropTypes';
 	import type { PropRotDir } from './Motion/MotionInterface';
 
-	export let pictographData: any; // Input pictograph data
+	export let pictographData: any;
 	export let isSelected: boolean = false;
 	export let name: string | null = null;
 	export let interactive: boolean = true;
 	export let onClick: () => void;
 
-	let gridPoints: Record<string, { x: number; y: number }> = {}; // Grid points data
-	let motions: Motion[] = []; // List of motions
-	let currentPictograph: any; // Reference to the current Pictograph instance
+	let gridPoints: Record<string, { x: number; y: number }> = {};
+	let motions: Motion[] = [];
+	let currentPictograph: any;
 
-	/**
-	 * Creates a Motion instance and initializes its associated Arrow and Prop components.
-	 *
-	 * @param data Motion-related data
-	 * @param color Color of the motion (red/blue)
-	 * @param propType Type of the prop (e.g., hand, staff)
-	 * @param startOri Initial orientation of the motion
-	 * @param propRotDir Rotation direction of the prop (cw/ccw)
-	 */
 	function createMotion(
 		data: any,
 		color: 'red' | 'blue',
@@ -48,7 +39,6 @@
 			handRotDir: propRotDir === 'cw' ? 'cw_handpath' : 'ccw_handpath'
 		});
 
-		// Initialize and bind the Arrow instance
 		const arrow = new Arrow({
 			target: document.body,
 			props: {
@@ -60,12 +50,11 @@
 			}
 		});
 
-		// Initialize and bind the Prop instance
 		const prop = new Prop({
 			target: document.body,
 			props: {
-				motion,
-				propType: propType as PropType, // Explicitly cast to PropType
+				motion, // Bind the motion instance
+				propType,
 				color,
 				loc: color === 'red' ? 'n' : 's',
 				ori: color === 'red' ? 'in' : 'out',
@@ -73,33 +62,21 @@
 			}
 		});
 
-		// Establish relationships between Motion, Arrow, and Prop
 		motion.attachComponents(arrow, prop);
 		return motion;
 	}
 
-	/**
-	 * Processes the input pictograph data to initialize motions, arrows, and props.
-	 *
-	 * @param data Pictograph data
-	 */
 	function processPictographData(data: any) {
 		if (!data) return;
 
 		motions = [
-			createMotion(data.red_attributes, 'red', 'staff', 'in', 'cw'),
+			createMotion(data.red_attributes, 'red', 'hand', 'in', 'cw'),
 			createMotion(data.blue_attributes, 'blue', 'staff', 'out', 'ccw')
 		];
 	}
 
-	// Reactively process pictograph data when it changes
 	$: processPictographData(pictographData);
 
-	/**
-	 * Handles the grid points being ready and updates the `gridPoints` reference.
-	 *
-	 * @param points The updated grid points
-	 */
 	function handleGridPointsReady(points: any) {
 		gridPoints = { ...points };
 	}

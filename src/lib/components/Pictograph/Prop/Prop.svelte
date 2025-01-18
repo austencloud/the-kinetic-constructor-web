@@ -1,19 +1,19 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { PropType, Orientation, Location } from './PropTypes';
+	import type { Motion } from '../Motion/Motion';
 	import PropAttrManager from './PropAttrManager';
 	import PropChecker from './PropChecker';
 	import PropRotAngleManager from './PropRotAngleManager';
 	import PropUpdater from './PropUpdater';
 	import PropSvgManager from './PropSvgManager';
-	import type { Motion } from '../Motion/Motion';
 
 	export let propType: PropType = 'hand';
 	export let color: 'red' | 'blue' = 'blue';
 	export let loc: Location = 'n';
 	export let ori: Orientation = 'in';
 	export let size: { width: number; height: number } = { width: 50, height: 50 };
-	export let motion: Motion | null = null; // Add motion as a prop
+	export let motion: Motion | null = null; // Motion instance bound to this Prop
 
 	let svgPath = '';
 	let transform = '';
@@ -41,6 +41,14 @@
 	$: {
 		transform = `translate(${size.width / 2}px, ${size.height / 2}px) rotate(${rotAngleManager.getRotationAngle()}deg)`;
 		svgPath = svgManager.getSvgPath(propType, color);
+	}
+
+	$: {
+		// Optionally react to motion updates if needed
+		if (motion) {
+			loc = motion.endLoc; // Update the location based on the motion
+			ori = motion.endOri; // Update the orientation based on the motion
+		}
 	}
 </script>
 
