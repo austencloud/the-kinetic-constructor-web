@@ -1,4 +1,4 @@
-import type { MotionType, Location, Orientation } from '../types/MotionTypes';
+import type { MotionType, Location, Orientation } from './MotionTypes';
 
 export class MotionOriCalculator {
 	motion: any;

@@ -7,7 +7,7 @@
 </script>
 
 <div
-	class="pictograph-wrapper"
+	class="pictograph-view"
 	class:selected={isSelected}
 	style="--cursor: {interactive ? 'pointer' : 'default'}; --hover-scale: {interactive
 		? 'scale(1.05)'
@@ -25,7 +25,7 @@
 </div>
 
 <style>
-	.pictograph-wrapper {
+	.pictograph-view {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
@@ -33,13 +33,12 @@
 		justify-content: center;
 		cursor: var(--cursor, default);
 		transition: transform 0.2s ease;
-		color: white;
 	}
 
-	.pictograph-wrapper:hover {
+	.pictograph-view:hover {
 		transform: var(--hover-scale, none);
 	}
-	.pictograph-wrapper:active {
+	.pictograph-view:active {
 		transform: var(--click-scale, none);
 	}
 

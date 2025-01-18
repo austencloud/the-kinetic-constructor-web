@@ -104,6 +104,7 @@
 		background-color: transparent;
 		box-sizing: border-box;
 		overflow: hidden;
+		gap:1px;
 	}
 
 	.start-pos {
@@ -115,5 +116,6 @@
 
 	.beat-container {
 		cursor: pointer;
+		border: 1px solid black;
 	}
 </style>

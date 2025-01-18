@@ -1,106 +1,104 @@
 <script lang="ts">
 	import Grid from './Grid/Grid.svelte';
 	import Arrow from './Arrow/Arrow.svelte';
+	import Prop from './Prop/Prop.svelte';
+	import { Motion } from './Motion/Motion';
+	import SvgManager from './SvgManager/SvgManager';
 	import PictographView from './PictographView.svelte';
 
-	export let pictographData: any; // Input pictograph data
+	export let pictographData: any;
 	export let isSelected: boolean = false;
-	export let onClick: (() => void) | undefined;
 	export let name: string | null = null;
 	export let interactive: boolean = true;
-
+	export let onClick: () => void;
 	let gridPoints: Record<string, { x: number; y: number }> = {};
-	let arrows: Array<{
-		color: 'red' | 'blue';
-		position: { x: number; y: number };
-		rotation: number;
-		mirrored: boolean;
-		motion: {
-			startLoc: 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw' | 'c';
-			endLoc: 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw' | 'c';
-			type: 'pro' | 'anti' | 'dash' | 'static';
-			propRotDir?: 'cw' | 'ccw' | "no_rot";
-		};
-	}> = [];
+	let motions: Motion[] = [];
+	let svgManager = new SvgManager();
 
-	// Pictograph instance for arrows
-	let pictograph: any = { gridPoints, data: pictographData }; // Example of a pictograph instance
-
-	// Extract arrow data from the pictograph data
+	// Generate motions, arrows, and props
 	function processPictographData(data: any) {
 		if (!data) return;
 
-		arrows = [
-			{
-				color: 'red',
-				position: { x: 0, y: 0 },
-				rotation: 0,
-				mirrored: false,
-				motion: {
-					startLoc: data.red_attributes?.motion?.startLoc || 'c',
-					endLoc: data.red_attributes?.motion?.endLoc || 'c',
-					type: data.red_attributes?.motion?.type || 'static'
-				}
-			},
-			{
-				color: 'blue',
-				position: { x: 0, y: 0 },
-				rotation: 0,
-				mirrored: false,
-				motion: {
+		motions = [
+			new Motion(
+				{
+					pictograph: { gridPoints },
+					motionType: data.red_attributes?.motion?.type || 'static',
+					startLoc: data.red_attributes?.motion?.startLoc || 'n',
+					endLoc: data.red_attributes?.motion?.endLoc || 's',
+					color: 'red',
+					arrow: {
+						color: 'red',
+						position: { x: 0, y: 0 },
+						rotation: 0,
+						motionType: data.red_attributes?.motion?.type || 'static'
+					},
+					prop: {
+						propType: 'hand',
+						color: 'red',
+						location: 'n',
+						orientation: 'in',
+						size: { width: 50, height: 50 }
+					}
+				},
+				gridPoints
+			),
+			new Motion(
+				{
+					pictograph: { gridPoints },
+					motionType: data.blue_attributes?.motion?.type || 'static',
 					startLoc: data.blue_attributes?.motion?.startLoc || 'c',
 					endLoc: data.blue_attributes?.motion?.endLoc || 'c',
-					type: data.blue_attributes?.motion?.type || 'static'
-				}
-			}
+					color: 'blue',
+					arrow: {
+						color: 'blue',
+						position: { x: 0, y: 0 },
+						rotation: 0,
+						motionType: data.blue_attributes?.motion?.type || 'static'
+					},
+					prop: {
+						propType: 'staff',
+						color: 'blue',
+						location: 's',
+						orientation: 'out',
+						size: { width: 50, height: 50 }
+					}
+				},
+				gridPoints
+			)
 		];
 	}
 
-	// Reactively update arrow data whenever pictographData changes
 	$: processPictographData(pictographData);
 
-	function handlePointsReady(points: {
-		hand_points: {
-			normal: Record<string, { x: number; y: number }>;
-			strict: Record<string, { x: number; y: number }>;
-		};
-		layer2_points: {
-			normal: Record<string, { x: number; y: number }>;
-			strict: Record<string, { x: number; y: number }>;
-		};
-		outer_points: Record<string, string>;
-		center_point: { x: number; y: number };
-	}) {
-		gridPoints = {
-			...points.hand_points.normal,
-			...points.hand_points.strict,
-			...points.layer2_points.normal,
-			...points.layer2_points.strict,
-			...points.outer_points,
-			center: points.center_point
-		};
-		pictograph.gridPoints = gridPoints; // Update the pictograph grid points
+	function handleGridPointsReady(points: any) {
+		gridPoints = { ...points };
 	}
 </script>
 
 <PictographView {isSelected} {interactive} {onClick} {name}>
-	<div class="base-pictograph">
-		<Grid gridMode={pictographData?.grid_mode || 'diamond'} onPointsReady={handlePointsReady} />
-		{#each arrows as arrow (arrow.color)}
-			<Arrow {...arrow} {pictograph} />
+	<div class="pictograph">
+		<Grid gridMode={pictographData?.grid_mode || 'diamond'} onPointsReady={handleGridPointsReady} />
+		{#each motions as motion}
+			<Arrow {...motion.arrow} pictograph={motion.pictograph} />
+			{#if motion.prop}
+				<Prop
+					propType={motion.prop.propType}
+					color={motion.prop.color}
+					loc={motion.prop.location}
+					ori={motion.prop.orientation}
+					size={motion.prop.size}
+				/>
+			{/if}
 		{/each}
 	</div>
 </PictographView>
 
 <style>
-	.base-pictograph {
+	.pictograph {
+		position: relative;
 		width: 100%;
 		height: 100%;
-		position: relative;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: #f0f0f0;
-		overflow: hidden;
+        background-color: white;
 	}
 </style>

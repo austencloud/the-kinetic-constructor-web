@@ -1,4 +1,4 @@
-import type { PropRotDir, MotionType } from '$lib/components/Pictograph/types/MotionTypes';
+import type { PropRotDir, MotionType } from '$lib/components/Pictograph/Motion/MotionTypes';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 

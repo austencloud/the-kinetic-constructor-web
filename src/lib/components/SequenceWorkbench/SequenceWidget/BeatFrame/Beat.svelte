@@ -28,13 +28,9 @@
 
 <style>
 	.beat {
-		/* Put your border here so that it scales together with the content */
-		border: 1px solid black;
-		/* Center or size the container as you wish */
 		width: 100%;
 		height: 100%;
-
-		/* Animate scale on hover */
+		padding:0;
 		transition: transform 0.1s ease;
 		cursor: pointer; /* so user sees pointer on hover */
 	}

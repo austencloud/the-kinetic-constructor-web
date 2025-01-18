@@ -2,16 +2,7 @@ import { MotionChecker } from './MotionChecker';
 import { MotionOriCalculator } from './MotionOriCalculator';
 import { MotionUpdater } from './MotionUpdater';
 import { MotionAttrManager } from './MotionAttrManager';
-import type {
-	MotionInterface,
-	MotionType,
-	PropRotDir,
-	Location,
-	Color,
-	LeadState,
-	Orientation,
-	HandRotDir
-} from '../types/MotionTypes';
+import type { MotionInterface } from './MotionTypes';
 import Prop from '../Prop/Prop.svelte';
 import Arrow from '../Arrow/Arrow.svelte';
 import Pictograph from '../Pictograph.svelte';
@@ -26,10 +17,11 @@ export class Motion {
 	color = 'blue';
 	turns = 0;
 	leadState = 'trailing';
+	endOri = 'in';
 	startOri = 'in';
 	handRotDir = 'cw';
-	arrow = null;
-	prop = null;
+	arrow: Arrow | null = null;
+	prop: Prop | null = null;
 	prefloatMotionType = null;
 	prefloatPropRotDir = null;
 	checker = new MotionChecker(this);
