@@ -1,25 +1,25 @@
-type Motion = {
-	type: 'pro' | 'anti' | 'dash' | 'static';
-	startLoc: string;
-	endLoc: string;
-	propRotDir?: string;
-};
+import type { Motion } from '../Motion/Motion';
+import type { Color } from '../Motion/MotionInterface';
 
 export default class ArrowSvgManager {
 	private motion: Motion;
-	private color: string;
-
-	constructor(arrowProps: { motion: Motion; color: string }) {
+	private color: Color;
+	constructor(arrowProps: { motion: Motion; color: Color }) {
 		this.motion = arrowProps.motion;
 		this.color = arrowProps.color;
 	}
 
 	getSvgPath(): string {
-		const basePath = '/assets/arrows';
-		const typePath = this.motion.type.toLowerCase();
+		const basePath = '/images/arrows';
+		const typePath = this.motion.motionType.toLowerCase();
 		const colorPath = this.color.toLowerCase();
-
-		return `${basePath}/${typePath}/${colorPath}.svg`;
+		const radialPath =
+			this.motion.startOri === 'out' || this.motion.startOri === 'in'
+				? 'from_radial'
+				: 'from_nonradial';
+		const turns = this.motion.turns.toFixed(1); // Convert turns to float with one decimal place
+		const motionType = this.motion.motionType;
+		return `${basePath}/${typePath}/${radialPath}/${motionType}_${turns}.svg`;
 	}
 
 	updateSvgAppearance(): { backgroundColor: string } {

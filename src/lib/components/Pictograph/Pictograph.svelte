@@ -17,6 +17,16 @@
 	let motions: Motion[] = [];
 	let currentPictograph: any;
 
+	/**
+	 * Creates a Motion instance and binds Arrow and Prop components.
+	 *
+	 * @param data Motion-related data
+	 * @param color Motion color ('red' | 'blue')
+	 * @param propType Type of the prop ('hand', 'staff', etc.)
+	 * @param startOri Initial orientation ('in' | 'out' | ...)
+	 * @param propRotDir Rotation direction ('cw' | 'ccw')
+	 * @returns Motion instance
+	 */
 	function createMotion(
 		data: any,
 		color: 'red' | 'blue',
@@ -39,33 +49,16 @@
 			handRotDir: propRotDir === 'cw' ? 'cw_handpath' : 'ccw_handpath'
 		});
 
-		const arrow = new Arrow({
-			target: document.body,
-			props: {
-				motion,
-				color,
-				position: { x: 0, y: 0 },
-				rotation: 0,
-				mirrored: false
-			}
-		});
+		// Arrow and Prop will be instantiated declaratively in the markup
+		motion.arrow = null;
+		motion.prop = null;
 
-		const prop = new Prop({
-			target: document.body,
-			props: {
-				motion, // Bind the motion instance
-				propType,
-				color,
-				loc: color === 'red' ? 'n' : 's',
-				ori: color === 'red' ? 'in' : 'out',
-				size: { width: 50, height: 50 }
-			}
-		});
-
-		motion.attachComponents(arrow, prop);
 		return motion;
 	}
 
+	/**
+	 * Processes the input pictograph data to initialize motions.
+	 */
 	function processPictographData(data: any) {
 		if (!data) return;
 
@@ -75,8 +68,12 @@
 		];
 	}
 
+	// Reactively process data
 	$: processPictographData(pictographData);
 
+	/**
+	 * Updates grid points when they are ready.
+	 */
 	function handleGridPointsReady(points: any) {
 		gridPoints = { ...points };
 	}

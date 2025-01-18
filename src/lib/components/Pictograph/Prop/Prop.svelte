@@ -18,33 +18,42 @@
 	let svgPath = '';
 	let transform = '';
 
-	let attrManager: PropAttrManager;
-	let checker: PropChecker;
-	let rotAngleManager: PropRotAngleManager;
-	let updater: PropUpdater;
-	let svgManager: PropSvgManager;
+	let attrManager: PropAttrManager | null = null;
+	let checker: PropChecker | null = null;
+	let rotAngleManager: PropRotAngleManager | null = null;
+	let updater: PropUpdater | null = null;
+	let svgManager: PropSvgManager | null = null;
 
+	// Ensure all managers are initialized
 	onMount(() => {
 		attrManager = new PropAttrManager({
 			propType,
 			color,
-			loc: loc,
-			ori: ori,
+			loc,
+			ori,
 			size
 		});
 		checker = new PropChecker(attrManager);
 		rotAngleManager = new PropRotAngleManager(attrManager);
-		updater = new PropUpdater(attrManager, rotAngleManager, svgManager);
 		svgManager = new PropSvgManager();
+		updater = new PropUpdater(attrManager, rotAngleManager, svgManager);
 	});
 
+	// Reactive transform update with nullish checks
 	$: {
-		transform = `translate(${size.width / 2}px, ${size.height / 2}px) rotate(${rotAngleManager.getRotationAngle()}deg)`;
-		svgPath = svgManager.getSvgPath(propType, color);
+		transform =
+			rotAngleManager && typeof rotAngleManager.getRotationAngle === 'function'
+				? `translate(${size.width / 2}px, ${size.height / 2}px) rotate(${rotAngleManager.getRotationAngle()}deg)`
+				: `translate(${size.width / 2}px, ${size.height / 2}px)`;
 	}
 
+	// Reactive SVG path update with nullish checks
 	$: {
-		// Optionally react to motion updates if needed
+		svgPath = svgManager?.getSvgPath(propType, color) || '';
+	}
+
+	// React to motion updates if motion is bound
+	$: {
 		if (motion) {
 			loc = motion.endLoc; // Update the location based on the motion
 			ori = motion.endOri; // Update the orientation based on the motion
