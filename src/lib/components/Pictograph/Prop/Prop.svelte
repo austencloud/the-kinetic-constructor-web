@@ -6,12 +6,14 @@
 	import PropRotAngleManager from './PropRotAngleManager';
 	import PropUpdater from './PropUpdater';
 	import PropSvgManager from './PropSvgManager';
+	import type { Motion } from '../Motion/Motion';
 
 	export let propType: PropType = 'hand';
 	export let color: 'red' | 'blue' = 'blue';
 	export let loc: Location = 'n';
 	export let ori: Orientation = 'in';
 	export let size: { width: number; height: number } = { width: 50, height: 50 };
+	export let motion: Motion | null = null; // Add motion as a prop
 
 	let svgPath = '';
 	let transform = '';

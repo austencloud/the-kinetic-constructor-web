@@ -1,6 +1,7 @@
 import StaticLocationCalculator from './ArrowLocationManager/StaticLocationCalculator';
 import ShiftLocationCalculator from './ArrowLocationManager/ShiftLocationCalculator';
 import DashLocationCalculator from './ArrowLocationManager/DashLocationCalculator';
+import type { Motion } from '../Motion/Motion';
 
 export default class ArrowLocationManager {
 	arrowProps: {
@@ -8,21 +9,27 @@ export default class ArrowLocationManager {
 		position: { x: number; y: number };
 		rotation: number;
 		mirrored: boolean;
-		motion: { startLoc: string; endLoc: string; type: string; propRotDir?: string };
 	};
-	pictograph: any;
+	motion: Motion;
 
-	constructor({ arrowProps, pictograph }: { arrowProps: any; pictograph: any }) {
+	constructor({
+		arrowProps,
+		motion
+	}: {
+		arrowProps: {
+			color: string;
+			position: { x: number; y: number };
+			rotation: number;
+			mirrored: boolean;
+		};
+		motion: Motion;
+	}) {
 		this.arrowProps = arrowProps;
-		this.pictograph = pictograph;
+		this.motion = motion;
 	}
 
 	_selectCalculator() {
-		const motionType = this.arrowProps.motion.type.toLowerCase() as
-			| 'pro'
-			| 'anti'
-			| 'dash'
-			| 'static';
+		const motionType = this.motion.motionType.toLowerCase() as 'pro' | 'anti' | 'dash' | 'static';
 		const calculatorMap = {
 			pro: ShiftLocationCalculator,
 			anti: ShiftLocationCalculator,
@@ -31,7 +38,7 @@ export default class ArrowLocationManager {
 		};
 
 		const CalculatorClass = calculatorMap[motionType];
-		return CalculatorClass ? new (CalculatorClass as any)(this.arrowProps, this.pictograph) : null;
+		return CalculatorClass ? new (CalculatorClass as any)(this.arrowProps, this.motion.pictograph) : null;
 	}
 
 	updateLocation(location: string | null = null) {

@@ -1,4 +1,4 @@
-import type { MotionInterface } from './MotionTypes';
+import type { MotionInterface } from './MotionInterface';
 import type { Motion } from './Motion';
 
 export class MotionUpdater {
@@ -12,6 +12,8 @@ export class MotionUpdater {
 		if (motionData) {
 			this.motion.attrManager.updateAttributes(motionData);
 		}
+
+		// Use the corrected calculateEndOri function
 		this.motion.endOri = this.motion.oriCalculator.calculateEndOri();
 
 		if (!this.motion.prop) {
@@ -19,6 +21,6 @@ export class MotionUpdater {
 		}
 
 		this.motion.prop.loc = this.motion.endLoc;
-		this.motion.prop.ori = this.motion.endOri;
+		this.motion.prop.ori = this.motion.endOri; // No type error here
 	}
 }

@@ -1,4 +1,4 @@
-import type { MotionType, Location, Orientation } from './MotionTypes';
+import type { MotionType, Location, Orientation, HandRotDir } from './MotionInterface';
 
 export class MotionOriCalculator {
 	motion: any;
@@ -7,7 +7,7 @@ export class MotionOriCalculator {
 		this.motion = motion;
 	}
 
-	calculateEndOri(): string {
+	calculateEndOri(): Orientation {
 		if (this.motion.motionType === 'float') {
 			return this.calculateFloatOrientation();
 		}
@@ -24,7 +24,7 @@ export class MotionOriCalculator {
 		return this.motion.startOri;
 	}
 
-	private calculateWholeTurnOrientation(): string {
+	private calculateWholeTurnOrientation(): Orientation {
 		const { motionType, startOri } = this.motion;
 		const isEven = this.motion.turns % 2 === 0;
 		return motionType === 'pro' || motionType === 'static'
@@ -35,7 +35,7 @@ export class MotionOriCalculator {
 				? this.switchOrientation(startOri)
 				: startOri;
 	}
-	calculateHalfTurnOrientation(): string {
+	calculateHalfTurnOrientation(): Orientation {
 		const { motionType, turns, startOri, propRotDir } = this.motion;
 
 		const orientationMap: Record<string, string> = {
@@ -61,14 +61,14 @@ export class MotionOriCalculator {
 		return orientationMap[`${motionType},${propRotDir},${startOri}`] || startOri;
 	}
 
-	calculateFloatOrientation(): string {
+	calculateFloatOrientation(): Orientation {
 		const { startOri } = this.motion;
-		const handpathDirection = this.motion.handRotDirCalculator.getHandRotDir(
+		const handpathDirection: HandRotDir = this.motion.handRotDirCalculator.getHandRotDir(
 			this.motion.startLoc,
 			this.motion.endLoc
 		);
 
-		const orientationMap: Record<string, Record<string, string>> = {
+		const orientationMap: Record<string, Record<HandRotDir, Orientation>> = {
 			in: { cw_handpath: 'clock', ccw_handpath: 'counter' },
 			out: { cw_handpath: 'counter', ccw_handpath: 'clock' },
 			clock: { cw_handpath: 'out', ccw_handpath: 'in' },

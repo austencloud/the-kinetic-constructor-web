@@ -3,93 +3,114 @@
 	import Arrow from './Arrow/Arrow.svelte';
 	import Prop from './Prop/Prop.svelte';
 	import { Motion } from './Motion/Motion';
-	import SvgManager from './SvgManager/SvgManager';
 	import PictographView from './PictographView.svelte';
+	import type { Orientation, PropType } from './Prop/PropTypes';
+	import type { PropRotDir } from './Motion/MotionInterface';
 
-	export let pictographData: any;
+	export let pictographData: any; // Input pictograph data
 	export let isSelected: boolean = false;
 	export let name: string | null = null;
 	export let interactive: boolean = true;
 	export let onClick: () => void;
-	let gridPoints: Record<string, { x: number; y: number }> = {};
-	let motions: Motion[] = [];
-	let svgManager = new SvgManager();
 
-	// Generate motions, arrows, and props
+	let gridPoints: Record<string, { x: number; y: number }> = {}; // Grid points data
+	let motions: Motion[] = []; // List of motions
+	let currentPictograph: any; // Reference to the current Pictograph instance
+
+	/**
+	 * Creates a Motion instance and initializes its associated Arrow and Prop components.
+	 *
+	 * @param data Motion-related data
+	 * @param color Color of the motion (red/blue)
+	 * @param propType Type of the prop (e.g., hand, staff)
+	 * @param startOri Initial orientation of the motion
+	 * @param propRotDir Rotation direction of the prop (cw/ccw)
+	 */
+	function createMotion(
+		data: any,
+		color: 'red' | 'blue',
+		propType: PropType,
+		startOri: Orientation,
+		propRotDir: PropRotDir
+	): Motion {
+		const motion = new Motion({
+			pictograph: currentPictograph,
+			motionType: data?.motion?.type || 'static',
+			startLoc: data?.motion?.startLoc || 'n',
+			endLoc: data?.motion?.endLoc || 's',
+			startOri,
+			propRotDir,
+			color,
+			turns: 0,
+			leadState: color === 'red' ? 'leading' : 'trailing',
+			prefloatMotionType: null,
+			prefloatPropRotDir: null,
+			handRotDir: propRotDir === 'cw' ? 'cw_handpath' : 'ccw_handpath'
+		});
+
+		// Initialize and bind the Arrow instance
+		const arrow = new Arrow({
+			target: document.body,
+			props: {
+				motion,
+				color,
+				position: { x: 0, y: 0 },
+				rotation: 0,
+				mirrored: false
+			}
+		});
+
+		// Initialize and bind the Prop instance
+		const prop = new Prop({
+			target: document.body,
+			props: {
+				motion,
+				propType: propType as PropType, // Explicitly cast to PropType
+				color,
+				loc: color === 'red' ? 'n' : 's',
+				ori: color === 'red' ? 'in' : 'out',
+				size: { width: 50, height: 50 }
+			}
+		});
+
+		// Establish relationships between Motion, Arrow, and Prop
+		motion.attachComponents(arrow, prop);
+		return motion;
+	}
+
+	/**
+	 * Processes the input pictograph data to initialize motions, arrows, and props.
+	 *
+	 * @param data Pictograph data
+	 */
 	function processPictographData(data: any) {
 		if (!data) return;
 
 		motions = [
-			new Motion(
-				{
-					pictograph: { gridPoints },
-					motionType: data.red_attributes?.motion?.type || 'static',
-					startLoc: data.red_attributes?.motion?.startLoc || 'n',
-					endLoc: data.red_attributes?.motion?.endLoc || 's',
-					color: 'red',
-					arrow: {
-						color: 'red',
-						position: { x: 0, y: 0 },
-						rotation: 0,
-						motionType: data.red_attributes?.motion?.type || 'static'
-					},
-					prop: {
-						propType: 'hand',
-						color: 'red',
-						location: 'n',
-						orientation: 'in',
-						size: { width: 50, height: 50 }
-					}
-				},
-				gridPoints
-			),
-			new Motion(
-				{
-					pictograph: { gridPoints },
-					motionType: data.blue_attributes?.motion?.type || 'static',
-					startLoc: data.blue_attributes?.motion?.startLoc || 'c',
-					endLoc: data.blue_attributes?.motion?.endLoc || 'c',
-					color: 'blue',
-					arrow: {
-						color: 'blue',
-						position: { x: 0, y: 0 },
-						rotation: 0,
-						motionType: data.blue_attributes?.motion?.type || 'static'
-					},
-					prop: {
-						propType: 'staff',
-						color: 'blue',
-						location: 's',
-						orientation: 'out',
-						size: { width: 50, height: 50 }
-					}
-				},
-				gridPoints
-			)
+			createMotion(data.red_attributes, 'red', 'staff', 'in', 'cw'),
+			createMotion(data.blue_attributes, 'blue', 'staff', 'out', 'ccw')
 		];
 	}
 
+	// Reactively process pictograph data when it changes
 	$: processPictographData(pictographData);
 
+	/**
+	 * Handles the grid points being ready and updates the `gridPoints` reference.
+	 *
+	 * @param points The updated grid points
+	 */
 	function handleGridPointsReady(points: any) {
 		gridPoints = { ...points };
 	}
 </script>
 
-<PictographView {isSelected} {interactive} {onClick} {name}>
+<PictographView bind:this={currentPictograph} {isSelected} {interactive} {onClick} {name}>
 	<div class="pictograph">
 		<Grid gridMode={pictographData?.grid_mode || 'diamond'} onPointsReady={handleGridPointsReady} />
 		{#each motions as motion}
-			<Arrow {...motion.arrow} pictograph={motion.pictograph} />
-			{#if motion.prop}
-				<Prop
-					propType={motion.prop.propType}
-					color={motion.prop.color}
-					loc={motion.prop.location}
-					ori={motion.prop.orientation}
-					size={motion.prop.size}
-				/>
-			{/if}
+			<Arrow {motion} />
+			<Prop {motion} />
 		{/each}
 	</div>
 </PictographView>
@@ -99,7 +120,6 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
-        background-color: white;
-
+		background-color: white;
 	}
 </style>
