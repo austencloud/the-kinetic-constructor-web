@@ -32,19 +32,21 @@
 		align-items: center;
 		justify-content: center;
 		cursor: var(--cursor, default);
-		transition: transform 0.2s ease;
+		transition: transform 0.1s ease;
+		
 	}
 
 	.pictograph-view:hover {
-		transform: var(--hover-scale, none);
+		transform: scale(1.1); /* Entire container + border grows */
 	}
 	.pictograph-view:active {
-		transform: var(--click-scale, none);
+		transform: scale(1);
 	}
 
 	.pictograph-label {
 		margin-top: 0.5em;
 		font-size: 0.8em;
 		text-align: center;
+		
 	}
 </style>

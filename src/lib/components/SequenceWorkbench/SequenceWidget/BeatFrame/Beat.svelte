@@ -31,18 +31,7 @@
 		width: 100%;
 		height: 100%;
 		padding:0;
-		transition: transform 0.1s ease;
-		cursor: pointer; /* so user sees pointer on hover */
 	}
 	
-	.beat:hover {
-		transform: scale(1.05); /* Entire container + border grows */
-		cursor: pointer; /* so user sees pointer on hover */
-		z-index: 10
-	}
-	
-	.beat:active {
-		transform: scale(1);
-		cursor: pointer; /* so user sees pointer on hover */
-	}
+
 </style>
