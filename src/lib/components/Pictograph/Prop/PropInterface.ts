@@ -1,4 +1,4 @@
-import type { MotionInterface } from '../Motion/MotionInterface';
+import type { MotionInterface, Location } from '../Motion/MotionInterface';
 import type { Orientation } from './PropTypes';
 
 export type RadialMode = 'radial' | 'nonradial';
@@ -10,4 +10,6 @@ export interface PropInterface {
 	ori: Orientation | null;
 	motion: MotionInterface;
 	coords: { x: number; y: number };
+	loc: Location
+	
 }

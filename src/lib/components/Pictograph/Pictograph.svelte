@@ -32,7 +32,8 @@
 					motion: motions[0],
 					radialMode: determineRadialMode(data.redMotionData.endOri),
 					ori: data.redMotionData.endOri,
-					coords: {x:0, y:0}
+					coords: {x:0, y:0},
+					loc: data.redMotionData.endLoc
 				},
 				{
 					propType: 'staff',
@@ -40,7 +41,8 @@
 					motion: motions[1],
 					radialMode: determineRadialMode(data.blueMotionData.endOri),
 					ori: data.blueMotionData.endOri,
-					coords: {x:0, y:0}
+					coords: {x:0, y:0},
+					loc: data.blueMotionData.endLoc
 				}
 			];
 		} else {
