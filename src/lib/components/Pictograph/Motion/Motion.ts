@@ -16,6 +16,7 @@ import Prop from '../Prop/Prop.svelte';
 import Pictograph from '../Pictograph.svelte';
 import type { Orientation } from '../Prop/PropTypes';
 import type { PictographInterface } from '../../../types/PictographInterface';
+import { LeadStateDeterminer } from './LeadStateDeterminer';
 
 export class Motion implements MotionInterface {
 	motionType: MotionType;
@@ -117,17 +118,20 @@ export class Motion implements MotionInterface {
 	}
 
 	assignLeadStates(): void {
-		const motions = this.pictographData.motionData;
+		// Extract the red and blue motions
+		const redMotionData = this.pictographData.redMotionData;
+		const blueMotionData = this.pictographData.blueMotionData;
 
-		if (motions?.length === 2) {
-			// Assuming two motions: one red and one blue
-			const [leadingMotion, trailingMotion] = motions;
+		// Initialize the LeadStateDeterminer with the motions
+		if (redMotionData && blueMotionData) {
+			const leadStateDeterminer = new LeadStateDeterminer(redMotionData, blueMotionData);
+			const leadingMotion = leadStateDeterminer.getLeadingMotion();
+			const trailingMotion = leadStateDeterminer.getTrailingMotion();
 
-			// Assign lead states
 			leadingMotion.leadState = 'leading';
 			trailingMotion.leadState = 'trailing';
 		} else {
-			console.warn('Unexpected number of motions in pictograph data:', motions);
+			throw new Error('Red or Blue motion data is null');
 		}
 	}
 

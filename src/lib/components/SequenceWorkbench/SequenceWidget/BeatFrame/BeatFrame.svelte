@@ -2,62 +2,76 @@
 	import { onMount } from 'svelte';
 	import { resizeObserver } from '$lib/actions/resizeObserver';
 
-	import StartPosBeat, { type StartPosBeatData } from './StartPosBeat.svelte';
-	import Beat, { type BeatData } from './Beat.svelte';
-	import { sampleBeats } from './BeatFrameExampleData';
+	import StartPosBeat from './StartPosBeat.svelte';
+	import Beat from './Beat.svelte';
+	import { defaultPictographData } from '$lib/components/Pictograph/defaultPictographData';
 
 	import { applyLayout, calculateCellSize } from './beatFrameLayoutHelpers';
 	import type { LayoutDict } from './beatFrameLayoutHelpers';
 	import { getDefaultLayouts } from '$lib/services/beatLayoutService';
+	import type { BeatData } from './BetaData';
 
 	let defaultLayouts: LayoutDict = {};
 
-	const startPosBeatData: StartPosBeatData = {
-		id: 0,
+	// Start position beat
+	const startPosBeatData: BeatData = {
+		beatNumber: 0,
 		filled: false,
-		pictographData: { grid: '/diamond_grid.svg' }
+		pictographData: defaultPictographData
 	};
-
-	let beatData: BeatData[] = sampleBeats;
-	export let visibleCount = beatData.length;
 
 	let beatRows = 4;
 	let beatCols = 4;
+	let beatData: BeatData[] = [];
 
 	let frameRef: HTMLDivElement | null = null;
 	let frameWidth = 0;
 	let frameHeight = 0;
 
-	function onResize(width: number, height: number) {
-		// console.log('Resize detected:', width, height);
-		frameWidth = width;
-		frameHeight = height;
-		updateCellSize();
-	}
-
 	const gap = 10;
 	let cellSize = 50;
 
-	let ro: ResizeObserver | undefined;
-
 	onMount(() => {
 		initLayouts();
+		generateBeats();
+
 		// Force recalculation once DOM is ready
 		setTimeout(() => {
 			if (frameRef) {
 				const rect = frameRef.getBoundingClientRect();
 				onResize(rect.width, rect.height);
 			}
-		}, 50); // Delay slightly longer if needed
+		}, 50);
 	});
 
 	async function initLayouts() {
 		defaultLayouts = await getDefaultLayouts();
-		applyBeatLayout(visibleCount);
+		applyBeatLayout();
 	}
 
-	function applyBeatLayout(beatCount: number) {
-		[beatRows, beatCols] = applyLayout(defaultLayouts, beatCount, [4, 4]);
+	function applyBeatLayout() {
+		[beatRows, beatCols] = applyLayout(defaultLayouts, beatData.length, [4, 4]);
+		updateCellSize();
+	}
+
+	function generateBeats() {
+		beatData = [];
+		let beatNumber = 1; // Start numbering after the start position
+
+		for (let row = 0; row < beatRows; row++) {
+			for (let col = 0; col < beatCols; col++) {
+				beatData.push({
+					beatNumber: beatNumber++,
+					filled: false,
+					pictographData: { ...defaultPictographData }
+				});
+			}
+		}
+	}
+
+	function onResize(width: number, height: number) {
+		frameWidth = width;
+		frameHeight = height;
 		updateCellSize();
 	}
 
@@ -70,10 +84,7 @@
 	}
 
 	function handleBeatClick(beat: BeatData) {
-		beat.filled = !beat.filled;
-	}
-	$: if (frameWidth && frameHeight) {
-		updateCellSize();
+		console.log('Clicked beat:', beat);
 	}
 </script>
 
@@ -85,24 +96,27 @@
 >
 	<div
 		class="start-pos"
-		style="grid-row: 1; grid-column: 1; width: {cellSize}px;height: {cellSize}px;"
+		style="grid-row: 1; grid-column: 1; width: {cellSize}px; height: {cellSize}px;"
 	>
-		<StartPosBeat {startPosBeatData} onClick={(sp) => console.log('Start pos clicked =>', sp)} />
+		<StartPosBeat
+			beatData={startPosBeatData} onClick={() => handleBeatClick(startPosBeatData)}
+		/>
 	</div>
 
-	{#each beatData.slice(0, visibleCount) as beat, index (beat.id)}
-		<div
-			class="beat-container"
-			style="
-				grid-row: {Math.floor(index / beatCols) + 1};
-				grid-column: {(index % beatCols) + 2};
-				width: {cellSize}px;
-				height: {cellSize}px;
-			"
-		>
-			<Beat {beat} onClick={handleBeatClick} />
-		</div>
-	{/each}
+	{#each beatData as beatData (beatData.beatNumber)}
+	<div
+		class="beat-container"
+		style="
+			grid-row: {Math.floor((beatData.beatNumber - 1) / beatCols) + 1};
+			grid-column: {(beatData.beatNumber - 1) % beatCols + 2};
+			width: {cellSize}px;
+			height: {cellSize}px;
+		"
+	>
+		<Beat beatData={beatData} onClick={() => handleBeatClick(beatData)} />
+	</div>
+{/each}
+
 </div>
 
 <style>

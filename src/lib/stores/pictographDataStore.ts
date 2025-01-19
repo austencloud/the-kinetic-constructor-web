@@ -77,7 +77,16 @@ function groupPictographsByLetter(pictographs: Record<string, any>[]): Pictograp
 }
 
 
-function extractAttributes(record: Record<string, any>, prefix: string): MotionInterface {
+function extractAttributes(record: Record<string, any>, prefix: string): MotionInterface | null {
+	if (
+		!record[`${prefix}MotionType`] ||
+		!record[`${prefix}StartLoc`] ||
+		!record[`${prefix}EndLoc`] ||
+		!record[`${prefix}PropRotDir`]
+	) {
+		return null; // Return null if any required attribute is missing
+	}
+
 	return {
 		pictographData: null as any, // Replace with a valid reference later, if necessary
 		handRotDir: 'cw_handpath', // Default hand rotation direction
@@ -94,5 +103,7 @@ function extractAttributes(record: Record<string, any>, prefix: string): MotionI
 		prefloatPropRotDir: null
 	};
 }
+
+
 
 export default pictographDataStore;

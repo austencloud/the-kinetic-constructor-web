@@ -8,6 +8,7 @@
 	import type { MotionInterface, PropRotDir } from './Motion/MotionInterface';
 	import type { Orientation } from './Prop/PropTypes';
 	import type { PictographInterface } from '$lib/types/PictographInterface';
+	import { defaultPictographData } from './defaultPictographData';
 
 	export let pictographData: any;
 	export let name: string | null = null;
@@ -19,35 +20,29 @@
 	let propPlacementManager = new PropPlacementManager();
 
 	function processPictographData(pictographData: PictographInterface | null): void {
-		if (!pictographData) {
-			console.warn('No pictograph data provided.');
-			return;
+		// Fallback to default data if null
+		const data = pictographData || defaultPictographData;
+
+		// Handle red and blue motion data
+		if (data.redMotionData && data.blueMotionData) {
+			motions = [createMotion(data.redMotionData), createMotion(data.blueMotionData)];
+
+			propDicts = [
+				{
+					propType: 'staff',
+					color: 'red',
+					motion: motions[0]
+				},
+				{
+					propType: 'staff',
+					color: 'blue',
+					motion: motions[1]
+				}
+			];
+		} else {
+			motions = [];
+			propDicts = [];
 		}
-
-		if (!pictographData.redMotionData || !pictographData.blueMotionData) {
-			console.warn('Incomplete motion data:', pictographData);
-			return;
-		}
-
-		// console.log('Processing Pictograph Data:', pictographData);
-
-		motions = [
-			createMotion(pictographData.redMotionData),
-			createMotion(pictographData.blueMotionData)
-		];
-
-		propDicts = [
-			{
-				propType: 'staff',
-				color: 'red',
-				motion: motions[0]
-			},
-			{
-				propType: 'staff',
-				color: 'blue',
-				motion: motions[1]
-			}
-		];
 	}
 
 	// Handle grid points
@@ -71,7 +66,6 @@
 
 	function createMotion(attributes: MotionInterface): Motion {
 		const motionData: MotionInterface = {
-			pictographData,
 			motionType: attributes.motionType,
 			startLoc: attributes.startLoc,
 			endLoc: attributes.endLoc,
@@ -95,7 +89,14 @@
 	$: processPictographData(pictographData);
 </script>
 
-<div class="pictograph">
+<div
+	class="pictograph"
+	role="button"
+	tabindex="0"
+    on:click|stopPropagation={onClick}
+
+	on:keydown={(e) => e.key === 'Enter' && onClick()}
+>
 	<Grid gridMode={pictographData?.grid_mode || 'diamond'} onPointsReady={handleGridPointsReady} />
 	{#each propDicts as propDict}
 		<Prop {propDict} {gridPoints} />

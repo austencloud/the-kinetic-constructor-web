@@ -4,15 +4,15 @@ import type { TKAPosition } from './TKAPosition';
 
 export type VTGDir = 'tog' | 'opp';
 export type VTGTiming = 'split' | 'same';
+export type GridMode = 'diamond' | 'box';
 
 export interface PictographInterface {
-	letter: Letter;
-	startPos: TKAPosition;
-	endPos: TKAPosition;
-	timing: VTGTiming;
-	direction: VTGDir;
-	gridMode: 'diamond' | 'box';
-	blueMotionData: MotionInterface; // Interface, not instance
-	redMotionData: MotionInterface; // Interface, not instance
-	motionData: MotionInterface[]; // Use interfaces to keep it decoupled
+	letter: Letter | null;
+	startPos: TKAPosition | null;
+	endPos: TKAPosition | null;
+	timing: VTGTiming | null;
+	direction: VTGDir | null;
+	gridMode: GridMode | null;
+	blueMotionData: MotionInterface | null;
+	redMotionData: MotionInterface | null;
 }

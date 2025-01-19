@@ -14,7 +14,6 @@ import type { Orientation } from '../Prop/PropTypes';
 import type { PictographInterface } from '../../../types/PictographInterface';
 
 export interface MotionInterface {
-	pictographData: PictographInterface;
 	arrow?: Arrow | null; // Optional or null for uninitialized state
 	prop?: Prop | null; // Optional or null for uninitialized state
 	handRotDir: HandRotDir | null;

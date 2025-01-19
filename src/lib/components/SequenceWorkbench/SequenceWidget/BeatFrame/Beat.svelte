@@ -1,37 +1,30 @@
-<script context="module" lang="ts">
-	export interface BeatData {
-		id: number;
-		filled: boolean;
-		pictographData: any;
-	}
-</script>
-
 <script lang="ts">
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
+	import { defaultPictographData } from '$lib/components/Pictograph/defaultPictographData';
+	import type { PictographInterface } from '$lib/types/PictographInterface';
+	import type { BeatData } from './BetaData';
 
-	export let beat: BeatData;
+
+	export let beatData: BeatData;
 	export let onClick: (beat: BeatData) => void;
 
-	// You can remove or keep this if you need it for debugging, 
-	// but you won’t show a label in the Pictograph now.
-	let localName = `Beat ${beat.id}`;
+	let pictographData: PictographInterface = beatData.pictographData || defaultPictographData;
 </script>
 
-<!-- Container that includes the border and hover scale -->
-<button class="beat" on:click={() => onClick(beat)} aria-label={`Beat ${beat.id}`} on:keydown={(e) => e.key === 'Enter' && onClick(beat)}>
-	<Pictograph 
-		pictographData={beat.pictographData} 
-		isSelected={beat.filled}
-		interactive={false}
-		onClick={() => onClick(beat)}></Pictograph>
+<button
+	class="beat"
+	on:click={() => onClick(beatData)}
+	aria-label={`Beat ${beatData.beatNumber}`}
+	on:keydown={(e) => e.key === 'Enter' && onClick(beatData)}
+>
+	<Pictograph {pictographData} isSelected={beatData.filled} onClick={() => onClick(beatData)}
+	></Pictograph>
 </button>
 
 <style>
 	.beat {
 		width: 100%;
 		height: 100%;
-		padding:0;
+		padding: 0;
 	}
-	
-
 </style>

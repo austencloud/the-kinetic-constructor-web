@@ -16,7 +16,6 @@
 			return;
 		}
 
-
 		const defaultStartPosKeys =
 			gridMode === 'diamond'
 				? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
@@ -30,11 +29,11 @@
 				defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`);
 			return isValid;
 		});
-
 	});
 
 	const handleSelect = (position: PictographInterface) => {
 		selectedStartPos.set(position);
+		console.log('Selected start position:', position);
 	};
 </script>
 
@@ -43,7 +42,6 @@
 	<div class="pictograph-container">
 		{#if startPositions.length > 0}
 			{#each startPositions as position}
-				<!-- Ensure redMotionData and blueMotionData are valid before rendering -->
 				{#if position.redMotionData && position.blueMotionData}
 					<Pictograph
 						pictographData={position}
