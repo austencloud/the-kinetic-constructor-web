@@ -19,7 +19,6 @@
             const data: CircleCoords = await response.json();
             points = parseCircleCoords(data, gridMode); // Use utility function to parse
 
-            console.log('Loaded circle coordinates:', points);
 
             if (onPointsReady && points) {
                 onPointsReady(points);

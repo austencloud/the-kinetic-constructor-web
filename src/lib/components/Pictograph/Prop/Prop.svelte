@@ -2,63 +2,65 @@
 	import { onMount } from 'svelte';
 	import type { PropType, Orientation, Location } from './PropTypes';
 	import type { Motion } from '../Motion/Motion';
-	import PropAttrManager from './PropAttrManager';
-	import PropChecker from './PropChecker';
 	import PropRotAngleManager from './PropRotAngleManager';
-	import PropUpdater from './PropUpdater';
-	import PropSvgManager from './PropSvgManager';
 
-	export let propType: PropType = 'hand';
+	export let propType: PropType = 'staff';
 	export let color: 'red' | 'blue' = 'blue';
 	export let loc: Location = 'n';
 	export let ori: Orientation = 'in';
 	export let size: { width: number; height: number } = { width: 50, height: 50 };
-	export let motion: Motion | null = null; // Motion instance bound to this Prop
+	export let motion: Motion | null = null;
 
 	let svgPath = '';
 	let transform = '';
 
-	let attrManager: PropAttrManager | null = null;
-	let checker: PropChecker | null = null;
 	let rotAngleManager: PropRotAngleManager | null = null;
-	let updater: PropUpdater | null = null;
-	let svgManager: PropSvgManager | null = null;
 
-	// Ensure all managers are initialized
+	function updateAttributes(attributes: Partial<{ loc: Location; ori: Orientation }>): void {
+		if (attributes.loc) loc = attributes.loc;
+		if (attributes.ori) ori = attributes.ori;
+	}
+
+	function getAttributes(): Record<string, any> {
+		return { propType, color, loc, ori, size };
+	}
+
+	function swapOrientation(): void {
+		const orientationMap: Record<Orientation, Orientation> = {
+			in: 'out',
+			out: 'in',
+			clock: 'counter',
+			counter: 'clock',
+		};
+		ori = orientationMap[ori];
+	}
+
+	function setZValueBasedOnColor(): number {
+		return color === 'red' ? 5 : 4;
+	}
+
+	function getSvgPath(propType: string, color: 'red' | 'blue'): string {
+		const basePath = '/images/props/';
+		return `${basePath}${propType}.svg`;
+	}
+
+	function update(attributes: Partial<{ loc: Location; ori: Orientation; propType: PropType; color: string }>): void {
+		updateAttributes(attributes);
+		transform = `translate(${size.width / 2}px, ${size.height / 2}px) rotate(${rotAngleManager?.getRotationAngle() || 0}deg)`;
+		svgPath = getSvgPath(propType, color);
+	}
+
 	onMount(() => {
-		attrManager = new PropAttrManager({
-			propType,
-			color,
-			loc,
-			ori,
-			size
-		});
-		checker = new PropChecker(attrManager);
-		rotAngleManager = new PropRotAngleManager(attrManager);
-		svgManager = new PropSvgManager();
-		updater = new PropUpdater(attrManager, rotAngleManager, svgManager);
+		rotAngleManager = new PropRotAngleManager({ location: loc, orientation: ori });
+		update({ propType, color, loc, ori });
 	});
 
-	// Reactive transform update with nullish checks
-	$: {
-		transform =
-			rotAngleManager && typeof rotAngleManager.getRotationAngle === 'function'
-				? `translate(${size.width / 2}px, ${size.height / 2}px) rotate(${rotAngleManager.getRotationAngle()}deg)`
-				: `translate(${size.width / 2}px, ${size.height / 2}px)`;
+	$: if (motion) {
+		update({ loc: motion.endLoc, ori: motion.endOri });
 	}
 
-	// Reactive SVG path update with nullish checks
-	$: {
-		svgPath = svgManager?.getSvgPath(propType, color) || '';
-	}
-
-	// React to motion updates if motion is bound
-	$: {
-		if (motion) {
-			loc = motion.endLoc; // Update the location based on the motion
-			ori = motion.endOri; // Update the orientation based on the motion
-		}
-	}
+	$: transform = `translate(${size.width / 2}px, ${size.height / 2}px) rotate(${rotAngleManager?.getRotationAngle() || 0}deg)`;
+	$: svgPath = getSvgPath(propType, color);
 </script>
 
 <svg

@@ -19,7 +19,9 @@ export default class ArrowSvgManager {
 				: 'from_nonradial';
 		const turns = this.motion.turns.toFixed(1); // Convert turns to float with one decimal place
 		const motionType = this.motion.motionType;
-		return `${basePath}/${typePath}/${radialPath}/${motionType}_${turns}.svg`;
+		const svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${turns}.svg`;
+		console.log(`Loaded arrow SVG path: ${svgPath}`);
+		return svgPath;
 	}
 
 	updateSvgAppearance(): { backgroundColor: string } {

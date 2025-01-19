@@ -8,13 +8,12 @@ export default class SnowflakeManager {
     opacity: number;
     shape: Path2D;
     color: string;
-    superSpiky: boolean;
   }> = [];
 
   windStrength = 0; // Base wind strength
   windChangeTimer = 0; // Timer to trigger wind changes
   windChangeInterval = 200; // Interval for wind changes
-  density = 0.0004; // Snowflake density per pixel
+  density = 0.0003; // Snowflake density per pixel
 
   initialize(width: number, height: number) {
     const count = Math.floor(width * height * this.density);
@@ -23,7 +22,6 @@ export default class SnowflakeManager {
 
   createSnowflake(width: number, height: number) {
     const size = Math.random() * 5 + 2;
-    const superSpiky = Math.random() > 0.5; // 50% chance to be super spiky
     return {
       x: Math.random() * width,
       y: Math.random() * height, // Start within the visible height of the canvas
@@ -31,13 +29,12 @@ export default class SnowflakeManager {
       size,
       sway: Math.random() * 1 - 0.5,
       opacity: Math.random() * 0.8 + 0.2,
-      shape: this.generateSnowflake(size, superSpiky),
+      shape: this.generateSnowflake(size),
       color: this.randomSnowflakeColor(),
-      superSpiky,
     };
   }
 
-  generateSnowflake(size: number, superSpiky: boolean): Path2D {
+  generateSnowflake(size: number): Path2D {
     const path = new Path2D();
     const spikes = 6 + Math.floor(Math.random() * 4); // 6–10 spikes
 
@@ -47,8 +44,8 @@ export default class SnowflakeManager {
       const outerY = Math.sin(angle) * size;
       path.lineTo(outerX, outerY);
 
-      const innerX = Math.cos(angle + Math.PI / spikes) * size * (superSpiky ? 0.2 : 0.5);
-      const innerY = Math.sin(angle + Math.PI / spikes) * size * (superSpiky ? 0.2 : 0.5);
+      const innerX = Math.cos(angle + Math.PI / spikes) * size * 0.2;
+      const innerY = Math.sin(angle + Math.PI / spikes) * size * 0.2;
       path.lineTo(innerX, innerY);
     }
     path.closePath();
