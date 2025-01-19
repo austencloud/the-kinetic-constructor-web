@@ -24,7 +24,6 @@
 		loadPictographData()
 			.then((data) => {
 				pictographData = data;
-				console.log('Loaded Pictograph Data:', pictographData); // Debug output
 			})
 			.catch((err) => {
 				console.error('Error loading pictograph data:', err);

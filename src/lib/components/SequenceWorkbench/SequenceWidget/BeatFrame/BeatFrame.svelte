@@ -29,7 +29,7 @@
 	let frameHeight = 0;
 
 	function onResize(width: number, height: number) {
-		console.log('Resize detected:', width, height);
+		// console.log('Resize detected:', width, height);
 		frameWidth = width;
 		frameHeight = height;
 		updateCellSize();
@@ -42,12 +42,10 @@
 
 	onMount(() => {
 		initLayouts();
-		console.log('Beat frame mounted');
 		// Force recalculation once DOM is ready
 		setTimeout(() => {
 			if (frameRef) {
 				const rect = frameRef.getBoundingClientRect();
-				console.log('Initial frame dimensions:', rect.width, rect.height);
 				onResize(rect.width, rect.height);
 			}
 		}, 50); // Delay slightly longer if needed

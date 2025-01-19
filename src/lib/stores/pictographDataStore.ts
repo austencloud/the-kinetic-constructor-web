@@ -1,4 +1,13 @@
+import type { MotionInterface } from '$lib/components/Pictograph/Motion/MotionInterface';
+import type { PictographInterface } from '$lib/types/PictographInterface';
 import { writable } from 'svelte/store';
+
+// Utility function to convert snake_case or kebab-case to camelCase
+function toCamelCase(str: string): string {
+	return str.replace(/([-_][a-z])/g, (group) =>
+		group.toUpperCase().replace('-', '').replace('_', '')
+	);
+}
 
 const pictographDataStore = writable<Record<string, any>[]>([]);
 
@@ -13,70 +22,76 @@ export const loadPictographData = async () => {
 		const combinedData = [...diamondPictographs, ...boxPictographs];
 
 		// Restructure and group the data
-		const groupedData = groupPictographsByLetter(combinedData);
+		const allPictographData = groupPictographsByLetter(combinedData);
 
 		// Update the store
-		pictographDataStore.set(groupedData);
-
+		pictographDataStore.set(allPictographData);
 		// Return the grouped data for immediate use
-		return groupedData;
+		return allPictographData;
 	} catch (error) {
 		console.error('Error loading pictograph data:', error);
 		throw error;
 	}
 };
 
-// Parses CSV and adds grid attributes
+// Parses CSV and converts keys to camel case
 function parseCsvToJson(csv: string, gridMode: string) {
 	const lines = csv.split('\n').filter(Boolean);
-	const headers = lines.shift()?.split(',') || [];
+	const headers = lines.shift()?.split(',').map(toCamelCase) || []; // Convert headers to camel case
 
 	return lines.map((line) => {
 		const values = line.split(',');
-		const record = headers.reduce((acc, header, index) => {
-			acc[header.trim()] = values[index]?.trim();
-			return acc;
-		}, {} as Record<string, any>);
+		const record = headers.reduce(
+			(acc, header, index) => {
+				acc[header.trim()] = values[index]?.trim();
+				return acc;
+			},
+			{} as Record<string, any>
+		);
 
 		// Attach grid mode
-		record.grid_mode = gridMode;
+		record.gridMode = gridMode;
 
 		return record;
 	});
 }
 
-// Group and restructure data by letters
-function groupPictographsByLetter(pictographs: Record<string, any>[]) {
+function groupPictographsByLetter(pictographs: Record<string, any>[]): PictographInterface[] {
 	return pictographs.map((record) => {
-		const letter = record.letter;
-
-		// Restructure attributes
-		const blueAttributes = extractAttributes(record, 'blue');
-		const redAttributes = extractAttributes(record, 'red');
+		// Extract red and blue motion data
+		const redMotionData = extractAttributes(record, 'red');
+		const blueMotionData = extractAttributes(record, 'blue');
 
 		return {
-			letter,
-			start_pos: record.start_pos,
-			end_pos: record.end_pos,
+			letter: record.letter,
+			startPos: record.startPos,
+			endPos: record.endPos,
 			timing: record.timing,
 			direction: record.direction,
-			blue_attributes: blueAttributes,
-			red_attributes: redAttributes,
-			grid_mode: record.grid_mode, // Include grid mode for this pictograph
+			redMotionData,
+			blueMotionData,
+			gridMode: record.gridMode,
+			motionData: [], // Initialize as an empty array; motions can be added later
 		};
 	});
 }
 
-// Helper to extract attributes for blue/red
-function extractAttributes(record: Record<string, any>, prefix: string) {
+
+function extractAttributes(record: Record<string, any>, prefix: string): MotionInterface {
 	return {
-		motion_type: record[`${prefix}_motion_type`],
-		start_ori: "in",
-		prop_rot_dir: record[`${prefix}_prop_rot_dir`],
-		start_loc: record[`${prefix}_start_loc`],
-		end_loc: record[`${prefix}_end_loc`],
+		pictographData: null as any, // Replace with a valid reference later, if necessary
+		handRotDir: 'cw_handpath', // Default hand rotation direction
+		color: prefix === 'blue' ? 'blue' : 'red', // Determine based on the prefix
+		leadState: 'trailing', // Default lead state
+		motionType: record[`${prefix}MotionType`],
+		startLoc: record[`${prefix}StartLoc`],
+		endLoc: record[`${prefix}EndLoc`],
+		startOri: 'in',
+		endOri: null,
+		propRotDir: record[`${prefix}PropRotDir`],
 		turns: 0,
-		end_ori: null,
+		prefloatMotionType: null,
+		prefloatPropRotDir: null
 	};
 }
 

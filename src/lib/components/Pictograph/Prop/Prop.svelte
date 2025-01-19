@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import PropRotAngleManager from './PropRotAngleManager';
-	import type { Motion } from '../Motion/Motion';
+	import type { PropInterface } from './PropInterface';
 
-	export let propDict: { propType: string; color: 'red' | 'blue'; motion: Motion };
-	export let gridPoints: Record<string, { x: number; y: number }>;
+	export let propDict: PropInterface;
+	export let gridPoints: Record<string, { x: number; y: number }> = {};
 
 	let svgPath = '';
 	let transform = '';
@@ -12,11 +12,15 @@
 	let y = 0;
 	let rotAngleManager: PropRotAngleManager | null = null;
 
-	// Update position and rotation
+	function getSvgPath(): string {
+		const basePath = '/images/props/';
+		return `${basePath}${propDict.propType}.svg`;
+	}
+
 	function updatePosition(): void {
 		const { motion } = propDict;
 
-		if (!motion || !motion.endLoc) {
+		if (!motion?.endLoc || !motion?.endOri) {
 			console.warn('Motion data is incomplete:', motion);
 			x = 0;
 			y = 0;
@@ -31,23 +35,20 @@
 		transform = `translate(${x}px, ${y}px) rotate(${rotAngleManager?.getRotationAngle() || 0}deg)`;
 	}
 
-	function getSvgPath(): string {
-		const basePath = '/images/props/';
-		return `${basePath}${propDict.propType}.svg`;
-	}
-
 	onMount(() => {
-		rotAngleManager = new PropRotAngleManager({
-			location: propDict.motion.endLoc,
-			orientation: propDict.motion.endOri
-		});
-		updatePosition();
-		svgPath = getSvgPath();
-	});
+		const { motion } = propDict;
 
-	$: if (propDict.motion) {
-		updatePosition();
-	}
+		if (motion?.endLoc && motion?.endOri) {
+			rotAngleManager = new PropRotAngleManager({
+				location: motion.endLoc,
+				orientation: motion.endOri
+			});
+			updatePosition();
+			svgPath = getSvgPath();
+		} else {
+			console.error('Invalid motion data:', motion);
+		}
+	});
 </script>
 
 <svg

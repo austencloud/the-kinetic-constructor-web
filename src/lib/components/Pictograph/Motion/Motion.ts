@@ -3,7 +3,6 @@ import type {
 	MotionType,
 	PropRotDir,
 	Location,
-	Orientation,
 	Color,
 	LeadState,
 	HandRotDir
@@ -15,6 +14,8 @@ import { HandpathCalculator as HandRotDirCalculator } from './HandpathCalculator
 import Arrow from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
 import Pictograph from '../Pictograph.svelte';
+import type { Orientation } from '../Prop/PropTypes';
+import type { PictographInterface } from '../../../types/PictographInterface';
 
 export class Motion implements MotionInterface {
 	motionType: MotionType;
@@ -29,7 +30,7 @@ export class Motion implements MotionInterface {
 	prefloatPropRotDir: PropRotDir | null = null;
 	endOri: Orientation = 'in';
 	handRotDir: HandRotDir = 'cw_handpath';
-	pictograph: Pictograph;
+	pictographData: PictographInterface;
 
 	arrow: Arrow | null = null;
 	prop: Prop | null = null;
@@ -41,7 +42,7 @@ export class Motion implements MotionInterface {
 
 	constructor(motionData: MotionInterface) {
 		const {
-			pictograph,
+			pictographData: pictograph,
 			motionType = 'static',
 			startLoc = 'n',
 			endLoc = 'n',
@@ -56,7 +57,7 @@ export class Motion implements MotionInterface {
 			prop
 		} = motionData;
 
-		this.pictograph = pictograph;
+		this.pictographData = pictograph;
 		this.motionType = motionType;
 		this.startLoc = startLoc;
 		this.endLoc = endLoc;
@@ -77,21 +78,20 @@ export class Motion implements MotionInterface {
 		this.updater = new MotionUpdater(this);
 		this.handRotDirCalculator = new HandRotDirCalculator();
 
-		this.calculateEndOrientation(); // Calculate end orientation on instantiation
+		// Calculate end orientation immediately
+		this.calculateEndOrientation();
 		this.validatePrefloatProperties();
 	}
 
-	updateMotionData(newData: Partial<MotionInterface>): void {
-		// Update motion properties
-		Object.assign(this, newData);
+	private calculateEndOrientation(): void {
+		this.endOri = this.oriCalculator.calculateEndOri();
+	}
 
-		// Recalculate end orientation
+	updateMotionData(newData: Partial<MotionInterface>): void {
+		Object.assign(this, newData);
 		this.calculateEndOrientation();
 	}
 
-	/**
-	 * Update motion attributes directly.
-	 */
 	updateAttributes(attributes: Partial<MotionInterface>): void {
 		Object.assign(this, attributes);
 
@@ -103,9 +103,6 @@ export class Motion implements MotionInterface {
 		}
 	}
 
-	/**
-	 * Retrieve motion attributes as an object.
-	 */
 	getAttributes(): Record<string, any> {
 		return {
 			motionType: this.motionType,
@@ -119,27 +116,25 @@ export class Motion implements MotionInterface {
 		};
 	}
 
-	/**
-	 * Assign lead and trailing states.
-	 */
 	assignLeadStates(): void {
-		const leadingMotion = this.pictograph.getLeadingMotion();
-		const trailingMotion = this.pictograph.getTrailingMotion();
-		if (leadingMotion && trailingMotion) {
+		const motions = this.pictographData.motionData;
+
+		if (motions?.length === 2) {
+			// Assuming two motions: one red and one blue
+			const [leadingMotion, trailingMotion] = motions;
+
+			// Assign lead states
 			leadingMotion.leadState = 'leading';
 			trailingMotion.leadState = 'trailing';
+		} else {
+			console.warn('Unexpected number of motions in pictograph data:', motions);
 		}
-	}
-
-	private calculateEndOrientation(): void {
-		this.endOri = this.oriCalculator.calculateEndOri();
 	}
 
 	attachComponents(arrow: Arrow, prop: Prop): void {
 		this.arrow = arrow;
 		this.prop = prop;
 
-		// Reverse relationships
 		if (this.arrow) {
 			this.arrow.motion = this;
 		}

@@ -9,5 +9,5 @@ export type PropType =
     | 'buugeng'
     | 'bigbuugeng';
 
-export type Orientation = 'in' | 'out' | 'clock' | 'counter';
+export type Orientation = 'in' | 'out' | 'clock' | 'counter' ;
 export type Location = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw';

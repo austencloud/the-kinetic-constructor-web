@@ -1,4 +1,5 @@
-import type { MotionType, Location, Orientation, HandRotDir } from './MotionInterface';
+import type { Orientation } from '../Prop/PropTypes';
+import type { MotionType, Location, HandRotDir } from './MotionInterface';
 
 export class MotionOriCalculator {
 	motion: any;

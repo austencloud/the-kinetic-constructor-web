@@ -2,64 +2,57 @@
 	import Pictograph from '../Pictograph/Pictograph.svelte';
 	import pictographDataStore from '$lib/stores/pictographDataStore';
 	import { writable } from 'svelte/store';
-	import { onMount } from 'svelte';
 	import StartPositionLabel from './StartPosLabel.svelte';
+	import type { PictographInterface } from '$lib/types/PictographInterface';
 
-	export const selectedStartPos = writable<Record<string, any> | null>(null);
+	export const selectedStartPos = writable<PictographInterface | null>(null);
 
-	let startPositions: Record<string, any>[] = [];
+	let startPositions: PictographInterface[] = [];
 	let gridMode = 'diamond';
-
-	const containerWidth = writable<number>(0);
 
 	pictographDataStore.subscribe((data) => {
 		if (!Array.isArray(data)) {
 			console.error('Invalid pictograph data:', data);
 			return;
 		}
+
+
 		const defaultStartPosKeys =
 			gridMode === 'diamond'
 				? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
 				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
 
-		startPositions = data.filter((entry) =>
-			defaultStartPosKeys.includes(`${entry.start_pos}_${entry.end_pos}`)
-		);
-		// console.log('Filtered start positions:', startPositions);
+		// Filter and validate the data
+		startPositions = (data as PictographInterface[]).filter((entry) => {
+			const isValid =
+				entry.redMotionData &&
+				entry.blueMotionData &&
+				defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`);
+			return isValid;
+		});
+
 	});
 
-	const handleSelect = (position: Record<string, any>) => {
+	const handleSelect = (position: PictographInterface) => {
 		selectedStartPos.set(position);
 	};
-
-	let container: HTMLDivElement;
-	const updateWidth = () => {
-		if (container) {
-			containerWidth.set(container.clientWidth);
-		}
-	};
-
-	onMount(() => {
-		updateWidth();
-		window.addEventListener('resize', updateWidth);
-		return () => {
-			window.removeEventListener('resize', updateWidth);
-		};
-	});
 </script>
 
 <div class="start-pos-picker">
 	<StartPositionLabel />
-	<div class="pictograph-container" bind:this={container}>
+	<div class="pictograph-container">
 		{#if startPositions.length > 0}
 			{#each startPositions as position}
-				<Pictograph
-					pictographData={position}
-					onClick={() => handleSelect(position)}
-					isSelected={$selectedStartPos?.id === position.id}
-					name={position.name}
-					interactive={true}
-				/>
+				<!-- Ensure redMotionData and blueMotionData are valid before rendering -->
+				{#if position.redMotionData && position.blueMotionData}
+					<Pictograph
+						pictographData={position}
+						onClick={() => handleSelect(position)}
+						isSelected={$selectedStartPos?.letter === position.letter}
+					/>
+				{:else}
+					<p>Error: Invalid motion data for {position.letter}</p>
+				{/if}
 			{/each}
 		{:else}
 			<p>No start positions available.</p>
