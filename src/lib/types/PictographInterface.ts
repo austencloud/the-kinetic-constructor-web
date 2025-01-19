@@ -5,7 +5,6 @@ import type { TKAPosition } from './TKAPosition';
 export type VTGDir = 'tog' | 'opp';
 export type VTGTiming = 'split' | 'same';
 export type GridMode = 'diamond' | 'box';
-
 export interface PictographInterface {
 	letter: Letter | null;
 	startPos: TKAPosition | null;

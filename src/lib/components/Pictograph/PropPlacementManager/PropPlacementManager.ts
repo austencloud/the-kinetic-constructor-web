@@ -1,58 +1,33 @@
-import { BetaPropDirectionCalculator, type Direction } from './BetaPropDirectionCalculator';
+import type { PropInterface } from '../Prop/PropInterface';
+import { BetaPropPositioner } from './BetaPropPositioner';
+import { DefaultPropPositioner } from './DefaultPropPositioner';
 
 export class PropPlacementManager {
-	private directionCalculator: BetaPropDirectionCalculator;
+    private betaPositioner: BetaPropPositioner;
+    private defaultPositioner: DefaultPropPositioner;
 
-	constructor() {
-		this.directionCalculator = new BetaPropDirectionCalculator();
-	}
+    constructor() {
+        this.betaPositioner = new BetaPropPositioner();
+        this.defaultPositioner = new DefaultPropPositioner();
+    }
 
-	/**
-	 * Updates all prop positions using the appropriate logic (default or beta).
-	 * @param props List of props in the pictograph
-	 */
-	public updatePropPositions(props: any[]): void {
-		props.forEach((prop) => {
-			if (prop.isBeta) {
-				this.positionBetaProp(prop);
-			} else {
-				this.positionDefaultProp(prop);
-			}
-		});
-	}
+    public updatePropPositions(props: PropInterface[]): void {
+        const betaProps: PropInterface[] = [];
+        const defaultProps: PropInterface[] = [];
 
-	private positionBetaProp(prop: any): void {
-		const direction = this.directionCalculator.getDir(prop.motion);
-		if (direction) {
-			const position = this.calculatePositionFromDirection(prop.position, direction);
-			prop.position = position;
-		}
-	}
+        props.forEach((prop) => {
+            if (prop.motion && prop.motion.pictographData.gridMode === 'diamond') {
+                betaProps.push(prop);
+            } else {
+                defaultProps.push(prop);
+            }
+        });
 
-	private positionDefaultProp(prop: any): void {
-		// Example logic for default positioning
-		prop.position = { x: 100, y: 100 }; // Replace with actual logic
-	}
-
-	private calculatePositionFromDirection(
-		position: { x: number; y: number },
-		direction: Direction
-	): { x: number; y: number } {
-		const offset = 50; // Example offset
-		const movementMap = {
-			up: { x: 0, y: -offset },
-			down: { x: 0, y: offset },
-			left: { x: -offset, y: 0 },
-			right: { x: offset, y: 0 },
-			upright: { x: offset, y: -offset },
-			downleft: { x: -offset, y: offset },
-			downright: { x: offset, y: offset },
-			upleft: { x: -offset, y: -offset }
-		};
-		const movement = movementMap[direction] || { x: 0, y: 0 };
-		return {
-			x: position.x + movement.x,
-			y: position.y + movement.y
-		};
-	}
+        if (betaProps.length > 0) {
+            this.betaPositioner.reposition(betaProps);
+        }
+        defaultProps.forEach((prop) => {
+            this.defaultPositioner.setToDefaultPosition(prop);
+        });
+    }
 }

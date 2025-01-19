@@ -46,7 +46,6 @@
 					<Pictograph
 						pictographData={position}
 						onClick={() => handleSelect(position)}
-						isSelected={$selectedStartPos?.letter === position.letter}
 					/>
 				{:else}
 					<p>Error: Invalid motion data for {position.letter}</p>

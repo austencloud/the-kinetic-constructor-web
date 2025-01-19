@@ -43,7 +43,7 @@ export class Motion implements MotionInterface {
 
 	constructor(motionData: MotionInterface) {
 		const {
-			pictographData: pictograph,
+			pictographData: pictographData,
 			motionType = 'static',
 			startLoc = 'n',
 			endLoc = 'n',
@@ -58,7 +58,7 @@ export class Motion implements MotionInterface {
 			prop
 		} = motionData;
 
-		this.pictographData = pictograph;
+		this.pictographData = pictographData;
 		this.motionType = motionType;
 		this.startLoc = startLoc;
 		this.endLoc = endLoc;
@@ -73,13 +73,11 @@ export class Motion implements MotionInterface {
 		this.arrow = arrow || null;
 		this.prop = prop || null;
 
-		// Initialize managers
 		this.checker = new MotionChecker(this);
 		this.oriCalculator = new MotionOriCalculator(this);
 		this.updater = new MotionUpdater(this);
 		this.handRotDirCalculator = new HandRotDirCalculator();
 
-		// Calculate end orientation immediately
 		this.calculateEndOrientation();
 		this.validatePrefloatProperties();
 	}
@@ -118,11 +116,9 @@ export class Motion implements MotionInterface {
 	}
 
 	assignLeadStates(): void {
-		// Extract the red and blue motions
 		const redMotionData = this.pictographData.redMotionData;
 		const blueMotionData = this.pictographData.blueMotionData;
 
-		// Initialize the LeadStateDeterminer with the motions
 		if (redMotionData && blueMotionData) {
 			const leadStateDeterminer = new LeadStateDeterminer(redMotionData, blueMotionData);
 			const leadingMotion = leadStateDeterminer.getLeadingMotion();
