@@ -29,6 +29,7 @@
 	let frameHeight = 0;
 
 	function onResize(width: number, height: number) {
+		console.log('Resize detected:', width, height);
 		frameWidth = width;
 		frameHeight = height;
 		updateCellSize();
@@ -41,6 +42,15 @@
 
 	onMount(() => {
 		initLayouts();
+		console.log('Beat frame mounted');
+		// Force recalculation once DOM is ready
+		setTimeout(() => {
+			if (frameRef) {
+				const rect = frameRef.getBoundingClientRect();
+				console.log('Initial frame dimensions:', rect.width, rect.height);
+				onResize(rect.width, rect.height);
+			}
+		}, 50); // Delay slightly longer if needed
 	});
 
 	async function initLayouts() {
@@ -54,11 +64,18 @@
 	}
 
 	function updateCellSize() {
-		cellSize = calculateCellSize(frameWidth, frameHeight, beatRows, beatCols + 1, gap);
+		if (frameWidth > 0 && frameHeight > 0) {
+			cellSize = calculateCellSize(frameWidth, frameHeight, beatRows, beatCols + 1, gap);
+		} else {
+			console.warn('Frame dimensions not available yet');
+		}
 	}
 
 	function handleBeatClick(beat: BeatData) {
 		beat.filled = !beat.filled;
+	}
+	$: if (frameWidth && frameHeight) {
+		updateCellSize();
 	}
 </script>
 

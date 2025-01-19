@@ -11,8 +11,7 @@ import type {
 import { MotionChecker } from './MotionChecker';
 import { MotionOriCalculator } from './MotionOriCalculator';
 import { MotionUpdater } from './MotionUpdater';
-import { MotionAttrManager } from './MotionAttrManager';
-import { HandpathCalculator } from './HandpathCalculator';
+import { HandpathCalculator as HandRotDirCalculator } from './HandpathCalculator';
 import Arrow from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
 import Pictograph from '../Pictograph.svelte';
@@ -38,8 +37,7 @@ export class Motion implements MotionInterface {
 	checker: MotionChecker;
 	oriCalculator: MotionOriCalculator;
 	updater: MotionUpdater;
-	attrManager: MotionAttrManager;
-	handRotDirCalculator: HandpathCalculator;
+	handRotDirCalculator: HandRotDirCalculator;
 
 	constructor(motionData: MotionInterface) {
 		const {
@@ -77,10 +75,64 @@ export class Motion implements MotionInterface {
 		this.checker = new MotionChecker(this);
 		this.oriCalculator = new MotionOriCalculator(this);
 		this.updater = new MotionUpdater(this);
-		this.attrManager = new MotionAttrManager(this);
-		this.handRotDirCalculator = new HandpathCalculator();
+		this.handRotDirCalculator = new HandRotDirCalculator();
 
+		this.calculateEndOrientation(); // Calculate end orientation on instantiation
 		this.validatePrefloatProperties();
+	}
+
+	updateMotionData(newData: Partial<MotionInterface>): void {
+		// Update motion properties
+		Object.assign(this, newData);
+
+		// Recalculate end orientation
+		this.calculateEndOrientation();
+	}
+
+	/**
+	 * Update motion attributes directly.
+	 */
+	updateAttributes(attributes: Partial<MotionInterface>): void {
+		Object.assign(this, attributes);
+
+		if (this.prefloatMotionType === 'float') {
+			throw new Error("`prefloatMotionType` cannot be 'float'");
+		}
+		if (this.prefloatPropRotDir === 'no_rot') {
+			throw new Error("`prefloatPropRotDir` cannot be 'no_rot'");
+		}
+	}
+
+	/**
+	 * Retrieve motion attributes as an object.
+	 */
+	getAttributes(): Record<string, any> {
+		return {
+			motionType: this.motionType,
+			startLoc: this.startLoc,
+			endLoc: this.endLoc,
+			startOri: this.startOri,
+			endOri: this.endOri,
+			propRotDir: this.propRotDir,
+			color: this.color,
+			turns: this.turns
+		};
+	}
+
+	/**
+	 * Assign lead and trailing states.
+	 */
+	assignLeadStates(): void {
+		const leadingMotion = this.pictograph.getLeadingMotion();
+		const trailingMotion = this.pictograph.getTrailingMotion();
+		if (leadingMotion && trailingMotion) {
+			leadingMotion.leadState = 'leading';
+			trailingMotion.leadState = 'trailing';
+		}
+	}
+
+	private calculateEndOrientation(): void {
+		this.endOri = this.oriCalculator.calculateEndOri();
 	}
 
 	attachComponents(arrow: Arrow, prop: Prop): void {

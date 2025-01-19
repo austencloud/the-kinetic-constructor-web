@@ -21,6 +21,7 @@ export interface MotionInterface {
 	startLoc: Location;
 	endLoc: Location;
 	startOri: Orientation;
+	endOri: Orientation;
 	propRotDir: PropRotDir;
 	color: Color;
 	turns: number;

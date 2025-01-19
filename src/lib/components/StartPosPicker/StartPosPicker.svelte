@@ -25,7 +25,7 @@
 		startPositions = data.filter((entry) =>
 			defaultStartPosKeys.includes(`${entry.start_pos}_${entry.end_pos}`)
 		);
-		console.log('Filtered start positions:', startPositions);
+		// console.log('Filtered start positions:', startPositions);
 	});
 
 	const handleSelect = (position: Record<string, any>) => {

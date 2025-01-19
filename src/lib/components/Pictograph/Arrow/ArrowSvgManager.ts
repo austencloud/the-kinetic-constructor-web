@@ -20,7 +20,6 @@ export default class ArrowSvgManager {
 		const turns = this.motion.turns.toFixed(1); // Convert turns to float with one decimal place
 		const motionType = this.motion.motionType;
 		const svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${turns}.svg`;
-		console.log(`Loaded arrow SVG path: ${svgPath}`);
 		return svgPath;
 	}
 

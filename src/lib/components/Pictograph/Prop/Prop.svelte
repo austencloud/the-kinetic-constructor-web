@@ -1,71 +1,58 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { PropType, Orientation, Location } from './PropTypes';
-	import type { Motion } from '../Motion/Motion';
 	import PropRotAngleManager from './PropRotAngleManager';
+	import type { Motion } from '../Motion/Motion';
 
-	export let propType: PropType = 'staff';
-	export let color: 'red' | 'blue' = 'blue';
-	export let loc: Location = 'n';
-	export let ori: Orientation = 'in';
-	export let size: { width: number; height: number } = { width: 50, height: 50 };
-	export let motion: Motion | null = null;
+	export let propDict: { propType: string; color: 'red' | 'blue'; motion: Motion };
+	export let gridPoints: Record<string, { x: number; y: number }>;
 
 	let svgPath = '';
 	let transform = '';
-
+	let x = 0;
+	let y = 0;
 	let rotAngleManager: PropRotAngleManager | null = null;
 
-	function updateAttributes(attributes: Partial<{ loc: Location; ori: Orientation }>): void {
-		if (attributes.loc) loc = attributes.loc;
-		if (attributes.ori) ori = attributes.ori;
+	// Update position and rotation
+	function updatePosition(): void {
+		const { motion } = propDict;
+
+		if (!motion || !motion.endLoc) {
+			console.warn('Motion data is incomplete:', motion);
+			x = 0;
+			y = 0;
+			transform = `translate(${x}px, ${y}px)`;
+			return;
+		}
+
+		const position = gridPoints[motion.endLoc] || { x: 0, y: 0 };
+		x = position.x;
+		y = position.y;
+
+		transform = `translate(${x}px, ${y}px) rotate(${rotAngleManager?.getRotationAngle() || 0}deg)`;
 	}
 
-	function getAttributes(): Record<string, any> {
-		return { propType, color, loc, ori, size };
-	}
-
-	function swapOrientation(): void {
-		const orientationMap: Record<Orientation, Orientation> = {
-			in: 'out',
-			out: 'in',
-			clock: 'counter',
-			counter: 'clock',
-		};
-		ori = orientationMap[ori];
-	}
-
-	function setZValueBasedOnColor(): number {
-		return color === 'red' ? 5 : 4;
-	}
-
-	function getSvgPath(propType: string, color: 'red' | 'blue'): string {
+	function getSvgPath(): string {
 		const basePath = '/images/props/';
-		return `${basePath}${propType}.svg`;
-	}
-
-	function update(attributes: Partial<{ loc: Location; ori: Orientation; propType: PropType; color: string }>): void {
-		updateAttributes(attributes);
-		transform = `translate(${size.width / 2}px, ${size.height / 2}px) rotate(${rotAngleManager?.getRotationAngle() || 0}deg)`;
-		svgPath = getSvgPath(propType, color);
+		return `${basePath}${propDict.propType}.svg`;
 	}
 
 	onMount(() => {
-		rotAngleManager = new PropRotAngleManager({ location: loc, orientation: ori });
-		update({ propType, color, loc, ori });
+		rotAngleManager = new PropRotAngleManager({
+			location: propDict.motion.endLoc,
+			orientation: propDict.motion.endOri
+		});
+		updatePosition();
+		svgPath = getSvgPath();
 	});
 
-	$: if (motion) {
-		update({ loc: motion.endLoc, ori: motion.endOri });
+	$: if (propDict.motion) {
+		updatePosition();
 	}
-
-	$: transform = `translate(${size.width / 2}px, ${size.height / 2}px) rotate(${rotAngleManager?.getRotationAngle() || 0}deg)`;
-	$: svgPath = getSvgPath(propType, color);
 </script>
 
 <svg
 	class="prop"
-	style="transform: {transform}; width: {size.width}px; height: {size.height}px;"
+	style="left: {x}px; top: {y}px; transform: {transform};"
 	xmlns="http://www.w3.org/2000/svg"
 >
 	<use href={svgPath}></use>
@@ -73,7 +60,9 @@
 
 <style>
 	.prop {
-		transition: all 0.3s ease;
 		position: absolute;
+		transition: all 0.3s ease;
+		width: 50px;
+		height: 50px;
 	}
 </style>

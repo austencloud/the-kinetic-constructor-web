@@ -71,12 +71,12 @@ function groupPictographsByLetter(pictographs: Record<string, any>[]) {
 function extractAttributes(record: Record<string, any>, prefix: string) {
 	return {
 		motion_type: record[`${prefix}_motion_type`],
-		start_ori: record[`${prefix}_start_ori`],
+		start_ori: "in",
 		prop_rot_dir: record[`${prefix}_prop_rot_dir`],
 		start_loc: record[`${prefix}_start_loc`],
 		end_loc: record[`${prefix}_end_loc`],
-		turns: parseInt(record[`${prefix}_turns`]),
-		end_ori: record[`${prefix}_end_ori`],
+		turns: 0,
+		end_ori: null,
 	};
 }
 

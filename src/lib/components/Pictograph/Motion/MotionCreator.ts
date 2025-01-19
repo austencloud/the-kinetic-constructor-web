@@ -11,10 +11,11 @@ export function createMotion(
 ): Motion {
 	const motion = new Motion({
 		pictograph,
-		motionType: data?.motion?.type || 'static',
-		startLoc: data?.motion?.startLoc || 'n',
-		endLoc: data?.motion?.endLoc || 's',
-		startOri,
+		motionType: data?.motion?.type ,
+		startLoc: data?.motion?.startLoc,
+		endLoc: data?.motion?.endLoc ,
+		startOri: data?.motion?.startOri ,
+		endOri: data?.motion?.endOri ,
 		propRotDir,
 		color,
 		turns: 0,
