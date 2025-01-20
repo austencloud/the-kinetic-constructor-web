@@ -2,9 +2,9 @@
 	import { onMount } from 'svelte';
 	import { circleCoordinates } from './circleCoordinates'; // Adjust the path as needed
 	import type { GridData } from './GridInterface';
-	
+
 	export let gridMode: 'diamond' | 'box' = 'diamond';
-	export let sceneScaleFactor: number; // Scaling factor from Pictograph
+	export let gridScaleFactor: number; // Scaling factor from Pictograph
 	export let onPointsReady: (gridData: GridData) => void;
 
 	let gridSrc = '';
@@ -17,8 +17,8 @@
 
 	// Helper function to parse coordinate strings like "(475.0, 331.9)" into objects
 	function parseCoordinates(coordString: string): { x: number; y: number } | null {
-		if (coordString === "None") return null;
-		const [x, y] = coordString.replace(/[()]/g, "").split(", ").map(parseFloat);
+		if (coordString === 'None') return null;
+		const [x, y] = coordString.replace(/[()]/g, '').split(', ').map(parseFloat);
 		return { x, y };
 	}
 
@@ -59,34 +59,42 @@
 			),
 			centerPoint: {
 				coordinates: parseCoordinates(modeData.center_point)
-			},
+			}
 		};
 
 		// Emit the processed gridData
 		onPointsReady(gridData);
-		console.debug("Parsed gridData:", gridData);
+		console.debug('Parsed gridData:', gridData);
 	});
 </script>
 
-<div class="grid-container" style="transform: translate(-50%, -50%) scale({sceneScaleFactor});">
+<div
+    class="grid-container"
+    style="transform: translate(-50%, -50%) scale({gridScaleFactor});"
+>
     <img src={gridSrc} alt="Grid" class="grid-image" />
 </div>
 
-<style>
-    .grid-container {
-        width: 950px;
-        height: 950px;
-        transform-origin: center; /* Ensures scaling happens around the center */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-    }
 
-    .grid-image {
-        width: 100%;
-        height: auto;
-    }
+<style>
+	.grid-container {
+		width: 950px;
+		height: 950px;
+		transform-origin: center; /* Ensures scaling happens around the center */
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		padding: 0;
+		margin: 0;
+		border: none;    box-sizing: border-box;
+
+	}
+
+	.grid-image {
+		width: 100%;
+		height: auto;
+	}
 </style>

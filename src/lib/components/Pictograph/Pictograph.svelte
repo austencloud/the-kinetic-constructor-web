@@ -34,18 +34,30 @@
 			blueMotion = new Motion(blueMotionData);
 		}
 	}
+	let gridScaleFactor = 1;
+	let propScaleFactor = 1;
 
 	function updateContainerSize(): void {
 		if (pictographRef) {
-			let { width, height } = pictographRef.getBoundingClientRect();
-			containerWidth = width;
-			containerHeight = height;
-			sceneScaleFactor = Math.min(containerWidth / 950, containerHeight / 950);
+			const { width, height } = pictographRef.getBoundingClientRect();
+
+			// Grid scale factor (based on 950x950 logical size)
+			gridScaleFactor = Math.min(width / 950, height / 950);
+
+			// Prop scale factor (based on 650x650 logical size)
+			propScaleFactor = Math.min(width / 650, height / 650);
+
+			console.debug('Grid Scale Factor:', gridScaleFactor);
+			console.debug('Prop Scale Factor:', propScaleFactor);
 		}
 	}
 
 	function setupPropPlacementManager(): void {
 		if (pictographData && gridData) {
+			console.debug('Setting up Prop Placement Manager');
+			console.debug('Grid Data:', gridData);
+			console.debug('Pictograph Data:', pictographData);
+
 			propPlacementManager = new PropPlacementManager(
 				pictographData,
 				gridData,
@@ -54,11 +66,17 @@
 			);
 
 			if (redPropData) {
+				console.debug('Before updating redPropData:', redPropData);
 				redPropData = propPlacementManager.updatePropPositions([redPropData])[0];
+				console.debug('After updating redPropData:', redPropData);
 			}
 			if (bluePropData) {
+				console.debug('Before updating bluePropData:', bluePropData);
 				bluePropData = propPlacementManager.updatePropPositions([bluePropData])[0];
+				console.debug('After updating bluePropData:', bluePropData);
 			}
+		} else {
+			console.warn('Missing gridData or pictographData during setup.');
 		}
 	}
 
@@ -74,7 +92,7 @@
 						: null,
 				ori: redMotion.endOri,
 				coords: { x: 0, y: 0 },
-				loc: redMotion.endLoc,
+				loc: redMotion.endLoc
 			};
 		}
 
@@ -89,7 +107,7 @@
 						: null,
 				ori: blueMotion.endOri,
 				coords: { x: 0, y: 0 },
-				loc: blueMotion.endLoc,
+				loc: blueMotion.endLoc
 			};
 		}
 	}
@@ -120,6 +138,10 @@
 		isSelected = !isSelected;
 		onClick();
 	}
+	$: if (gridData && pictographData) {
+		console.debug('Setting up Prop Placement Manager');
+		setupPropPlacementManager();
+	}
 </script>
 
 <div
@@ -132,15 +154,16 @@
 >
 	<Grid
 		gridMode={pictographData?.gridMode || 'diamond'}
-		{sceneScaleFactor}
-		onPointsReady={(gridData) => {
-			gridData = gridData;
+		{gridScaleFactor}
+		onPointsReady={(data) => {
+			console.debug('Grid Data Ready:', data);
+			gridData = data;
 		}}
 	/>
 	{#if gridData}
 		{#each [redPropData, bluePropData] as propData (propData?.color)}
 			{#if propData}
-				<Prop {propData} {sceneScaleFactor} />
+				<Prop {propData} {propScaleFactor} />
 			{/if}
 		{/each}
 	{/if}
@@ -162,16 +185,14 @@
 		transform: scale(1);
 		z-index: 1;
 		position: relative; /* Add this */
-
-		
 	}
-	
+
 	.pictograph:hover {
 		transform: scale(1.1);
 		z-index: 4;
 		outline: 4px solid gold; /* Use outline for hover effect */
 	}
-	
+
 	.pictograph:active {
 		transform: scale(1);
 		border: none;
