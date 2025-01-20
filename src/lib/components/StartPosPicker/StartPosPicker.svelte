@@ -1,39 +1,42 @@
 <script lang="ts">
 	import Pictograph from '../Pictograph/Pictograph.svelte';
 	import pictographDataStore from '$lib/stores/pictographDataStore';
-	import { writable } from 'svelte/store';
+	import { pictographsRendered, totalPictographs } from '$lib/stores/pictographRenderStore';
+	import { onMount } from 'svelte';
 	import StartPositionLabel from './StartPosLabel.svelte';
 	import type { PictographInterface } from '$lib/types/PictographInterface';
-
-	export const selectedStartPos = writable<PictographInterface | null>(null);
+	import { writable } from 'svelte/store';
 
 	let startPositions: PictographInterface[] = [];
 	let gridMode = 'diamond';
+	export const selectedStartPos = writable<PictographInterface | null>(null);
+
+	// Track rendering status
+	$: pictographsRendered.subscribe((rendered) => {
+		if (rendered === startPositions.length) {
+			console.debug('All pictographs rendered, starting scaling adjustments.');
+			// Trigger scaling logic or any additional post-render adjustments here
+		}
+	});
 
 	pictographDataStore.subscribe((data) => {
-		if (!Array.isArray(data)) {
-			console.error('Invalid pictograph data:', data);
-			return;
-		}
-
 		const defaultStartPosKeys =
 			gridMode === 'diamond'
 				? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
 				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
 
-		// Filter and validate the data
 		startPositions = (data as PictographInterface[]).filter((entry) => {
-			const isValid =
+			return (
 				entry.redMotionData &&
 				entry.blueMotionData &&
-				defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`);
-			return isValid;
+				defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
+			);
 		});
+		totalPictographs.set(startPositions.length);
 	});
-
-	const handleSelect = (position: PictographInterface) => {
-		selectedStartPos.set(position);
-		console.log('Selected start position:', position);
+	const handleSelect = (start_pos_pictograph: PictographInterface) => {
+		selectedStartPos.set(start_pos_pictograph);
+		console.log('Selected start position:', start_pos_pictograph);
 	};
 </script>
 
@@ -42,14 +45,15 @@
 	<div class="pictograph-container">
 		{#if startPositions.length > 0}
 			{#each startPositions as position}
-				{#if position.redMotionData && position.blueMotionData}
-					<Pictograph
-						pictographData={position}
-						onClick={() => handleSelect(position)}
-					/>
-				{:else}
-					<p>Error: Invalid motion data for {position.letter}</p>
-				{/if}
+				<Pictograph
+					pictographData={position}
+					onClick={() => handleSelect(position)}
+					on:mounted={() => {
+						pictographsRendered.update((n) => n + 1);
+					}}
+				/>
+			{:else}
+				<p>Error: Invalid motion data </p>
 			{/each}
 		{:else}
 			<p>No start positions available.</p>
