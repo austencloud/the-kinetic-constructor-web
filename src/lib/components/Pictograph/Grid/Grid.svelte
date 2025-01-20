@@ -6,23 +6,23 @@
 	export let onPointsReady: (gridData: GridData) => void;
 	export let gridMode: 'diamond' | 'box' = 'diamond';
 
-	let gridImagePath: string = '';
 	let circleCoords: CircleCoords | null = null;
+	let gridWidth = 950; // Default dimensions for scaling reference
+	let gridHeight = 950;
 
 	async function loadCircleCoords(): Promise<void> {
 		try {
 			const response = await fetch('/circle_coords.json');
 			if (!response.ok) throw new Error('Failed to load circle_coords.json');
-
 			circleCoords = await response.json();
 
 			if (circleCoords) {
 				const gridData: GridData = {
 					allHandPointsStrict: parsePoints(circleCoords, 'strict'),
-					allHandPointsNormal: parsePoints(circleCoords, 'normal')
+					allHandPointsNormal: parsePoints(circleCoords, 'normal'),
 				};
 
-				if (onPointsReady) onPointsReady(gridData);
+				onPointsReady?.(gridData);
 			}
 		} catch (error) {
 			console.error('Error loading circle coordinates:', error);
@@ -39,40 +39,27 @@
 				acc[key] = { coordinates: value as { x: number; y: number } };
 				return acc;
 			},
-			{}
+			{} as Record<string, { coordinates: { x: number; y: number } }>
 		);
 	}
-
-	$: gridImagePath = gridMode === 'diamond' ? '/diamond_grid.png' : '/box_grid.png';
 
 	onMount(() => {
 		loadCircleCoords();
 	});
 </script>
 
-<div class="grid-container">
-	<img src={gridImagePath} alt="Grid Background" />
-</div>
+<svg
+	class="grid"
+	xmlns="http://www.w3.org/2000/svg"
+	viewBox="0 0 {gridWidth} {gridHeight}"
+	preserveAspectRatio="xMidYMid meet"
+>
+	<rect width="100%" height="100%" fill="none" stroke="black" />
+</svg>
 
 <style>
-	.grid-container {
+	.grid {
 		width: 100%;
 		height: 100%;
-		margin: 0; /* No outer spacing */
-		padding: 0; /* No inner spacing */
-		border: none; /* Removes any default borders */
-		display: flex; /* Aligns content */
-		justify-content: center; /* Ensures centering (if necessary) */
-		align-items: center; /* Ensures centering (if necessary) */
-		overflow: hidden; /* Avoids content overflow */
-	}
-
-	img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover; /* Ensures the image stretches properly */
-		margin: 0; /* No outer spacing */
-		padding: 0; /* No inner spacing */
-		border: none; /* Removes default borders */
 	}
 </style>

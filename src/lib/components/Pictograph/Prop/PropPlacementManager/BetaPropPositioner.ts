@@ -6,7 +6,7 @@ import Prop from '../Prop.svelte';
 export class BetaPropPositioner {
 	private dirCalculator = new BetaPropDirectionCalculator();
 
-	public reposition(props: Prop[]): void {
+	public reposition(props: PropInterface[]): void {
 		props.forEach((prop) => {
 			const direction = this.dirCalculator.getDir(prop.motion);
 			if (direction) {

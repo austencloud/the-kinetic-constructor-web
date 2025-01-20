@@ -17,7 +17,7 @@ export class PropPlacementManager {
 		this.betaPositioner = new BetaPropPositioner();
 	}
 
-	public updatePropPositions(propDataSet: Prop[]): void {
+	public updatePropPositions(propDataSet: PropInterface[]): void {
 		propDataSet.forEach((prop) => {
 			if (prop.motion.pictographData.gridMode === 'diamond') {
 				this.betaPositioner.reposition(propDataSet);
