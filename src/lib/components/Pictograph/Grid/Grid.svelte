@@ -1,65 +1,53 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { CircleCoords } from '../../../types/CircleCoords';
+
+	export let gridMode: 'diamond' | 'box' = 'diamond';
+	export let onPointsReady: (gridData: GridData) => void;
+
 	import type { GridData } from './GridInterface';
 
-	export let onPointsReady: (gridData: GridData) => void;
-	export let gridMode: 'diamond' | 'box' = 'diamond';
+	let gridSrc = '';
+	let gridData: GridData;
 
-	let circleCoords: CircleCoords | null = null;
-	let gridWidth = 950; // Default dimensions for scaling reference
-	let gridHeight = 950;
-
-	async function loadCircleCoords(): Promise<void> {
-		try {
-			const response = await fetch('/circle_coords.json');
-			if (!response.ok) throw new Error('Failed to load circle_coords.json');
-			circleCoords = await response.json();
-
-			if (circleCoords) {
-				const gridData: GridData = {
-					allHandPointsStrict: parsePoints(circleCoords, 'strict'),
-					allHandPointsNormal: parsePoints(circleCoords, 'normal'),
-				};
-
-				onPointsReady?.(gridData);
-			}
-		} catch (error) {
-			console.error('Error loading circle coordinates:', error);
-		}
+	$: {
+		// Dynamically load the grid SVG based on the mode
+		gridSrc = gridMode === 'diamond' ? '/diamond_grid.svg' : '/box_grid.svg';
 	}
 
-	function parsePoints(
-		circleCoords: CircleCoords,
-		mode: 'strict' | 'normal'
-	): Record<string, { coordinates: { x: number; y: number } }> {
-		const points = circleCoords[gridMode]?.hand_points[mode] || {};
-		return Object.entries(points).reduce(
-			(acc: Record<string, { coordinates: { x: number; y: number } }>, [key, value]) => {
-				acc[key] = { coordinates: value as { x: number; y: number } };
-				return acc;
-			},
-			{} as Record<string, { coordinates: { x: number; y: number } }>
-		);
-	}
-
+	// Simulate loading gridData (replace with actual logic for fetching or generating gridData)
 	onMount(() => {
-		loadCircleCoords();
+		gridData = {
+			allHandPointsStrict: {
+				n_diamond_hand_point_strict: { coordinates: { x: 475, y: 325 } },
+			},
+			allHandPointsNormal: {
+				n_diamond_hand_point: { coordinates: { x: 475, y: 331.9 } },
+			},
+		};
+
+		// Emit the event when gridData is ready
+		onPointsReady(gridData);
 	});
 </script>
 
-<svg
-	class="grid"
-	xmlns="http://www.w3.org/2000/svg"
-	viewBox="0 0 {gridWidth} {gridHeight}"
-	preserveAspectRatio="xMidYMid meet"
->
-	<rect width="100%" height="100%" fill="none" stroke="black" />
-</svg>
+<div class="grid-container">
+	<img src={gridSrc} alt="{gridMode} grid" class="grid-image" />
+</div>
 
 <style>
-	.grid {
+	.grid-container {
+		position: relative;
 		width: 100%;
 		height: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		overflow: hidden;
+	}
+
+	.grid-image {
+		width: 100%;
+		height: auto;
+		object-fit: contain;
 	}
 </style>

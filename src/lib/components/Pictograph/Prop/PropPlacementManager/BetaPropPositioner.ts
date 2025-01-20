@@ -1,7 +1,6 @@
 import { BetaPropDirectionCalculator } from './BetaPropDirectionCalculator';
 import type { Direction } from '../../Motion/MotionInterface';
 import type { PropInterface } from '../PropInterface';
-import Prop from '../Prop.svelte';
 
 export class BetaPropPositioner {
 	private dirCalculator = new BetaPropDirectionCalculator();
