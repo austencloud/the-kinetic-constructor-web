@@ -47,12 +47,21 @@
 	<div class="pictograph-row">
 		{#if startPositions.length > 0}
 			{#each startPositions as position}
-				<div class="pictograph-container">
+				<div
+					class="pictograph-container"
+					role="button"
+					tabindex="0"
+					on:click={() => handleSelect(position)}
+					on:keydown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') {
+							handleSelect(position);
+						}
+					}}
+				>
 					<Pictograph
 						pictographData={position}
 						onClick={() => handleSelect(position)}
 						on:mounted={() => {
-							console.debug('Mounted Pictograph Data:', position);
 							pictographsRendered.update((n) => n + 1);
 						}}
 					/>

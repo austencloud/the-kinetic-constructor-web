@@ -6,27 +6,32 @@
 	import type { GridData } from './Grid/GridInterface';
 	import { PropPlacementManager } from './Prop/PropPlacementManager/PropPlacementManager';
 	import type { PropInterface } from './Prop/PropInterface';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	export let pictographData: PictographInterface;
-	export let onClick: () => void;
+	export const onClick: () => void = () => {};
+	export let isSelected = false;
 
-	let motions: Motion[] = [];
+	let redMotion: Motion | null = null;
+	let blueMotion: Motion | null = null;
 	let containerWidth = 1;
 	let containerHeight = 1;
 	let gridData: GridData | null = null;
 	let propPlacementManager: PropPlacementManager | null = null;
-	let updatedProps: PropInterface[] = [];
+	let redPropData: PropInterface | null = null;
+	let bluePropData: PropInterface | null = null;
+	let sceneScaleFactor = 1;
 
 	let pictographRef: HTMLDivElement | null = null;
+	let resizeObserver: ResizeObserver;
 
 	function initializeMotions(): void {
 		const { redMotionData, blueMotionData } = pictographData || {};
-		console.debug('Red Motion Data:', redMotionData);
-		// log the data
-		if (redMotionData && blueMotionData) {
-			motions = [new Motion(redMotionData), new Motion(blueMotionData)];
-			console.debug('Initialized motions:', motions);
+		if (redMotionData) {
+			redMotion = new Motion(redMotionData);
+		}
+		if (blueMotionData) {
+			blueMotion = new Motion(blueMotionData);
 		}
 	}
 
@@ -35,15 +40,12 @@
 			const { width, height } = pictographRef.getBoundingClientRect();
 			containerWidth = width;
 			containerHeight = height;
-			console.debug('Updated container size:', { containerWidth, containerHeight });
+			sceneScaleFactor = Math.min(containerWidth / 950, containerHeight / 950);
 		}
 	}
 
 	function setupPropPlacementManager(): void {
 		if (pictographData && gridData) {
-			console.debug('Pictograph Data:', pictographData);
-			console.debug('Grid Data:', gridData);
-
 			propPlacementManager = new PropPlacementManager(
 				pictographData,
 				gridData,
@@ -51,58 +53,95 @@
 				containerHeight
 			);
 
-			// Map motions to props and update positions
-			const props: PropInterface[] = motions.map((motion) => ({
-				propType: 'staff',
-				color: motion.color,
-				motion,
-				radialMode:
-					motion.endOri === 'in' || motion.endOri === 'out'
-						? (motion.endOri as 'radial' | null)
-						: null,
-				ori: motion.endOri,
-				coords: { x: 0, y: 0 },
-				loc: motion.endLoc
-			}));
+			if (redPropData) {
+				redPropData = propPlacementManager.updatePropPositions([redPropData])[0];
+			}
+			if (bluePropData) {
+				bluePropData = propPlacementManager.updatePropPositions([bluePropData])[0];
+			}
+		}
+	}
 
-			updatedProps = propPlacementManager.updatePropPositions(props);
-			console.debug('Updated Props:', updatedProps);
-		} else {
-			console.warn('Pictograph data or grid data is missing.');
+	function createProps(): void {
+		if (redMotion) {
+			redPropData = {
+				propType: 'staff',
+				color: redMotion.color,
+				motion: redMotion,
+				radialMode:
+					redMotion.endOri === 'in' || redMotion.endOri === 'out'
+						? (redMotion.endOri as 'radial' | null)
+						: null,
+				ori: redMotion.endOri,
+				coords: { x: 0, y: 0 },
+				loc: redMotion.endLoc,
+			};
+		}
+
+		if (blueMotion) {
+			bluePropData = {
+				propType: 'staff',
+				color: blueMotion.color,
+				motion: blueMotion,
+				radialMode:
+					blueMotion.endOri === 'in' || blueMotion.endOri === 'out'
+						? (blueMotion.endOri as 'radial' | null)
+						: null,
+				ori: blueMotion.endOri,
+				coords: { x: 0, y: 0 },
+				loc: blueMotion.endLoc,
+			};
 		}
 	}
 
 	onMount(() => {
 		initializeMotions();
 		updateContainerSize();
+		createProps();
 		setupPropPlacementManager();
+
+		// Observe container resizing
+		resizeObserver = new ResizeObserver(() => {
+			updateContainerSize();
+		});
+
+		if (pictographRef) {
+			resizeObserver.observe(pictographRef);
+		}
 	});
 
-	$: if (pictographRef) {
-		updateContainerSize();
-		setupPropPlacementManager();
+	onDestroy(() => {
+		if (resizeObserver && pictographRef) {
+			resizeObserver.unobserve(pictographRef);
+		}
+	});
+
+	function handleClick(event: Event) {
+		isSelected = !isSelected;
+		onClick();
 	}
 </script>
 
 <div
 	class="pictograph"
 	bind:this={pictographRef}
+	on:click={handleClick}
+	on:keydown={(e) => e.key === 'Enter' && handleClick(e)}
 	role="button"
 	tabindex="0"
-	on:click|stopPropagation={onClick}
-	on:keydown={(e) => e.key === 'Enter' && onClick()}
 >
 	<Grid
 		gridMode={pictographData?.gridMode || 'diamond'}
-		onPointsReady={(data) => {
-			gridData = data;
-			console.debug('Received gridData:', gridData);
+		{sceneScaleFactor}
+		onPointsReady={(gridData) => {
+			gridData = gridData;
 		}}
 	/>
-
-	{#if gridData && updatedProps}
-		{#each updatedProps as prop}
-			<Prop {prop} />
+	{#if gridData}
+		{#each [redPropData, bluePropData] as propData (propData?.color)}
+			{#if propData}
+				<Prop {propData} {sceneScaleFactor} />
+			{/if}
 		{/each}
 	{/if}
 </div>

@@ -8,7 +8,7 @@ export interface PropInterface {
 	propType: string;
 	color: 'red' | 'blue';
 	radialMode: RadialMode | null;
-	ori: Orientation | null;
+	ori: Orientation;
 	motion: Motion;
 	coords: { x: number; y: number };
 	loc: Location;

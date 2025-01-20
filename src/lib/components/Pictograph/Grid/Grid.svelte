@@ -2,8 +2,9 @@
 	import { onMount } from 'svelte';
 	import { circleCoordinates } from './circleCoordinates'; // Adjust the path as needed
 	import type { GridData } from './GridInterface';
-
+	
 	export let gridMode: 'diamond' | 'box' = 'diamond';
+	export let sceneScaleFactor: number; // Scaling factor from Pictograph
 	export let onPointsReady: (gridData: GridData) => void;
 
 	let gridSrc = '';
@@ -67,24 +68,25 @@
 	});
 </script>
 
-<div class="grid-container">
-	<img src={gridSrc} alt="{gridMode} grid" class="grid-image" />
+<div class="grid-container" style="transform: translate(-50%, -50%) scale({sceneScaleFactor});">
+    <img src={gridSrc} alt="Grid" class="grid-image" />
 </div>
 
 <style>
-	.grid-container {
-		position: relative;
-		width: 100%;
-		height: 100%;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		overflow: hidden;
-	}
+    .grid-container {
+        width: 950px;
+        height: 950px;
+        transform-origin: center; /* Ensures scaling happens around the center */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+    }
 
-	.grid-image {
-		width: 100%;
-		height: auto;
-		object-fit: contain;
-	}
+    .grid-image {
+        width: 100%;
+        height: auto;
+    }
 </style>

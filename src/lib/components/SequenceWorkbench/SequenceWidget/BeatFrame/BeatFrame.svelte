@@ -128,11 +128,8 @@
 		align-content: center;
 		width: 100%;
 		height: 100%;
-		padding: 1%;
-		min-height: 0;
-		background-color: transparent;
-		box-sizing: border-box;
-		overflow: hidden;
+		/* padding: 1%; */
+		/* min-height: 0; */
 	}
 
 	.start-pos {

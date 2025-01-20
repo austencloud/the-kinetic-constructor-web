@@ -31,24 +31,25 @@ export class DefaultPropPositioner {
 	}
 
 	private placePropAtHandPoint(prop: PropInterface, handPoint: { x: number; y: number }): void {
-		// Align the prop's center to the hand point
-		const propCenterOffset = this.getSvgCenterOffset();
+		// Calculate scaling factor
+		const scaleFactorX = this.gridWidth / 950;
+		const scaleFactorY = this.gridHeight / 950;
+	
+		// Scale coordinates based on container dimensions
 		const scaledHandPoint = {
-			x: (handPoint.x / 950) * this.gridWidth,
-			y: (handPoint.y / 950) * this.gridHeight,
+			x: handPoint.x * scaleFactorX,
+			y: handPoint.y * scaleFactorY,
 		};
+	
+		// Update prop coordinates
 		prop.coords = {
-			x: scaledHandPoint.x - propCenterOffset.x,
-			y: scaledHandPoint.y - propCenterOffset.y,
+			x: scaledHandPoint.x,
+			y: scaledHandPoint.y,
 		};
+	
 		console.debug(`Placed prop at scaled coordinates:`, prop.coords);
 	}
-
-	private getSvgCenterOffset(): { x: number; y: number } {
-		// Hardcoded center offset for props based on the SVG's "centerPoint"
-		// Replace these values with the actual "centerPoint" offset if dynamic
-		return { x: 5, y: 5 }; // Example offset; replace with actual centerPoint data
-	}
+	
 
 	private getGridPoint(pointName: string, strict: boolean): GridPoint | undefined {
 		if (this.locationPointsCache[pointName]) {

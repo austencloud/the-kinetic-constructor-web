@@ -18,7 +18,7 @@
 	on:keydown={(e) => e.key === 'Enter' && onClick(beatData)}
 >
 	<Pictograph {pictographData} isSelected={beatData.filled} onClick={() => onClick(beatData)}
-	></Pictograph>
+	/>
 </button>
 
 <style>
