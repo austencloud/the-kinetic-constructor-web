@@ -4,26 +4,28 @@
 	import { Motion } from './Motion/Motion';
 	import type { PictographInterface } from '$lib/types/PictographInterface';
 	import type { GridData } from './Grid/GridInterface';
+	import { PropPlacementManager } from './Prop/PropPlacementManager/PropPlacementManager';
+	import type { PropInterface } from './Prop/PropInterface';
 	import { onMount } from 'svelte';
 
-	export let pictographData: PictographInterface | null;
+	export let pictographData: PictographInterface;
 	export let onClick: () => void;
 
 	let motions: Motion[] = [];
 	let containerWidth = 1;
 	let containerHeight = 1;
 	let gridData: GridData | null = null;
+	let propPlacementManager: PropPlacementManager | null = null;
+	let updatedProps: PropInterface[] = [];
 
 	let pictographRef: HTMLDivElement | null = null;
 
 	function initializeMotions(): void {
 		const { redMotionData, blueMotionData } = pictographData || {};
-
+		console.debug('Red Motion Data:', redMotionData);
+		// log the data
 		if (redMotionData && blueMotionData) {
-			motions = [
-				new Motion(redMotionData),
-				new Motion(blueMotionData),
-			];
+			motions = [new Motion(redMotionData), new Motion(blueMotionData)];
 			console.debug('Initialized motions:', motions);
 		}
 	}
@@ -37,13 +39,48 @@
 		}
 	}
 
+	function setupPropPlacementManager(): void {
+		if (pictographData && gridData) {
+			console.debug('Pictograph Data:', pictographData);
+			console.debug('Grid Data:', gridData);
+
+			propPlacementManager = new PropPlacementManager(
+				pictographData,
+				gridData,
+				containerWidth,
+				containerHeight
+			);
+
+			// Map motions to props and update positions
+			const props: PropInterface[] = motions.map((motion) => ({
+				propType: 'staff',
+				color: motion.color,
+				motion,
+				radialMode:
+					motion.endOri === 'in' || motion.endOri === 'out'
+						? (motion.endOri as 'radial' | null)
+						: null,
+				ori: motion.endOri,
+				coords: { x: 0, y: 0 },
+				loc: motion.endLoc
+			}));
+
+			updatedProps = propPlacementManager.updatePropPositions(props);
+			console.debug('Updated Props:', updatedProps);
+		} else {
+			console.warn('Pictograph data or grid data is missing.');
+		}
+	}
+
 	onMount(() => {
 		initializeMotions();
 		updateContainerSize();
+		setupPropPlacementManager();
 	});
 
 	$: if (pictographRef) {
 		updateContainerSize();
+		setupPropPlacementManager();
 	}
 </script>
 
@@ -55,23 +92,17 @@
 	on:click|stopPropagation={onClick}
 	on:keydown={(e) => e.key === 'Enter' && onClick()}
 >
-	<Grid 
-		gridMode={pictographData?.gridMode || 'diamond'} 
+	<Grid
+		gridMode={pictographData?.gridMode || 'diamond'}
 		onPointsReady={(data) => {
 			gridData = data;
 			console.debug('Received gridData:', gridData);
-		}} 
+		}}
 	/>
 
-	{#if gridData}
-		{#each motions as motion}
-			<Prop 
-				{motion} 
-				{gridData} 
-				gridWidth={containerWidth} 
-				gridHeight={containerHeight} 
-				gridMode = {pictographData?.gridMode || 'diamond'}
-			/>
+	{#if gridData && updatedProps}
+		{#each updatedProps as prop}
+			<Prop {prop} />
 		{/each}
 	{/if}
 </div>

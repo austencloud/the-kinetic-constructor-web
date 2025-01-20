@@ -2,11 +2,15 @@ import type { GridData, GridPoint } from "../../Grid/GridInterface";
 import type { GridMode } from "../../Motion/MotionInterface";
 import type { PropInterface } from "../PropInterface";
 
-
 export class DefaultPropPositioner {
 	private locationPointsCache: Record<string, GridPoint> = {};
 
-	constructor(private gridData: GridData, private gridMode: GridMode) {}
+	constructor(
+		private gridData: GridData,
+		private gridMode: GridMode,
+		private gridWidth: number,
+		private gridHeight: number
+	) {}
 
 	public setToDefaultPosition(prop: PropInterface): void {
 		const strict = this.hasStrictlyPlacedProps(prop);
@@ -27,8 +31,23 @@ export class DefaultPropPositioner {
 	}
 
 	private placePropAtHandPoint(prop: PropInterface, handPoint: { x: number; y: number }): void {
-		// Directly set the prop's coordinates based on the grid point
-		prop.coords = { x: handPoint.x, y: handPoint.y };
+		// Align the prop's center to the hand point
+		const propCenterOffset = this.getSvgCenterOffset();
+		const scaledHandPoint = {
+			x: (handPoint.x / 950) * this.gridWidth,
+			y: (handPoint.y / 950) * this.gridHeight,
+		};
+		prop.coords = {
+			x: scaledHandPoint.x - propCenterOffset.x,
+			y: scaledHandPoint.y - propCenterOffset.y,
+		};
+		console.debug(`Placed prop at scaled coordinates:`, prop.coords);
+	}
+
+	private getSvgCenterOffset(): { x: number; y: number } {
+		// Hardcoded center offset for props based on the SVG's "centerPoint"
+		// Replace these values with the actual "centerPoint" offset if dynamic
+		return { x: 5, y: 5 }; // Example offset; replace with actual centerPoint data
 	}
 
 	private getGridPoint(pointName: string, strict: boolean): GridPoint | undefined {

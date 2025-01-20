@@ -3,7 +3,6 @@ import { DefaultPropPositioner } from './DefaultPropPositioner';
 import { BetaPropPositioner } from './BetaPropPositioner';
 import type { GridData } from '../../Grid/GridInterface';
 import type { PictographInterface } from '$lib/types/PictographInterface';
-import Prop from '../Prop.svelte';
 
 export class PropPlacementManager {
 	private defaultPositioner: DefaultPropPositioner;
@@ -11,19 +10,34 @@ export class PropPlacementManager {
 
 	constructor(
 		private pictographData: PictographInterface,
-		gridData: GridData
+		private gridData: GridData,
+		private gridWidth: number,
+		private gridHeight: number
 	) {
-		this.defaultPositioner = new DefaultPropPositioner(gridData);
+		const gridMode = this.pictographData?.gridMode ?? 'diamond';
+		if (!this.gridData) {
+			console.error('Grid data is missing.');
+		}
+		this.defaultPositioner = new DefaultPropPositioner(gridData, gridMode, gridWidth, gridHeight);
 		this.betaPositioner = new BetaPropPositioner();
 	}
 
-	public updatePropPositions(propDataSet: PropInterface[]): void {
-		propDataSet.forEach((prop) => {
+	public updatePropPositions(props: PropInterface[]): PropInterface[] {
+		console.debug('Updating Prop Positions:', props);
+	
+		return props.map((prop) => {
+			if (!prop.motion?.pictographData?.gridMode) {
+				console.warn('Prop has missing motion or gridMode:', prop);
+				return prop;
+			}
+	
 			if (prop.motion.pictographData.gridMode === 'diamond') {
-				this.betaPositioner.reposition(propDataSet);
+				this.betaPositioner.reposition(props);
 			} else {
 				this.defaultPositioner.setToDefaultPosition(prop);
 			}
+			return prop; // Ensure updated coordinates are returned
 		});
 	}
+	
 }

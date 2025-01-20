@@ -1,64 +1,25 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { DefaultPropPositioner } from './PropPlacementManager/DefaultPropPositioner';
-	import type { GridData } from '../Grid/GridInterface';
 	import type { PropInterface } from './PropInterface';
-	import type { Motion } from '../Motion/Motion';
-	import type { GridMode } from '../Motion/MotionInterface';
-	import { pictographsRendered, totalPictographs } from '$lib/stores/pictographRenderStore';
 
-	export let motion: Motion;
-	export let gridData: GridData;
-	export let gridWidth: number;
-	export let gridHeight: number;
-	export let gridMode: GridMode;
+	export let prop: PropInterface;
 
-	let propData: PropInterface;
-	let x = 0;
-	let y = 0;
 	let transform = '';
 	let svgPath = '';
-	let scaleFactor = 1;
 
 	function getSvgPath(): string {
 		const basePath = '/images/props/';
-		svgPath = `${basePath}staff.svg`;
-		return svgPath;
+		return `${basePath}${prop.propType}.svg`;
 	}
-
-	function calculateScaledCoords(originalX: number, originalY: number): { x: number; y: number } {
-		return {
-			x: (originalX / 950) * gridWidth,
-			y: (originalY / 950) * gridHeight,
-		};
-	}
-
 
 	onMount(() => {
+		console.debug('Received Prop Data:', prop); // Debug log
+		const { coords, ori } = prop;
+		const rotationAngle = ori === 'in' ? 90 : 0;
 
-		// Wait until all pictographs are ready
-		
-		const unsubscribe = pictographsRendered.subscribe((rendered) => {
-			totalPictographs.subscribe((total) => {
-				if (rendered === total) {
-					scaleFactor = Math.min(gridWidth / 950, gridHeight / 950);
-					propData = {
-						propType: 'staff',
-						color: motion.color,
-						motion,
-						radialMode: motion.endOri === 'in' || motion.endOri === 'out' ? 'radial' : 'nonradial',
-						ori: motion.endOri,
-						coords: { x: 0, y: 0 },
-						loc: motion.endLoc,
-					};
-					x = calculateScaledCoords(propData.coords.x, propData.coords.y).x;
-					y = calculateScaledCoords(propData.coords.x, propData.coords.y).y;
-					svgPath = getSvgPath();
-					transform = `translate(${x}px, ${y}px) scale(${scaleFactor})`;
-					unsubscribe();
-				}
-			});
-		});
+		svgPath = getSvgPath();
+		transform = `translate(${coords.x}px, ${coords.y}px) rotate(${rotationAngle}deg)`;
+		console.debug('Transform:', transform);
 	});
 </script>
 
@@ -72,7 +33,7 @@
 	.prop {
 		position: absolute;
 		transition: all 0.3s ease;
-		transform-origin: center; /* Ensure scaling is centered */
+		transform-origin: center;
 		z-index: 10;
 	}
 </style>

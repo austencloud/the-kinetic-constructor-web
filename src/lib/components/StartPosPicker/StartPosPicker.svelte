@@ -33,6 +33,8 @@
 			);
 		});
 		totalPictographs.set(startPositions.length);
+		//  log the daata
+		console.debug('Start Positions:', startPositions);
 	});
 	const handleSelect = (start_pos_pictograph: PictographInterface) => {
 		selectedStartPos.set(start_pos_pictograph);
@@ -42,18 +44,19 @@
 
 <div class="start-pos-picker">
 	<StartPositionLabel />
-	<div class="pictograph-container">
+	<div class="pictograph-row">
 		{#if startPositions.length > 0}
 			{#each startPositions as position}
-				<Pictograph
-					pictographData={position}
-					onClick={() => handleSelect(position)}
-					on:mounted={() => {
-						pictographsRendered.update((n) => n + 1);
-					}}
-				/>
-			{:else}
-				<p>Error: Invalid motion data </p>
+				<div class="pictograph-container">
+					<Pictograph
+						pictographData={position}
+						onClick={() => handleSelect(position)}
+						on:mounted={() => {
+							console.debug('Mounted Pictograph Data:', position);
+							pictographsRendered.update((n) => n + 1);
+						}}
+					/>
+				</div>
 			{/each}
 		{:else}
 			<p>No start positions available.</p>
@@ -72,7 +75,7 @@
 		margin-bottom: 5%;
 	}
 
-	.pictograph-container {
+	.pictograph-row {
 		display: flex;
 		flex-direction: row;
 		justify-content: space-around;
@@ -80,5 +83,13 @@
 		width: 70%;
 		height: auto;
 		gap: 3%;
+	}
+	/* make the container 1/4 of the width of tis
+	 */
+	.pictograph-container {
+		width: 30%; /* Fixed 30% width */
+		aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
+		height: auto;
+		position: relative;
 	}
 </style>

@@ -11,3 +11,4 @@ export type PropType =
 
 export type Orientation = 'in' | 'out' | 'clock' | 'counter' ;
 export type Location = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw';
+export type Color = 'red' | 'blue';
