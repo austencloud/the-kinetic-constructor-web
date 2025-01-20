@@ -1,52 +1,45 @@
 <script lang="ts">
 	import ArrowUpdater from './ArrowUpdater';
 	import ArrowLocationManager from './ArrowLocationManager';
+	import type { ArrowInterface } from './ArrowInterface';
 	import type { Motion } from '../Motion/Motion';
-	import type { MotionInterface } from '../Motion/MotionInterface';
+	import { onMount } from 'svelte';
 
-	// Props
-	export let motion: Motion; // Associated motion instance
-	export let color: 'blue' | 'red' = 'blue';
-	export let position: { x: number; y: number } = { x: 0, y: 0 };
-	export let rotation: number = 0;
-	export let mirrored: boolean = false;
+	export let motion: Motion;
 
+	let arrowData: ArrowInterface;
 	let arrowUpdater: ArrowUpdater;
 	let arrowLocationManager: ArrowLocationManager;
-
-	// Explicitly type `svgStyles` to match 'blue' | 'red'
-	let svgStyles: { backgroundColor: 'blue' | 'red' } = { backgroundColor: color };
 	let svgPath = '';
 	let transform: string;
 
-	// Initialize managers
-	arrowUpdater = new ArrowUpdater({ color, position, rotation, mirrored, motion: motion });
-	arrowLocationManager = new ArrowLocationManager({
-		arrowProps: { color, position, rotation, mirrored },
-		motion: motion
+	function initializeArrowData(): ArrowInterface {
+		return {
+			color: motion.color,
+			position: { x: 0, y: 0 },
+			rotation: 0,
+			mirrored: false,
+			motion
+		};
+	}
+
+	// Initialize arrow data and managers
+	onMount(() => {
+		arrowData = initializeArrowData();
+		arrowUpdater = new ArrowUpdater(arrowData);
+		arrowLocationManager = new ArrowLocationManager({ arrowData });
 	});
 
-	// Reactive updates
 	$: {
 		const updateResult = arrowUpdater.updateArrow();
-		// Safely cast or enforce that `backgroundColor` stays within 'blue' | 'red'
-		svgStyles = {
-			backgroundColor: (updateResult.svgStyles?.backgroundColor as 'blue' | 'red') || color
-		};
-		mirrored = updateResult.mirrored ?? mirrored;
 		svgPath = updateResult.svgPath || '';
-		transform = `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg) scale(${
-			mirrored ? -1 : 1
+		transform = `translate(${arrowData.position.x}px, ${arrowData.position.y}px) rotate(${arrowData.rotation}deg) scale(${
+			arrowData.mirrored ? -1 : 1
 		}, 1)`;
 	}
 </script>
 
-<img
-	src={svgPath}
-	alt="Arrow"
-	class="arrow"
-	style="transform: {transform}; background-color: {svgStyles.backgroundColor};"
-/>
+<img src={svgPath} alt="Arrow" class="arrow" style="transform: {transform};" />
 
 <style>
 	.arrow {

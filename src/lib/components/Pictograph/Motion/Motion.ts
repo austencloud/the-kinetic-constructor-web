@@ -13,7 +13,6 @@ import { MotionUpdater } from './MotionUpdater';
 import { HandpathCalculator as HandRotDirCalculator } from './HandpathCalculator';
 import Arrow from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
-import Pictograph from '../Pictograph.svelte';
 import type { Orientation } from '../Prop/PropTypes';
 import type { PictographInterface } from '../../../types/PictographInterface';
 import { LeadStateDeterminer } from './LeadStateDeterminer';
@@ -33,7 +32,7 @@ export class Motion implements MotionInterface {
 	endOri: Orientation = 'in';
 	handRotDir: HandRotDir = 'cw_handpath';
 	pictographData: PictographInterface;
-	pictographManager: PictographManager // Pass manager instance
+	pictographManager: PictographManager; // Pass manager instance
 
 	prop: Prop | null = null;
 	arrow: Arrow | null = null;
@@ -60,7 +59,7 @@ export class Motion implements MotionInterface {
 			prefloatMotionType = null,
 			prefloatPropRotDir = null,
 			arrow,
-			prop,
+			prop
 		} = motionData;
 
 		this.pictographData = pictographData;
@@ -84,19 +83,13 @@ export class Motion implements MotionInterface {
 		this.updater = new MotionUpdater(this);
 		this.handRotDirCalculator = new HandRotDirCalculator();
 
-		this.calculateEndOrientation();
-		this.validatePrefloatProperties();
-	}
-
-
-
-	private calculateEndOrientation(): void {
 		this.endOri = this.oriCalculator.calculateEndOri();
+		this.validatePrefloatProperties();
 	}
 
 	updateMotionData(newData: Partial<MotionInterface>): void {
 		Object.assign(this, newData);
-		this.calculateEndOrientation();
+		this.endOri = this.oriCalculator.calculateEndOri();
 	}
 
 	updateAttributes(attributes: Partial<MotionInterface>): void {

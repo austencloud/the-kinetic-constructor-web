@@ -2,30 +2,15 @@ import StaticLocationCalculator from './ArrowLocationManager/StaticLocationCalcu
 import ShiftLocationCalculator from './ArrowLocationManager/ShiftLocationCalculator';
 import DashLocationCalculator from './ArrowLocationManager/DashLocationCalculator';
 import type { Motion } from '../Motion/Motion';
-
+import Arrow from '../Arrow/Arrow.svelte';
+import type { ArrowInterface } from './ArrowInterface';
 export default class ArrowLocationManager {
-	arrowProps: {
-		color: string;
-		position: { x: number; y: number };
-		rotation: number;
-		mirrored: boolean;
-	};
+	arrowData: ArrowInterface;
 	motion: Motion;
 
-	constructor({
-		arrowProps,
-		motion
-	}: {
-		arrowProps: {
-			color: string;
-			position: { x: number; y: number };
-			rotation: number;
-			mirrored: boolean;
-		};
-		motion: Motion;
-	}) {
-		this.arrowProps = arrowProps;
-		this.motion = motion;
+	constructor({ arrowData: arrowData }: { arrowData: ArrowInterface }) {
+		this.arrowData = arrowData;
+		this.motion = arrowData.motion;
 	}
 
 	_selectCalculator() {
@@ -38,21 +23,19 @@ export default class ArrowLocationManager {
 		};
 
 		const CalculatorClass = calculatorMap[motionType];
-		return CalculatorClass
-			? new (CalculatorClass as any)(this.arrowProps, this.motion.pictograph)
-			: null;
+		return CalculatorClass ? new (CalculatorClass as any)(this.arrowData) : null;
 	}
 
 	updateLocation(location: string | null = null) {
 		const calculator = this._selectCalculator();
 
 		if (location) {
-			this.arrowProps.position = this._convertLocationToPosition(location);
+			this.arrowData.position = this._convertLocationToPosition(location);
 		} else if (calculator) {
 			const calculatedLocation = calculator.calculateLocation();
-			this.arrowProps.position = this._convertLocationToPosition(calculatedLocation);
+			this.arrowData.position = this._convertLocationToPosition(calculatedLocation);
 		}
-		return this.arrowProps.position;
+		return this.arrowData.position;
 	}
 
 	private _convertLocationToPosition(location: string): { x: number; y: number } {

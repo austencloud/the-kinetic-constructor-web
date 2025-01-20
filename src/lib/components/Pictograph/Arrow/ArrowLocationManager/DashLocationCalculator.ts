@@ -4,9 +4,8 @@ export default class DashLocationCalculator {
     arrow: Arrow;
     pictograph: any;
 
-    constructor(arrow: Arrow, pictograph: any) {
+    constructor(arrow: Arrow) {
         this.arrow = arrow;
-        this.pictograph = pictograph;
     }
 
     calculateLocation(): string {

@@ -30,8 +30,8 @@
 		{#each pictographManager.getMotions() as motion}
 			<Prop {motion} />
 		{/each}
-		{#each pictographManager.getArrows() as { motion, color }}
-			<Arrow {motion} {color} />
+		{#each pictographManager.getMotions() as motion}
+			<Arrow {motion} />
 		{/each}
 	{/if}
 </div>

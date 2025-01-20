@@ -4,9 +4,8 @@ export default class ShiftLocationCalculator {
     arrow: Arrow;
     pictograph: any;
 
-    constructor(arrow: Arrow, pictograph: any) {
+    constructor(arrow: Arrow) {
         this.arrow = arrow;
-        this.pictograph = pictograph;
     }
     calculateLocation() {
         const directionPairs: { [key: string]: string } = {
