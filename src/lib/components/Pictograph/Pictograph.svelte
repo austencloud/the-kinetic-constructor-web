@@ -16,7 +16,6 @@
 
 	let pictographRef: HTMLDivElement | null = null;
 
-	// Initialize motions when the component mounts
 	function initializeMotions(): void {
 		const { redMotionData, blueMotionData } = pictographData || {};
 
@@ -25,25 +24,24 @@
 				new Motion(redMotionData),
 				new Motion(blueMotionData),
 			];
+			console.debug('Initialized motions:', motions);
 		}
 	}
 
-	// Update container size
 	function updateContainerSize(): void {
 		if (pictographRef) {
 			const { width, height } = pictographRef.getBoundingClientRect();
 			containerWidth = width;
 			containerHeight = height;
+			console.debug('Updated container size:', { containerWidth, containerHeight });
 		}
 	}
 
-	// Initialize motions and ensure size is updated on mount
 	onMount(() => {
 		initializeMotions();
 		updateContainerSize();
 	});
 
-	// Monitor size changes reactively
 	$: if (pictographRef) {
 		updateContainerSize();
 	}
@@ -57,10 +55,12 @@
 	on:click|stopPropagation={onClick}
 	on:keydown={(e) => e.key === 'Enter' && onClick()}
 >
-	<!-- Listen for grid data being ready -->
 	<Grid 
 		gridMode={pictographData?.gridMode || 'diamond'} 
-		onPointsReady={(gridData) => (gridData = gridData)} 
+		onPointsReady={(data) => {
+			gridData = data;
+			console.debug('Received gridData:', gridData);
+		}} 
 	/>
 
 	{#if gridData}
@@ -70,11 +70,11 @@
 				{gridData} 
 				gridWidth={containerWidth} 
 				gridHeight={containerHeight} 
+				gridMode = {pictographData?.gridMode || 'diamond'}
 			/>
 		{/each}
 	{/if}
 </div>
-
 
 <style>
 	.pictograph {

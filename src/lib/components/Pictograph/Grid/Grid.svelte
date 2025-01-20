@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { circleCoordinates } from './circleCoordinates'; // Adjust the path as needed
+	import type { GridData } from './GridInterface';
 
 	export let gridMode: 'diamond' | 'box' = 'diamond';
 	export let onPointsReady: (gridData: GridData) => void;
-
-	import type { GridData } from './GridInterface';
 
 	let gridSrc = '';
 	let gridData: GridData;
@@ -14,19 +14,56 @@
 		gridSrc = gridMode === 'diamond' ? '/diamond_grid.svg' : '/box_grid.svg';
 	}
 
-	// Simulate loading gridData (replace with actual logic for fetching or generating gridData)
+	// Helper function to parse coordinate strings like "(475.0, 331.9)" into objects
+	function parseCoordinates(coordString: string): { x: number; y: number } | null {
+		if (coordString === "None") return null;
+		const [x, y] = coordString.replace(/[()]/g, "").split(", ").map(parseFloat);
+		return { x, y };
+	}
+
 	onMount(() => {
+		const modeData = circleCoordinates[gridMode];
+
+		// Convert raw data into GridData structure
 		gridData = {
-			allHandPointsStrict: {
-				n_diamond_hand_point_strict: { coordinates: { x: 475, y: 325 } },
-			},
-			allHandPointsNormal: {
-				n_diamond_hand_point: { coordinates: { x: 475, y: 331.9 } },
+			allHandPointsStrict: Object.fromEntries(
+				Object.entries(modeData.hand_points.strict).map(([key, value]) => [
+					key,
+					{ coordinates: parseCoordinates(value as string) }
+				])
+			),
+			allHandPointsNormal: Object.fromEntries(
+				Object.entries(modeData.hand_points.normal).map(([key, value]) => [
+					key,
+					{ coordinates: parseCoordinates(value as string) }
+				])
+			),
+			allLayer2PointsStrict: Object.fromEntries(
+				Object.entries(modeData.layer2_points.strict).map(([key, value]) => [
+					key,
+					{ coordinates: parseCoordinates(value as string) }
+				])
+			),
+			allLayer2PointsNormal: Object.fromEntries(
+				Object.entries(modeData.layer2_points.normal).map(([key, value]) => [
+					key,
+					{ coordinates: parseCoordinates(value as string) }
+				])
+			),
+			allOuterPoints: Object.fromEntries(
+				Object.entries(modeData.outer_points).map(([key, value]) => [
+					key,
+					{ coordinates: parseCoordinates(value as string) }
+				])
+			),
+			centerPoint: {
+				coordinates: parseCoordinates(modeData.center_point)
 			},
 		};
 
-		// Emit the event when gridData is ready
+		// Emit the processed gridData
 		onPointsReady(gridData);
+		console.debug("Parsed gridData:", gridData);
 	});
 </script>
 

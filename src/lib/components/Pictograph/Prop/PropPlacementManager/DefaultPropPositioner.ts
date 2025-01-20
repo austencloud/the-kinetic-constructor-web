@@ -1,16 +1,17 @@
 import type { GridData, GridPoint } from "../../Grid/GridInterface";
+import type { GridMode } from "../../Motion/MotionInterface";
 import type { PropInterface } from "../PropInterface";
 
 
 export class DefaultPropPositioner {
 	private locationPointsCache: Record<string, GridPoint> = {};
 
-	constructor(private gridData: GridData) {}
+	constructor(private gridData: GridData, private gridMode: GridMode) {}
 
 	public setToDefaultPosition(prop: PropInterface): void {
 		const strict = this.hasStrictlyPlacedProps(prop);
 		const pointSuffix = strict ? '_strict' : '';
-		const pointName = `${prop.loc}_${prop.motion.pictographData.gridMode}_hand_point${pointSuffix}`;
+		const pointName = `${prop.loc}_${this.gridMode}_hand_point${pointSuffix}`;
 
 		console.debug(`Attempting to place prop '${prop.propType}' at point '${pointName}'.`);
 
