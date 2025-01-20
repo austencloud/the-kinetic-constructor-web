@@ -2,76 +2,20 @@
 	import Grid from './Grid/Grid.svelte';
 	import Prop from './Prop/Prop.svelte';
 	import Arrow from './Arrow/Arrow.svelte';
-	import { Motion } from './Motion/Motion';
-	import { PropPlacementManager } from './PropPlacementManager/PropPlacementManager';
-	import type { CircleCoords } from '$lib/types/CircleCoords';
-	import type { MotionInterface, PropRotDir } from './Motion/MotionInterface';
-	import type { Orientation } from './Prop/PropTypes';
+	import { PictographManager } from './PictographManager';
 	import type { PictographInterface } from '$lib/types/PictographInterface';
-	import { defaultPictographData } from './defaultPictographData';
-	import type { PropInterface, RadialMode } from './Prop/PropInterface';
+	import type { GridData } from './Grid/GridInterface';
 
-	export let pictographData: any;
+	export let pictographData: PictographInterface | null;
 	export let onClick: () => void;
 
-	let gridPoints: Record<string, { x: number; y: number }> = {};
-	let motions: Motion[] = [];
-	let propDicts: PropInterface[] = [];
-	let propPlacementManager = new PropPlacementManager();
+	let pictographManager: PictographManager | null = null;
 
-	function processPictographData(pictographData: PictographInterface | null): void {
-		const data = pictographData || defaultPictographData;
-
-		if (data.redMotionData && data.blueMotionData) {
-			motions = [createMotion(data.redMotionData), createMotion(data.blueMotionData)];
-
-			propDicts = [
-				{
-					propType: 'staff',
-					color: 'red',
-					motion: motions[0],
-					radialMode: determineRadialMode(data.redMotionData.endOri),
-					ori: data.redMotionData.endOri,
-					coords: {x:0, y:0},
-					loc: data.redMotionData.endLoc
-				},
-				{
-					propType: 'staff',
-					color: 'blue',
-					motion: motions[1],
-					radialMode: determineRadialMode(data.blueMotionData.endOri),
-					ori: data.blueMotionData.endOri,
-					coords: {x:0, y:0},
-					loc: data.blueMotionData.endLoc
-				}
-			];
-		} else {
-			motions = [];
-			propDicts = [];
+	function handleGridDataReady(data: GridData): void {
+		if (pictographData) {
+			pictographManager = new PictographManager(pictographData, data);
 		}
 	}
-
-	function determineRadialMode(endOri: Orientation | null): RadialMode {
-		return endOri === 'in' || endOri === 'out' ? 'radial' : 'nonradial';
-	}
-
-	function handleGridPointsReady(points: CircleCoords[keyof CircleCoords]): void {
-		gridPoints = points.hand_points.normal || {};
-	}
-
-	function createMotion(attributes: MotionInterface): Motion {
-		const motionData: MotionInterface = {
-			...attributes,
-			pictographData: pictographData,
-			endOri: attributes.endOri || null
-		};
-
-		const motion = new Motion(motionData);
-		pictographData.motionData = pictographData.motionData || [];
-		return motion;
-	}
-
-	$: processPictographData(pictographData);
 </script>
 
 <div
@@ -81,13 +25,15 @@
 	on:click|stopPropagation={onClick}
 	on:keydown={(e) => e.key === 'Enter' && onClick()}
 >
-	<Grid gridMode={pictographData?.grid_mode || 'diamond'} onPointsReady={handleGridPointsReady} />
-	{#each propDicts as propDict}
-		<Prop {propDict} {gridPoints} />
-	{/each}
-	{#each motions as motion}
-		<Arrow {motion} />
-	{/each}
+	<Grid gridMode={pictographData?.gridMode || 'diamond'} onPointsReady={handleGridDataReady} />
+	{#if pictographManager}
+		{#each pictographManager.getMotions() as motion}
+			<Prop {motion} />
+		{/each}
+		{#each pictographManager.getArrows() as { motion, color }}
+			<Arrow {motion} {color} />
+		{/each}
+	{/if}
 </div>
 
 <style>

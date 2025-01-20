@@ -39,7 +39,7 @@ export default class ArrowLocationManager {
 
 		const CalculatorClass = calculatorMap[motionType];
 		return CalculatorClass
-			? new (CalculatorClass as any)(this.arrowProps, this.motion.pictographData)
+			? new (CalculatorClass as any)(this.arrowProps, this.motion.pictograph)
 			: null;
 	}
 

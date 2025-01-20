@@ -71,11 +71,10 @@ function groupPictographsByLetter(pictographs: Record<string, any>[]): Pictograp
 			redMotionData,
 			blueMotionData,
 			gridMode: record.gridMode,
-			motionData: [], // Initialize as an empty array; motions can be added later
+			motionData: [] // Initialize as an empty array; motions can be added later
 		};
 	});
 }
-
 
 function extractAttributes(record: Record<string, any>, prefix: string): MotionInterface | null {
 	if (
@@ -103,7 +102,5 @@ function extractAttributes(record: Record<string, any>, prefix: string): MotionI
 		prefloatPropRotDir: null
 	};
 }
-
-
 
 export default pictographDataStore;

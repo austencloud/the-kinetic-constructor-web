@@ -1,30 +1,46 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { parseCircleCoords } from '../../../utils/gridCoordinateUtils'; // Utilities
-	import type { CircleCoords } from '../../../types/CircleCoords'; // Types
+	import type { CircleCoords } from '../../../types/CircleCoords';
+	import type { GridData } from './GridInterface';
 
-	export let onPointsReady: (points: CircleCoords[keyof CircleCoords]) => void;
+	export let onPointsReady: (gridData: GridData) => void;
 	export let gridMode: 'diamond' | 'box' = 'diamond';
 
 	let gridImagePath: string = '';
-	let points: CircleCoords[keyof CircleCoords] | null = null;
+	let circleCoords: CircleCoords | null = null;
 
 	async function loadCircleCoords(): Promise<void> {
 		try {
 			const response = await fetch('/circle_coords.json');
-			if (!response.ok) {
-				throw new Error('Failed to load circle_coords.json');
-			}
+			if (!response.ok) throw new Error('Failed to load circle_coords.json');
 
-			const data: CircleCoords = await response.json();
-			points = parseCircleCoords(data, gridMode);
+			circleCoords = await response.json();
 
-			if (onPointsReady && points) {
-				onPointsReady(points);
+			if (circleCoords) {
+				const gridData: GridData = {
+					allHandPointsStrict: parsePoints(circleCoords, 'strict'),
+					allHandPointsNormal: parsePoints(circleCoords, 'normal')
+				};
+
+				if (onPointsReady) onPointsReady(gridData);
 			}
 		} catch (error) {
 			console.error('Error loading circle coordinates:', error);
 		}
+	}
+
+	function parsePoints(
+		circleCoords: CircleCoords,
+		mode: 'strict' | 'normal'
+	): Record<string, { coordinates: { x: number; y: number } }> {
+		const points = circleCoords[gridMode]?.hand_points[mode] || {};
+		return Object.entries(points).reduce(
+			(acc: Record<string, { coordinates: { x: number; y: number } }>, [key, value]) => {
+				acc[key] = { coordinates: value as { x: number; y: number } };
+				return acc;
+			},
+			{}
+		);
 	}
 
 	$: gridImagePath = gridMode === 'diamond' ? '/diamond_grid.png' : '/box_grid.png';
@@ -37,6 +53,7 @@
 <div class="grid-container">
 	<img src={gridImagePath} alt="Grid Background" />
 </div>
+
 <style>
 	.grid-container {
 		width: 100%;

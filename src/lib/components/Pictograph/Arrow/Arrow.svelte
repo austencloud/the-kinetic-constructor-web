@@ -2,6 +2,7 @@
 	import ArrowUpdater from './ArrowUpdater';
 	import ArrowLocationManager from './ArrowLocationManager';
 	import type { Motion } from '../Motion/Motion';
+	import type { MotionInterface } from '../Motion/MotionInterface';
 
 	// Props
 	export let motion: Motion; // Associated motion instance
@@ -19,10 +20,10 @@
 	let transform: string;
 
 	// Initialize managers
-	arrowUpdater = new ArrowUpdater({ color, position, rotation, mirrored, motion });
+	arrowUpdater = new ArrowUpdater({ color, position, rotation, mirrored, motion: motion });
 	arrowLocationManager = new ArrowLocationManager({
 		arrowProps: { color, position, rotation, mirrored },
-		motion
+		motion: motion
 	});
 
 	// Reactive updates

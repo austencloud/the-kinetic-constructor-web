@@ -1,3 +1,4 @@
+import type { Motion } from '../Motion/Motion';
 import type { MotionInterface, Location } from '../Motion/MotionInterface';
 import type { Orientation } from './PropTypes';
 
@@ -8,8 +9,7 @@ export interface PropInterface {
 	color: 'red' | 'blue';
 	radialMode: RadialMode | null;
 	ori: Orientation | null;
-	motion: MotionInterface;
+	motion: Motion;
 	coords: { x: number; y: number };
-	loc: Location
-	
+	loc: Location;
 }

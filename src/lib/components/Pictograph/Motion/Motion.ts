@@ -17,6 +17,7 @@ import Pictograph from '../Pictograph.svelte';
 import type { Orientation } from '../Prop/PropTypes';
 import type { PictographInterface } from '../../../types/PictographInterface';
 import { LeadStateDeterminer } from './LeadStateDeterminer';
+import type { PictographManager } from '../PictographManager';
 
 export class Motion implements MotionInterface {
 	motionType: MotionType;
@@ -32,18 +33,22 @@ export class Motion implements MotionInterface {
 	endOri: Orientation = 'in';
 	handRotDir: HandRotDir = 'cw_handpath';
 	pictographData: PictographInterface;
+	pictographManager: PictographManager // Pass manager instance
 
-	arrow: Arrow | null = null;
 	prop: Prop | null = null;
+	arrow: Arrow | null = null;
 
 	checker: MotionChecker;
 	oriCalculator: MotionOriCalculator;
 	updater: MotionUpdater;
 	handRotDirCalculator: HandRotDirCalculator;
 
-	constructor(motionData: MotionInterface) {
+	constructor(
+		motionData: MotionInterface,
+		pictographManager: PictographManager // Add the PictographManager parameter
+	) {
 		const {
-			pictographData: pictographData,
+			pictographData,
 			motionType = 'static',
 			startLoc = 'n',
 			endLoc = 'n',
@@ -55,10 +60,11 @@ export class Motion implements MotionInterface {
 			prefloatMotionType = null,
 			prefloatPropRotDir = null,
 			arrow,
-			prop
+			prop,
 		} = motionData;
 
 		this.pictographData = pictographData;
+		this.pictographManager = pictographManager; // Store the instance
 		this.motionType = motionType;
 		this.startLoc = startLoc;
 		this.endLoc = endLoc;
@@ -81,6 +87,8 @@ export class Motion implements MotionInterface {
 		this.calculateEndOrientation();
 		this.validatePrefloatProperties();
 	}
+
+
 
 	private calculateEndOrientation(): void {
 		this.endOri = this.oriCalculator.calculateEndOri();
@@ -131,16 +139,9 @@ export class Motion implements MotionInterface {
 		}
 	}
 
-	attachComponents(arrow: Arrow, prop: Prop): void {
-		this.arrow = arrow;
+	attachComponents(prop: Prop, arrow: Arrow): void {
 		this.prop = prop;
-
-		if (this.arrow) {
-			this.arrow.motion = this;
-		}
-		if (this.prop) {
-			this.prop.motion = this;
-		}
+		this.arrow = arrow;
 	}
 
 	private validatePrefloatProperties(): void {
