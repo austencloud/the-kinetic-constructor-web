@@ -2,20 +2,35 @@
 	import Grid from './Grid/Grid.svelte';
 	import Prop from './Prop/Prop.svelte';
 	import Arrow from './Arrow/Arrow.svelte';
-	import { PictographManager } from './PictographManager';
+	import { Motion } from './Motion/Motion';
+	import { PropPlacementManager } from './Prop/PropPlacementManager/PropPlacementManager';
 	import type { PictographInterface } from '$lib/types/PictographInterface';
 	import type { GridData } from './Grid/GridInterface';
 
 	export let pictographData: PictographInterface | null;
 	export let onClick: () => void;
 
-	let pictographManager: PictographManager | null = null;
+	let motions: Motion[] = [];
+	let propPlacementManager: PropPlacementManager | null = null;
 
 	function handleGridDataReady(data: GridData): void {
 		if (pictographData) {
-			pictographManager = new PictographManager(pictographData, data);
+			propPlacementManager = new PropPlacementManager(pictographData, data);
+			initializeMotions();
 		}
 	}
+
+	function initializeMotions(): void {
+		const { redMotionData, blueMotionData } = pictographData || {};
+
+		if (redMotionData && blueMotionData) {
+			motions = [
+				new Motion(redMotionData),
+				new Motion(blueMotionData),
+			];
+		}
+	}
+
 </script>
 
 <div
@@ -26,11 +41,11 @@
 	on:keydown={(e) => e.key === 'Enter' && onClick()}
 >
 	<Grid gridMode={pictographData?.gridMode || 'diamond'} onPointsReady={handleGridDataReady} />
-	{#if pictographManager}
-		{#each pictographManager.getMotions() as motion}
+	{#if propPlacementManager}
+		{#each motions as motion}
 			<Prop {motion} />
 		{/each}
-		{#each pictographManager.getMotions() as motion}
+		{#each motions as motion}
 			<Arrow {motion} />
 		{/each}
 	{/if}

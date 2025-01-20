@@ -16,7 +16,6 @@ import Prop from '../Prop/Prop.svelte';
 import type { Orientation } from '../Prop/PropTypes';
 import type { PictographInterface } from '../../../types/PictographInterface';
 import { LeadStateDeterminer } from './LeadStateDeterminer';
-import type { PictographManager } from '../PictographManager';
 
 export class Motion implements MotionInterface {
 	motionType: MotionType;
@@ -32,7 +31,6 @@ export class Motion implements MotionInterface {
 	endOri: Orientation = 'in';
 	handRotDir: HandRotDir = 'cw_handpath';
 	pictographData: PictographInterface;
-	pictographManager: PictographManager; // Pass manager instance
 
 	prop: Prop | null = null;
 	arrow: Arrow | null = null;
@@ -44,7 +42,6 @@ export class Motion implements MotionInterface {
 
 	constructor(
 		motionData: MotionInterface,
-		pictographManager: PictographManager // Add the PictographManager parameter
 	) {
 		const {
 			pictographData,
@@ -63,7 +60,6 @@ export class Motion implements MotionInterface {
 		} = motionData;
 
 		this.pictographData = pictographData;
-		this.pictographManager = pictographManager; // Store the instance
 		this.motionType = motionType;
 		this.startLoc = startLoc;
 		this.endLoc = endLoc;

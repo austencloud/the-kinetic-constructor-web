@@ -8,11 +8,12 @@
 	export let motion: Motion;
 
 	let arrowData: ArrowInterface;
-	let arrowUpdater: ArrowUpdater;
-	let arrowLocationManager: ArrowLocationManager;
+	let arrowUpdater: ArrowUpdater | null = null;
+	let arrowLocationManager: ArrowLocationManager | null = null;
 	let svgPath = '';
 	let transform: string;
 
+	// Initialize arrow data
 	function initializeArrowData(): ArrowInterface {
 		return {
 			color: motion.color,
@@ -23,14 +24,14 @@
 		};
 	}
 
-	// Initialize arrow data and managers
 	onMount(() => {
 		arrowData = initializeArrowData();
 		arrowUpdater = new ArrowUpdater(arrowData);
 		arrowLocationManager = new ArrowLocationManager({ arrowData });
 	});
 
-	$: {
+	// Reactive updates
+	$: if (arrowUpdater) {
 		const updateResult = arrowUpdater.updateArrow();
 		svgPath = updateResult.svgPath || '';
 		transform = `translate(${arrowData.position.x}px, ${arrowData.position.y}px) rotate(${arrowData.rotation}deg) scale(${
