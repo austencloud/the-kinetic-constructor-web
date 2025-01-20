@@ -26,7 +26,7 @@
 	let resizeObserver: ResizeObserver;
 
 	function initializeMotions(): void {
-		const { redMotionData, blueMotionData } = pictographData || {};
+		let { redMotionData, blueMotionData } = pictographData || {};
 		if (redMotionData) {
 			redMotion = new Motion(redMotionData);
 		}
@@ -37,7 +37,7 @@
 
 	function updateContainerSize(): void {
 		if (pictographRef) {
-			const { width, height } = pictographRef.getBoundingClientRect();
+			let { width, height } = pictographRef.getBoundingClientRect();
 			containerWidth = width;
 			containerHeight = height;
 			sceneScaleFactor = Math.min(containerWidth / 950, containerHeight / 950);
@@ -158,16 +158,23 @@
 		border: none;
 		cursor: pointer;
 		transition: transform 0.1s;
-	}
+		box-sizing: border-box;
+		transform: scale(1);
+		z-index: 1;
+		position: relative; /* Add this */
 
+		
+	}
+	
 	.pictograph:hover {
 		transform: scale(1.1);
-		z-index: 1;
-		border: 1px solid black;
+		z-index: 4;
+		outline: 4px solid gold; /* Use outline for hover effect */
 	}
-
+	
 	.pictograph:active {
 		transform: scale(1);
 		border: none;
+		z-index: 1;
 	}
 </style>
