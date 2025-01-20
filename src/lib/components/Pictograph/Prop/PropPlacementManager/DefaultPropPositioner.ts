@@ -1,5 +1,4 @@
 import type { GridData, GridPoint } from "../../Grid/GridInterface";
-import type { GridMode } from "../../Motion/MotionInterface";
 import type { PropInterface } from "../PropInterface";
 
 export class DefaultPropPositioner {
@@ -7,7 +6,7 @@ export class DefaultPropPositioner {
 
 	constructor(
 		private gridData: GridData,
-		private gridMode: GridMode,
+		private gridMode: string,
 		private gridWidth: number,
 		private gridHeight: number
 	) {}
@@ -17,39 +16,40 @@ export class DefaultPropPositioner {
 		const pointSuffix = strict ? '_strict' : '';
 		const pointName = `${prop.loc}_${this.gridMode}_hand_point${pointSuffix}`;
 
-		console.debug(`Attempting to place prop '${prop.propType}' at point '${pointName}'.`);
+		console.debug(`Placing prop '${prop.propType}' at point '${pointName}'.`);
 
-		// Fetch the grid point based on the prop's location and grid mode
 		const gridPoint = this.getGridPoint(pointName, strict);
 
 		if (gridPoint?.coordinates) {
 			console.debug(`Found coordinates for '${pointName}':`, gridPoint.coordinates);
 			this.placePropAtHandPoint(prop, gridPoint.coordinates);
 		} else {
-			console.warn(`Hand point '${pointName}' not found or has no coordinates.`);
+			console.warn(`Grid point '${pointName}' not found.`);
 		}
 	}
 
 	private placePropAtHandPoint(prop: PropInterface, handPoint: { x: number; y: number }): void {
-		// Calculate scaling factor
 		const scaleFactorX = this.gridWidth / 950;
 		const scaleFactorY = this.gridHeight / 950;
-	
-		// Scale coordinates based on container dimensions
+
 		const scaledHandPoint = {
 			x: handPoint.x * scaleFactorX,
 			y: handPoint.y * scaleFactorY,
 		};
-	
-		// Update prop coordinates
-		prop.coords = {
-			x: scaledHandPoint.x,
-			y: scaledHandPoint.y,
+
+		const centerPoint = prop.svgCenter || { x: 0, y: 0 };
+		const offset = {
+			x: scaledHandPoint.x - centerPoint.x,
+			y: scaledHandPoint.y - centerPoint.y,
 		};
-	
-		console.debug(`Placed prop at scaled coordinates:`, prop.coords);
+
+		prop.coords = {
+			x: offset.x,
+			y: offset.y,
+		};
+
+		console.debug(`Placed prop '${prop.propType}' at coordinates:`, prop.coords);
 	}
-	
 
 	private getGridPoint(pointName: string, strict: boolean): GridPoint | undefined {
 		if (this.locationPointsCache[pointName]) {

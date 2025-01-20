@@ -1,5 +1,5 @@
 import type { Motion } from '../Motion/Motion';
-import type { MotionInterface, Location } from '../Motion/MotionInterface';
+import type { Location } from '../Motion/MotionInterface';
 import type { Orientation } from './PropTypes';
 
 export type RadialMode = 'radial' | 'nonradial';
@@ -12,4 +12,5 @@ export interface PropInterface {
 	motion: Motion;
 	coords: { x: number; y: number };
 	loc: Location;
+	svgCenter?: { x: number; y: number }; // Optional property for the SVG center
 }

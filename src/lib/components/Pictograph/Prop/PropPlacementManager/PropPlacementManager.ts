@@ -24,20 +24,10 @@ export class PropPlacementManager {
 
 	public updatePropPositions(props: PropInterface[]): PropInterface[] {
 		console.debug('Updating Prop Positions:', props);
-	
+
 		return props.map((prop) => {
-			if (!prop.motion?.pictographData?.gridMode) {
-				console.warn('Prop has missing motion or gridMode:', prop);
-				return prop;
-			}
-	
-			if (prop.motion.pictographData.gridMode === 'diamond') {
-				this.betaPositioner.reposition(props);
-			} else {
-				this.defaultPositioner.setToDefaultPosition(prop);
-			}
-			return prop; // Ensure updated coordinates are returned
+			this.defaultPositioner.setToDefaultPosition(prop);
+			return prop; 
 		});
 	}
-	
 }

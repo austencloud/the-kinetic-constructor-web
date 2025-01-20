@@ -54,10 +54,6 @@
 
 	function setupPropPlacementManager(): void {
 		if (pictographData && gridData) {
-			console.debug('Setting up Prop Placement Manager');
-			console.debug('Grid Data:', gridData);
-			console.debug('Pictograph Data:', pictographData);
-
 			propPlacementManager = new PropPlacementManager(
 				pictographData,
 				gridData,
@@ -65,18 +61,9 @@
 				containerHeight
 			);
 
-			if (redPropData) {
-				console.debug('Before updating redPropData:', redPropData);
-				redPropData = propPlacementManager.updatePropPositions([redPropData])[0];
-				console.debug('After updating redPropData:', redPropData);
-			}
-			if (bluePropData) {
-				console.debug('Before updating bluePropData:', bluePropData);
-				bluePropData = propPlacementManager.updatePropPositions([bluePropData])[0];
-				console.debug('After updating bluePropData:', bluePropData);
-			}
-		} else {
-			console.warn('Missing gridData or pictographData during setup.');
+			// Update props with correct positions
+			redPropData = redPropData ? propPlacementManager.updatePropPositions([redPropData])[0] : null;
+			bluePropData = bluePropData ? propPlacementManager.updatePropPositions([bluePropData])[0] : null;
 		}
 	}
 
@@ -84,7 +71,7 @@
 		if (redMotion) {
 			redPropData = {
 				propType: 'staff',
-				color: redMotion.color,
+				color: 'red',
 				motion: redMotion,
 				radialMode:
 					redMotion.endOri === 'in' || redMotion.endOri === 'out'
@@ -99,7 +86,7 @@
 		if (blueMotion) {
 			bluePropData = {
 				propType: 'staff',
-				color: blueMotion.color,
+				color: 'blue',
 				motion: blueMotion,
 				radialMode:
 					blueMotion.endOri === 'in' || blueMotion.endOri === 'out'
@@ -161,9 +148,9 @@
 		}}
 	/>
 	{#if gridData}
-		{#each [redPropData, bluePropData] as propData (propData?.color)}
-			{#if propData}
-				<Prop {propData} {propScaleFactor} />
+		{#each [{ color: 'red', prop: redPropData }, { color: 'blue', prop: bluePropData }] as { color, prop } (color)}
+			{#if prop}
+				<Prop propData={prop} {propScaleFactor} />
 			{/if}
 		{/each}
 	{/if}
@@ -184,13 +171,13 @@
 		box-sizing: border-box;
 		transform: scale(1);
 		z-index: 1;
-		position: relative; /* Add this */
+		position: relative;
 	}
 
 	.pictograph:hover {
 		transform: scale(1.1);
 		z-index: 4;
-		outline: 4px solid gold; /* Use outline for hover effect */
+		outline: 4px solid gold;
 	}
 
 	.pictograph:active {
