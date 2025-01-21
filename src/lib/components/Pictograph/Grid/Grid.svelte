@@ -1,4 +1,3 @@
-
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { circleCoordinates } from './circleCoordinates';
@@ -17,10 +16,16 @@
 
 	function parseCoordinates(coordString: string): { x: number; y: number } | null {
 		if (coordString === 'None') return null;
-		const [x, y] = coordString.replace(/[()]/g, '').split(', ').map(parseFloat);
-		return { x, y };
-	}
 
+		// Parse coordinates and scale them appropriately
+		const [x, y] = coordString.replace(/[()]/g, '').split(', ').map(parseFloat);
+
+		// Ensure the coordinates are scaled based on grid size (950x950)
+		return {
+			x: x * gridScaleFactor, // Apply grid scale factor
+			y: y * gridScaleFactor
+		};
+	}
 
 	onMount(() => {
 		const modeData = circleCoordinates[gridMode];
@@ -61,16 +66,13 @@
 				coordinates: parseCoordinates(modeData.center_point)
 			}
 		};
-		console.debug("Parsed Grid Data:", gridData);
+		// console.debug("Parsed Grid Data:", gridData);
 
 		onPointsReady(gridData);
 	});
 </script>
 
-<div
-	class="grid-container"
-	style="transform: translate(-50%, -50%) scale({gridScaleFactor});"
->
+<div class="grid-container" style="transform: translate(-50%, -50%) scale({gridScaleFactor});">
 	<img src={gridSrc} alt="Grid" class="grid-image" />
 </div>
 

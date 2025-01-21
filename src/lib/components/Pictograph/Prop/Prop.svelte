@@ -75,7 +75,16 @@
 			imageSrc = ''; // Clear on error
 		}
 	}
+	$: if (propData.coords) {
+		const rotationManager = new PropRotAngleManager({
+			location: propData.loc,
+			orientation: propData.ori
+		});
+		const rotationAngle = rotationManager.getRotationAngle();
 
+		transform = `translate(${propData.coords.x}px, ${propData.coords.y}px)
+				 scale(${propScaleFactor}) rotate(${rotationAngle}deg)`;
+	}
 	onMount(() => {
 		svgPath = getSvgPath();
 		loadAndTransformSvg(svgPath, propData.color);
@@ -88,23 +97,18 @@
 			});
 			const rotationAngle = rotationManager.getRotationAngle();
 
-			transform = `translate(${propData.coords.x * propScaleFactor}px, ${propData.coords.y * propScaleFactor}px)
-						 scale(${propScaleFactor}) rotate(${rotationAngle}deg)`;
+			// Apply the scale only to the scale transformation, not to the translate values
+			transform = `translate(${propData.coords.x}px, ${propData.coords.y}px)
+					 scale(${propScaleFactor}) rotate(${rotationAngle}deg)`;
 		} else {
 			console.error('Prop coordinates are missing.');
 		}
-		console.debug("Computed transform for prop:", transform);
-
+		console.debug('Computed transform for prop:', transform);
 	});
 </script>
 
 {#if imageSrc}
-	<img
-		src={imageSrc}
-		class="prop"
-		style="transform: {transform};"
-		alt="Transformed Prop"
-	/>
+	<img src={imageSrc} class="prop" style="transform: {transform};" alt="Transformed Prop" />
 {:else}
 	<p>Loading or transforming SVG failed.</p>
 {/if}

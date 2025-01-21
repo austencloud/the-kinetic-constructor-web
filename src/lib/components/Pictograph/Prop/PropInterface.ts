@@ -12,5 +12,4 @@ export interface PropInterface {
 	motion: Motion;
 	coords: { x: number; y: number };
 	loc: Location;
-	svgCenter?: { x: number; y: number }; // Optional property for the SVG center
-}
+	svgCenter?: { x: number; y: number } | null | undefined;}

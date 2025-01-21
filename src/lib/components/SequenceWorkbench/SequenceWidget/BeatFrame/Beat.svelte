@@ -28,6 +28,7 @@
 		padding: 0;
 		/* set the border radius to none */
 		border-radius: 0;
+		border:1px solid black;
 	}
 
 

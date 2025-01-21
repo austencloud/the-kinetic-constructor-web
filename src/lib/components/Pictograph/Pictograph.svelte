@@ -47,8 +47,6 @@
 			// Prop scale factor (based on 650x650 logical size)
 			propScaleFactor = Math.min(width / 650, height / 650);
 
-			console.debug('Grid Scale Factor:', gridScaleFactor);
-			console.debug('Prop Scale Factor:', propScaleFactor);
 		}
 	}
 
@@ -143,7 +141,7 @@
 		gridMode={pictographData?.gridMode || 'diamond'}
 		{gridScaleFactor}
 		onPointsReady={(data) => {
-			console.debug('Grid Data Ready:', data);
+			// console.debug('Grid Data Ready:', data);
 			gridData = data;
 		}}
 	/>
@@ -183,6 +181,6 @@
 	.pictograph:active {
 		transform: scale(1);
 		border: none;
-		z-index: 1;
+		/* z-index: 1; */
 	}
 </style>
