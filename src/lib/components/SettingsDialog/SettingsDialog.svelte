@@ -69,6 +69,7 @@
 		overflow: hidden;
 		cursor: default;
 		transform-origin: center;
+		z-index: 100;
 	}
 
 	.dialog-title {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import TurnsBox from './TurnsBox/TurnsBox.svelte';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
+	import type { PictographInterface } from '$lib/types/PictographInterface';
 
 	export let isExpanded: boolean;
 	export let animationDuration: number;
@@ -14,7 +15,16 @@
 	$: contentWidth = maxEditorHeight - 2 * borderSize;
 
 	// Pictograph data
-	const dummyPictographData = { grid: '/diamond_grid.svg', name: 'Graph Editor' };
+	const dummyPictographData: PictographInterface = {
+		letter: null,
+		startPos: null,
+		endPos: null,
+		timing: null,
+		direction: null,
+		gridMode: null,
+		blueMotionData: null,
+		redMotionData: null
+	};
 </script>
 
 <div
@@ -35,7 +45,7 @@
 			height: {contentWidth}px; 
 		"
 	>
-		<Pictograph pictographData={dummyPictographData} interactive={false} onClick={undefined} />
+		<Pictograph pictographData={dummyPictographData} onClick={undefined} />
 	</div>
 
 	<div class="turns-box-container">

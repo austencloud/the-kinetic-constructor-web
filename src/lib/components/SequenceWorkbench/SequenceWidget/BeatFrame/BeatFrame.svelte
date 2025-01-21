@@ -128,7 +128,7 @@
 		align-content: center;
 		width: 100%;
 		height: 100%;
-		/* padding: 1%; */
+		padding: 1%;
 		/* min-height: 0; */
 	}
 
