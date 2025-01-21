@@ -37,3 +37,30 @@ export interface MotionInterface {
 	prefloatMotionType: MotionType | null;
 	prefloatPropRotDir: PropRotDir | null;
 }
+
+export interface BlankMotionInterface {
+	pictographData: {
+		letter: null;
+		startPos: null;
+		endPos: null;
+		timing: null;
+		direction: null;
+		gridMode: null;
+		blueMotionData: null;
+		redMotionData: null;
+	};
+	arrow: null;
+	prop: null;
+	handRotDir: null;
+	motionType: 'static';
+	startLoc: 'n';
+	endLoc: 'n';
+	startOri: 'in';
+	endOri: null;
+	propRotDir: 'no_rot';
+	color: 'blue';
+	turns: 0;
+	leadState: 'trailing';
+	prefloatMotionType: null;
+	prefloatPropRotDir: null;
+}

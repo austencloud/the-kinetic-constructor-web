@@ -5,7 +5,8 @@ import type {
 	Location,
 	Color,
 	LeadState,
-	HandRotDir
+	HandRotDir,
+	BlankMotionInterface
 } from './MotionInterface';
 import { MotionChecker } from './MotionChecker';
 import { MotionOriCalculator } from './MotionOriCalculator';
@@ -41,7 +42,7 @@ export class Motion implements MotionInterface {
 	handRotDirCalculator: HandRotDirCalculator;
 
 	constructor(
-		motionData: MotionInterface,
+		motionData: MotionInterface 
 	) {
 		const {
 			pictographData,

@@ -4,7 +4,6 @@
 	import type { PictographInterface } from '$lib/types/PictographInterface';
 	import type { BeatData } from './BetaData';
 
-
 	export let beatData: BeatData;
 	export let onClick: (beat: BeatData) => void;
 
@@ -17,8 +16,7 @@
 	aria-label={`Beat ${beatData.beatNumber}`}
 	on:keydown={(e) => e.key === 'Enter' && onClick(beatData)}
 >
-	<Pictograph {pictographData} isSelected={beatData.filled} onClick={() => onClick(beatData)}
-	/>
+	<Pictograph {pictographData} onClick={() => onClick(beatData)} />
 </button>
 
 <style>
@@ -26,10 +24,7 @@
 		width: 100%;
 		height: 100%;
 		padding: 0;
-		/* set the border radius to none */
 		border-radius: 0;
-		border:1px solid black;
-	}
-
-
+		border: 1px solid black;
+}
 </style>
