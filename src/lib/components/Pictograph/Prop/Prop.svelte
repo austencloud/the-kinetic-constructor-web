@@ -93,6 +93,8 @@
 		} else {
 			console.error('Prop coordinates are missing.');
 		}
+		console.debug("Computed transform for prop:", transform);
+
 	});
 </script>
 

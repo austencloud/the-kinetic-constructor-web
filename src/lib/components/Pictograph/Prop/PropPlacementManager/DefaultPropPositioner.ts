@@ -12,21 +12,20 @@ export class DefaultPropPositioner {
 	) {}
 
 	public setToDefaultPosition(prop: PropInterface): void {
-		const strict = this.hasStrictlyPlacedProps(prop);
-		const pointSuffix = strict ? '_strict' : '';
-		const pointName = `${prop.loc}_${this.gridMode}_hand_point${pointSuffix}`;
-
-		console.debug(`Placing prop '${prop.propType}' at point '${pointName}'.`);
-
-		const gridPoint = this.getGridPoint(pointName, strict);
-
+		const pointName = `${prop.loc}_${this.gridMode}_hand_point`;
+		console.debug(`Looking for point: ${pointName}`);
+		
+		const gridPoint = this.getGridPoint(pointName, false);
+		console.debug(`Grid point for ${prop.propType}:`, gridPoint);
+		
 		if (gridPoint?.coordinates) {
-			console.debug(`Found coordinates for '${pointName}':`, gridPoint.coordinates);
+			console.debug(`Placing ${prop.propType} at`, gridPoint.coordinates);
 			this.placePropAtHandPoint(prop, gridPoint.coordinates);
 		} else {
-			console.warn(`Grid point '${pointName}' not found.`);
+			console.warn(`No coordinates found for ${pointName}`);
 		}
 	}
+	
 
 	private placePropAtHandPoint(prop: PropInterface, handPoint: { x: number; y: number }): void {
 		const scaleFactorX = this.gridWidth / 950;

@@ -61,6 +61,7 @@
 				coordinates: parseCoordinates(modeData.center_point)
 			}
 		};
+		console.debug("Parsed Grid Data:", gridData);
 
 		onPointsReady(gridData);
 	});
