@@ -26,27 +26,21 @@ export function applyLayout(
 	return fallback;
 }
 
+// Updated calculateCellSize function
 export function calculateCellSize(
-	containerWidth: number,
-	containerHeight: number,
-	totalRows: number,
-	totalCols: number,
-	gap: number
+    containerWidth: number,
+    containerHeight: number,
+    totalRows: number,
+    totalCols: number,
+    gap: number
 ): number {
-	// total gap space
-	const totalHorizontalGap = (totalCols - 1) * gap;
-	const totalVerticalGap = (totalRows - 1) * gap;
+    // Calculate available space after accounting for gaps
+    const availableWidth = containerWidth - (totalCols - 1) * gap;
+    const availableHeight = containerHeight - (totalRows - 1) * gap;
 
-	// Remaining space for actual cells
-	const availableWidth = Math.max(0, containerWidth - totalHorizontalGap);
-	const availableHeight = Math.max(0, containerHeight - totalVerticalGap);
-
-	// Each row is same height, each col is same width => pick min for squares
-	const cellWidth = availableWidth / totalCols;
-	const cellHeight = availableHeight / totalRows;
-	let size = Math.floor(Math.min(cellWidth, cellHeight));
-
-	// Ensure we don’t go negative
-	size = Math.max(size, 0);
-	return size;
+    // Calculate scale factors with 1px buffer
+    const scaleX = (availableWidth - 1) / (950 * totalCols);
+    const scaleY = (availableHeight - 1) / (950 * totalRows);
+    
+    return 950 * Math.min(scaleX, scaleY, 1);
 }

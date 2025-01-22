@@ -4,15 +4,12 @@ import type { PropInterface, RadialMode } from './Prop/PropInterface';
 import type { Orientation, Location } from './Prop/PropTypes';
 import type { DefaultPropPositioner } from './Prop/PropPlacementManager/DefaultPropPositioner';
 
-
-
-export function createProp(
+export function createPropData(
 	propType: string,
 	color: 'red' | 'blue',
 	motion: Motion,
 	positioner: DefaultPropPositioner
 ): PropInterface {
-	// Initialize base prop data
 	const prop: PropInterface = {
 		propType,
 		color,
@@ -21,10 +18,9 @@ export function createProp(
 		loc: motion.endLoc,
 		ori: motion.endOri,
 		radialMode: 'radial',
-		svgCenter: { x: 0, y: 0 },
+		svgCenter: { x: 0, y: 0 }
 	};
 
-	// Set coordinates using the positioner
 	positioner.setToDefaultPosition(prop);
 
 	return prop;

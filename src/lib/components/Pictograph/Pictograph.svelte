@@ -5,7 +5,7 @@
 	import type { PictographInterface } from '$lib/types/PictographInterface';
 	import type { GridData } from './Grid/GridInterface';
 	import { DefaultPropPositioner } from './Prop/PropPlacementManager/DefaultPropPositioner';
-	import { createProp } from './PropCreator';
+	import { createPropData } from './PropFactory';
 	import { writable, type Writable } from 'svelte/store';
 	import type { PropInterface } from './Prop/PropInterface';
 	import { onMount } from 'svelte';
@@ -29,8 +29,8 @@
 			positioner = new DefaultPropPositioner(gridData, pictographData.gridMode || 'diamond');
 
 			// Create props with coordinates already set
-			redPropData.set(createProp('staff', 'red', redMotion, positioner));
-			bluePropData.set(createProp('staff', 'blue', blueMotion, positioner));
+			redPropData.set(createPropData('staff', 'red', redMotion, positioner));
+			bluePropData.set(createPropData('staff', 'blue', blueMotion, positioner));
 		}
 	});
 </script>
@@ -54,15 +54,23 @@
 	.pictograph {
 		width: 100%;
 		height: 100%;
+		max-width: 100%;
+		max-height: 100%;
 		display: flex;
 		flex: 1;
 		background-color: white;
 		cursor: pointer;
 		transition: transform 0.1s;
-		box-sizing: border-box;
+		/* box-sizing: border-box; */
 		transform: scale(1);
 		z-index: 1;
 		position: relative;
+		outline: 1px solid black;
+		aspect-ratio: 1;
+		margin: auto;
+		overflow: visible;
+        transform-origin: center center;
+		
 	}
 
 	.pictograph:hover {

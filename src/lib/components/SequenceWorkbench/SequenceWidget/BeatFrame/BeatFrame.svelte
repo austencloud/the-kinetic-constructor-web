@@ -76,70 +76,76 @@
 	}
 
 	function updateCellSize() {
-		if (frameWidth > 0 && frameHeight > 0) {
-			cellSize = calculateCellSize(frameWidth, frameHeight, beatRows, beatCols + 1, gap);
-		} else {
-			console.warn('Frame dimensions not available yet');
-		}
+	if (frameWidth > 0 && frameHeight > 0) {
+		// Ensure all cells have the same size
+		cellSize = calculateCellSize(frameWidth, frameHeight, beatRows, beatCols + 1, gap);
+		document.documentElement.style.setProperty('--cell-size', `${cellSize}px`);
+	} else {
+		console.warn('Frame dimensions not available yet');
 	}
+}
+
 
 	function handleBeatClick(beat: BeatData) {
 		console.log('Clicked beat:', beat);
 	}
+	$: if (cellSize) {
+        beatData = beatData.map(b => ({...b})); // Force array update
+    }
 </script>
-
 <div
 	bind:this={frameRef}
 	use:resizeObserver={onResize}
 	class="beat-frame"
 	style="--total-rows: {beatRows}; --total-cols: {beatCols + 1}; --gap: {gap}px;"
 >
+	<!-- Start Position Beat -->
 	<div
 		class="start-pos"
-		style="grid-row: 1; grid-column: 1; width: {cellSize}px; height: {cellSize}px;"
+		style="width: {cellSize}px; height: {cellSize}px;"
 	>
 		<StartPosBeat
-			beatData={startPosBeatData} onClick={() => handleBeatClick(startPosBeatData)}
+			beatData={startPosBeatData}
+			onClick={() => handleBeatClick(startPosBeatData)}
 		/>
 	</div>
 
-	{#each beatData as beatData (beatData.beatNumber)}
+	<!-- Other Beats -->
+	{#each beatData as beat (beat.beatNumber)}
 	<div
 		class="beat-container"
 		style="
-			grid-row: {Math.floor((beatData.beatNumber - 1) / beatCols) + 1};
-			grid-column: {(beatData.beatNumber - 1) % beatCols + 2};
 			width: {cellSize}px;
 			height: {cellSize}px;
+			grid-row: {Math.floor((beat.beatNumber - 1) / beatCols) + 1};
+			grid-column: {(beat.beatNumber - 1) % beatCols + 2};
 		"
 	>
-		<Beat beatData={beatData} onClick={() => handleBeatClick(beatData)} />
+		<Beat beatData={beat} onClick={() => handleBeatClick(beat)} />
 	</div>
-{/each}
-
+	{/each}
 </div>
 
+
 <style>
-	.beat-frame {
-		display: grid;
-		grid-template-rows: repeat(var(--total-rows, 4), auto);
-		grid-template-columns: repeat(var(--total-cols, 5), auto);
-		justify-content: center;
-		align-content: center;
-		width: 100%;
-		height: 100%;
-		padding: 1%;
-		/* min-height: 0; */
-	}
+.beat-frame {
+	display: grid;
+	grid-template-rows: repeat(var(--total-rows, 4), var(--cell-size, 50px));
+	grid-template-columns: repeat(var(--total-cols, 5), var(--cell-size, 50px));
+	justify-content: center;
+	align-content: center;
+	width: 100%;
+	height: 100%;
+}
 
-	.start-pos {
-		aspect-ratio: 1 / 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
+.start-pos {
+	width: var(--cell-size, 50px);
+	height: var(--cell-size, 50px);
+	aspect-ratio: 1 / 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
 
-	.beat-container {
-		cursor: pointer;
-	}
+
 </style>

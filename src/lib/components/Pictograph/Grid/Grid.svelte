@@ -27,7 +27,10 @@
 
 		const parsePoints = (points: Record<string, string>) =>
 			Object.fromEntries(
-				Object.entries(points).map(([key, value]) => [key, { coordinates: parseCoordinates(value) }])
+				Object.entries(points).map(([key, value]) => [
+					key,
+					{ coordinates: parseCoordinates(value) }
+				])
 			);
 
 		// Convert raw data into structured `GridData`
@@ -45,4 +48,5 @@
 	});
 </script>
 
-<image href={gridSrc} width="950" height="950" />
+<!-- Replace image with -->
+<image href={gridSrc} x="0" y="0" width="950" height="950" preserveAspectRatio="none" />

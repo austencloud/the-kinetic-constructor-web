@@ -25,6 +25,6 @@
 		height: 100%;
 		padding: 0;
 		border-radius: 0;
-		border: 1px solid black;
+		border: none
 }
 </style>
