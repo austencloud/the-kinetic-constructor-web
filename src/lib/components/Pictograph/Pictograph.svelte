@@ -20,19 +20,17 @@
 	let redPropData: Writable<PropInterface> = writable();
 	let bluePropData: Writable<PropInterface> = writable();
 
-	onMount(() => {
-		if (pictographData.redMotionData && pictographData.blueMotionData && gridData) {
+		$: if (gridData) {
+		positioner = new DefaultPropPositioner(gridData, pictographData.gridMode || 'diamond');
+		
+		if (positioner && pictographData.redMotionData && pictographData.blueMotionData) {
 			const redMotion = new Motion(pictographData.redMotionData);
 			const blueMotion = new Motion(pictographData.blueMotionData);
 
-			// Create the positioner
-			positioner = new DefaultPropPositioner(gridData, pictographData.gridMode || 'diamond');
-
-			// Create props with coordinates already set
 			redPropData.set(createPropData('staff', 'red', redMotion, positioner));
 			bluePropData.set(createPropData('staff', 'blue', blueMotion, positioner));
 		}
-	});
+	}
 </script>
 
 <svg class="pictograph" viewBox="0 0 950 950" xmlns="http://www.w3.org/2000/svg" role="img">
@@ -48,7 +46,6 @@
 		<Prop propData={$bluePropData} />
 	{/if}
 </svg>
-
 
 <style>
 	.pictograph {
@@ -69,8 +66,7 @@
 		aspect-ratio: 1;
 		margin: auto;
 		overflow: visible;
-        transform-origin: center center;
-		
+		transform-origin: center center;
 	}
 
 	.pictograph:hover {
