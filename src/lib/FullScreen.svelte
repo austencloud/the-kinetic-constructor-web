@@ -74,6 +74,9 @@
 	}
 
 	.fs-btn {
+		z-index: 9999;
+    /* pointer-events: all; */
+    
 		position: absolute;
 		right: 20px;
 		bottom: 20px;

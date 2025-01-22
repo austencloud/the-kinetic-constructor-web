@@ -60,11 +60,11 @@
 
 <div id="main-widget">
 	<!-- Render background immediately -->
-	<div class="background">
-		<SnowfallBackground />
-	</div>
 
 	<FullScreen on:toggleFullscreen={handleFullscreenToggle}>
+		<div class="background">
+			<SnowfallBackground />
+		</div>
 		<div id="content">
 			{#if isLoading}
 				<!-- Display loading spinner as an overlay -->
