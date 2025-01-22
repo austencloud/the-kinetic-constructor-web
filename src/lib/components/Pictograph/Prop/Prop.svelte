@@ -23,7 +23,10 @@
 			orientation: propData.ori
 		});
 		const rotationAngle = rotationManager.getRotationAngle();
-		return `translate(${propData.coords.x}px, ${propData.coords.y}px) rotate(${rotationAngle}deg)`;
+
+		// Use SVG units without 'px' and adjust for SVG center
+		return `translate(${propData.coords.x}, ${propData.coords.y}) 
+		        rotate(${rotationAngle} ${propData.svgCenter?.x ?? 0} ${propData.svgCenter?.y ?? 0})`;
 	}
 
 	/**
@@ -55,16 +58,16 @@
 </script>
 
 {#if imageSrc}
-	<g class="prop-group" transform={transform}>
-		<image
-			href={imageSrc}
-			width="252.8" 
-			height="77.8" 
-			x="0"
-			y="0"
-			preserveAspectRatio="xMidYMid meet"
-		/>
-	</g>
+<g class="prop-group" transform={transform}>
+	<image
+		href={imageSrc}
+		width="252.8" 
+		height="77.8" 
+		x={-(propData.svgCenter?.x ?? 0)} 
+		y={-(propData.svgCenter?.y ?? 0)}
+		preserveAspectRatio="xMidYMid meet"
+	/>
+</g>
 {:else}
 	<p>Loading or transforming SVG failed.</p>
 {/if}

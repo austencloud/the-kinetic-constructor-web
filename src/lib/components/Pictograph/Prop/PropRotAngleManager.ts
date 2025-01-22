@@ -3,6 +3,8 @@ import type { Orientation, Location } from './PropTypes';
 export default class PropRotAngleManager {
 	private location: Location;
 	private orientation: Orientation | null;
+	private diamondAngleMap: Partial<Record<Orientation, Partial<Record<Location, number>>>> = {};
+	private boxAngleMap: Partial<Record<Orientation, Partial<Record<Location, number>>>> = {};
 
 	constructor({ location, orientation }: { location: Location; orientation: Orientation }) {
 		this.location = location;
@@ -25,9 +27,15 @@ export default class PropRotAngleManager {
 			counter: { ne: 225, nw: 135, sw: 45, se: 315 }
 		};
 
-		const angleMap = isDiamondLocation ? diamondAngleMap : boxAngleMap;
-
-		const orientationAngles = angleMap[this.orientation as Orientation];
-		return orientationAngles?.[this.location as Location] ?? 0;
+		if (
+			this.location.includes('nw') ||
+			this.location.includes('ne') ||
+			this.location.includes('sw') ||
+			this.location.includes('se')
+		) {
+			return this.orientation ? this.boxAngleMap[this.orientation]?.[this.location] || 0 : 0;
+		}
+		// Handle diamond grid orientations
+		return this.orientation ? this.diamondAngleMap[this.orientation]?.[this.location] || 0 : 0;
 	}
 }

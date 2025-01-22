@@ -4,7 +4,10 @@ import type { PropInterface } from '../PropInterface';
 export class DefaultPropPositioner {
 	private locationPointsCache: Record<string, GridPoint> = {};
 
-	constructor(private gridData: GridData, private gridMode: string) {}
+	constructor(
+		private gridData: GridData,
+		private gridMode: string
+	) {}
 
 	public async setToDefaultPosition(propData: PropInterface): Promise<void> {
 		// Retrieve the center point from the prop's SVG
@@ -13,27 +16,23 @@ export class DefaultPropPositioner {
 		// Place the prop at the appropriate hand point
 		this.placePropAtHandPoint(propData);
 	}
-
 	private placePropAtHandPoint(prop: PropInterface): void {
 		const pointName = `${prop.loc}_${this.gridMode}_hand_point`;
-		console.debug(`Looking for point: ${pointName}`);
-	
 		const gridPoint = this.getGridPoint(pointName, false);
-		if (!gridPoint || !gridPoint.coordinates) {
+
+		if (!gridPoint?.coordinates) {
 			console.error(`Invalid grid point for ${pointName}`);
 			return;
 		}
-	
-		const handPoint = gridPoint.coordinates;
-		const centerPoint = prop.svgCenter || { x: 0, y: 0 };
+
+		// Use direct coordinates without center offset
 		prop.coords = {
-			x: handPoint.x - centerPoint.x,
-			y: handPoint.y - centerPoint.y,
+			x: gridPoint.coordinates.x,
+			y: gridPoint.coordinates.y
 		};
-	
-		console.debug(`Placed prop '${prop.propType}' at coordinates:`, prop.coords);
+
+		console.debug(`Placed prop at:`, prop.coords);
 	}
-	
 
 	private async getSvgCenterPoint(svgPath: string): Promise<{ x: number; y: number } | null> {
 		try {
@@ -58,16 +57,15 @@ export class DefaultPropPositioner {
 
 	private getGridPoint(pointName: string, strict: boolean): GridPoint | undefined {
 		console.debug('Fetching grid point:', pointName);
-		
+
 		const gridPoints = strict
 			? this.gridData.allHandPointsStrict
 			: this.gridData.allHandPointsNormal;
 		const gridPoint = gridPoints[pointName];
-	
+
 		if (!gridPoint) {
 			console.warn(`Grid point '${pointName}' not found.`);
 		}
 		return gridPoint;
 	}
-	
 }

@@ -13,3 +13,5 @@ export interface PropInterface {
 	coords: { x: number; y: number };
 	loc: Location;
 	svgCenter?: { x: number; y: number } | null | undefined;}
+
+	
