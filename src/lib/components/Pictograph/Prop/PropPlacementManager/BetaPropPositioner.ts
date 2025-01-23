@@ -22,7 +22,7 @@ export class BetaPropPositioner {
 		position: { x: number; y: number },
 		direction: Direction
 	): { x: number; y: number } {
-		const offset = 50; // Example offset
+		const offset = 25; // Example offset
 		const movementMap = {
 			up: { x: 0, y: -offset },
 			down: { x: 0, y: offset },

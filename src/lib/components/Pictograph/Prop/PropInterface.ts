@@ -1,5 +1,6 @@
 import type { Motion } from '../Motion/Motion';
-import type { Orientation, PropType } from './PropPlacementManager/PropTypes';
+import type { Color, Orientation } from '../Motion/MotionInterface';
+import type { PropType } from './PropPlacementManager/PropTypes';
 
 export type RadialMode = 'radial' | 'nonradial';
 export type DiamondLocation = 'n' | 's' | 'e' | 'w';
@@ -8,7 +9,7 @@ export type Location = DiamondLocation | BoxLocation;
 
 export interface PropInterface {
 	propType: PropType;
-	color: 'red' | 'blue';
+	color: Color;
 	radialMode: RadialMode | null;
 	ori: Orientation;
 	motion: Motion;

@@ -2,7 +2,6 @@
 import type { PropInterface } from '../PropInterface';
 import { BetaPropDirectionCalculator } from './BetaPropDirectionCalculator';
 import type { PictographInterface } from '$lib/types/PictographInterface';
-import { MotionType } from '../../Motion/MotionInterface';
 export default class RepositionBetaByLetterHandler {
 	private pictographData: PictographInterface;
 	private directionCalculator: BetaPropDirectionCalculator;
@@ -24,16 +23,20 @@ export default class RepositionBetaByLetterHandler {
 
 		if (!redPropData) return;
 		const furtherDirection = this.directionCalculator.getDirection(redPropData);
-		const otherDirection = this.directionCalculator.getOppositeDirection(furtherDirection);
+		const otherDirection = furtherDirection
+			? this.directionCalculator.getOppositeDirection(furtherDirection)
+			: undefined;
 
-		this.moveProp(redPropData, furtherDirection);
-		if (bluePropData) {
+		if (furtherDirection) {
+			this.moveProp(redPropData, furtherDirection);
+		}
+		if (bluePropData && otherDirection) {
 			this.moveProp(bluePropData, otherDirection);
 		}
 	}
 
 	reposition_I(): void {
-		const proProp = this.pictographData.motions.some((m) => m.motionType === MotionType.PRO)
+		const proProp = this.pictographData.motions.some((m) => m.motionType === 'pro')
 			? this.pictographData.redPropData
 			: this.pictographData.bluePropData;
 
@@ -42,10 +45,16 @@ export default class RepositionBetaByLetterHandler {
 			: this.pictographData.bluePropData;
 
 		const proDirection = this.directionCalculator.getDirection(proProp);
-		const antiDirection = this.directionCalculator.getOppositeDirection(proDirection);
+		const antiDirection = proDirection
+			? this.directionCalculator.getOppositeDirection(proDirection)
+			: undefined;
 
-		this.moveProp(proProp, proDirection);
-		this.moveProp(antiProp, antiDirection);
+		if (proDirection) {
+			this.moveProp(proProp, proDirection);
+		}
+		if (antiDirection) {
+			this.moveProp(antiProp, antiDirection);
+		}
 	}
 
 	reposition_J_K_L(): void {
@@ -60,15 +69,16 @@ export default class RepositionBetaByLetterHandler {
 
 	reposition_Y_Z(): void {
 		const shiftMotion = this.pictographData.motions.find((m) =>
-			[MotionType.PRO, MotionType.ANTI, MotionType.FLOAT].includes(m.motionType)
+			['pro', 'anti', 'float'].includes(m.motionType)
 		);
 		const staticMotion = this.pictographData.motions.find(
-			(m) => m.motionType === MotionType.STATIC
+			(m) => m.motionType === 'static'
 		);
 
 		if (!shiftMotion || !staticMotion) return;
 
-		const direction = this.directionCalculator.getDirection(shiftMotion.propData);
+		if (!shiftMotion.prop) return;
+		const direction = this.directionCalculator.getDirection(shiftMotion.prop.propData);
 		if (!direction) return;
 
 		this.moveProp(this.getPropByColor(shiftMotion.color), direction);

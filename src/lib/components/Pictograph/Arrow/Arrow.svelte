@@ -30,7 +30,6 @@
 		arrowLocationManager = new ArrowLocationManager({ arrowData });
 	});
 
-	// Reactive updates
 	$: if (arrowUpdater) {
 		const updateResult = arrowUpdater.updateArrow();
 		svgPath = updateResult.svgPath || '';

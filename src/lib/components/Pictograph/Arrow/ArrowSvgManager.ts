@@ -12,7 +12,6 @@ export default class ArrowSvgManager {
 	getSvgPath(): string {
 		const basePath = '/images/arrows';
 		const typePath = this.motion.motionType.toLowerCase();
-		const colorPath = this.color.toLowerCase();
 		const radialPath =
 			this.motion.startOri === 'out' || this.motion.startOri === 'in'
 				? 'from_radial'

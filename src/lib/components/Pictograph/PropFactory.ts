@@ -2,6 +2,7 @@ import type { Motion } from './Motion/Motion';
 import type { PropInterface } from './Prop/PropInterface';
 import type { DefaultPropPositioner } from './Prop/PropPlacementManager/DefaultPropPositioner';
 import type { PropPlacementManager } from './Prop/PropPlacementManager/PropPlacementManager';
+import { PropType } from './Prop/PropPlacementManager/PropTypes';
 import PropRotAngleManager from './Prop/PropRotAngleManager';
 
 export function updatePropData(motion: Motion, placementManager: PropPlacementManager): PropInterface {
@@ -10,7 +11,7 @@ export function updatePropData(motion: Motion, placementManager: PropPlacementMa
 		ori: motion.endOri
 	});
 	const propData: PropInterface = {
-		propType: 'staff',
+		propType: PropType.STAFF,
 		color: motion.color,
 		motion,
 		coords: { x: 0, y: 0 },

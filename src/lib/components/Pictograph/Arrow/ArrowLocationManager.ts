@@ -4,6 +4,7 @@ import DashLocationCalculator from './ArrowLocationManager/DashLocationCalculato
 import type { Motion } from '../Motion/Motion';
 import Arrow from '../Arrow/Arrow.svelte';
 import type { ArrowInterface } from './ArrowInterface';
+import type { Location } from '../Prop/PropInterface';
 export default class ArrowLocationManager {
 	arrowData: ArrowInterface;
 	motion: Motion;
@@ -26,7 +27,7 @@ export default class ArrowLocationManager {
 		return CalculatorClass ? new (CalculatorClass as any)(this.arrowData) : null;
 	}
 
-	updateLocation(location: string | null = null) {
+	updateLocation(location: Location | null = null) {
 		const calculator = this._selectCalculator();
 
 		if (location) {
@@ -38,14 +39,19 @@ export default class ArrowLocationManager {
 		return this.arrowData.position;
 	}
 
-	private _convertLocationToPosition(location: string): { x: number; y: number } {
-		type LocationKey = 'n' | 'e' | 's' | 'w';
-		const positionMap: Record<LocationKey, { x: number; y: number }> = {
-			n: { x: 50, y: 0 },
-			e: { x: 100, y: 50 },
-			s: { x: 50, y: 100 },
-			w: { x: 0, y: 50 }
-		};
-		return positionMap[location as LocationKey] || { x: 0, y: 0 };
+	private fullPositionMap = {
+		n: [50, 0],
+		ne: [75, 25],
+		e: [100, 50],
+		se: [75, 75],
+		s: [50, 100],
+		sw: [25, 75],
+		w: [0, 50],
+		nw: [25, 25]
+	};
+
+	// ArrowLocationManager.ts
+	private _convertLocationToPosition(location: keyof typeof this.fullPositionMap) {
+		return { x: this.fullPositionMap[location][0], y: this.fullPositionMap[location][1] };
 	}
 }

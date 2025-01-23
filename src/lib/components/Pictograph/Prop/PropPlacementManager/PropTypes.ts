@@ -9,7 +9,3 @@ export enum PropType {
 }
 
 
-export enum Color {
-	RED = 'red',
-	BLUE = 'blue'
-}

@@ -56,7 +56,7 @@ export class BetaPropDirectionCalculator {
 	private diamondMapRadial: Record<DiamondLocation, Record<Color, Direction>> = {
 		n: { red: 'right', blue: 'left' },
 		e: { red: 'down', blue: 'up' },
-		s: { red: 'left', blue: 'right' },
+		s: { red: 'right', blue: 'left' },
 		w: { red: 'down', blue: 'up' },
 	};
 
