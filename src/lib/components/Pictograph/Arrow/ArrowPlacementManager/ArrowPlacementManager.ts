@@ -18,10 +18,7 @@ export class ArrowPlacementManager {
 		private checker: PictographChecker
 	) {
 		this.defaultPositioner = new DefaultArrowPositioner(pictographData, gridData, checker);
-
-		// Pass pictographData AND gridData here
 		this.initialPosCalculator = new ArrowInitialPosCalculator(pictographData, gridData);
-
 		this.adjustmentCalculator = new ArrowAdjustmentCalculator(this.defaultPositioner);
 	}
 
@@ -39,7 +36,6 @@ export class ArrowPlacementManager {
 		const newX = initialPos.x + adjustment.x - boundingCenter.x;
 		const newY = initialPos.y + adjustment.y - boundingCenter.y;
 
-		console.log('Arrow new position:', { x: newX, y: newY });
 		arrow.coords = { x: newX, y: newY };
 	}
 }

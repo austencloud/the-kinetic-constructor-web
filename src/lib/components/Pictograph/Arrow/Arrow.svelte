@@ -36,7 +36,7 @@
 
 
 			// log the loc
-			console.log(arrowData.loc);
+			(arrowData.loc);
 			transform = `translate(${arrowData.coords.x}, ${arrowData.coords.y}) 
 				rotate(${arrowData.rotAngle} ${center.x} ${center.y})`;
 		} catch (error) {

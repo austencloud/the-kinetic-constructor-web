@@ -29,7 +29,7 @@ export class Motion implements MotionInterface {
 	prefloatMotionType: MotionType | null = null;
 	prefloatPropRotDir: PropRotDir | null = null;
 	endOri: Orientation = 'in';
-	handRotDir: HandRotDir = 'cw_handpath';
+	handRotDir: HandRotDir = null;
 	pictographData: PictographInterface;
 
 	prop: Prop | null = null;

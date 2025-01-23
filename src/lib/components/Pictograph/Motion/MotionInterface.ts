@@ -1,4 +1,5 @@
 export type MotionType = 'anti' | 'pro' | 'static' | 'dash' | 'float';
+export type ShiftMotion = 'pro' | 'anti' | 'float' 
 export type PropRotDir = 'cw' | 'ccw' | 'no_rot';
 export type GridMode = 'diamond' | 'box';
 export type Direction =
@@ -12,7 +13,7 @@ export type Direction =
 	| 'downleft';
 export type Color = 'blue' | 'red';
 export type LeadState = 'leading' | 'trailing' | null;
-export type HandRotDir = 'cw_handpath' | 'ccw_handpath';
+export type HandRotDir = 'cw_handpath' | 'ccw_handpath' | null;
 export type Orientation = 'in' | 'out' | 'clock' | 'counter';
 import type { Loc } from '../Prop/PropInterface';
 import Arrow from '../Arrow/Arrow.svelte';

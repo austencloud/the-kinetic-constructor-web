@@ -75,7 +75,6 @@ export class DefaultArrowPositioner {
 		}
 
 		this.loaded = true;
-		// console.log('All default arrow placements loaded:', this.allDefaults);
 	}
 
 	public getDefaultAdjustment(arrow: ArrowInterface): [number, number] {

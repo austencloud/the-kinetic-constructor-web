@@ -12,7 +12,6 @@
 	// Toggle dialog visibility
 	const toggleDialog = () => {
 		isOpen = !isOpen;
-		console.log('Dialog toggled:', isOpen); // Debugging
 	};
 	onMount(() => {
 		const updateSizes = () => {
