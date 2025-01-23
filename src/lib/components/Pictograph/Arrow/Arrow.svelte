@@ -14,7 +14,7 @@
 	const svgManager = new SvgManager();
 	let arrowRotAngleManager: ArrowRotAngleManager;
 	let arrowLocationManager: ArrowLocationManager;
-	
+
 	const loadAndTransformArrow = async () => {
 		try {
 			const svgText = await svgManager.getArrowSvg(
@@ -29,6 +29,8 @@
 			}
 
 			const { viewBox, center } = parseArrowSvg(svgText);
+			// log the center
+			console.log('Arrow center:', center);
 			svgData = {
 				imageSrc: `data:image/svg+xml;base64,${btoa(svgText)}`,
 				viewBox,
@@ -60,14 +62,18 @@
 </script>
 
 {#if svgData}
-	<g {transform}>
+	<g
+		transform={`
+    translate(${arrowData.coords.x}, ${arrowData.coords.y})
+    rotate(${arrowData.rotAngle}, 0, 0)
+  `}
+	>
 		<image
 			href={svgData.imageSrc}
 			width={svgData.viewBox.width}
 			height={svgData.viewBox.height}
 			x={-svgData.center.x}
 			y={-svgData.center.y}
-			transform-origin="center"
 		/>
 	</g>
 {/if}

@@ -9,11 +9,9 @@ import StaticRotAngleCalculator from './StaticRotAngleCalculator';
 
 export default class ArrowRotAngleManager {
 	private arrowData: ArrowInterface;
-	private rotationCalculator: any;
 
 	constructor(arrowData: ArrowInterface) {
 		this.arrowData = arrowData;
-		this.rotationCalculator = this.selectCalculator(arrowData.motion.motionType);
 	}
 
 	private selectCalculator(motionType: MotionType) {
