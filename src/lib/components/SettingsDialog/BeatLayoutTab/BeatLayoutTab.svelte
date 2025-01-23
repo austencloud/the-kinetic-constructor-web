@@ -2,7 +2,7 @@
 	import { numBeatsStore, currentLayoutStore } from '../../../stores/layoutStore';
 
 	import LayoutControls from './LayoutControls.svelte';
-	import GridPreview from './GridPreview.svelte';
+	import GridPreview from './LayoutGridPreview.svelte';
 	import { onMount, tick } from 'svelte';
 
 	let numBeats: number = 16;
