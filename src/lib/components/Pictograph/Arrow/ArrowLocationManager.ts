@@ -31,12 +31,12 @@ export default class ArrowLocationManager {
 		const calculator = this._selectCalculator();
 
 		if (location) {
-			this.arrowData.position = this._convertLocationToPosition(location);
+			this.arrowData.coords = this._convertLocationToPosition(location);
 		} else if (calculator) {
 			const calculatedLocation = calculator.calculateLocation();
-			this.arrowData.position = this._convertLocationToPosition(calculatedLocation);
+			this.arrowData.coords = this._convertLocationToPosition(calculatedLocation);
 		}
-		return this.arrowData.position;
+		return this.arrowData.coords;
 	}
 
 	private fullPositionMap = {

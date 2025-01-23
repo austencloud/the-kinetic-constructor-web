@@ -17,7 +17,8 @@
 	function initializeArrowData(): ArrowInterface {
 		return {
 			color: motion.color,
-			position: { x: 0, y: 0 },
+			coords: { x: 0, y: 0 },
+			loc: 'n',
 			rotation: 0,
 			mirrored: false,
 			motion
@@ -33,7 +34,7 @@
 	$: if (arrowUpdater) {
 		const updateResult = arrowUpdater.updateArrow();
 		svgPath = updateResult.svgPath || '';
-		transform = `translate(${arrowData.position.x}px, ${arrowData.position.y}px) rotate(${arrowData.rotation}deg) scale(${
+		transform = `translate(${arrowData.coords.x}px, ${arrowData.coords.y}px) rotate(${arrowData.rotation}deg) scale(${
 			arrowData.mirrored ? -1 : 1
 		}, 1)`;
 	}

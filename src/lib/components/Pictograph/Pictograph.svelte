@@ -1,15 +1,16 @@
 <script lang="ts">
-	import Grid from './Grid/Grid.svelte';
-	import Prop from './Prop/Prop.svelte';
-	import { Motion } from './Motion/Motion';
 	import type { PictographInterface } from '$lib/types/PictographInterface';
 	import type { GridData } from './Grid/GridInterface';
-	import { updatePropData } from './PropFactory';
-	import { writable, type Writable } from 'svelte/store';
 	import type { PropInterface } from './Prop/PropInterface';
-	import { onMount, tick } from 'svelte';
-	import PropRotAngleManager from './Prop/PropRotAngleManager';
+
+	import Grid from './Grid/Grid.svelte';
+	import Prop from './Prop/Prop.svelte';
 	import SvgManager from './SvgManager/SvgManager';
+
+	import { Motion } from './Motion/Motion';
+	import { createPropData } from './PropFactory';
+	import { writable, type Writable } from 'svelte/store';
+	import { tick } from 'svelte';
 	import { PictographChecker } from './PictographChecker';
 	import { PropPlacementManager } from './Prop/PropPlacementManager/PropPlacementManager';
 
@@ -38,8 +39,8 @@
 				const redMotion = new Motion(pictographData.redMotionData);
 				const blueMotion = new Motion(pictographData.blueMotionData);
 
-				const redProp = updatePropData(redMotion, placementManager);
-				const blueProp = updatePropData(blueMotion, placementManager);
+				const redProp = createPropData(redMotion);
+				const blueProp = createPropData(blueMotion);
 
 				redPropData.set(redProp);
 				bluePropData.set(blueProp);
