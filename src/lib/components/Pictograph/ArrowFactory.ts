@@ -6,7 +6,7 @@ export function createArrowData(motion: Motion): ArrowInterface {
 		color: motion.color,
 		coords: { x: 0, y: 0 },
 		loc: null,
-		rotation: 0,
+		rotAngle: 0,
 		mirrored: false,
 		motion: motion,
 		svgCenter: { x: 0, y: 0 }

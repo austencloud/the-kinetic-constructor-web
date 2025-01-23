@@ -1,28 +1,33 @@
+import type { Location } from '../../Prop/PropInterface';
 import Arrow from '../Arrow.svelte';
 
 export default class ShiftLocationCalculator {
-    arrow: Arrow;
-    pictograph: any;
+	arrow: Arrow;
+	pictograph: any;
 
-    constructor(arrow: Arrow) {
-        this.arrow = arrow;
-    }
+	constructor(arrow: Arrow) {
+		this.arrow = arrow;
+	}
 
-    calculateLocation() {
-        const directionPairs: { [key: string]: string } = {
-            n_e: 'ne',
-            e_s: 'se',
-            s_w: 'sw',
-            w_n: 'nw',
-            ne_nw: 'n',
-            ne_se: 'e',
-            sw_se: 's',
-            nw_sw: 'w'
-        };
+	calculateLocation(): Location {
+		const startLoc = this.arrow.motion.startLoc;
+		const endLoc = this.arrow.motion.endLoc;
 
-        const key = `${this.arrow.motion.startLoc}_${this.arrow.motion.endLoc}`;
-        const location = directionPairs[key] || '';
-        console.log('Calculated Location:', location);
-        return location;
-    }
+		const locationMap: { [key: string]: Location } = {
+			'n-e': 'ne',
+			'e-s': 'se',
+			's-w': 'sw',
+			'w-n': 'nw',
+			'ne-nw': 'n',
+			'ne-se': 'e',
+			'sw-se': 's',
+			'nw-sw': 'w'
+		};
+
+		const key = `${startLoc}-${endLoc}`;
+		const location = locationMap[key] || null;
+
+		console.log('Calculated Location:', location);
+		return location;
+	}
 }

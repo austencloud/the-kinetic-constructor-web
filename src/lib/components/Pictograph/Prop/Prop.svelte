@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { parseSvgMetadata } from '../SvgManager/svgUtils';
+	import { parsePropSvg } from '../SvgManager/PropSvgParser';
 	import SvgManager from '../SvgManager/SvgManager';
 	import type { PropInterface } from './PropInterface';
 	import type { PropSvgData as PropSvgData } from '../SvgManager/PropSvgData';
-	import { rotateOffset } from './propRotationUtils';
+	import { rotateOffset } from './rotationUtils';
 	import PropRotAngleManager from './PropRotAngleManager';
 
 	export let propData: PropInterface;
@@ -18,7 +18,7 @@
 	const loadSvg = async () => {
 		try {
 			const svgText = await svgManager.getPropSvg(propData.propType, propData.color);
-			const { viewBox, center } = parseSvgMetadata(svgText);
+			const { viewBox, center } = parsePropSvg(svgText);
 
 			svgData = {
 				imageSrc: `data:image/svg+xml;base64,${btoa(svgText)}`,

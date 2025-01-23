@@ -6,7 +6,7 @@ export interface ArrowInterface {
 	color: Color;
 	coords: { x: number; y: number };
 	loc: Location | null;
-	rotation: number;
+	rotAngle: number;
 	mirrored: boolean;
 	motion: Motion;
 	svgCenter: { x: number; y: number };

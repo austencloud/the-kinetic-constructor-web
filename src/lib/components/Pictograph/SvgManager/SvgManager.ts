@@ -29,6 +29,7 @@ export default class SvgManager {
 		const radialPath = startOri === 'out' || startOri === 'in' ? 'from_radial' : 'from_nonradial';
 		const fixedTurns = turns.toFixed(1); 
 		const svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${fixedTurns}.svg`;
-		return Promise.resolve(svgPath);
+		console.log('Arrow SVG Path:', svgPath);
+		return this.fetchSvg(svgPath);
 	}
 }

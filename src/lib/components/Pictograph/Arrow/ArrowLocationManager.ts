@@ -27,30 +27,11 @@ export default class ArrowLocationManager {
 		return CalculatorClass ? new (CalculatorClass as any)(this.arrowData) : null;
 	}
 
-	updateLocation(location: Location | null) {
+	getArrowLocation(location: Location | null) {
 		const calculator = this._selectCalculator();
 
-		if (location) {
-			this.arrowData.coords = this._convertLocationToPosition(location);
-		} else if (calculator) {
-			const calculatedLocation = calculator.calculateLocation();
-			this.arrowData.coords = this._convertLocationToPosition(calculatedLocation);
+		if (calculator) {
+			return calculator.calculateLocation(location);
 		}
-		return this.arrowData.coords;
-	}
-
-	private fullPositionMap = {
-		n: [50, 0],
-		ne: [75, 25],
-		e: [100, 50],
-		se: [75, 75],
-		s: [50, 100],
-		sw: [25, 75],
-		w: [0, 50],
-		nw: [25, 25]
-	};
-
-	private _convertLocationToPosition(location: keyof typeof this.fullPositionMap) {
-		return { x: this.fullPositionMap[location][0], y: this.fullPositionMap[location][1] };
 	}
 }
