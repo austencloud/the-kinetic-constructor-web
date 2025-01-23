@@ -1,5 +1,5 @@
 // PropSvgLoader.ts
-import type { SvgData as ImportedSvgData } from './svgData';
+import type { SvgData as ImportedSvgData } from '../SvgManager/svgData';
 
 const parseViewBox = (svg: SVGElement) => {
 	const [, , w, h] = svg.getAttribute('viewBox')?.split(/\s+/) || [];

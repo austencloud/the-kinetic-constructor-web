@@ -1,4 +1,3 @@
-// src/lib/rotationUtils.ts
 export function rotateOffset(point: { x: number; y: number }, angleDeg: number) {
 	const angleRad = (angleDeg * Math.PI) / 180;
 	return {

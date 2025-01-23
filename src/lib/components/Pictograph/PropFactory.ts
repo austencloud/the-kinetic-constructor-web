@@ -1,7 +1,5 @@
-import { writable } from 'svelte/store';
 import type { Motion } from './Motion/Motion';
-import type { PropInterface, RadialMode } from './Prop/PropInterface';
-import type { Orientation } from './Prop/PropTypes';
+import type { PropInterface } from './Prop/PropInterface';
 import type { DefaultPropPositioner } from './Prop/PropPlacementManager/DefaultPropPositioner';
 import PropRotAngleManager from './Prop/PropRotAngleManager';
 

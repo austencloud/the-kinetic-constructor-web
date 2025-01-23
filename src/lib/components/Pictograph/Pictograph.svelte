@@ -6,10 +6,11 @@
 	import type { GridData } from './Grid/GridInterface';
 	import { DefaultPropPositioner } from './Prop/PropPlacementManager/DefaultPropPositioner';
 	import { updatePropData } from './PropFactory';
-	import { writable, type Writable} from 'svelte/store';
+	import { writable, type Writable } from 'svelte/store';
 	import type { PropInterface } from './Prop/PropInterface';
 	import { onMount, tick } from 'svelte';
 	import PropRotAngleManager from './Prop/PropRotAngleManager';
+	import SvgManager from './SvgManager/SvgManager';
 
 	export let pictographData: PictographInterface;
 	export const onClick: () => void = () => {};
@@ -19,20 +20,19 @@
 
 	let redPropData: Writable<PropInterface> = writable();
 	let bluePropData: Writable<PropInterface> = writable();
+	const svgManager = new SvgManager();
 
-	$: if (gridData?.centerPoint?.coordinates && 
-		pictographData?.redMotionData && 
-		pictographData?.blueMotionData) 
-	{
+	$: if (
+		gridData?.centerPoint?.coordinates &&
+		pictographData?.redMotionData &&
+		pictographData?.blueMotionData
+	) {
 		(async () => {
 			try {
-				positioner = new DefaultPropPositioner(
-					gridData, 
-					pictographData.gridMode || 'diamond'
-				);
+				positioner = new DefaultPropPositioner(gridData, pictographData.gridMode || 'diamond');
 
 				await tick();
-				
+
 				const redMotion = new Motion(pictographData.redMotionData);
 				const blueMotion = new Motion(pictographData.blueMotionData);
 
@@ -57,8 +57,8 @@
 	/>
 
 	{#if $redPropData?.coords?.x !== undefined && $bluePropData?.coords?.x !== undefined}
-		<Prop propData={$redPropData} />
-		<Prop propData={$bluePropData} />
+		<Prop propData={$redPropData} {svgManager} />
+		<Prop propData={$bluePropData} {svgManager} />
 	{:else}
 		<g class="loading-overlay">
 			<text x="50%" y="50%" text-anchor="middle" fill="#666">Initializing props...</text>
