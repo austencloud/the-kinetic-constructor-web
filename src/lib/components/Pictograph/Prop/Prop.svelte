@@ -43,8 +43,12 @@
 	  rotate(${propData.rotAngle} ${svgData.center.x} ${svgData.center.y})
 	` : '';
   
-	onMount(loadSvg);
-	$: propData.propType && loadSvg();
+	$: {
+		// React to propType OR color changes
+		if (propData.propType || propData.color) {
+			loadSvg();
+		}
+	}
   </script>
   
   {#if svgData}
