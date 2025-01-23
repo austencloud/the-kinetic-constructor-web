@@ -9,7 +9,7 @@ export default class ArrowLocationManager {
 	arrowData: ArrowInterface;
 	motion: Motion;
 
-	constructor({ arrowData: arrowData }: { arrowData: ArrowInterface }) {
+	constructor(arrowData: ArrowInterface) {
 		this.arrowData = arrowData;
 		this.motion = arrowData.motion;
 	}
@@ -27,7 +27,7 @@ export default class ArrowLocationManager {
 		return CalculatorClass ? new (CalculatorClass as any)(this.arrowData) : null;
 	}
 
-	getArrowLocation(location: Location | null) {
+	getArrowLocation() {
 		const calculator = this._selectCalculator();
 
 		if (calculator) {

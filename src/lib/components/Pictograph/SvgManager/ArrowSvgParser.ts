@@ -25,8 +25,6 @@ export const parseArrowSvg = (svgText: string): Omit<ArrowSvgData, 'imageSrc'> =
         center: { x: x + width / 2, y: y + height / 2 }
     };
 
-    console.log('viewBox:', result.viewBox);
-    console.log('center:', result.center);
 
     return result;
 };

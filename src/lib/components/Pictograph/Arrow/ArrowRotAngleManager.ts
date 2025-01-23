@@ -35,6 +35,7 @@ export default class ArrowRotAngleManager {
 
 	public updateRotation(): number {
 		const calculator = this.selectCalculator(this.arrowData.motion.motionType);
-		return calculator.calculate(this.arrowData);
+        const rotation = calculator.calculate(this.arrowData);
+        return rotation;
 	}
 }

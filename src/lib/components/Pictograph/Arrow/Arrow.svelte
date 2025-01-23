@@ -5,6 +5,7 @@
 	import { parseArrowSvg } from '../SvgManager/ArrowSvgParser';
 	import ArrowRotAngleManager from './ArrowRotAngleManager';
 	import SvgManager from '../SvgManager/SvgManager';
+	import ArrowLocationManager from './ArrowLocationManager';
 
 	export let arrowData: ArrowInterface;
 
@@ -12,25 +13,21 @@
 	let transform = '';
 	const svgManager = new SvgManager();
 	let arrowRotAngleManager: ArrowRotAngleManager;
-
-	/**
-	 * Load SVG and compute rotation.
-	 */
+	let arrowLocationManager: ArrowLocationManager;
+	
 	const loadAndTransformArrow = async () => {
 		try {
-			// Load SVG content
 			const svgText = await svgManager.getArrowSvg(
 				arrowData.motion.motionType,
 				arrowData.motion.startOri,
-				arrowData.motion.turns
+				arrowData.motion.turns,
+				arrowData.motion.color
 			);
-			console.debug('Raw SVG text from svgManager:', svgText);
 
 			if (!svgText?.includes('<svg')) {
 				throw new Error('Invalid SVG content: Missing <svg> element');
 			}
 
-			// Parse SVG
 			const { viewBox, center } = parseArrowSvg(svgText);
 			svgData = {
 				imageSrc: `data:image/svg+xml;base64,${btoa(svgText)}`,
@@ -39,19 +36,15 @@
 			};
 			arrowData.svgCenter = center;
 
-			// Calculate rotation angle
 			arrowRotAngleManager = new ArrowRotAngleManager(arrowData);
+			arrowLocationManager = new ArrowLocationManager(arrowData);
+			arrowData.loc = arrowLocationManager.getArrowLocation();
 			arrowData.rotAngle = arrowRotAngleManager.updateRotation();
-			// log the rot angle
-			console.debug('Arrow rotation angle:', arrowData.rotAngle);
 			transform = `translate(${arrowData.coords.x}, ${arrowData.coords.y}) 
 				rotate(${arrowData.rotAngle} ${center.x} ${center.y})`;
-
-			console.debug('Arrow rotation applied with transform:', transform);
 		} catch (error) {
 			console.error('Error loading or rotating arrow:', error);
 
-			// Fallback to default SVG
 			svgData = {
 				imageSrc: '/fallback-arrow.svg',
 				viewBox: { width: 100, height: 100 },
@@ -61,7 +54,6 @@
 		}
 	};
 
-	// Reactive logic
 	onMount(() => {
 		loadAndTransformArrow();
 	});

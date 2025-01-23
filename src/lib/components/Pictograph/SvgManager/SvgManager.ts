@@ -1,5 +1,5 @@
 import type { Motion } from '../Motion/Motion';
-import type { MotionInterface, MotionType, Orientation } from '../Motion/MotionInterface';
+import type { Color, MotionInterface, MotionType, Orientation } from '../Motion/MotionInterface';
 
 // SvgManager.ts (enhanced)
 export default class SvgManager {
@@ -19,17 +19,26 @@ export default class SvgManager {
 		return propType === 'hand' ? baseSvg : this.applyColor(baseSvg, color);
 	}
 
-	public getArrowSvg(
+	public async getArrowSvg(
 		motionType: MotionType,
 		startOri: Orientation,
-		turns: number
+		turns: number,
+		color: Color
 	): Promise<string> {
 		const basePath = '/images/arrows';
 		const typePath = motionType.toLowerCase();
 		const radialPath = startOri === 'out' || startOri === 'in' ? 'from_radial' : 'from_nonradial';
-		const fixedTurns = turns.toFixed(1); 
+		const fixedTurns = turns.toFixed(1);
 		const svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${fixedTurns}.svg`;
+	
 		console.log('Arrow SVG Path:', svgPath);
-		return this.fetchSvg(svgPath);
+		let baseSvg = await this.fetchSvg(svgPath);
+	
+		// If color is supplied, apply it
+		if (color) {
+		  baseSvg = this.applyColor(baseSvg, color);
+		}
+	
+		return baseSvg;
 	}
 }
