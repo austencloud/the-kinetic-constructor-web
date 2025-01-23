@@ -16,7 +16,7 @@ export type HandRotDir = 'cw_handpath' | 'ccw_handpath';
 import type { Location } from '../Prop/PropInterface';
 import Arrow from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
-import type { Orientation } from '../Prop/PropTypes';
+import type { Orientation } from '../Prop/PropPlacementManager/PropTypes';
 import type { PictographInterface } from '../../../types/PictographInterface';
 
 export interface MotionInterface {

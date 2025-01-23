@@ -1,13 +1,13 @@
-import type {
-	Color,
-	Direction,
-	MotionInterface as Motion,
-	Location
-} from '../../Motion/MotionInterface';
-import Prop from '../Prop.svelte';
+// BetaPropDirectionCalculator.ts
 
+import type { Color, Direction } from '../../Motion/MotionInterface';
+import type { BoxLocation, DiamondLocation, PropInterface } from '../PropInterface';
+import type { Location } from '../../Prop/PropInterface';
+import type { PictographInterface } from '$lib/types/PictographInterface';
+import { Letter } from '$lib/types/Letter';
 export class BetaPropDirectionCalculator {
-	private directionMapRadial = {
+	// Special case maps for Letter I
+	private directionMapRadialI: Record<Location, Record<Color, Direction>> = {
 		n: { red: 'right', blue: 'left' },
 		e: { red: 'down', blue: 'up' },
 		s: { red: 'left', blue: 'right' },
@@ -18,7 +18,7 @@ export class BetaPropDirectionCalculator {
 		nw: { red: 'upright', blue: 'downleft' }
 	};
 
-	private directionMapNonRadial = {
+	private directionMapNonRadialI: Record<Location, Record<Color, Direction>> = {
 		n: { red: 'up', blue: 'down' },
 		e: { red: 'right', blue: 'left' },
 		s: { red: 'down', blue: 'up' },
@@ -29,7 +29,8 @@ export class BetaPropDirectionCalculator {
 		nw: { red: 'downright', blue: 'upleft' }
 	};
 
-	private directionMapRadialShift = {
+	// Shift direction maps
+	private directionMapRadialShift: Record<Location, Partial<Record<Location, Direction>>> = {
 		e: { n: 'right', s: 'right' },
 		w: { n: 'left', s: 'left' },
 		n: { e: 'up', w: 'up' },
@@ -40,36 +41,108 @@ export class BetaPropDirectionCalculator {
 		nw: { ne: 'upleft', sw: 'upleft' }
 	};
 
-	private directionMapNonRadialShift = {
+	private directionMapNonRadialShift: Record<Location, Partial<Record<Location, Direction>>> = {
 		e: { n: 'up', s: 'up' },
 		w: { n: 'down', s: 'down' },
 		n: { e: 'right', w: 'right' },
 		s: { e: 'left', w: 'left' },
 		ne: { se: 'upleft', nw: 'downright' },
-		se: { ne: 'upright', sw: 'upright' },
-		sw: { nw: 'upleft', se: 'downright' },
-		nw: { ne: 'downleft', sw: 'downleft' }
+		se: { ne: 'upright', sw: 'downleft' },
+		sw: { nw: 'upright', se: 'downright' },
+		nw: { sw: 'upleft', ne: 'downleft' }
 	};
 
-	public getDirection(
-		isRadial: boolean,
-		location: keyof typeof this.directionMapRadial,
-		color: Color
-	): Direction | undefined {
-		const map = isRadial ? this.directionMapRadial : this.directionMapNonRadial;
-		return (map?.[location]?.[color] as Direction) ?? undefined;
+	// Static/dash maps
+	private diamondMapRadial: Record<DiamondLocation, Record<Color, Direction>> = {
+		n: { red: 'right', blue: 'left' },
+		e: { red: 'down', blue: 'up' },
+		s: { red: 'left', blue: 'right' },
+		w: { red: 'down', blue: 'up' },
+	};
+
+	private diamondMapNonRadial: Record<DiamondLocation, Record<Color, Direction>> = {
+		n: { red: 'up', blue: 'down' },
+		e: { red: 'right', blue: 'left' },
+		s: { red: 'down', blue: 'up' },
+		w: { red: 'right', blue: 'left' },
+
+	};
+
+	private boxMapRadial: Record<BoxLocation, Record<Color, Direction>> = {
+		ne: { red: 'downright', blue: 'upleft' },
+		se: { red: 'upright', blue: 'downleft' },
+		sw: { red: 'downright', blue: 'upleft' },
+		nw: { red: 'upright', blue: 'downleft' },
+	};
+
+	private boxMapNonRadial: Record<BoxLocation, Record<Color, Direction>> = {
+		ne: { red: 'upright', blue: 'downleft' },
+		se: { red: 'downright', blue: 'upleft' },
+		sw: { red: 'upright', blue: 'downleft' },
+		nw: { red: 'downright', blue: 'upleft' },
+	};
+
+	constructor(private pictographData: PictographInterface) {}
+
+	getDirection(prop: PropInterface): Direction | undefined {
+		if (['pro', 'anti', 'float'].includes(prop.motion.motionType)) {
+			return this.handleShiftMotion(prop);
+		}
+		return this.handleStaticDashMotion(prop);
+	}
+	endsWithRadialOrientation(): boolean {
+		return (
+			((this.pictographData.redMotionData?.endOri === 'in' ||
+				this.pictographData.redMotionData?.endOri === 'out') &&
+				this.pictographData.blueMotionData?.endOri === 'in') ||
+			this.pictographData.blueMotionData?.endOri === 'out'
+		);
+	}
+	endsWithNonRadialOrientation(): boolean {
+		return (
+			((this.pictographData.redMotionData?.endOri === 'clock' ||
+				this.pictographData.redMotionData?.endOri === 'counter') &&
+				this.pictographData.blueMotionData?.endOri === 'clock') ||
+			this.pictographData.blueMotionData?.endOri === 'counter'
+		);
+	}
+	private handleShiftMotion(prop: PropInterface): Direction | undefined {
+		if (this.pictographData.letter === Letter.I) {
+			if (this.endsWithRadialOrientation()) {
+				return this.directionMapRadialI[prop.motion.endLoc][prop.color];
+			}
+			if (this.endsWithNonRadialOrientation()) {
+				return this.directionMapNonRadialI[prop.motion.endLoc][prop.color];
+			}
+		}
+
+		const isRadial = prop.radialMode === 'radial';
+		return this.getShiftDirection(isRadial, prop.motion.startLoc, prop.motion.endLoc);
 	}
 
-	public getShiftDirection(
+	private getShiftDirection(
 		isRadial: boolean,
-		startLocation: keyof typeof this.directionMapRadialShift,
-		endLocation: keyof typeof this.directionMapRadialShift.e
+		startLoc: Location,
+		endLoc: Location
 	): Direction | undefined {
 		const map = isRadial ? this.directionMapRadialShift : this.directionMapNonRadialShift;
-		return (map[startLocation] as Record<string, Direction>)?.[endLocation];
+		return map[startLoc]?.[endLoc];
 	}
 
-	public getOppositeDirection(direction: Direction): Direction {
+	private handleStaticDashMotion(prop: PropInterface): Direction {
+		const gridMode = ['n', 's', 'e', 'w'].includes(prop.loc) ? 'diamond' : 'box';
+		const isRadial = prop.radialMode === 'radial';
+
+		if (gridMode === 'diamond') {
+			const map = isRadial ? this.diamondMapRadial : this.diamondMapNonRadial;
+			return map[prop.loc as DiamondLocation][prop.color];
+		}
+
+		const map = isRadial ? this.boxMapRadial : this.boxMapNonRadial;
+		return map[prop.loc as BoxLocation][prop.color];
+	}
+
+	getOppositeDirection(direction: Direction): Direction {
 		const opposites: Record<Direction, Direction> = {
 			up: 'down',
 			down: 'up',
@@ -81,87 +154,5 @@ export class BetaPropDirectionCalculator {
 			downright: 'upleft'
 		};
 		return opposites[direction];
-	}
-
-	public getDir(motion: Motion): Direction | undefined {
-		if (
-			(motion.pictographData.redMotionData?.endOri === 'in' &&
-				motion.pictographData.blueMotionData?.endOri === 'in') ||
-			(motion.pictographData.redMotionData?.endOri === 'out' &&
-				motion.pictographData.blueMotionData?.endOri === 'out') ||
-			(motion.pictographData.redMotionData?.endOri === 'in' &&
-				motion.pictographData.blueMotionData?.endOri === 'out') ||
-			(motion.pictographData.redMotionData?.endOri === 'out' &&
-				motion.pictographData.blueMotionData?.endOri === 'in')
-		) {
-			return this.getDirectionForRadialI(motion);
-		} else if (
-			(motion.pictographData.redMotionData?.endOri === 'clock' &&
-				motion.pictographData.blueMotionData?.endOri === 'clock') ||
-			(motion.pictographData.redMotionData?.endOri === 'counter' &&
-				motion.pictographData.blueMotionData?.endOri === 'counter') ||
-			(motion.pictographData.redMotionData?.endOri === 'clock' &&
-				motion.pictographData.blueMotionData?.endOri === 'counter') ||
-			(motion.pictographData.redMotionData?.endOri === 'counter' &&
-				motion.pictographData.blueMotionData?.endOri === 'clock')
-		) {
-			return this.getDirectionForNonRadialI(motion);
-		}
-		if (
-			motion.motionType === 'pro' ||
-			motion.motionType === 'anti' ||
-			motion.motionType === 'float'
-		) {
-			return motion.prop?.propType === 'radial'
-				? this.getDirForRadial(motion)
-				: this.getDirForNonRadial(motion);
-		} else if (motion.motionType === 'static' || motion.motionType === 'dash') {
-			if (motion.prop) {
-				return this.getDirForNonShift(motion.prop);
-			} else {
-				throw new Error('Prop is undefined for a static or dash motion type.');
-			}
-		}
-	}
-
-	private getDirectionForNonRadialI(motion: Motion): Direction | undefined {
-		return this.getDirection(false, motion.endLoc, motion.prop?.color || 'red');
-	}
-
-	private getDirectionForRadialI(motion: Motion): Direction | undefined {
-		return this.getDirection(true, motion.endLoc, motion.prop?.color || 'red');
-	}
-
-	private getDirForRadial(motion: Motion): Direction | undefined {
-		if (this.isValidRadialShiftLocation(motion.endLoc)) {
-			return this.getShiftDirection(true, motion.startLoc, motion.endLoc);
-		}
-		throw new Error(`Invalid end location for radial shift: ${motion.endLoc}`);
-	}
-
-	private getDirForNonRadial(motion: Motion): Direction | undefined {
-		if (this.isValidRadialShiftLocation(motion.endLoc)) {
-			return this.getShiftDirection(false, motion.startLoc, motion.endLoc);
-		}
-		throw new Error(`Invalid end location for non-radial shift: ${motion.endLoc}`);
-	}
-
-	private getDirForNonShift(prop: Prop): Direction {
-		const gridMode = ['n', 's', 'e', 'w'].includes(prop.loc) ? 'diamond' : 'box';
-		const map =
-			gridMode === 'diamond'
-				? prop.propType === 'radial'
-					? this.directionMapRadial
-					: this.directionMapNonRadial
-				: prop.propType === 'radial'
-					? this.directionMapRadialShift
-					: this.directionMapNonRadialShift;
-
-		return (map[prop.loc as keyof typeof map] as Record<Color, Direction>)[prop.color as Color];
-	}
-	private isValidRadialShiftLocation(
-		loc: Location
-	): loc is keyof typeof this.directionMapRadialShift.e {
-		return ['n', 's'].includes(loc);
 	}
 }

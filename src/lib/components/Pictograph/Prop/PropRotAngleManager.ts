@@ -1,4 +1,4 @@
-import type { Orientation } from './PropTypes';
+import type { Orientation } from './PropPlacementManager/PropTypes';
 import type { Location } from './PropInterface';
 export default class PropRotAngleManager {
 	private loc: Location;

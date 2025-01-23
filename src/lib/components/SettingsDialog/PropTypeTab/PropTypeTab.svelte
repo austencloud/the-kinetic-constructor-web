@@ -1,30 +1,23 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import PropButton from './PropButton.svelte';
+	import { PropType } from '$lib/components/Pictograph/Prop/PropPlacementManager/PropTypes';
 
-	// Props and their corresponding icon paths
 	const props = [
-		{ name: 'Staff', icon: 'images/props/staff.svg' },
-		{ name: 'Club', icon: 'images/props/club.svg' },
-		{ name: 'Fan', icon: 'images/props/fan.svg' },
-		{ name: 'Triad', icon: 'images/props/triad.svg' },
-		{ name: 'Minihoop', icon: 'images/props/minihoop.svg' },
-		{ name: 'Buugeng', icon: 'images/props/buugeng.svg' }
+		{ name: PropType.HAND, icon: 'images/props/hand.svg' },
+		{ name: PropType.STAFF, icon: 'images/props/staff.svg' },
+		{ name: PropType.CLUB, icon: 'images/props/club.svg' },
+		{ name: PropType.FAN, icon: 'images/props/fan.svg' },
+		{ name: PropType.TRIAD, icon: 'images/props/triad.svg' },
+		{ name: PropType.MINIHOOP, icon: 'images/props/minihoop.svg' },
+		{ name: PropType.BUUGENG, icon: 'images/props/buugeng.svg' }
 	];
-
-	const dispatch = createEventDispatcher();
-
-	// Handle button click
-	const handlePropClick = (propName: string) => {
-		dispatch('propSelected', propName);
-	};
 </script>
 
 <div class="prop-type-tab">
 	<h2 class="header">Prop Type</h2>
 	<div class="grid">
 		{#each props as { name, icon }}
-			<PropButton {name} {icon} on:click={() => handlePropClick(name)} />
+			<PropButton {name} {icon} />
 		{/each}
 	</div>
 </div>
@@ -35,7 +28,7 @@
 		flex-direction: column;
 		align-items: center;
 		padding: 20px;
-		height: 100%; /* Ensure it takes up all available height */
+		height: 100%;
 	}
 
 	.header {
@@ -47,11 +40,10 @@
 
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Responsive columns */
+		grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
 		gap: 2vh;
 		width: 100%;
-		/* max-width: 600px; */
-		height: 100%; /* Ensure it takes up available height */
+		height: 100%;
 		margin-top: 5vh;
 	}
 </style>

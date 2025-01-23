@@ -1,9 +1,10 @@
 import type { Motion } from './Motion/Motion';
 import type { PropInterface } from './Prop/PropInterface';
 import type { DefaultPropPositioner } from './Prop/PropPlacementManager/DefaultPropPositioner';
+import type { PropPlacementManager } from './Prop/PropPlacementManager/PropPlacementManager';
 import PropRotAngleManager from './Prop/PropRotAngleManager';
 
-export function updatePropData(motion: Motion, positioner: DefaultPropPositioner): PropInterface {
+export function updatePropData(motion: Motion, placementManager: PropPlacementManager): PropInterface {
 	const rotAngleManager = new PropRotAngleManager({
 		loc: motion.endLoc,
 		ori: motion.endOri
@@ -19,7 +20,5 @@ export function updatePropData(motion: Motion, positioner: DefaultPropPositioner
 		svgCenter: { x: 0, y: 0 },
 		rotAngle: rotAngleManager.getRotationAngle()
 	};
-
-	positioner.updateCoords(propData);
 	return propData;
 }

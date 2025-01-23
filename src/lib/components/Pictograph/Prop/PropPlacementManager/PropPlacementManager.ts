@@ -1,28 +1,31 @@
-import type { PropInterface } from '../PropInterface';
+// PropPlacementManager.ts
 import { DefaultPropPositioner } from './DefaultPropPositioner';
+import { BetaPropPositioner } from './BetaPropPositioner';
 import type { GridData } from '../../Grid/GridInterface';
 import type { PictographInterface } from '$lib/types/PictographInterface';
+import { PictographChecker } from '../../PictographChecker';
+import type { PropInterface } from '../PropInterface';
 
 export class PropPlacementManager {
-	private defaultPositioner: DefaultPropPositioner;
+	public defaultPositioner: DefaultPropPositioner;
+	private betaPositioner: BetaPropPositioner;
+	private checker: PictographChecker;
 
-	constructor(
-		private pictographData: PictographInterface,
-		private gridData: GridData,
-	) {
-		const gridMode = this.pictographData?.gridMode ?? 'diamond';
-		if (!this.gridData) {
-			console.error('Grid data is missing.');
-		}
+	constructor(pictographData: PictographInterface, gridData: GridData, checker: PictographChecker) {
+		const gridMode = pictographData?.gridMode ?? 'diamond';
 		this.defaultPositioner = new DefaultPropPositioner(gridData, gridMode);
+		this.betaPositioner = new BetaPropPositioner(pictographData);
+		this.checker = checker;
 	}
 
-	public updatePropPositions(props: PropInterface[]): PropInterface[] {
-		console.debug('Updating Prop Positions', props.map(p => p.propType));
-		return props.map((prop) => {
+	public updatePropPlacement(props: PropInterface[]): PropInterface[] {
+		props.forEach((prop) => {
 			this.defaultPositioner.setToDefaultPosition(prop);
-			return prop;
 		});
+		if (this.checker.endsWithBeta()) {
+			this.betaPositioner.reposition(props);
+		}
+
+		return props;
 	}
-	
 }
