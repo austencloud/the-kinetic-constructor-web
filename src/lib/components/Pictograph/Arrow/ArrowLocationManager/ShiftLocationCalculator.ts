@@ -7,19 +7,22 @@ export default class ShiftLocationCalculator {
     constructor(arrow: Arrow) {
         this.arrow = arrow;
     }
+
     calculateLocation() {
         const directionPairs: { [key: string]: string } = {
-            NORTH_EAST: 'ne',
-            EAST_SOUTH: 'se',
-            SOUTH_WEST: 'sw',
-            WEST_NORTH: 'nw',
-            NORTHEAST_NORTHWEST: 'n',
-            NORTHEAST_SOUTHEAST: 'e',
-            SOUTHWEST_SOUTHEAST: 's',
-            NORTHWEST_SOUTHWEST: 'w'
+            n_e: 'ne',
+            e_s: 'se',
+            s_w: 'sw',
+            w_n: 'nw',
+            ne_nw: 'n',
+            ne_se: 'e',
+            sw_se: 's',
+            nw_sw: 'w'
         };
 
         const key = `${this.arrow.motion.startLoc}_${this.arrow.motion.endLoc}`;
-        return directionPairs[key] || ''; // Return matching location or an empty string
+        const location = directionPairs[key] || '';
+        console.log('Calculated Location:', location);
+        return location;
     }
 }

@@ -27,7 +27,7 @@ export default class ArrowLocationManager {
 		return CalculatorClass ? new (CalculatorClass as any)(this.arrowData) : null;
 	}
 
-	updateLocation(location: Location | null = null) {
+	updateLocation(location: Location | null) {
 		const calculator = this._selectCalculator();
 
 		if (location) {
@@ -50,7 +50,6 @@ export default class ArrowLocationManager {
 		nw: [25, 25]
 	};
 
-	// ArrowLocationManager.ts
 	private _convertLocationToPosition(location: keyof typeof this.fullPositionMap) {
 		return { x: this.fullPositionMap[location][0], y: this.fullPositionMap[location][1] };
 	}

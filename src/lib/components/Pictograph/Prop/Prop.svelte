@@ -10,7 +10,7 @@
 	export let propData: PropInterface;
 
 	let transform = '';
-	let propSvgData: PropSvgData | null = null;
+	let svgData: PropSvgData | null = null;
 	let coords = { x: 0, y: 0 };
 	const svgManager = new SvgManager();
 
@@ -20,15 +20,16 @@
 			const svgText = await svgManager.getPropSvg(propData.propType, propData.color);
 			const { viewBox, center } = parseSvgMetadata(svgText);
 
-			propSvgData = {
+			svgData = {
 				imageSrc: `data:image/svg+xml;base64,${btoa(svgText)}`,
 				viewBox,
 				center
 			};
 
+			propData.svgCenter = center;
 		} catch (error) {
 			console.error('Prop load failed:', error);
-			propSvgData = null;
+			svgData = null;
 		}
 	};
 
@@ -38,12 +39,12 @@
 		}
 	}
 
-	$: coords = propSvgData
-		? rotateOffset({ x: -propSvgData.center.x, y: -propSvgData.center.y }, -propData.rotAngle)
+	$: coords = svgData
+		? rotateOffset({ x: -svgData.center.x, y: -svgData.center.y }, -propData.rotAngle)
 		: { x: 0, y: 0 };
 
 	$: transform =
-		propSvgData && (propData.motion.endLoc || propData.motion.endOri)
+		svgData && (propData.motion.endLoc || propData.motion.endOri)
 			? (() => {
 					const rotAngleManager = new PropRotAngleManager({
 						loc: propData.motion.endLoc,
@@ -51,17 +52,17 @@
 					});
 					propData.rotAngle = rotAngleManager.getRotationAngle();
 					return `translate(${propData.coords.x} ${propData.coords.y})
-					rotate(${propData.rotAngle} ${propSvgData.center.x} ${propSvgData.center.y})`;
+					rotate(${propData.rotAngle} ${svgData.center.x} ${svgData.center.y})`;
 				})()
 			: '';
 </script>
 
-{#if propSvgData}
+{#if svgData}
 	<g {transform}>
 		<image
-			href={propSvgData.imageSrc}
-			width={propSvgData.viewBox.width}
-			height={propSvgData.viewBox.height}
+			href={svgData.imageSrc}
+			width={svgData.viewBox.width}
+			height={svgData.viewBox.height}
 			x={coords.x}
 			y={coords.y}
 			preserveAspectRatio="xMidYMid meet"

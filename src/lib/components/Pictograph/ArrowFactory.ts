@@ -5,10 +5,11 @@ export function createArrowData(motion: Motion): ArrowInterface {
 	const arrowData: ArrowInterface = {
 		color: motion.color,
 		coords: { x: 0, y: 0 },
-		loc: 'n',
+		loc: null,
 		rotation: 0,
 		mirrored: false,
-		motion: motion
+		motion: motion,
+		svgCenter: { x: 0, y: 0 }
 	};
 	return arrowData;
 }

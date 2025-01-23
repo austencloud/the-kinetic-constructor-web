@@ -22,7 +22,8 @@
 	pictographDataStore.subscribe((data) => {
 		const defaultStartPosKeys =
 			gridMode === 'diamond'
-				? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
+				// ? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
+				? ['alpha1_alpha3']
 				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
 
 		startPositions = (data as PictographInterface[]).filter((entry) => {
@@ -33,8 +34,6 @@
 			);
 		});
 		totalPictographs.set(startPositions.length);
-		//  log the daata
-		// console.debug('Start Positions:', startPositions);
 	});
 	const handleSelect = (start_pos_pictograph: PictographInterface) => {
 		selectedStartPos.set(start_pos_pictograph);
@@ -89,7 +88,7 @@
 		flex-direction: row;
 		justify-content: space-around;
 		align-items: center;
-		width: 70%;
+		width: 90%;
 		height: auto;
 		gap: 3%;
 	}
