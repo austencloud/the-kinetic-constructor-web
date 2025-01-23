@@ -30,7 +30,6 @@
 
 			const { viewBox, center } = parseArrowSvg(svgText);
 			// log the center
-			console.log('Arrow center:', center);
 			svgData = {
 				imageSrc: `data:image/svg+xml;base64,${btoa(svgText)}`,
 				viewBox,

@@ -31,7 +31,6 @@ export default class SvgManager {
 		const fixedTurns = turns.toFixed(1);
 		const svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${fixedTurns}.svg`;
 	
-		console.log('Arrow SVG Path:', svgPath);
 		let baseSvg = await this.fetchSvg(svgPath);
 	
 		// If color is supplied, apply it

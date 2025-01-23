@@ -1,5 +1,5 @@
-import type { ArrowInterface } from './Arrow/ArrowInterface';
-import type { Motion } from './Motion/Motion';
+import type { ArrowInterface } from './ArrowInterface';
+import type { Motion } from '../Motion/Motion';
 
 export function createArrowData(motion: Motion): ArrowInterface {
 	const arrowData: ArrowInterface = {

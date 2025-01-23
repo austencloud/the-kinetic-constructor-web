@@ -28,8 +28,6 @@ export default class ProRotAngleCalculator {
 		const directionMap =
 			arrowData.motion.propRotDir === 'cw' ? this.directionMapCW : this.directionMapCCW;
         const angle = directionMap[arrowData.loc as Location] ?? 0;
-        console.log(`Arrow Location: ${arrowData.loc}, Direction: ${arrowData.motion.propRotDir}`);
-        console.log(`Calculated angle: ${angle}`);
         return angle;
 	}
 }

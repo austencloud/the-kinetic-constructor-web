@@ -8,5 +8,13 @@ export const defaultPictographData: PictographInterface = {
 	direction: null,
 	gridMode: null,
 	blueMotionData: null,
-	redMotionData: null
+	redMotionData: null,
+
+	motions: [],
+	redMotion: null,
+	blueMotion: null,
+
+	props: [],
+	redPropData: null,
+	bluePropData: null
 };

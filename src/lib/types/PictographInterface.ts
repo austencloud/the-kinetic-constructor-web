@@ -14,14 +14,14 @@ export interface PictographInterface {
 	timing: VTGTiming | null;
 	direction: VTGDir | null;
 	gridMode: GridMode | null;
-	blueMotionData: MotionInterface;
-	redMotionData: MotionInterface;
+	blueMotionData: MotionInterface | null;
+	redMotionData: MotionInterface | null;
 
 	motions: Motion[];
-	redMotion: Motion;
-	blueMotion: Motion;
+	redMotion: Motion | null;
+	blueMotion: Motion | null;
 
 	props: PropInterface[];
-	redPropData: PropInterface;
-	bluePropData: PropInterface;
+	redPropData: PropInterface | null;
+	bluePropData: PropInterface | null;
 }

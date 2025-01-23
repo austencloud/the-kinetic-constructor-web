@@ -6,12 +6,15 @@
 	import type { PropSvgData as PropSvgData } from '../SvgManager/PropSvgData';
 	import { rotateOffset } from './rotationUtils';
 	import PropRotAngleManager from './PropRotAngleManager';
+	import { PropChecker } from './PropChecker';
 
 	export let propData: PropInterface;
 
 	let transform = '';
 	let svgData: PropSvgData | null = null;
 	let coords = { x: 0, y: 0 };
+	let checker = new PropChecker(propData);
+
 	const svgManager = new SvgManager();
 
 	// Load SVG and update svgData

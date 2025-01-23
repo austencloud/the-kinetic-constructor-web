@@ -27,7 +27,6 @@ export default class ShiftLocationCalculator {
 		const key = `${startLoc}-${endLoc}`;
 		const location = locationMap[key] || null;
 
-		console.log('Calculated Location:', location);
 		return location;
 	}
 }

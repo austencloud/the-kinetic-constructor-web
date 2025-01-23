@@ -3,19 +3,18 @@
 	import type { GridData } from './Grid/GridInterface';
 	import type { PropInterface } from './Prop/PropInterface';
 	import type { ArrowInterface } from './Arrow/ArrowInterface';
-
-	import Grid from './Grid/Grid.svelte';
-	import Prop from './Prop/Prop.svelte';
-	import SvgManager from './SvgManager/SvgManager';
-
 	import { Motion } from './Motion/Motion';
 	import { createPropData } from './PropFactory';
 	import { writable, type Writable } from 'svelte/store';
 	import { tick } from 'svelte';
 	import { PictographChecker } from './PictographChecker';
 	import { PropPlacementManager } from './Prop/PropPlacementManager/PropPlacementManager';
-	import { createArrowData } from './ArrowFactory';
+	import { createArrowData } from './Arrow/ArrowFactory';
+	import { ArrowPlacementManager } from './Arrow/ArrowPlacementManager/ArrowPlacementManager';
+	import Grid from './Grid/Grid.svelte';
 	import Arrow from './Arrow/Arrow.svelte';
+	import Prop from './Prop/Prop.svelte';
+
 
 	export let pictographData: PictographInterface;
 	export const onClick: () => void = () => {};
@@ -23,13 +22,13 @@
 	let gridData: GridData | null = null;
 	let checker = new PictographChecker(pictographData);
 	let propPlacementManager: PropPlacementManager | null = null;
+	let arrowPlacementManager: ArrowPlacementManager | null = null;
 
 	let redPropData: Writable<PropInterface> = writable();
 	let bluePropData: Writable<PropInterface> = writable();
 
 	let redArrowData: Writable<ArrowInterface> = writable();
 	let blueArrowData: Writable<ArrowInterface> = writable();
-
 
 	$: if (
 		gridData?.centerPoint?.coordinates &&
@@ -39,31 +38,37 @@
 		(async () => {
 			try {
 				propPlacementManager = new PropPlacementManager(pictographData, gridData, checker);
+				arrowPlacementManager = new ArrowPlacementManager(pictographData, gridData, checker);
 
 				await tick();
 
-				const redMotion = new Motion(pictographData.redMotionData);
-				const blueMotion = new Motion(pictographData.blueMotionData);
-				const redProp = createPropData(redMotion);
-				const blueProp = createPropData(blueMotion);
-				const redArrow = createArrowData(redMotion);
-				const blueArrow = createArrowData(blueMotion);
+				if (pictographData.redMotionData && pictographData.blueMotionData) {
+					const redMotion = new Motion(pictographData.redMotionData);
+					const blueMotion = new Motion(pictographData.blueMotionData);
+					const redProp = createPropData(redMotion);
+					const blueProp = createPropData(blueMotion);
+					const redArrow = createArrowData(redMotion);
+					const blueArrow = createArrowData(blueMotion);
 
-				redPropData.set(redProp);
-				bluePropData.set(blueProp);
-				redArrowData.set(redArrow);
-				blueArrowData.set(blueArrow);
-
-				
+					redPropData.set(redProp);
+					bluePropData.set(blueProp);
+					redArrowData.set(redArrow);
+					blueArrowData.set(blueArrow);
+				} else {
+					throw new Error('Motion data is null');
+				}
 			} catch (error) {
 				console.error('Prop initialization error:', error);
 			}
 		})();
 	}
-	// add a reactive statement to update prop placement
 	$: if (propPlacementManager && $redPropData && $bluePropData) {
 		const props: PropInterface[] = [$redPropData, $bluePropData];
 		propPlacementManager.updatePropPlacement(props);
+	}
+	$: if (arrowPlacementManager && $redArrowData && $blueArrowData) {
+		const arrows: ArrowInterface[] = [$redArrowData, $blueArrowData];
+		arrowPlacementManager.updateArrowPlacements(arrows);
 	}
 </script>
 
@@ -77,7 +82,7 @@
 
 	{#if $redPropData?.coords?.x !== undefined && $bluePropData?.coords?.x !== undefined}
 		<Prop propData={$redPropData} />
-		<Prop propData={$bluePropData}/>
+		<Prop propData={$bluePropData} />
 	{:else}
 		<g class="loading-overlay">
 			<text x="50%" y="50%" text-anchor="middle" fill="#666">Initializing props...</text>
