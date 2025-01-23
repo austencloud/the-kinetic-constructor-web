@@ -2,7 +2,7 @@ import type { ArrowInterface } from './Arrow/ArrowInterface';
 import type { Motion } from './Motion/Motion';
 
 export function createArrowData(motion: Motion): ArrowInterface {
-	const propData: ArrowInterface = {
+	const arrowData: ArrowInterface = {
 		color: motion.color,
 		coords: { x: 0, y: 0 },
 		loc: 'n',
@@ -10,5 +10,5 @@ export function createArrowData(motion: Motion): ArrowInterface {
 		mirrored: false,
 		motion: motion
 	};
-	return propData;
+	return arrowData;
 }

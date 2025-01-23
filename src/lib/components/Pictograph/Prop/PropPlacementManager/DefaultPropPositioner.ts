@@ -1,7 +1,6 @@
 // src/lib/components/Prop/PropPlacementManager/DefaultPropPositioner.ts
 import type { GridData, GridPoint } from '../../Grid/GridInterface';
 import type { PropInterface } from '../PropInterface';
-import type { PropType } from './PropTypes';
 
 export class DefaultPropPositioner {
 	constructor(

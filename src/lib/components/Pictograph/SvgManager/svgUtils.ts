@@ -1,8 +1,8 @@
 // svgUtils.ts (new shared utilities)
 
-import type { SvgData } from './svgData';
+import type { PropSvgData } from './PropSvgData';
 
-export const parseSvgMetadata = (svgText: string): Omit<SvgData, 'imageSrc'> => {
+export const parseSvgMetadata = (svgText: string): Omit<PropSvgData, 'imageSrc'> => {
 	const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
 	const svg = doc.documentElement;
 

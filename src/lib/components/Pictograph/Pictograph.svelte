@@ -2,6 +2,7 @@
 	import type { PictographInterface } from '$lib/types/PictographInterface';
 	import type { GridData } from './Grid/GridInterface';
 	import type { PropInterface } from './Prop/PropInterface';
+	import type { ArrowInterface } from './Arrow/ArrowInterface';
 
 	import Grid from './Grid/Grid.svelte';
 	import Prop from './Prop/Prop.svelte';
@@ -13,17 +14,22 @@
 	import { tick } from 'svelte';
 	import { PictographChecker } from './PictographChecker';
 	import { PropPlacementManager } from './Prop/PropPlacementManager/PropPlacementManager';
+	import { createArrowData } from './ArrowFactory';
+	import Arrow from './Arrow/Arrow.svelte';
 
 	export let pictographData: PictographInterface;
 	export const onClick: () => void = () => {};
 
 	let gridData: GridData | null = null;
 	let checker = new PictographChecker(pictographData);
-	let placementManager: PropPlacementManager | null = null;
+	let propPlacementManager: PropPlacementManager | null = null;
 
 	let redPropData: Writable<PropInterface> = writable();
 	let bluePropData: Writable<PropInterface> = writable();
-	const svgManager = new SvgManager();
+
+	let redArrowData: Writable<ArrowInterface> = writable();
+	let blueArrowData: Writable<ArrowInterface> = writable();
+
 
 	$: if (
 		gridData?.centerPoint?.coordinates &&
@@ -32,27 +38,32 @@
 	) {
 		(async () => {
 			try {
-				placementManager = new PropPlacementManager(pictographData, gridData, checker);
+				propPlacementManager = new PropPlacementManager(pictographData, gridData, checker);
 
 				await tick();
 
 				const redMotion = new Motion(pictographData.redMotionData);
 				const blueMotion = new Motion(pictographData.blueMotionData);
-
 				const redProp = createPropData(redMotion);
 				const blueProp = createPropData(blueMotion);
+				const redArrow = createArrowData(redMotion);
+				const blueArrow = createArrowData(blueMotion);
 
 				redPropData.set(redProp);
 				bluePropData.set(blueProp);
+				redArrowData.set(redArrow);
+				blueArrowData.set(blueArrow);
+
+				
 			} catch (error) {
 				console.error('Prop initialization error:', error);
 			}
 		})();
 	}
 	// add a reactive statement to update prop placement
-	$: if (placementManager && $redPropData && $bluePropData) {
+	$: if (propPlacementManager && $redPropData && $bluePropData) {
 		const props: PropInterface[] = [$redPropData, $bluePropData];
-		placementManager.updatePropPlacement(props);
+		propPlacementManager.updatePropPlacement(props);
 	}
 </script>
 
@@ -65,8 +76,16 @@
 	/>
 
 	{#if $redPropData?.coords?.x !== undefined && $bluePropData?.coords?.x !== undefined}
-		<Prop propData={$redPropData} {svgManager} />
-		<Prop propData={$bluePropData} {svgManager} />
+		<Prop propData={$redPropData} />
+		<Prop propData={$bluePropData}/>
+	{:else}
+		<g class="loading-overlay">
+			<text x="50%" y="50%" text-anchor="middle" fill="#666">Initializing props...</text>
+		</g>
+	{/if}
+	{#if $redArrowData?.coords?.x !== undefined && $blueArrowData?.coords?.x !== undefined}
+		<Arrow arrowData={$redArrowData} />
+		<Arrow arrowData={$blueArrowData} />
 	{:else}
 		<g class="loading-overlay">
 			<text x="50%" y="50%" text-anchor="middle" fill="#666">Initializing props...</text>

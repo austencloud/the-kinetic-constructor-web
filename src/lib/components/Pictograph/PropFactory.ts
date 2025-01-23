@@ -14,8 +14,7 @@ export function createPropData(
 		loc: motion.endLoc,
 		ori: motion.endOri,
 		radialMode: ['in', 'out'].includes(motion.endOri) ? 'radial' : 'nonradial',
-		svgCenter: { x: 0, y: 0 },
-		rotAngle: 0
+
 	};
 	return propData;
 }

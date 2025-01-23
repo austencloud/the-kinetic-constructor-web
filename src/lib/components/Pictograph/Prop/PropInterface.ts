@@ -15,6 +15,5 @@ export interface PropInterface {
 	motion: Motion;
 	coords: { x: number; y: number };
 	loc: Location;
-	svgCenter?: { x: number; y: number };
 	rotAngle: number;
 }
