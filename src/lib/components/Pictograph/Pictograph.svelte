@@ -128,6 +128,6 @@
 
 	.pictograph:active {
 		transform: scale(1);
-		border: none;
+		/* border: none; */
 	}
 </style>
