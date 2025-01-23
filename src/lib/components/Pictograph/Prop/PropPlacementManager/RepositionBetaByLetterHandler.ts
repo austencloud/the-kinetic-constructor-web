@@ -1,0 +1,104 @@
+// reposition-beta-by-letter-handler.ts
+import type { PropInterface } from '../PropInterface';
+import { BetaPropDirectionCalculator } from './BetaPropDirectionCalculator';
+import type { PictographInterface } from '$lib/types/PictographInterface';
+import { MotionType } from '../../Motion/MotionInterface';
+export default class RepositionBetaByLetterHandler {
+	private pictographData: PictographInterface;
+	private directionCalculator: BetaPropDirectionCalculator;
+	private offsetCalculator: any; // Would need proper type
+	constructor(
+		directionCalculator: BetaPropDirectionCalculator,
+		pictographData: PictographInterface
+	) {
+		this.pictographData = pictographData;
+		this.directionCalculator = directionCalculator;
+	}
+
+	reposition_G_H(): void {
+		const redMotion = this.pictographData.redMotionData;
+		const blueMotion = this.pictographData.blueMotionData;
+		const redPropData = this.pictographData.redPropData;
+		const bluePropData = this.pictographData.bluePropData;
+		if (!redMotion || !blueMotion) return;
+
+		if (!redPropData) return;
+		const furtherDirection = this.directionCalculator.getDirection(redPropData);
+		const otherDirection = this.directionCalculator.getOppositeDirection(furtherDirection);
+
+		this.moveProp(redPropData, furtherDirection);
+		if (bluePropData) {
+			this.moveProp(bluePropData, otherDirection);
+		}
+	}
+
+	reposition_I(): void {
+		const proProp = this.pictographData.motions.some((m) => m.motionType === MotionType.PRO)
+			? this.pictographData.redPropData
+			: this.pictographData.bluePropData;
+
+		const antiProp = this.pictographData.motions.some((m) => m.motionType === 'anti')
+			? this.pictographData.redPropData
+			: this.pictographData.bluePropData;
+
+		const proDirection = this.directionCalculator.getDirection(proProp);
+		const antiDirection = this.directionCalculator.getOppositeDirection(proDirection);
+
+		this.moveProp(proProp, proDirection);
+		this.moveProp(antiProp, antiDirection);
+	}
+
+	reposition_J_K_L(): void {
+		const redDirection = this.directionCalculator.getDirection(this.pictographData.redPropData);
+		const blueDirection = this.directionCalculator.getDirection(this.pictographData.bluePropData);
+
+		if (redDirection && blueDirection) {
+			this.moveProp(this.pictographData.redPropData, redDirection);
+			this.moveProp(this.pictographData.bluePropData, blueDirection);
+		}
+	}
+
+	reposition_Y_Z(): void {
+		const shiftMotion = this.pictographData.motions.find((m) =>
+			[MotionType.PRO, MotionType.ANTI, MotionType.FLOAT].includes(m.motionType)
+		);
+		const staticMotion = this.pictographData.motions.find(
+			(m) => m.motionType === MotionType.STATIC
+		);
+
+		if (!shiftMotion || !staticMotion) return;
+
+		const direction = this.directionCalculator.getDirection(shiftMotion.propData);
+		if (!direction) return;
+
+		this.moveProp(this.getPropByColor(shiftMotion.color), direction);
+		this.moveProp(
+			this.getPropByColor(staticMotion.color),
+			this.directionCalculator.getOppositeDirection(direction)
+		);
+	}
+
+	reposition_β(): void {
+		const direction = this.directionCalculator.getDirection(this.pictographData.redPropData);
+		if (direction) {
+			this.moveProp(this.pictographData.redPropData, direction);
+			this.moveProp(
+				this.pictographData.bluePropData,
+				this.directionCalculator.getOppositeDirection(direction)
+			);
+		}
+	}
+
+	private getPropByColor(color: 'red' | 'blue'): PropInterface {
+		return color === 'red' ? this.pictographData.redPropData : this.pictographData.bluePropData;
+	}
+
+	private moveProp(prop: PropInterface, direction: string): void {
+		// Implement actual movement logic using offset calculator
+		const newPosition = this.offsetCalculator.calculateNewPositionWithOffset(
+			prop.coords,
+			direction
+		);
+		prop.coords = newPosition;
+	}
+}

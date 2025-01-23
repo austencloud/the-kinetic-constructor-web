@@ -13,15 +13,19 @@ export default class SantaManager {
 	santaInterval = this.randomInt(1200, 1500);
 
 	constructor() {
-		// Defer image initialization
-		if (typeof window !== 'undefined') {
+		// Only load image in December
+		if (typeof window !== 'undefined' && new Date().getMonth() === 11) {
+			// 11 = December
 			this.santaImage = new Image();
 			this.santaImage.src = 'santa.png';
 			this.santaImage.onload = () => (this.imageLoaded = true);
 			this.santaImage.onerror = () => console.error('Failed to load Santa image');
 		}
 	}
-
+	// Add this new method
+	private isDecember(): boolean {
+		return new Date().getMonth() === 11; // 11 = December
+	}
 	initialize(width: number, height: number) {
 		this.santa = { x: -0.2, y: 0.2, speed: 0.001, active: false, direction: 1, opacity: 0.8 };
 		this.santaTimer = 0;
@@ -33,6 +37,8 @@ export default class SantaManager {
 	}
 
 	animateSanta() {
+		if (!this.isDecember()) return; // Don't animate if not December
+
 		if (this.santa.active) {
 			this.santa.x += this.santa.speed * this.santa.direction;
 			if (
@@ -56,6 +62,8 @@ export default class SantaManager {
 	}
 
 	draw(ctx: CanvasRenderingContext2D, width: number, height: number) {
+		if (!this.isDecember()) return; // Don't draw if not December
+
 		if (!this.santa.active || !this.imageLoaded || !this.santaImage) return;
 
 		const santaWidth = Math.max(50, Math.min(width * 0.05, 100));

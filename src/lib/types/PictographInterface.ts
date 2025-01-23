@@ -1,6 +1,8 @@
 import type { Letter } from './Letter';
 import type { MotionInterface } from '../components/Pictograph/Motion/MotionInterface';
 import type { TKAPosition } from './TKAPosition';
+import type { PropInterface } from '$lib/components/Pictograph/Prop/PropInterface';
+import type { Motion } from '$lib/components/Pictograph/Motion/Motion';
 
 export type VTGDir = 'tog' | 'opp';
 export type VTGTiming = 'split' | 'same';
@@ -14,4 +16,12 @@ export interface PictographInterface {
 	gridMode: GridMode | null;
 	blueMotionData: MotionInterface;
 	redMotionData: MotionInterface;
+
+	motions: Motion[];
+	redMotion: Motion;
+	blueMotion: Motion;
+
+	props: PropInterface[];
+	redPropData: PropInterface;
+	bluePropData: PropInterface;
 }

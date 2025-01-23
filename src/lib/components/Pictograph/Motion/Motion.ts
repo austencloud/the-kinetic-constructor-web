@@ -4,7 +4,8 @@ import type {
 	PropRotDir,
 	Color,
 	LeadState,
-	HandRotDir
+	HandRotDir,
+	Orientation
 } from './MotionInterface';
 import { MotionChecker } from './MotionChecker';
 import { MotionOriCalculator } from './MotionOriCalculator';
@@ -12,7 +13,6 @@ import { MotionUpdater } from './MotionUpdater';
 import { HandpathCalculator as HandRotDirCalculator } from './HandpathCalculator';
 import Arrow from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
-import type { Orientation } from '../Prop/PropPlacementManager/PropTypes';
 import type { PictographInterface } from '../../../types/PictographInterface';
 import { LeadStateDeterminer } from './LeadStateDeterminer';
 import type { Location } from '../Prop/PropInterface';

@@ -13,10 +13,10 @@ export type Direction =
 export type Color = 'blue' | 'red';
 export type LeadState = 'leading' | 'trailing' | null;
 export type HandRotDir = 'cw_handpath' | 'ccw_handpath';
+export type Orientation = 'in' | 'out' | 'clock' | 'counter' 
 import type { Location } from '../Prop/PropInterface';
 import Arrow from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
-import type { Orientation } from '../Prop/PropPlacementManager/PropTypes';
 import type { PictographInterface } from '../../../types/PictographInterface';
 
 export interface MotionInterface {
