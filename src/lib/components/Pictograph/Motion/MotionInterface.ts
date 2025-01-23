@@ -13,8 +13,8 @@ export type Direction =
 export type Color = 'blue' | 'red';
 export type LeadState = 'leading' | 'trailing' | null;
 export type HandRotDir = 'cw_handpath' | 'ccw_handpath';
-export type Orientation = 'in' | 'out' | 'clock' | 'counter' 
-import type { Location } from '../Prop/PropInterface';
+export type Orientation = 'in' | 'out' | 'clock' | 'counter';
+import type { Loc } from '../Prop/PropInterface';
 import Arrow from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
 import type { PictographInterface } from '../../../types/PictographInterface';
@@ -25,8 +25,8 @@ export interface MotionInterface {
 	prop: Prop | null;
 	handRotDir: HandRotDir | null;
 	motionType: MotionType;
-	startLoc: Location;
-	endLoc: Location;
+	startLoc: Loc;
+	endLoc: Loc;
 	startOri: Orientation;
 	endOri: Orientation | null;
 	propRotDir: PropRotDir;

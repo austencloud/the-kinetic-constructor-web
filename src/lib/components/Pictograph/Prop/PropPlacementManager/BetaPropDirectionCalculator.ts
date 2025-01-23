@@ -1,13 +1,13 @@
 // BetaPropDirectionCalculator.ts
 
 import type { Color, Direction } from '../../Motion/MotionInterface';
-import type { BoxLocation, DiamondLocation, PropInterface } from '../PropInterface';
-import type { Location } from '../../Prop/PropInterface';
+import type { BoxLoc, DiamondLoc, PropInterface } from '../PropInterface';
+import type { Loc } from '../../Prop/PropInterface';
 import type { PictographInterface } from '$lib/types/PictographInterface';
 import { Letter } from '$lib/types/Letter';
 export class BetaPropDirectionCalculator {
 	// Special case maps for Letter I
-	private directionMapRadialI: Record<Location, Record<Color, Direction>> = {
+	private directionMapRadialI: Record<Loc, Record<Color, Direction>> = {
 		n: { red: 'right', blue: 'left' },
 		e: { red: 'down', blue: 'up' },
 		s: { red: 'left', blue: 'right' },
@@ -18,7 +18,7 @@ export class BetaPropDirectionCalculator {
 		nw: { red: 'upright', blue: 'downleft' }
 	};
 
-	private directionMapNonRadialI: Record<Location, Record<Color, Direction>> = {
+	private directionMapNonRadialI: Record<Loc, Record<Color, Direction>> = {
 		n: { red: 'up', blue: 'down' },
 		e: { red: 'right', blue: 'left' },
 		s: { red: 'down', blue: 'up' },
@@ -30,7 +30,7 @@ export class BetaPropDirectionCalculator {
 	};
 
 	// Shift direction maps
-	private directionMapRadialShift: Record<Location, Partial<Record<Location, Direction>>> = {
+	private directionMapRadialShift: Record<Loc, Partial<Record<Loc, Direction>>> = {
 		e: { n: 'right', s: 'right' },
 		w: { n: 'left', s: 'left' },
 		n: { e: 'up', w: 'up' },
@@ -41,7 +41,7 @@ export class BetaPropDirectionCalculator {
 		nw: { ne: 'upleft', sw: 'upleft' }
 	};
 
-	private directionMapNonRadialShift: Record<Location, Partial<Record<Location, Direction>>> = {
+	private directionMapNonRadialShift: Record<Loc, Partial<Record<Loc, Direction>>> = {
 		e: { n: 'up', s: 'up' },
 		w: { n: 'down', s: 'down' },
 		n: { e: 'right', w: 'right' },
@@ -53,33 +53,32 @@ export class BetaPropDirectionCalculator {
 	};
 
 	// Static/dash maps
-	private diamondMapRadial: Record<DiamondLocation, Record<Color, Direction>> = {
+	private diamondMapRadial: Record<DiamondLoc, Record<Color, Direction>> = {
 		n: { red: 'right', blue: 'left' },
 		e: { red: 'down', blue: 'up' },
 		s: { red: 'right', blue: 'left' },
-		w: { red: 'down', blue: 'up' },
+		w: { red: 'down', blue: 'up' }
 	};
 
-	private diamondMapNonRadial: Record<DiamondLocation, Record<Color, Direction>> = {
+	private diamondMapNonRadial: Record<DiamondLoc, Record<Color, Direction>> = {
 		n: { red: 'up', blue: 'down' },
 		e: { red: 'right', blue: 'left' },
 		s: { red: 'down', blue: 'up' },
-		w: { red: 'right', blue: 'left' },
-
+		w: { red: 'right', blue: 'left' }
 	};
 
-	private boxMapRadial: Record<BoxLocation, Record<Color, Direction>> = {
+	private boxMapRadial: Record<BoxLoc, Record<Color, Direction>> = {
 		ne: { red: 'downright', blue: 'upleft' },
 		se: { red: 'upright', blue: 'downleft' },
 		sw: { red: 'downright', blue: 'upleft' },
-		nw: { red: 'upright', blue: 'downleft' },
+		nw: { red: 'upright', blue: 'downleft' }
 	};
 
-	private boxMapNonRadial: Record<BoxLocation, Record<Color, Direction>> = {
+	private boxMapNonRadial: Record<BoxLoc, Record<Color, Direction>> = {
 		ne: { red: 'upright', blue: 'downleft' },
 		se: { red: 'downright', blue: 'upleft' },
 		sw: { red: 'upright', blue: 'downleft' },
-		nw: { red: 'downright', blue: 'upleft' },
+		nw: { red: 'downright', blue: 'upleft' }
 	};
 
 	constructor(private pictographData: PictographInterface) {}
@@ -120,11 +119,7 @@ export class BetaPropDirectionCalculator {
 		return this.getShiftDirection(isRadial, prop.motion.startLoc, prop.motion.endLoc);
 	}
 
-	private getShiftDirection(
-		isRadial: boolean,
-		startLoc: Location,
-		endLoc: Location
-	): Direction | undefined {
+	private getShiftDirection(isRadial: boolean, startLoc: Loc, endLoc: Loc): Direction | undefined {
 		const map = isRadial ? this.directionMapRadialShift : this.directionMapNonRadialShift;
 		return map[startLoc]?.[endLoc];
 	}
@@ -135,11 +130,11 @@ export class BetaPropDirectionCalculator {
 
 		if (gridMode === 'diamond') {
 			const map = isRadial ? this.diamondMapRadial : this.diamondMapNonRadial;
-			return map[prop.loc as DiamondLocation][prop.color];
+			return map[prop.loc as DiamondLoc][prop.color];
 		}
 
 		const map = isRadial ? this.boxMapRadial : this.boxMapNonRadial;
-		return map[prop.loc as BoxLocation][prop.color];
+		return map[prop.loc as BoxLoc][prop.color];
 	}
 
 	getOppositeDirection(direction: Direction): Direction {

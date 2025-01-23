@@ -3,17 +3,14 @@
 	import type { ArrowSvgData } from '../SvgManager/ArrowSvgData';
 	import { onMount } from 'svelte';
 	import { parseArrowSvg } from '../SvgManager/ArrowSvgParser';
-	import ArrowRotAngleManager from './ArrowRotAngleManager';
 	import SvgManager from '../SvgManager/SvgManager';
-	import ArrowLocationManager from './ArrowLocationManager';
 
 	export let arrowData: ArrowInterface;
 
 	let svgData: ArrowSvgData | null = null;
 	let transform = '';
 	const svgManager = new SvgManager();
-	let arrowRotAngleManager: ArrowRotAngleManager;
-	let arrowLocationManager: ArrowLocationManager;
+
 
 	const loadAndTransformArrow = async () => {
 		try {
@@ -37,10 +34,9 @@
 			};
 			arrowData.svgCenter = center;
 
-			arrowRotAngleManager = new ArrowRotAngleManager(arrowData);
-			arrowLocationManager = new ArrowLocationManager(arrowData);
-			arrowData.loc = arrowLocationManager.getArrowLocation();
-			arrowData.rotAngle = arrowRotAngleManager.updateRotation();
+
+			// log the loc
+			console.log(arrowData.loc);
 			transform = `translate(${arrowData.coords.x}, ${arrowData.coords.y}) 
 				rotate(${arrowData.rotAngle} ${center.x} ${center.y})`;
 		} catch (error) {

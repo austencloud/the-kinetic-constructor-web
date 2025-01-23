@@ -1,13 +1,13 @@
-import Arrow from '../Arrow.svelte';
+import type { Motion } from '../../Motion/Motion';
 
 export default class StaticLocationCalculator {
-    arrow: Arrow;
+	motion: Motion;
 
-    constructor(arrow: Arrow) {
-        this.arrow = arrow;
-    }
+	constructor(motion: Motion) {
+		this.motion = motion;
+	}
 
     calculateLocation() {
-        return this.arrow.motion.startLoc; // Return the arrow's starting location
+        return this.motion.startLoc; // Return the arrow's starting location
     }
 }

@@ -1,27 +1,36 @@
-import type { Location } from '../../Prop/PropInterface';
-import Arrow from '../Arrow.svelte';
+import {
+	EAST,
+	NORTH,
+	NORTHEAST,
+	NORTHWEST,
+	SOUTH,
+	SOUTHEAST,
+	SOUTHWEST,
+	WEST
+} from '$lib/types/Constants';
+import type { Motion } from '../../Motion/Motion';
+import type { Loc } from '../../Prop/PropInterface';
 
 export default class ShiftLocationCalculator {
-	arrow: Arrow;
-	pictograph: any;
+	motion: Motion;
 
-	constructor(arrow: Arrow) {
-		this.arrow = arrow;
+	constructor(motion: Motion) {
+		this.motion = motion;
 	}
 
-	calculateLocation(): Location {
-		const startLoc = this.arrow.motion.startLoc;
-		const endLoc = this.arrow.motion.endLoc;
+	calculateLocation(): Loc {
+		const startLoc = this.motion.startLoc;
+		const endLoc = this.motion.endLoc;
 
-		const locationMap: { [key: string]: Location } = {
-			'n-e': 'ne',
-			'e-s': 'se',
-			's-w': 'sw',
-			'w-n': 'nw',
-			'ne-nw': 'n',
-			'ne-se': 'e',
-			'sw-se': 's',
-			'nw-sw': 'w'
+		const locationMap: { [key: string]: Loc } = {
+			'n-e': NORTHEAST,
+			'e-s': SOUTHEAST,
+			's-w': SOUTHWEST,
+			'w-n': NORTHWEST,
+			'ne-nw': NORTH,
+			'ne-se': EAST,
+			'sw-se': SOUTH,
+			'nw-sw': WEST
 		};
 
 		const key = `${startLoc}-${endLoc}`;

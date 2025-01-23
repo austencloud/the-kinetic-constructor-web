@@ -14,8 +14,8 @@ export class ArrowPlacementManager {
 	constructor(pictographData: PictographInterface, gridData: GridData, checker: PictographChecker) {
 		this.defaultPositioner = new DefaultArrowPositioner(pictographData, gridData, checker);
 
-		this.initialPosCalculator = new ArrowInitialPosCalculator(/* this, or references */);
-		this.adjustmentCalculator = new ArrowAdjustmentCalculator(/* this, or references */);
+		this.initialPosCalculator = new ArrowInitialPosCalculator(pictographData);
+		this.adjustmentCalculator = new ArrowAdjustmentCalculator(this.defaultPositioner);
 	}
 
 	public updateArrowPlacements(arrows: ArrowInterface[]): void {

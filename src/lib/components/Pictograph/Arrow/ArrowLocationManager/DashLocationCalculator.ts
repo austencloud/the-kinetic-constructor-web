@@ -1,23 +1,27 @@
+import { Letter } from '$lib/types/Letter';
+import type { Motion } from '../../Motion/Motion';
+import type { PictographGetter } from '../../PictographGetter';
 import Arrow from '../Arrow.svelte';
 
 export default class DashLocationCalculator {
-    arrow: Arrow;
-    pictograph: any;
-
-    constructor(arrow: Arrow) {
-        this.arrow = arrow;
+    private motion: Motion;
+    private getter: PictographGetter;
+  
+    constructor(motion: Motion, getter: PictographGetter) {
+      this.motion = motion;
+      this.getter = getter;
     }
-
+  
     calculateLocation(): string {
-        if (['Φ_DASH', 'Ψ_DASH'].includes(this.pictograph.letter)) {
+        if (this.motion.pictographData.letter && [Letter.Φ_DASH, Letter.Ψ_DASH].includes(this.motion.pictographData.letter)) {
             return this._getPhiDashPsiDashLocation();
         }
 
-        if (['Λ', 'Λ_DASH'].includes(this.pictograph.letter) && this.arrow.motion.turns === 0) {
+        if (this.motion.pictographData.letter && [Letter.Λ, Letter.Λ_DASH].includes(this.motion.pictographData.letter) && this.motion.turns === 0) {
             return this._getLambdaZeroTurnsLocation();
         }
 
-        if (this.arrow.motion.turns === 0) {
+        if (this.motion.turns === 0) {
             return this._defaultZeroTurnsDashLocation();
         }
 
@@ -25,9 +29,9 @@ export default class DashLocationCalculator {
     }
 
     private _getPhiDashPsiDashLocation(): string {
-        const otherMotion = this.pictograph.getOtherMotion(this.arrow.motion);
+        const otherMotion = this.getter.getOtherMotion(this.motion);
 
-        if (this.arrow.motion.turns === 0 && otherMotion.turns === 0) {
+        if (this.motion.turns === 0 && otherMotion && otherMotion.turns === 0) {
             const locationMap: { [key: string]: string } = {
                 RED_NORTH_SOUTH: 'se',
                 RED_EAST_WEST: 'ne',
@@ -35,25 +39,25 @@ export default class DashLocationCalculator {
                 BLUE_EAST_WEST: 'sw'
             };
 
-            const key = `${this.arrow.color}_${this.arrow.motion.startLoc}_${this.arrow.motion.endLoc}`;
+            const key = `${this.motion.color}_${this.motion.startLoc}_${this.motion.endLoc}`;
             return locationMap[key] || '';
         }
 
-        if (this.arrow.motion.turns === 0) {
-            return this.pictograph.getOppositeLocation(this._dashLocationNonZeroTurns(otherMotion));
+        if (this.motion.turns === 0) {
+            return this.getter.getOppositeLocation(this._dashLocationNonZeroTurns(otherMotion ?? undefined)) ?? '';
         }
 
-        return this._dashLocationNonZeroTurns(this.arrow.motion);
+        return this._dashLocationNonZeroTurns(this.motion);
     }
 
     private _getLambdaZeroTurnsLocation(): string {
-        const otherMotion = this.pictograph.getOtherMotion(this.arrow.motion);
+        const otherMotion = this.getter.getOtherMotion(this.motion);
         const locMap: { [key: string]: string } = {
             NORTH_SOUTH_WEST: 'se',
             EAST_WEST_SOUTH: 'ne'
         };
 
-        const key = `${this.arrow.motion.startLoc}_${this.arrow.motion.endLoc}_${otherMotion.endLoc}`;
+        const key = `${this.motion.startLoc}_${this.motion.endLoc}_${otherMotion?.endLoc ?? ''}`;
         return locMap[key] || '';
     }
 
@@ -63,11 +67,11 @@ export default class DashLocationCalculator {
             EAST_WEST: 'sw'
         };
 
-        const key = `${this.arrow.motion.startLoc}_${this.arrow.motion.endLoc}`;
+        const key = `${this.motion.startLoc}_${this.motion.endLoc}`;
         return locationMap[key] || '';
     }
 
-    private _dashLocationNonZeroTurns(motion = this.arrow.motion): string {
+    private _dashLocationNonZeroTurns(motion = this.motion): string {
         const locMap: { [key: string]: { [key: string]: string } } = {
             CLOCKWISE: {
                 NORTH: 'se',

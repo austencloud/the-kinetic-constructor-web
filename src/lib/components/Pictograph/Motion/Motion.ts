@@ -15,12 +15,12 @@ import Arrow from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
 import type { PictographInterface } from '../../../types/PictographInterface';
 import { LeadStateDeterminer } from './LeadStateDeterminer';
-import type { Location } from '../Prop/PropInterface';
+import type { Loc } from '../Prop/PropInterface';
 
 export class Motion implements MotionInterface {
 	motionType: MotionType;
-	startLoc: Location;
-	endLoc: Location;
+	startLoc: Loc;
+	endLoc: Loc;
 	startOri: Orientation;
 	propRotDir: PropRotDir;
 	color: Color;

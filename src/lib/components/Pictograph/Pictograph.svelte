@@ -14,13 +14,14 @@
 	import Grid from './Grid/Grid.svelte';
 	import Arrow from './Arrow/Arrow.svelte';
 	import Prop from './Prop/Prop.svelte';
-
+	import { PictographGetter } from './PictographGetter';
 
 	export let pictographData: PictographInterface;
 	export const onClick: () => void = () => {};
 
 	let gridData: GridData | null = null;
 	let checker = new PictographChecker(pictographData);
+	let getter = new PictographGetter(pictographData);
 	let propPlacementManager: PropPlacementManager | null = null;
 	let arrowPlacementManager: ArrowPlacementManager | null = null;
 
@@ -47,8 +48,8 @@
 					const blueMotion = new Motion(pictographData.blueMotionData);
 					const redProp = createPropData(redMotion);
 					const blueProp = createPropData(blueMotion);
-					const redArrow = createArrowData(redMotion);
-					const blueArrow = createArrowData(blueMotion);
+					const redArrow = createArrowData(redMotion, getter);
+					const blueArrow = createArrowData(blueMotion, getter);
 
 					redPropData.set(redProp);
 					bluePropData.set(blueProp);

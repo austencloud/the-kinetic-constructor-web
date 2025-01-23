@@ -3,9 +3,9 @@ import type { Color, Orientation } from '../Motion/MotionInterface';
 import type { PropType } from './PropPlacementManager/PropTypes';
 
 export type RadialMode = 'radial' | 'nonradial';
-export type DiamondLocation = 'n' | 's' | 'e' | 'w';
-export type BoxLocation = 'ne' | 'se' | 'sw' | 'nw';
-export type Location = DiamondLocation | BoxLocation ;
+export type DiamondLoc = 'n' | 's' | 'e' | 'w';
+export type BoxLoc = 'ne' | 'se' | 'sw' | 'nw';
+export type Loc = 'n' | 's' | 'e' | 'w' | 'ne' | 'se' | 'sw' | 'nw';
 
 export interface PropInterface {
 	propType: PropType;
@@ -14,8 +14,7 @@ export interface PropInterface {
 	ori: Orientation;
 	motion: Motion;
 	coords: { x: number; y: number };
-	loc: Location;
+	loc: Loc;
 	rotAngle: number;
 	svgCenter: { x: number; y: number };
-
 }
