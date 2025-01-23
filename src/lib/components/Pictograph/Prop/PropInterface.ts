@@ -5,7 +5,7 @@ import type { PropType } from './PropPlacementManager/PropTypes';
 export type RadialMode = 'radial' | 'nonradial';
 export type DiamondLocation = 'n' | 's' | 'e' | 'w';
 export type BoxLocation = 'ne' | 'se' | 'sw' | 'nw';
-export type Location = DiamondLocation | BoxLocation | null;
+export type Location = DiamondLocation | BoxLocation ;
 
 export interface PropInterface {
 	propType: PropType;
