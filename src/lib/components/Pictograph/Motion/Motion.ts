@@ -2,11 +2,9 @@ import type {
 	MotionInterface,
 	MotionType,
 	PropRotDir,
-	Location,
 	Color,
 	LeadState,
 	HandRotDir,
-	BlankMotionInterface
 } from './MotionInterface';
 import { MotionChecker } from './MotionChecker';
 import { MotionOriCalculator } from './MotionOriCalculator';
@@ -17,6 +15,7 @@ import Prop from '../Prop/Prop.svelte';
 import type { Orientation } from '../Prop/PropTypes';
 import type { PictographInterface } from '../../../types/PictographInterface';
 import { LeadStateDeterminer } from './LeadStateDeterminer';
+import type { Location } from '../Prop/PropInterface';
 
 export class Motion implements MotionInterface {
 	motionType: MotionType;

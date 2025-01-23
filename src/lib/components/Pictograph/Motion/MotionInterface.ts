@@ -10,11 +10,10 @@ export type Direction =
 	| 'upleft'
 	| 'downright'
 	| 'downleft';
-export type Location = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw';
 export type Color = 'blue' | 'red';
 export type LeadState = 'leading' | 'trailing' | null;
 export type HandRotDir = 'cw_handpath' | 'ccw_handpath';
-
+import type { Location } from '../Prop/PropInterface';
 import Arrow from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
 import type { Orientation } from '../Prop/PropTypes';
@@ -37,7 +36,6 @@ export interface MotionInterface {
 	prefloatMotionType: MotionType | null;
 	prefloatPropRotDir: PropRotDir | null;
 }
-
 export interface BlankMotionInterface {
 	pictographData: {
 		letter: null;
@@ -52,15 +50,15 @@ export interface BlankMotionInterface {
 	arrow: null;
 	prop: null;
 	handRotDir: null;
-	motionType: 'static';
-	startLoc: 'n';
-	endLoc: 'n';
-	startOri: 'in';
+	motionType: null;
+	startLoc: null;
+	endLoc: null;
+	startOri: null;
 	endOri: null;
-	propRotDir: 'no_rot';
-	color: 'blue';
-	turns: 0;
-	leadState: 'trailing';
+	propRotDir: null;
+	color: null;
+	turns: null;
+	leadState: null;
 	prefloatMotionType: null;
 	prefloatPropRotDir: null;
 }

@@ -25,8 +25,8 @@ let transform = '';
 // Define computeTransform
 function computeTransform(propData: PropInterface): string {
 	const rotationManager = new PropRotAngleManager({
-		location: propData.loc,
-		orientation: propData.ori
+		loc: propData.loc,
+		ori: propData.ori
 	});
 	const rotationAngle = rotationManager.getRotationAngle();
 	return `translate(${propData.coords.x}px, ${propData.coords.y}px) rotate(${rotationAngle}deg)`;

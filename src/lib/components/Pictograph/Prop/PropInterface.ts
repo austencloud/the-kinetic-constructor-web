@@ -1,17 +1,18 @@
 import type { Motion } from '../Motion/Motion';
-import type { Location } from '../Motion/MotionInterface';
-import type { Orientation } from './PropTypes';
+import type { Orientation, PropType } from './PropTypes';
 
 export type RadialMode = 'radial' | 'nonradial';
+export type Location = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw';
 
 export interface PropInterface {
-	propType: string;
+	propType: PropType;
 	color: 'red' | 'blue';
 	radialMode: RadialMode | null;
 	ori: Orientation;
 	motion: Motion;
 	coords: { x: number; y: number };
 	loc: Location;
-	svgCenter?: { x: number; y: number } | null | undefined;}
-
-	
+	svgCenter?: { x: number; y: number };
+	rotAngle : number;
+}	
+			

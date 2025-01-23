@@ -55,7 +55,6 @@
 	}
 
 	.toggleTab:hover {
-		transform: scale(1.05);
 		box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3);
 	}
 

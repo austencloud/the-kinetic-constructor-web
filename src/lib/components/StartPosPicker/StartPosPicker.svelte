@@ -34,7 +34,7 @@
 		});
 		totalPictographs.set(startPositions.length);
 		//  log the daata
-		console.debug('Start Positions:', startPositions);
+		// console.debug('Start Positions:', startPositions);
 	});
 	const handleSelect = (start_pos_pictograph: PictographInterface) => {
 		selectedStartPos.set(start_pos_pictograph);

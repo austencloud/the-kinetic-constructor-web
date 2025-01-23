@@ -1,81 +1,49 @@
+<!-- Prop.svelte -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import PropRotAngleManager from './PropRotAngleManager';
+	import { rotateOffset } from './rotationUtils';
+	import PropSvgLoader from './PropSvgLoader';
+	import type { SvgData } from './svgData';
 	import type { PropInterface } from './PropInterface';
 
 	export let propData: PropInterface;
 
-	let transform = '';
-	let svgPath = '';
-	let imageSrc = '';
+	let svgData: SvgData | null = null;
 
-	/**
-	 * Generates the path to the SVG asset for the prop.
-	 */
-	const getSvgPath = () => `/images/props/${propData.propType}.svg`;
-
-	/**
-	 * Computes the transform string for placing and rotating the prop.
-	 */
-	function computeTransform(): string {
-		const rotationManager = new PropRotAngleManager({
-			location: propData.loc,
-			orientation: propData.ori
-		});
-		const rotationAngle = rotationManager.getRotationAngle();
-
-		// Use SVG units without 'px' and adjust for SVG center
-		return `translate(${propData.coords.x}, ${propData.coords.y}) 
-		        rotate(${rotationAngle} ${propData.svgCenter?.x ?? 0} ${propData.svgCenter?.y ?? 0})`;
-	}
-
-	/**
-	 * Handles SVG loading and assigns the transformed URL for rendering.
-	 */
-	async function loadSvg(): Promise<void> {
+	const loadSvg = async () => {
 		try {
-			const response = await fetch(svgPath);
-
-			if (!response.ok || !response.headers.get('content-type')?.includes('image/svg+xml')) {
-				throw new Error('Failed to load valid SVG file.');
-			}
-
-			const svgData = await response.text();
-			imageSrc = `data:image/svg+xml;base64,${btoa(svgData)}`;
+			svgData = await PropSvgLoader.load(propData.propType);
+			propData.svgCenter = svgData.center;
 		} catch (error) {
-			console.error('Error loading SVG:', error);
-			imageSrc = '';
+			console.error('Prop loading failed:', error);
+			svgData = null;
 		}
-	}
+	};
 
-	// Reactive statement for transform
-	$: transform = computeTransform();
+	const getPosition = (center: SvgData['center'], angle: number) =>
+		rotateOffset({ x: -center.x, y: -center.y }, -angle);
 
-	onMount(() => {
-		svgPath = getSvgPath();
-		loadSvg();
-	});
+	$: position = svgData ? getPosition(svgData.center, propData.rotAngle) : { x: 0, y: 0 };
+	$: transform = svgData
+		? `
+	  translate(${propData.coords.x} ${propData.coords.y})
+	  rotate(${propData.rotAngle} ${svgData.center.x} ${svgData.center.y})
+	`
+		: '';
+
+	onMount(loadSvg);
+	$: propData.propType && loadSvg();
 </script>
 
-{#if imageSrc}
-<g class="prop-group" transform={transform}>
-	<image
-		href={imageSrc}
-		width="252.8" 
-		height="77.8" 
-		x={-(propData.svgCenter?.x ?? 0)} 
-		y={-(propData.svgCenter?.y ?? 0)}
-		preserveAspectRatio="xMidYMid meet"
-	/>
-</g>
-{:else}
-	<p>Loading or transforming SVG failed.</p>
+{#if svgData}
+	<g {transform}>
+		<image
+			href={svgData.imageSrc}
+			width={svgData.viewBox.width}
+			height={svgData.viewBox.height}
+			x={position.x}
+			y={position.y}
+			preserveAspectRatio="xMidYMid meet"
+		/>
+	</g>
 {/if}
-
-<style>
-	.prop-group {
-		transform-origin: center;
-		cursor: pointer;
-		transition: transform 0.2s ease;
-	}
-</style>

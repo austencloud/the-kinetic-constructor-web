@@ -5,10 +5,11 @@
 	import type { PictographInterface } from '$lib/types/PictographInterface';
 	import type { GridData } from './Grid/GridInterface';
 	import { DefaultPropPositioner } from './Prop/PropPlacementManager/DefaultPropPositioner';
-	import { createPropData } from './PropFactory';
-	import { writable, type Writable } from 'svelte/store';
+	import { updatePropData } from './PropFactory';
+	import { writable, type Writable} from 'svelte/store';
 	import type { PropInterface } from './Prop/PropInterface';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
+	import PropRotAngleManager from './Prop/PropRotAngleManager';
 
 	export let pictographData: PictographInterface;
 	export const onClick: () => void = () => {};
@@ -16,20 +17,34 @@
 	let gridData: GridData | null = null;
 	let positioner: DefaultPropPositioner | null = null;
 
-	// Stores for props
 	let redPropData: Writable<PropInterface> = writable();
 	let bluePropData: Writable<PropInterface> = writable();
 
-		$: if (gridData) {
-		positioner = new DefaultPropPositioner(gridData, pictographData.gridMode || 'diamond');
-		
-		if (positioner && pictographData.redMotionData && pictographData.blueMotionData) {
-			const redMotion = new Motion(pictographData.redMotionData);
-			const blueMotion = new Motion(pictographData.blueMotionData);
+	$: if (gridData?.centerPoint?.coordinates && 
+		pictographData?.redMotionData && 
+		pictographData?.blueMotionData) 
+	{
+		(async () => {
+			try {
+				positioner = new DefaultPropPositioner(
+					gridData, 
+					pictographData.gridMode || 'diamond'
+				);
 
-			redPropData.set(createPropData('staff', 'red', redMotion, positioner));
-			bluePropData.set(createPropData('staff', 'blue', blueMotion, positioner));
-		}
+				await tick();
+				
+				const redMotion = new Motion(pictographData.redMotionData);
+				const blueMotion = new Motion(pictographData.blueMotionData);
+
+				const redProp = updatePropData(redMotion, positioner);
+				const blueProp = updatePropData(blueMotion, positioner);
+
+				redPropData.set(redProp);
+				bluePropData.set(blueProp);
+			} catch (error) {
+				console.error('Prop initialization error:', error);
+			}
+		})();
 	}
 </script>
 
@@ -41,9 +56,13 @@
 		}}
 	/>
 
-	{#if gridData}
+	{#if $redPropData?.coords?.x !== undefined && $bluePropData?.coords?.x !== undefined}
 		<Prop propData={$redPropData} />
 		<Prop propData={$bluePropData} />
+	{:else}
+		<g class="loading-overlay">
+			<text x="50%" y="50%" text-anchor="middle" fill="#666">Initializing props...</text>
+		</g>
 	{/if}
 </svg>
 
@@ -58,7 +77,6 @@
 		background-color: white;
 		cursor: pointer;
 		transition: transform 0.1s;
-		/* box-sizing: border-box; */
 		transform: scale(1);
 		z-index: 1;
 		position: relative;
@@ -78,6 +96,5 @@
 	.pictograph:active {
 		transform: scale(1);
 		border: none;
-		/* z-index: 1; */
 	}
 </style>

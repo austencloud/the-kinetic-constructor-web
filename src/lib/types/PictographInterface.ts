@@ -12,6 +12,6 @@ export interface PictographInterface {
 	timing: VTGTiming | null;
 	direction: VTGDir | null;
 	gridMode: GridMode | null;
-	blueMotionData: MotionInterface | null;
-	redMotionData: MotionInterface | null;
+	blueMotionData: MotionInterface;
+	redMotionData: MotionInterface;
 }
