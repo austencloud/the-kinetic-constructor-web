@@ -5,41 +5,37 @@ import { QuadrantIndexHandler } from './QuadrantIndexHandler';
 import { DirectionalTupleManager } from './tupleGenerators/DirectionalTupleManager';
 
 export class ArrowAdjustmentCalculator {
-	constructor(
-		private defaultPositioner: DefaultArrowPositioner,
-		private pictographData: any,
-		private gridData: any
-	) {
-		this.quadrantIndexHandler = new QuadrantIndexHandler(pictographData, gridData);
-    this.pictographData = pictographData;
-    this.gridData = gridData;
-	}
-	private quadrantIndexHandler: QuadrantIndexHandler;
+  private quadrantIndexHandler: QuadrantIndexHandler;
 
-	public getAdjustment(arrow: ArrowInterface): { x: number; y: number } {
-		if (!this.pictographData.letter) {
-			return { x: 0, y: 0 };
-		}
-		const [x, y] = this.defaultPositioner.getDefaultAdjustment(arrow);
-		const dtManager = new DirectionalTupleManager(arrow.motion);
-		const directionalAdjustments = dtManager.generateDirectionalTuples(x, y);
+  constructor(
+    private defaultPositioner: DefaultArrowPositioner,
+    private pictographData: any,
+    private gridData: any
+  ) {
+    this.quadrantIndexHandler = new QuadrantIndexHandler(pictographData, gridData);
+  }
 
-		
+  public getAdjustment(arrow: ArrowInterface): { x: number; y: number } {
+    if (!this.pictographData.letter) {
+      return { x: 0, y: 0 };
+    }
 
-		if (!directionalAdjustments || directionalAdjustments.length === 0) {
-			console.warn(`No directional adjustments for motion type: ${arrow.motion.motionType}`);
-			return { x, y };
-		}
+    const [x, y] = this.defaultPositioner.getDefaultAdjustment(arrow);
 
-		const quadrantIndex = this.quadrantIndexHandler.getQuadrantIndex(arrow); 
-		if (quadrantIndex < 0 || quadrantIndex >= directionalAdjustments.length) {
-			console.error(`Quadrant index out of range: ${quadrantIndex}`);
-			return { x: 0, y: 0 };
-		}
+    const dtManager = new DirectionalTupleManager(arrow.motion);
+    const directionalAdjustments = dtManager.generateDirectionalTuples(x, y);
+    console.log('X:', x, 'Y:', y);
+    console.log('Directional Adjustments:', directionalAdjustments);
 
-		const [adjX, adjY] = directionalAdjustments[quadrantIndex];
-		return { x: adjX, y: adjY };
-	}
+    if (!directionalAdjustments || directionalAdjustments.length === 0) {
+      return { x, y };
+    }
+    const quadrantIndex = this.quadrantIndexHandler.getQuadrantIndex(arrow);
+    if (quadrantIndex < 0 || quadrantIndex >= directionalAdjustments.length) {
+      return { x: 0, y: 0 };
+    }
 
-
+    const [adjX, adjY] = directionalAdjustments[quadrantIndex];
+    return { x: adjX, y: adjY };
+  }
 }

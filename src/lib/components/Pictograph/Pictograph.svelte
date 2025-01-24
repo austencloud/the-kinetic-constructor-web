@@ -5,8 +5,8 @@
 	import type { ArrowInterface } from './Arrow/ArrowInterface';
 	import { Motion } from './Motion/Motion';
 	import { createPropData } from './PropFactory';
-	import { writable, type Writable } from 'svelte/store';
-	import { tick } from 'svelte';
+	import { get, writable, type Writable } from 'svelte/store';
+	import { onMount, tick } from 'svelte';
 	import { PictographChecker } from './PictographChecker';
 	import { PropPlacementManager } from './Prop/PropPlacementManager/PropPlacementManager';
 	import { createArrowData } from './Arrow/ArrowFactory';
@@ -67,9 +67,9 @@
 		const props: PropInterface[] = [$redPropData, $bluePropData];
 		propPlacementManager.updatePropPlacement(props);
 	}
+
 	$: if (arrowPlacementManager && $redArrowData && $blueArrowData) {
-		const arrows: ArrowInterface[] = [$redArrowData, $blueArrowData];
-		arrowPlacementManager.updateArrowPlacements(arrows);
+		arrowPlacementManager.updateArrowPlacements([$redArrowData, $blueArrowData]);
 	}
 </script>
 

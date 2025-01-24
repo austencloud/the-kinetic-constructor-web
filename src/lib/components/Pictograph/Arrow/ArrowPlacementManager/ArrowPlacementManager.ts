@@ -6,37 +6,39 @@ import type { PictographChecker } from '../../PictographChecker';
 import { ArrowAdjustmentCalculator } from './ArrowAdjustmentCalculator';
 import { ArrowInitialPosCalculator } from './ArrowInitialPositionCalculator';
 import { DefaultArrowPositioner } from './DefaultArrowPositioner';
-import { QuadrantIndexHandler } from './QuadrantIndexHandler';
 
 export class ArrowPlacementManager {
-	private initialPosCalculator: ArrowInitialPosCalculator;
-	private adjustmentCalculator: ArrowAdjustmentCalculator;
-	private defaultPositioner: DefaultArrowPositioner;
-	constructor(
-		private pictographData: PictographInterface,
-		private gridData: GridData,
-		private checker: PictographChecker
-	) {
-		this.defaultPositioner = new DefaultArrowPositioner(pictographData, gridData, checker);
-		this.initialPosCalculator = new ArrowInitialPosCalculator(pictographData, gridData);
-		this.adjustmentCalculator = new ArrowAdjustmentCalculator(this.defaultPositioner, pictographData, gridData);
-	
-	}
+  private initialPosCalculator: ArrowInitialPosCalculator;
+  private adjustmentCalculator: ArrowAdjustmentCalculator;
+  public defaultPositioner: DefaultArrowPositioner;
 
-	public updateArrowPlacements(arrows: ArrowInterface[]): void {
-		arrows.forEach((arrow) => {
-			this.updateArrowPosition(arrow);
-		});
-	}
+  constructor(
+    private pictographData: PictographInterface,
+    private gridData: GridData,
+    private checker: PictographChecker
+  ) {
+    this.defaultPositioner = new DefaultArrowPositioner(pictographData, gridData, checker);
+    this.initialPosCalculator = new ArrowInitialPosCalculator(pictographData, gridData);
+    this.adjustmentCalculator = new ArrowAdjustmentCalculator(
+      this.defaultPositioner,
+      pictographData,
+      gridData
+    );
+  }
 
-	public updateArrowPosition(arrow: ArrowInterface): void {
-		const initialPos = this.initialPosCalculator.getInitialCoords(arrow);
-		const adjustment = this.adjustmentCalculator.getAdjustment(arrow);
-		const boundingCenter = arrow.svgCenter || { x: 0, y: 0 };
+  public updateArrowPlacements(arrows: ArrowInterface[]): void {
+    arrows.forEach((arrow) => {
+      this.updateArrowPosition(arrow);
+    });
+  }
 
-		const newX = initialPos.x + adjustment.x - boundingCenter.x;
-		const newY = initialPos.y + adjustment.y - boundingCenter.y;
+  private updateArrowPosition(arrow: ArrowInterface): void {
+    const initialPos = this.initialPosCalculator.getInitialCoords(arrow);
+    const adjustment = this.adjustmentCalculator.getAdjustment(arrow);
+    const boundingCenter = arrow.svgCenter || { x: 0, y: 0 };
 
-		arrow.coords = { x: newX, y: newY };
-	}
+    const newX = initialPos.x + adjustment.x - boundingCenter.x;
+    const newY = initialPos.y + adjustment.y - boundingCenter.y;
+    arrow.coords = { x: newX, y: newY };
+  }
 }

@@ -7,20 +7,12 @@ import type { Motion } from '../../../Motion/Motion';
 import { StaticDirectionalGenerator } from './StaticDirectionalGenrartor';
 import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';
 
-/**
- * The manager that picks which generator to use, like your Python code:
- *
- * if motion.motion_type in [PRO, ANTI, FLOAT] => ShiftDirectionalGenerator
- * elif dash => DashDirectionalGenerator
- * elif static => StaticDirectionalGenerator
- */
 export class DirectionalTupleManager {
 	private generator: BaseDirectionalGenerator | null = null;
 
 	constructor(private motion: Motion) {
 		this.generator = this._selectGenerator();
 	}
-
 	private _selectGenerator(): BaseDirectionalGenerator | null {
 		switch (this.motion.motionType) {
 			case PRO:

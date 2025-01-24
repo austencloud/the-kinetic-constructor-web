@@ -13,7 +13,7 @@ export interface PictographInterface {
 	endPos: TKAPosition | null;
 	timing: VTGTiming | null;
 	direction: VTGDir | null;
-	gridMode: GridMode | null;
+	gridMode: GridMode;
 	blueMotionData: MotionInterface | null;
 	redMotionData: MotionInterface | null;
 
