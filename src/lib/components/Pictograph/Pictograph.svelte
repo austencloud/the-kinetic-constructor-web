@@ -15,6 +15,7 @@
 	import Arrow from './Arrow/Arrow.svelte';
 	import Prop from './Prop/Prop.svelte';
 	import { PictographGetter } from './PictographGetter';
+	import TKAGlyph from './TKAGlyph/TKAGlyph.svelte';
 
 	export let pictographData: PictographInterface;
 	export const onClick: () => void = () => {};
@@ -80,22 +81,15 @@
 			gridData = data;
 		}}
 	/>
+	<TKAGlyph letter={pictographData.letter} turnsTuple="(s, 0, 0)" x={50} y={850} />
 
 	{#if $redPropData?.coords?.x !== undefined && $bluePropData?.coords?.x !== undefined}
 		<Prop propData={$redPropData} />
 		<Prop propData={$bluePropData} />
-	{:else}
-		<g class="loading-overlay">
-			<text x="50%" y="50%" text-anchor="middle" fill="#666">Initializing props...</text>
-		</g>
 	{/if}
 	{#if $redArrowData?.coords?.x !== undefined && $blueArrowData?.coords?.x !== undefined}
 		<Arrow arrowData={$redArrowData} />
 		<Arrow arrowData={$blueArrowData} />
-	{:else}
-		<g class="loading-overlay">
-			<text x="50%" y="50%" text-anchor="middle" fill="#666">Initializing props...</text>
-		</g>
 	{/if}
 </svg>
 

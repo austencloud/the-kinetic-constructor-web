@@ -1,12 +1,11 @@
 import type { Letter } from './Letter';
-import type { MotionInterface } from '../components/Pictograph/Motion/MotionInterface';
 import type { TKAPosition } from './TKAPosition';
 import type { PropInterface } from '$lib/components/Pictograph/Prop/PropInterface';
 import type { Motion } from '$lib/components/Pictograph/Motion/Motion';
+import type { GridMode, VTGDir, VTGTiming } from '$lib/components/Pictograph/types/Types';
+import type { MotionInterface } from '$lib/components/Pictograph/Motion/MotionInterface';
 
-export type VTGDir = 'tog' | 'opp';
-export type VTGTiming = 'split' | 'same';
-export type GridMode = 'diamond' | 'box';
+
 export interface PictographInterface {
 	letter: Letter | null;
 	startPos: TKAPosition | null;

@@ -1,25 +1,9 @@
-export type MotionType = 'anti' | 'pro' | 'static' | 'dash' | 'float';
-export type ShiftMotionType = 'pro' | 'anti' | 'float';
-export type PropRotDir = 'cw' | 'ccw' | 'no_rot';
-export type GridMode = 'diamond' | 'box';
-export type Direction =
-	| 'up'
-	| 'down'
-	| 'left'
-	| 'right'
-	| 'upright'
-	| 'upleft'
-	| 'downright'
-	| 'downleft';
-export type Color = 'blue' | 'red' | null;
-export type LeadState = 'leading' | 'trailing' | null;
-export type HandRotDir = 'cw_handpath' | 'ccw_handpath' | 'dash' | 'static' | null;
-export type ShiftHandRotDir = 'cw_handpath' | 'ccw_handpath';
-export type Orientation = 'in' | 'out' | 'clock' | 'counter';
+
 import type { Loc } from '../Prop/PropInterface';
 import Arrow from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
 import type { PictographInterface } from '../../../types/PictographInterface';
+import type { Color, HandRotDir, LeadState, MotionType, Orientation, PropRotDir, TkaTurns } from '../types/Types';
 
 export interface MotionInterface {
 	pictographData: PictographInterface;
@@ -33,7 +17,7 @@ export interface MotionInterface {
 	endOri: Orientation | null;
 	propRotDir: PropRotDir;
 	color: Color;
-	turns: number;
+	turns: TkaTurns;
 	leadState: LeadState;
 	prefloatMotionType: MotionType | null;
 	prefloatPropRotDir: PropRotDir | null;
