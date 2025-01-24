@@ -1,3 +1,5 @@
+import type { HandRotDir } from "./MotionInterface";
+
 export class HandpathCalculator {
     private handRotDirMap: Record<string, string>;
 
@@ -57,7 +59,7 @@ export class HandpathCalculator {
         };
     }
 
-    getHandRotDir(startLoc: string, endLoc: string): string {
-        return this.handRotDirMap[`${startLoc},${endLoc}`] || 'no_hand_rotation_found';
+    getHandRotDir(startLoc: string, endLoc: string): HandRotDir {
+        return this.handRotDirMap[`${startLoc},${endLoc}`] as HandRotDir || null;
     }
 }

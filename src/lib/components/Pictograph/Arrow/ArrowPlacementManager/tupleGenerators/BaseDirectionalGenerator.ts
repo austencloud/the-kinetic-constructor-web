@@ -26,17 +26,9 @@ export abstract class BaseDirectionalGenerator {
 
 	public abstract generateDirectionalTuples(x: number, y: number): Array<[number, number]>;
 
-	/**
-	 * In Python, you wrote:
-	 *   if self.motion.prop.loc in ["ne", "nw", "se", "sw"]: => BOX
-	 *   elif in ["n", "s", "e", "w"]: => DIAMOND
-	 *
-	 * Adapt as needed. We'll assume you store `gridMode` in motion.pictographData.gridMode.
-	 */
+
 	protected _get_grid_mode(): GridMode {
-		// If you want to replicate the Python approach exactly:
-		// if (this.motion.startLoc in [NE, NW, SE, SW]) ...
-		// But usually you already have a gridMode on the pictographData:
+		// log the data
 		const mode = this.motion.pictographData.gridMode || DIAMOND;
 		if (mode !== BOX && mode !== DIAMOND) return DIAMOND;
 		return mode;

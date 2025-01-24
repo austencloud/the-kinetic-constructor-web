@@ -1,5 +1,7 @@
-import type { Orientation } from '../Prop/PropPlacementManager/PropTypes';
-import type { MotionType, Location, HandRotDir } from './MotionInterface';
+import { CLOCK, COUNTER, FLOAT, IN, OUT, PRO, STATIC } from '$lib/types/Constants';
+import type { Motion } from './Motion';
+import type { MotionType, HandRotDir, ShiftMotionType, ShiftMotionInterface, ShiftHandRotDir, Orientation } from './MotionInterface';
+
 
 export class MotionOriCalculator {
 	motion: any;
@@ -9,8 +11,8 @@ export class MotionOriCalculator {
 	}
 
 	calculateEndOri(): Orientation {
-		if (this.motion.motionType === 'float') {
-			return this.calculateFloatOrientation();
+		if (this.motion.motionType === FLOAT) {
+			return this.calculateFloatOrientation(this.motion, this.motion.motionData as ShiftMotionInterface);
 		}
 
 		const validTurns = [0, 0.5, 1, 1.5, 2, 2.5, 3];
@@ -28,7 +30,7 @@ export class MotionOriCalculator {
 	private calculateWholeTurnOrientation(): Orientation {
 		const { motionType, startOri } = this.motion;
 		const isEven = this.motion.turns % 2 === 0;
-		return motionType === 'pro' || motionType === 'static'
+		return motionType === PRO || motionType === STATIC
 			? isEven
 				? startOri
 				: this.switchOrientation(startOri)
@@ -36,55 +38,74 @@ export class MotionOriCalculator {
 				? this.switchOrientation(startOri)
 				: startOri;
 	}
-	calculateHalfTurnOrientation(): Orientation {
+
+	private calculateHalfTurnOrientation(): Orientation {
 		const { motionType, turns, startOri, propRotDir } = this.motion;
 
 		const orientationMap: Record<string, string> = {
-			'anti,cw,in': turns % 2 === 0.5 ? 'clock' : 'counter',
-			'anti,ccw,in': turns % 2 === 0.5 ? 'counter' : 'clock',
-			'anti,cw,out': turns % 2 === 0.5 ? 'counter' : 'clock',
-			'anti,ccw,out': turns % 2 === 0.5 ? 'clock' : 'counter',
-			'anti,cw,clock': turns % 2 === 0.5 ? 'out' : 'in',
-			'anti,ccw,clock': turns % 2 === 0.5 ? 'in' : 'out',
-			'anti,cw,counter': turns % 2 === 0.5 ? 'in' : 'out',
-			'anti,ccw,counter': turns % 2 === 0.5 ? 'out' : 'in',
+			'anti,cw,in': turns % 2 === 0.5 ? CLOCK : COUNTER,
+			'anti,ccw,in': turns % 2 === 0.5 ? COUNTER : CLOCK,
+			'anti,cw,out': turns % 2 === 0.5 ? COUNTER : CLOCK,
+			'anti,ccw,out': turns % 2 === 0.5 ? CLOCK : COUNTER,
+			'anti,cw,clock': turns % 2 === 0.5 ? OUT : IN,
+			'anti,ccw,clock': turns % 2 === 0.5 ? IN : OUT,
+			'anti,cw,counter': turns % 2 === 0.5 ? IN : OUT,
+			'anti,ccw,counter': turns % 2 === 0.5 ? OUT : IN,
 
-			'pro,cw,in': turns % 2 === 0.5 ? 'counter' : 'clock',
-			'pro,ccw,in': turns % 2 === 0.5 ? 'clock' : 'counter',
-			'pro,cw,out': turns % 2 === 0.5 ? 'clock' : 'counter',
-			'pro,ccw,out': turns % 2 === 0.5 ? 'counter' : 'clock',
-			'pro,cw,clock': turns % 2 === 0.5 ? 'in' : 'out',
-			'pro,ccw,clock': turns % 2 === 0.5 ? 'out' : 'in',
-			'pro,cw,counter': turns % 2 === 0.5 ? 'out' : 'in',
-			'pro,ccw,counter': turns % 2 === 0.5 ? 'in' : 'out'
+			'pro,cw,in': turns % 2 === 0.5 ? COUNTER : CLOCK,
+			'pro,ccw,in': turns % 2 === 0.5 ? CLOCK : COUNTER,
+			'pro,cw,out': turns % 2 === 0.5 ? CLOCK : COUNTER,
+			'pro,ccw,out': turns % 2 === 0.5 ? COUNTER : CLOCK,
+			'pro,cw,clock': turns % 2 === 0.5 ? IN : OUT,
+			'pro,ccw,clock': turns % 2 === 0.5 ? OUT : IN,
+			'pro,cw,counter': turns % 2 === 0.5 ? OUT : IN,
+			'pro,ccw,counter': turns % 2 === 0.5 ? IN : OUT
 		};
 
 		return orientationMap[`${motionType},${propRotDir},${startOri}`] || startOri;
 	}
 
-	calculateFloatOrientation(): Orientation {
-		const { startOri } = this.motion;
-		const handpathDirection: HandRotDir = this.motion.handRotDirCalculator.getHandRotDir(
-			this.motion.startLoc,
-			this.motion.endLoc
+	private calculateFloatOrientation(motion: Motion, motionData: ShiftMotionInterface): Orientation {
+		const { startOri } = motionData;
+		const handrotDir: HandRotDir = motion.handRotDirCalculator.getHandRotDir(
+			motionData.startLoc,
+			motionData.endLoc
 		);
+		if (handrotDir && !['cw_handpath', 'ccw_handpath'].includes(handrotDir)) {
+			throw new Error('Invalid handpath direction while calculating float orientation');
+		}
 
-		const orientationMap: Record<string, Record<HandRotDir, Orientation>> = {
-			in: { cw_handpath: 'clock', ccw_handpath: 'counter' },
-			out: { cw_handpath: 'counter', ccw_handpath: 'clock' },
-			clock: { cw_handpath: 'out', ccw_handpath: 'in' },
-			counter: { cw_handpath: 'in', ccw_handpath: 'out' }
+		const orientationMap: Record<Orientation, Record<ShiftHandRotDir, Orientation>> = {
+			in: {
+				cw_handpath: CLOCK,
+				ccw_handpath: COUNTER
+			},
+			out: {
+				cw_handpath: COUNTER,
+				ccw_handpath: CLOCK
+			},
+			clock: {
+				cw_handpath: OUT,
+				ccw_handpath: IN
+			},
+			counter: {
+				cw_handpath: IN,
+				ccw_handpath: OUT
+			}
 		};
 
-		return orientationMap[startOri]?.[handpathDirection] || startOri;
+		if (!handrotDir) {
+			throw new Error('Invalid handpath direction');
+		}
+		return orientationMap[startOri][handrotDir as ShiftHandRotDir];
 	}
 
-	private switchOrientation(ori: 'in' | 'out' | 'clock' | 'counter'): string {
-		const orientationMap: { [key in 'in' | 'out' | 'clock' | 'counter']: string } = {
-			in: 'out',
-			out: 'in',
-			clock: 'counter',
-			counter: 'clock'
+	private switchOrientation(ori: Orientation): string {
+		const orientationMap: { [key in Orientation]: string } = {
+			in: OUT,
+			out: IN,
+			clock: COUNTER,
+			counter: CLOCK
 		};
 		return orientationMap[ori];
 	}

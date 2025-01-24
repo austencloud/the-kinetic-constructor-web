@@ -1,4 +1,18 @@
-import { ANTI, BOX, CLOCK, COUNTER, DASH, DIAMOND, FLOAT, IN, NONRADIAL, OUT, PRO, RADIAL, STATIC } from '$lib/types/Constants';
+import {
+	ANTI,
+	BOX,
+	CLOCK,
+	COUNTER,
+	DASH,
+	DIAMOND,
+	FLOAT,
+	IN,
+	NONRADIAL,
+	OUT,
+	PRO,
+	RADIAL,
+	STATIC
+} from '$lib/types/Constants';
 import { LetterType, LetterUtils } from '$lib/types/Letter';
 import type { GridMode, PictographInterface } from '$lib/types/PictographInterface';
 import type { GridData } from '../../Grid/GridInterface';
@@ -10,6 +24,8 @@ export class DefaultArrowPositioner {
 	private pictographData: PictographInterface;
 	private gridData: GridData;
 	private checker: PictographChecker;
+	private loaded = false;
+	private loadPromise: Promise<void>;
 
 	private allDefaults: {
 		diamond: Record<MotionType, any>;
@@ -35,16 +51,15 @@ export class DefaultArrowPositioner {
 		static: 'default_box_static_placements.json'
 	};
 
-	private loaded = false;
-
 	constructor(pictographData: PictographInterface, gridData: GridData, checker: PictographChecker) {
 		this.pictographData = pictographData;
 		this.gridData = gridData;
 		this.checker = checker;
+		this.loadPromise = this.loadAllDefaultPlacements();
+	}
 
-		this.loadAllDefaultPlacements().catch((err) =>
-			console.error('Error loading arrow placement JSON:', err)
-		);
+	public async waitUntilLoaded(): Promise<void> {
+		await this.loadPromise;
 	}
 
 	private async loadAllDefaultPlacements(): Promise<void> {
@@ -76,12 +91,14 @@ export class DefaultArrowPositioner {
 
 		this.loaded = true;
 	}
-
+	public isLoaded(): boolean {
+		return this.loaded;
+	}
 	public getDefaultAdjustment(arrow: ArrowInterface): [number, number] {
 		if (!this.loaded) {
 			console.warn('DefaultArrowPositioner data not fully loaded yet.');
 			return [0, 0];
-		}
+		  }
 
 		const motionType = arrow.motion.motionType as MotionType;
 		let gridMode = (this.pictographData.gridMode ?? DIAMOND).toLowerCase();

@@ -31,7 +31,7 @@ export class Motion implements MotionInterface {
 	endOri: Orientation = 'in';
 	handRotDir: HandRotDir = null;
 	pictographData: PictographInterface;
-
+	motionData: MotionInterface;
 	prop: Prop | null = null;
 	arrow: Arrow | null = null;
 
@@ -40,74 +40,30 @@ export class Motion implements MotionInterface {
 	updater: MotionUpdater;
 	handRotDirCalculator: HandRotDirCalculator;
 
-	constructor(motionData: MotionInterface) {
-		const {
-			pictographData,
-			motionType = 'static',
-			startLoc = 'n',
-			endLoc = 'n',
-			startOri = 'in',
-			propRotDir = 'no_rot',
-			color = 'blue',
-			turns = 0,
-			leadState = 'trailing',
-			prefloatMotionType = null,
-			prefloatPropRotDir = null,
-			arrow,
-			prop
-		} = motionData;
-
+	constructor(pictographData: PictographInterface, motionData: MotionInterface) {
+		// log the motion data
+		this.motionData = motionData;
 		this.pictographData = pictographData;
-		this.motionType = motionType;
-		this.startLoc = startLoc;
-		this.endLoc = endLoc;
-		this.startOri = startOri;
-		this.propRotDir = propRotDir;
-		this.color = color;
-		this.turns = turns;
-		this.leadState = leadState;
-		this.prefloatMotionType = prefloatMotionType;
-		this.prefloatPropRotDir = prefloatPropRotDir;
-
-		this.arrow = arrow || null;
-		this.prop = prop || null;
-
+		this.motionData.pictographData = pictographData;
+		this.motionType = motionData.motionType;
+		this.startLoc = motionData.startLoc;
+		this.endLoc = motionData.endLoc;
+		this.startOri = motionData.startOri;
+		this.propRotDir = motionData.propRotDir;
+		this.color = motionData.color;
+		this.turns = motionData.turns;
+		this.leadState = motionData.leadState;
+		this.prefloatMotionType = motionData.prefloatMotionType;
+		this.prefloatPropRotDir = motionData.prefloatPropRotDir;
+		
 		this.checker = new MotionChecker(this);
 		this.oriCalculator = new MotionOriCalculator(this);
 		this.updater = new MotionUpdater(this);
 		this.handRotDirCalculator = new HandRotDirCalculator();
-
-		this.endOri = this.oriCalculator.calculateEndOri();
+		
+		this.motionData.endOri = this.oriCalculator.calculateEndOri();
+		console.log('motionData', motionData);
 		this.validatePrefloatProperties();
-	}
-
-	updateMotionData(newData: Partial<MotionInterface>): void {
-		Object.assign(this, newData);
-		this.endOri = this.oriCalculator.calculateEndOri();
-	}
-
-	updateAttributes(attributes: Partial<MotionInterface>): void {
-		Object.assign(this, attributes);
-
-		if (this.prefloatMotionType === 'float') {
-			throw new Error("`prefloatMotionType` cannot be 'float'");
-		}
-		if (this.prefloatPropRotDir === 'no_rot') {
-			throw new Error("`prefloatPropRotDir` cannot be 'no_rot'");
-		}
-	}
-
-	getAttributes(): Record<string, any> {
-		return {
-			motionType: this.motionType,
-			startLoc: this.startLoc,
-			endLoc: this.endLoc,
-			startOri: this.startOri,
-			endOri: this.endOri,
-			propRotDir: this.propRotDir,
-			color: this.color,
-			turns: this.turns
-		};
 	}
 
 	assignLeadStates(): void {

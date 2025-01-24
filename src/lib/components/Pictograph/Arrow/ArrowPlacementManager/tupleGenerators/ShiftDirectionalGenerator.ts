@@ -11,13 +11,8 @@ import {
 	FLOAT,
 	PRO
 } from '$lib/types/Constants';
-import type { MotionType, ShiftMotion } from '../../../Motion/MotionInterface';
+import type { MotionType, ShiftMotionType } from '../../../Motion/MotionInterface';
 
-/**
- * Equivalent to your Python ShiftDirectionalGenerator,
- * with separate methods for diamond_pro, diamond_anti, diamond_float,
- * and likewise for box.
- */
 export class ShiftDirectionalGenerator extends BaseDirectionalGenerator {
 	constructor(motion: Motion) {
 		super(motion);
@@ -28,20 +23,21 @@ export class ShiftDirectionalGenerator extends BaseDirectionalGenerator {
 		let directionalFn: (x: number, y: number) => Array<[number, number]>;
 
 		if (gridMode === DIAMOND) {
-			const diamondMap: Record<ShiftMotion, (x: number, y: number) => Array<[number, number]>> = {
-				[PRO]: this._generate_diamond_pro_directional_tuples.bind(this),
-				[ANTI]: this._generate_diamond_anti_directional_tuples.bind(this),
-				[FLOAT]: this._generate_diamond_float_directional_tuples.bind(this)
-			};
-			directionalFn = diamondMap[this.motion.motionType as ShiftMotion] ?? (() => []);
+			const diamondMap: Record<ShiftMotionType, (x: number, y: number) => Array<[number, number]>> =
+				{
+					[PRO]: this._generate_diamond_pro_directional_tuples.bind(this),
+					[ANTI]: this._generate_diamond_anti_directional_tuples.bind(this),
+					[FLOAT]: this._generate_diamond_float_directional_tuples.bind(this)
+				};
+			directionalFn = diamondMap[this.motion.motionType as ShiftMotionType] ?? (() => []);
 		} else {
 			// BOX
-			const boxMap: Record<ShiftMotion, (x: number, y: number) => Array<[number, number]>> = {
+			const boxMap: Record<ShiftMotionType, (x: number, y: number) => Array<[number, number]>> = {
 				[PRO]: this._generate_box_pro_directional_tuples.bind(this),
 				[ANTI]: this._generate_box_anti_directional_tuples.bind(this),
 				[FLOAT]: this._generate_box_float_directional_tuples.bind(this)
 			};
-			directionalFn = boxMap[this.motion.motionType as ShiftMotion] ?? (() => []);
+			directionalFn = boxMap[this.motion.motionType as ShiftMotionType] ?? (() => []);
 		}
 
 		return directionalFn(x, y);
@@ -108,7 +104,7 @@ export class ShiftDirectionalGenerator extends BaseDirectionalGenerator {
 				[-x, y]
 			]
 		};
-		return directionMap[handpathDirection] ?? [];
+		return handpathDirection ? directionMap[handpathDirection] : [];
 	}
 
 	private _generate_box_pro_directional_tuples(x: number, y: number): Array<[number, number]> {
@@ -166,6 +162,6 @@ export class ShiftDirectionalGenerator extends BaseDirectionalGenerator {
 				[-x, y]
 			]
 		};
-		return directionMap[handpathDirection] ?? [];
+		return handpathDirection ? directionMap[handpathDirection] : [];
 	}
 }

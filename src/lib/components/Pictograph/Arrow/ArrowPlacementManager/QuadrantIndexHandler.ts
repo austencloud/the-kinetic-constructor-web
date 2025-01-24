@@ -1,31 +1,34 @@
 // QuadrantIndexHandler.ts
+import type { PictographInterface } from '$lib/types/PictographInterface';
+import type { GridData } from '../../Grid/GridInterface';
 import type { ArrowInterface } from '../ArrowInterface';
 
 export class QuadrantIndexHandler {
-	constructor(/* references? e.g. PictographData */) {}
+
+	private pictographData: PictographInterface;
+	private gridData: GridData;
+
+	constructor(pictographData: any, gridData: any) {
+		this.pictographData = pictographData;
+		this.gridData = gridData;
+	}
 
 	public getQuadrantIndex(arrow: ArrowInterface): number {
-		// The Python logic:
-		//  - if diamond, check if arrow.motion.motion_type in [PRO, ANTI, FLOAT], use _diamond_shift_quadrant_index
-		//  - else if diamond, motion_type in [STATIC, DASH], use _diamond_static_dash_quadrant_index
-		//  - if box, ...
-		// For simplicity, do a direct approach:
-
-		const gridMode = arrow.pictograph?.gridMode || 'diamond';
+		const gridMode = this.pictographData.gridMode || 'diamond';
 		const motionType = arrow.motion.motionType;
 
 		// Replace with your actual 4-case checks:
 		if (gridMode === 'diamond') {
 			if (['pro', 'anti', 'float'].includes(motionType)) {
-				return this.diamondShiftQuadrantIndex(arrow.loc);
+				return this.diamondShiftQuadrantIndex(arrow.loc ?? '');
 			} else if (['static', 'dash'].includes(motionType)) {
-				return this.diamondStaticDashQuadrantIndex(arrow.loc);
+				return this.diamondStaticDashQuadrantIndex(arrow.loc ?? '');
 			}
 		} else if (gridMode === 'box') {
 			if (['pro', 'anti', 'float'].includes(motionType)) {
-				return this.boxShiftQuadrantIndex(arrow.loc);
+				return this.boxShiftQuadrantIndex(arrow.loc ?? '');
 			} else if (['static', 'dash'].includes(motionType)) {
-				return this.boxStaticDashQuadrantIndex(arrow.loc);
+				return this.boxStaticDashQuadrantIndex(arrow.loc ?? '');
 			}
 		}
 		return 0;

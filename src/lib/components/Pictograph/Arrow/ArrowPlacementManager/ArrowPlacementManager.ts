@@ -6,12 +6,12 @@ import type { PictographChecker } from '../../PictographChecker';
 import { ArrowAdjustmentCalculator } from './ArrowAdjustmentCalculator';
 import { ArrowInitialPosCalculator } from './ArrowInitialPositionCalculator';
 import { DefaultArrowPositioner } from './DefaultArrowPositioner';
+import { QuadrantIndexHandler } from './QuadrantIndexHandler';
 
 export class ArrowPlacementManager {
 	private initialPosCalculator: ArrowInitialPosCalculator;
 	private adjustmentCalculator: ArrowAdjustmentCalculator;
 	private defaultPositioner: DefaultArrowPositioner;
-
 	constructor(
 		private pictographData: PictographInterface,
 		private gridData: GridData,
@@ -19,7 +19,8 @@ export class ArrowPlacementManager {
 	) {
 		this.defaultPositioner = new DefaultArrowPositioner(pictographData, gridData, checker);
 		this.initialPosCalculator = new ArrowInitialPosCalculator(pictographData, gridData);
-		this.adjustmentCalculator = new ArrowAdjustmentCalculator(this.defaultPositioner);
+		this.adjustmentCalculator = new ArrowAdjustmentCalculator(this.defaultPositioner, pictographData, gridData);
+	
 	}
 
 	public updateArrowPlacements(arrows: ArrowInterface[]): void {

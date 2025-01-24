@@ -44,8 +44,8 @@
 				await tick();
 
 				if (pictographData.redMotionData && pictographData.blueMotionData) {
-					const redMotion = new Motion(pictographData.redMotionData);
-					const blueMotion = new Motion(pictographData.blueMotionData);
+					const redMotion = new Motion(pictographData, pictographData.redMotionData);
+					const blueMotion = new Motion(pictographData, pictographData.blueMotionData);
 					const redProp = createPropData(redMotion);
 					const blueProp = createPropData(blueMotion);
 					const redArrow = createArrowData(redMotion, getter);
