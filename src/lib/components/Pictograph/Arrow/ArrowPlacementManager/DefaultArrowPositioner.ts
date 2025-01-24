@@ -1,83 +1,68 @@
-// DefaultArrowPositioner.ts
 import {
 	PRO, ANTI, FLOAT, DASH, STATIC,
 	DIAMOND, BOX, RADIAL, NONRADIAL, CLOCK, COUNTER, IN, OUT
-  } from '$lib/types/Constants';
-  
-  import type { MotionType } from '../../Motion/MotionInterface';
-  import type { PictographInterface } from '$lib/types/PictographInterface';
-  import type { GridData } from '../../Grid/GridInterface';
-  import type { PictographChecker } from '../../PictographChecker';
-  import type { ArrowInterface } from '../ArrowInterface';
-  import { LetterType, LetterUtils } from '$lib/types/Letter';
-  
-  // 1) Import each JSON from the *src* directory:
-  import diamondProData from '$lib/data/arrow_placement/diamond/default/default_diamond_pro_placements.json';
-  import diamondAntiData from '$lib/data/arrow_placement/diamond/default/default_diamond_anti_placements.json';
-  import diamondFloatData from '$lib/data/arrow_placement/diamond/default/default_diamond_float_placements.json';
-  import diamondDashData from '$lib/data/arrow_placement/diamond/default/default_diamond_dash_placements.json';
-  import diamondStaticData from '$lib/data/arrow_placement/diamond/default/default_diamond_static_placements.json';
-  
-  import boxProData from '$lib/data/arrow_placement/box/default/default_box_pro_placements.json';
-  import boxAntiData from '$lib/data/arrow_placement/box/default/default_box_anti_placements.json';
-  import boxFloatData from '$lib/data/arrow_placement/box/default/default_box_float_placements.json';
-  import boxDashData from '$lib/data/arrow_placement/box/default/default_box_dash_placements.json';
-  import boxStaticData from '$lib/data/arrow_placement/box/default/default_box_static_placements.json';
-  
-  /**
-   * Synchronous approach: The JSON objects are fully loaded at build time,
-   * so no async fetch is needed.
-   */
-  export class DefaultArrowPositioner {
-  
+} from '$lib/types/Constants';
+
+import type { MotionType } from '../../Motion/MotionInterface';
+import type { PictographInterface } from '$lib/types/PictographInterface';
+import type { GridData } from '../../Grid/GridInterface';
+import type { PictographChecker } from '../../PictographChecker';
+import type { ArrowInterface } from '../ArrowInterface';
+import { LetterType, LetterUtils } from '$lib/types/Letter';
+
+import diamondProData from '$lib/data/arrow_placement/diamond/default/default_diamond_pro_placements.json';
+import diamondAntiData from '$lib/data/arrow_placement/diamond/default/default_diamond_anti_placements.json';
+import diamondFloatData from '$lib/data/arrow_placement/diamond/default/default_diamond_float_placements.json';
+import diamondDashData from '$lib/data/arrow_placement/diamond/default/default_diamond_dash_placements.json';
+import diamondStaticData from '$lib/data/arrow_placement/diamond/default/default_diamond_static_placements.json';
+
+import boxProData from '$lib/data/arrow_placement/box/default/default_box_pro_placements.json';
+import boxAntiData from '$lib/data/arrow_placement/box/default/default_box_anti_placements.json';
+import boxFloatData from '$lib/data/arrow_placement/box/default/default_box_float_placements.json';
+import boxDashData from '$lib/data/arrow_placement/box/default/default_box_dash_placements.json';
+import boxStaticData from '$lib/data/arrow_placement/box/default/default_box_static_placements.json';
+
+export class DefaultArrowPositioner {
+
 	private allDefaults: {
-	  diamond: Record<MotionType, any>;
-	  box: Record<MotionType, any>;
+		diamond: Record<MotionType, any>;
+		box: Record<MotionType, any>;
 	} = {
-	  diamond: {
-		pro: diamondProData,
-		anti: diamondAntiData,
-		float: diamondFloatData,
-		dash: diamondDashData,
-		static: diamondStaticData
-	  },
-	  box: {
-		pro: boxProData,
-		anti: boxAntiData,
-		float: boxFloatData,
-		dash: boxDashData,
-		static: boxStaticData
-	  }
+		diamond: {
+			pro: diamondProData,
+			anti: diamondAntiData,
+			float: diamondFloatData,
+			dash: diamondDashData,
+			static: diamondStaticData
+		},
+		box: {
+			pro: boxProData,
+			anti: boxAntiData,
+			float: boxFloatData,
+			dash: boxDashData,
+			static: boxStaticData
+		}
 	};
-  
+
 	constructor(
-	  private pictographData: PictographInterface,
-	  private gridData: GridData,
-	  private checker: PictographChecker
-	) {
-	  // Instantly have data, no fetch needed
-	}
-  
+		private pictographData: PictographInterface,
+		private gridData: GridData,
+		private checker: PictographChecker
+	) {}
+
 	public getDefaultAdjustment(arrowData: ArrowInterface): [number, number] {
-	  const motionType = arrowData.motion.motionType as MotionType;
-	  const gridMode = this.pictographData.gridMode || DIAMOND;
-  
-	  // Synchronous dictionary
-	  const defaultPlacements = this.allDefaults[gridMode][motionType] || {};
-  
-	  // Build the orientation/letter-based key
-	  const key = this._get_adjustment_key(arrowData, defaultPlacements);
-	  const turnsString = String(arrowData.motion.turns);
-  
-	  console.log('all defaults:', this.allDefaults);
-	  console.log('default placements:', defaultPlacements);
-  
-	  if (key in defaultPlacements && turnsString in defaultPlacements[key]) {
-		return defaultPlacements[key][turnsString];
-	  } else if (motionType in defaultPlacements && turnsString in defaultPlacements[motionType]) {
-		return defaultPlacements[motionType][turnsString];
-	  }
-	  return [0, 0];
+		const motionType = arrowData.motion.motionType as MotionType;
+		const gridMode = this.pictographData.gridMode || DIAMOND;
+		const defaultPlacements = this.allDefaults[gridMode][motionType] || {};
+		const key = this._get_adjustment_key(arrowData, defaultPlacements);
+		const turnsString = String(arrowData.motion.turns);
+
+		if (key in defaultPlacements && turnsString in defaultPlacements[key]) {
+			return defaultPlacements[key][turnsString];
+		} else if (motionType in defaultPlacements && turnsString in defaultPlacements[motionType]) {
+			return defaultPlacements[motionType][turnsString];
+		}
+		return [0, 0];
 	}
 
 	private _get_adjustment_key(arrow: ArrowInterface, defaultPlacements: any): string {
