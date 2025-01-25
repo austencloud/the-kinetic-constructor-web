@@ -1,4 +1,4 @@
-import type { DirRelation, PropRotDir, TkaTurns } from "../../types/Types";
+import type { DirRelation, PropRotDir, TkaTurns } from '../../types/Types';
 
 export const SAME = 's';
 export const OPP = 'o';
@@ -9,7 +9,7 @@ const validTurnNums = [0, 0.5, 1, 1.5, 2, 2.5, 3];
 
 export function parseTurnsTupleString(
 	turnsStr: string
-): [DirRelation | PropRotDir, TkaTurns, TkaTurns] {
+): [DirRelation | PropRotDir | null, TkaTurns, TkaTurns] {
 	const cleaned = turnsStr.replace(/[()]/g, '').trim();
 	const parts = cleaned.split(',').map((p) => p.trim());
 	const [dirRaw, topRaw, bottomRaw] = parts;
@@ -17,8 +17,8 @@ export function parseTurnsTupleString(
 	const direction = parseDirection(dirRaw);
 	const topVal = parseTurnValue(topRaw);
 	const bottomVal = parseTurnValue(bottomRaw);
-
-	return [direction ?? 's', topVal ?? 0, bottomVal ?? 0];
+	
+	return [direction ?? null, topVal ?? 0, bottomVal ?? 0];
 }
 
 function parseDirection(item: string | undefined): DirRelation | PropRotDir | null {

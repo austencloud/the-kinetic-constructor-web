@@ -23,7 +23,7 @@ const getCenterPoint = (doc: Document, viewBox: ImportedSvgData['viewBox']) => {
 export default class PropSvgLoader {
 	static async load(propType: string): Promise<ImportedSvgData> {
 		const response = await fetch(`/images/props/${propType}.svg`);
-		if (!response.ok) throw new Error(`Failed to load SVG: ${propType}`);
+		if (!response.ok) throw new Error(`Failed to load prop SVG: ${propType}`);
 
 		const svgText = await response.text();
 		const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');

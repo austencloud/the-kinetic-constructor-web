@@ -3,12 +3,10 @@ import {
 	DIAMOND, BOX, RADIAL, NONRADIAL, CLOCK, COUNTER, IN, OUT
 } from '$lib/types/Constants';
 
-import type { MotionType } from '../../Motion/MotionInterface';
 import type { PictographInterface } from '$lib/types/PictographInterface';
 import type { GridData } from '../../Grid/GridInterface';
 import type { PictographChecker } from '../../PictographChecker';
 import type { ArrowInterface } from '../ArrowInterface';
-import { LetterType, LetterUtils } from '$lib/types/Letter';
 
 import diamondProData from '$lib/data/arrow_placement/diamond/default/default_diamond_pro_placements.json';
 import diamondAntiData from '$lib/data/arrow_placement/diamond/default/default_diamond_anti_placements.json';
@@ -21,6 +19,9 @@ import boxAntiData from '$lib/data/arrow_placement/box/default/default_box_anti_
 import boxFloatData from '$lib/data/arrow_placement/box/default/default_box_float_placements.json';
 import boxDashData from '$lib/data/arrow_placement/box/default/default_box_dash_placements.json';
 import boxStaticData from '$lib/data/arrow_placement/box/default/default_box_static_placements.json';
+import type { MotionType } from '../../types/Types';
+import { LetterUtils } from '../../LetterUtils';
+import { LetterType } from '$lib/types/LetterType';
 
 export class DefaultArrowPositioner {
 

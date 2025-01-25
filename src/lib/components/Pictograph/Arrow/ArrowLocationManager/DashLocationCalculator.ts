@@ -2,16 +2,20 @@ import { Letter } from '$lib/types/Letter';
 import type { Motion } from '../../Motion/Motion';
 import type { PictographGetter } from '../../PictographGetter';
 import Arrow from '../Arrow.svelte';
+import {
+    RED, BLUE, NORTH, EAST, SOUTH, WEST, NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST,
+    CLOCKWISE, COUNTER_CLOCKWISE, DIAMOND, BOX
+} from '$lib/types/Constants';
 
 export default class DashLocationCalculator {
     private motion: Motion;
     private getter: PictographGetter;
-  
+
     constructor(motion: Motion, getter: PictographGetter) {
-      this.motion = motion;
-      this.getter = getter;
+        this.motion = motion;
+        this.getter = getter;
     }
-  
+
     calculateLocation(): string {
         if (this.motion.pictographData.letter && [Letter.Φ_DASH, Letter.Ψ_DASH].includes(this.motion.pictographData.letter)) {
             return this._getPhiDashPsiDashLocation();
@@ -33,10 +37,22 @@ export default class DashLocationCalculator {
 
         if (this.motion.turns === 0 && otherMotion && otherMotion.turns === 0) {
             const locationMap: { [key: string]: string } = {
-                RED_NORTH_SOUTH: 'se',
-                RED_EAST_WEST: 'ne',
-                BLUE_NORTH_SOUTH: 'nw',
-                BLUE_EAST_WEST: 'sw'
+                [`${RED}_${NORTH}_${SOUTH}`]: EAST,
+                [`${RED}_${EAST}_${WEST}`]: NORTH,
+                [`${RED}_${SOUTH}_${NORTH}`]: EAST,
+                [`${RED}_${WEST}_${EAST}`]: NORTH,
+                [`${BLUE}_${NORTH}_${SOUTH}`]: WEST,
+                [`${BLUE}_${EAST}_${WEST}`]: SOUTH,
+                [`${BLUE}_${SOUTH}_${NORTH}`]: WEST,
+                [`${BLUE}_${WEST}_${EAST}`]: SOUTH,
+                [`${RED}_${NORTHWEST}_${SOUTHEAST}`]: NORTHEAST,
+                [`${RED}_${NORTHEAST}_${SOUTHWEST}`]: SOUTHEAST,
+                [`${RED}_${SOUTHWEST}_${NORTHEAST}`]: SOUTHEAST,
+                [`${RED}_${SOUTHEAST}_${NORTHWEST}`]: NORTHEAST,
+                [`${BLUE}_${NORTHWEST}_${SOUTHEAST}`]: SOUTHWEST,
+                [`${BLUE}_${NORTHEAST}_${SOUTHWEST}`]: NORTHWEST,
+                [`${BLUE}_${SOUTHWEST}_${NORTHEAST}`]: NORTHWEST,
+                [`${BLUE}_${SOUTHEAST}_${NORTHWEST}`]: SOUTHWEST
             };
 
             const key = `${this.motion.color}_${this.motion.startLoc}_${this.motion.endLoc}`;
@@ -53,8 +69,22 @@ export default class DashLocationCalculator {
     private _getLambdaZeroTurnsLocation(): string {
         const otherMotion = this.getter.getOtherMotion(this.motion);
         const locMap: { [key: string]: string } = {
-            NORTH_SOUTH_WEST: 'se',
-            EAST_WEST_SOUTH: 'ne'
+            [`${NORTH}_${SOUTH}_${WEST}`]: EAST,
+            [`${EAST}_${WEST}_${SOUTH}`]: NORTH,
+            [`${NORTH}_${SOUTH}_${EAST}`]: WEST,
+            [`${WEST}_${EAST}_${SOUTH}`]: NORTH,
+            [`${SOUTH}_${NORTH}_${WEST}`]: EAST,
+            [`${EAST}_${WEST}_${NORTH}`]: SOUTH,
+            [`${SOUTH}_${NORTH}_${EAST}`]: WEST,
+            [`${WEST}_${EAST}_${NORTH}`]: SOUTH,
+            [`${NORTHEAST}_${SOUTHWEST}_${NORTHWEST}`]: SOUTHEAST,
+            [`${NORTHWEST}_${SOUTHEAST}_${NORTHEAST}`]: SOUTHWEST,
+            [`${SOUTHWEST}_${NORTHEAST}_${SOUTHEAST}`]: NORTHWEST,
+            [`${SOUTHEAST}_${NORTHWEST}_${SOUTHWEST}`]: NORTHEAST,
+            [`${NORTHEAST}_${SOUTHWEST}_${SOUTHEAST}`]: NORTHWEST,
+            [`${NORTHWEST}_${SOUTHEAST}_${SOUTHWEST}`]: NORTHEAST,
+            [`${SOUTHWEST}_${NORTHEAST}_${NORTHWEST}`]: SOUTHEAST,
+            [`${SOUTHEAST}_${NORTHWEST}_${NORTHEAST}`]: SOUTHWEST
         };
 
         const key = `${this.motion.startLoc}_${this.motion.endLoc}_${otherMotion?.endLoc ?? ''}`;
@@ -63,8 +93,14 @@ export default class DashLocationCalculator {
 
     private _defaultZeroTurnsDashLocation(): string {
         const locationMap: { [key: string]: string } = {
-            NORTH_SOUTH: 'se',
-            EAST_WEST: 'sw'
+            [`${NORTH}_${SOUTH}`]: EAST,
+            [`${EAST}_${WEST}`]: SOUTH,
+            [`${SOUTH}_${NORTH}`]: WEST,
+            [`${WEST}_${EAST}`]: NORTH,
+            [`${NORTHEAST}_${SOUTHWEST}`]: SOUTHEAST,
+            [`${NORTHWEST}_${SOUTHEAST}`]: NORTHEAST,
+            [`${SOUTHWEST}_${NORTHEAST}`]: NORTHWEST,
+            [`${SOUTHEAST}_${NORTHWEST}`]: SOUTHWEST
         };
 
         const key = `${this.motion.startLoc}_${this.motion.endLoc}`;
@@ -73,13 +109,25 @@ export default class DashLocationCalculator {
 
     private _dashLocationNonZeroTurns(motion = this.motion): string {
         const locMap: { [key: string]: { [key: string]: string } } = {
-            CLOCKWISE: {
-                NORTH: 'se',
-                EAST: 'sw'
+            [CLOCKWISE]: {
+                [NORTH]: EAST,
+                [EAST]: SOUTH,
+                [SOUTH]: WEST,
+                [WEST]: NORTH,
+                [NORTHEAST]: SOUTHEAST,
+                [SOUTHEAST]: SOUTHWEST,
+                [SOUTHWEST]: NORTHWEST,
+                [NORTHWEST]: NORTHEAST
             },
-            COUNTER_CLOCKWISE: {
-                NORTH: 'nw',
-                EAST: 'ne'
+            [COUNTER_CLOCKWISE]: {
+                [NORTH]: WEST,
+                [EAST]: NORTH,
+                [SOUTH]: EAST,
+                [WEST]: SOUTH,
+                [NORTHEAST]: NORTHWEST,
+                [SOUTHEAST]: NORTHEAST,
+                [SOUTHWEST]: SOUTHEAST,
+                [NORTHWEST]: SOUTHWEST
             }
         };
 

@@ -2,18 +2,27 @@
 <script lang="ts">
 	import type { Letter } from '$lib/types/Letter';
 	export let letter: Letter | null = null;
-  
-	// Show if letter includes '-'
-	const hasDash = letter ? letter.includes('-') : false;
+	export let letterRect: {left: number, right: number, top: number, bottom: number, width: number, height: number};
   
 	let dashPath = '/images/dash.svg';
+	let dashVisible = false;
+	let dashX = 0;
+	let dashY = 0;
+	let dashWidth = 20;
+	let dashHeight = 20;
+	const padding = 5;
   
-	// We'll place it at x=60 if letter is 50 wide
-	let dashX = 60;
-	let dashY = 10;
+	$: dashVisible = letter ? letter.includes('-') : false;
+  
+	// replicate python logic: x = letterRect.right + 5, y = letterRect.centerY - dashHeight/2
+	$: {
+	  let centerY = letterRect.top + letterRect.height / 2;
+	  dashX = letterRect.right + padding;
+	  dashY = centerY - dashHeight / 2;
+	}
   </script>
   
-  <g class="tka-dash" opacity={hasDash ? 1 : 0}>
-	<image href={dashPath} width="20" height="20" x={dashX} y={dashY} />
+  <g class="tka-dash" opacity={dashVisible ? 1 : 0} transform={`translate(${dashX}, ${dashY})`}>
+	<image href={dashPath} width={dashWidth} height={dashHeight} />
   </g>
   

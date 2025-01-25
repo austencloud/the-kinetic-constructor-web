@@ -20,7 +20,7 @@ export class ArrowInitialPosCalculator {
 				return this.getShiftCoords(arrow);
 			case STATIC:
 			case DASH:
-				return this.getStaticCoords(arrow);
+				return this.getStaticDashCoords(arrow);
 			default:
 				return { x: 0, y: 0 };
 		}
@@ -37,12 +37,12 @@ export class ArrowInitialPosCalculator {
 		return shiftCoord;
 	}
 
-	private getStaticCoords(arrow: ArrowInterface): { x: number; y: number } {
+	private getStaticDashCoords(arrow: ArrowInterface): { x: number; y: number } {
 		const pointName = `${arrow.loc}_${this.pictographData.gridMode || 'diamond'}_hand_point`;
 
 		const staticCoord = this.getStaticCoordFromGrid(pointName);
 		if (!staticCoord) {
-			console.warn(`Static coordinate for '${pointName}' not found.`);
+			console.warn(`Static/Dash coordinate for '${pointName}' not found.`);
 			return { x: 0, y: 0 };
 		}
 		return staticCoord;
@@ -54,7 +54,7 @@ export class ArrowInitialPosCalculator {
 	}
 
 	private getStaticCoordFromGrid(pointName: string): { x: number; y: number } | null {
-		const point = this.gridData.allHandPointsStrict[pointName];
+		const point = this.gridData.allHandPointsNormal[pointName];
 		return point?.coordinates ?? null;
 	}
 }

@@ -81,7 +81,7 @@
 			gridData = data;
 		}}
 	/>
-	<TKAGlyph letter={pictographData.letter} turnsTuple="(s, 0, 0)" x={50} y={850} />
+	<TKAGlyph letter={pictographData.letter} turnsTuple="(s, 0, 0)" x={50} y={800} />
 
 	{#if $redPropData?.coords?.x !== undefined && $bluePropData?.coords?.x !== undefined}
 		<Prop propData={$redPropData} />
@@ -107,7 +107,7 @@
 		transform: scale(1);
 		z-index: 1;
 		position: relative;
-		outline: 1px solid black;
+		border: 1px solid black;
 		aspect-ratio: 1;
 		margin: auto;
 		overflow: visible;
@@ -117,7 +117,7 @@
 	.pictograph:hover {
 		transform: scale(1.1);
 		z-index: 4;
-		outline: 4px solid gold;
+		border: 4px solid gold;
 	}
 
 	.pictograph:active {

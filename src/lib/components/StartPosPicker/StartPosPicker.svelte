@@ -23,7 +23,7 @@
 		const defaultStartPosKeys =
 			gridMode === 'diamond'
 				// ? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
-				? ['alpha1_alpha3']
+				? ['alpha1_gamma3']
 				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
 
 		startPositions = (data as PictographInterface[]).filter((entry) => {

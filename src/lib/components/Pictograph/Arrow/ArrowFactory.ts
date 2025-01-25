@@ -20,6 +20,6 @@ export function createArrowData(motion: Motion, getter: PictographGetter): Arrow
 	};
 
 	const rotAngleManager = new ArrowRotAngleManager(motion, loc);
-	arrowData.rotAngle = rotAngleManager.updateRotation();
+	arrowData.rotAngle = rotAngleManager.updateRotation(motion);
 	return arrowData;
 }

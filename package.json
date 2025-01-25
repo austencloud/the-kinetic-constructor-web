@@ -51,8 +51,8 @@
 	},
 	"dependencies": {
 		"@sveltejs/adapter-static": "^3.0.8",
+		"fs-extra": "^11.3.0",
 		"glob": "11.0.1",
 		"polished": "^4.3.1"
 	}
-	
 }

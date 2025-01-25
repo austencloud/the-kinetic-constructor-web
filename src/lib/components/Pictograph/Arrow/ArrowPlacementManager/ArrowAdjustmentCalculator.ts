@@ -24,8 +24,6 @@ export class ArrowAdjustmentCalculator {
 
     const dtManager = new DirectionalTupleManager(arrow.motion);
     const directionalAdjustments = dtManager.generateDirectionalTuples(x, y);
-    console.log('X:', x, 'Y:', y);
-    console.log('Directional Adjustments:', directionalAdjustments);
 
     if (!directionalAdjustments || directionalAdjustments.length === 0) {
       return { x, y };

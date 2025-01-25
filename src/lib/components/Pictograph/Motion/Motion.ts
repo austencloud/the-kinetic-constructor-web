@@ -1,12 +1,4 @@
-import type {
-	MotionInterface,
-	MotionType,
-	PropRotDir,
-	Color,
-	LeadState,
-	HandRotDir,
-	Orientation
-} from './MotionInterface';
+
 import { MotionChecker } from './MotionChecker';
 import { MotionOriCalculator } from './MotionOriCalculator';
 import { MotionUpdater } from './MotionUpdater';
@@ -16,6 +8,8 @@ import Prop from '../Prop/Prop.svelte';
 import type { PictographInterface } from '../../../types/PictographInterface';
 import { LeadStateDeterminer } from './LeadStateDeterminer';
 import type { Loc } from '../Prop/PropInterface';
+import type { Color, HandRotDir, LeadState, MotionType, Orientation, PropRotDir, TkaTurns } from '../types/Types';
+import type { MotionInterface } from './MotionInterface';
 
 export class Motion implements MotionInterface {
 	motionType: MotionType;
@@ -24,7 +18,7 @@ export class Motion implements MotionInterface {
 	startOri: Orientation;
 	propRotDir: PropRotDir;
 	color: Color;
-	turns: number;
+	turns: TkaTurns;
 	leadState: LeadState;
 	prefloatMotionType: MotionType | null = null;
 	prefloatPropRotDir: PropRotDir | null = null;
@@ -62,7 +56,6 @@ export class Motion implements MotionInterface {
 		this.handRotDirCalculator = new HandRotDirCalculator();
 		
 		this.motionData.endOri = this.oriCalculator.calculateEndOri();
-		console.log('motionData', motionData);
 		this.validatePrefloatProperties();
 	}
 

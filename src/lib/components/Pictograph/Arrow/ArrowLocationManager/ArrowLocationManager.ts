@@ -3,8 +3,8 @@ import DashLocationCalculator from './DashLocationCalculator';
 import ShiftLocationCalculator from './ShiftLocationCalculator';
 import StaticLocationCalculator from './StaticLocationCalculator';
 import type { Motion } from '../../Motion/Motion';
-import type { MotionType } from '../../Motion/MotionInterface';
 import type { PictographGetter } from '../../PictographGetter'; // <== import
+import type { MotionType } from '../../types/Types';
 
 export default class ArrowLocationManager {
   motion: Motion;
