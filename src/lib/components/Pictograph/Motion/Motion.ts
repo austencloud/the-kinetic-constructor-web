@@ -1,14 +1,20 @@
-
 import { MotionChecker } from './MotionChecker';
 import { MotionOriCalculator } from './MotionOriCalculator';
-import { MotionUpdater } from './MotionUpdater';
 import { HandpathCalculator as HandRotDirCalculator } from './HandpathCalculator';
-import Arrow from '../Arrow/Arrow.svelte';
+import ArrowInterface from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
 import type { PictographInterface } from '../../../types/PictographInterface';
 import { LeadStateDeterminer } from './LeadStateDeterminer';
 import type { Loc } from '../Prop/PropInterface';
-import type { Color, HandRotDir, LeadState, MotionType, Orientation, PropRotDir, TkaTurns } from '../types/Types';
+import type {
+	Color,
+	HandRotDir,
+	LeadState,
+	MotionType,
+	Orientation,
+	PropRotDir,
+	TKATurns
+} from '../types/Types';
 import type { MotionInterface } from './MotionInterface';
 
 export class Motion implements MotionInterface {
@@ -18,7 +24,7 @@ export class Motion implements MotionInterface {
 	startOri: Orientation;
 	propRotDir: PropRotDir;
 	color: Color;
-	turns: TkaTurns;
+	turns: TKATurns;
 	leadState: LeadState;
 	prefloatMotionType: MotionType | null = null;
 	prefloatPropRotDir: PropRotDir | null = null;
@@ -27,11 +33,10 @@ export class Motion implements MotionInterface {
 	pictographData: PictographInterface;
 	motionData: MotionInterface;
 	prop: Prop | null = null;
-	arrow: Arrow | null = null;
+	arrow: ArrowInterface | null = null;
 
 	checker: MotionChecker;
 	oriCalculator: MotionOriCalculator;
-	updater: MotionUpdater;
 	handRotDirCalculator: HandRotDirCalculator;
 
 	constructor(pictographData: PictographInterface, motionData: MotionInterface) {
@@ -49,12 +54,11 @@ export class Motion implements MotionInterface {
 		this.leadState = motionData.leadState;
 		this.prefloatMotionType = motionData.prefloatMotionType;
 		this.prefloatPropRotDir = motionData.prefloatPropRotDir;
-		
+
 		this.checker = new MotionChecker(this);
 		this.oriCalculator = new MotionOriCalculator(this);
-		this.updater = new MotionUpdater(this);
 		this.handRotDirCalculator = new HandRotDirCalculator();
-		
+
 		this.motionData.endOri = this.oriCalculator.calculateEndOri();
 		this.validatePrefloatProperties();
 	}
@@ -75,7 +79,7 @@ export class Motion implements MotionInterface {
 		}
 	}
 
-	attachComponents(prop: Prop, arrow: Arrow): void {
+	attachComponents(prop: Prop, arrow: ArrowInterface): void {
 		this.prop = prop;
 		this.arrow = arrow;
 	}

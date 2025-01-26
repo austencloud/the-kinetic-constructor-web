@@ -18,24 +18,28 @@ export default class ShiftLocationCalculator {
 		this.motion = motion;
 	}
 
-	calculateLocation(): Loc {
+	calculateLocation(): Loc | null {
 		const startLoc = this.motion.startLoc;
 		const endLoc = this.motion.endLoc;
 
-		const locationMap: { [key: string]: Loc } = {
-			'n-e': NORTHEAST,
-			'e-s': SOUTHEAST,
-			's-w': SOUTHWEST,
-			'w-n': NORTHWEST,
-			'ne-nw': NORTH,
-			'ne-se': EAST,
-			'sw-se': SOUTH,
-			'nw-sw': WEST
-		};
+		const directionPairs: Map<Set<string>, Loc> = new Map([
+			[new Set([NORTH, EAST]), NORTHEAST],
+			[new Set([EAST, SOUTH]), SOUTHEAST],
+			[new Set([SOUTH, WEST]), SOUTHWEST],
+			[new Set([WEST, NORTH]), NORTHWEST],
+			[new Set([NORTHEAST, NORTHWEST]), NORTH],
+			[new Set([NORTHEAST, SOUTHEAST]), EAST],
+			[new Set([SOUTHWEST, SOUTHEAST]), SOUTH],
+			[new Set([NORTHWEST, SOUTHWEST]), WEST]
+		]);
 
-		const key = `${startLoc}-${endLoc}`;
-		const location = locationMap[key] || null;
 
-		return location;
+		for (const [key, value] of directionPairs.entries()) {
+			if (key.has(startLoc) && key.has(endLoc)) {
+				return value;
+			}
+		}
+
+		return null;
 	}
 }

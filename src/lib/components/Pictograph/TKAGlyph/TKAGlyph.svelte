@@ -1,13 +1,12 @@
 <script lang="ts">
-	import TkaLetter from './Letter/TkaLetter.svelte';
-	import TkaDash from './Dash/TkaDash.svelte';
-	import TkaDotHandler from './Dot/TkaDotHandler.svelte';
-	import TkaTurnsNumberGroup from './Turns/TkaTurnsNumberGroup.svelte';
-
 	import { parseTurnsTupleString } from './Turns/parseTurnsTuple';
 	import type { Letter } from '$lib/types/Letter';
-	import type { DirRelation, PropRotDir, TkaTurns } from '../types/Types';
-	import { afterUpdate, onMount } from 'svelte';
+	import type { DirRelation, PropRotDir, TKATurns } from '../types/Types';
+	import TKADash from './Dash/TKADash.svelte';
+	import TKALetter from './Letter/TKALetter.svelte';
+	import TKADotHandler from './Dot/TKADotHandler.svelte';
+	import TKATurnsNumberGroup from './Turns/TKATurnsNumberGroup.svelte';
+
 
 	export let letter: Letter | null = null;
 	export let turnsTuple: string = '';
@@ -15,11 +14,10 @@
 	export let x: number = 0;
 	export let y: number = 0;
 
-	let letterRect = { left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 };
-
+	let letterRect = new DOMRect();
 	let firstTupleItem: DirRelation | PropRotDir | null = null;
-	let topTurn: TkaTurns = 0;
-	let bottomTurn: TkaTurns = 0;
+	let topTurn: TKATurns = 0;
+	let bottomTurn: TKATurns = 0;
 	let glyphBBox = { x: 0, y: 0, width: 0, height: 0 };
 	let glyphEl: SVGGElement | null = null;
 
@@ -33,30 +31,12 @@
 	}
 
 	function handleLetterBBox(e: CustomEvent) {
-		letterRect = e.detail; // store the real bounding rect
+		letterRect = e.detail; 
 	}
-	// 2) We'll measure the <g> using getBBox() after each update
-	onMount(() => {
-		measureGlyph();
-	});
-	afterUpdate(() => {
-		measureGlyph();
-	});
 
-	function measureGlyph() {
-		if (!glyphEl) return;
-		const bbox = glyphEl.getBBox(); // entire group bounding box
-		glyphBBox = {
-			x: bbox.x,
-			y: bbox.y,
-			width: bbox.width,
-			height: bbox.height
-		};
-	}
 </script>
 
 <g class="tka-glyph" bind:this={glyphEl} transform={`translate(${x}, ${y})`}>
-	<!-- The dynamic red rectangle follows the bounding box of the entire <g> -->
 	<rect
 		fill="none"
 		stroke="red"
@@ -66,14 +46,8 @@
 		width={glyphBBox.width}
 		height={glyphBBox.height}
 	/>
-	<TkaLetter {letter} on:letterBBox={handleLetterBBox} />
-	<TkaDash {letter} {letterRect} />
-	<TkaDotHandler direction={firstTupleItem} {letterRect} {letter} />
-	<TkaTurnsNumberGroup topValue={topTurn} bottomValue={bottomTurn} {letterRect} />
+	<TKALetter {letter} on:letterBBox={handleLetterBBox} />
+	<TKADash {letter} {letterRect} />
+	<TKADotHandler dir={firstTupleItem} {letterRect} {letter} />
+	<TKATurnsNumberGroup topValue={topTurn} bottomValue={bottomTurn} {letterRect} />
 </g>
-
-<style>
-	.tka-glyph {
-		border: 1px solid red;
-	}
-</style>

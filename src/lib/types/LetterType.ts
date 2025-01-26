@@ -38,9 +38,9 @@ export class LetterType {
 	static Type4 = new LetterType(['Φ', 'Ψ', 'Λ'], 'Dash', 'Type4');
 	static Type5 = new LetterType(['Φ-', 'Ψ-', 'Λ-'], 'Dual-Dash', 'Type5');
 	static Type6 = new LetterType(['α', 'β', 'Γ'], 'Static', 'Type6');
-	static Type7 = new LetterType(['ζ', 'η'], 'Special1', 'Type7');
-	static Type8 = new LetterType(['μ', 'ν'], 'Special2', 'Type8');
-	static Type9 = new LetterType(['τ', '⊕'], 'Special3', 'Type9');
+	static Type7 = new LetterType(['ζ', 'η'], 'Skewed', 'Type7');
+	static Type8 = new LetterType(['μ', 'ν'], 'TauShift', 'Type8');
+	static Type9 = new LetterType(['τ', '⊕'], 'Centric', 'Type9');
 
 	static AllTypes = [
 		LetterType.Type1,

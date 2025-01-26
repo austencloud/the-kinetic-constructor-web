@@ -1,13 +1,14 @@
 // ArrowFactory.ts
+import type { PictographInterface } from '$lib/types/PictographInterface';
 import type { Motion } from '../Motion/Motion';
 import type { PictographGetter } from '../PictographGetter';
 import type { ArrowInterface } from './ArrowInterface';
 import ArrowLocationManager from './ArrowLocationManager/ArrowLocationManager';
 import ArrowRotAngleManager from './ArrowRotAngleManager/ArrowRotAngleManager';
 
-export function createArrowData(motion: Motion, getter: PictographGetter): ArrowInterface {
-	const locationManager = new ArrowLocationManager(motion, getter);
-	const loc = locationManager.getArrowLocation();
+export function createArrowData(pictographData: PictographInterface, motion: Motion, getter: PictographGetter): ArrowInterface {
+	const locationManager = new ArrowLocationManager(pictographData, motion, getter);
+	const loc = locationManager.getArrowLocation(motion);
 
 	const arrowData: ArrowInterface = {
 		color: motion.color,

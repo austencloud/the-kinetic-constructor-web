@@ -1,11 +1,12 @@
 <!-- TkaDotHandler.svelte -->
 <script lang="ts">
-	import TkaDot from './TkaDot.svelte';
 	import type { DirRelation, PropRotDir } from '../../types/Types';
-	import {type Letter } from '$lib/types/Letter';
+	import { type Letter } from '$lib/types/Letter';
 	import { createEventDispatcher } from 'svelte';
+	import TKADot from './TKADot.svelte';
+	import { LetterType } from '$lib/types/LetterType';
 
-	export let direction: DirRelation | PropRotDir | null = null;
+	export let dir: DirRelation | PropRotDir | null = null;
 	// TkaDotHandler.svelte
 	export let letterRect = {
 		left: 0,
@@ -17,49 +18,35 @@
 	};
 
 	export let letter: Letter | null = null;
-	let imageElement: SVGImageElement | null = null;
-	const dispatch = createEventDispatcher();
 
-	const padding = 10;
+	const padding = 20;
 	let sameX = 0,
 		sameY = 0;
 	let oppX = 0,
 		oppY = 0;
-	let dotWidth = 12,
-		dotHeight = 12;
+	let dotHeight = 0;
 
 	$: {
-		// replicate python
-		let centerX = letterRect.left + letterRect.width / 2;
-		let top = letterRect.top;
-		let bottom = letterRect.bottom;
-
-		// same => top - padding
-		sameX = centerX - dotWidth / 2;
-		sameY = top - padding - dotHeight / 2;
-
-		// opp => bottom + padding
-		oppX = centerX - dotWidth / 2;
-		oppY = bottom + padding - dotHeight / 2;
+		if (letterRect) {
+			// Calculate positions relative to parent translation
+			const centerX = letterRect.left + letterRect.width / 2;
+			
+			// Same dot positioning
+			sameX = centerX;
+			sameY = letterRect.top - padding - (dotHeight / 2);
+			
+			// Opp dot positioning
+			oppX = centerX;
+			oppY = letterRect.bottom + padding - (dotHeight / 2);
+		}
 	}
-	function handleImageLoad() {
-		if (!imageElement) return;
-		const bbox = imageElement.getBBox();
-		dispatch('letterBBox', {
-			left: bbox.x,
-			top: bbox.y,
-			width: bbox.width,
-			height: bbox.height,
-			right: bbox.x + bbox.width,
-			bottom: bbox.y + bbox.height
-		});
-	}
-	// $: canPlaceDot = letter && LetterType.getLetterType(letter) !== LetterType.Type1;
+
+	$: canPlaceDot = letter && LetterType.getLetterType(letter) !== LetterType.Type1;
 </script>
 
 <g class="dot-handler">
-	<!-- {#if canPlaceDot} -->
-		<TkaDot visible={direction === 's'} x={sameX} y={sameY} />
-		<TkaDot visible={direction === 'o'} x={oppX} y={oppY} />
-	<!-- {/if} -->
+	{#if canPlaceDot}
+		<TKADot visible={dir === 's'} x={sameX} y={sameY} />
+		<TKADot visible={dir === 'o'} x={oppX} y={oppY} />
+	{/if}
 </g>

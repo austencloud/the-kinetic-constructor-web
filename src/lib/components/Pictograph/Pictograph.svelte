@@ -39,28 +39,45 @@
 	) {
 		(async () => {
 			try {
+				// Wrap entire async block in try/catch
 				propPlacementManager = new PropPlacementManager(pictographData, gridData, checker);
 				arrowPlacementManager = new ArrowPlacementManager(pictographData, gridData, checker);
 
 				await tick();
 
 				if (pictographData.redMotionData && pictographData.blueMotionData) {
-					const redMotion = new Motion(pictographData, pictographData.redMotionData);
-					const blueMotion = new Motion(pictographData, pictographData.blueMotionData);
+					// Initialize motions first
+					const redMotion =
+						pictographData.redMotion || new Motion(pictographData, pictographData.redMotionData);
+					const blueMotion =
+						pictographData.blueMotion || new Motion(pictographData, pictographData.blueMotionData);
+
+					// Update getter before creating dependencies
+					getter.updateData({
+						...pictographData,
+						redMotion,
+						blueMotion
+					});
+
+					// Create components after initialization
 					const redProp = createPropData(redMotion);
 					const blueProp = createPropData(blueMotion);
-					const redArrow = createArrowData(redMotion, getter);
-					const blueArrow = createArrowData(blueMotion, getter);
+					const redArrow = createArrowData(pictographData, redMotion, getter);
+					const blueArrow = createArrowData(pictographData, blueMotion, getter);
 
+					redMotion.arrow 		= redArrow;
+					blueMotion.arrow 	= blueArrow;
+					
+
+					// Update stores last
 					redPropData.set(redProp);
 					bluePropData.set(blueProp);
 					redArrowData.set(redArrow);
 					blueArrowData.set(blueArrow);
-				} else {
-					throw new Error('Motion data is null');
 				}
 			} catch (error) {
-				console.error('Prop initialization error:', error);
+				console.error('Initialization error:', error);
+				// Add recovery logic here
 			}
 		})();
 	}

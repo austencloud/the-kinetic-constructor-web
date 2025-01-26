@@ -1,102 +1,82 @@
-// PictographGetter.ts
-
 import type { PictographInterface } from '$lib/types/PictographInterface';
-import {
-	RED,
-	BLUE,
-	NORTH,
-	SOUTH,
-	EAST,
-	WEST,
-	NORTHEAST,
-	SOUTHEAST,
-	SOUTHWEST,
-	NORTHWEST
-} from '$lib/types/Constants';
-import type { Motion } from './Motion/Motion';
+import { RED, BLUE } from '$lib/types/Constants';
+import { Motion } from './Motion/Motion';
 
-/**
- * Example "PictographGetter" in TypeScript, mirroring your Python approach.
- *
- * This class expects that `pictographData` has references like `redMotionData` and `blueMotionData`,
- * each being used to instantiate a `Motion` object (or they are already `Motion`).
- *
- * For "getOtherMotion", we rely on a color property in `Motion`.
- * If `motion.color === 'red'`, we return `blueMotion`; if 'blue', return `redMotion`.
- */
 export class PictographGetter {
-	private pictographData: PictographInterface;
+	private _currentData: PictographInterface;
+	private _initialized = false;
 
-	// Possibly store direct references to "redMotion" and "blueMotion" if desired:
-	private redMotion: Motion | null = null;
-	private blueMotion: Motion | null = null;
+	constructor(initialData: PictographInterface) {
+		this._currentData = initialData;
+		this._initializeMotions();
+	}
 
-	// Track if we've "initialized" everything
-	public isInitialized = false;
+	private _initializeMotions(): void {
+		if (this._initialized) return;
 
-	constructor(pictographData: PictographInterface) {
-		this.pictographData = pictographData;
-
-		// If your PictographInterface already has "redMotion" and "blueMotion" as actual Motion objects,
-		// set them here. If it just has "redMotionData" or such, you may need to create them or store them differently.
-		if (pictographData.redMotionData) {
-			// In some setups, you might store the real Motion instance.
-			// Or if you already have a "Motion" object, store it directly.
-			this.redMotion = pictographData.redMotion;
-		}
-		if (pictographData.blueMotionData) {
-			this.blueMotion = pictographData.blueMotion;
+		try {
+			if (this._currentData.redMotionData && !this._currentData.redMotion) {
+				this._currentData.redMotion = new Motion(
+					this._currentData,
+					this._currentData.redMotionData
+				);
+			}
+			if (this._currentData.blueMotionData && !this._currentData.blueMotion) {
+				this._currentData.blueMotion = new Motion(
+					this._currentData,
+					this._currentData.blueMotionData
+				);
+			}
+			this._initialized = true;
+		} catch (error) {
+			console.error('Motion initialization failed:', error);
+			this._initialized = false;
 		}
 	}
 
-
-
-	/**
-	 * Return whichever motion matches "color", e.g. "red" => redMotion
-	 */
-	public motionByColor(color: string): Motion | null {
-		if (color === RED && this.redMotion) {
-			return this.redMotion;
-		}
-		if (color === BLUE && this.blueMotion) {
-			return this.blueMotion;
-		}
-		return null;
+	private _deepClone<T>(obj: T): T {
+		return JSON.parse(JSON.stringify(obj));
 	}
 
-	/**
-	 * Return "the other" motion from the one passed in.
-	 * If we pass in a red motion, return the blue one, and vice versa.
-	 */
+	updateData(newData: PictographInterface): void {
+		this._currentData = newData;
+		this._initializeMotions();
+	}
+
+	public getShiftMotion(): Motion | null {
+		try {
+			const motions = [this._currentData.redMotion, this._currentData.blueMotion].filter(
+				(m) => m?.motionData?.motionType
+			);
+
+			return (
+				motions.find((m) => ['pro', 'anti', 'float'].includes(m!.motionData.motionType)) ?? null
+			);
+		} catch (error) {
+			console.error('Shift motion detection failed:', error);
+			return null;
+		}
+	}
+
+	// Other methods remain similar but with added error handling
 	public getOtherMotion(currentMotion: Motion): Motion | null {
-		if (currentMotion.color === RED && this.blueMotion) {
-			return this.blueMotion;
+		try {
+			if (!this._initialized) return null;
+
+			const otherColor = currentMotion.color === RED ? BLUE : RED;
+			return this.motionByColor(otherColor);
+		} catch (error) {
+			console.error('Failed to get other motion:', error);
+			return null;
 		}
-		if (currentMotion.color === BLUE && this.redMotion) {
-			return this.redMotion;
-		}
-		return null;
 	}
 
-	/**
-	 * Example "oppositeLocation" method, if you need it:
-	 */
-	public getOppositeLocation(loc: string): string | null {
-		const oppositeMap: Record<string, string> = {
-			[NORTH]: SOUTH,
-			[SOUTH]: NORTH,
-			[EAST]: WEST,
-			[WEST]: EAST,
-			[NORTHEAST]: SOUTHWEST,
-			[SOUTHWEST]: NORTHEAST,
-			[SOUTHEAST]: NORTHWEST,
-			[NORTHWEST]: SOUTHEAST
-		};
-		return oppositeMap[loc] ?? null;
+	private motionByColor(color: string): Motion | null {
+		try {
+			return color === RED ? this._currentData.redMotion : this._currentData.blueMotion;
+		} catch (error) {
+			console.error('Motion by color failed:', error);
+			return null;
+		}
 	}
-
-	// ... other methods from your Python code, as needed:
-	// trailingMotion() { ... }
-	// leadingMotion() { ... }
-	// etc.
 }

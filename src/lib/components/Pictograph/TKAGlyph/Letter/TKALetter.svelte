@@ -1,4 +1,3 @@
-<!-- TkaLetter.svelte -->
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
 	import type { Letter } from '$lib/types/Letter';
@@ -9,36 +8,29 @@
 
 	export let letter: Letter | null = null;
 
-	// We'll store the actual file URL
 	let letterFilePath: string | null = null;
-
-	// We'll keep track of the numeric width/height from the letter’s viewBox
 	let svgWidth = 0;
 	let svgHeight = 0;
-
-	// We'll keep a reference to the <image> so we can do getBBox() if desired
 	let imageElement: SVGImageElement | null = null;
 
 	onMount(async () => {
 		if (!letter) return;
 
-		// Suppose Type1 is for ASCII letters, Type2 is for Greek, Type3 is for Greek-dash, etc.
-		// We can figure out the folder by checking the letter’s type or do your own logic.
-		// For example:
-		//   import { LetterType } from './Letter';
-		//   let letterType = LetterType.getLetterType(letter);
-		//   let folderName = pickFolder(letterType); // "Type1"/"Type2"/...
-
-		// For simplicity:
-		let folderName = 'Type1'; // Default
+		let folderName = 'Type1';
 		const letterType = LetterType.getLetterType(letter);
 		if (letterType) {
 			folderName = letterType.folderName;
 		}
-		// or you can do a function: folderName = getFolderByLetter(letter);
-		// or store the folder in your renameMap.
+		if (letterType) {
+			// Special case: Use Type2 folder for dashed variants
+			folderName = letterType === LetterType.Type3 ? 'Type2' : letterType.folderName;
+			folderName = letterType === LetterType.Type5 ? 'Type4' : letterType.folderName;
+		}
+		if (letter?.toString().match(/[ΩθΣΔ]-/)) {
+			folderName = 'Type2';
+		}
 
-		const asciiName = safeAsciiName(letter); // e.g. "OmegaDash"
+		const asciiName = safeAsciiName(letter);
 		letterFilePath = `/images/letters_trimmed/${folderName}/${asciiName}.svg`;
 
 		const resp = await fetch(letterFilePath);
@@ -52,7 +44,6 @@
 			/viewBox\s*=\s*"([\d\.\-]+)\s+([\d\.\-]+)\s+([\d\.\-]+)\s+([\d\.\-]+)"/i
 		);
 		if (!viewBoxMatch) {
-			console.warn('Could not parse viewBox, defaulting 100×100.');
 			svgWidth = 100;
 			svgHeight = 100;
 		} else {
@@ -62,10 +53,6 @@
 		}
 	});
 
-	/**
-	 * Once <image> is rendered with width=svgWidth, height=svgHeight,
-	 * we can measure getBBox() if you want to dispatch that bounding box upward.
-	 */
 	function handleImageLoad() {
 		if (!imageElement) return;
 		const bbox = imageElement.getBBox();
@@ -82,10 +69,6 @@
 
 <g class="tka-letter">
 	{#if letterFilePath}
-		<!-- 
-		Use svgWidth / svgHeight in user units for the <image>. 
-		No "height: 100" or similar. Now it matches the letter’s viewBox dimension. 
-	  -->
 		<image
 			bind:this={imageElement}
 			href={letterFilePath}

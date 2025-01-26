@@ -1,5 +1,5 @@
-export type VTGDir = 'tog' | 'opp';
-export type VTGTiming = 'split' | 'same';
+export type VTGTiming = 'split' | 'tog';
+export type VTGDir = 'same' | 'opp';
 export type GridMode = 'diamond' | 'box';
 export type DirRelation = 's' | 'o';
 export type MotionType = 'anti' | 'pro' | 'static' | 'dash' | 'float';
@@ -19,4 +19,4 @@ export type LeadState = 'leading' | 'trailing' | null;
 export type HandRotDir = 'cw_handpath' | 'ccw_handpath' | 'dash' | 'static' | null;
 export type ShiftHandRotDir = 'cw_handpath' | 'ccw_handpath';
 export type Orientation = 'in' | 'out' | 'clock' | 'counter';
-export type TkaTurns = 'fl' | 0 | 0.5 | 1 | 1.5 | 2 | 2.5 | 3;
+export type TKATurns = 'fl' | 0 | 0.5 | 1 | 1.5 | 2 | 2.5 | 3;

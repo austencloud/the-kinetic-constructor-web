@@ -1,3 +1,4 @@
+import { DIAMOND } from '$lib/types/Constants';
 import type { PictographInterface } from '$lib/types/PictographInterface';
 
 export const defaultPictographData: PictographInterface = {
@@ -6,7 +7,7 @@ export const defaultPictographData: PictographInterface = {
 	endPos: null,
 	timing: null,
 	direction: null,
-	gridMode: null,
+	gridMode: DIAMOND,
 	blueMotionData: null,
 	redMotionData: null,
 
