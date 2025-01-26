@@ -1,16 +1,45 @@
 import type { PictographInterface } from '$lib/types/PictographInterface';
 import { RED, BLUE } from '$lib/types/Constants';
 import { Motion } from './Motion/Motion';
+import SvgManager from './SvgManager/SvgManager';
+import type { MotionInterface } from './Motion/MotionInterface';
 
 export class PictographGetter {
 	private _currentData: PictographInterface;
 	private _initialized = false;
+	private _svgManager = new SvgManager();
 
 	constructor(initialData: PictographInterface) {
 		this._currentData = initialData;
 		this._initializeMotions();
 	}
+	
+	public async initializeMotions(): Promise<void> {
+		if (this._initialized) return;
 
+		// Preload required SVGs
+		await Promise.all([
+			this.preloadMotionSvg(this._currentData.redMotionData ?? undefined),
+			this.preloadMotionSvg(this._currentData.blueMotionData ?? undefined)
+		]);
+
+		this._initializeMotions();
+	}
+
+	private async preloadMotionSvg(motionData?: MotionInterface): Promise<void> {
+		if (!motionData) return;
+		
+		try {
+			await this._svgManager.getArrowSvg(
+				motionData.motionType,
+				motionData.startOri,
+				motionData.turns,
+				motionData.color
+			);
+		} catch (error) {
+			console.error('Preload failed:', error);
+		}
+	}
 	private _initializeMotions(): void {
 		if (this._initialized) return;
 

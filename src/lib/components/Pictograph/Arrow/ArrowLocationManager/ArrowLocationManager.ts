@@ -17,6 +17,8 @@ export default class ArrowLocationManager {
 		this.motion = motion;
 		this.getter = getter;
 		this.pictographData = pictographData;
+		// log the pictograph data
+		console.log('Pictograph Data: ', this.pictographData);
 	}
 
 	private _selectCalculator() {

@@ -9,4 +9,5 @@ export interface ArrowInterface {
     mirrored: boolean;
     motion: Motion;
     svgCenter: { x: number; y: number };
+    svgLoaded: boolean;
 }

@@ -1,5 +1,4 @@
-import type { Motion } from '../Motion/Motion';
-import type { Color, MotionType, Orientation, TKATurns } from '../types/Types';
+import type { Color, MotionType, Orientation, PropType, TKATurns } from '../types/Types';
 
 // SvgManager.ts (enhanced)
 export default class SvgManager {
@@ -9,12 +8,12 @@ export default class SvgManager {
 		return response.text();
 	}
 
-	public applyColor(svgData: string, color: 'red' | 'blue'): string {
+	public applyColor(svgData: string, color: Color): string {
 		const hexColor = color === 'red' ? '#ED1C24' : '#2E3192';
 		return svgData.replace(/\.st0{([^}]*fill:#)2E3192([^}]*)}/g, `.st0{$1${hexColor.slice(1)}$2}`);
 	}
 
-	public async getPropSvg(propType: string, color: 'red' | 'blue'): Promise<string> {
+	public async getPropSvg(propType: PropType, color: Color): Promise<string> {
 		const baseSvg = await this.fetchSvg(`/images/props/${propType}.svg`);
 		return propType === 'hand' ? baseSvg : this.applyColor(baseSvg, color);
 	}

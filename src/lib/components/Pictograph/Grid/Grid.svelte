@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { circleCoordinates } from './circleCoordinates';
 	import type { GridData } from './GridInterface';
 
@@ -22,7 +22,9 @@
 		return { x, y };
 	}
 
-	onMount(() => {
+	onMount(async () => {
+		await tick(); // Wait for DOM to render
+
 		const modeData = circleCoordinates[gridMode];
 
 		const parsePoints = (points: Record<string, string>) =>

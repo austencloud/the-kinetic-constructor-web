@@ -1,3 +1,4 @@
+import { LetterUtils } from '$lib/components/Pictograph/LetterUtils';
 import type { MotionInterface } from '$lib/components/Pictograph/Motion/MotionInterface';
 import type { PictographInterface } from '$lib/types/PictographInterface';
 import { writable } from 'svelte/store';
@@ -55,7 +56,7 @@ function groupPictographsByLetter(pictographs: Record<string, any>[]): Pictograp
 		const blueMotionData = extractAttributes(record, 'blue');
 
 		return {
-			letter: record.letter,
+			letter: LetterUtils.fromString(record.letter),
 			startPos: record.startPos,
 			endPos: record.endPos,
 			timing: record.timing,
@@ -85,7 +86,6 @@ function extractAttributes(record: Record<string, any>, prefix: string): MotionI
 	}
 
 	return {
-		pictographData: null as unknown as PictographInterface,
 		handRotDir: 'cw_handpath',
 		color: prefix === 'blue' ? 'blue' : 'red',
 		leadState: null,

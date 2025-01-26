@@ -12,10 +12,6 @@ import {
 } from '$lib/types/Constants';
 import type { Motion } from '../../../Motion/Motion';
 
-/**
- * Translates your Python DashDirectionalGenerator.
- * We replicate logic for 'type5 zero turns', 'no_rot' dash, etc.
- */
 export class DashDirectionalGenerator extends BaseDirectionalGenerator {
 	constructor(motion: Motion) {
 		super(motion);
@@ -24,17 +20,10 @@ export class DashDirectionalGenerator extends BaseDirectionalGenerator {
 	public generateDirectionalTuples(x: number, y: number): Array<[number, number]> {
 		const gridMode = this._get_grid_mode();
 
-		// If 'type5 zero turns'? (Your code uses letter conditions: letterType == Type5 && turns==0)
-		// For simplicity, we'll assume you can check it on motion. If you do:
-		//   if (motion.pictographData.letterType == 'type5' && motion.turns == 0) ...
-		// or replicate your Python check:
-		//   if self.motion.pictograph.letter_type == LetterType.Type5 and self.motion.turns == 0
-
 		if (gridMode === DIAMOND) {
 			if (this._isType5ZeroTurns()) {
 				return this._handle_type5_zero_turns_diamond(x, y);
 			} else if (this.motion.propRotDir === NO_ROT) {
-				// Possibly a fallback to the "type5 zero turns" approach or your `_handle_no_rotation_dash`
 				return this._handle_no_rotation_dash(x, y);
 			} else if (this.motion.propRotDir === CLOCKWISE) {
 				return [
@@ -77,11 +66,7 @@ export class DashDirectionalGenerator extends BaseDirectionalGenerator {
 	}
 
 	private _handle_no_rotation_dash(x: number, y: number): Array<[number, number]> {
-		// Your code references 'otherMotion.motionType' inside these big if-chains.
-		// For a minimal example, just return a fallback or replicate the logic fully.
-		// We'll replicate a partial snippet:
 		if (!this.otherMotion) {
-			// fallback
 			return [
 				[x, -y],
 				[y, x],
@@ -90,10 +75,6 @@ export class DashDirectionalGenerator extends BaseDirectionalGenerator {
 			];
 		}
 
-		// Suppose we replicate the python approach:
-		//   if self.otherMotion.motion_type == PRO:
-		//       if self.otherMotion.prop_rot_dir == CLOCKWISE => ...
-		// For brevity, here's a very short version:
 		switch (this.otherMotion.motionType) {
 			case PRO:
 				if (this.otherMotion.propRotDir === CLOCKWISE) {
@@ -111,7 +92,6 @@ export class DashDirectionalGenerator extends BaseDirectionalGenerator {
 						[y, x]
 					];
 				}
-			// etc.
 			default:
 				return [
 					[x, -y],
@@ -123,18 +103,11 @@ export class DashDirectionalGenerator extends BaseDirectionalGenerator {
 	}
 
 	private _isType5ZeroTurns(): boolean {
-		// If letter is type5 and motion.turns==0 => true
-		// E.g. if (this.motion.pictographData.letterType === 'type5' && this.motion.turns === 0)
-		// For demonstration:
-		return false; // Or real check
+		return false;
 	}
 
 	private _handle_type5_zero_turns_diamond(x: number, y: number): Array<[number, number]> {
-		// Python references color + (startLoc, endLoc) => a map.
-		// We'll replicate a small portion:
 		const key = `${this.motion.color}_${this.motion.startLoc}_${this.motion.endLoc}` as const;
-
-		// Just an example map:
 		const diamondType5Map: Record<string, Array<[number, number]>> = {
 			[`${BLUE}_n_s`]: [
 				[x, y],
@@ -142,14 +115,12 @@ export class DashDirectionalGenerator extends BaseDirectionalGenerator {
 				[-x, -y],
 				[y, -x]
 			]
-			// etc...
 		};
 
 		return diamondType5Map[key] ?? [];
 	}
 
 	private _handle_type5_zero_turns_box(x: number, y: number): Array<[number, number]> {
-		// Similar approach:
 		const key = `${this.motion.color}_${this.motion.startLoc}_${this.motion.endLoc}` as const;
 		const boxType5Map: Record<string, Array<[number, number]>> = {
 			[`${RED}_ne_sw`]: [
@@ -158,7 +129,6 @@ export class DashDirectionalGenerator extends BaseDirectionalGenerator {
 				[-x, -y],
 				[y, x]
 			]
-			// etc...
 		};
 
 		return boxType5Map[key] ?? [];

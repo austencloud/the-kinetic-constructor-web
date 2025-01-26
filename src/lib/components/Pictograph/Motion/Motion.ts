@@ -6,6 +6,7 @@ import type { PictographInterface } from '../../../types/PictographInterface';
 import { LeadStateDeterminer } from './LeadStateDeterminer';
 import type {
 	Color,
+	GridMode,
 	HandRotDir,
 	LeadState,
 	Loc,
@@ -17,6 +18,8 @@ import type {
 import type { MotionInterface } from './MotionInterface';
 import type { PropInterface } from '../Prop/PropInterface';
 import type { ArrowInterface } from '../Arrow/ArrowInterface';
+import type { Letter } from '$lib/types/Letter';
+import { LetterUtils } from '../LetterUtils';
 
 export class Motion implements MotionInterface {
 	motionType: MotionType;
@@ -31,21 +34,33 @@ export class Motion implements MotionInterface {
 	prefloatPropRotDir: PropRotDir | null = null;
 	endOri: Orientation = 'in';
 	handRotDir: HandRotDir = null;
-	pictographData: PictographInterface;
 	motionData: MotionInterface;
 	prop: PropInterface | null = null;
 	arrow: ArrowInterface | null = null;
-
+	gridMode: GridMode;
 	checker: MotionChecker;
 	oriCalculator: MotionOriCalculator;
 	handRotDirCalculator: HandRotDirCalculator;
+	redMotionData: MotionInterface;
+	blueMotionData: MotionInterface;
+	letter: Letter;
 
 	constructor(pictographData: PictographInterface, motionData: MotionInterface) {
 		// log the motion data
+		if (pictographData.redMotionData && pictographData.blueMotionData) {
+			this.redMotionData = pictographData.redMotionData;
+			this.blueMotionData = pictographData.blueMotionData;
+		} else {
+			throw new Error('Red or Blue motion data is null');
+		}
+		if (pictographData.letter === null) {
+			throw new Error('Letter is null');
+		}
 		this.motionData = motionData;
-		this.pictographData = pictographData;
-		this.motionData.pictographData = pictographData;
+		this.letter = LetterUtils.getLetter(pictographData.letter);
+
 		this.motionType = motionData.motionType;
+		this.gridMode = pictographData.gridMode;
 		this.startLoc = motionData.startLoc;
 		this.endLoc = motionData.endLoc;
 		this.startOri = motionData.startOri;
@@ -65,8 +80,8 @@ export class Motion implements MotionInterface {
 	}
 
 	assignLeadStates(): void {
-		const redMotionData = this.pictographData.redMotionData;
-		const blueMotionData = this.pictographData.blueMotionData;
+		const redMotionData = this.redMotionData;
+		const blueMotionData = this.blueMotionData;
 
 		if (redMotionData && blueMotionData) {
 			const leadStateDeterminer = new LeadStateDeterminer(redMotionData, blueMotionData);

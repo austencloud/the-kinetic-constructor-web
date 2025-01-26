@@ -2,7 +2,7 @@
 import type { Motion } from '../../../Motion/Motion';
 import { HandpathCalculator } from '../../../Motion/HandpathCalculator';
 import { BOX, DIAMOND } from '$lib/types/Constants';
-import type { GridMode } from '$lib/types/PictographInterface';
+import type { GridMode } from '$lib/components/Pictograph/types/Types';
 
 /**
  * Equivalent to the Python BaseDirectionalGenerator:
@@ -29,7 +29,7 @@ export abstract class BaseDirectionalGenerator {
 
 	protected _get_grid_mode(): GridMode {
 		// log the data
-		const mode = this.motion.pictographData.gridMode || DIAMOND;
+		const mode = this.motion.gridMode || DIAMOND;
 		if (mode !== BOX && mode !== DIAMOND) return DIAMOND;
 		return mode;
 	}

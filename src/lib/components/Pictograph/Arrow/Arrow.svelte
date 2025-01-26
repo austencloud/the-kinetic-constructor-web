@@ -26,7 +26,6 @@
 			}
 
 			const { viewBox, center } = parseArrowSvg(svgText);
-			// log the center
 			svgData = {
 				imageSrc: `data:image/svg+xml;base64,${btoa(svgText)}`,
 				viewBox,
@@ -34,8 +33,7 @@
 			};
 			arrowData.svgCenter = center;
 
-
-			// log the loc
+			
 			(arrowData.loc);
 			transform = `translate(${arrowData.coords.x}, ${arrowData.coords.y}) 
 				rotate(${arrowData.rotAngle} ${center.x} ${center.y})`;
@@ -49,11 +47,15 @@
 			};
 			transform = `translate(${arrowData.coords.x}, ${arrowData.coords.y})`;
 		}
+		
 	};
 
 	onMount(() => {
 		loadAndTransformArrow();
 	});
+	$: if (svgData) {
+		arrowData.svgCenter = svgData.center; 
+	}
 </script>
 
 {#if svgData}

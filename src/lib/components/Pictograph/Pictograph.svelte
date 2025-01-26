@@ -45,7 +45,9 @@
 
 				await tick();
 
+				console.log('Initializing Pictograph:', pictographData);
 				if (pictographData.redMotionData && pictographData.blueMotionData) {
+
 					// Initialize motions first
 					const redMotion =
 						pictographData.redMotion || new Motion(pictographData, pictographData.redMotionData);

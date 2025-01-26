@@ -15,7 +15,6 @@ import type { ArrowInterface } from '../Arrow/ArrowInterface';
 import type { PropInterface } from '../Prop/PropInterface';
 
 export interface MotionInterface {
-	pictographData: PictographInterface;
     arrow?: ArrowInterface | null;
     prop: PropInterface | null;
 	handRotDir: HandRotDir | null;
