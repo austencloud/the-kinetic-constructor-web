@@ -1,5 +1,5 @@
 import type { Motion } from '../Motion/Motion';
-import type { Color, MotionInterface, MotionType, Orientation } from '../Motion/MotionInterface';
+import type { Color, MotionType, Orientation, TKATurns } from '../types/Types';
 
 // SvgManager.ts (enhanced)
 export default class SvgManager {
@@ -22,13 +22,13 @@ export default class SvgManager {
 	public async getArrowSvg(
 		motionType: MotionType,
 		startOri: Orientation,
-		turns: number,
+		turns: TKATurns,
 		color: Color
 	): Promise<string> {
 		const basePath = '/images/arrows';
 		const typePath = motionType.toLowerCase();
 		const radialPath = startOri === 'out' || startOri === 'in' ? 'from_radial' : 'from_nonradial';
-		const fixedTurns = turns.toFixed(1);
+		const fixedTurns = (typeof turns === 'number' ? turns : parseFloat(turns)).toFixed(1);
 		const svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${fixedTurns}.svg`;
 	
 		let baseSvg = await this.fetchSvg(svgPath);

@@ -1,6 +1,6 @@
 import type { Motion } from './Motion/Motion';
 import type { PropInterface } from './Prop/PropInterface';
-import { PropType } from './Prop/PropPlacementManager/PropTypes';
+import { PropType } from './types/Types';
 
 export function createPropData(
 	motion: Motion,

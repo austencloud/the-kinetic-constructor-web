@@ -60,20 +60,19 @@
 					});
 
 					// Create components after initialization
-					const redProp = createPropData(redMotion);
-					const blueProp = createPropData(blueMotion);
-					const redArrow = createArrowData(pictographData, redMotion, getter);
-					const blueArrow = createArrowData(pictographData, blueMotion, getter);
+					const newRedPropData = createPropData(redMotion);
+					const newBluePropData = createPropData(blueMotion);
+					const newRedArrowData = createArrowData(pictographData, redMotion, getter);
+					const newBlueArrowData = createArrowData(pictographData, blueMotion, getter);
 
-					redMotion.arrow 		= redArrow;
-					blueMotion.arrow 	= blueArrow;
-					
+					redMotion.arrow = newRedArrowData;
+					blueMotion.arrow = newBlueArrowData;
 
 					// Update stores last
-					redPropData.set(redProp);
-					bluePropData.set(blueProp);
-					redArrowData.set(redArrow);
-					blueArrowData.set(blueArrow);
+					redPropData.set(newRedPropData);
+					bluePropData.set(newBluePropData);
+					redArrowData.set(newRedArrowData);
+					blueArrowData.set(newBlueArrowData);
 				}
 			} catch (error) {
 				console.error('Initialization error:', error);

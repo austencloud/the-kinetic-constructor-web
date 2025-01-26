@@ -18,7 +18,6 @@ import {
 	DIAMOND,
 	BOX
 } from '$lib/types/Constants';
-import type { Loc } from '../../Prop/PropInterface';
 import { LetterType } from '$lib/types/LetterType';
 
 export default class DashLocationCalculator {

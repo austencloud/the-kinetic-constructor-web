@@ -1,4 +1,3 @@
-import type { Loc } from '../Prop/PropInterface';
 import Arrow from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
 import type { PictographInterface } from '../../../types/PictographInterface';
@@ -6,16 +5,19 @@ import type {
 	Color,
 	HandRotDir,
 	LeadState,
+	Loc,
 	MotionType,
 	Orientation,
 	PropRotDir,
 	TKATurns
 } from '../types/Types';
+import type { ArrowInterface } from '../Arrow/ArrowInterface';
+import type { PropInterface } from '../Prop/PropInterface';
 
 export interface MotionInterface {
 	pictographData: PictographInterface;
-	arrow?: Arrow | null;
-	prop: Prop | null;
+    arrow?: ArrowInterface | null;
+    prop: PropInterface | null;
 	handRotDir: HandRotDir | null;
 	motionType: MotionType;
 	startLoc: Loc;

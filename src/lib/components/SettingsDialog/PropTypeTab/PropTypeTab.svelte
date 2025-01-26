@@ -1,6 +1,6 @@
 <script lang="ts">
+	import { PropType } from '$lib/components/Pictograph/types/Types';
 	import PropButton from './PropButton.svelte';
-	import { PropType } from '$lib/components/Pictograph/Prop/PropPlacementManager/PropTypes';
 
 	const props = [
 		{ name: PropType.HAND, icon: 'images/props/hand.svg' },

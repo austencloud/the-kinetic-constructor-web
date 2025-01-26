@@ -1,21 +1,22 @@
 import { MotionChecker } from './MotionChecker';
 import { MotionOriCalculator } from './MotionOriCalculator';
 import { HandpathCalculator as HandRotDirCalculator } from './HandpathCalculator';
-import ArrowInterface from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
 import type { PictographInterface } from '../../../types/PictographInterface';
 import { LeadStateDeterminer } from './LeadStateDeterminer';
-import type { Loc } from '../Prop/PropInterface';
 import type {
 	Color,
 	HandRotDir,
 	LeadState,
+	Loc,
 	MotionType,
 	Orientation,
 	PropRotDir,
 	TKATurns
 } from '../types/Types';
 import type { MotionInterface } from './MotionInterface';
+import type { PropInterface } from '../Prop/PropInterface';
+import type { ArrowInterface } from '../Arrow/ArrowInterface';
 
 export class Motion implements MotionInterface {
 	motionType: MotionType;
@@ -32,7 +33,7 @@ export class Motion implements MotionInterface {
 	handRotDir: HandRotDir = null;
 	pictographData: PictographInterface;
 	motionData: MotionInterface;
-	prop: Prop | null = null;
+	prop: PropInterface | null = null;
 	arrow: ArrowInterface | null = null;
 
 	checker: MotionChecker;
@@ -79,7 +80,7 @@ export class Motion implements MotionInterface {
 		}
 	}
 
-	attachComponents(prop: Prop, arrow: ArrowInterface): void {
+	attachComponents(prop: PropInterface, arrow: ArrowInterface): void {
 		this.prop = prop;
 		this.arrow = arrow;
 	}

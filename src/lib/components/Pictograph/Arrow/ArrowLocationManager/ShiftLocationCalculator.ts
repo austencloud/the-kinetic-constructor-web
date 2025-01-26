@@ -9,7 +9,7 @@ import {
 	WEST
 } from '$lib/types/Constants';
 import type { Motion } from '../../Motion/Motion';
-import type { Loc } from '../../Prop/PropInterface';
+import type { Loc } from '../../types/Types';
 
 export default class ShiftLocationCalculator {
 	motion: Motion;
