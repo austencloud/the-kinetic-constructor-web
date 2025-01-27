@@ -1,6 +1,6 @@
 <!-- TkaTurnsNumberGroup.svelte -->
 <script lang="ts">
-	import TkaNumberItem from './TkaNumberItem.svelte';
+	import TKANumberItem from './TKANumberItem.svelte';
 	import type { TKATurns } from '../../types/Types';
 
 	export let topValue: TKATurns = 0;
@@ -40,9 +40,9 @@
 
 <g class="turns-number-group">
 	{#if topValue !== 0}
-		<TkaNumberItem value={topValue} x={topX} y={topY} />
+		<TKANumberItem value={topValue} x={topX} y={topY} />
 	{/if}
 	{#if bottomValue !== 0}
-		<TkaNumberItem value={bottomValue} x={bottomX} y={bottomY} />
+		<TKANumberItem value={bottomValue} x={bottomX} y={bottomY} />
 	{/if}
 </g>
