@@ -50,11 +50,13 @@
 		
 	};
 
-	onMount(() => {
+	$: if (arrowData.motion) {
 		loadAndTransformArrow();
-	});
-	$: if (svgData) {
-		arrowData.svgCenter = svgData.center; 
+	}
+
+	$: if (svgData && arrowData.coords.x !== 0) {
+		transform = `translate(${arrowData.coords.x}, ${arrowData.coords.y})
+			rotate(${arrowData.rotAngle}, ${svgData.center.x}, ${svgData.center.y})`;
 	}
 </script>
 

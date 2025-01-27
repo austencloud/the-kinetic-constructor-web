@@ -7,35 +7,33 @@
 	import type { PictographInterface } from '$lib/types/PictographInterface';
 	import { writable } from 'svelte/store';
 
-	let startPositions: PictographInterface[] = [];
+	let startPositionDataSet: PictographInterface[] = [];
 	let gridMode = 'diamond';
 	export const selectedStartPos = writable<PictographInterface | null>(null);
 
 	// Track rendering status
 	$: pictographsRendered.subscribe((rendered) => {
-		if (rendered === startPositions.length) {
+		if (rendered === startPositionDataSet.length) {
 			console.debug('All pictographs rendered, starting scaling adjustments.');
 			// Trigger scaling logic or any additional post-render adjustments here
 		}
 	});
 
-	pictographDataStore.subscribe((data) => {
+	pictographDataStore.subscribe((data: PictographInterface[]) => {
 		const defaultStartPosKeys =
 			gridMode === 'diamond'
-				// ? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
-				? ['alpha1_gamma5']
+				? // ? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
+					['alpha1_gamma5']
 				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
 
-		startPositions = (data as PictographInterface[]).filter((entry) => {
-			
-			
+		startPositionDataSet = (data as PictographInterface[]).filter((entry) => {
 			return (
 				entry.redMotionData &&
 				entry.blueMotionData &&
 				defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
 			);
 		});
-		totalPictographs.set(startPositions.length);
+		totalPictographs.set(startPositionDataSet.length);
 	});
 	const handleSelect = (start_pos_pictograph: PictographInterface) => {
 		selectedStartPos.set(start_pos_pictograph);
@@ -46,22 +44,25 @@
 <div class="start-pos-picker">
 	<StartPositionLabel />
 	<div class="pictograph-row">
-		{#if startPositions.length > 0}
-			{#each startPositions as position}
+		{#if startPositionDataSet.length > 0}
+			{#each startPositionDataSet as startPositionData}
 				<div
 					class="pictograph-container"
 					role="button"
 					tabindex="0"
-					on:click={() => handleSelect(position)}
+					on:click={() => handleSelect(startPositionData)}
 					on:keydown={(e) => {
 						if (e.key === 'Enter' || e.key === ' ') {
-							handleSelect(position);
+							handleSelect(startPositionData);
 						}
 					}}
 				>
+					{#if startPositionData}
+						{console.log('Pictograph data:', startPositionData)}
+					{/if}
 					<Pictograph
-						pictographData={position}
-						onClick={() => handleSelect(position)}
+						pictographData={startPositionData}
+						onClick={() => handleSelect(startPositionData)}
 						on:mounted={() => {
 							pictographsRendered.update((n) => n + 1);
 						}}

@@ -1,5 +1,6 @@
 import { LetterUtils } from '$lib/components/Pictograph/LetterUtils';
 import type { MotionInterface } from '$lib/components/Pictograph/Motion/MotionInterface';
+import type { Color, HandRotDir, LeadState } from '$lib/components/Pictograph/types/Types';
 import type { PictographInterface } from '$lib/types/PictographInterface';
 import { writable } from 'svelte/store';
 
@@ -75,30 +76,31 @@ function groupPictographsByLetter(pictographs: Record<string, any>[]): Pictograp
 	});
 }
 
-function extractAttributes(record: Record<string, any>, prefix: string): MotionInterface | null {
-	if (
-		!record[`${prefix}MotionType`] ||
-		!record[`${prefix}StartLoc`] ||
-		!record[`${prefix}EndLoc`] ||
-		!record[`${prefix}PropRotDir`]
-	) {
-		return null;
-	}
+const defaultMotionData: MotionInterface = {
+	handRotDir: 'cw_handpath',
+	color: 'red',
+	leadState: 'leading',
+	motionType: 'static',
+	startLoc: 'n',
+	endLoc: 's',
+	startOri: 'in',
+	endOri: 'in',
+	propRotDir: 'cw',
+	prop: null,
+	turns: 0,
+	prefloatMotionType: null,
+	prefloatPropRotDir: null
+};
 
+// Modify the extractAttributes function
+function extractAttributes(record: Record<string, any>, prefix: string): MotionInterface {
 	return {
-		handRotDir: 'cw_handpath',
+		...defaultMotionData,
 		color: prefix === 'blue' ? 'blue' : 'red',
-		leadState: null,
-		motionType: record[`${prefix}MotionType`],
-		startLoc: record[`${prefix}StartLoc`],
-		endLoc: record[`${prefix}EndLoc`],
-		startOri: 'in',
-		endOri: null,
-		propRotDir: record[`${prefix}PropRotDir`],
-		prop: null,
-		turns: 0,
-		prefloatMotionType: null,
-		prefloatPropRotDir: null
+		motionType: record[`${prefix}MotionType`] || defaultMotionData.motionType,
+		startLoc: record[`${prefix}StartLoc`] || defaultMotionData.startLoc,
+		endLoc: record[`${prefix}EndLoc`] || defaultMotionData.endLoc,
+		propRotDir: record[`${prefix}PropRotDir`] || defaultMotionData.propRotDir
 	};
 }
 

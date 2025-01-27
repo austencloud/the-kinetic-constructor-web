@@ -31,65 +31,68 @@
 
 	let redArrowData: Writable<ArrowInterface> = writable();
 	let blueArrowData: Writable<ArrowInterface> = writable();
+	let initializationComplete = false;
 
-	$: if (
-		gridData?.centerPoint?.coordinates &&
-		pictographData?.redMotionData &&
-		pictographData?.blueMotionData
-	) {
-		(async () => {
-			try {
-				// Wrap entire async block in try/catch
-				propPlacementManager = new PropPlacementManager(pictographData, gridData, checker);
-				arrowPlacementManager = new ArrowPlacementManager(pictographData, gridData, checker);
-
-				await tick();
-
-				console.log('Initializing Pictograph:', pictographData);
-				if (pictographData.redMotionData && pictographData.blueMotionData) {
-
-					// Initialize motions first
-					const redMotion =
-						pictographData.redMotion || new Motion(pictographData, pictographData.redMotionData);
-					const blueMotion =
-						pictographData.blueMotion || new Motion(pictographData, pictographData.blueMotionData);
-
-					// Update getter before creating dependencies
-					getter.updateData({
-						...pictographData,
-						redMotion,
-						blueMotion
-					});
-
-					// Create components after initialization
-					const newRedPropData = createPropData(redMotion);
-					const newBluePropData = createPropData(blueMotion);
-					const newRedArrowData = createArrowData(pictographData, redMotion, getter);
-					const newBlueArrowData = createArrowData(pictographData, blueMotion, getter);
-
-					redMotion.arrow = newRedArrowData;
-					blueMotion.arrow = newBlueArrowData;
-
-					// Update stores last
-					redPropData.set(newRedPropData);
-					bluePropData.set(newBluePropData);
-					redArrowData.set(newRedArrowData);
-					blueArrowData.set(newBlueArrowData);
-				}
-			} catch (error) {
-				console.error('Initialization error:', error);
-				// Add recovery logic here
+	async function initializeAll() {
+		try {
+			// 1. Check if pictographData.letter is null
+			if (!pictographData.letter) {
+				return
 			}
-		})();
-	}
-	$: if (propPlacementManager && $redPropData && $bluePropData) {
-		const props: PropInterface[] = [$redPropData, $bluePropData];
-		propPlacementManager.updatePropPlacement(props);
-	}
 
-	$: if (arrowPlacementManager && $redArrowData && $blueArrowData) {
-		arrowPlacementManager.updateArrowPlacements([$redArrowData, $blueArrowData]);
+			// 2. Wait for valid grid data
+			while (!gridData?.centerPoint?.coordinates) await tick();
+
+			// 2. Create placement managers
+			
+			// log the pictograph data
+			console.log('Pictograph data:', pictographData);
+			
+			// 3. Initialize motions properly
+			const redMotion = new Motion(pictographData, pictographData.redMotionData!);
+			const blueMotion = new Motion(pictographData, pictographData.blueMotionData!);
+			
+			// Wait for motion initialization to complete
+			await Promise.all([redMotion.ready, blueMotion.ready]);
+			
+			// 4. Create component data with initialized motions
+			const [redProp, blueProp] = await Promise.all([
+				createPropData(redMotion),
+				createPropData(blueMotion)
+			]);
+			
+			const [redArrow, blueArrow] = await Promise.all([
+				createArrowData(pictographData, redMotion, getter),
+				createArrowData(pictographData, blueMotion, getter)
+			]);
+			
+			// 5. Atomic store updates
+			redPropData.set(redProp);
+			bluePropData.set(blueProp);
+			redArrowData.set(redArrow);
+			blueArrowData.set(blueArrow);
+			
+			// 6. Final placement after DOM update
+			await tick();
+			
+			// log the pictograph data
+			console.log('Pictograph data:', pictographData);
+			
+			propPlacementManager = new PropPlacementManager(pictographData, gridData, checker);
+			arrowPlacementManager = new ArrowPlacementManager(pictographData, gridData, checker);
+
+			arrowPlacementManager?.updateArrowPlacements([$redArrowData, $blueArrowData]);
+			propPlacementManager?.updatePropPlacement([$redPropData, $bluePropData]);
+
+			initializationComplete = true;
+
+		} catch (error) {
+			console.error('Initialization failed:', error);
+		}
 	}
+	onMount(() => {
+		initializeAll();
+	});
 </script>
 
 <svg class="pictograph" viewBox="0 0 950 950" xmlns="http://www.w3.org/2000/svg" role="img">

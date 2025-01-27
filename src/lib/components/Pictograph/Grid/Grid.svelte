@@ -21,6 +21,20 @@
 		const [x, y] = coordString.replace(/[()]/g, '').split(', ').map(parseFloat);
 		return { x, y };
 	}
+	const validateGridData = (data: GridData) => {
+		const requiredPoints = [
+			data.centerPoint,
+			...Object.values(data.allHandPointsNormal),
+			...Object.values(data.allLayer2PointsNormal),
+			...Object.values(data.allOuterPoints),
+			...Object.values(data.allHandPointsStrict),
+			...Object.values(data.allLayer2PointsStrict)
+		];
+		
+		if (requiredPoints.some(p => !p?.coordinates)) {
+			throw new Error('Invalid grid data: Missing required points');
+		}
+	};
 
 	onMount(async () => {
 		await tick(); // Wait for DOM to render
@@ -45,7 +59,7 @@
 			centerPoint: { coordinates: parseCoordinates(modeData.center_point) }
 		};
 
-		// Send the structured data to the parent component
+		validateGridData(gridData); // Validate before sending
 		onPointsReady(gridData);
 	});
 </script>

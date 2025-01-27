@@ -17,18 +17,25 @@
 		if (!letter) return;
 
 		let folderName = 'Type1';
+
+
+
 		const letterType = LetterType.getLetterType(letter);
+
+
 		if (letterType) {
 			folderName = letterType.folderName;
 		}
+
+		
 		if (letterType) {
-			// Special case: Use Type2 folder for dashed variants
 			folderName = letterType === LetterType.Type3 ? 'Type2' : letterType.folderName;
 			folderName = letterType === LetterType.Type5 ? 'Type4' : letterType.folderName;
 		}
-		if (letter?.toString().match(/[ΩθΣΔ]-/)) {
+		if (letter?.toString().match(/[WXYZΩθΣΔ]-/)) {
 			folderName = 'Type2';
 		}
+		
 
 		const asciiName = safeAsciiName(letter);
 		letterFilePath = `/images/letters_trimmed/${folderName}/${asciiName}.svg`;

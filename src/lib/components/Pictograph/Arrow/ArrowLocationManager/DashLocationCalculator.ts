@@ -37,8 +37,7 @@ export default class DashLocationCalculator {
 
 		const letter = LetterUtils.getLetter(this.motion.letter);
 
-		console.log('letterType', letterType);
-		console.log('letter:', letter);
+
 
 		// Handle Type3 specific logic
 		if (letterType === LetterType.Type3 && this.motion.turns === 0) {
@@ -189,11 +188,7 @@ export default class DashLocationCalculator {
 		const dashStartLoc = dashMotion?.startLoc ?? '';
 		const gridMode = this.motion.gridMode;
 
-		console.log('shiftMotion', shiftMotion);
-		console.log('dashMotion', dashMotion);
-		console.log('shiftLocation', shiftLocation);
-		console.log('dashStartLoc', dashStartLoc);
-		console.log('gridMode', gridMode);
+
 
 
 

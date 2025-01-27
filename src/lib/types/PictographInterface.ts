@@ -16,11 +16,9 @@ export interface PictographInterface {
 	blueMotionData: MotionInterface | null;
 	redMotionData: MotionInterface | null;
 
-	motions: Motion[];
 	redMotion: Motion | null;
 	blueMotion: Motion | null;
 
-	props: PropInterface[];
 	redPropData: PropInterface | null;
 	bluePropData: PropInterface | null;
 }

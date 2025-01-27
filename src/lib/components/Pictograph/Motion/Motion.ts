@@ -44,9 +44,17 @@ export class Motion implements MotionInterface {
 	redMotionData: MotionInterface;
 	blueMotionData: MotionInterface;
 	letter: Letter;
+	public readonly ready: Promise<void>;
 
 	constructor(pictographData: PictographInterface, motionData: MotionInterface) {
-		// log the motion data
+		this.ready = new Promise((resolve, reject) => {
+			try {
+				// Move constructor logic here
+				resolve();
+			} catch (error) {
+				reject(error);
+			}
+		});// log the motion data
 		if (pictographData.redMotionData && pictographData.blueMotionData) {
 			this.redMotionData = pictographData.redMotionData;
 			this.blueMotionData = pictographData.blueMotionData;
@@ -56,6 +64,7 @@ export class Motion implements MotionInterface {
 		if (pictographData.letter === null) {
 			throw new Error('Letter is null');
 		}
+		
 		this.motionData = motionData;
 		this.letter = LetterUtils.getLetter(pictographData.letter);
 

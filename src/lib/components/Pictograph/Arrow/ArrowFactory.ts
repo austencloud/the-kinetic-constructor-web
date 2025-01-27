@@ -17,10 +17,12 @@ export function createArrowData(pictographData: PictographInterface, motion: Mot
 		rotAngle: 0,
 		mirrored: false,
 		motion: motion,
-		svgCenter: { x: 0, y: 0 }
+		svgCenter: { x: 0, y: 0 },
+		svgLoaded: false,
 	};
 
 	const rotAngleManager = new ArrowRotAngleManager(motion, loc);
 	arrowData.rotAngle = rotAngleManager.updateRotation();
+	
 	return arrowData;
 }
