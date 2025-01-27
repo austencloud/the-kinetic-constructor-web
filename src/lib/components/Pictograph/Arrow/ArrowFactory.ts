@@ -7,13 +7,11 @@ import ArrowLocationManager from './ArrowLocationManager/ArrowLocationManager';
 import ArrowRotAngleManager from './ArrowRotAngleManager/ArrowRotAngleManager';
 
 export function createArrowData(pictographData: PictographInterface, motion: Motion, getter: PictographGetter): ArrowInterface {
-	const locationManager = new ArrowLocationManager(pictographData, motion, getter);
-	const loc = locationManager.getArrowLocation(motion);
 
 	const arrowData: ArrowInterface = {
 		color: motion.color,
 		coords: { x: 0, y: 0 },
-		loc: loc,
+		loc: 'n',
 		rotAngle: 0,
 		mirrored: false,
 		motion: motion,
@@ -21,8 +19,6 @@ export function createArrowData(pictographData: PictographInterface, motion: Mot
 		svgLoaded: false,
 	};
 
-	const rotAngleManager = new ArrowRotAngleManager(motion, loc);
-	arrowData.rotAngle = rotAngleManager.updateRotation();
 	
 	return arrowData;
 }

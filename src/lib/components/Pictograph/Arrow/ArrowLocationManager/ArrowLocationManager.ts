@@ -2,7 +2,7 @@
 import DashLocationCalculator from './DashLocationCalculator';
 import ShiftLocationCalculator from './ShiftLocationCalculator';
 import StaticLocationCalculator from './StaticLocationCalculator';
-import type { Motion } from '../../Motion/Motion';
+import { Motion } from '../../Motion/Motion';
 import type { PictographGetter } from '../../PictographGetter'; // <== import
 import type { MotionType } from '../../types/Types';
 import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';
@@ -10,18 +10,18 @@ import type { PictographInterface } from '$lib/types/PictographInterface';
 
 export default class ArrowLocationManager {
 	pictographData: PictographInterface;
-	motion: Motion;
 	getter: PictographGetter;
 
-	constructor(pictographData: PictographInterface, motion: Motion, getter: PictographGetter) {
-		this.motion = motion;
+	constructor(pictographData: PictographInterface, getter: PictographGetter) {
 		this.getter = getter;
 		this.pictographData = pictographData;
 		// log the pictograph data
 	}
 
-	private _selectCalculator() {
-		const motionType = this.motion.motionType.toLowerCase() as MotionType;
+	private _selectCalculator(
+		motion: Motion
+	) {
+		const motionType = motion.motionType.toLowerCase() as MotionType;
 
 		const calculatorMap: Record<MotionType, any> = {
 			[PRO]: ShiftLocationCalculator,
@@ -33,7 +33,7 @@ export default class ArrowLocationManager {
 		const CalculatorClass = calculatorMap[motionType];
 
 		try {
-			return new CalculatorClass(this.motion, this.getter);
+			return new CalculatorClass(motion, this.getter);
 		} catch (error) {
 			console.error('Calculator initialization failed:', error);
 			return null;
@@ -41,7 +41,7 @@ export default class ArrowLocationManager {
 	}
 
 	getArrowLocation(motion: Motion) {
-		const calculator = this._selectCalculator();
+		const calculator = this._selectCalculator(motion);
 		return calculator?.calculateLocation?.() || null;
 	}
 }

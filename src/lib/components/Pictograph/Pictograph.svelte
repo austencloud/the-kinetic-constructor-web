@@ -16,6 +16,8 @@
 	import Prop from './Prop/Prop.svelte';
 	import { PictographGetter } from './PictographGetter';
 	import TKAGlyph from './TKAGlyph/TKAGlyph.svelte';
+	import ArrowLocationManager from './Arrow/ArrowLocationManager/ArrowLocationManager';
+	import ArrowRotAngleManager from './Arrow/ArrowRotAngleManager/ArrowRotAngleManager';
 
 	export let pictographData: PictographInterface;
 	export const onClick: () => void = () => {};
@@ -35,49 +37,48 @@
 
 	async function initializeAll() {
 		try {
-			// 1. Check if pictographData.letter is null
 			if (!pictographData.letter) {
-				return
+				return;
 			}
 
-			// 2. Wait for valid grid data
 			while (!gridData?.centerPoint?.coordinates) await tick();
 
-			// 2. Create placement managers
-			
-			// log the pictograph data
 			console.log('Pictograph data:', pictographData);
-			
-			// 3. Initialize motions properly
+
 			const redMotion = new Motion(pictographData, pictographData.redMotionData!);
 			const blueMotion = new Motion(pictographData, pictographData.blueMotionData!);
-			
-			// Wait for motion initialization to complete
+
 			await Promise.all([redMotion.ready, blueMotion.ready]);
-			
-			// 4. Create component data with initialized motions
+
 			const [redProp, blueProp] = await Promise.all([
 				createPropData(redMotion),
 				createPropData(blueMotion)
 			]);
-			
+
 			const [redArrow, blueArrow] = await Promise.all([
 				createArrowData(pictographData, redMotion, getter),
 				createArrowData(pictographData, blueMotion, getter)
 			]);
-			
-			// 5. Atomic store updates
+
 			redPropData.set(redProp);
 			bluePropData.set(blueProp);
 			redArrowData.set(redArrow);
 			blueArrowData.set(blueArrow);
+
+			redMotion.arrow = redArrow;
+			blueMotion.arrow = blueArrow;
+			const locationManager = new ArrowLocationManager(pictographData, getter);
+			redArrow.loc = locationManager.getArrowLocation(redMotion);
+			blueArrow.loc = locationManager.getArrowLocation(blueMotion);
+
+			const rotAngleManager = new ArrowRotAngleManager();
+			redArrow.rotAngle = rotAngleManager.updateRotation(redMotion, redArrow.loc);
+			blueArrow.rotAngle = rotAngleManager.updateRotation(blueMotion, blueArrow.loc);
 			
-			// 6. Final placement after DOM update
 			await tick();
-			
-			// log the pictograph data
+
 			console.log('Pictograph data:', pictographData);
-			
+
 			propPlacementManager = new PropPlacementManager(pictographData, gridData, checker);
 			arrowPlacementManager = new ArrowPlacementManager(pictographData, gridData, checker);
 
@@ -85,7 +86,6 @@
 			propPlacementManager?.updatePropPlacement([$redPropData, $bluePropData]);
 
 			initializationComplete = true;
-
 		} catch (error) {
 			console.error('Initialization failed:', error);
 		}

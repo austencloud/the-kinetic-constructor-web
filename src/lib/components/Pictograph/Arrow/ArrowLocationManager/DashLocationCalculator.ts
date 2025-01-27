@@ -1,7 +1,6 @@
 import { Letter } from '$lib/types/Letter';
 import type { Motion } from '../../Motion/Motion';
 import type { PictographGetter } from '../../PictographGetter';
-import Arrow from '../Arrow.svelte';
 import {
 	RED,
 	BLUE,
@@ -20,6 +19,9 @@ import {
 } from '$lib/types/Constants';
 import { LetterType } from '$lib/types/LetterType';
 import { LetterUtils } from '../../LetterUtils';
+import ArrowLocationManager from './ArrowLocationManager';
+import ShiftLocationCalculator from './ShiftLocationCalculator';
+
 
 export default class DashLocationCalculator {
 	private motion: Motion;
@@ -184,11 +186,15 @@ export default class DashLocationCalculator {
 		// if this.motion.motionType is pro, anti, or float, it's the shift, otherwise, the get other motion returns the shift
 		const shiftMotion = this.getter.getShiftMotion();
 		const dashMotion = shiftMotion ? this.getter.getOtherMotion(shiftMotion) : null;
-		const shiftLocation = shiftMotion?.arrow?.loc ?? '';
+		const shiftLocation = shiftMotion ? new ShiftLocationCalculator(shiftMotion).calculateLocation() : '';
 		const dashStartLoc = dashMotion?.startLoc ?? '';
 		const gridMode = this.motion.gridMode;
 
-
+		console.log('shiftMotion:', shiftMotion);
+		console.log('dashMotion', dashMotion);
+		console.log('shiftLocation', shiftLocation);
+		console.log('dashStartLoc', dashStartLoc);
+		console.log('gridMode', gridMode);
 
 
 
