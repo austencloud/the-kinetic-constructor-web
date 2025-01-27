@@ -1,5 +1,4 @@
 import type { ArrowInterface } from '../../ArrowInterface';
-import type { Loc } from '../../../Prop/PropInterface';
 import {
 	IN,
 	OUT,
@@ -17,7 +16,7 @@ import {
 	NORTHWEST
 } from '$lib/types/Constants';
 import type { Motion } from '$lib/components/Pictograph/Motion/Motion';
-import type { PropRotDir } from '$lib/components/Pictograph/types/Types';
+import type { Loc, PropRotDir } from '$lib/components/Pictograph/types/Types';
 
 export default class AntiRotAngleCalculator {
 	private directionMap: Partial<Record<PropRotDir, Partial<Record<Loc, number>>>> = {

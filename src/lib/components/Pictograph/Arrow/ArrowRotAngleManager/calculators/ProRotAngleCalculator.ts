@@ -1,5 +1,4 @@
-import type { PropRotDir } from '$lib/components/Pictograph/types/Types';
-import type { Loc } from '../../../Prop/PropInterface';
+import type { Loc, PropRotDir } from '$lib/components/Pictograph/types/Types';
 import type { ArrowInterface } from '../../ArrowInterface';
 import {
 	CLOCKWISE,
@@ -13,6 +12,7 @@ import {
 	SOUTHWEST,
 	NORTHWEST
 } from '$lib/types/Constants';
+import type { Motion } from '$lib/components/Pictograph/Motion/Motion';
 
 export default class ProRotAngleCalculator {
 	private directionMap: Partial<Record<PropRotDir, Partial<Record<Loc, number>>>> = {
@@ -38,8 +38,8 @@ export default class ProRotAngleCalculator {
 		}
 	};
 
-	public calculate(loc: Loc, propRotDir: PropRotDir): number {
-		const directionMap = this.directionMap[propRotDir] || {};
+	public calculate(loc: Loc, motion: Motion): number {
+		const directionMap = this.directionMap[motion.propRotDir] || {};
 		const angle = directionMap[loc as Loc] ?? 0;
 		return angle;
 	}

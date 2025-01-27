@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { PictographInterface } from '$lib/types/PictographInterface';
-	import type { GridData } from './Grid/GridInterface';
 	import type { PropInterface } from './Prop/PropInterface';
 	import type { ArrowInterface } from './Arrow/ArrowInterface';
 	import { Motion } from './Motion/Motion';
@@ -18,6 +17,7 @@
 	import TKAGlyph from './TKAGlyph/TKAGlyph.svelte';
 	import ArrowLocationManager from './Arrow/ArrowLocationManager/ArrowLocationManager';
 	import ArrowRotAngleManager from './Arrow/ArrowRotAngleManager/ArrowRotAngleManager';
+	import type { GridData } from './Grid/GridData';
 
 	export let pictographData: PictographInterface;
 	export const onClick: () => void = () => {};
@@ -56,8 +56,8 @@
 			]);
 
 			const [redArrow, blueArrow] = await Promise.all([
-				createArrowData(pictographData, redMotion, getter),
-				createArrowData(pictographData, blueMotion, getter)
+				createArrowData(redMotion),
+				createArrowData(blueMotion)
 			]);
 
 			redPropData.set(redProp);
@@ -67,7 +67,8 @@
 
 			redMotion.arrow = redArrow;
 			blueMotion.arrow = blueArrow;
-			const locationManager = new ArrowLocationManager(pictographData, getter);
+
+			const locationManager = new ArrowLocationManager(getter);
 			redArrow.loc = locationManager.getArrowLocation(redMotion);
 			blueArrow.loc = locationManager.getArrowLocation(blueMotion);
 

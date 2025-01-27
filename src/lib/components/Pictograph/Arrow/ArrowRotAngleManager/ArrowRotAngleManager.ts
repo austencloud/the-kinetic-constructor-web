@@ -8,11 +8,11 @@ import ProRotAngleCalculator from './calculators/ProRotAngleCalculator';
 import StaticRotAngleCalculator from './calculators/StaticRotAngleCalculator';
 
 const calculatorMapping = {
-	[STATIC]: StaticRotAngleCalculator,
 	[PRO]: ProRotAngleCalculator,
 	[ANTI]: AntiRotAngleCalculator,
-	[DASH]: DashRotAngleCalculator,
 	[FLOAT]: FloatRotAngleCalculator,
+	[DASH]: DashRotAngleCalculator,
+	[STATIC]: StaticRotAngleCalculator,
 };
 
 export default class ArrowRotAngleManager {

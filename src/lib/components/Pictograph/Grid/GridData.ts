@@ -1,6 +1,4 @@
-export interface GridPoint {
-    coordinates: { x: number; y: number } | null;
-}
+import type { GridPoint } from "./GridPoint";
 
 export interface GridData {
 	allHandPointsStrict: Record<string, GridPoint>;

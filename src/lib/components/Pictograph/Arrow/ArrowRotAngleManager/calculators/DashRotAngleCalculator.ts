@@ -1,6 +1,5 @@
 import type { ArrowInterface } from '../../ArrowInterface';
-import type { Loc } from '../../../Prop/PropInterface';
-import type { PropRotDir } from '$lib/components/Pictograph/types/Types';
+import type { Loc, PropRotDir } from '$lib/components/Pictograph/types/Types';
 import {
 	NORTH,
 	EAST,

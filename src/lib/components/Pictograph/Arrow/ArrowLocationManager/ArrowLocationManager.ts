@@ -9,13 +9,10 @@ import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';
 import type { PictographInterface } from '$lib/types/PictographInterface';
 
 export default class ArrowLocationManager {
-	pictographData: PictographInterface;
 	getter: PictographGetter;
 
-	constructor(pictographData: PictographInterface, getter: PictographGetter) {
+	constructor(getter: PictographGetter) {
 		this.getter = getter;
-		this.pictographData = pictographData;
-		// log the pictograph data
 	}
 
 	private _selectCalculator(

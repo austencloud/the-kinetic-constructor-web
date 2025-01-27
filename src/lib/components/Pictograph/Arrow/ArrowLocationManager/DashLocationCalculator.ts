@@ -22,7 +22,6 @@ import { LetterUtils } from '../../LetterUtils';
 import ArrowLocationManager from './ArrowLocationManager';
 import ShiftLocationCalculator from './ShiftLocationCalculator';
 
-
 export default class DashLocationCalculator {
 	private motion: Motion;
 	private getter: PictographGetter;
@@ -33,30 +32,19 @@ export default class DashLocationCalculator {
 	}
 
 	calculateLocation(): string {
-		const letterType = this.motion.letter
-			? LetterType.getLetterType(this.motion.letter)
-			: null;
+		const letterType = this.motion.letter ? LetterType.getLetterType(this.motion.letter) : null;
 
 		const letter = LetterUtils.getLetter(this.motion.letter);
-
-
 
 		// Handle Type3 specific logic
 		if (letterType === LetterType.Type3 && this.motion.turns === 0) {
 			return this._calculateDashLocationBasedOnShift();
 		}
-		if (
-			letter &&
-			[Letter.Φ_DASH, Letter.Ψ_DASH].includes(letter)
-		) {
+		if (letter && [Letter.Φ_DASH, Letter.Ψ_DASH].includes(letter)) {
 			return this._getPhiDashPsiDashLocation();
 		}
 
-		if (
-			letter &&
-			[Letter.Λ, Letter.Λ_DASH].includes(letter) &&
-			this.motion.turns === 0
-		) {
+		if (letter && [Letter.Λ, Letter.Λ_DASH].includes(letter) && this.motion.turns === 0) {
 			return this._getLambdaZeroTurnsLocation();
 		}
 
@@ -186,17 +174,11 @@ export default class DashLocationCalculator {
 		// if this.motion.motionType is pro, anti, or float, it's the shift, otherwise, the get other motion returns the shift
 		const shiftMotion = this.getter.getShiftMotion();
 		const dashMotion = shiftMotion ? this.getter.getOtherMotion(shiftMotion) : null;
-		const shiftLocation = shiftMotion ? new ShiftLocationCalculator(shiftMotion).calculateLocation() : '';
+		const shiftLocation = shiftMotion
+			? new ShiftLocationCalculator(shiftMotion).calculateLocation()
+			: '';
 		const dashStartLoc = dashMotion?.startLoc ?? '';
 		const gridMode = this.motion.gridMode;
-
-		console.log('shiftMotion:', shiftMotion);
-		console.log('dashMotion', dashMotion);
-		console.log('shiftLocation', shiftLocation);
-		console.log('dashStartLoc', dashStartLoc);
-		console.log('gridMode', gridMode);
-
-
 
 		const diamondDashLocationMap: Record<string, Record<string, string>> = {
 			[NORTH]: { [NORTHWEST]: EAST, [NORTHEAST]: WEST, [SOUTHEAST]: WEST, [SOUTHWEST]: EAST },
@@ -213,10 +195,13 @@ export default class DashLocationCalculator {
 		};
 
 		if (gridMode === DIAMOND) {
-
-			return diamondDashLocationMap[dashStartLoc][shiftLocation] || '';
+			return (
+				(dashStartLoc && shiftLocation && diamondDashLocationMap[dashStartLoc][shiftLocation]) || ''
+			);
 		} else if (gridMode === BOX) {
-			return boxDashLocationMap[dashStartLoc][shiftLocation] || '';
+			return (
+				(dashStartLoc && shiftLocation && boxDashLocationMap[dashStartLoc][shiftLocation]) || ''
+			);
 		}
 
 		return '';

@@ -1,10 +1,20 @@
 import {
-	PRO, ANTI, FLOAT, DASH, STATIC,
-	DIAMOND, BOX, RADIAL, NONRADIAL, CLOCK, COUNTER, IN, OUT
+	PRO,
+	ANTI,
+	FLOAT,
+	DASH,
+	STATIC,
+	DIAMOND,
+	BOX,
+	RADIAL,
+	NONRADIAL,
+	CLOCK,
+	COUNTER,
+	IN,
+	OUT
 } from '$lib/types/Constants';
 
 import type { PictographInterface } from '$lib/types/PictographInterface';
-import type { GridData } from '../../Grid/GridInterface';
 import type { PictographChecker } from '../../PictographChecker';
 import type { ArrowInterface } from '../ArrowInterface';
 
@@ -22,9 +32,9 @@ import boxStaticData from '$lib/data/arrow_placement/box/default/default_box_sta
 import type { MotionType } from '../../types/Types';
 import { LetterUtils } from '../../LetterUtils';
 import { LetterType } from '$lib/types/LetterType';
+import type { GridData } from '../../Grid/GridData';
 
 export class DefaultArrowPositioner {
-
 	private allDefaults: {
 		diamond: Record<MotionType, any>;
 		box: Record<MotionType, any>;

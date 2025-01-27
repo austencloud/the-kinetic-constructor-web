@@ -1,8 +1,7 @@
-import type { Loc } from '$lib/components/Pictograph/Prop/PropInterface';
-import type { PropRotDir } from '../../../Motion/MotionInterface';
+import type { Loc, PropRotDir } from "$lib/components/Pictograph/types/Types";
 
 export default class StaticRotAngleCalculator {
-	public calculate(loc: Loc, propRotDir: PropRotDir): number {
-		return 0; // Static: Always return 0 rotation
+	public calculate(): number {
+		return 0; 
 	}
 }

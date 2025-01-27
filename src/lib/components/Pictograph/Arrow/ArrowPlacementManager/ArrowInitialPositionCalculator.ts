@@ -1,7 +1,8 @@
 import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';
 import type { PictographInterface } from '$lib/types/PictographInterface';
+import type { GridData } from '../../Grid/GridData';
 import type { ArrowInterface } from '../ArrowInterface';
-import type { GridData } from '../../Grid/GridInterface';
+
 
 export class ArrowInitialPosCalculator {
 	private pictographData: PictographInterface;

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { circleCoordinates } from './circleCoordinates';
-	import type { GridData } from './GridInterface';
+	import type { GridData } from './GridData';
 
 	export let gridMode: 'diamond' | 'box' = 'diamond';
 	export let onPointsReady: (gridData: GridData) => void;

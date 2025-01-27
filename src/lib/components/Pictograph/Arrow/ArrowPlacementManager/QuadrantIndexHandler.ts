@@ -1,10 +1,9 @@
 // QuadrantIndexHandler.ts
 import type { PictographInterface } from '$lib/types/PictographInterface';
-import type { GridData } from '../../Grid/GridInterface';
+import type { GridData } from '../../Grid/GridData';
 import type { ArrowInterface } from '../ArrowInterface';
 
 export class QuadrantIndexHandler {
-
 	private pictographData: PictographInterface;
 	private gridData: GridData;
 
