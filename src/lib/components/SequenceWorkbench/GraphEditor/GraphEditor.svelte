@@ -1,7 +1,8 @@
 <script lang="ts">
 	import TurnsBox from './TurnsBox/TurnsBox.svelte';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
-	import type { PictographInterface } from '$lib/types/PictographInterface';
+	import type { PictographData } from '$lib/types/PictographData';
+	import { DIAMOND } from '$lib/types/Constants';
 
 	export let isExpanded: boolean;
 	export let animationDuration: number;
@@ -11,20 +12,19 @@
 
 	$: borderSize = Math.floor(maxEditorHeight * BORDER_PERCENTAGE);
 
-
 	$: contentWidth = maxEditorHeight - 2 * borderSize;
 
-	// Pictograph data
-	const dummyPictographData: PictographInterface = {
+	const dummyPictographData: PictographData = {
 		letter: null,
 		startPos: null,
 		endPos: null,
 		timing: null,
 		direction: null,
-		gridMode: null,
+		gridMode: DIAMOND,
 		blueMotionData: null,
 		redMotionData: null
 	};
+
 </script>
 
 <div
@@ -76,6 +76,6 @@
 	}
 
 	.pictograph-container {
-		cursor:default
+		cursor: default;
 	}
 </style>

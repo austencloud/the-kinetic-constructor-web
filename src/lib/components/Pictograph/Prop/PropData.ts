@@ -1,8 +1,7 @@
 import type { Motion } from '../Motion/Motion';
 import type { Color, Loc, Orientation, PropType, RadialMode } from '../types/Types';
 
-
-export interface PropInterface {
+export interface PropData {
 	propType: PropType;
 	color: Color;
 	radialMode: RadialMode | null;

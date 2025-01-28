@@ -2,7 +2,7 @@ import { MotionChecker } from './MotionChecker';
 import { MotionOriCalculator } from './MotionOriCalculator';
 import { HandpathCalculator as HandRotDirCalculator } from './HandpathCalculator';
 import Prop from '../Prop/Prop.svelte';
-import type { PictographInterface } from '../../../types/PictographInterface';
+import type { PictographData } from '../../../types/PictographData';
 import { LeadStateDeterminer } from './LeadStateDeterminer';
 import type {
 	Color,
@@ -15,13 +15,13 @@ import type {
 	PropRotDir,
 	TKATurns
 } from '../types/Types';
-import type { MotionInterface } from './MotionInterface';
-import type { PropInterface } from '../Prop/PropInterface';
-import type { ArrowInterface } from '../Arrow/ArrowInterface';
+import type { MotionData } from './MotionData';
+import type { PropData } from '../Prop/PropData';
+import type { ArrowData } from '../Arrow/ArrowData';
 import type { Letter } from '$lib/types/Letter';
 import { LetterUtils } from '../LetterUtils';
 
-export class Motion implements MotionInterface {
+export class Motion implements MotionData {
 	motionType: MotionType;
 	startLoc: Loc;
 	endLoc: Loc;
@@ -34,19 +34,19 @@ export class Motion implements MotionInterface {
 	prefloatPropRotDir: PropRotDir | null = null;
 	endOri: Orientation = 'in';
 	handRotDir: HandRotDir = null;
-	motionData: MotionInterface;
-	prop: PropInterface | null = null;
-	arrow: ArrowInterface | null = null;
+	motionData: MotionData;
+	prop: PropData | null = null;
+	arrow: ArrowData | null = null;
 	gridMode: GridMode;
 	checker: MotionChecker;
 	oriCalculator: MotionOriCalculator;
 	handRotDirCalculator: HandRotDirCalculator;
-	redMotionData: MotionInterface;
-	blueMotionData: MotionInterface;
+	redMotionData: MotionData;
+	blueMotionData: MotionData;
 	letter: Letter;
 	public readonly ready: Promise<void>;
 
-	constructor(pictographData: PictographInterface, motionData: MotionInterface) {
+	constructor(pictographData: PictographData, motionData: MotionData) {
 		this.ready = new Promise((resolve, reject) => {
 			try {
 				// Move constructor logic here
@@ -54,7 +54,7 @@ export class Motion implements MotionInterface {
 			} catch (error) {
 				reject(error);
 			}
-		});// log the motion data
+		}); // log the motion data
 		if (pictographData.redMotionData && pictographData.blueMotionData) {
 			this.redMotionData = pictographData.redMotionData;
 			this.blueMotionData = pictographData.blueMotionData;
@@ -64,7 +64,7 @@ export class Motion implements MotionInterface {
 		if (pictographData.letter === null) {
 			throw new Error('Letter is null');
 		}
-		
+
 		this.motionData = motionData;
 		this.letter = LetterUtils.getLetter(pictographData.letter);
 
@@ -104,7 +104,7 @@ export class Motion implements MotionInterface {
 		}
 	}
 
-	attachComponents(prop: PropInterface, arrow: ArrowInterface): void {
+	attachComponents(prop: PropData, arrow: ArrowData): void {
 		this.prop = prop;
 		this.arrow = arrow;
 	}

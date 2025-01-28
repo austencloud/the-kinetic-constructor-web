@@ -1,6 +1,6 @@
 import Arrow from '../Arrow/Arrow.svelte';
 import Prop from '../Prop/Prop.svelte';
-import type { PictographInterface } from '../../../types/PictographInterface';
+import type { PictographData } from '../../../types/PictographData';
 import type {
 	Color,
 	HandRotDir,
@@ -11,12 +11,12 @@ import type {
 	PropRotDir,
 	TKATurns
 } from '../types/Types';
-import type { ArrowInterface } from '../Arrow/ArrowInterface';
-import type { PropInterface } from '../Prop/PropInterface';
+import type { ArrowData } from '../Arrow/ArrowData';
+import type { PropData } from '../Prop/PropData';
 
-export interface MotionInterface {
-    arrow?: ArrowInterface | null;
-    prop: PropInterface | null;
+export interface MotionData {
+	arrow?: ArrowData | null;
+	prop: PropData | null;
 	handRotDir: HandRotDir | null;
 	motionType: MotionType;
 	startLoc: Loc;
@@ -30,7 +30,7 @@ export interface MotionInterface {
 	prefloatMotionType: MotionType | null;
 	prefloatPropRotDir: PropRotDir | null;
 }
-export interface BlankMotionInterface {
+export interface BlankMotionData {
 	pictographData: {
 		letter: null;
 		startPos: null;
@@ -57,7 +57,7 @@ export interface BlankMotionInterface {
 	prefloatPropRotDir: null;
 }
 
-export interface ShiftMotionInterface extends MotionInterface {
+export interface ShiftMotionInterface extends MotionData {
 	motionType: 'float';
 	handRotDir: 'cw_handpath' | 'ccw_handpath';
 }

@@ -1,6 +1,6 @@
 // PropClassifier.ts
 
-import type { PropInterface } from '../PropInterface';
+import type { PropData } from '../PropData';
 import { PropType } from './PropTypes';
 
 const smallUnilateral = [PropType.CLUB];
@@ -15,7 +15,7 @@ export class PropClassifier {
 	bigUni: any;
 	bigBi: any;
 
-	constructor(props: PropInterface[]) {
+	constructor(props: PropData[]) {
 		props.forEach((prop) => {
 			if (smallUnilateral.includes(prop.propType)) {
 				this.smallUni.push(prop);

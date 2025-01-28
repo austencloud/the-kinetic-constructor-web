@@ -1,5 +1,5 @@
 import type { Loc, PropRotDir } from '$lib/components/Pictograph/types/Types';
-import type { ArrowInterface } from '../../ArrowInterface';
+import type { ArrowData } from '../../ArrowData';
 import {
 	CLOCKWISE,
 	COUNTER_CLOCKWISE,

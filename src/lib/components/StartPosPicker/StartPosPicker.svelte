@@ -4,12 +4,12 @@
 	import { pictographsRendered, totalPictographs } from '$lib/stores/pictographRenderStore';
 	import { onMount } from 'svelte';
 	import StartPositionLabel from './StartPosLabel.svelte';
-	import type { PictographInterface } from '$lib/types/PictographInterface';
+	import type { PictographData } from '$lib/types/PictographData';
 	import { writable } from 'svelte/store';
 
-	let startPositionDataSet: PictographInterface[] = [];
+	let startPositionDataSet: PictographData[] = [];
 	let gridMode = 'diamond';
-	export const selectedStartPos = writable<PictographInterface | null>(null);
+	export const selectedStartPos = writable<PictographData | null>(null);
 
 	// Track rendering status
 	$: pictographsRendered.subscribe((rendered) => {
@@ -19,14 +19,14 @@
 		}
 	});
 
-	pictographDataStore.subscribe((data: PictographInterface[]) => {
+	pictographDataStore.subscribe((data) => {
+		const pictographData = data as PictographData[];
 		const defaultStartPosKeys =
 			gridMode === 'diamond'
 				? // ? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
-					['alpha1_gamma5']
+					['alpha1_gamma15']
 				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
-
-		startPositionDataSet = (data as PictographInterface[]).filter((entry) => {
+		startPositionDataSet = pictographData.filter((entry) => {
 			return (
 				entry.redMotionData &&
 				entry.blueMotionData &&
@@ -35,7 +35,7 @@
 		});
 		totalPictographs.set(startPositionDataSet.length);
 	});
-	const handleSelect = (start_pos_pictograph: PictographInterface) => {
+	const handleSelect = (start_pos_pictograph: PictographData) => {
 		selectedStartPos.set(start_pos_pictograph);
 		console.log('Selected start position:', start_pos_pictograph);
 	};
@@ -58,7 +58,7 @@
 					}}
 				>
 					{#if startPositionData}
-						{console.log('Pictograph data:', startPositionData)}
+						{console.log(`Creating ${startPositionData.letter} pictograph: `, startPositionData)}
 					{/if}
 					<Pictograph
 						pictographData={startPositionData}

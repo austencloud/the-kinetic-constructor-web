@@ -1,13 +1,13 @@
-import type { MotionInterface } from './MotionInterface';
+import type { MotionData } from './MotionData';
 import { HandpathCalculator } from './HandpathCalculator';
-import type { Location } from './MotionInterface';
+import type { Location } from './MotionData';
 
 export class LeadStateDeterminer {
-	private redMotionData: MotionInterface;
-	private blueMotionData: MotionInterface;
+	private redMotionData: MotionData;
+	private blueMotionData: MotionData;
 	private handpathCalculator: HandpathCalculator;
 
-	constructor(redMotionData: MotionInterface, blueMotionData: MotionInterface) {
+	constructor(redMotionData: MotionData, blueMotionData: MotionData) {
 		this.redMotionData = redMotionData;
 		this.blueMotionData = blueMotionData;
 		this.handpathCalculator = new HandpathCalculator();
@@ -35,7 +35,7 @@ export class LeadStateDeterminer {
 		);
 	}
 
-	private determineMotionOrder(trailing: boolean): MotionInterface {
+	private determineMotionOrder(trailing: boolean): MotionData {
 		const redStart = this.redMotionData.startLoc;
 		const redEnd = this.redMotionData.endLoc;
 		const blueStart = this.blueMotionData.startLoc;
@@ -77,11 +77,11 @@ export class LeadStateDeterminer {
 		}
 	}
 
-	getTrailingMotion(): MotionInterface {
+	getTrailingMotion(): MotionData {
 		return this.determineMotionOrder(true);
 	}
 
-	getLeadingMotion(): MotionInterface {
+	getLeadingMotion(): MotionData {
 		return this.determineMotionOrder(false);
 	}
 }

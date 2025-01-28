@@ -1,5 +1,5 @@
 import { LetterUtils } from '$lib/components/Pictograph/LetterUtils';
-import type { MotionInterface } from '$lib/components/Pictograph/Motion/MotionInterface';
+import type { MotionData } from '$lib/components/Pictograph/Motion/MotionInterface';
 import type { Color, HandRotDir, LeadState } from '$lib/components/Pictograph/types/Types';
 import type { PictographInterface } from '$lib/types/PictographInterface';
 import { writable } from 'svelte/store';
@@ -76,7 +76,7 @@ function groupPictographsByLetter(pictographs: Record<string, any>[]): Pictograp
 	});
 }
 
-const defaultMotionData: MotionInterface = {
+const defaultMotionData: MotionData = {
 	handRotDir: 'cw_handpath',
 	color: 'red',
 	leadState: 'leading',
@@ -93,7 +93,7 @@ const defaultMotionData: MotionInterface = {
 };
 
 // Modify the extractAttributes function
-function extractAttributes(record: Record<string, any>, prefix: string): MotionInterface {
+function extractAttributes(record: Record<string, any>, prefix: string): MotionData {
 	return {
 		...defaultMotionData,
 		color: prefix === 'blue' ? 'blue' : 'red',

@@ -1,7 +1,7 @@
-import type { ArrowInterface } from './ArrowInterface';
+import type { ArrowData } from './ArrowData';
 
 export default class ArrowSvgManager {
-	constructor(private arrowData: ArrowInterface) {}
+	constructor(private arrowData: ArrowData) {}
 
 	getSvgPath(): string {
 		const basePath = '/images/arrows';
@@ -13,10 +13,8 @@ export default class ArrowSvgManager {
 				: 'from_nonradial';
 		if (turns === 'fl' && motionType === 'float') {
 			return `${basePath}/float.svg`;
-		}
-		else
-		{
-		return `${basePath}/${motionType}/${radialPath}/${motionType}_${Number(turns).toFixed(1)}.svg`;
+		} else {
+			return `${basePath}/${motionType}/${radialPath}/${motionType}_${Number(turns).toFixed(1)}.svg`;
 		}
 	}
 }

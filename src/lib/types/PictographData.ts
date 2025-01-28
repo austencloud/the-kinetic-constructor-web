@@ -1,24 +1,23 @@
 import type { Letter } from './Letter';
 import type { TKAPosition } from './TKAPosition';
-import type { PropInterface } from '$lib/components/Pictograph/Prop/PropInterface';
 import type { Motion } from '$lib/components/Pictograph/Motion/Motion';
 import type { GridMode, VTGDir, VTGTiming } from '$lib/components/Pictograph/types/Types';
-import type { MotionInterface } from '$lib/components/Pictograph/Motion/MotionInterface';
+import type { PropData } from '$lib/components/Pictograph/Prop/PropData';
+import type { MotionData } from '$lib/components/Pictograph/Motion/MotionData';
 
-
-export interface PictographInterface {
+export interface PictographData {
 	letter: Letter | null;
 	startPos: TKAPosition | null;
 	endPos: TKAPosition | null;
 	timing: VTGTiming | null;
 	direction: VTGDir | null;
 	gridMode: GridMode;
-	blueMotionData: MotionInterface | null;
-	redMotionData: MotionInterface | null;
+	blueMotionData: MotionData | null;
+	redMotionData: MotionData | null;
 
 	redMotion: Motion | null;
 	blueMotion: Motion | null;
 
-	redPropData: PropInterface | null;
-	bluePropData: PropInterface | null;
+	redPropData: PropData | null;
+	bluePropData: PropData | null;
 }

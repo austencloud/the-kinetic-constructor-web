@@ -1,7 +1,7 @@
 // QuadrantIndexHandler.ts
 import type { PictographInterface } from '$lib/types/PictographInterface';
 import type { GridData } from '../../Grid/GridData';
-import type { ArrowInterface } from '../ArrowInterface';
+import type { ArrowData } from '../ArrowData';
 
 export class QuadrantIndexHandler {
 	private pictographData: PictographInterface;
@@ -12,7 +12,7 @@ export class QuadrantIndexHandler {
 		this.gridData = gridData;
 	}
 
-	public getQuadrantIndex(arrow: ArrowInterface): number {
+	public getQuadrantIndex(arrow: ArrowData): number {
 		const gridMode = this.pictographData.gridMode || 'diamond';
 		const motionType = arrow.motion.motionType;
 

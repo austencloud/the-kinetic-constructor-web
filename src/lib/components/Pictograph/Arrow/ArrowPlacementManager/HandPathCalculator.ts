@@ -14,8 +14,8 @@ import {
 	SOUTHEAST,
 	SOUTHWEST
 } from '$lib/types/Constants';
-import type { HandRotDir } from '../../Motion/MotionInterface';
-import type { Loc } from '../../Prop/PropInterface';
+import type { HandRotDir } from '../../Motion/MotionData';
+import type { Loc } from '../../Prop/PropData';
 
 export class HandpathCalculator {
 	private handRotDirMap: Map<string, HandRotDir>;

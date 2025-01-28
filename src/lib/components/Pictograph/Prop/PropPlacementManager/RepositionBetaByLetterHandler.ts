@@ -1,5 +1,5 @@
 // reposition-beta-by-letter-handler.ts
-import type { PropInterface } from '../PropInterface';
+import type { PropData } from '../PropData';
 import { BetaPropDirectionCalculator } from './BetaPropDirectionCalculator';
 import type { PictographInterface } from '$lib/types/PictographInterface';
 export default class RepositionBetaByLetterHandler {
@@ -71,9 +71,7 @@ export default class RepositionBetaByLetterHandler {
 		const shiftMotion = this.pictographData.motions.find((m) =>
 			['pro', 'anti', 'float'].includes(m.motionType)
 		);
-		const staticMotion = this.pictographData.motions.find(
-			(m) => m.motionType === 'static'
-		);
+		const staticMotion = this.pictographData.motions.find((m) => m.motionType === 'static');
 
 		if (!shiftMotion || !staticMotion) return;
 
@@ -99,11 +97,11 @@ export default class RepositionBetaByLetterHandler {
 		}
 	}
 
-	private getPropByColor(color: 'red' | 'blue'): PropInterface {
+	private getPropByColor(color: 'red' | 'blue'): PropData {
 		return color === 'red' ? this.pictographData.redPropData : this.pictographData.bluePropData;
 	}
 
-	private moveProp(prop: PropInterface, direction: string): void {
+	private moveProp(prop: PropData, direction: string): void {
 		// Implement actual movement logic using offset calculator
 		const newPosition = this.offsetCalculator.calculateNewPositionWithOffset(
 			prop.coords,

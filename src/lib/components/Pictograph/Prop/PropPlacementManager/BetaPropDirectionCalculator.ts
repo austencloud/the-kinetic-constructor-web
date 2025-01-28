@@ -1,8 +1,8 @@
 // BetaPropDirectionCalculator.ts
 
-import type { Color, Direction } from '../../Motion/MotionInterface';
-import type { BoxLoc, DiamondLoc, PropInterface } from '../PropInterface';
-import type { Loc } from '../../Prop/PropInterface';
+import type { Color, Direction } from '../../Motion/MotionData';
+import type { BoxLoc, DiamondLoc, PropData } from '../PropData';
+import type { Loc } from '../PropData';
 import type { PictographInterface } from '$lib/types/PictographInterface';
 import { Letter } from '$lib/types/Letter';
 export class BetaPropDirectionCalculator {
@@ -83,7 +83,7 @@ export class BetaPropDirectionCalculator {
 
 	constructor(private pictographData: PictographInterface) {}
 
-	getDirection(prop: PropInterface): Direction | undefined {
+	getDirection(prop: PropData): Direction | undefined {
 		if (['pro', 'anti', 'float'].includes(prop.motion.motionType)) {
 			return this.handleShiftMotion(prop);
 		}
@@ -105,7 +105,7 @@ export class BetaPropDirectionCalculator {
 			this.pictographData.blueMotionData?.endOri === 'counter'
 		);
 	}
-	private handleShiftMotion(prop: PropInterface): Direction | undefined {
+	private handleShiftMotion(prop: PropData): Direction | undefined {
 		if (this.pictographData.letter === Letter.I) {
 			if (this.endsWithRadialOrientation()) {
 				return this.directionMapRadialI[prop.motion.endLoc][prop.color];
@@ -124,7 +124,7 @@ export class BetaPropDirectionCalculator {
 		return map[startLoc]?.[endLoc];
 	}
 
-	private handleStaticDashMotion(prop: PropInterface): Direction {
+	private handleStaticDashMotion(prop: PropData): Direction {
 		const gridMode = ['n', 's', 'e', 'w'].includes(prop.loc) ? 'diamond' : 'box';
 		const isRadial = prop.radialMode === 'radial';
 

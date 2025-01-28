@@ -1,19 +1,18 @@
 import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';
-import type { PictographInterface } from '$lib/types/PictographInterface';
+import type { PictographData } from '$lib/types/PictographData';
 import type { GridData } from '../../Grid/GridData';
-import type { ArrowInterface } from '../ArrowInterface';
-
+import type { ArrowData } from '../ArrowData';
 
 export class ArrowInitialPosCalculator {
-	private pictographData: PictographInterface;
+	private pictographData: PictographData;
 	private gridData: GridData;
 
-	constructor(pictographData: PictographInterface, gridData: GridData) {
+	constructor(pictographData: PictographData, gridData: GridData) {
 		this.pictographData = pictographData;
 		this.gridData = gridData;
 	}
 
-	public getInitialCoords(arrow: ArrowInterface): { x: number; y: number } {
+	public getInitialCoords(arrow: ArrowData): { x: number; y: number } {
 		switch (arrow.motion.motionType) {
 			case PRO:
 			case ANTI:
@@ -27,25 +26,28 @@ export class ArrowInitialPosCalculator {
 		}
 	}
 
-	private getShiftCoords(arrow: ArrowInterface): { x: number; y: number } {
+	private getShiftCoords(arrow: ArrowData): { x: number; y: number } {
 		const pointName = `${arrow.loc}_${this.pictographData.gridMode || 'diamond'}_layer2_point`;
+		let shiftCoord = this.getShiftCoordFromGrid(pointName);
 
-		const shiftCoord = this.getShiftCoordFromGrid(pointName);
 		if (!shiftCoord) {
 			console.warn(`Shift coordinate for '${pointName}' not found.`);
 			return { x: 0, y: 0 };
 		}
+
 		return shiftCoord;
 	}
 
-	private getStaticDashCoords(arrow: ArrowInterface): { x: number; y: number } {
+	private getStaticDashCoords(arrow: ArrowData): { x: number; y: number } {
 		const pointName = `${arrow.loc}_${this.pictographData.gridMode || 'diamond'}_hand_point`;
+		let staticCoord = this.getStaticCoordFromGrid(pointName);
 
-		const staticCoord = this.getStaticCoordFromGrid(pointName);
 		if (!staticCoord) {
-			console.warn(`Static/Dash coordinate for '${pointName}' not found.`);
+			console.warn(`Static coordinate for '${pointName}' not found.`);
 			return { x: 0, y: 0 };
 		}
+
+
 		return staticCoord;
 	}
 

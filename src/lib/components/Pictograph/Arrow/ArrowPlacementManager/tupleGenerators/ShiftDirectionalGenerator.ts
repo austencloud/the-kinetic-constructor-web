@@ -11,7 +11,7 @@ import {
 	FLOAT,
 	PRO
 } from '$lib/types/Constants';
-import type { MotionType, ShiftMotionType } from '../../../Motion/MotionInterface';
+import type { MotionType, ShiftMotionType } from '../../../Motion/MotionData';
 
 export class ShiftDirectionalGenerator extends BaseDirectionalGenerator {
 	constructor(motion: Motion) {

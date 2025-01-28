@@ -1,14 +1,10 @@
 // ArrowFactory.ts
-import type { PictographInterface } from '$lib/types/PictographInterface';
 import type { Motion } from '../Motion/Motion';
-import type { PictographGetter } from '../PictographGetter';
-import type { ArrowInterface } from './ArrowInterface';
-import ArrowLocationManager from './ArrowLocationManager/ArrowLocationManager';
+import type { ArrowData } from './ArrowData';
 import ArrowSvgMirrorManager from './ArrowSvgMirrorManager';
-import ArrowRotAngleManager from './ArrowRotAngleManager/ArrowRotAngleManager';
 
-export function createArrowData(motion: Motion): ArrowInterface {
-	const arrowData: ArrowInterface = {
+export function createArrowData(motion: Motion): ArrowData {
+	const arrowData: ArrowData = {
 		color: motion.color,
 		coords: { x: 0, y: 0 },
 		loc: 'n',
@@ -16,10 +12,10 @@ export function createArrowData(motion: Motion): ArrowInterface {
 		svgMirrored: false, // Default
 		motion: motion,
 		svgCenter: { x: 0, y: 0 },
-		svgLoaded: false
+		svgLoaded: false,
+		svgData: null,
 	};
 
-	// Initialize mirroring manager to set the mirrored state
 	const mirrorManager = new ArrowSvgMirrorManager(arrowData);
 	mirrorManager.updateMirror();
 

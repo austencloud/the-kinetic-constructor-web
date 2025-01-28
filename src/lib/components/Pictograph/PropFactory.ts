@@ -1,12 +1,9 @@
 import type { Motion } from './Motion/Motion';
-import type { PropInterface } from './Prop/PropInterface';
+import type { PropData } from './Prop/PropData';
 import { PropType } from './types/Types';
 
-export function createPropData(
-	motion: Motion,
-): PropInterface {
-
-	const propData: PropInterface = {
+export function createPropData(motion: Motion): PropData {
+	const propData: PropData = {
 		propType: PropType.STAFF,
 		color: motion.color,
 		motion,

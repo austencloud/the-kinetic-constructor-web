@@ -1,10 +1,10 @@
-import { CLOCK, COUNTER, IN, OUT } from "$lib/types/Constants";
-import type { PropInterface } from "./PropInterface";
+import { CLOCK, COUNTER, IN, OUT } from '$lib/types/Constants';
+import type { PropData } from './PropData';
 
 class PropChecker {
-	prop: PropInterface;
+	prop: PropData;
 
-	constructor(propData: PropInterface) {
+	constructor(propData: PropData) {
 		this.prop = propData;
 	}
 

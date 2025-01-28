@@ -6,7 +6,6 @@ import { Motion } from '../../Motion/Motion';
 import type { PictographGetter } from '../../PictographGetter'; // <== import
 import type { MotionType } from '../../types/Types';
 import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';
-import type { PictographInterface } from '$lib/types/PictographInterface';
 
 export default class ArrowLocationManager {
 	getter: PictographGetter;

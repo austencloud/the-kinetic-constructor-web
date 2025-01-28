@@ -1,6 +1,5 @@
 import type { Color, MotionType, Orientation, PropType, TKATurns } from '../types/Types';
 
-// SvgManager.ts (enhanced)
 export default class SvgManager {
 	private async fetchSvg(path: string): Promise<string> {
 		const response = await fetch(path);
@@ -10,7 +9,7 @@ export default class SvgManager {
 
 	public applyColor(svgData: string, color: Color): string {
 		const hexColor = color === 'red' ? '#ED1C24' : '#2E3192';
-		return svgData.replace(/\.st0{([^}]*fill:#)2E3192([^}]*)}/g, `.st0{$1${hexColor.slice(1)}$2}`);
+		return svgData.replace(/\.st0{([^}]*fill:#)[0-9A-Fa-f]{6}([^}]*)}/g, `.st0{$1${hexColor.slice(1)}$2}`);
 	}
 
 	public async getPropSvg(propType: PropType, color: Color): Promise<string> {
@@ -29,14 +28,8 @@ export default class SvgManager {
 		const radialPath = startOri === 'out' || startOri === 'in' ? 'from_radial' : 'from_nonradial';
 		const fixedTurns = (typeof turns === 'number' ? turns : parseFloat(turns)).toFixed(1);
 		const svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${fixedTurns}.svg`;
-	
-		let baseSvg = await this.fetchSvg(svgPath);
-	
-		// If color is supplied, apply it
-		if (color) {
-		  baseSvg = this.applyColor(baseSvg, color);
-		}
-	
-		return baseSvg;
+
+		const svgData = await this.fetchSvg(svgPath);
+		return this.applyColor(svgData, color);
 	}
 }

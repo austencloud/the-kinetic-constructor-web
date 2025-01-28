@@ -1,10 +1,10 @@
 import { ANTI, CLOCKWISE, COUNTER_CLOCKWISE } from '$lib/types/Constants';
-import type { ArrowInterface } from './ArrowInterface';
+import type { ArrowData } from './ArrowData';
 
 export default class ArrowSvgMirrorManager {
-	private arrow: ArrowInterface;
+	private arrow: ArrowData;
 
-	constructor(arrow: ArrowInterface) {
+	constructor(arrow: ArrowData) {
 		this.arrow = arrow;
 		this.updateMirror();
 	}
@@ -25,16 +25,11 @@ export default class ArrowSvgMirrorManager {
 		const motionType = this.arrow.motion.motionType;
 		const propRotDir = this.arrow.motion.propRotDir;
 
-
-
 		if (motionType in mirrorConditions) {
 			this.arrow.svgMirrored = mirrorConditions[motionType]?.[propRotDir] || false;
 		} else {
 			this.arrow.svgMirrored = mirrorConditions.other?.[propRotDir] || false;
 		}
-
-		// log the arrows and its mirrored state
-		console.log(this.arrow, this.arrow.svgMirrored);
-		
+		// log the value
 	}
 }

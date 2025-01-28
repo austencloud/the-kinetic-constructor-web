@@ -1,6 +1,6 @@
 import { BetaPropDirectionCalculator } from './BetaPropDirectionCalculator';
-import type { Direction } from '../../Motion/MotionInterface';
-import type { PropInterface } from '../PropInterface';
+import type { Direction } from '../../Motion/MotionData';
+import type { PropData } from '../PropData';
 import type { PictographInterface } from '$lib/types/PictographInterface';
 
 export class BetaPropPositioner {
@@ -9,7 +9,7 @@ export class BetaPropPositioner {
 		this.dirCalculator = new BetaPropDirectionCalculator(this.pictographData);
 	}
 
-	public reposition(props: PropInterface[]): void {
+	public reposition(props: PropData[]): void {
 		props.forEach((prop) => {
 			const direction = this.dirCalculator.getDirection(prop);
 			if (direction) {

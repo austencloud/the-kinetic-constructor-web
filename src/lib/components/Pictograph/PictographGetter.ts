@@ -1,19 +1,19 @@
-import type { PictographInterface } from '$lib/types/PictographInterface';
 import { RED, BLUE } from '$lib/types/Constants';
 import { Motion } from './Motion/Motion';
 import SvgManager from './SvgManager/SvgManager';
-import type { MotionInterface } from './Motion/MotionInterface';
+import type { MotionData } from './Motion/MotionData';
+import type { PictographData } from '$lib/types/PictographData';
 
 export class PictographGetter {
-	private _currentData: PictographInterface;
+	private _currentData: PictographData;
 	private _initialized = false;
 	private _svgManager = new SvgManager();
 
-	constructor(initialData: PictographInterface) {
+	constructor(initialData: PictographData) {
 		this._currentData = initialData;
 		this._initializeMotions();
 	}
-	
+
 	public async initializeMotions(): Promise<void> {
 		if (this._initialized) return;
 
@@ -26,9 +26,9 @@ export class PictographGetter {
 		this._initializeMotions();
 	}
 
-	private async preloadMotionSvg(motionData?: MotionInterface): Promise<void> {
+	private async preloadMotionSvg(motionData?: MotionData): Promise<void> {
 		if (!motionData) return;
-		
+
 		try {
 			await this._svgManager.getArrowSvg(
 				motionData.motionType,
@@ -67,7 +67,7 @@ export class PictographGetter {
 		return JSON.parse(JSON.stringify(obj));
 	}
 
-	updateData(newData: PictographInterface): void {
+	updateData(newData: PictographData): void {
 		this._currentData = newData;
 		this._initializeMotions();
 	}

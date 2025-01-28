@@ -1,4 +1,4 @@
-import type { ArrowInterface } from '../../ArrowInterface';
+import type { ArrowData } from '../../ArrowData';
 import {
 	IN,
 	OUT,

@@ -1,7 +1,6 @@
 <script lang="ts">
-	import type { PictographInterface } from '$lib/types/PictographInterface';
-	import type { PropInterface } from './Prop/PropInterface';
-	import type { ArrowInterface } from './Arrow/ArrowInterface';
+	import type { PictographData as PictographData } from '$lib/types/PictographData';
+	import type { PropData } from './Prop/PropData';
 	import { Motion } from './Motion/Motion';
 	import { createPropData } from './PropFactory';
 	import { get, writable, type Writable } from 'svelte/store';
@@ -18,8 +17,9 @@
 	import ArrowLocationManager from './Arrow/ArrowLocationManager/ArrowLocationManager';
 	import ArrowRotAngleManager from './Arrow/ArrowRotAngleManager/ArrowRotAngleManager';
 	import type { GridData } from './Grid/GridData';
+	import type { ArrowData } from './Arrow/ArrowData';
 
-	export let pictographData: PictographInterface;
+	export let pictographData: PictographData;
 	export const onClick: () => void = () => {};
 
 	let gridData: GridData | null = null;
@@ -28,11 +28,11 @@
 	let propPlacementManager: PropPlacementManager | null = null;
 	let arrowPlacementManager: ArrowPlacementManager | null = null;
 
-	let redPropData: Writable<PropInterface> = writable();
-	let bluePropData: Writable<PropInterface> = writable();
+	let redPropData: Writable<PropData> = writable();
+	let bluePropData: Writable<PropData> = writable();
 
-	let redArrowData: Writable<ArrowInterface> = writable();
-	let blueArrowData: Writable<ArrowInterface> = writable();
+	let redArrowData: Writable<ArrowData> = writable();
+	let blueArrowData: Writable<ArrowData> = writable();
 	let initializationComplete = false;
 
 	async function initializeAll() {
@@ -42,8 +42,6 @@
 			}
 
 			while (!gridData?.centerPoint?.coordinates) await tick();
-
-			console.log('Pictograph data:', pictographData);
 
 			const redMotion = new Motion(pictographData, pictographData.redMotionData!);
 			const blueMotion = new Motion(pictographData, pictographData.blueMotionData!);
@@ -75,10 +73,8 @@
 			const rotAngleManager = new ArrowRotAngleManager();
 			redArrow.rotAngle = rotAngleManager.updateRotation(redMotion, redArrow.loc);
 			blueArrow.rotAngle = rotAngleManager.updateRotation(blueMotion, blueArrow.loc);
-			
-			await tick();
 
-			console.log('Pictograph data:', pictographData);
+			await tick();
 
 			propPlacementManager = new PropPlacementManager(pictographData, gridData, checker);
 			arrowPlacementManager = new ArrowPlacementManager(pictographData, gridData, checker);
@@ -110,8 +106,8 @@
 		<Prop propData={$bluePropData} />
 	{/if}
 	{#if $redArrowData?.coords?.x !== undefined && $blueArrowData?.coords?.x !== undefined}
-		<Arrow arrowData={$redArrowData} />
-		<Arrow arrowData={$blueArrowData} />
+	<Arrow arrowData={$redArrowData} />
+	<Arrow arrowData={$blueArrowData} />
 	{/if}
 </svg>
 

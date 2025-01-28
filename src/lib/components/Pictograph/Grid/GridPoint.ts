@@ -1,4 +1,6 @@
-export interface GridPoint {
-    coordinates: { x: number; y: number } | null;
-}
 
+export type GridPoint = {
+
+    coordinates: { x: number; y: number } | null;
+
+};

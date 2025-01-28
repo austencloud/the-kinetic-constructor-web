@@ -1,7 +1,13 @@
 import { CLOCK, COUNTER, FLOAT, IN, OUT, PRO, STATIC } from '$lib/types/Constants';
 import type { Motion } from './Motion';
-import type { MotionType, HandRotDir, ShiftMotionType, ShiftMotionInterface, ShiftHandRotDir, Orientation } from './MotionInterface';
-
+import type {
+	MotionType,
+	HandRotDir,
+	ShiftMotionType,
+	ShiftMotionInterface,
+	ShiftHandRotDir,
+	Orientation
+} from './MotionData';
 
 export class MotionOriCalculator {
 	motion: any;
@@ -12,7 +18,10 @@ export class MotionOriCalculator {
 
 	calculateEndOri(): Orientation {
 		if (this.motion.motionType === FLOAT) {
-			return this.calculateFloatOrientation(this.motion, this.motion.motionData as ShiftMotionInterface);
+			return this.calculateFloatOrientation(
+				this.motion,
+				this.motion.motionData as ShiftMotionInterface
+			);
 		}
 
 		const validTurns = [0, 0.5, 1, 1.5, 2, 2.5, 3];

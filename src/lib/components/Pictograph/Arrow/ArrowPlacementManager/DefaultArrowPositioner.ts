@@ -14,9 +14,8 @@ import {
 	OUT
 } from '$lib/types/Constants';
 
-import type { PictographInterface } from '$lib/types/PictographInterface';
 import type { PictographChecker } from '../../PictographChecker';
-import type { ArrowInterface } from '../ArrowInterface';
+import type { ArrowData } from '../ArrowData';
 
 import diamondProData from '$lib/data/arrow_placement/diamond/default/default_diamond_pro_placements.json';
 import diamondAntiData from '$lib/data/arrow_placement/diamond/default/default_diamond_anti_placements.json';
@@ -33,6 +32,7 @@ import type { MotionType } from '../../types/Types';
 import { LetterUtils } from '../../LetterUtils';
 import { LetterType } from '$lib/types/LetterType';
 import type { GridData } from '../../Grid/GridData';
+import type { PictographData } from '$lib/types/PictographData';
 
 export class DefaultArrowPositioner {
 	private allDefaults: {
@@ -56,12 +56,12 @@ export class DefaultArrowPositioner {
 	};
 
 	constructor(
-		private pictographData: PictographInterface,
+		private pictographData: PictographData,
 		private gridData: GridData,
 		private checker: PictographChecker
 	) {}
 
-	public getDefaultAdjustment(arrowData: ArrowInterface): [number, number] {
+	public getDefaultAdjustment(arrowData: ArrowData): [number, number] {
 		const motionType = arrowData.motion.motionType as MotionType;
 		const gridMode = this.pictographData.gridMode || DIAMOND;
 		const defaultPlacements = this.allDefaults[gridMode][motionType] || {};
@@ -76,7 +76,7 @@ export class DefaultArrowPositioner {
 		return [0, 0];
 	}
 
-	private _get_adjustment_key(arrow: ArrowInterface, defaultPlacements: any): string {
+	private _get_adjustment_key(arrow: ArrowData, defaultPlacements: any): string {
 		const motionType = arrow.motion.motionType;
 		const motionEndOri = arrow.motion.endOri;
 

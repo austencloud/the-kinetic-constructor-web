@@ -1,13 +1,13 @@
 <script lang="ts">
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import { defaultPictographData } from '$lib/components/Pictograph/defaultPictographData';
-	import type { PictographInterface } from '$lib/types/PictographInterface';
+	import type { PictographData } from '$lib/types/PictographData';
 	import type { BeatData } from './BetaData';
 
 	export let beatData: BeatData;
 	export let onClick: (beat: BeatData) => void;
 
-	let pictographData: PictographInterface = beatData.pictographData || defaultPictographData;
+	let pictographData: PictographData = beatData.pictographData || defaultPictographData;
 </script>
 
 <button
@@ -25,6 +25,6 @@
 		height: 100%;
 		padding: 0;
 		border-radius: 0;
-		border: none
-}
+		border: none;
+	}
 </style>

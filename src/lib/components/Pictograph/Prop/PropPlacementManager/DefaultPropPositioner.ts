@@ -1,6 +1,6 @@
 // src/lib/components/Prop/PropPlacementManager/DefaultPropPositioner.ts
 import type { GridData, GridPoint } from '../../Grid/GridPoint';
-import type { PropInterface } from '../PropInterface';
+import type { PropData } from '../PropData';
 
 export class DefaultPropPositioner {
 	constructor(
@@ -8,11 +8,11 @@ export class DefaultPropPositioner {
 		private gridMode: string
 	) {}
 
-	public async setToDefaultPosition(propData: PropInterface): Promise<void> {
+	public async setToDefaultPosition(propData: PropData): Promise<void> {
 		this.updateCoords(propData);
 	}
 
-	public updateCoords(prop: PropInterface): void {
+	public updateCoords(prop: PropData): void {
 		const pointName = `${prop.loc}_${this.gridMode}_hand_point`;
 		const gridPoint = this.getGridPoint(pointName);
 

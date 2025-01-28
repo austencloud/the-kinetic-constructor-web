@@ -1,4 +1,4 @@
-import type { ArrowInterface } from '../../ArrowInterface';
+import type { ArrowData } from '../../ArrowData';
 import type { Loc, PropRotDir } from '$lib/components/Pictograph/types/Types';
 import {
 	NORTH,
