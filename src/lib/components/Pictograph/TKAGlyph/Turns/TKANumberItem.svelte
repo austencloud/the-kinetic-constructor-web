@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { TKATurns } from '../../types/Types';
+	import type { TKATurns } from '../../../../types/Types';
 
 	export let value: TKATurns = 0;
 	export let x: number = 0;

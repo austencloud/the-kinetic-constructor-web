@@ -1,6 +1,6 @@
 import type { Motion } from './Motion/Motion';
 import type { PropData } from './Prop/PropData';
-import { PropType } from './types/Types';
+import { PropType } from '../../types/Types';
 
 export function createPropData(motion: Motion): PropData {
 	const propData: PropData = {

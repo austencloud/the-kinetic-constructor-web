@@ -1,7 +1,7 @@
 <!-- TkaTurnsNumberGroup.svelte -->
 <script lang="ts">
 	import TKANumberItem from './TKANumberItem.svelte';
-	import type { TKATurns } from '../../types/Types';
+	import type { TKATurns } from '../../../../types/Types';
 
 	export let topValue: TKATurns = 0;
 	export let bottomValue: TKATurns = 0;

@@ -1,11 +1,11 @@
 import { BetaPropDirectionCalculator } from './BetaPropDirectionCalculator';
-import type { Direction } from '../../Motion/MotionData';
 import type { PropData } from '../PropData';
-import type { PictographInterface } from '$lib/types/PictographInterface';
+import type { PictographData } from '$lib/types/PictographData';
+import type { Direction } from '$lib/types/Types';
 
 export class BetaPropPositioner {
 	private dirCalculator: BetaPropDirectionCalculator;
-	constructor(private pictographData: PictographInterface) {
+	constructor(private pictographData: PictographData) {
 		this.dirCalculator = new BetaPropDirectionCalculator(this.pictographData);
 	}
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PropType } from '$lib/components/Pictograph/types/Types';
+	import { PropType } from '$lib/types/Types';
 	import PropButton from './PropButton.svelte';
 
 	const props = [

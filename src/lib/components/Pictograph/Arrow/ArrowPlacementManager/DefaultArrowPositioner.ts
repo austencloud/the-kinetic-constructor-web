@@ -28,7 +28,7 @@ import boxAntiData from '$lib/data/arrow_placement/box/default/default_box_anti_
 import boxFloatData from '$lib/data/arrow_placement/box/default/default_box_float_placements.json';
 import boxDashData from '$lib/data/arrow_placement/box/default/default_box_dash_placements.json';
 import boxStaticData from '$lib/data/arrow_placement/box/default/default_box_static_placements.json';
-import type { MotionType } from '../../types/Types';
+import type { MotionType } from '../../../../types/Types';
 import { LetterUtils } from '../../LetterUtils';
 import { LetterType } from '$lib/types/LetterType';
 import type { GridData } from '../../Grid/GridData';

@@ -10,7 +10,7 @@ import type {
 	Orientation,
 	PropRotDir,
 	TKATurns
-} from '../types/Types';
+} from '../../../types/Types';
 import type { ArrowData } from '../Arrow/ArrowData';
 import type { PropData } from '../Prop/PropData';
 

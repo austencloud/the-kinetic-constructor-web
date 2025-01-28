@@ -1,4 +1,4 @@
-import type { DirRelation, PropRotDir, TKATurns } from '../../types/Types';
+import type { DirRelation, PropRotDir, TKATurns } from '../../../../types/Types';
 
 export const SAME = 's';
 export const OPP = 'o';

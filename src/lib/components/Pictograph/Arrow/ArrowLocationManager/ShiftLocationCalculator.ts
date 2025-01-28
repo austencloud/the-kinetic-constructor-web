@@ -9,7 +9,7 @@ import {
 	WEST
 } from '$lib/types/Constants';
 import type { Motion } from '../../Motion/Motion';
-import type { Loc } from '../../types/Types';
+import type { Loc } from '../../../../types/Types';
 
 export default class ShiftLocationCalculator {
 	motion: Motion;
@@ -32,7 +32,6 @@ export default class ShiftLocationCalculator {
 			[new Set([SOUTHWEST, SOUTHEAST]), SOUTH],
 			[new Set([NORTHWEST, SOUTHWEST]), WEST]
 		]);
-
 
 		for (const [key, value] of directionPairs.entries()) {
 			if (key.has(startLoc) && key.has(endLoc)) {

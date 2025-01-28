@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { parseTurnsTupleString } from './Turns/parseTurnsTuple';
 	import type { Letter } from '$lib/types/Letter';
-	import type { DirRelation, PropRotDir, TKATurns } from '../types/Types';
+	import type { DirRelation, PropRotDir, TKATurns } from '../../../types/Types';
 	import TKADash from './Dash/TKADash.svelte';
 	import TKALetter from './Letter/TKALetter.svelte';
 	import TKADotHandler from './Dot/TKADotHandler.svelte';

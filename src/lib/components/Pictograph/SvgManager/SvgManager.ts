@@ -1,4 +1,4 @@
-import type { Color, MotionType, Orientation, PropType, TKATurns } from '../types/Types';
+import type { Color, MotionType, Orientation, PropType, TKATurns } from '../../../types/Types';
 
 export default class SvgManager {
 	private async fetchSvg(path: string): Promise<string> {
@@ -9,7 +9,10 @@ export default class SvgManager {
 
 	public applyColor(svgData: string, color: Color): string {
 		const hexColor = color === 'red' ? '#ED1C24' : '#2E3192';
-		return svgData.replace(/\.st0{([^}]*fill:#)[0-9A-Fa-f]{6}([^}]*)}/g, `.st0{$1${hexColor.slice(1)}$2}`);
+		return svgData.replace(
+			/\.st0{([^}]*fill:#)[0-9A-Fa-f]{6}([^}]*)}/g,
+			`.st0{$1${hexColor.slice(1)}$2}`
+		);
 	}
 
 	public async getPropSvg(propType: PropType, color: Color): Promise<string> {

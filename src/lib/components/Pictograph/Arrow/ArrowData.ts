@@ -1,6 +1,6 @@
 import type { Motion } from '../Motion/Motion';
 import type { ArrowSvgData } from '../SvgManager/ArrowSvgData';
-import type { Color, Loc } from '../types/Types';
+import type { Color, Loc } from '../../../types/Types';
 
 export interface ArrowData {
 	color: Color;

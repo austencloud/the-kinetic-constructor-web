@@ -4,7 +4,7 @@ import ShiftLocationCalculator from './ShiftLocationCalculator';
 import StaticLocationCalculator from './StaticLocationCalculator';
 import { Motion } from '../../Motion/Motion';
 import type { PictographGetter } from '../../PictographGetter'; // <== import
-import type { MotionType } from '../../types/Types';
+import type { MotionType } from '../../../../types/Types';
 import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';
 
 export default class ArrowLocationManager {
@@ -14,9 +14,7 @@ export default class ArrowLocationManager {
 		this.getter = getter;
 	}
 
-	private _selectCalculator(
-		motion: Motion
-	) {
+	private _selectCalculator(motion: Motion) {
 		const motionType = motion.motionType.toLowerCase() as MotionType;
 
 		const calculatorMap: Record<MotionType, any> = {

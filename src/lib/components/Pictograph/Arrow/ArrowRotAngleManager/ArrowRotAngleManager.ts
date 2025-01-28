@@ -1,6 +1,6 @@
 import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';
 import type { Motion } from '../../Motion/Motion';
-import type { Loc, MotionType } from '../../types/Types';
+import type { Loc, MotionType } from '../../../../types/Types';
 import AntiRotAngleCalculator from './calculators/AntiRotAngleCalculator';
 import DashRotAngleCalculator from './calculators/DashRotAngleCalculator';
 import FloatRotAngleCalculator from './calculators/FloatRotAngleCalculator';
@@ -12,11 +12,10 @@ const calculatorMapping = {
 	[ANTI]: AntiRotAngleCalculator,
 	[FLOAT]: FloatRotAngleCalculator,
 	[DASH]: DashRotAngleCalculator,
-	[STATIC]: StaticRotAngleCalculator,
+	[STATIC]: StaticRotAngleCalculator
 };
 
 export default class ArrowRotAngleManager {
-
 	private selectCalculator(motionType: MotionType) {
 		const CalculatorClass = calculatorMapping[motionType];
 		if (!CalculatorClass) {
@@ -25,7 +24,7 @@ export default class ArrowRotAngleManager {
 		return new CalculatorClass();
 	}
 
-	public updateRotation(motion:Motion, arrowLoc: Loc) {
+	public updateRotation(motion: Motion, arrowLoc: Loc) {
 		const calculator = this.selectCalculator(motion.motionType);
 		const rotation = calculator.calculate(arrowLoc, motion);
 		return rotation;
