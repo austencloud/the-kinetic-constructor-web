@@ -1,36 +1,26 @@
 <script lang="ts">
-    import { writable } from 'svelte/store';
-    import { defaultPictographData } from '$lib/components/Pictograph/defaultPictographData.js';
-    import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
-    import type { PictographData } from '$lib/types/PictographData.js';
-    import type { BeatData } from './BeatData.js';
+	import { writable, get, type Writable } from 'svelte/store';
+	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
+	import type { PictographData } from '$lib/types/PictographData.js';
+	import type { BeatData } from './BeatData.js';
 
-    export let beatData: BeatData;
-    export let onClick: (beat: BeatData) => void;
+	export let beatData: BeatData; // ✅ Receive plain BeatData object
+	export let onClick: (beat: BeatData) => void;
 
-    // Ensure reactivity by making pictographData a writable store
-    let pictographData = writable(beatData.pictographData || defaultPictographData);
+	// ✅ Store pictographData as writable (but NOT beatData itself)
+	let pictographDataStore: Writable<PictographData> = writable(beatData.pictographData);
 
-    $: if (beatData.pictographData) {
-        pictographData.set(beatData.pictographData);
-    }
+	// ✅ Update pictographData when beatData changes
+	$: if (beatData.pictographData) {
+		pictographDataStore.set(beatData.pictographData);
+	}
 </script>
 
 <button
-    class="beat"
-    on:click={() => onClick(beatData)}
-    aria-label={`Beat ${beatData.beatNumber}`}
-    on:keydown={(e) => e.key === 'Enter' && onClick(beatData)}
+	class="beat"
+	on:click={() => onClick(beatData)}
+	aria-label={`Beat ${beatData.beatNumber}`}
+	on:keydown={(e) => e.key === 'Enter' && onClick(beatData)}
 >
-    <Pictograph {pictographData} onClick={() => onClick(beatData)} />
+	<Pictograph pictographDataStore={pictographDataStore} onClick={() => onClick(beatData)} />
 </button>
-
-<style>
-    .beat {
-        width: 100%;
-        height: 100%;
-        padding: 0;
-        border-radius: 0;
-        border: none;
-    }
-</style>

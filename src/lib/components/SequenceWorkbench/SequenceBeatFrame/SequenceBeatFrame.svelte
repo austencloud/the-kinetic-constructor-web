@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { get } from 'svelte/store';
+	import { get, writable, type Writable } from 'svelte/store';
 	import StartPosBeat from './StartPosBeat.svelte';
 	import Beat from './Beat.svelte';
 	import type { BeatData } from './BeatData.js';
@@ -20,24 +20,35 @@
 	let beatRows = 1;
 	let beatCols = 1;
 
-	import { writable } from 'svelte/store';
-
-	let startPos = writable<PictographData | null>(null);
+	// ✅ Only create writable once
+	let startPos: Writable<PictographData> = writable(defaultPictographData);
 
 	selectedStartPos.subscribe((newStartPos) => {
-		console.log('Updated startPos in SequenceBeatFrame:', newStartPos);
+		console.log('🔄 Updated startPos in SequenceBeatFrame:', newStartPos);
 		startPos.set(newStartPos || defaultPictographData);
 	});
 
-	$: startPosBeatData = {
+	let startPosBeatDataStore: Writable<BeatData> = writable({
 		beatNumber: 0,
-		filled: $startPos !== null,
-		pictographData: $startPos
-	};
+		filled: !!get(startPos),
+		pictographData: get(startPos)
+	});
 
-	// ✅ Make sure beats update layout dynamically
+	// ✅ Only update when `selectedStartPos` actually changes
+	selectedStartPos.subscribe((newStartPos) => {
+		startPosBeatDataStore.update((data) => {
+			return { ...data, pictographData: newStartPos || defaultPictographData };
+		});
+	});
+	$: {
+		// Log updates to find infinite loops
+		console.log('🚨 Re-evaluating startPosBeatData:', startPosBeatDataStore);
+	}
+
+	// ✅ Ensure beats update dynamically
 	const unsubscribe = beatsStore.subscribe((value) => {
 		beats = value;
+		console.log('🛠 Updating Beat Layout...');
 		applyBeatLayout();
 	});
 
@@ -70,7 +81,12 @@
 		}
 	}
 
+	function handleStartPosBeatClick(startPosBeatDataStore: Writable<BeatData>) {
+		console.log('🟢 Start Pos clicked,', get(startPosBeatDataStore));
+		addBeat();
+	}
 	function handleBeatClick(beat: BeatData) {
+		console.log('🟢 Beat Clicked:', beat);
 		addBeat();
 	}
 </script>
@@ -82,35 +98,15 @@
 	style="--total-rows: {beatRows}; --total-cols: {beatCols}; --gap: {gap}px;"
 >
 	<!-- Start Position Beat -->
-	<div class="start-pos" style="width: {cellSize}px; height: {cellSize}px;">
-		<StartPosBeat beatData={startPosBeatData} onClick={() => handleBeatClick(startPosBeatData)} />
-	</div>
+	<StartPosBeat
+		{startPosBeatDataStore}
+		onClick={() => handleStartPosBeatClick(startPosBeatDataStore)}
+	/>
 
 	<!-- Other Beats -->
-	{#each beats as beat (beat.beatNumber)}
+	{#each $beatsStore as beat (beat.beatNumber)}
 		<div class="beat-container" style="width: {cellSize}px; height: {cellSize}px;">
 			<Beat beatData={beat} onClick={() => handleBeatClick(beat)} />
 		</div>
 	{/each}
 </div>
-
-<style>
-	.beat-frame {
-		display: grid;
-		grid-template-rows: repeat(var(--total-rows, 1), var(--cell-size, 50px));
-		grid-template-columns: repeat(var(--total-cols, 1), var(--cell-size, 50px));
-		justify-content: center;
-		align-content: center;
-		width: 100%;
-		height: 100%;
-	}
-
-	.start-pos {
-		width: var(--cell-size, 50px);
-		height: var(--cell-size, 50px);
-		aspect-ratio: 1 / 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-</style>

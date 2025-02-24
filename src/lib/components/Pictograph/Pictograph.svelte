@@ -9,46 +9,47 @@
 	import Arrow from '../objects/Arrow/Arrow.svelte';
 	import Grid from '../objects/Grid/Grid.svelte';
 	import TKAGlyph from './../objects/Glyphs/TKAGlyph/TKAGlyph.svelte';
+	import { PictographManagers } from './PictographManagers';
+	import { createPictographElements } from './PictographElements';
 
-	export let pictographData: PictographData | Writable<PictographData>;
+	export let pictographDataStore: Writable<PictographData>;
 	export const onClick: () => void = () => {};
+
+	let pictographManagers = new PictographManagers(pictographDataStore);
+
+	let initializer = new PictographInitializer(pictographDataStore);
+	let elements = initializer.elements;
 
 	let redProp: PropData | null = null;
 	let blueProp: PropData | null = null;
 	let redArrow: ArrowData | null = null;
 	let blueArrow: ArrowData | null = null;
 
-	let pictographDataStore: Writable<PictographData>;
-
-	if ('subscribe' in pictographData) {
-		pictographDataStore = pictographData as Writable<PictographData>;
-	} else {
-		pictographDataStore = writable(pictographData);
-	}
-
-	let initializer = new PictographInitializer(pictographDataStore);
-	let elements = initializer.elements;
-
-	// Ensure we wait for initialization
 	onMount(async () => {
-		await initializer.initialize(); // ✅ Wait until it's done
-		console.log('🟢 Initialization Complete. Now retrieving props and arrows.');
+		await initializer.initialize();
+		console.log('🟢 Initialization Complete.');
 
-		// ✅ Ensure we get the updated store values
 		redProp = get(get(elements).redPropData);
 		blueProp = get(get(elements).bluePropData);
 		redArrow = get(get(elements).redArrowData);
 		blueArrow = get(get(elements).blueArrowData);
 
-		console.log('🧐 Props:', { redProp, blueProp });
-		console.log('🧐 Arrows:', { redArrow, blueArrow });
+		// ✅ Ensure initial placement
+		updatePlacements();
 	});
+
 	$: {
-		if (get(elements)) {
-			redProp = get(get(elements).redPropData);
-			blueProp = get(get(elements).bluePropData);
-			redArrow = get(get(elements).redArrowData);
-			blueArrow = get(get(elements).blueArrowData);
+		if (redProp && blueProp && redArrow && blueArrow) {
+			console.log('🔄 Props & Arrows changed. Updating placements...');
+			updatePlacements();
+		}
+	}
+
+	function updatePlacements() {
+		if (pictographManagers.propPlacementManager && pictographManagers.arrowPlacementManager) {
+			pictographManagers.propPlacementManager.updatePropPlacement([redProp!, blueProp!]);
+			pictographManagers.arrowPlacementManager.updateArrowPlacements([redArrow!, blueArrow!]);
+			console.log('✅ Props & Arrows repositioned');
 		}
 	}
 </script>

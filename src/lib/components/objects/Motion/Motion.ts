@@ -41,6 +41,8 @@ export class Motion implements MotionData {
 	redMotionData: MotionData | null = null;
 	blueMotionData: MotionData | null = null;
 	letter: Letter | null = null;
+	prefloatMotionType!: MotionType | null;
+	prefloatPropRotDir!: PropRotDir | null;
 	public readonly ready: Promise<void>;
 
 	constructor(pictographData: PictographData, motionData: MotionData) {

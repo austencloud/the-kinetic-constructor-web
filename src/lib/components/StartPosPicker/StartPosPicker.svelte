@@ -5,47 +5,53 @@
 	import type { PictographData } from '$lib/types/PictographData.js';
 	import pictographDataStore from '$lib/stores/pictographDataStore.js';
 	import { selectedStartPos } from '$lib/stores/constructStores.js';
+	import { writable, type Writable } from 'svelte/store';
 
-    let gridMode = 'diamond';
-    let startPositionDataSet: PictographData[] = [];
+	let gridMode = 'diamond';
+	let startPositionDataStoreSet: Writable<PictographData>[] = []; // ✅ Store as Writable
 
-    pictographDataStore.subscribe((data) => {
-        const pictographData = data as PictographData[];
-        const defaultStartPosKeys =
-            gridMode === 'diamond'
-                ? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
-                : ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
-        startPositionDataSet = pictographData.filter((entry) => {
-            return (
-                entry.redMotionData &&
-                entry.blueMotionData &&
-                defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
-            );
-        });
-    });
+	pictographDataStore.subscribe((data) => {
+		const pictographData = data as PictographData[];
+		const defaultStartPosKeys =
+			gridMode === 'diamond'
+				? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
+				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
 
-    const handleSelect = (startPosPictograph: PictographData) => {
-        console.log("Setting selectedStartPos to:", startPosPictograph);
-        selectedStartPos.set({ ...startPosPictograph }); // ✅ Ensure reactivity
-    };
+		startPositionDataStoreSet = pictographData
+			.filter(
+				(entry) =>
+					entry.redMotionData &&
+					entry.blueMotionData &&
+					defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
+			)
+			.map((entry) => writable(entry)); // ✅ Convert to writable store
+	});
+
+	const handleSelect = (startPosPictograph: PictographData) => {
+		console.log('Setting selectedStartPos to:', startPosPictograph);
+		selectedStartPos.set({ ...startPosPictograph }); // ✅ Ensure reactivity
+	};
 </script>
 
 <div class="start-pos-picker">
 	<StartPositionLabel />
 	<div class="pictograph-row">
-		{#each startPositionDataSet as startPositionData}
+		{#each startPositionDataStoreSet as startPositionStore}
 			<div
 				class="pictograph-container"
 				role="button"
 				tabindex="0"
-				on:click={() => handleSelect(startPositionData)}
+				on:click={() => {
+					startPositionStore.subscribe((data) => handleSelect(data))();
+				}}
 				on:keydown={(e) => {
 					if (e.key === 'Enter' || e.key === ' ') {
-						handleSelect(startPositionData);
+						startPositionStore.subscribe((data) => handleSelect(data))();
 					}
 				}}
 			>
-				<Pictograph pictographData={startPositionData} />
+				<!-- ✅ Pass as a store -->
+				<Pictograph pictographDataStore={startPositionStore} />
 			</div>
 		{/each}
 	</div>

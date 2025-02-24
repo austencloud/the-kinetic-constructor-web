@@ -11,7 +11,15 @@ export class PropPlacementManager {
 	private betaPositioner: BetaPropPositioner;
 	private checker: PictographChecker;
 
-	constructor(pictographData: PictographData, gridData: GridData, checker: PictographChecker) {
+	constructor(
+		pictographData: PictographData,
+		gridData: GridData | null,
+		checker: PictographChecker
+	) {
+		// if grid data is null when passed in, throw an error
+		if (!gridData) {
+			throw new Error('Grid data is required to initialize PropPlacementManager');
+		}
 		const gridMode = pictographData?.gridMode ?? 'diamond';
 		this.defaultPositioner = new DefaultPropPositioner(gridData, gridMode);
 		this.betaPositioner = new BetaPropPositioner(pictographData);
@@ -23,13 +31,12 @@ export class PropPlacementManager {
 			this.defaultPositioner.setToDefaultPosition(prop);
 			console.log(`📌 Default Positioner Set for ${prop.id}:`, prop.coords);
 		});
-	
+
 		if (this.checker.endsWithBeta()) {
 			this.betaPositioner.reposition(props);
 			props.forEach((prop) => console.log(`🚀 Beta Positioner Set for ${prop.id}:`, prop.coords));
 		}
-	
+
 		return props;
 	}
-	
 }

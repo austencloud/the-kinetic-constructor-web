@@ -14,9 +14,12 @@ export class ArrowPlacementManager {
 
 	constructor(
 		private pictographData: PictographData,
-		private gridData: GridData,
+		private gridData: GridData | null,
 		private checker: PictographChecker
 	) {
+		if (!gridData) {
+			throw new Error('Grid data is required to initialize PropPlacementManager');
+		}
 		this.defaultPositioner = new DefaultArrowPositioner(pictographData, gridData, checker);
 		this.initialPosCalculator = new ArrowInitialPosCalculator(pictographData, gridData);
 		this.adjustmentCalculator = new ArrowAdjustmentCalculator(

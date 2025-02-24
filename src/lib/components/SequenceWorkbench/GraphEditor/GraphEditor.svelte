@@ -3,6 +3,7 @@
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { DIAMOND } from '$lib/types/Constants';
+	import { writable } from 'svelte/store';
 
 	export let isExpanded: boolean;
 	export let animationDuration: number;
@@ -11,10 +12,10 @@
 	const BORDER_PERCENTAGE = 0.02;
 
 	$: borderSize = Math.floor(maxEditorHeight * BORDER_PERCENTAGE);
-
 	$: contentWidth = maxEditorHeight - 2 * borderSize;
 
-	const dummyPictographData: PictographData = {
+	// ✅ Create a writable store
+	const pictographDataStore = writable<PictographData>({
 		letter: null,
 		startPos: null,
 		endPos: null,
@@ -22,9 +23,14 @@
 		direction: null,
 		gridMode: DIAMOND,
 		blueMotionData: null,
-		redMotionData: null
-	};
-
+		redMotionData: null,
+		gridData: null,
+		redPropData: null,
+		bluePropData: null,
+		redArrowData: null,
+		blueArrowData: null,
+		grid: ''
+	});
 </script>
 
 <div
@@ -45,7 +51,8 @@
 			height: {contentWidth}px; 
 		"
 	>
-		<Pictograph pictographData={dummyPictographData} onClick={undefined} />
+		<!-- ✅ Pass the store directly instead of its value -->
+		<Pictograph pictographDataStore={pictographDataStore} onClick={undefined} />
 	</div>
 
 	<div class="turns-box-container">
