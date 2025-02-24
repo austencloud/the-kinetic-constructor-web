@@ -1,4 +1,4 @@
-import type { Color, MotionType, Orientation, PropType, TKATurns } from '../../../types/Types';
+import type { Color, MotionType, Orientation, PropType, TKATurns } from "$lib/types/Types";
 
 export default class SvgManager {
 	private async fetchSvg(path: string): Promise<string> {

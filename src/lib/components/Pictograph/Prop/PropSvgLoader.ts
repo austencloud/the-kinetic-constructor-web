@@ -1,12 +1,13 @@
 // PropSvgLoader.ts
-import type { PropSvgData as ImportedSvgData } from '../SvgManager/PropSvgData';
+
+import type { PropSvgData } from "$lib/components/SvgManager/PropSvgData";
 
 const parseViewBox = (svg: SVGElement) => {
 	const [, , w, h] = svg.getAttribute('viewBox')?.split(/\s+/) || [];
 	return { width: parseFloat(w), height: parseFloat(h) };
 };
 
-const getCenterPoint = (doc: Document, viewBox: ImportedSvgData['viewBox']) => {
+const getCenterPoint = (doc: Document, viewBox: PropSvgData['viewBox']) => {
 	const element = doc.getElementById('centerPoint');
 	if (!element)
 		return {
@@ -21,7 +22,7 @@ const getCenterPoint = (doc: Document, viewBox: ImportedSvgData['viewBox']) => {
 };
 
 export default class PropSvgLoader {
-	static async load(propType: string): Promise<ImportedSvgData> {
+	static async load(propType: string): Promise<PropSvgData> {
 		const response = await fetch(`/images/props/${propType}.svg`);
 		if (!response.ok) throw new Error(`Failed to load prop SVG: ${propType}`);
 

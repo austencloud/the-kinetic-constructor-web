@@ -1,8 +1,8 @@
 import { RED, BLUE } from '$lib/types/Constants';
 import { Motion } from './Motion/Motion';
-import SvgManager from './SvgManager/SvgManager';
 import type { MotionData } from './Motion/MotionData';
 import type { PictographData } from '$lib/types/PictographData';
+import SvgManager from '../SvgManager/SvgManager';
 
 export class PictographGetter {
 	private _currentData: PictographData;

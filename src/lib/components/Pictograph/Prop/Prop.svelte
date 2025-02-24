@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { parsePropSvg } from '../SvgManager/PropSvgParser';
-	import SvgManager from '../SvgManager/SvgManager';
+	import { parsePropSvg } from '../../SvgManager/PropSvgParser';
+	import SvgManager from '../../SvgManager/SvgManager';
 	import type { PropData } from './PropData';
-	import type { PropSvgData as PropSvgData } from '../SvgManager/PropSvgData';
+	import type { PropSvgData as PropSvgData } from '../../SvgManager/PropSvgData';
 	import { rotateOffset } from './rotationUtils';
 	import PropRotAngleManager from './PropRotAngleManager';
 	import { PropChecker } from './PropChecker';

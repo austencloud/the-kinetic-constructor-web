@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { ArrowData } from './ArrowData';
-	import type { ArrowSvgData } from '../SvgManager/ArrowSvgData';
-	import { parseArrowSvg } from '../SvgManager/parseArrowSvg';
-	import SvgManager from '../SvgManager/SvgManager';
+	import type { ArrowSvgData } from '../../SvgManager/ArrowSvgData';
+	import { parseArrowSvg } from '../../SvgManager/parseArrowSvg';
+	import SvgManager from '../../SvgManager/SvgManager';
 
 	export let arrowData: ArrowData;
 
