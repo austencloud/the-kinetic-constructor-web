@@ -61,11 +61,11 @@ export class DefaultArrowPositioner {
 	) {}
 
 	public getDefaultAdjustment(arrowData: ArrowData): [number, number] {
-		const motionType = arrowData.motion.motionType as MotionType;
+		const motionType = arrowData.motionType as MotionType;
 		const gridMode = this.pictographData.gridMode || DIAMOND;
 		const defaultPlacements = this.allDefaults[gridMode][motionType] || {};
 		const key = this._get_adjustment_key(arrowData, defaultPlacements);
-		const turnsString = String(arrowData.motion.turns);
+		const turnsString = String(arrowData.turns);
 
 		if (key in defaultPlacements && turnsString in defaultPlacements[key]) {
 			return defaultPlacements[key][turnsString];
@@ -76,8 +76,8 @@ export class DefaultArrowPositioner {
 	}
 
 	private _get_adjustment_key(arrow: ArrowData, defaultPlacements: any): string {
-		const motionType = arrow.motion.motionType;
-		const motionEndOri = arrow.motion.endOri;
+		const motionType = arrow.motionType;
+		const motionEndOri = arrow.endOri;
 
 		const hasBetaProps = this.checker.endsWithBeta();
 		const hasAlphaProps = this.checker.endsWithAlpha();

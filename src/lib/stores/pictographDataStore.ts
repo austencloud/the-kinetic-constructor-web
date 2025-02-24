@@ -64,6 +64,7 @@ function groupPictographsByLetter(pictographs: Record<string, any>[]): Pictograp
 			redMotionData,
 			blueMotionData,
 			gridMode: record.gridMode,
+			grid: '',
 			motionData: [],
 			motions: [],
 			redMotion: null,
@@ -76,6 +77,7 @@ function groupPictographsByLetter(pictographs: Record<string, any>[]): Pictograp
 }
 
 const defaultMotionData: MotionData = {
+	id: '',
 	handRotDir: 'cw_handpath',
 	color: 'red',
 	leadState: 'leading',
@@ -85,10 +87,9 @@ const defaultMotionData: MotionData = {
 	startOri: 'in',
 	endOri: 'in',
 	propRotDir: 'cw',
-	prop: null,
 	turns: 0,
 	prefloatMotionType: null,
-	prefloatPropRotDir: null
+	prefloatPropRotDir: null,
 };
 
 // Modify the extractAttributes function

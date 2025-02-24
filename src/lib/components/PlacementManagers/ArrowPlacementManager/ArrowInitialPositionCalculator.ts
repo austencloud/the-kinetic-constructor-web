@@ -1,4 +1,4 @@
-import type { ArrowData } from '$lib/components/Pictograph/Arrow/ArrowData';
+import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 import type { GridData } from '$lib/components/objects/Grid/GridData';
 import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';
 import type { PictographData } from '$lib/types/PictographData';
@@ -13,7 +13,7 @@ export class ArrowInitialPosCalculator {
 	}
 
 	public getInitialCoords(arrow: ArrowData): { x: number; y: number } {
-		switch (arrow.motion.motionType) {
+		switch (arrow.motionType) {
 			case PRO:
 			case ANTI:
 			case FLOAT:

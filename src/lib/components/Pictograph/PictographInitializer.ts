@@ -46,17 +46,19 @@ export class PictographInitializer {
 			console.log('✅ Grid data is ready, proceeding to create props and arrows...');
 
 			const [redMotion, blueMotion] = await this.createMotions(pictograph);
+			console.log('✅ Created motions:', { redMotion, blueMotion });
 			const [redProp, blueProp] = await this.createProps(redMotion, blueMotion);
+			console.log('✅ Created props:', { redProp, blueProp });
 			const [redArrow, blueArrow] = await this.createArrows(redMotion, blueMotion);
-
+			console.log('✅ Created arrows:', { redArrow, blueArrow });
 			this.updateElementsStore(redProp, blueProp, redArrow, blueArrow, redMotion, blueMotion);
-
+			console.log('✅ Updated elements store');
 			this.setArrowAttributes(redMotion, blueMotion, redArrow, blueArrow);
-
-			await tick();
-
-			await this.initializePlacementManagers(pictograph);
+			console.log('✅ Set arrow attributes');
+			this.initializePlacementManagers(pictograph);
+			console.log('✅ Initialized placement managers');
 			this.updatePlacements(redArrow, blueArrow, redProp, blueProp);
+			console.log('✅ Updated placements');
 
 			console.log('✅ Finalized placements:', { redArrow, blueArrow, redProp, blueProp });
 		} catch (error) {
@@ -181,7 +183,12 @@ export class PictographInitializer {
 	}
 
 	private updatePlacements(redArrow: any, blueArrow: any, redProp: any, blueProp: any) {
+		console.log('🟠 Calling updatePropPlacement with:', { redProp, blueProp });
+		
 		this.managers.arrowPlacementManager?.updateArrowPlacements([redArrow, blueArrow]);
 		this.managers.propPlacementManager?.updatePropPlacement([redProp, blueProp]);
+	
+		console.log('✅ Finished calling updatePropPlacement');
 	}
+	
 }

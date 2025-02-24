@@ -23,6 +23,8 @@ export interface MotionData {
 	color: Color;
 	turns: TKATurns;
 	leadState: LeadState;
+	prefloatMotionType: MotionType | null;
+	prefloatPropRotDir: PropRotDir | null;
 }
 
 export const BlankMotionData: Partial<MotionData> = {

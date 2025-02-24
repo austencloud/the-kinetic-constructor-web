@@ -5,7 +5,7 @@
 	import SvgManager from '../../SvgManager/SvgManager';
 
 	export let arrowData: ArrowData;
-	console.log("📦 Received Arrow Data:", arrowData);
+	console.log('📦 Received Arrow Data:', arrowData);
 
 	let svgData: ArrowSvgData | null = null;
 	let transform = '';
@@ -16,8 +16,8 @@
 		try {
 			const svgText = await svgManager.getArrowSvg(
 				arrowData.motionType, // ✅ Use stored motionType
-				arrowData.startOri,   // ✅ Use stored startOri
-				arrowData.turns,      // ✅ Use stored turns
+				arrowData.startOri, // ✅ Use stored startOri
+				arrowData.turns, // ✅ Use stored turns
 				arrowData.color
 			);
 

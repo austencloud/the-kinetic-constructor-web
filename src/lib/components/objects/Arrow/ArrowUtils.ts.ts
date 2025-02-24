@@ -12,10 +12,10 @@ export async function loadArrowSvg(arrowData: ArrowData): Promise<{ svgData: any
 	try {
 		// Fetch and validate the SVG
 		const svgText = await svgManager.getArrowSvg(
-			arrowData.motion.motionType,
-			arrowData.motion.startOri,
-			arrowData.motion.turns,
-			arrowData.motion.color
+			arrowData.motionType,
+			arrowData.startOri,
+			arrowData.turns,
+			arrowData.color
 		);
 
 		// Parse the SVG's viewBox and original center

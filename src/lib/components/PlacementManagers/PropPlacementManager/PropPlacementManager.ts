@@ -21,11 +21,15 @@ export class PropPlacementManager {
 	public updatePropPlacement(props: PropData[]): PropData[] {
 		props.forEach((prop) => {
 			this.defaultPositioner.setToDefaultPosition(prop);
+			console.log(`📌 Default Positioner Set for ${prop.id}:`, prop.coords);
 		});
+	
 		if (this.checker.endsWithBeta()) {
 			this.betaPositioner.reposition(props);
+			props.forEach((prop) => console.log(`🚀 Beta Positioner Set for ${prop.id}:`, prop.coords));
 		}
-
+	
 		return props;
 	}
+	
 }

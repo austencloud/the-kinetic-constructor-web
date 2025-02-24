@@ -48,11 +48,11 @@
 		: { x: 0, y: 0 };
 
 	$: transform =
-		svgData && (propData.endLoc || propData.endOri) // ✅ Use stored values instead of motion reference
+		svgData && (propData.loc || propData.ori) // ✅ Use stored values instead of motion reference
 			? (() => {
 					const rotAngleManager = new PropRotAngleManager({
-						loc: propData.endLoc, // ✅ Use `propData.endLoc`
-						ori: propData.endOri  // ✅ Use `propData.endOri`
+						loc: propData.loc, // ✅ Use `propData.endLoc`
+						ori: propData.ori  // ✅ Use `propData.endOri`
 					});
 					propData.rotAngle = rotAngleManager.getRotationAngle();
 					return `translate(${propData.coords.x} ${propData.coords.y})

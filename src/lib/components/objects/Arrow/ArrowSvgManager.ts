@@ -5,10 +5,10 @@ export default class ArrowSvgManager {
 
 	getSvgPath(): string {
 		const basePath = '/images/arrows';
-		const motionType = this.arrowData.motion.motionType.toLowerCase();
-		const turns = this.arrowData.motion.turns;
+		const motionType = this.arrowData.motionType.toLowerCase();
+		const turns = this.arrowData.turns;
 		const radialPath =
-			this.arrowData.motion.startOri === 'out' || this.arrowData.motion.startOri === 'in'
+			this.arrowData.startOri === 'out' || this.arrowData.startOri === 'in'
 				? 'from_radial'
 				: 'from_nonradial';
 		if (turns === 'fl' && motionType === 'float') {
