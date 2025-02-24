@@ -1,5 +1,5 @@
-import type { Orientation } from '../Motion/MotionData';
-import type { Loc } from './PropData';
+import type { Loc, Orientation } from "$lib/types/Types";
+
 export default class PropRotAngleManager {
 	private loc: Loc;
 	private ori: Orientation | null;

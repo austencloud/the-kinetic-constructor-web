@@ -2,22 +2,15 @@ import { writable } from 'svelte/store';
 import { defaultPictographData } from '$lib/components/Pictograph/defaultPictographData.js';
 import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData.js';
 
-const initialBeats: BeatData[] = Array.from({ length: 16 }, (_, i) => ({
-	beatNumber: i + 1,
-	filled: false,
-	pictographData: defaultPictographData
-}));
+export const beatsStore = writable<BeatData[]>([]); // ✅ Start empty
 
-export const beatsStore = writable<BeatData[]>(initialBeats);
-
-export function addBeat(newBeat: BeatData) {
+export function addBeat() {
 	beatsStore.update((beats) => {
-		if (beats.length >= 64) {
-			console.warn('Max beats reached (64)');
-			return beats;
-		}
-
-		newBeat.beatNumber = beats.length + 1;
+		const newBeat: BeatData = {
+			beatNumber: beats.length + 1,
+			filled: false,
+			pictographData: defaultPictographData
+		};
 		return [...beats, newBeat];
 	});
 }
