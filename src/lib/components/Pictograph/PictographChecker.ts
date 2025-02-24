@@ -2,7 +2,7 @@
 import { CLOCK, COUNTER, IN, OUT } from '$lib/types/Constants';
 import type { PictographData } from '$lib/types/PictographData';
 import { LetterConditions } from './LetterConditions';
-import { LetterUtils } from './LetterUtils';
+import { LetterUtils } from '../../utils/LetterUtils';
 
 export class PictographChecker {
 	constructor(private pictographData: PictographData) {}

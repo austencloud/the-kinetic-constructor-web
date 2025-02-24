@@ -1,7 +1,7 @@
-import { Motion } from '$lib/components/Pictograph/Motion/Motion';
+import { Motion } from '$lib/components/objects/Motion/Motion';
 import type { BlankMotionData } from '$lib/components/Pictograph/Motion/MotionInterface';
 import type { PropData } from '$lib/components/Pictograph/Prop/PropInterface';
-import PropRotAngleManager from '$lib/components/Pictograph/Prop/PropRotAngleManager';
+import PropRotAngleManager from '$lib/components/objects/Prop/PropRotAngleManager';
 import { writable } from 'svelte/store';
 
 // Initial prop data

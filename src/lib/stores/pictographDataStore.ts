@@ -1,6 +1,5 @@
-
-import { LetterUtils } from '$lib/components/Pictograph/LetterUtils.js';
-import type { MotionData } from '$lib/components/Pictograph/Motion/MotionData.js';
+import { LetterUtils } from '$lib/utils/LetterUtils.js';
+import type { MotionData } from '$lib/components/objects/Motion/MotionData.js';
 import type { PictographData } from '$lib/types/PictographData.js';
 import { writable } from 'svelte/store';
 

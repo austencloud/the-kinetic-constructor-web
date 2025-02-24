@@ -1,6 +1,6 @@
 import { RED, BLUE } from '$lib/types/Constants';
-import { Motion } from './Motion/Motion';
-import type { MotionData } from './Motion/MotionData';
+import { Motion } from '../objects/Motion/Motion';
+import type { MotionData } from '../objects/Motion/MotionData';
 import type { PictographData } from '$lib/types/PictographData';
 import SvgManager from '../SvgManager/SvgManager';
 
