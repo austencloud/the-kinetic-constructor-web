@@ -2,22 +2,12 @@
 	import Pictograph from '../Pictograph/Pictograph.svelte';
 	import { onMount } from 'svelte';
 	import StartPositionLabel from './StartPosLabel.svelte';
-	import { writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData.js';
-	import { pictographsRendered, totalPictographs } from '$lib/stores/pictographRenderStore.js';
 	import pictographDataStore from '$lib/stores/pictographDataStore.js';
+	import { selectedStartPos } from '$lib/stores/constructStores.js';
 
 	let startPositionDataSet: PictographData[] = [];
 	let gridMode = 'diamond';
-	export const selectedStartPos = writable<PictographData | null>(null);
-
-	// Track rendering status
-	$: pictographsRendered.subscribe((rendered) => {
-		if (rendered === startPositionDataSet.length) {
-			console.debug('All pictographs rendered, starting scaling adjustments.');
-			// Trigger scaling logic or any additional post-render adjustments here
-		}
-	});
 
 	pictographDataStore.subscribe((data) => {
 		const pictographData = data as PictographData[];
@@ -32,14 +22,14 @@
 				defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
 			);
 		});
-		totalPictographs.set(startPositionDataSet.length);
 	});
-	const handleSelect = (start_pos_pictograph: PictographData) => {
-		selectedStartPos.set(start_pos_pictograph);
-		console.log('Selected start position:', start_pos_pictograph);
+
+	const handleSelect = (startPosPictograph: PictographData) => {
+		selectedStartPos.set(startPosPictograph);
 	};
 </script>
 
+// src/lib/components/StartPosPicker/StartPosPicker.svelte
 <div class="start-pos-picker">
 	<StartPositionLabel />
 	<div class="pictograph-row">
@@ -56,16 +46,7 @@
 						}
 					}}
 				>
-					{#if startPositionData}
-						{console.log(`Creating ${startPositionData.letter} pictograph: `, startPositionData)}
-					{/if}
-					<Pictograph
-						pictographData={startPositionData}
-						onClick={() => handleSelect(startPositionData)}
-						on:mounted={() => {
-							pictographsRendered.update((n) => n + 1);
-						}}
-					/>
+					<Pictograph pictographData={startPositionData} />
 				</div>
 			{/each}
 		{:else}
@@ -82,24 +63,20 @@
 		align-items: center;
 		height: 100%;
 		width: 100%;
-		margin-bottom: 5%;
 	}
-
 	.pictograph-row {
 		display: flex;
 		flex-direction: row;
 		justify-content: space-around;
 		align-items: center;
 		width: 90%;
-		height: auto;
 		gap: 3%;
 	}
-	/* make the container 1/4 of the width of tis
-	 */
 	.pictograph-container {
-		width: 30%; /* Fixed 30% width */
-		aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
+		width: 30%;
+		aspect-ratio: 1 / 1;
 		height: auto;
 		position: relative;
+		cursor: pointer;
 	}
 </style>

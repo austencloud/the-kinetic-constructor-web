@@ -1,6 +1,6 @@
 <script context="module" lang="ts">
 	import Beat from './Beat.svelte';
-	import type { BeatData } from './BetaData';
+	import type { BeatData } from './BetaData.js';
 </script>
 
 <script lang="ts">

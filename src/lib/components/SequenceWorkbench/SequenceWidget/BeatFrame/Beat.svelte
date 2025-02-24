@@ -1,8 +1,8 @@
 <script lang="ts">
+	import { defaultPictographData } from '$lib/components/Pictograph/defaultPictographData.js';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
-	import { defaultPictographData } from '$lib/components/Pictograph/defaultPictographData';
-	import type { PictographData } from '$lib/types/PictographData';
-	import type { BeatData } from './BetaData';
+	import type { PictographData } from '$lib/types/PictographData.js';
+	import type { BeatData } from './BetaData.js';
 
 	export let beatData: BeatData;
 	export let onClick: (beat: BeatData) => void;
