@@ -1,7 +1,7 @@
 import { DIAMOND } from '$lib/types/Constants';
-import type { PictographInterface } from '$lib/types/PictographInterface';
+import type { PictographData } from '$lib/types/PictographData';
 
-export const defaultPictographData: PictographInterface = {
+export const defaultPictographData: PictographData = {
 	letter: null,
 	startPos: null,
 	endPos: null,

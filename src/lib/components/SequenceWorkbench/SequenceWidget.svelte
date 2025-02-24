@@ -5,7 +5,7 @@
 	import DifficultyLabel from './Labels/DifficultyLabel.svelte';
 	import SequenceWidgetButtonPanel from './ButtonPanel/SequenceWidgetButtonPanel.svelte';
 	import { browser } from '$app/environment';
-	import BeatFrame from './BeatFrame/BeatFrame.svelte';
+	import BeatFrame from './SequenceBeatFrame/SequenceBeatFrame.svelte';
 	import type { PictographData } from '$lib/types/PictographData.js';
 	
 	let width = 0;

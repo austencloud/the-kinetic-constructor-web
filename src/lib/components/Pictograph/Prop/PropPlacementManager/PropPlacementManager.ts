@@ -1,7 +1,7 @@
 // PropPlacementManager.ts
 import { DefaultPropPositioner } from './DefaultPropPositioner';
 import { BetaPropPositioner } from './BetaPropPositioner';
-import type { PictographInterface } from '$lib/types/PictographInterface';
+import type { PictographData } from '$lib/types/PictographData';
 import { PictographChecker } from '../../PictographChecker';
 import type { PropData } from '../PropData';
 import type { GridData } from '../../Grid/GridData';
@@ -11,7 +11,7 @@ export class PropPlacementManager {
 	private betaPositioner: BetaPropPositioner;
 	private checker: PictographChecker;
 
-	constructor(pictographData: PictographInterface, gridData: GridData, checker: PictographChecker) {
+	constructor(pictographData: PictographData, gridData: GridData, checker: PictographChecker) {
 		const gridMode = pictographData?.gridMode ?? 'diamond';
 		this.defaultPositioner = new DefaultPropPositioner(gridData, gridMode);
 		this.betaPositioner = new BetaPropPositioner(pictographData);

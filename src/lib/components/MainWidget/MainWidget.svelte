@@ -1,16 +1,16 @@
 <script lang="ts">
 	import MenuBar from '../MenuBar/MenuBar.svelte';
 	import SequenceWorkbench from '../SequenceWorkbench/SequenceWorkbench.svelte';
-	import StartPosPicker from '../StartPosPicker/StartPosPicker.svelte';
 	import OptionPicker from '../OptionPicker/OptionPicker.svelte';
 	import SnowfallBackground from '../Backgrounds/SnowfallBackground.svelte';
 	import SettingsDialog from '../SettingsDialog/SettingsDialog.svelte';
 	import FullScreen from '$lib/FullScreen.svelte';
 	import LoadingSpinner from './LoadingSpinner.svelte';
 	import { writable } from 'svelte/store';
-	import { selectedStartPos } from '../../stores/constructStores';
-	import { loadPictographData } from '$lib/stores/pictographDataStore';
 	import { onMount } from 'svelte';
+	import { loadPictographData } from '$lib/stores/pictographDataStore.js';
+	import { selectedStartPos } from '$lib/stores/constructStores.js';
+	import StartPosPicker from '../StartPosPicker/StartPosPicker.svelte';
 
 	let dynamicHeight = '100vh';
 	let isSettingsDialogOpen = false;

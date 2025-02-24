@@ -1,21 +1,44 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { get } from 'svelte/store';
 	import StartPosBeat from './StartPosBeat.svelte';
 	import Beat from './Beat.svelte';
-	import { applyLayout, calculateCellSize } from './beatFrameLayoutHelpers.js';
-	import type { LayoutDict } from './beatFrameLayoutHelpers.js';
-	import type { BeatData } from './BetaData.js';
+	import type { BeatData } from './BeatData.js';
 	import { defaultPictographData } from '$lib/components/Pictograph/defaultPictographData.js';
 	import { getDefaultLayouts } from '$lib/services/beatLayoutService.js';
 	import { resizeObserver } from '$lib/actions/resizeObserver.js';
+	import type { PictographData } from '$lib/types/PictographData.js';
+	import { applyLayout, calculateCellSize, type LayoutDict } from './beatFrameHelpers.js';
+	import { beatsStore } from '$lib/stores/beatsStore.js';
+	import { selectedStartPos } from '$lib/stores/constructStores.js';
 
-	export let selectedStartPos = null;
+	// Get current value
+	let currentStartPos = get(selectedStartPos);
+
+	// Subscribe to updates
+	selectedStartPos.subscribe((value) => {
+		currentStartPos = value;
+	});
+
+	export let startPos: PictographData | null = null;
 
 	let defaultLayouts: LayoutDict = {};
-	export let startPos = null; // ✅ Receive prop
+	let beats = get(beatsStore);
+	let frameRef: HTMLDivElement | null = null;
+	let frameWidth = 0;
+	let frameHeight = 0;
+	const gap = 10;
+	let cellSize = 50;
+	let beatRows = 4;
+	let beatCols = 4;
 
+	// Reactive start position update
+	let startPosBeatData: BeatData = {
+		beatNumber: 0,
+		filled: false,
+		pictographData: defaultPictographData
+	};
 
-	// Reactively update start position when changed
 	$: if (startPos) {
 		startPosBeatData = {
 			beatNumber: 0,
@@ -23,28 +46,17 @@
 			pictographData: startPos
 		};
 	}
-	// Start position beat
-	let startPosBeatData: BeatData = {
-		beatNumber: 0,
-		filled: false,
-		pictographData: defaultPictographData
-	};
 
-	let beatRows = 4;
-	let beatCols = 4;
-	let beatData: BeatData[] = [];
+	// Subscribe to store updates
+	const unsubscribe = beatsStore.subscribe((value) => {
+		beats = value;
+		applyBeatLayout();
+	});
 
-	let frameRef: HTMLDivElement | null = null;
-	let frameWidth = 0;
-	let frameHeight = 0;
-
-	const gap = 10;
-	let cellSize = 50;
+	onDestroy(() => unsubscribe());
 
 	onMount(() => {
 		initLayouts();
-		generateBeats();
-
 		setTimeout(() => {
 			if (frameRef) {
 				const rect = frameRef.getBoundingClientRect();
@@ -59,23 +71,8 @@
 	}
 
 	function applyBeatLayout() {
-		[beatRows, beatCols] = applyLayout(defaultLayouts, beatData.length, [4, 4]);
+		[beatRows, beatCols] = applyLayout(defaultLayouts, beats.length, [4, 4]);
 		updateCellSize();
-	}
-
-	function generateBeats() {
-		beatData = [];
-		let beatNumber = 1;
-
-		for (let row = 0; row < beatRows; row++) {
-			for (let col = 0; col < beatCols; col++) {
-				beatData.push({
-					beatNumber: beatNumber++,
-					filled: false,
-					pictographData: { ...defaultPictographData }
-				});
-			}
-		}
 	}
 
 	function onResize(width: number, height: number) {
@@ -88,22 +85,11 @@
 		if (frameWidth > 0 && frameHeight > 0) {
 			cellSize = calculateCellSize(frameWidth, frameHeight, beatRows, beatCols + 1, gap);
 			document.documentElement.style.setProperty('--cell-size', `${cellSize}px`);
-		} else {
-			console.warn('Frame dimensions not available yet');
 		}
 	}
 
 	function handleBeatClick(beat: BeatData) {
 		console.log('Clicked beat:', beat);
-	}
-
-	// React to `selectedStartPos` updates
-	$: if (selectedStartPos) {
-		startPosBeatData = {
-			beatNumber: 0,
-			filled: true,
-			pictographData: selectedStartPos
-		};
 	}
 </script>
 
@@ -119,15 +105,15 @@
 	</div>
 
 	<!-- Other Beats -->
-	{#each beatData as beat (beat.beatNumber)}
+	{#each beats as beat (beat.beatNumber)}
 		<div
 			class="beat-container"
 			style="
-				width: {cellSize}px;
-				height: {cellSize}px;
-				grid-row: {Math.floor((beat.beatNumber - 1) / beatCols) + 1};
-				grid-column: {((beat.beatNumber - 1) % beatCols) + 2};
-			"
+		  width: {cellSize}px;
+		  height: {cellSize}px;
+		  grid-row: {Math.floor((beat.beatNumber - 1) / beatCols) + 1};
+		  grid-column: {((beat.beatNumber - 1) % beatCols) + 2};
+		"
 		>
 			<Beat beatData={beat} onClick={() => handleBeatClick(beat)} />
 		</div>

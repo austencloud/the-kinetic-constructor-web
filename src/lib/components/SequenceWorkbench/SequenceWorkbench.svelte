@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SequenceWidget from './SequenceWidget/SequenceWidget.svelte';
+	import SequenceWidget from './SequenceWidget.svelte';
 	import GraphEditor from './GraphEditor/GraphEditor.svelte';
 	import GraphEditorToggleTab from './GraphEditor/GraphEditorToggleTab.svelte';
 	import { onMount, onDestroy } from 'svelte';

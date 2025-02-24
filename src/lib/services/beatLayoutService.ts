@@ -1,6 +1,7 @@
-// src/lib/services/layoutService.ts
-import type { LayoutDict } from '$lib/components/SequenceWorkbench/SequenceWidget/BeatFrame/beatFrameLayoutHelpers';
-import { fetchDefaultLayouts } from '$lib/components/SequenceWorkbench/SequenceWidget/BeatFrame/beatFrameLayoutHelpers';
+import {
+	fetchDefaultLayouts,
+	type LayoutDict
+} from '$lib/components/SequenceWorkbench/SequenceBeatFrame/beatFrameHelpers.js';
 
 let layoutsCache: LayoutDict | null = null;
 

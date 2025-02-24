@@ -1,9 +1,9 @@
-import type { Letter } from './Letter';
-import type { TKAPosition } from './TKAPosition';
-import type { Motion } from '$lib/components/Pictograph/Motion/Motion';
-import type { GridMode, VTGDir, VTGTiming } from '$lib/components/Pictograph/types/Types';
-import type { PropData } from '$lib/components/Pictograph/Prop/PropData';
-import type { MotionData } from '$lib/components/Pictograph/Motion/MotionData';
+import type { Motion } from "$lib/components/Pictograph/Motion/Motion.js";
+import type { MotionData } from "$lib/components/Pictograph/Motion/MotionData.js";
+import type { PropData } from "$lib/components/Pictograph/Prop/PropData.js";
+import type { Letter } from "./Letter.js";
+import type { TKAPosition } from "./TKAPosition.js";
+import type { GridMode, VTGDir, VTGTiming } from "./Types.js";
 
 export interface PictographData {
 	letter: Letter | null;
@@ -20,4 +20,6 @@ export interface PictographData {
 
 	redPropData: PropData | null;
 	bluePropData: PropData | null;
+
+	grid: string;
 }

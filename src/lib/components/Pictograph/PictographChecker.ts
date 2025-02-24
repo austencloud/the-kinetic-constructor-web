@@ -1,11 +1,11 @@
 // PictographChecker.ts
 import { CLOCK, COUNTER, IN, OUT } from '$lib/types/Constants';
-import type { PictographInterface } from '$lib/types/PictographInterface';
+import type { PictographData } from '$lib/types/PictographData';
 import { LetterConditions } from './LetterConditions';
 import { LetterUtils } from './LetterUtils';
 
 export class PictographChecker {
-	constructor(private pictographData: PictographInterface) {}
+	constructor(private pictographData: PictographData) {}
 
 	endsWithBeta(): boolean {
 		return this.pictographData.letter

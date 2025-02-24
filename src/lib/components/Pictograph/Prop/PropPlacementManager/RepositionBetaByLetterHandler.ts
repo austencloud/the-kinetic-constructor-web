@@ -1,15 +1,12 @@
 // reposition-beta-by-letter-handler.ts
 import type { PropData } from '../PropData';
 import { BetaPropDirectionCalculator } from './BetaPropDirectionCalculator';
-import type { PictographInterface } from '$lib/types/PictographInterface';
+import type { PictographData } from '$lib/types/PictographData';
 export default class RepositionBetaByLetterHandler {
-	private pictographData: PictographInterface;
+	private pictographData: PictographData;
 	private directionCalculator: BetaPropDirectionCalculator;
 	private offsetCalculator: any; // Would need proper type
-	constructor(
-		directionCalculator: BetaPropDirectionCalculator,
-		pictographData: PictographInterface
-	) {
+	constructor(directionCalculator: BetaPropDirectionCalculator, pictographData: PictographData) {
 		this.pictographData = pictographData;
 		this.directionCalculator = directionCalculator;
 	}
