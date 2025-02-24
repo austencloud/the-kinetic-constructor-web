@@ -1,11 +1,11 @@
 <script lang="ts">
 	import Pictograph from '../Pictograph/Pictograph.svelte';
-	import pictographDataStore from '$lib/stores/pictographDataStore';
-	import { pictographsRendered, totalPictographs } from '$lib/stores/pictographRenderStore';
 	import { onMount } from 'svelte';
 	import StartPositionLabel from './StartPosLabel.svelte';
-	import type { PictographData } from '$lib/types/PictographData';
 	import { writable } from 'svelte/store';
+	import type { PictographData } from '$lib/types/PictographData.js';
+	import { pictographsRendered, totalPictographs } from '$lib/stores/pictographRenderStore.js';
+	import pictographDataStore from '$lib/stores/pictographDataStore.js';
 
 	let startPositionDataSet: PictographData[] = [];
 	let gridMode = 'diamond';

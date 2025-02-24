@@ -1,7 +1,7 @@
-import { LetterUtils } from '$lib/components/Pictograph/LetterUtils';
-import type { MotionData } from '$lib/components/Pictograph/Motion/MotionInterface';
-import type { Color, HandRotDir, LeadState } from '$lib/components/Pictograph/types/Types';
-import type { PictographInterface } from '$lib/types/PictographInterface';
+
+import { LetterUtils } from '$lib/components/Pictograph/LetterUtils.js';
+import type { MotionData } from '$lib/components/Pictograph/Motion/MotionData.js';
+import type { PictographData } from '$lib/types/PictographData.js';
 import { writable } from 'svelte/store';
 
 function toCamelCase(str: string): string {
@@ -51,7 +51,7 @@ function parseCsvToJson(csv: string, gridMode: string) {
 	});
 }
 
-function groupPictographsByLetter(pictographs: Record<string, any>[]): PictographInterface[] {
+function groupPictographsByLetter(pictographs: Record<string, any>[]): PictographData[] {
 	return pictographs.map((record) => {
 		const redMotionData = extractAttributes(record, 'red');
 		const blueMotionData = extractAttributes(record, 'blue');
