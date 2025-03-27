@@ -24,7 +24,6 @@
 	let startPos: Writable<PictographData> = writable(defaultPictographData);
 
 	selectedStartPos.subscribe((newStartPos) => {
-		console.log('🔄 Updated startPos in SequenceBeatFrame:', newStartPos);
 		startPos.set(newStartPos || defaultPictographData);
 	});
 
@@ -40,15 +39,11 @@
 			return { ...data, pictographData: newStartPos || defaultPictographData };
 		});
 	});
-	$: {
-		// Log updates to find infinite loops
-		console.log('🚨 Re-evaluating startPosBeatData:', startPosBeatDataStore);
-	}
+
 
 	// ✅ Ensure beats update dynamically
 	const unsubscribe = beatsStore.subscribe((value) => {
 		beats = value;
-		console.log('🛠 Updating Beat Layout...');
 		applyBeatLayout();
 	});
 
@@ -82,11 +77,9 @@
 	}
 
 	function handleStartPosBeatClick(startPosBeatDataStore: Writable<BeatData>) {
-		console.log('🟢 Start Pos clicked,', get(startPosBeatDataStore));
 		addBeat();
 	}
 	function handleBeatClick(beat: BeatData) {
-		console.log('🟢 Beat Clicked:', beat);
 		addBeat();
 	}
 </script>

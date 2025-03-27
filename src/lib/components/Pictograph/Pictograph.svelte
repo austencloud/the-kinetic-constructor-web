@@ -1,5 +1,4 @@
 <script lang="ts">
-	// This is a minimal version focusing on the loading and positioning sequence
 	import { onMount, createEventDispatcher, tick } from 'svelte';
 	import { get, writable, type Writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData.js';
@@ -16,6 +15,7 @@
 
 	export let pictographDataStore: Writable<PictographData>;
 	export const onClick: () => void = () => {};
+	export let debug: boolean = false; // Enable debug mode
 
 	// Track rendering stages with more detail
 	let stage = 'initializing'; // initializing -> loading -> grid_ready -> components_ready -> positioning -> complete
@@ -33,15 +33,19 @@
 		blueArrow: false
 	};
 
-	let pictographManagers = new PictographManagers(pictographDataStore);
-	let initializer = new PictographInitializer(pictographDataStore);
-	let elements = initializer.elements;
+	let gridData: GridData | null = null;
+	let pictographManagers: PictographManagers | null = null;
+	let initializer: PictographInitializer | null = null;
+	let elements: Writable<ReturnType<typeof createPictographElements>> | null = null;
 
 	let redProp: PropData | null = null;
 	let blueProp: PropData | null = null;
 	let redArrow: ArrowData | null = null;
 	let blueArrow: ArrowData | null = null;
 	let gridDataLoaded = false;
+	let initializationComplete = false;
+	let retryCount = 0;
+	const MAX_RETRIES = 3;
 
 	// Create event dispatcher for loaded event
 	const dispatch = createEventDispatcher();
@@ -49,61 +53,88 @@
 	// Prevent infinite loading with a safety timeout
 	let safetyTimer: number;
 
-	// For debugging
-	function logDebug(message: string) {
-		console.log(`[Pictograph] ${message}`);
-	}
 
 	// Handle grid data loading - CRITICAL for prop positioning
-	function handleGridDataReady(data: any) {
+	function handleGridDataReady(data: GridData) {
 		try {
-			logDebug(
-				`📊 Grid data loaded with ${Object.keys(data.allHandPointsNormal).length} hand points`
-			);
 
-			// Store grid data in store
-			elements.update((els) => {
-				els.gridData.set(data);
-				return els;
-			});
+			// Store grid data globally for access
+			gridData = data;
+
+			// Log a few grid points for debugging
+			if (debug) {
+				const samplePoints = Object.entries(data.allHandPointsNormal).slice(0, 3);
+
+			}
 
 			// Store grid data in pictograph data for placement managers
-			pictographDataStore.update((data) => ({
-				...data,
-				gridData: data as unknown as GridData
+			pictographDataStore.update((existingData) => ({
+				...existingData,
+				gridData: data
 			}));
 
 			gridDataLoaded = true;
 			componentLoading.grid = true;
 			stage = 'grid_ready';
 
-			// After grid is ready, initialize placement managers
-			initPlacementManagers();
-
-			checkAllComponentsLoaded();
+			// Initialize managers and elements after grid is loaded
+			initializeAll();
 		} catch (error) {
-			logDebug(`❌ Error handling grid data: ${error}`);
 			componentLoading.grid = true; // Mark as loaded anyway
 			checkAllComponentsLoaded();
 		}
 	}
 
-	// Initialize placement managers after grid is loaded
-	async function initPlacementManagers() {
-		try {
-			logDebug('🔄 Initializing placement managers...');
+	// Initialize everything in the correct order
+	async function initializeAll() {
+		if (initializationComplete) return;
 
-			// Wait for placement managers to be ready
+		try {
+
+			// Initialize elements first
+			initializer = new PictographInitializer(pictographDataStore);
+			elements = initializer.elements;
+
+			// Wait for initializer to complete
+			await initializer.initialize();
+
+			// Now that we have elements, create and initialize the managers
+			pictographManagers = new PictographManagers(pictographDataStore);
+
+			// Extract the stored components
+			const pictographElements = get(elements);
+
+			redProp = get(pictographElements.redPropData);
+			blueProp = get(pictographElements.bluePropData);
+			redArrow = get(pictographElements.redArrowData);
+			blueArrow = get(pictographElements.blueArrowData);
+
+
+			// Wait for managers to be ready
 			await pictographManagers.ready;
 
-			// Only proceed to positioning after grid is loaded AND components are ready
-			if (gridDataLoaded && redProp && blueProp && redArrow && blueArrow) {
-				updatePlacements();
-			} else {
-				logDebug('⏳ Waiting for components before positioning...');
+			initializationComplete = true;
+
+			// Check if we can proceed to positioning (grid data and elements must be loaded)
+			if (gridDataLoaded && redProp && blueProp) {
+				if (pictographManagers && pictographManagers.propPlacementManager) {
+					stage = 'components_ready';
+					updatePlacements();
+				}
 			}
 		} catch (error) {
-			logDebug(`❌ Error initializing placement managers: ${error}`);
+
+			// Retry initialization a few times before giving up
+			if (retryCount < MAX_RETRIES) {
+				retryCount++;
+				setTimeout(initializeAll, 500); // Wait before retrying
+			} else {
+				// Even on error, show something
+				stage = 'complete';
+				dispatch('loaded', { error: true });
+				dispatch('error', { message: (error as any)?.message || 'Unknown error' });
+				clearTimeout(safetyTimer);
+			}
 		}
 	}
 
@@ -113,11 +144,9 @@
 
 		if (allLoaded) {
 			if (stage === 'grid_ready') {
-				logDebug('✅ Grid and components loaded, proceeding to positioning');
 				stage = 'components_ready';
 				updatePlacements();
 			} else if (stage === 'positioning') {
-				logDebug('✅ All components loaded and positioned');
 				stage = 'complete';
 				dispatch('loaded');
 			}
@@ -129,7 +158,6 @@
 		const allPositioned = Object.values(componentPositioning).every((positioned) => positioned);
 
 		if (allPositioned) {
-			logDebug('✅ All components positioned successfully');
 			stage = 'complete';
 			dispatch('loaded');
 		}
@@ -137,10 +165,8 @@
 
 	// CRITICAL: This updates the positions of props and arrows
 	async function updatePlacements() {
-		logDebug(`🔄 Updating placements (stage: ${stage})`);
 
 		if (!pictographManagers) {
-			logDebug('❌ Pictograph managers not available');
 			return;
 		}
 
@@ -152,23 +178,24 @@
 				// Make sure we have grid data
 				const pictograph = get(pictographDataStore);
 				if (!pictograph.gridData) {
-					logDebug('⚠️ No grid data in pictograph data store');
 
-					// Get grid data from elements store
-					pictograph.gridData = get(get(elements).gridData);
+					// Get grid data from elements store or global var
+					pictograph.gridData = gridData;
 
 					if (!pictograph.gridData) {
-						logDebug('❌ Cannot position - no grid data available');
 						return;
 					}
 				}
 
 				// Log the props before positioning
-				logDebug(`📊 Red prop before: ${JSON.stringify(redProp?.coords)}`);
-				logDebug(`📊 Blue prop before: ${JSON.stringify(blueProp?.coords)}`);
 
-				// Position the props
+				// Position the props - use temporary coordinates first to ensure change
 				if (redProp && blueProp) {
+					// Force props to be at origin to ensure positioning takes effect
+					redProp.coords = { x: 0, y: 0 };
+					blueProp.coords = { x: 0, y: 0 };
+
+					// Now position them
 					pictographManagers.propPlacementManager.updatePropPlacement([redProp, blueProp]);
 					componentPositioning.redProp = true;
 					componentPositioning.blueProp = true;
@@ -182,17 +209,17 @@
 				}
 
 				// Log the props after positioning
-				logDebug(`📊 Red prop after: ${JSON.stringify(redProp?.coords)}`);
-				logDebug(`📊 Blue prop after: ${JSON.stringify(blueProp?.coords)}`);
 
-				logDebug('✅ Props & Arrows repositioned');
 
-				// Validate positioning
+				// Apply fallback positions if needed
 				if (redProp && redProp.coords.x === 0 && redProp.coords.y === 0) {
-					logDebug('⚠️ Red prop position still at origin (0,0) after positioning');
+
+					applyFallbackPosition(redProp, 'red');
 				}
+
 				if (blueProp && blueProp.coords.x === 0 && blueProp.coords.y === 0) {
-					logDebug('⚠️ Blue prop position still at origin (0,0) after positioning');
+
+					applyFallbackPosition(blueProp, 'blue');
 				}
 
 				checkAllComponentsPositioned();
@@ -200,19 +227,56 @@
 				// Wait for next tick to ensure the DOM updates
 				await tick();
 			} catch (error) {
-				logDebug(`❌ Error updating placements: ${error}`);
+				// Apply fallbacks even on error
+				if (redProp) applyFallbackPosition(redProp, 'red');
+				if (blueProp) applyFallbackPosition(blueProp, 'blue');
+				checkAllComponentsPositioned();
 			}
 		} else {
-			logDebug('⚠️ Placement managers not available');
+			// Apply fallbacks if managers are not ready
+			if (redProp) applyFallbackPosition(redProp, 'red');
+			if (blueProp) applyFallbackPosition(blueProp, 'blue');
+			checkAllComponentsPositioned();
+		}
+	}
+
+	// Apply fallback positions directly to props
+	function applyFallbackPosition(prop: PropData, color: string) {
+		// Apply strong fallback positions based on prop location
+		const fallbacks: Record<string, { x: number; y: number }> = {
+			n: { x: 475, y: 330 },
+			e: { x: 620, y: 475 },
+			s: { x: 475, y: 620 },
+			w: { x: 330, y: 475 },
+			ne: { x: 620, y: 330 },
+			se: { x: 620, y: 620 },
+			sw: { x: 330, y: 620 },
+			nw: { x: 330, y: 330 }
+		};
+
+		// Apply more spread out positions for red vs blue
+		const offset = color === 'red' ? 30 : -30;
+
+		if (prop.loc && fallbacks[prop.loc]) {
+			prop.coords = {
+				x: fallbacks[prop.loc].x + offset,
+				y: fallbacks[prop.loc].y
+			};
+
+		} else {
+			// Last resort center position with offset
+			prop.coords = {
+				x: 475 + offset,
+				y: 475
+			};
+
 		}
 	}
 
 	onMount(() => {
-		logDebug('Component mounted');
 
 		// Set a safety timeout (5 seconds maximum)
 		safetyTimer = setTimeout(() => {
-			logDebug('⚠️ Safety timeout triggered for pictograph');
 			if (stage !== 'complete') {
 				// Even with timeout, try to render what we have
 				if (stage === 'loading' || stage === 'grid_ready' || stage === 'components_ready') {
@@ -227,40 +291,17 @@
 					dispatch('loaded', { timedOut: true });
 				}
 			}
-		}, 100);
+		}, 10);
 
-		(async () => {
-			try {
-				// First stage: initialize the pictograph data
-				await initializer.initialize();
-				logDebug('🟢 Pictograph Initialization Complete');
+		// Start initialization process
+		if (!initializationComplete) {
+			stage = 'loading';
 
-				// Get the stored components
-				redProp = get(get(elements).redPropData);
-				blueProp = get(get(elements).bluePropData);
-				redArrow = get(get(elements).redArrowData);
-				blueArrow = get(get(elements).blueArrowData);
-
-				// Log component properties for debugging
-				if (redProp) logDebug(`📊 Red prop details: loc=${redProp.loc}, ori=${redProp.ori}`);
-				if (blueProp) logDebug(`📊 Blue prop details: loc=${blueProp.loc}, ori=${blueProp.ori}`);
-
-				// Update to loading stage - now we'll wait for individual components to load
-				stage = 'loading';
-
-				// If grid data is already loaded, we can proceed to positioning
-				if (gridDataLoaded && pictographManagers.propPlacementManager) {
-					updatePlacements();
-				}
-			} catch (error) {
-				logDebug(`❌ Failed to initialize pictograph: ${error}`);
-				// Even on error, show something
-				stage = 'complete';
-				dispatch('loaded', { error: true });
-				dispatch('error', { message: (error as any)?.message || 'Unknown error' });
-				clearTimeout(safetyTimer);
+			// If grid data is already loaded somehow, we can proceed to initialization
+			if (gridDataLoaded && !initializationComplete) {
+				initializeAll();
 			}
-		})();
+		}
 
 		return () => {
 			clearTimeout(safetyTimer);
@@ -268,20 +309,17 @@
 	});
 
 	function handlePropLoaded(color: 'red' | 'blue') {
-		logDebug(`✅ ${color} prop loaded`);
 		componentLoading[`${color}Prop`] = true;
 		checkAllComponentsLoaded();
 	}
 
 	function handleArrowLoaded(color: 'red' | 'blue') {
-		logDebug(`✅ ${color} arrow loaded`);
 		componentLoading[`${color}Arrow`] = true;
 		checkAllComponentsLoaded();
 	}
 
 	// If any component errors, still mark it as loaded to not block rendering
 	function handleComponentError(component: string, error?: any) {
-		logDebug(`❌ Error loading ${component}: ${error?.message || 'Unknown error'}`);
 
 		// Mark the component as loaded despite the error
 		if (component.includes('prop')) {
@@ -295,6 +333,31 @@
 		}
 
 		checkAllComponentsLoaded();
+	}
+
+	// Show debug information
+	function getDebugInfo() {
+		return {
+			stage,
+			componentLoading,
+			componentPositioning,
+			redProp: redProp
+				? {
+						loc: redProp.loc,
+						coords: redProp.coords,
+						id: redProp.id
+					}
+				: null,
+			blueProp: blueProp
+				? {
+						loc: blueProp.loc,
+						coords: blueProp.coords,
+						id: blueProp.id
+					}
+				: null,
+			gridData: gridData ? 'loaded' : 'not loaded',
+			managers: pictographManagers ? 'initialized' : 'not initialized'
+		};
 	}
 </script>
 
@@ -321,6 +384,11 @@
 					on:loaded={() => handlePropLoaded('red')}
 					on:error={() => handleComponentError('redProp')}
 				/>
+
+				<!-- Debug marker for red prop position -->
+				{#if debug}
+					<circle cx={redProp.coords.x} cy={redProp.coords.y} r="8" fill="red" opacity="0.5" />
+				{/if}
 			{/if}
 
 			{#if blueProp}
@@ -329,6 +397,11 @@
 					on:loaded={() => handlePropLoaded('blue')}
 					on:error={() => handleComponentError('blueProp')}
 				/>
+
+				<!-- Debug marker for blue prop position -->
+				{#if debug}
+					<circle cx={blueProp.coords.x} cy={blueProp.coords.y} r="8" fill="blue" opacity="0.5" />
+				{/if}
 			{/if}
 
 			{#if redArrow}
@@ -346,6 +419,40 @@
 					on:error={() => handleComponentError('blueArrow')}
 				/>
 			{/if}
+
+			<!-- Debug grid point overlay -->
+			{#if debug && gridData}
+				{#each Object.entries(gridData.allHandPointsNormal || {}) as [key, point]}
+					{#if point && point.coordinates}
+						<circle
+							cx={point.coordinates.x}
+							cy={point.coordinates.y}
+							r="3"
+							fill="rgba(0,255,0,0.5)"
+							stroke="white"
+							stroke-width="0.5"
+						/>
+					{/if}
+				{/each}
+
+				{#if gridData.centerPoint && gridData.centerPoint.coordinates}
+					<circle
+						cx={gridData.centerPoint.coordinates.x}
+						cy={gridData.centerPoint.coordinates.y}
+						r="5"
+						fill="pink"
+						stroke="black"
+						stroke-width="1"
+					/>
+				{/if}
+			{/if}
+		{/if}
+
+		<!-- Status indicator -->
+		{#if debug}
+			<text x="10" y="20" font-size="12" fill="white" stroke="black" stroke-width="0.5">
+				Stage: {stage}
+			</text>
 		{/if}
 	</svg>
 </div>

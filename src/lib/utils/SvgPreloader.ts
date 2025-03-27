@@ -101,7 +101,6 @@ export default class SvgPreloader {
 			);
 
 			await Promise.all(promises);
-			console.log('✅ Common prop SVGs preloaded');
 		} catch (error) {
 			console.warn('Prop preloading skipped (possibly SSR context):', error);
 		}
@@ -135,7 +134,7 @@ export default class SvgPreloader {
 			);
 
 			await Promise.all(promises);
-			console.log('✅ Common arrow SVGs preloaded');
+			('✅ Common arrow SVGs preloaded');
 		} catch (error) {
 			console.warn('Arrow preloading skipped (possibly SSR context):', error);
 		}
@@ -147,9 +146,7 @@ export default class SvgPreloader {
 	async preloadCommonSvgs(): Promise<void> {
 		try {
 			await Promise.all([this.preloadCommonProps(), this.preloadCommonArrows()]);
-			console.log(
-				`✅ SVG preloading complete. Cache contains ${Object.keys(svgCache).length} items.`
-			);
+
 		} catch (error) {
 			console.warn('SVG preloading skipped (possibly SSR context)', error);
 		}
@@ -175,7 +172,6 @@ export const svgPreloader = new SvgPreloader();
 export async function initSvgPreloading(): Promise<void> {
 	// Skip preloading in SSR context
 	if (typeof window === 'undefined') {
-		console.log('⏭️ Skipping SVG preloading in SSR context');
 		return;
 	}
 

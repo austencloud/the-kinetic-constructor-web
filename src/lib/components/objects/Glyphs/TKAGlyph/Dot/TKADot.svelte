@@ -15,13 +15,7 @@
 	// Update transform when position changes
 	$: transform = `translate(${x}, ${y})`;
 	
-	// Log position for debugging
-	$: {
-		if (visible && x && y) {
-			console.log(`Dot positioned at (${x}, ${y}), visible: ${visible}`);
-		}
-	}
-	
+
 	onMount(async () => {
 		try {
 			const response = await fetch(dotPath);
@@ -33,7 +27,6 @@
 			if (viewBoxMatch) {
 				dotWidth = parseFloat(viewBoxMatch[1]);
 				dotHeight = parseFloat(viewBoxMatch[2]);
-				console.log('Dot SVG loaded with dimensions:', { dotWidth, dotHeight });
 				
 				// Notify parent that dot is loaded with dimensions
 				dispatch('dotLoaded', { width: dotWidth, height: dotHeight });
@@ -46,10 +39,7 @@
 		}
 	});
 
-	// Handle when dot image is loaded in the DOM
-	function handleImageLoaded() {
-		console.log('Dot image loaded in DOM');
-	}
+
 </script>
 
 <g class="tka-dot" {transform} opacity={visible ? 1 : 0}>
@@ -60,7 +50,6 @@
 			height={dotHeight}
 			x={-dotWidth / 2}
 			y={-dotHeight / 2}
-			on:load={handleImageLoaded}
 		/>
 		
 		<!-- Uncomment for debugging -->

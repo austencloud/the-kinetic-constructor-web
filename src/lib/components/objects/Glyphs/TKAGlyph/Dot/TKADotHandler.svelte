@@ -6,8 +6,6 @@
 	import type { DirRelation, PropRotDir } from '$lib/types/Types';
 
 	export let dir: DirRelation | PropRotDir | null = null;
-	export let glyphX: number = 0;  // Position of parent glyph
-	export let glyphY: number = 0;  // Position of parent glyph
 
 	export let letterRect = {
 		left: 0,
@@ -39,7 +37,6 @@
 			if (viewBoxMatch) {
 				dotWidth = parseFloat(viewBoxMatch[1]);
 				dotHeight = parseFloat(viewBoxMatch[2]);
-				console.log('Dot dimensions loaded:', { dotWidth, dotHeight });
 				// Recalculate positions with the correct height
 				updatePositions();
 				dotsReady = true;
@@ -62,13 +59,7 @@
 			
 			oppX = centerX;
 			oppY = letterRect.bottom + padding + (dotHeight / 2);
-			
-			console.log('Updated dot positions:', {
-				letterRect,
-				glyphPosition: { x: glyphX, y: glyphY },
-				samePosition: { x: sameX, y: sameY },
-				oppPosition: { x: oppX, y: oppY }
-			});
+
 		}
 	}
 	

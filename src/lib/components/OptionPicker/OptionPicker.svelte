@@ -37,7 +37,6 @@
 		// Mark this pictograph as loaded in the global store
 		setPictographLoaded(optionPickerId, true);
 		
-		console.log(`Pictograph loaded: ${loadedPictographs}/${totalPictographs}`);
 	}
 </script>
 

@@ -81,7 +81,6 @@ function renameFilesInTypeFolder(typeFolder) {
 					return;
 				}
 
-				console.log(`Renaming ${file} to ${newFilename}.svg`);
 				fs.renameSync(oldPath, newPath);
 			}
 		}

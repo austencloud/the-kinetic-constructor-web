@@ -18,14 +18,7 @@
 	// Add a timeout to prevent infinite loading
 	let loadingTimeout: number;
 
-	// Add more debug logging
-	function logDebug(message: string) {
-		console.log(`[StartPosPicker] ${message}`);
-	}
-
 	const unsubscribe = pictographDataStore.subscribe((data) => {
-		logDebug(`Received pictograph data: ${data ? data.length : 0} items`);
-
 		if (!data || data.length === 0) {
 			isLoading = true;
 			return;
@@ -44,15 +37,10 @@
 				defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
 		);
 
-		logDebug(`Filtered to ${filteredPictographs.length} start positions`);
-
-		// If no pictographs match, handle gracefully
 		if (filteredPictographs.length === 0) {
-			logDebug('No matching start positions found, using first available data');
 			if (pictographData.length > 0) {
 				startPositionDataStoreSet = [writable(pictographData[0])];
 			} else {
-				logDebug('ERROR: No pictograph data available at all');
 				isLoading = false;
 				return;
 			}
@@ -64,16 +52,11 @@
 		loadedPictographs = 0;
 		dataInitialized = true;
 
-		logDebug(`Created ${totalPictographs} pictograph stores`);
-
-		// Keep showing loading until pictographs finish initializing
 		isLoading = true;
 
-		// Set a safety timeout that will force display after 5 seconds even if events don't fire
 		clearTimeout(loadingTimeout);
 		loadingTimeout = setTimeout(() => {
 			if (isLoading) {
-				logDebug('⚠️ Loading timeout triggered. Forcing display.');
 				isLoading = false;
 			}
 		}, 100);
@@ -85,49 +68,34 @@
 	});
 
 	const handleSelect = (startPosPictograph: PictographData) => {
-		logDebug('Setting selectedStartPos to: ' + startPosPictograph.letter);
 		selectedStartPos.set({ ...startPosPictograph });
 	};
 
 	function handlePictographLoaded(event: CustomEvent) {
 		loadedPictographs++;
-		logDebug(`Pictograph loaded (${loadedPictographs}/${totalPictographs})`);
 
-		// Check if this was the last one
 		if (loadedPictographs >= totalPictographs) {
-			// All pictographs have loaded, we can show them
-			logDebug('All pictographs loaded, displaying now');
-			setTimeout(() => {
-				isLoading = false;
-			}, 200); // Small delay for a smoother transition
-		}
-	}
-
-	function handlePictographError(event: CustomEvent) {
-		loadedPictographs++;
-		logDebug(
-			`⚠️ Pictograph loading error (${loadedPictographs}/${totalPictographs}): ${event.detail?.message || 'Unknown error'}`
-		);
-
-		// Even with errors, proceed if this was the last one
-		if (loadedPictographs >= totalPictographs) {
-			logDebug('All pictographs attempted to load (with errors), displaying anyway');
 			setTimeout(() => {
 				isLoading = false;
 			}, 200);
 		}
 	}
 
-	// Create a basic fallback pictograph in case all else fails
+	function handlePictographError(event: CustomEvent) {
+		loadedPictographs++;
+
+		if (loadedPictographs >= totalPictographs) {
+			setTimeout(() => {
+				isLoading = false;
+			}, 200);
+		}
+	}
+
 	let fallbackDisplayed = false;
 
 	onMount(() => {
-		logDebug('Component mounted');
-
-		// Safety timeout for initial data loading
 		const initialDataTimeout = setTimeout(() => {
 			if (!dataInitialized) {
-				logDebug('⚠️ Data initialization timeout. Displaying fallback.');
 				fallbackDisplayed = true;
 				isLoading = false;
 			}
@@ -176,7 +144,6 @@
 						}
 					}}
 				>
-					<!-- Pass as a store and listen for loaded event -->
 					<Pictograph
 						pictographDataStore={startPositionStore}
 						on:loaded={handlePictographLoaded}

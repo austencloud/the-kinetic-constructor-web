@@ -56,11 +56,7 @@
 				const [, minX, minY, w, h] = viewBoxMatch;
 				svgWidth = parseFloat(w);
 				svgHeight = parseFloat(h);
-				console.log('Letter SVG loaded with dimensions:', { 
-					width: svgWidth, 
-					height: svgHeight,
-					path: letterFilePath
-				});
+
 			}
 			
 			letterLoaded = true;
@@ -90,7 +86,6 @@
 				bottom: bbox.y + bbox.height
 			};
 			
-			console.log('Letter bounding box from getBBox:', rect);
 			dispatch('letterBBox', rect);
 		} catch (error) {
 			console.error('Error getting letter bounding box:', error);

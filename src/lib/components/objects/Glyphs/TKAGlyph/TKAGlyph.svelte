@@ -7,7 +7,6 @@
 	import TKATurnsNumberGroup from './Turns/TKATurnsNumberGroup.svelte';
 	import type { DirRelation, PropRotDir, TKATurns } from '$lib/types/Types';
 
-
 	export let letter: Letter | null = null;
 	export let turnsTuple: string = '';
 
@@ -20,7 +19,7 @@
 	let bottomTurn: TKATurns = 0;
 	let glyphBBox = { x: 0, y: 0, width: 0, height: 0 };
 	let glyphEl: SVGGElement | null = null;
-	let letterLoaded = false;  // Track when letter is loaded
+	let letterLoaded = false; // Track when letter is loaded
 
 	$: {
 		if (turnsTuple) {
@@ -34,7 +33,6 @@
 	function handleLetterBBox(e: CustomEvent) {
 		letterRect = e.detail;
 		letterLoaded = true;
-		console.log(`Letter loaded at glyph position (${x}, ${y})`, letterRect);
 	}
 </script>
 
@@ -49,23 +47,13 @@
 		width={glyphBBox.width}
 		height={glyphBBox.height}
 	/> -->
-	
+
 	<TKALetter {letter} on:letterBBox={handleLetterBBox} />
-	
+
 	<!-- Only show dash and dots after letter is loaded with proper dimensions -->
 	{#if letterLoaded}
 		<TKADash {letter} {letterRect} />
-		<TKADotHandler 
-			dir={firstTupleItem} 
-			{letterRect} 
-			{letter} 
-			glyphX={x} 
-			glyphY={y} 
-		/>
-		<TKATurnsNumberGroup 
-			topValue={topTurn} 
-			bottomValue={bottomTurn} 
-			{letterRect} 
-		/>
+		<TKADotHandler dir={firstTupleItem} {letterRect} {letter} />
+		<TKATurnsNumberGroup topValue={topTurn} bottomValue={bottomTurn} {letterRect} />
 	{/if}
 </g>

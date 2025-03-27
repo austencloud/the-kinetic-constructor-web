@@ -11,6 +11,7 @@ export class ArrowPlacementManager {
 	private initialPosCalculator: ArrowInitialPosCalculator;
 	private adjustmentCalculator: ArrowAdjustmentCalculator;
 	public defaultPositioner: DefaultArrowPositioner;
+	ready: any;
 
 	constructor(
 		private pictographData: PictographData,

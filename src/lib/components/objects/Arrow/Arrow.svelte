@@ -6,7 +6,6 @@
 	import SvgManager from '../../SvgManager/SvgManager';
 
 	export let arrowData: ArrowData;
-	console.log('📦 Received Arrow Data:', arrowData);
 
 	let svgData: ArrowSvgData | null = null;
 	let transform = '';
@@ -21,24 +20,18 @@
 	// For tracking load state
 	let loadTimeout: number;
 
-	// For debugging
-	function logDebug(message: string) {
-		console.log(`[Arrow ${arrowData.color}] ${message}`);
-	}
 
 	// Load the SVG and set up its data
 	const loadArrowSvg = async () => {
 		try {
-			logDebug('Loading SVG...');
 
 			// Set a timeout to ensure we don't get stuck in loading state
 			loadTimeout = setTimeout(() => {
 				if (!isLoaded) {
-					logDebug('⚠️ Arrow load timeout triggered');
 					isLoaded = true;
 					dispatch('loaded', { timeout: true });
 				}
-			}, 3000);
+			}, 10);
 
 			const svgText = await svgManager.getArrowSvg(
 				arrowData.motionType, // ✅ Use stored motionType
@@ -68,13 +61,11 @@
 			// Clear timeout as we've loaded successfully
 			clearTimeout(loadTimeout);
 
-			logDebug('✅ SVG loaded successfully');
 
 			// Mark as loaded immediately
 			isLoaded = true;
 			dispatch('loaded');
 		} catch (error) {
-			logDebug(`❌ Error loading arrow SVG: ${error}`);
 			hasErrored = true;
 
 			// Use a fallback SVG for errors
@@ -95,12 +86,10 @@
 
 	// Trigger the SVG load when mounted or when properties change
 	onMount(() => {
-		logDebug('Component mounted');
 
 		if (arrowData.motionType) {
 			loadArrowSvg();
 		} else {
-			logDebug('⚠️ No motion type provided');
 			isLoaded = true;
 			dispatch('loaded', { error: true });
 		}
@@ -128,14 +117,12 @@
 
 	// Handle image load events
 	function handleImageLoad() {
-		logDebug('Image loaded');
 		dispatch('imageLoaded');
 	}
 
 	// Handle image load errors
 	function handleImageError(e: Event) {
 		const errorEvent = e as ErrorEvent;
-		logDebug(`❌ Image load error: ${errorEvent}`);
 		dispatch('error', { message: 'Image failed to load' });
 	}
 </script>

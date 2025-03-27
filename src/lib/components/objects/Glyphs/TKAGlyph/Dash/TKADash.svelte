@@ -25,7 +25,6 @@
 				dashWidth = parseFloat(viewBoxMatch[1]);
 				dashHeight = parseFloat(viewBoxMatch[2]);
 				dashLoaded = true;
-				console.log('Dash SVG loaded with dimensions:', { dashWidth, dashHeight });
 				updateDashPosition();
 			} else {
 				console.warn('Could not parse dash SVG viewBox');
@@ -46,10 +45,7 @@
 			dashX = letterRect.right + padding;
 			dashY = centerY - dashHeight / 2;
 			
-			console.log('Updated dash position:', {
-				letterRect,
-				dashPosition: { x: dashX, y: dashY }
-			});
+
 		}
 	}
 	
@@ -59,9 +55,7 @@
 	}
 
 	// Handle when dash image is loaded in the DOM
-	function handleImageLoaded() {
-		console.log('Dash image loaded in DOM');
-	}
+
 </script>
 
 <g class="tka-dash" opacity={dashVisible ? 1 : 0}>
@@ -72,7 +66,6 @@
 			height={dashHeight}
 			x={dashX}
 			y={dashY}
-			on:load={handleImageLoaded}
 		/>
 		
 		<!-- Uncomment for debugging -->

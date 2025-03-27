@@ -3,9 +3,9 @@ import { ShiftDirectionalGenerator } from './ShiftDirectionalGenerator';
 import { DashDirectionalGenerator } from './DashDirectionalGenerator';
 import { BaseDirectionalGenerator } from './BaseDirectionalGenerator';
 
-import type { Motion } from '../../../Motion/Motion';
 import { StaticDirectionalGenerator } from './StaticDirectionalGenrartor';
 import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';
+import type { Motion } from '$lib/components/objects/Motion/Motion';
 
 export class DirectionalTupleManager {
 	private generator: BaseDirectionalGenerator | null = null;
