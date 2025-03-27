@@ -5,20 +5,33 @@ import { createPropData } from '../objects/Prop/PropFactory';
 import { createArrowData } from '../objects/Arrow/ArrowFactory';
 import type { PictographData } from '$lib/types/PictographData';
 import type { ArrowData } from '../objects/Arrow/ArrowData';
+import type { PropData } from '../objects/Prop/PropData';
 
 export class PictographInitializer {
     elements: Writable<ReturnType<typeof createPictographElements>>;
     pictographDataStore: Writable<PictographData>;
     ready: Promise<void>;
     private resolveReady!: () => void;
+    private rejectReady!: (reason?: any) => void;
+    private components: {
+        motions: { red?: Motion; blue?: Motion };
+        props: { red?: PropData; blue?: PropData };
+        arrows: { red?: ArrowData; blue?: ArrowData };
+    };
 
     constructor(pictographDataStore: Writable<PictographData>) {
         this.elements = writable(createPictographElements());
         this.pictographDataStore = pictographDataStore;
+        this.components = {
+            motions: {},
+            props: {},
+            arrows: {}
+        };
         
         // Create a promise to track when initialization is complete
-        this.ready = new Promise<void>((resolve) => {
+        this.ready = new Promise<void>((resolve, reject) => {
             this.resolveReady = resolve;
+            this.rejectReady = reject;
         });
     }
 
@@ -34,88 +47,138 @@ export class PictographInitializer {
                 return;
             }
 
-            // Use Promise.all for parallel processing where possible
-            const [redMotion, blueMotion] = await this.createMotions(pictograph);
+            // Create and wait for motions to be ready
+            await this.createAndStoreMotions(pictograph);
             
-            const [propResults, arrowResults] = await Promise.all([
-                this.createProps(redMotion, blueMotion),
-                this.createArrows(redMotion, blueMotion)
+            // Create props and arrows in parallel
+            await Promise.all([
+                this.createAndStoreProps(),
+                this.createAndStoreArrows()
             ]);
             
-            const [redProp, blueProp] = propResults;
-            const [redArrow, blueArrow] = arrowResults;
-
-            this.updateElementsStore(redProp, blueProp, redArrow, blueArrow, redMotion, blueMotion);
+            // Update the elements store with all components
+            this.updateElementsStore();
             
             console.log('✅ Pictograph Initialization Complete');
             this.resolveReady(); // Resolve the ready promise
         } catch (error) {
             console.error('❌ Initialization failed:', error);
-            this.resolveReady(); // Resolve even on error, to avoid deadlocking UI
+            this.rejectReady(error); // Reject with error
             throw error;
         }
     }
 
-    private async createMotions(pictograph: PictographData): Promise<[Motion, Motion]> {
+    private async createAndStoreMotions(pictograph: PictographData): Promise<void> {
         console.log('🔄 Creating Motions...');
-        const redMotion = new Motion(pictograph, pictograph.redMotionData!);
-        const blueMotion = new Motion(pictograph, pictograph.blueMotionData!);
-        await Promise.all([redMotion.ready, blueMotion.ready]);
-        console.log('✅ Motions Created');
-        return [redMotion, blueMotion];
+        
+        try {
+            const redMotion = new Motion(pictograph, pictograph.redMotionData!);
+            const blueMotion = new Motion(pictograph, pictograph.blueMotionData!);
+            
+            // Wait for motion initialization to complete
+            await Promise.all([redMotion.ready, blueMotion.ready]);
+            
+            // Store the motions
+            this.components.motions.red = redMotion;
+            this.components.motions.blue = blueMotion;
+            
+            console.log('✅ Motions Created and Ready');
+        } catch (error) {
+            console.error('❌ Motion creation failed:', error);
+            throw error;
+        }
     }
 
-    private async createProps(redMotion: Motion, blueMotion: Motion): Promise<[any, any]> {
+    private async createAndStoreProps(): Promise<void> {
         console.log('🔄 Creating Props...');
-        const [redProp, blueProp] = await Promise.all([
-            createPropData(redMotion),
-            createPropData(blueMotion)
-        ]);
-        console.log('✅ Props Created');
-        return [redProp, blueProp];
+        
+        if (!this.components.motions.red || !this.components.motions.blue) {
+            throw new Error('Cannot create props: Motions not initialized');
+        }
+        
+        try {
+            const [redProp, blueProp] = await Promise.all([
+                createPropData(this.components.motions.red),
+                createPropData(this.components.motions.blue)
+            ]);
+            
+            this.components.props.red = redProp;
+            this.components.props.blue = blueProp;
+            
+            console.log('✅ Props Created and Ready');
+        } catch (error) {
+            console.error('❌ Prop creation failed:', error);
+            throw error;
+        }
     }
 
-    private async createArrows(redMotion: Motion, blueMotion: Motion): Promise<[any, any]> {
+    private async createAndStoreArrows(): Promise<void> {
         console.log('🔄 Creating Arrows...');
-        const [redArrow, blueArrow] = await Promise.all([
-            createArrowData(redMotion),
-            createArrowData(blueMotion)
-        ]);
-        console.log('✅ Arrows Created');
-        return [redArrow, blueArrow];
+        
+        if (!this.components.motions.red || !this.components.motions.blue) {
+            throw new Error('Cannot create arrows: Motions not initialized');
+        }
+        
+        try {
+            const [redArrow, blueArrow] = await Promise.all([
+                createArrowData(this.components.motions.red),
+                createArrowData(this.components.motions.blue)
+            ]);
+            
+            this.components.arrows.red = redArrow;
+            this.components.arrows.blue = blueArrow;
+            
+            console.log('✅ Arrows Created and Ready');
+        } catch (error) {
+            console.error('❌ Arrow creation failed:', error);
+            throw error;
+        }
     }
 
-    private updateElementsStore(
-        redProp: any,
-        blueProp: any,
-        redArrow: any,
-        blueArrow: any,
-        redMotion: Motion,
-        blueMotion: Motion
-    ) {
+    private updateElementsStore() {
+        console.log('🔄 Updating Elements Store...');
+        
+        if (!this.components.props.red || !this.components.props.blue || 
+            !this.components.arrows.red || !this.components.arrows.blue || 
+            !this.components.motions.red || !this.components.motions.blue) {
+            throw new Error('Cannot update elements store: Missing components');
+        }
+        
         this.elements.update((els) => {
-            els.redPropData.set({ ...redProp, motionId: redMotion.id });
-            els.bluePropData.set({ ...blueProp, motionId: blueMotion.id });
+            els.redPropData.set({ 
+                ...this.components.props.red!, 
+                motionId: this.components.motions.red!.id 
+            });
+            
+            els.bluePropData.set({ 
+                ...this.components.props.blue!, 
+                motionId: this.components.motions.blue!.id 
+            });
 
             els.redArrowData.set({
-                ...redArrow,
-                motionId: redMotion.id,
-                motionType: redMotion.motionType,
-                startOri: redMotion.startOri,
-                turns: redMotion.turns,
-                propRotDir: redMotion.propRotDir
+                ...this.components.arrows.red!,
+                motionId: this.components.motions.red!.id,
+                motionType: this.components.motions.red!.motionType,
+                startOri: this.components.motions.red!.startOri,
+                turns: this.components.motions.red!.turns,
+                propRotDir: this.components.motions.red!.propRotDir
             });
 
             els.blueArrowData.set({
-                ...blueArrow,
-                motionId: blueMotion.id,
-                motionType: blueMotion.motionType,
-                startOri: blueMotion.startOri,
-                turns: blueMotion.turns,
-                propRotDir: blueMotion.propRotDir
+                ...this.components.arrows.blue!,
+                motionId: this.components.motions.blue!.id,
+                motionType: this.components.motions.blue!.motionType,
+                startOri: this.components.motions.blue!.startOri,
+                turns: this.components.motions.blue!.turns,
+                propRotDir: this.components.motions.blue!.propRotDir
             });
+            
+            els.redMotion.set(this.components.motions.red!);
+            els.blueMotion.set(this.components.motions.blue!);
 
             return els;
         });
+        
+        console.log('✅ Elements Store Updated');
     }
 }

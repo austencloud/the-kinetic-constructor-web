@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { parsePropSvg } from '../../SvgManager/PropSvgParser';
 	import SvgManager from '../../SvgManager/SvgManager';
 	import type { PropData } from './PropData';
@@ -15,12 +15,24 @@
 	let svgData: PropSvgData | null = null;
 	let coords = { x: 0, y: 0 };
 	let checker = propData ? new PropChecker(propData) : null;
+	let isLoaded = false;
+	
+	const dispatch = createEventDispatcher();
+	
+	// For tracking load state
+	let loadTimeout: number;
 
 	const svgManager = new SvgManager();
 
 	// Load SVG and update svgData
 	const loadSvg = async () => {
 		try {
+			// Set a timeout to ensure we don't get stuck in loading state
+			loadTimeout = setTimeout(() => {
+				isLoaded = true;
+				dispatch('loaded');
+			}, 3000);
+			
 			const svgText = await svgManager.getPropSvg(propData.propType, propData.color);
 			const { viewBox, center } = parsePropSvg(svgText);
 
@@ -31,11 +43,35 @@
 			};
 
 			propData.svgCenter = center;
+			
+			// Clear timeout as we've loaded successfully
+			clearTimeout(loadTimeout);
+			
+			// Mark as loaded after a brief delay to ensure rendering completes
+			setTimeout(() => {
+				isLoaded = true;
+				dispatch('loaded');
+			}, 50);
 		} catch (error) {
 			console.error('Prop load failed:', error);
 			svgData = null;
+			
+			// Even if we fail, mark as loaded so we don't block the UI
+			clearTimeout(loadTimeout);
+			isLoaded = true;
+			dispatch('loaded', { error: true });
 		}
 	};
+
+	onMount(() => {
+		if (propData.propType) {
+			loadSvg();
+		}
+		
+		return () => {
+			clearTimeout(loadTimeout);
+		};
+	});
 
 	$: {
 		if (propData.propType || propData.color) {
@@ -51,8 +87,8 @@
 		svgData && (propData.loc || propData.ori) // ✅ Use stored values instead of motion reference
 			? (() => {
 					const rotAngleManager = new PropRotAngleManager({
-						loc: propData.loc, // ✅ Use `propData.endLoc`
-						ori: propData.ori  // ✅ Use `propData.endOri`
+						loc: propData.loc, // ✅ Use `propData.loc`
+						ori: propData.ori  // ✅ Use `propData.ori`
 					});
 					propData.rotAngle = rotAngleManager.getRotationAngle();
 					return `translate(${propData.coords.x} ${propData.coords.y})
@@ -61,7 +97,7 @@
 			: '';
 </script>
 
-{#if svgData}
+{#if svgData && isLoaded}
 	<g {transform}>
 		<image
 			href={svgData.imageSrc}
@@ -70,6 +106,7 @@
 			x={coords.x}
 			y={coords.y}
 			preserveAspectRatio="xMidYMid meet"
+			on:load={() => dispatch('imageLoaded')}
 		/>
 	</g>
 {/if}

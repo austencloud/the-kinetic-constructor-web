@@ -11,6 +11,8 @@
 	let gridMode = 'diamond';
 	let startPositionDataStoreSet: Writable<PictographData>[] = []; 
 	let isLoading = true;
+	let loadedPictographs = 0;
+	let totalPictographs = 0;
 
 	pictographDataStore.subscribe((data) => {
 		if (!data || data.length === 0) {
@@ -24,25 +26,35 @@
 				? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
 				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
 
-		startPositionDataStoreSet = pictographData
-			.filter(
-				(entry) =>
-					entry.redMotionData &&
-					entry.blueMotionData &&
-					defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
-			)
-			.map((entry) => writable(entry));
+		const filteredPictographs = pictographData.filter(
+			(entry) =>
+				entry.redMotionData &&
+				entry.blueMotionData &&
+				defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
+		);
 		
-		// After loading data, set loading to false with a slight delay for smooth transition
-		setTimeout(() => {
-			isLoading = false;
-		}, 200);
+		startPositionDataStoreSet = filteredPictographs.map((entry) => writable(entry));
+		totalPictographs = startPositionDataStoreSet.length;
+		loadedPictographs = 0;
+		
+		// Keep showing loading until pictographs finish initializing
+		isLoading = true;
 	});
 
 	const handleSelect = (startPosPictograph: PictographData) => {
 		console.log('Setting selectedStartPos to:', startPosPictograph);
 		selectedStartPos.set({ ...startPosPictograph }); 
 	};
+	
+	function handlePictographLoaded() {
+		loadedPictographs++;
+		if (loadedPictographs >= totalPictographs) {
+			// All pictographs have loaded, we can show them
+			setTimeout(() => {
+				isLoading = false;
+			}, 200); // Small delay for a smoother transition
+		}
+	}
 </script>
 
 <div class="start-pos-picker">
@@ -51,7 +63,11 @@
 	{#if isLoading}
 		<div class="loading-container">
 			<LoadingSpinner />
-			<p class="loading-text">Loading Start Positions...</p>
+			<p class="loading-text">
+				{loadedPictographs === 0 
+					? "Loading Start Positions..." 
+					: `Loading pictographs (${loadedPictographs}/${totalPictographs})`}
+			</p>
 		</div>
 	{:else}
 		<div class="pictograph-row">
@@ -69,8 +85,11 @@
 						}
 					}}
 				>
-					<!-- Pass as a store -->
-					<Pictograph pictographDataStore={startPositionStore} />
+					<!-- Pass as a store and listen for loaded event -->
+					<Pictograph 
+						pictographDataStore={startPositionStore} 
+						on:loaded={handlePictographLoaded}
+					/>
 				</div>
 			{/each}
 		</div>

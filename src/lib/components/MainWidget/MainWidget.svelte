@@ -8,56 +8,27 @@
 	import LoadingSpinner from './LoadingSpinner.svelte';
 	import { writable } from 'svelte/store';
 	import { onMount } from 'svelte';
-	import { loadPictographData } from '$lib/stores/pictographDataStore.js';
 	import { selectedStartPos } from '$lib/stores/constructStores.js';
 	import StartPosPicker from '../StartPosPicker/StartPosPicker.svelte';
+	import { loadingState } from '$lib/stores/loadingStateStore';
+	import { initializeApplication } from '$lib/utils/appInitializer';
 
 	let dynamicHeight = '100vh';
 	let isSettingsDialogOpen = false;
 	let isFullScreen = false;
 	let background = 'Snowfall';
-	let isLoading = true;
-	let loadingProgress = 0;
-	let loadingText = 'Initializing...';
 	let pictographData: any;
+	let initializationError = false;
 
 	onMount(() => {
-		// Show loading spinner with progress simulation
-		const loadingInterval = setInterval(() => {
-			loadingProgress += 5;
-			
-			if (loadingProgress <= 30) {
-				loadingText = "Loading components...";
-			} else if (loadingProgress <= 60) {
-				loadingText = "Processing pictograph data...";
-			} else if (loadingProgress <= 90) {
-				loadingText = "Preparing visualizations...";
-			} else {
-				loadingText = "Almost ready...";
+		// Initialize the application using our centralized initializer
+		initializeApplication().then((success) => {
+			if (!success) {
+				initializationError = true;
 			}
-			
-			if (loadingProgress >= 100) {
-				clearInterval(loadingInterval);
-			}
-		}, 100);
-		
-		loadPictographData()
-			.then((data) => {
-				pictographData = data;
-				setTimeout(() => {
-					isLoading = false;
-				}, 500); // Give a little extra time for final UI preparations
-				clearInterval(loadingInterval); // Clear interval if data loads before progress reaches 100
-			})
-			.catch((err) => {
-				console.error('Error loading pictograph data:', err);
-				loadingText = "Error loading data. Please try refreshing.";
-				setTimeout(() => {
-					isLoading = false;
-				}, 1000);
-				clearInterval(loadingInterval);
-			});
+		});
 
+		// Set up window resize handling for height adjustment
 		function updateHeight() {
 			dynamicHeight = `${window.innerHeight}px`;
 		}
@@ -67,7 +38,6 @@
 
 		return () => {
 			window.removeEventListener('resize', updateHeight);
-			clearInterval(loadingInterval);
 		};
 	});
 
@@ -94,16 +64,28 @@
 			<SnowfallBackground />
 		</div>
 		
-		{#if isLoading}
+		{#if $loadingState.isLoading}
 			<!-- Enhanced loading spinner with progress and text -->
 			<div class="loading-overlay">
 				<div class="loading-container">
 					<LoadingSpinner />
 					<div class="loading-progress-container">
 						<div class="loading-progress-bar">
-							<div class="loading-progress-fill" style="width: {loadingProgress}%"></div>
+							<div 
+                                class="loading-progress-fill" 
+                                style="width: {$loadingState.progress}%"
+                            ></div>
 						</div>
-						<p class="loading-text">{loadingText}</p>
+						<p class="loading-text">{$loadingState.message}</p>
+						
+						{#if initializationError}
+							<p class="error-text">
+								An error occurred during initialization. 
+								<button class="retry-button" on:click={() => window.location.reload()}>
+									Retry
+								</button>
+							</p>
+						{/if}
 					</div>
 				</div>
 			</div>
@@ -213,6 +195,27 @@
 		font-size: 16px;
 		color: #333;
 		margin: 0;
+	}
+	
+	.error-text {
+		color: #d32f2f;
+		margin-top: 15px;
+		font-size: 14px;
+	}
+	
+	.retry-button {
+		background-color: #4285f4;
+		color: white;
+		border: none;
+		border-radius: 4px;
+		padding: 5px 10px;
+		margin-left: 10px;
+		cursor: pointer;
+		transition: background-color 0.2s;
+	}
+	
+	.retry-button:hover {
+		background-color: #2b68c9;
 	}
 
 	#content {

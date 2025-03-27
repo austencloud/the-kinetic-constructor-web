@@ -12,6 +12,9 @@ export class PictographManagers {
 	propPlacementManager: PropPlacementManager | null = null;
 	arrowPlacementManager: ArrowPlacementManager | null = null;
 	svgManager: SvgManager;
+	ready: Promise<void>;
+	private resolveReady!: () => void;
+	private rejectReady!: (reason?: any) => void;
 
 	constructor(private pictographDataStore: Writable<PictographData>) {
 		const pictographData = get(pictographDataStore); // ✅ Always retrieve the data from store
@@ -19,30 +22,68 @@ export class PictographManagers {
 		this.checker = new PictographChecker(pictographData);
 		this.getter = new PictographGetter(pictographData);
 		this.svgManager = new SvgManager();
+		
+		// Create a promise to track initialization
+		this.ready = new Promise<void>((resolve, reject) => {
+			this.resolveReady = resolve;
+			this.rejectReady = reject;
+		});
 
-		// ✅ Initialize placement managers when constructing
-		this.initializePlacementManagers();
+		// ✅ Initialize placement managers asynchronously
+		this.initializePlacementManagers()
+			.then(() => this.resolveReady())
+			.catch((error) => {
+				console.error('Failed to initialize placement managers:', error);
+				this.rejectReady(error);
+			});
 	}
 
-	private initializePlacementManagers() {
-		const pictographData = get(this.pictographDataStore);
-		const gridData = pictographData?.gridData || null;
+	private async initializePlacementManagers() {
+		try {
+			const pictographData = get(this.pictographDataStore);
+			const gridData = pictographData?.gridData || null;
 
-		if (!gridData) {
-			console.error('❌ Grid data is missing. Placement managers cannot be initialized.');
-			return;
+			if (!gridData) {
+				console.error('❌ Grid data is missing. Placement managers cannot be initialized.');
+				throw new Error('Grid data is missing');
+			}
+
+			this.propPlacementManager = new PropPlacementManager(pictographData, gridData, this.checker);
+			this.arrowPlacementManager = new ArrowPlacementManager(pictographData, gridData, this.checker);
+			
+			console.log('✅ Placement managers initialized successfully');
+		} catch (error) {
+			console.error('❌ Error initializing placement managers:', error);
+			throw error;
 		}
-
-		this.propPlacementManager = new PropPlacementManager(pictographData, gridData, this.checker);
-		this.arrowPlacementManager = new ArrowPlacementManager(pictographData, gridData, this.checker);
 	}
 
-	updateData() {
-		const pictographData = get(this.pictographDataStore);
-		this.checker = new PictographChecker(pictographData);
-		this.getter = new PictographGetter(pictographData);
+	async updateData() {
+		try {
+			const pictographData = get(this.pictographDataStore);
+			this.checker = new PictographChecker(pictographData);
+			this.getter = new PictographGetter(pictographData);
 
-		// Ensure placement managers update with new data
-		this.initializePlacementManagers();
+			// Reinitialize placement managers with new data
+			await this.initializePlacementManagers();
+		} catch (error) {
+			console.error('❌ Error updating managers with new data:', error);
+			throw error;
+		}
+	}
+	
+	// Add a function to validate placements have been applied correctly
+	validatePlacements(props: any[], arrows: any[]): boolean {
+		if (props.some(prop => !prop.coords || prop.coords.x === undefined || prop.coords.y === undefined)) {
+			console.error('❌ Validation failed: Props have invalid coordinates');
+			return false;
+		}
+		
+		if (arrows.some(arrow => !arrow.coords || arrow.coords.x === undefined || arrow.coords.y === undefined)) {
+			console.error('❌ Validation failed: Arrows have invalid coordinates');
+			return false;
+		}
+		
+		return true;
 	}
 }
