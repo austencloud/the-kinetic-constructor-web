@@ -10,24 +10,36 @@
 
 	let svgData: ArrowSvgData | null = null;
 	let transform = '';
-	const svgManager = new SvgManager();
 	let isLoaded = false;
-	
+	let hasErrored = false;
+
+	const svgManager = new SvgManager();
+
 	// Create event dispatcher for load events
 	const dispatch = createEventDispatcher();
-	
+
 	// For tracking load state
 	let loadTimeout: number;
+
+	// For debugging
+	function logDebug(message: string) {
+		console.log(`[Arrow ${arrowData.color}] ${message}`);
+	}
 
 	// Load the SVG and set up its data
 	const loadArrowSvg = async () => {
 		try {
+			logDebug('Loading SVG...');
+
 			// Set a timeout to ensure we don't get stuck in loading state
 			loadTimeout = setTimeout(() => {
-				isLoaded = true;
-				dispatch('loaded');
+				if (!isLoaded) {
+					logDebug('⚠️ Arrow load timeout triggered');
+					isLoaded = true;
+					dispatch('loaded', { timeout: true });
+				}
 			}, 3000);
-			
+
 			const svgText = await svgManager.getArrowSvg(
 				arrowData.motionType, // ✅ Use stored motionType
 				arrowData.startOri, // ✅ Use stored startOri
@@ -52,43 +64,54 @@
 				viewBox: originalSvgData.viewBox,
 				center
 			};
-			
+
 			// Clear timeout as we've loaded successfully
 			clearTimeout(loadTimeout);
-			
-			// Mark as loaded after a brief delay to ensure rendering completes
-			setTimeout(() => {
-				isLoaded = true;
-				dispatch('loaded');
-			}, 50);
+
+			logDebug('✅ SVG loaded successfully');
+
+			// Mark as loaded immediately
+			isLoaded = true;
+			dispatch('loaded');
 		} catch (error) {
-			console.error('Error loading arrow SVG:', error);
+			logDebug(`❌ Error loading arrow SVG: ${error}`);
+			hasErrored = true;
+
+			// Use a fallback SVG for errors
 			svgData = {
-				imageSrc: '/fallback-arrow.svg',
+				imageSrc:
+					'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZiIgLz48dGV4dCB4PSIyMCIgeT0iNTAiIGZpbGw9IiNmMDAiPkVycm9yPC90ZXh0Pjwvc3ZnPg==',
 				viewBox: { x: 0, y: 0, width: 100, height: 100 },
 				center: { x: 50, y: 50 }
 			};
-			
+
 			// Even if we fail, mark as loaded so we don't block the UI
 			clearTimeout(loadTimeout);
 			isLoaded = true;
 			dispatch('loaded', { error: true });
+			dispatch('error', { message: (error as Error)?.message || 'Unknown error' });
 		}
 	};
 
 	// Trigger the SVG load when mounted or when properties change
 	onMount(() => {
+		logDebug('Component mounted');
+
 		if (arrowData.motionType) {
 			loadArrowSvg();
+		} else {
+			logDebug('⚠️ No motion type provided');
+			isLoaded = true;
+			dispatch('loaded', { error: true });
 		}
-		
+
 		return () => {
 			clearTimeout(loadTimeout);
 		};
 	});
-	
+
 	$: {
-		if (arrowData.motionType) {
+		if (arrowData.motionType && !isLoaded && !hasErrored) {
 			loadArrowSvg();
 		}
 	}
@@ -102,6 +125,19 @@
 			${mirrorTransform}
 		`;
 	}
+
+	// Handle image load events
+	function handleImageLoad() {
+		logDebug('Image loaded');
+		dispatch('imageLoaded');
+	}
+
+	// Handle image load errors
+	function handleImageError(e: Event) {
+		const errorEvent = e as ErrorEvent;
+		logDebug(`❌ Image load error: ${errorEvent}`);
+		dispatch('error', { message: 'Image failed to load' });
+	}
 </script>
 
 {#if svgData && isLoaded}
@@ -112,7 +148,8 @@
 			height={svgData.viewBox.height}
 			x={-svgData.center.x}
 			y={-svgData.center.y}
-			on:load={() => dispatch('imageLoaded')}
+			on:load={handleImageLoad}
+			on:error={handleImageError}
 		/>
 	</g>
 {/if}
