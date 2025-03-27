@@ -17,17 +17,45 @@
 	let isFullScreen = false;
 	let background = 'Snowfall';
 	let isLoading = true;
+	let loadingProgress = 0;
+	let loadingText = 'Initializing...';
 	let pictographData: any;
 
 	onMount(() => {
+		// Show loading spinner with progress simulation
+		const loadingInterval = setInterval(() => {
+			loadingProgress += 5;
+			
+			if (loadingProgress <= 30) {
+				loadingText = "Loading components...";
+			} else if (loadingProgress <= 60) {
+				loadingText = "Processing pictograph data...";
+			} else if (loadingProgress <= 90) {
+				loadingText = "Preparing visualizations...";
+			} else {
+				loadingText = "Almost ready...";
+			}
+			
+			if (loadingProgress >= 100) {
+				clearInterval(loadingInterval);
+			}
+		}, 100);
+		
 		loadPictographData()
 			.then((data) => {
 				pictographData = data;
-				isLoading = false;
+				setTimeout(() => {
+					isLoading = false;
+				}, 500); // Give a little extra time for final UI preparations
+				clearInterval(loadingInterval); // Clear interval if data loads before progress reaches 100
 			})
 			.catch((err) => {
 				console.error('Error loading pictograph data:', err);
-				isLoading = false;
+				loadingText = "Error loading data. Please try refreshing.";
+				setTimeout(() => {
+					isLoading = false;
+				}, 1000);
+				clearInterval(loadingInterval);
 			});
 
 		function updateHeight() {
@@ -39,6 +67,7 @@
 
 		return () => {
 			window.removeEventListener('resize', updateHeight);
+			clearInterval(loadingInterval);
 		};
 	});
 
@@ -59,19 +88,27 @@
 </script>
 
 <div id="main-widget">
-	<!-- Render background immediately -->
-
+	<!-- Background is always loaded immediately to give a nice visual during loading -->
 	<FullScreen on:toggleFullscreen={handleFullscreenToggle}>
 		<div class="background">
 			<SnowfallBackground />
 		</div>
-		<div id="content">
-			{#if isLoading}
-				<!-- Display loading spinner as an overlay -->
-				<div class="loading-overlay">
+		
+		{#if isLoading}
+			<!-- Enhanced loading spinner with progress and text -->
+			<div class="loading-overlay">
+				<div class="loading-container">
 					<LoadingSpinner />
+					<div class="loading-progress-container">
+						<div class="loading-progress-bar">
+							<div class="loading-progress-fill" style="width: {loadingProgress}%"></div>
+						</div>
+						<p class="loading-text">{loadingText}</p>
+					</div>
 				</div>
-			{:else}
+			</div>
+		{:else}
+			<div id="content">
 				<div class="menuBar">
 					<MenuBar
 						{background}
@@ -93,17 +130,17 @@
 						{/if}
 					</div>
 				</div>
-			{/if}
-
-			{#if isSettingsDialogOpen}
-				<SettingsDialog
-					isOpen={isSettingsDialogOpen}
-					{background}
-					onChangeBackground={updateBackground}
-					onClose={() => (isSettingsDialogOpen = false)}
-				/>
-			{/if}
-		</div>
+				
+				{#if isSettingsDialogOpen}
+					<SettingsDialog
+						isOpen={isSettingsDialogOpen}
+						{background}
+						onChangeBackground={updateBackground}
+						onClose={() => (isSettingsDialogOpen = false)}
+					/>
+				{/if}
+			</div>
+		{/if}
 	</FullScreen>
 </div>
 
@@ -135,8 +172,47 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		background-color: rgba(0, 0, 0, 0.4); /* Semi-transparent background */
+		background-color: rgba(0, 0, 0, 0.4);
 		z-index: 10;
+	}
+	
+	.loading-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		background-color: rgba(255, 255, 255, 0.95);
+		padding: 30px;
+		border-radius: 10px;
+		box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+		max-width: 80%;
+	}
+	
+	.loading-progress-container {
+		margin-top: 20px;
+		width: 100%;
+		text-align: center;
+	}
+	
+	.loading-progress-bar {
+		width: 300px;
+		height: 10px;
+		background-color: #e0e0e0;
+		border-radius: 5px;
+		overflow: hidden;
+		margin: 10px 0;
+	}
+	
+	.loading-progress-fill {
+		height: 100%;
+		background-color: #4285f4;
+		border-radius: 5px;
+		transition: width 0.3s ease;
+	}
+	
+	.loading-text {
+		font-size: 16px;
+		color: #333;
+		margin: 0;
 	}
 
 	#content {

@@ -7,10 +7,7 @@
 	export let beatData: BeatData; // ✅ Receive plain BeatData object
 	export let onClick: (beat: BeatData) => void;
 
-	// ✅ Store pictographData as writable (but NOT beatData itself)
 	let pictographDataStore: Writable<PictographData> = writable(beatData.pictographData);
-
-	// ✅ Update pictographData when beatData changes
 	$: if (beatData.pictographData) {
 		pictographDataStore.set(beatData.pictographData);
 	}
