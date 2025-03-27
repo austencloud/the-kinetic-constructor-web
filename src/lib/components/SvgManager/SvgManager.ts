@@ -1,8 +1,14 @@
-import { PropType, type Color, type MotionType, type Orientation, type TKATurns } from "$lib/types/Types";
-import { svgPreloader } from "$lib/utils/SvgPreloader";
+// src/lib/components/SvgManager/SvgManager.ts
+import {
+	PropType,
+	type Color,
+	type MotionType,
+	type Orientation,
+	type TKATurns
+} from '$lib/types/Types';
 
 /**
- * Enhanced SvgManager that integrates with the preloading system
+ * Enhanced SvgManager that doesn't depend on svgPreloader
  */
 export default class SvgManager {
 	/**
@@ -22,6 +28,10 @@ export default class SvgManager {
 	 */
 	private async fetchSvg(path: string): Promise<string> {
 		try {
+			if (typeof window === 'undefined') {
+				throw new Error('Cannot fetch SVG in SSR context');
+			}
+
 			const response = await fetch(path);
 			if (!response.ok) {
 				throw new Error(`Failed to fetch SVG: ${path} (${response.status} ${response.statusText})`);
@@ -45,36 +55,33 @@ export default class SvgManager {
 	}
 
 	/**
-	 * Get prop SVG, using preloaded content if available
+	 * Get prop SVG directly from source
 	 */
 	public async getPropSvg(propType: PropType, color: Color): Promise<string> {
 		const cacheKey = this.getCacheKey(['prop', propType, color]);
-		
+
 		// Check local cache first
 		if (SvgManager.cache.has(cacheKey)) {
 			return SvgManager.cache.get(cacheKey)!;
 		}
-		
+
 		try {
-			// Try to use preloaded content
-			const preloadedSvg = await svgPreloader.preloadPropSvg(propType, color);
-			SvgManager.cache.set(cacheKey, preloadedSvg);
-			return preloadedSvg;
-		} catch (error) {
 			// Fallback to direct fetch
-			console.warn(`Preloaded prop SVG not available for ${propType}:${color}, fetching directly`);
 			const path = `/images/props/${propType}.svg`;
 			const baseSvg = await this.fetchSvg(path);
 			const coloredSvg = propType === PropType.HAND ? baseSvg : this.applyColor(baseSvg, color);
-			
+
 			// Cache for future use
 			SvgManager.cache.set(cacheKey, coloredSvg);
 			return coloredSvg;
+		} catch (error) {
+			console.error('Error fetching prop SVG:', error);
+			return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="10" y="50" fill="red">Error</text></svg>`;
 		}
 	}
 
 	/**
-	 * Get arrow SVG, using preloaded content if available
+	 * Get arrow SVG directly from source
 	 */
 	public async getArrowSvg(
 		motionType: MotionType,
@@ -83,43 +90,41 @@ export default class SvgManager {
 		color: Color
 	): Promise<string> {
 		const cacheKey = this.getCacheKey(['arrow', motionType, startOri, String(turns), color]);
-		
+
 		// Check local cache first
 		if (SvgManager.cache.has(cacheKey)) {
 			return SvgManager.cache.get(cacheKey)!;
 		}
-		
+
 		try {
-			// Try to use preloaded content
-			const preloadedSvg = await svgPreloader.preloadArrowSvg(motionType, startOri, turns, color);
-			SvgManager.cache.set(cacheKey, preloadedSvg);
-			return preloadedSvg;
-		} catch (error) {
 			// Fallback to direct fetch
-			console.warn(`Preloaded arrow SVG not available for ${motionType}:${startOri}:${turns}:${color}, fetching directly`);
-			
 			const basePath = '/images/arrows';
 			const typePath = motionType.toLowerCase();
 			const radialPath = startOri === 'out' || startOri === 'in' ? 'from_radial' : 'from_nonradial';
-			const fixedTurns = (typeof turns === 'number' ? turns : parseFloat(turns.toString())).toFixed(1);
+			const fixedTurns = (typeof turns === 'number' ? turns : parseFloat(turns.toString())).toFixed(
+				1
+			);
 			const svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${fixedTurns}.svg`;
 
 			const svgData = await this.fetchSvg(svgPath);
 			const coloredSvg = this.applyColor(svgData, color);
-			
+
 			// Cache for future use
 			SvgManager.cache.set(cacheKey, coloredSvg);
 			return coloredSvg;
+		} catch (error) {
+			console.error('Error fetching arrow SVG:', error);
+			return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="10" y="50" fill="red">Error</text></svg>`;
 		}
 	}
-	
+
 	/**
 	 * Clear the SVG cache (useful for testing or when memory needs to be reclaimed)
 	 */
 	public static clearCache(): void {
 		SvgManager.cache.clear();
 	}
-	
+
 	/**
 	 * Get stats about the cache
 	 */

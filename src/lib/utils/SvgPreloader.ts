@@ -1,5 +1,4 @@
 // src/lib/utils/SvgPreloader.ts
-import SvgManager from '../components/SvgManager/SvgManager';
 import type { Color, MotionType, Orientation, TKATurns } from '$lib/types/Types';
 import { PropType } from '$lib/types/Types';
 
@@ -7,10 +6,25 @@ import { PropType } from '$lib/types/Types';
 const svgCache: Record<string, string> = {};
 
 export default class SvgPreloader {
-	private svgManager: SvgManager;
+	private svgManager: any = null;
 
 	constructor() {
-		this.svgManager = new SvgManager();
+		// Defer creation of SvgManager until needed
+		// This breaks the circular dependency
+	}
+
+	// Lazy-load SvgManager when needed
+	private async getSvgManager() {
+		if (!this.svgManager) {
+			// Only import when needed, not during module initialization
+			// This avoids the circular dependency at module load time
+			if (typeof window !== 'undefined') {
+				// Only attempt to load in browser context
+				const { default: SvgManager } = await import('../components/SvgManager/SvgManager');
+				this.svgManager = new SvgManager();
+			}
+		}
+		return this.svgManager;
 	}
 
 	/**
@@ -50,7 +64,11 @@ export default class SvgPreloader {
 	 */
 	async preloadPropSvg(propType: PropType, color: Color): Promise<string> {
 		const key = this.getCacheKey('prop', propType, color);
-		return this.getOrFetchSvg(key, () => this.svgManager.getPropSvg(propType, color));
+		const manager = await this.getSvgManager();
+		if (!manager) {
+			throw new Error('SVG Manager could not be initialized (SSR context)');
+		}
+		return this.getOrFetchSvg(key, () => manager.getPropSvg(propType, color));
 	}
 
 	/**
@@ -63,35 +81,37 @@ export default class SvgPreloader {
 		color: Color
 	): Promise<string> {
 		const key = this.getCacheKey('arrow', motionType, startOri, String(turns), color);
-		return this.getOrFetchSvg(key, () =>
-			this.svgManager.getArrowSvg(motionType, startOri, turns, color)
-		);
+		const manager = await this.getSvgManager();
+		if (!manager) {
+			throw new Error('SVG Manager could not be initialized (SSR context)');
+		}
+		return this.getOrFetchSvg(key, () => manager.getArrowSvg(motionType, startOri, turns, color));
 	}
 
 	/**
 	 * Bulk preload SVGs for common props
 	 */
 	async preloadCommonProps(): Promise<void> {
-		const propTypes: PropType[] = [
-			PropType.STAFF, 
-			PropType.CLUB, 
-			PropType.HAND
-		];
+		const propTypes: PropType[] = [PropType.STAFF, PropType.CLUB, PropType.HAND];
 		const colors: Color[] = ['red', 'blue'];
 
-		const promises = propTypes.flatMap((propType) =>
-			colors.map((color) => this.preloadPropSvg(propType, color))
-		);
+		try {
+			const promises = propTypes.flatMap((propType) =>
+				colors.map((color) => this.preloadPropSvg(propType, color))
+			);
 
-		await Promise.all(promises);
-		console.log('✅ Common prop SVGs preloaded');
+			await Promise.all(promises);
+			console.log('✅ Common prop SVGs preloaded');
+		} catch (error) {
+			console.warn('Prop preloading skipped (possibly SSR context):', error);
+		}
 	}
 
 	/**
 	 * Bulk preload SVGs for common arrows
 	 */
 	async preloadCommonArrows(): Promise<void> {
-		// To avoid too many preloads at once, we'll just preload the most common combinations
+		// Common combinations for arrows
 		const commonCombinations = [
 			// Pro motions with common turns
 			{ motionType: 'pro' as MotionType, startOri: 'in' as Orientation, turns: 0 as TKATurns },
@@ -107,24 +127,32 @@ export default class SvgPreloader {
 
 		const colors: Color[] = ['red', 'blue'];
 
-		const promises = commonCombinations.flatMap((combo) =>
-			colors.map((color) =>
-				this.preloadArrowSvg(combo.motionType, combo.startOri, combo.turns, color)
-			)
-		);
+		try {
+			const promises = commonCombinations.flatMap((combo) =>
+				colors.map((color) =>
+					this.preloadArrowSvg(combo.motionType, combo.startOri, combo.turns, color)
+				)
+			);
 
-		await Promise.all(promises);
-		console.log('✅ Common arrow SVGs preloaded');
+			await Promise.all(promises);
+			console.log('✅ Common arrow SVGs preloaded');
+		} catch (error) {
+			console.warn('Arrow preloading skipped (possibly SSR context):', error);
+		}
 	}
 
 	/**
 	 * Preload all common SVGs
 	 */
 	async preloadCommonSvgs(): Promise<void> {
-		await Promise.all([this.preloadCommonProps(), this.preloadCommonArrows()]);
-		console.log(
-			`✅ SVG preloading complete. Cache contains ${Object.keys(svgCache).length} items.`
-		);
+		try {
+			await Promise.all([this.preloadCommonProps(), this.preloadCommonArrows()]);
+			console.log(
+				`✅ SVG preloading complete. Cache contains ${Object.keys(svgCache).length} items.`
+			);
+		} catch (error) {
+			console.warn('SVG preloading skipped (possibly SSR context)', error);
+		}
 	}
 
 	/**
@@ -145,6 +173,12 @@ export const svgPreloader = new SvgPreloader();
 
 // Function to initialize preloading at app startup
 export async function initSvgPreloading(): Promise<void> {
+	// Skip preloading in SSR context
+	if (typeof window === 'undefined') {
+		console.log('⏭️ Skipping SVG preloading in SSR context');
+		return;
+	}
+
 	try {
 		await svgPreloader.preloadCommonSvgs();
 	} catch (error) {
