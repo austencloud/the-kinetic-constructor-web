@@ -1,8 +1,8 @@
+import { Motion } from '$lib/components/objects/Motion/Motion';
+import type { MotionData } from '$lib/components/objects/Motion/MotionData';
+import SvgManager from '$lib/components/SvgManager/SvgManager';
 import { RED, BLUE } from '$lib/types/Constants';
-import { Motion } from '../objects/Motion/Motion';
-import type { MotionData } from '../objects/Motion/MotionData';
 import type { PictographData } from '$lib/types/PictographData';
-import SvgManager from '../SvgManager/SvgManager';
 
 export class PictographGetter {
 	private _currentData: PictographData;
@@ -75,11 +75,11 @@ export class PictographGetter {
 	public getShiftMotion(): Motion | null {
 		try {
 			const motions = [this._currentData.redMotion, this._currentData.blueMotion].filter(
-				(m) => m?.motionData?.motionType
+				(m) => m?.motionType
 			);
 
 			return (
-				motions.find((m) => ['pro', 'anti', 'float'].includes(m!.motionData.motionType)) ?? null
+				motions.find((m) => ['pro', 'anti', 'float'].includes(m!.motionType)) ?? null
 			);
 		} catch (error) {
 			console.error('Shift motion detection failed:', error);
@@ -102,7 +102,7 @@ export class PictographGetter {
 
 	private motionByColor(color: string): Motion | null {
 		try {
-			return color === RED ? this._currentData.redMotion : this._currentData.blueMotion;
+			return (color === RED ? this._currentData.redMotion : this._currentData.blueMotion) ?? null;
 		} catch (error) {
 			console.error('Motion by color failed:', error);
 			return null;

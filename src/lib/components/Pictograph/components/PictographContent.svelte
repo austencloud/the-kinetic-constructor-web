@@ -2,15 +2,15 @@
 	import { get } from 'svelte/store';
 	import type { Writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData.js';
-	import type { PropData } from '../objects/Prop/PropData';
-	import type { ArrowData } from '../objects/Arrow/ArrowData';
-	import type { PictographManagers } from './PictographManagers';
-	import type { RenderStage, ComponentLoadingStatus, ComponentPositioningStatus } from './constants/trackingConstants';
-	import type { GridData } from '../objects/Grid/GridData';
-	import Grid from '../objects/Grid/Grid.svelte';
-	import TKAGlyph from './../objects/Glyphs/TKAGlyph/TKAGlyph.svelte';
-	import Prop from '../objects/Prop/Prop.svelte';
-	import Arrow from '../objects/Arrow/Arrow.svelte';
+	import type { PropData } from '../../objects/Prop/PropData';
+	import type { ArrowData } from '../../objects/Arrow/ArrowData';
+	import type { PictographManagers } from '../core/PictographManagers';
+	import type { RenderStage, ComponentLoadingStatus, ComponentPositioningStatus } from '../constants/trackingConstants';
+	import type { GridData } from '../../objects/Grid/GridData';
+	import Grid from '../../objects/Grid/Grid.svelte';
+	import TKAGlyph from '../../objects/Glyphs/TKAGlyph/TKAGlyph.svelte';
+	import Prop from '../../objects/Prop/Prop.svelte';
+	import Arrow from '../../objects/Arrow/Arrow.svelte';
 	import PictographDebugView from './PictographDebugView.svelte';
 
 	export let pictographDataStore: Writable<PictographData>;

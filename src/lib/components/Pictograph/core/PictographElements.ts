@@ -1,9 +1,10 @@
 // src/lib/components/Pictograph/PictographElements.ts
+import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
+import type { GridData } from '$lib/components/objects/Grid/GridData';
+import type { Motion } from '$lib/components/objects/Motion/Motion';
+import type { PropData } from '$lib/components/objects/Prop/PropData';
 import { writable, type Writable } from 'svelte/store';
-import type { GridData } from '../objects/Grid/GridData';
-import type { Motion } from '../objects/Motion/Motion';
-import type { ArrowData } from '../objects/Arrow/ArrowData';
-import type { PropData } from '../objects/Prop/PropData';
+
 
 /**
  * Factory function to create a structure holding Svelte stores for

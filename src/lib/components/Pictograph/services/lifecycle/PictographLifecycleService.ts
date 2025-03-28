@@ -1,13 +1,9 @@
 // src/lib/components/Pictograph/services/PictographLifecycleService.ts
 import type { PictographData } from '$lib/types/PictographData';
-import type { GridData } from '../../objects/Grid/GridData';
 import type { Writable } from 'svelte/store';
-import type { PictographInitializer } from '../PictographInitializer';
-import {
-	type RenderStage,
-	MAX_RETRIES,
-	DEFAULT_SAFETY_TIMEOUT
-} from '../constants/trackingConstants';
+import { DEFAULT_SAFETY_TIMEOUT, MAX_RETRIES, type RenderStage } from '../../constants/trackingConstants';
+import type { GridData } from '$lib/components/objects/Grid/GridData';
+
 
 type LifecycleEventHandler = (eventData?: any) => void;
 

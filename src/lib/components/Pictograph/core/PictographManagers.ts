@@ -2,13 +2,14 @@
 import { get, type Writable } from 'svelte/store';
 import { PictographChecker } from './PictographChecker';
 import { PictographGetter } from './PictographGetter';
-import { PropPlacementManager } from '../PlacementManagers/PropPlacementManager/PropPlacementManager';
-import { ArrowPlacementManager } from '../PlacementManagers/ArrowPlacementManager/ArrowPlacementManager';
-import SvgManager from '../SvgManager/SvgManager';
+import { PropPlacementManager } from '$lib/components/PlacementManagers/PropPlacementManager/PropPlacementManager';
+import { ArrowPlacementManager } from '$lib/components/PlacementManagers/ArrowPlacementManager/ArrowPlacementManager';
+import SvgManager from '$lib/components/SvgManager/SvgManager';
 import type { PictographData } from '$lib/types/PictographData';
-import type { GridData } from '../objects/Grid/GridData'; // Import GridData type
-import type { PropData } from '../objects/Prop/PropData';
-import type { ArrowData } from '../objects/Arrow/ArrowData';
+import type { GridData } from '$lib/components/objects/Grid/GridData';
+import type { PropData } from '$lib/components/objects/Prop/PropData';
+import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
+
 
 /**
  * Manages auxiliary services and data accessors related to a Pictograph.

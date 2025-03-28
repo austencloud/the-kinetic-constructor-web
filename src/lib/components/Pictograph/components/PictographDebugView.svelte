@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { PropData } from "../objects/Prop/PropData";
-	import type { PictographManagers } from "./PictographManagers";
+	import type { PropData } from "../../objects/Prop/PropData";
+	import type { PictographManagers } from "../core/PictographManagers";
 
 
 	export let redProp: PropData | null = null;

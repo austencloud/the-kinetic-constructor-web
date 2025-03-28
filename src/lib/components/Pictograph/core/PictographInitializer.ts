@@ -1,12 +1,13 @@
 // src/lib/components/Pictograph/PictographInitializer.ts
 import { get, writable, type Writable } from 'svelte/store';
 import { createPictographElements, type PictographElementStores } from './PictographElements';
-import { Motion } from '../objects/Motion/Motion';
-import { createPropData } from '../objects/Prop/PropFactory';
-import { createArrowData } from '../objects/Arrow/ArrowFactory';
+
 import type { PictographData } from '$lib/types/PictographData';
-import type { ArrowData } from '../objects/Arrow/ArrowData';
-import type { PropData } from '../objects/Prop/PropData';
+import { Motion } from '$lib/components/objects/Motion/Motion';
+import type { PropData } from '$lib/components/objects/Prop/PropData';
+import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
+import { createPropData } from '$lib/components/objects/Prop/PropFactory';
+import { createArrowData } from '$lib/components/objects/Arrow/ArrowFactory';
 
 /**
  * Handles the creation and initialization of all core pictograph components

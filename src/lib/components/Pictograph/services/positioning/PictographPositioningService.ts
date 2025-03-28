@@ -1,11 +1,11 @@
 // src/lib/components/Pictograph/services/PictographPositioningService.ts
-import type { PropData } from '../../objects/Prop/PropData';
-import type { ArrowData } from '../../objects/Arrow/ArrowData';
-import type { PictographManagers } from '../PictographManagers';
-import { applyFallbackPosition } from '../utils/positionUtils';
-import { tick } from 'svelte';
-import type { ComponentPositioningStatus } from '../constants/trackingConstants'; // Use type from constants
-import type { RenderStage } from '../constants/trackingConstants';
+
+import type { ArrowData } from "$lib/components/objects/Arrow/ArrowData";
+import type { PropData } from "$lib/components/objects/Prop/PropData";
+import { tick } from "svelte";
+import type { ComponentPositioningStatus, RenderStage } from "../../constants/trackingConstants";
+import type { PictographManagers } from "../../core/PictographManagers";
+import { applyFallbackPosition } from "../../utils/positionUtils";
 
 /** Type for the callback function to update component positioning status. */
 type UpdatePositioningStatusCallback = (

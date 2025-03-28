@@ -12,16 +12,16 @@
 		type ComponentPositioningStatus
 	} from './constants/trackingConstants';
 
-	import PictographContent from './PictographContent.svelte';
+	import PictographContent from './components/PictographContent.svelte';
 
-	import { PictographInitializer } from './PictographInitializer';
-	import { PictographManagers } from './PictographManagers';
-	import type { PictographElementStores } from './PictographElements';
+	import { PictographInitializer } from './core/PictographInitializer';
+	import { PictographManagers } from './core/PictographManagers';
+	import type { PictographElementStores } from './core/PictographElements';
 
-	import { PictographLifecycleService } from './services/PictographLifecycleService';
-	import { PictographValidationService } from './services/PictographValidationService';
-	import { PictographPositioningService } from './services/PictographPositioningService';
-	import { PictographComponentStatusService } from './services/PictographComponentStatusService';
+	import { PictographLifecycleService } from './services/lifecycle/PictographLifecycleService';
+	import { PictographValidationService } from './services/validation/PictographValidationService';
+	import { PictographPositioningService } from './services/positioning/PictographPositioningService';
+	import { PictographComponentStatusService } from './services/status/PictographComponentStatusService';
 
 	export let pictographDataStore: Writable<PictographData>;
 	export let onClick: (() => void) | undefined = undefined;
@@ -192,10 +192,10 @@
 			);
 
 		const updateStatusCallback = (
-			component: keyof ComponentPositioningStatus,
+			component: string | number | symbol,
 			isComplete: boolean
 		) => {
-			componentStatusService.updateComponentStatus(component, 'positioning', isComplete);
+			componentStatusService.updateComponentStatus(component as "redProp" | "blueProp" | "redArrow" | "blueArrow", 'positioning', isComplete);
 		};
 
 		try {
