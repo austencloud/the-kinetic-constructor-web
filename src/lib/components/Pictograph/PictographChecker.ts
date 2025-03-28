@@ -1,4 +1,3 @@
-// PictographChecker.ts
 import { CLOCK, COUNTER, IN, OUT } from '$lib/types/Constants';
 import type { PictographData } from '$lib/types/PictographData';
 import { LetterConditions } from './LetterConditions';
@@ -7,53 +6,50 @@ import { LetterUtils } from '../../utils/LetterUtils';
 export class PictographChecker {
 	constructor(private pictographData: PictographData) {}
 
-	endsWithBeta(): boolean {
-		return this.pictographData.letter
-			? LetterUtils.getLettersByCondition(LetterConditions.BETA_ENDING).includes(
-					this.pictographData.letter
-				)
-			: false;
-	}
 	endsWithAlpha(): boolean {
-		return this.pictographData.letter
-			? LetterUtils.getLettersByCondition(LetterConditions.ALPHA_ENDING).includes(
-					this.pictographData.letter
-				)
-			: false;
+		return this.checkLetterCondition(LetterConditions.ALPHA_ENDING);
 	}
+
+	endsWithBeta(): boolean {
+		return this.checkLetterCondition(LetterConditions.BETA_ENDING);
+	}
+
 	endsWithGamma(): boolean {
+		return this.checkLetterCondition(LetterConditions.GAMMA_ENDING);
+	}
+
+	private checkLetterCondition(condition: LetterConditions): boolean {
 		return this.pictographData.letter
-			? LetterUtils.getLettersByCondition(LetterConditions.GAMMA_ENDING).includes(
-					this.pictographData.letter
-				)
+			? LetterUtils.getLettersByCondition(condition).includes(this.pictographData.letter)
 			: false;
 	}
+
 	endsWithLayer3(): boolean {
-		return (
-			((this.pictographData.redMotionData?.endOri === IN ||
-				this.pictographData.redMotionData?.endOri === OUT) &&
-				(this.pictographData.blueMotionData?.endOri === CLOCK ||
-					this.pictographData.blueMotionData?.endOri === COUNTER)) ||
-			((this.pictographData.redMotionData?.endOri === CLOCK ||
-				this.pictographData.redMotionData?.endOri === COUNTER) &&
-				(this.pictographData.blueMotionData?.endOri === IN ||
-					this.pictographData.blueMotionData?.endOri === OUT))
-		);
+		const redEndOri = this.pictographData.redMotionData?.endOri;
+		const blueEndOri = this.pictographData.blueMotionData?.endOri;
+
+		const redIsRadial = redEndOri === IN || redEndOri === OUT;
+		const redIsRotational = redEndOri === CLOCK || redEndOri === COUNTER;
+		const blueIsRadial = blueEndOri === IN || blueEndOri === OUT;
+		const blueIsRotational = blueEndOri === CLOCK || blueEndOri === COUNTER;
+
+		return (redIsRadial && blueIsRotational) || (redIsRotational && blueIsRadial);
 	}
+
 	endsWithRadialOri(): boolean {
-		return (
-			((this.pictographData.redMotionData?.endOri === IN ||
-				this.pictographData.redMotionData?.endOri === OUT) &&
-				this.pictographData.blueMotionData?.endOri === IN) ||
-			this.pictographData.blueMotionData?.endOri === OUT
-		);
+		const redEndOri = this.pictographData.redMotionData?.endOri;
+		const blueEndOri = this.pictographData.blueMotionData?.endOri;
+
+		return (redEndOri === IN || redEndOri === OUT) && (blueEndOri === IN || blueEndOri === OUT);
 	}
+
 	endsWithNonRadialOri(): boolean {
+		const redEndOri = this.pictographData.redMotionData?.endOri;
+		const blueEndOri = this.pictographData.blueMotionData?.endOri;
+
 		return (
-			((this.pictographData.redMotionData?.endOri === CLOCK ||
-				this.pictographData.redMotionData?.endOri === COUNTER) &&
-				this.pictographData.blueMotionData?.endOri === CLOCK) ||
-			this.pictographData.blueMotionData?.endOri === COUNTER
+			(redEndOri === CLOCK || redEndOri === COUNTER) &&
+			(blueEndOri === CLOCK || blueEndOri === COUNTER)
 		);
 	}
 }

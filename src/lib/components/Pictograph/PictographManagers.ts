@@ -13,7 +13,7 @@ export class PictographManagers {
 	arrowPlacementManager: ArrowPlacementManager | null = null;
 	svgManager: SvgManager;
 	ready: Promise<void>;
-	private resolveReady!: () => void;
+	public resolveReady!: () => void;
 	private rejectReady!: (reason?: any) => void;
 	private initialized: boolean = false;
 	private debugMode: boolean = true;
