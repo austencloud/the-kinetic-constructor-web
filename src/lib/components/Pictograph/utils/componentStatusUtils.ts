@@ -1,112 +1,101 @@
 // src/lib/components/Pictograph/utils/componentStatusUtils.ts
 import type { RenderStage } from '../constants/trackingConstants';
+import type { ComponentLoadingStatus, ComponentPositioningStatus } from '../constants/trackingConstants'; // Use types from constants
 
 /**
- * Tracks the loading status of individual pictograph components
- */
-export type ComponentLoadingStatus = {
-  grid: boolean;
-  redProp: boolean;
-  blueProp: boolean;
-  redArrow: boolean;
-  blueArrow: boolean;
-};
-
-/**
- * Tracks the positioning status of individual pictograph components
- */
-export type ComponentPositioningStatus = {
-  redProp: boolean;
-  blueProp: boolean;
-  redArrow: boolean;
-  blueArrow: boolean;
-};
-
-/**
- * Check if all tracked components are loaded
- * 
- * @param componentLoading - Object tracking loading status of all components
- * @returns true if all components are loaded, false otherwise
+ * Checks if all components tracked in the `ComponentLoadingStatus` object
+ * are marked as loaded (`true`).
+ *
+ * @param componentLoading - The status object tracking component loading.
+ * @returns `true` if all components are loaded, `false` otherwise.
  */
 export function checkAllComponentsLoaded(
-  componentLoading: ComponentLoadingStatus
+	componentLoading: ComponentLoadingStatus
 ): boolean {
-  return Object.values(componentLoading).every((loaded) => loaded);
+	// Assumes all keys in DEFAULT_COMPONENT_LOADING are relevant
+	return Object.values(componentLoading).every((isLoaded) => isLoaded === true);
 }
 
 /**
- * Check if all tracked components are positioned
- * 
- * @param componentPositioning - Object tracking positioning status of all components
- * @returns true if all components are positioned, false otherwise
+ * Checks if all components tracked in the `ComponentPositioningStatus` object
+ * are marked as positioned (`true`).
+ *
+ * @param componentPositioning - The status object tracking component positioning.
+ * @returns `true` if all components are positioned, `false` otherwise.
  */
 export function checkAllComponentsPositioned(
-  componentPositioning: ComponentPositioningStatus
+	componentPositioning: ComponentPositioningStatus
 ): boolean {
-  return Object.values(componentPositioning).every((positioned) => positioned);
+	// Assumes all keys in DEFAULT_COMPONENT_POSITIONING are relevant
+	return Object.values(componentPositioning).every((isPositioned) => isPositioned === true);
 }
 
 /**
- * Determine the next render stage based on current component status
- * 
- * @param currentStage - The current render stage
- * @param allLoaded - Whether all components are loaded
- * @param allPositioned - Whether all components are positioned
- * @returns The next appropriate render stage
+ * Determines the next logical `RenderStage` based on the current stage
+ * and the loading/positioning completion status.
+ *
+ * @param currentStage - The current render stage.
+ * @param allLoaded - Flag indicating if all components have finished loading.
+ * @param allPositioned - Flag indicating if all components have finished positioning.
+ * @returns The calculated next render stage.
  */
 export function determineNextStage(
-  currentStage: RenderStage, 
-  allLoaded: boolean, 
-  allPositioned: boolean
+	currentStage: RenderStage,
+	allLoaded: boolean,
+	allPositioned: boolean
 ): RenderStage {
-  // If everything is positioned, we're complete
-  if (allPositioned) {
-    return 'complete';
-  }
-  
-  // If everything is loaded but not positioned
-  if (allLoaded) {
-    // Move from grid ready to components ready
-    if (currentStage === 'grid_ready') {
-      return 'components_ready';
-    } 
-    // Move from positioning to complete if we're in the positioning stage
-    else if (currentStage === 'positioning') {
-      return 'complete';
+
+    // Final state: If everything is positioned, we are 'complete', regardless of current stage.
+	if (allPositioned) {
+		return 'complete';
+	}
+
+    // Intermediate state: If all components are loaded but not yet positioned.
+	if (allLoaded) {
+        // If we were waiting for the grid or loading components, and now they are all loaded,
+        // the next step is to be ready for positioning.
+        if (currentStage === 'grid_ready' || currentStage === 'loading') {
+		    return 'components_ready';
+        }
+        // If we are already in 'components_ready' or 'positioning', stay there until 'allPositioned' becomes true.
+        if (currentStage === 'components_ready' || currentStage === 'positioning') {
+            return currentStage; // Stay in current stage
+        }
+	}
+
+    // If not all loaded yet, and not initializing, stay in grid_ready or loading
+    if (!allLoaded && (currentStage === 'grid_ready' || currentStage === 'loading')) {
+        return currentStage;
     }
-  }
-  
-  // No stage change needed
-  return currentStage;
+
+    // Default: No change from current stage if none of the above conditions are met.
+    // This covers 'initializing' -> 'loading'/'grid_ready' transitions handled elsewhere,
+    // and cases where the stage shouldn't change yet.
+	return currentStage;
 }
 
 /**
- * Handle component errors by marking components as loaded
- * This allows rendering to continue even when some components fail
- * 
- * @param component - The component that experienced an error
- * @param componentLoading - Current loading status object
- * @returns Updated loading status with failed component marked as loaded
+ * Handles a component error during the loading phase by marking that specific
+ * component as 'loaded' (`true`) in the status object. This allows the overall
+ * loading process to potentially complete, even if one component failed.
+ *
+ * @param componentKey - The key (e.g., 'redProp', 'grid') of the component that failed.
+ * @param currentLoadingStatus - The current loading status object.
+ * @returns A *new* loading status object with the failed component marked as loaded.
  */
 export function handleComponentError(
-  component: string,
-  componentLoading: ComponentLoadingStatus
+	componentKey: keyof ComponentLoadingStatus,
+	currentLoadingStatus: ComponentLoadingStatus
 ): ComponentLoadingStatus {
-  const updatedLoading = { ...componentLoading };
-  
-  // Determine which component had an error and mark it as loaded
-  if (component.includes('prop')) {
-    const color = component.includes('red') ? 'red' : 'blue';
-    updatedLoading[`${color}Prop` as keyof ComponentLoadingStatus] = true;
-  } else if (component.includes('arrow')) {
-    const color = component.includes('red') ? 'red' : 'blue';
-    updatedLoading[`${color}Arrow` as keyof ComponentLoadingStatus] = true;
-  } else if (component.includes('grid')) {
-    updatedLoading.grid = true;
-  }
-  
-  // Log the error for debugging
-  console.warn(`Marked ${component} as loaded after error`);
-  
-  return updatedLoading;
+	// Return a new object to avoid mutating the original state directly
+	const updatedStatus = { ...currentLoadingStatus };
+
+	if (componentKey in updatedStatus) {
+		updatedStatus[componentKey] = true; // Mark as loaded despite the error
+		console.warn(`🚦 ComponentStatusUtil: Marked '${componentKey}' as loaded after an error to allow progression.`);
+	} else {
+        console.error(`❌ ComponentStatusUtil: Tried to handle error for unknown component key: ${componentKey}`);
+    }
+
+	return updatedStatus;
 }

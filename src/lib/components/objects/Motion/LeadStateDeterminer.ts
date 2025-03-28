@@ -1,6 +1,6 @@
 import type { MotionData } from './MotionData';
 import { HandpathCalculator } from './HandpathCalculator';
-import type { Location } from './MotionData';
+import type { Loc } from '$lib/types/Types';
 
 export class LeadStateDeterminer {
 	private redMotionData: MotionData;
@@ -13,9 +13,9 @@ export class LeadStateDeterminer {
 		this.handpathCalculator = new HandpathCalculator();
 	}
 
-	private static CLOCKWISE_ORDER: Location[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+	private static CLOCKWISE_ORDER: Loc[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
-	private isClockwiseAhead(startA: Location, startB: Location): boolean {
+	private isClockwiseAhead(startA: Loc, startB: Loc): boolean {
 		const idxA = LeadStateDeterminer.CLOCKWISE_ORDER.indexOf(startA);
 		const idxB = LeadStateDeterminer.CLOCKWISE_ORDER.indexOf(startB);
 		return (
@@ -25,7 +25,7 @@ export class LeadStateDeterminer {
 		);
 	}
 
-	private isCounterClockwiseAhead(startA: Location, startB: Location): boolean {
+	private isCounterClockwiseAhead(startA: Loc, startB: Loc): boolean {
 		const idxA = LeadStateDeterminer.CLOCKWISE_ORDER.indexOf(startA);
 		const idxB = LeadStateDeterminer.CLOCKWISE_ORDER.indexOf(startB);
 		return (

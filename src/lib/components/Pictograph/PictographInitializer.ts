@@ -1,5 +1,6 @@
+// src/lib/components/Pictograph/PictographInitializer.ts
 import { get, writable, type Writable } from 'svelte/store';
-import { createPictographElements } from './PictographElements';
+import { createPictographElements, type PictographElementStores } from './PictographElements';
 import { Motion } from '../objects/Motion/Motion';
 import { createPropData } from '../objects/Prop/PropFactory';
 import { createArrowData } from '../objects/Arrow/ArrowFactory';
@@ -8,260 +9,305 @@ import type { ArrowData } from '../objects/Arrow/ArrowData';
 import type { PropData } from '../objects/Prop/PropData';
 
 /**
- * PictographInitializer handles the creation and initialization of all pictograph components
- * It follows a structured sequence of initialization steps and manages component dependencies
+ * Handles the creation and initialization of all core pictograph components
+ * (Motions, Props, Arrows) based on the input `PictographData`.
+ *
+ * It follows a structured sequence:
+ * 1. Validate input data completeness.
+ * 2. Create Motion instances.
+ * 3. Create PropData and ArrowData instances (concurrently).
+ * 4. Update the `elements` stores with the created data.
+ *
+ * It signals readiness via the `ready` promise and indicates if the input
+ * data was incomplete via the `hasIncompleteData` flag.
  */
 export class PictographInitializer {
-    elements: Writable<ReturnType<typeof createPictographElements>>;
-    pictographDataStore: Writable<PictographData>;
-    ready: Promise<void>;
-    public resolveReady!: () => void;
-    private rejectReady!: (reason?: any) => void;
-    private components: {
-        motions: { red?: Motion; blue?: Motion };
-        props: { red?: PropData; blue?: PropData };
-        arrows: { red?: ArrowData; blue?: ArrowData };
-    };
-    private initialized: boolean = false;
-    private debugMode: boolean = true;
+	/** Holds the Svelte stores for initialized pictograph elements. */
+	elements: Writable<PictographElementStores>;
+	/** Reference to the main pictograph data store. */
+	pictographDataStore: Writable<PictographData>;
+	/** Promise that resolves when initialization is complete or deemed unnecessary. */
+	ready: Promise<void>;
+	/** Function to resolve the `ready` promise. */
+	public resolveReady!: () => void;
+	/** Function to reject the `ready` promise. */
+	private rejectReady!: (reason?: any) => void;
 
-    constructor(pictographDataStore: Writable<PictographData>) {
-        this.elements = writable(createPictographElements());
-        this.pictographDataStore = pictographDataStore;
-        this.components = {
-            motions: {},
-            props: {},
-            arrows: {}
-        };
-
-        // Create a promise to track when initialization is complete
-        this.ready = new Promise<void>((resolve, reject) => {
-            this.resolveReady = resolve;
-            this.rejectReady = reject;
-        });
-    }
+	/** Internal state holding created components before storing them. */
+	private components: {
+		motions: { red?: Motion; blue?: Motion };
+		props: { red?: PropData; blue?: PropData };
+		arrows: { red?: ArrowData; blue?: ArrowData };
+	};
+	/** Flag indicating if the initialization process has run. */
+	private initialized: boolean = false;
+	/** Flag indicating if the input pictograph data was found to be incomplete for full rendering. */
 	public hasIncompleteData: boolean = false;
+	/** Enables detailed console logging for debugging. */
+	private debugMode: boolean = true; // Set to false for production builds
 
-    /**
-     * Initialize all pictograph components in the correct sequence
-     */
-    async initialize(): Promise<void> {
+	constructor(pictographDataStore: Writable<PictographData>) {
+		this.elements = writable(createPictographElements());
+		this.pictographDataStore = pictographDataStore;
+		this.components = {
+			motions: {},
+			props: {},
+			arrows: {}
+		};
+
+		this.ready = new Promise<void>((resolve, reject) => {
+			this.resolveReady = resolve;
+			this.rejectReady = reject;
+		});
+
+		if (this.debugMode) console.log('🔄 PictographInitializer: Created');
+	}
+
+	/**
+	 * Initializes all pictograph components based on the data in `pictographDataStore`.
+	 * Handles incomplete data scenarios by resolving early.
+	 */
+	async initialize(): Promise<void> {
 		if (this.initialized) {
-			console.log('Initializer already completed');
-			return;
+			if (this.debugMode) console.log('✅ PictographInitializer: Already initialized');
+			return this.ready; // Return existing promise if already run
 		}
-	
+
+		if (this.debugMode) console.log('🚀 PictographInitializer: Starting initialization...');
+
 		try {
 			const pictograph: PictographData = get(this.pictographDataStore);
-			
+
 			// Step 1: Validate input data
-			const isComplete = this.validatePictographData(pictograph);
-			
-			// Handle incomplete data case - early completion
-			if (!isComplete) {
-				console.log('Pictograph has incomplete data - finalizing with grid only');
-				this.hasIncompleteData = true; // Set the flag to indicate incomplete data
+			const isDataSufficient = this.validatePictographData(pictograph);
+
+			// Handle incomplete data: Resolve early, set flag, skip component creation.
+			if (!isDataSufficient) {
+				console.warn('⚠️ PictographInitializer: Incomplete data detected. Only grid will render.');
+				this.hasIncompleteData = true; // Signal incomplete data
 				this.initialized = true;
-				this.resolveReady();
-				return;
+				this.resolveReady(); // Mark as "ready" (for grid rendering)
+				return; // Stop further initialization
 			}
-            
-            // Proceed with complete data initialization
-            // Step 2: Create and initialize motions
-            await this.createAndStoreMotions(pictograph);
-            
-            // Step 3: Create props and arrows in parallel
-            await this.createComponentsInParallel();
-            
-            // Step 4: Update element stores with created components
-            this.updateElementsStore();
-            
-            // Mark initialization as complete
-            this.initialized = true;
-            this.resolveReady();
-        } catch (error) {
-            this.handleInitializationError(error);
-        }
-    }
 
-    /**
-     * Validate that the pictograph data contains the necessary information
-     * @returns boolean indicating if the data is complete enough to proceed
-     */
-    private validatePictographData(pictograph: PictographData): boolean {
-        let isComplete = true;
-        
-        if (!pictograph.letter) {
-            console.warn('Initializing pictograph without a letter');
-            // Letter can be optional
-        }
-        
-        if (!pictograph.redMotionData || !pictograph.blueMotionData) {
-            console.warn('Pictograph has incomplete motion data - will render grid only');
-            isComplete = false;
-        }
-        
-        return isComplete;
-    }
+			// Proceed with full initialization for complete data
+			if (this.debugMode) console.log('📊 PictographInitializer: Data sufficient, proceeding...');
 
-    /**
-     * Create both motions from pictograph data
-     */
-    private async createAndStoreMotions(pictograph: PictographData): Promise<void> {
-        try {
-            // Generate unique IDs for motions if they don't exist
-            if (pictograph.redMotionData && !pictograph.redMotionData.id) {
-                pictograph.redMotionData.id = crypto.randomUUID();
-            }
-            if (pictograph.blueMotionData && !pictograph.blueMotionData.id) {
-                pictograph.blueMotionData.id = crypto.randomUUID();
-            }
+			// Step 2: Create and initialize motions
+			await this.createAndStoreMotions(pictograph);
+			if (this.debugMode) console.log('bewegung PictographInitializer: Motions created');
 
-            if (!pictograph.redMotionData || !pictograph.blueMotionData) {
-                throw new Error('Motion data is missing for red or blue motion');
-            }
+			// Step 3: Create props and arrows in parallel
+			await this.createComponentsInParallel();
+			if (this.debugMode) console.log('🎨 PictographInitializer: Props and Arrows created');
 
-            const redMotion = new Motion(pictograph, pictograph.redMotionData);
-            const blueMotion = new Motion(pictograph, pictograph.blueMotionData);
+			// Step 4: Update element stores with created components
+			this.updateElementsStore();
+			if (this.debugMode) console.log('💾 PictographInitializer: Element stores updated');
 
-            // Wait for motion initialization to complete
-            await Promise.all([redMotion.ready, blueMotion.ready]);
+			// Mark initialization as complete
+			this.initialized = true;
+			this.resolveReady(); // Signal successful completion
+			if (this.debugMode) console.log('✅ PictographInitializer: Initialization successful');
 
-            // Store the motions
-            this.components.motions.red = redMotion;
-            this.components.motions.blue = blueMotion;
-        } catch (error) {
-            throw new Error(`Motion initialization failed: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
+		} catch (error) {
+			this.handleInitializationError(error);
+			// Rethrow عشان the caller (Pictograph.svelte) can potentially handle it
+			throw error;
+		}
+	}
 
-    /**
-     * Create props and arrows in parallel
-     */
-    private async createComponentsInParallel(): Promise<void> {
-        try {
-            await Promise.all([
-                this.createAndStoreProps(),
-                this.createAndStoreArrows()
-            ]);
-        } catch (error) {
-            throw new Error(`Component creation failed: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
+	/**
+	 * Validates if the pictograph data contains the minimum required information
+	 * (currently, red and blue motion data) for a full render.
+	 * @param pictograph - The pictograph data to validate.
+	 * @returns `true` if data is sufficient, `false` otherwise.
+	 */
+	private validatePictographData(pictograph: PictographData): boolean {
+		if (!pictograph) {
+			console.error('❌ PictographInitializer: Pictograph data is null or undefined.');
+			return false;
+		}
+		// Core requirement: Both motion data objects must exist for a full render.
+		const hasRedMotion = !!pictograph.redMotionData;
+		const hasBlueMotion = !!pictograph.blueMotionData;
 
-    /**
-     * Create props for both red and blue motions
-     */
-    private async createAndStoreProps(): Promise<void> {
-        if (!this.components.motions.red || !this.components.motions.blue) {
-            throw new Error('Cannot create props: Motions not initialized');
-        }
+		if (!hasRedMotion || !hasBlueMotion) {
+			if (this.debugMode) {
+				console.warn(`❓ PictographInitializer: Missing motion data (Red: ${hasRedMotion}, Blue: ${hasBlueMotion}).`);
+			}
+			return false; // Data is insufficient
+		}
 
-        try {
-            const [redProp, blueProp] = await Promise.all([
-                createPropData(this.components.motions.red),
-                createPropData(this.components.motions.blue)
-            ]);
+		// Optional: Add more granular checks here if needed (e.g., check motionType, startOri)
+		// const isRedMotionComplete = hasRedMotion && pictograph.redMotionData?.motionType && pictograph.redMotionData?.startOri;
+		// const isBlueMotionComplete = hasBlueMotion && pictograph.blueMotionData?.motionType && pictograph.blueMotionData?.startOri;
+		// if (!isRedMotionComplete || !isBlueMotionComplete) {
+		//     if (this.debugMode) console.warn(`❓ PictographInitializer: Motion data properties missing.`);
+		//     return false;
+		// }
 
-            this.components.props.red = redProp;
-            this.components.props.blue = blueProp;
-        } catch (error) {
-            throw new Error(`Prop creation failed: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
+		return true; // Data is sufficient
+	}
 
-    /**
-     * Create arrows for both red and blue motions
-     */
-    private async createAndStoreArrows(): Promise<void> {
-        if (!this.components.motions.red || !this.components.motions.blue) {
-            throw new Error('Cannot create arrows: Motions not initialized');
-        }
+	/**
+	 * Creates Motion instances for red and blue based on pictograph data.
+	 * Ensures motion readiness before proceeding.
+	 * @param pictograph - The pictograph data containing motion details.
+	 */
+	private async createAndStoreMotions(pictograph: PictographData): Promise<void> {
+		try {
+			// Ensure motionData exists (already validated, but belt-and-suspenders)
+			if (!pictograph.redMotionData || !pictograph.blueMotionData) {
+				throw new Error('Motion data is unexpectedly missing.');
+			}
 
-        try {
-            const [redArrow, blueArrow] = await Promise.all([
-                createArrowData(this.components.motions.red),
-                createArrowData(this.components.motions.blue)
-            ]);
+			// Assign unique IDs if they don't exist (useful for debugging/tracking)
+			pictograph.redMotionData.id ??= crypto.randomUUID();
+			pictograph.blueMotionData.id ??= crypto.randomUUID();
 
-            this.components.arrows.red = redArrow;
-            this.components.arrows.blue = blueArrow;
-        } catch (error) {
-            throw new Error(`Arrow creation failed: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
+			const redMotion = new Motion(pictograph, pictograph.redMotionData);
+			const blueMotion = new Motion(pictograph, pictograph.blueMotionData);
 
-    /**
-     * Update element stores with created component data
-     */
-    private updateElementsStore(): void {
-        this.validateComponents();
+			// Wait for both motions to fully initialize (they might have async ops)
+			await Promise.all([redMotion.ready, blueMotion.ready]);
 
-        this.elements.update((els) => {
-            // Update red prop data
-            els.redPropData.set({
-                ...this.components.props.red!,
-                motionId: this.components.motions.red!.id
-            });
+			this.components.motions.red = redMotion;
+			this.components.motions.blue = blueMotion;
+		} catch (error) {
+			throw new Error(`Motion creation/initialization failed: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
 
-            // Update blue prop data
-            els.bluePropData.set({
-                ...this.components.props.blue!,
-                motionId: this.components.motions.blue!.id
-            });
+	/**
+	 * Orchestrates the parallel creation of props and arrows.
+	 */
+	private async createComponentsInParallel(): Promise<void> {
+		try {
+			await Promise.all([
+				this.createAndStoreProps(),
+				this.createAndStoreArrows()
+			]);
+		} catch (error) {
+			// Error is likely already specific from the called functions
+			throw error;
+		}
+	}
 
-            // Update red arrow data
-            els.redArrowData.set({
-                ...this.components.arrows.red!,
-                motionId: this.components.motions.red!.id,
-                motionType: this.components.motions.red!.motionType,
-                startOri: this.components.motions.red!.startOri,
-                turns: this.components.motions.red!.turns,
-                propRotDir: this.components.motions.red!.propRotDir
-            });
+	/**
+	 * Creates PropData instances for both red and blue motions.
+	 * Relies on Motion instances being available.
+	 */
+	private async createAndStoreProps(): Promise<void> {
+		if (!this.components.motions.red || !this.components.motions.blue) {
+			throw new Error('Cannot create props: Motions not initialized.');
+		}
+		try {
+			const [redProp, blueProp] = await Promise.all([
+				createPropData(this.components.motions.red),
+				createPropData(this.components.motions.blue)
+			]);
+			this.components.props.red = redProp;
+			this.components.props.blue = blueProp;
+		} catch (error) {
+			throw new Error(`Prop creation failed: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
 
-            // Update blue arrow data
-            els.blueArrowData.set({
-                ...this.components.arrows.blue!,
-                motionId: this.components.motions.blue!.id,
-                motionType: this.components.motions.blue!.motionType,
-                startOri: this.components.motions.blue!.startOri,
-                turns: this.components.motions.blue!.turns,
-                propRotDir: this.components.motions.blue!.propRotDir
-            });
+	/**
+	 * Creates ArrowData instances for both red and blue motions.
+	 * Relies on Motion instances being available.
+	 */
+	private async createAndStoreArrows(): Promise<void> {
+		if (!this.components.motions.red || !this.components.motions.blue) {
+			throw new Error('Cannot create arrows: Motions not initialized.');
+		}
+		try {
+			const [redArrow, blueArrow] = await Promise.all([
+				createArrowData(this.components.motions.red),
+				createArrowData(this.components.motions.blue)
+			]);
+			this.components.arrows.red = redArrow;
+			this.components.arrows.blue = blueArrow;
+		} catch (error) {
+			throw new Error(`Arrow creation failed: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
 
-            // Update motion data
-            els.redMotion.set(this.components.motions.red!);
-            els.blueMotion.set(this.components.motions.blue!);
+	/**
+	 * Updates the Svelte stores within `this.elements` with the fully created
+	 * component data (props, arrows, motions).
+	 * Ensures all required components exist before updating.
+	 */
+	private updateElementsStore(): void {
+		this.validateComponentsExist(); // Throw error if any component is missing
 
-            return els;
-        });
-    }
+		const redMotion = this.components.motions.red!;
+		const blueMotion = this.components.motions.blue!;
+		const redProp = this.components.props.red!;
+		const blueProp = this.components.props.blue!;
+		const redArrow = this.components.arrows.red!;
+		const blueArrow = this.components.arrows.blue!;
 
-    /**
-     * Validate that all required components have been created
-     */
-    private validateComponents(): void {
-        const missingComponents = [];
+		this.elements.update((els) => {
+			// Update stores using .set() for clarity
+			els.redPropData.set({ ...redProp, motionId: redMotion.id });
+			els.bluePropData.set({ ...blueProp, motionId: blueMotion.id });
 
-        if (!this.components.motions.red) missingComponents.push('red motion');
-        if (!this.components.motions.blue) missingComponents.push('blue motion');
-        if (!this.components.props.red) missingComponents.push('red prop');
-        if (!this.components.props.blue) missingComponents.push('blue prop');
-        if (!this.components.arrows.red) missingComponents.push('red arrow');
-        if (!this.components.arrows.blue) missingComponents.push('blue arrow');
+			// Include essential motion details directly in ArrowData for convenience
+			els.redArrowData.set({
+				...redArrow,
+				motionId: redMotion.id,
+				motionType: redMotion.motionType,
+				startOri: redMotion.startOri,
+				turns: redMotion.turns,
+				propRotDir: redMotion.propRotDir
+			});
+			els.blueArrowData.set({
+				...blueArrow,
+				motionId: blueMotion.id,
+				motionType: blueMotion.motionType,
+				startOri: blueMotion.startOri,
+				turns: blueMotion.turns,
+				propRotDir: blueMotion.propRotDir
+			});
 
-        if (missingComponents.length > 0) {
-            throw new Error(`Cannot update elements store: Missing components: ${missingComponents.join(', ')}`);
-        }
-    }
+			els.redMotion.set(redMotion);
+			els.blueMotion.set(blueMotion);
 
-    /**
-     * Handle initialization errors
-     */
-    private handleInitializationError(error: any): void {
-        console.error('❌ Initialization failed:', error);
-        this.rejectReady(error);
-        throw error;
-    }
+			// Grid data is handled separately via onPointsReady event
+
+			return els; // Return the updated structure
+		});
+	}
+
+	/**
+	 * Internal validation to ensure all expected components were created before
+	 * attempting to update the stores.
+	 */
+	private validateComponentsExist(): void {
+		const missing: string[] = [];
+		if (!this.components.motions.red) missing.push('red motion');
+		if (!this.components.motions.blue) missing.push('blue motion');
+		if (!this.components.props.red) missing.push('red prop');
+		if (!this.components.props.blue) missing.push('blue prop');
+		if (!this.components.arrows.red) missing.push('red arrow');
+		if (!this.components.arrows.blue) missing.push('blue arrow');
+
+		if (missing.length > 0) {
+			throw new Error(`Cannot update elements store: Missing components: ${missing.join(', ')}`);
+		}
+	}
+
+	/**
+	 * Handles errors during the initialization process, logs them,
+	 * and rejects the main `ready` promise.
+	 * @param error - The error object caught.
+	 */
+	private handleInitializationError(error: any): void {
+		console.error('❌ PictographInitializer: Initialization failed!', error);
+		this.initialized = false; // Mark as not successfully initialized
+		this.rejectReady(error); // Reject the promise
+		// Do not re-throw here; let the main initialize catch block handle it
+	}
 }
