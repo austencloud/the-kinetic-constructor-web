@@ -12,26 +12,29 @@
 	import { PictographManagers } from './PictographManagers';
 	import { createPictographElements } from './PictographElements';
 	import type { GridData } from '../objects/Grid/GridData';
+	import { applyFallbackPosition } from './utils/positionUtils';
+	import { 
+		DEFAULT_COMPONENT_LOADING, 
+		DEFAULT_COMPONENT_POSITIONING,
+		MAX_RETRIES,
+		DEFAULT_SAFETY_TIMEOUT,
+		type RenderStage
+	} from './constants/trackingConstants';
+	import { 
+		checkAllComponentsLoaded,
+		checkAllComponentsPositioned,
+		determineNextStage,
+		handleComponentError
+	} from './utils/componentStatusUtils';
 
 	export let pictographDataStore: Writable<PictographData>;
 	export const onClick: () => void = () => {};
 	export let debug: boolean = false; // Enable debug mode
 
 	// Track rendering stages with more detail
-	let stage = 'initializing'; // initializing -> loading -> grid_ready -> components_ready -> positioning -> complete
-	let componentLoading = {
-		grid: false,
-		redProp: false,
-		blueProp: false,
-		redArrow: false,
-		blueArrow: false
-	};
-	let componentPositioning = {
-		redProp: false,
-		blueProp: false,
-		redArrow: false,
-		blueArrow: false
-	};
+	let stage: RenderStage = 'initializing';
+	let componentLoading = { ...DEFAULT_COMPONENT_LOADING };
+	let componentPositioning = { ...DEFAULT_COMPONENT_POSITIONING };
 
 	let gridData: GridData | null = null;
 	let pictographManagers: PictographManagers | null = null;
@@ -45,7 +48,6 @@
 	let gridDataLoaded = false;
 	let initializationComplete = false;
 	let retryCount = 0;
-	const MAX_RETRIES = 3;
 
 	// Create event dispatcher for loaded event
 	const dispatch = createEventDispatcher();
@@ -53,80 +55,6 @@
 	// Prevent infinite loading with a safety timeout
 	let safetyTimer: number;
 
-	// Add this debugging function to the Pictograph.svelte file
-	// near the updatePlacements function
-
-	async function debugPropPositioning() {
-		// Check if props exist at all
-		console.log('=== PROP POSITIONING DEBUG START ===');
-
-		if (!redProp || !blueProp) {
-			console.error('Props are not defined:', { redProp, blueProp });
-			return;
-		}
-
-		// Track prop positions at different stages
-		console.log('Initial prop positions:');
-		console.log('- Red:', JSON.stringify(redProp.coords));
-		console.log('- Blue:', JSON.stringify(blueProp.coords));
-
-		// Add position tracking before and after beta positioning
-		if (pictographManagers && pictographManagers.propPlacementManager) {
-			// Check if default positioning is applied
-			pictographManagers.propPlacementManager.defaultPositioner.updateCoords(redProp);
-			pictographManagers.propPlacementManager.defaultPositioner.updateCoords(blueProp);
-			console.log('After default positioning:');
-			console.log('- Red:', JSON.stringify(redProp.coords));
-			console.log('- Blue:', JSON.stringify(blueProp.coords));
-
-			// Clone the props to avoid reference issues
-			const redPropClone = JSON.parse(JSON.stringify(redProp));
-			const bluePropClone = JSON.parse(JSON.stringify(blueProp));
-
-			// Apply beta positioning
-			if (pictographManagers.checker.endsWithBeta()) {
-				console.log('Applying beta positioning...');
-
-				// Track the prop positions before beta positioning
-				console.log('Before beta positioning:');
-				console.log('- Red:', JSON.stringify(redProp.coords));
-				console.log('- Blue:', JSON.stringify(blueProp.coords));
-
-				// Apply beta positioning
-				pictographManagers.propPlacementManager.betaPositioner.reposition([redProp, blueProp]);
-
-				console.log('After beta positioning:');
-				console.log('- Red:', JSON.stringify(redProp.coords));
-				console.log('- Blue:', JSON.stringify(blueProp.coords));
-
-				// Check if the coordinates actually changed
-				const redChanged =
-					redPropClone.coords.x !== redProp.coords.x || redPropClone.coords.y !== redProp.coords.y;
-				const blueChanged =
-					bluePropClone.coords.x !== blueProp.coords.x ||
-					bluePropClone.coords.y !== blueProp.coords.y;
-
-				console.log('Position changes detected:', { redChanged, blueChanged });
-			} else {
-				console.log('Not ending with beta, skipping beta positioning');
-			}
-		}
-
-		// Check component positioning flags
-		console.log('Component positioning state:', componentPositioning);
-
-		// Check if props are at final positions
-		console.log('Final prop positions:');
-		console.log('- Red:', JSON.stringify(redProp.coords));
-		console.log('- Blue:', JSON.stringify(blueProp.coords));
-		console.log('=== PROP POSITIONING DEBUG END ===');
-	}
-
-	// Add this call at the end of the updatePlacements function
-	// just before checkAllComponentsPositioned()
-	(async () => {
-		await debugPropPositioning();
-	})();
 	// Handle grid data loading - CRITICAL for prop positioning
 	function handleGridDataReady(data: GridData) {
 		try {
@@ -152,7 +80,7 @@
 			initializeAll();
 		} catch (error) {
 			componentLoading.grid = true; // Mark as loaded anyway
-			checkAllComponentsLoaded();
+			checkComponentStatus();
 		}
 	}
 
@@ -206,31 +134,23 @@
 		}
 	}
 
-	// Check if all components are loaded and ready to display
-	function checkAllComponentsLoaded() {
-		const allLoaded = Object.values(componentLoading).every((loaded) => loaded);
-
-		if (allLoaded) {
-			if (stage === 'grid_ready') {
-				stage = 'components_ready';
+	// Check component status and update stage accordingly
+	function checkComponentStatus() {
+		const allLoaded = checkAllComponentsLoaded(componentLoading);
+		const allPositioned = checkAllComponentsPositioned(componentPositioning);
+		
+		const nextStage = determineNextStage(stage, allLoaded, allPositioned);
+		
+		if (nextStage !== stage) {
+			stage = nextStage;
+			
+			if (stage === 'components_ready') {
 				updatePlacements();
-			} else if (stage === 'positioning') {
-				stage = 'complete';
+			} else if (stage === 'complete') {
 				dispatch('loaded');
 			}
 		}
 	}
-
-	// Check if all components are positioned
-	function checkAllComponentsPositioned() {
-		const allPositioned = Object.values(componentPositioning).every((positioned) => positioned);
-
-		if (allPositioned) {
-			stage = 'complete';
-			dispatch('loaded');
-		}
-	}
-	// In the Pictograph.svelte file
 
 	// CRITICAL: This updates the positions of props and arrows
 	async function updatePlacements() {
@@ -249,8 +169,6 @@
 					pictograph.gridData = gridData;
 					if (!pictograph.gridData) return;
 				}
-
-				// In updatePlacements function
 
 				// Position the props
 				if (redProp && blueProp) {
@@ -298,56 +216,32 @@
 					applyFallbackPosition(blueProp, 'blue');
 				}
 
+				// Debug prop positioning
+
 				// Wait for the DOM to update
 				await tick();
-				checkAllComponentsPositioned();
+				checkComponentStatus();
 			} catch (error) {
 				// Apply fallbacks even on error
 				if (redProp) applyFallbackPosition(redProp, 'red');
 				if (blueProp) applyFallbackPosition(blueProp, 'blue');
-				checkAllComponentsPositioned();
+				checkComponentStatus();
 			}
 		} else {
 			// Apply fallbacks if managers are not ready
 			if (redProp) applyFallbackPosition(redProp, 'red');
 			if (blueProp) applyFallbackPosition(blueProp, 'blue');
-			checkAllComponentsPositioned();
+			checkComponentStatus();
 		}
 	}
-
-	// Apply fallback positions directly to props
-	function applyFallbackPosition(prop: PropData, color: string) {
-		// Apply strong fallback positions based on prop location
-		const fallbacks: Record<string, { x: number; y: number }> = {
-			n: { x: 475, y: 330 },
-			e: { x: 620, y: 475 },
-			s: { x: 475, y: 620 },
-			w: { x: 330, y: 475 },
-			ne: { x: 620, y: 330 },
-			se: { x: 620, y: 620 },
-			sw: { x: 330, y: 620 },
-			nw: { x: 330, y: 330 }
-		};
-
-		// Apply more spread out positions for red vs blue
-		const offset = color === 'red' ? 30 : -30;
-
-		if (prop.loc && fallbacks[prop.loc]) {
-			prop.coords = {
-				x: fallbacks[prop.loc].x,
-				y: fallbacks[prop.loc].y
-			};
-		} else {
-			// Last resort center position with offset
-			prop.coords = {
-				x: 475 + offset,
-				y: 475
-			};
-		}
+	
+	function handlePictographComponentError(component: string, error?: any) {
+		componentLoading = handleComponentError(component, componentLoading);
+		checkComponentStatus();
 	}
 
 	onMount(() => {
-		// Set a safety timeout (5 seconds maximum)
+		// Set a safety timeout
 		safetyTimer = setTimeout(() => {
 			if (stage !== 'complete') {
 				// Even with timeout, try to render what we have
@@ -363,7 +257,7 @@
 					dispatch('loaded', { timedOut: true });
 				}
 			}
-		}, 10);
+		}, DEFAULT_SAFETY_TIMEOUT);
 
 		// Start initialization process
 		if (!initializationComplete) {
@@ -382,28 +276,12 @@
 
 	function handlePropLoaded(color: 'red' | 'blue') {
 		componentLoading[`${color}Prop`] = true;
-		checkAllComponentsLoaded();
+		checkComponentStatus();
 	}
 
 	function handleArrowLoaded(color: 'red' | 'blue') {
 		componentLoading[`${color}Arrow`] = true;
-		checkAllComponentsLoaded();
-	}
-
-	// If any component errors, still mark it as loaded to not block rendering
-	function handleComponentError(component: string, error?: any) {
-		// Mark the component as loaded despite the error
-		if (component.includes('prop')) {
-			const color = component.includes('red') ? 'red' : 'blue';
-			componentLoading[`${color}Prop`] = true;
-		} else if (component.includes('arrow')) {
-			const color = component.includes('red') ? 'red' : 'blue';
-			componentLoading[`${color}Arrow`] = true;
-		} else if (component.includes('grid')) {
-			componentLoading.grid = true;
-		}
-
-		checkAllComponentsLoaded();
+		checkComponentStatus();
 	}
 </script>
 
@@ -417,7 +295,7 @@
 			<Grid
 				gridMode={get(pictographDataStore)?.gridMode || 'diamond'}
 				onPointsReady={handleGridDataReady}
-				on:error={() => handleComponentError('grid')}
+				on:error={() => handlePictographComponentError('grid')}
 			/>
 
 			{#if get(pictographDataStore).letter}
@@ -428,7 +306,7 @@
 				<Prop
 					propData={redProp}
 					on:loaded={() => handlePropLoaded('red')}
-					on:error={() => handleComponentError('redProp')}
+					on:error={() => handlePictographComponentError('redProp')}
 				/>
 			{/if}
 
@@ -436,7 +314,7 @@
 				<Prop
 					propData={blueProp}
 					on:loaded={() => handlePropLoaded('blue')}
-					on:error={() => handleComponentError('blueProp')}
+					on:error={() => handlePictographComponentError('blueProp')}
 				/>
 			{/if}
 
@@ -444,7 +322,7 @@
 				<Arrow
 					arrowData={redArrow}
 					on:loaded={() => handleArrowLoaded('red')}
-					on:error={() => handleComponentError('redArrow')}
+					on:error={() => handlePictographComponentError('redArrow')}
 				/>
 			{/if}
 
@@ -452,7 +330,7 @@
 				<Arrow
 					arrowData={blueArrow}
 					on:loaded={() => handleArrowLoaded('blue')}
-					on:error={() => handleComponentError('blueArrow')}
+					on:error={() => handlePictographComponentError('blueArrow')}
 				/>
 			{/if}
 
