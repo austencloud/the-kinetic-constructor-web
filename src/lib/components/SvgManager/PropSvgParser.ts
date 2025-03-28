@@ -26,9 +26,7 @@ export const parsePropSvg = (svgText: string, propColor?: string): Omit<SvgData,
 				x: parseFloat(centerElement.getAttribute('cx') || '0') || center.x,
 				y: parseFloat(centerElement.getAttribute('cy') || '0') || center.y
 			};
-			console.log(
-				`📐 Found centerPoint in SVG for ${propColor || 'unknown'} prop: (${center.x}, ${center.y})`
-			);
+
 		} else {
 			console.warn(
 				`⚠️ No centerPoint element found in SVG for ${propColor || 'unknown'} prop, using default center: (${center.x}, ${center.y})`
@@ -42,7 +40,6 @@ export const parsePropSvg = (svgText: string, propColor?: string): Omit<SvgData,
 					x: bbox.x + bbox.width / 2,
 					y: bbox.y + bbox.height / 2
 				};
-				console.log(`📐 Using path bounding box center: (${center.x}, ${center.y})`);
 			}
 		}
 	} catch (e) {

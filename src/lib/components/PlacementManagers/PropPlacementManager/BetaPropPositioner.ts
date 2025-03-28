@@ -5,17 +5,56 @@ import type { PropData } from '$lib/components/objects/Prop/PropData';
 
 export class BetaPropPositioner {
 	private dirCalculator: BetaPropDirectionCalculator;
+
 	constructor(private pictographData: PictographData) {
 		this.dirCalculator = new BetaPropDirectionCalculator(this.pictographData);
 	}
 
 	public reposition(props: PropData[]): void {
+		console.log('Repositioning beta prop...');
+		if (!props || props.length === 0) {
+			console.warn('No props to reposition');
+			return;
+		}
+
+		// Store original positions for debugging
+		const originalPositions = props.map((prop) => ({
+			id: prop.id,
+			color: prop.color,
+			coords: { ...prop.coords }
+		}));
+
+		// Apply repositioning to each prop
 		props.forEach((prop) => {
 			const direction = this.dirCalculator.getDirection(prop);
+			console.log(`Direction for ${prop.color} prop: ${direction}`);
+
 			if (direction) {
-				prop.coords = this.calculateNewCoords(prop.coords, direction);
+				const oldCoords = { ...prop.coords };
+				const newCoords = this.calculateNewCoords(oldCoords, direction);
+				console.log(`DEBUG: ${prop.id} new coords calculation:`, newCoords);
+				prop.coords = JSON.parse(JSON.stringify(newCoords));
+
+				console.log(
+					`Repositioned prop: ${prop.id}, Old Coords: ${JSON.stringify(
+						oldCoords
+					)}, New Coords: ${JSON.stringify(prop.coords)}, Direction: ${direction}`
+				);
+			} else {
+				console.warn(`No direction determined for ${prop.color} prop`);
 			}
 		});
+
+		// Verify positions were changed
+		const newPositions = props.map((prop) => ({
+			id: prop.id,
+			color: prop.color,
+			coords: { ...prop.coords }
+		}));
+
+		console.log('Beta repositioning summary:');
+		console.log('- Original:', originalPositions);
+		console.log('- New:', newPositions);
 	}
 
 	private calculateNewCoords(
@@ -34,6 +73,8 @@ export class BetaPropPositioner {
 			downleft: { x: -offset, y: offset }
 		};
 		const movement = movementMap[direction] || { x: 0, y: 0 };
+
+		// Return a new object rather than modifying the original
 		return {
 			x: position.x + movement.x,
 			y: position.y + movement.y

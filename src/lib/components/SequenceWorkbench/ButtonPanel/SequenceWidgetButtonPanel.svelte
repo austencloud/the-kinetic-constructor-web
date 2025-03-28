@@ -28,7 +28,7 @@
 	}
 
 	// ResizeObserver to track container size
-	let resizeObserver: ResizeObserver | undefined;
+	let resizeObserver: ResizeObserver | null;
 	onMount(() => {
 		updateIsMobile();
 
@@ -59,7 +59,11 @@
 	$: updateButtonSize();
 
 	const buttons = [
-		{ icon: '/button_panel_icons/add_to_dictionary.png', title: 'Add to Dictionary', id: 'addToDictionary' },
+		{
+			icon: '/button_panel_icons/add_to_dictionary.png',
+			title: 'Add to Dictionary',
+			id: 'addToDictionary'
+		},
 		{ icon: '/button_panel_icons/save_image.png', title: 'Save Image', id: 'saveImage' },
 		{ icon: '/button_panel_icons/eye.png', title: 'View Full Screen', id: 'viewFullScreen' },
 		{ icon: '/button_panel_icons/mirror.png', title: 'Mirror Sequence', id: 'mirrorSequence' },
@@ -80,6 +84,7 @@
 		/>
 	{/each}
 </div>
+
 <style>
 	.button-panel {
 		display: flex;
@@ -87,7 +92,7 @@
 		align-items: center;
 		gap: 8px;
 		flex: 1;
-		padding: 5px
+		padding: 5px;
 	}
 
 	.button-panel.vertical {

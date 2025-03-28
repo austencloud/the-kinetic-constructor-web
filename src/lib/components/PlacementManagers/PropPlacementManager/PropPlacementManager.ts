@@ -8,7 +8,7 @@ import type { PropData } from '$lib/components/objects/Prop/PropData';
 
 export class PropPlacementManager {
 	public defaultPositioner: DefaultPropPositioner;
-	private betaPositioner: BetaPropPositioner;
+	public betaPositioner: BetaPropPositioner;
 	private checker: PictographChecker;
 	public ready: Promise<void>;
 	private resolveReady!: () => void;
@@ -46,23 +46,18 @@ export class PropPlacementManager {
 		}
 	}
 
+	// In PropPlacementManager.ts
 	public updatePropPlacement(props: PropData[]): PropData[] {
-		console.log(`🔄 PropPlacementManager: Updating placement for ${props.length} props`);
-
 		if (!props.length) {
 			console.warn('⚠️ PropPlacementManager: No props provided to updatePropPlacement');
 			return props;
 		}
 
-		// Log prop data BEFORE positioning
-		props.forEach((prop) => {
-			console.log(
-				`📊 BEFORE positioning: ${prop.color} prop at (${prop.coords.x}, ${prop.coords.y})`
-			);
-			console.log(
-				`📊 BEFORE details: loc=${prop.loc}, ori=${prop.ori}, svgCenter=(${prop.svgCenter.x}, ${prop.svgCenter.y})`
-			);
-		});
+		// Store initial coordinates for debugging
+		const initialCoords = props.map((prop) => ({
+			id: prop.id,
+			coords: { ...prop.coords }
+		}));
 
 		// Apply default positioning
 		props.forEach((prop) => {
@@ -71,33 +66,48 @@ export class PropPlacementManager {
 				return;
 			}
 
-			this.defaultPositioner.setToDefaultPosition(prop);
-			console.log(
-				`📌 Default position applied for ${prop.color} prop: (${prop.coords.x}, ${prop.coords.y})`
-			);
+			this.defaultPositioner.updateCoords(prop);
 		});
+
+		// Store coordinates after default positioning
+		const afterDefaultCoords = props.map((prop) => ({
+			id: prop.id,
+			coords: { ...prop.coords }
+		}));
 
 		// Apply beta positioning if needed
 		if (this.checker.endsWithBeta()) {
-			console.log('🔄 Applying beta positioning adjustments');
 			this.betaPositioner.reposition(props);
-			props.forEach((prop) =>
+
+			// Add this block right here
+			props.forEach((prop) => {
+				console.log(`Prop ${prop.id} final position: (${prop.coords.x}, ${prop.coords.y})`);
+			});
+
+			// Store coordinates after beta positioning
+			const afterBetaCoords = props.map((prop) => ({
+				id: prop.id,
+				coords: { ...prop.coords }
+			}));
+
+			console.log('📊 Positioning changes:', {
+				initial: initialCoords,
+				afterDefault: afterDefaultCoords,
+				afterBeta: afterBetaCoords
+			});
+
+			props.forEach((prop) => {
 				console.log(
 					`🚀 Beta position applied for ${prop.color} prop: (${prop.coords.x}, ${prop.coords.y})`
-				)
-			);
+				);
+			});
 		}
 
-		// Log final positions
-		props.forEach((prop) => {
-			console.log(
-				`📊 AFTER positioning: ${prop.color} prop at (${prop.coords.x}, ${prop.coords.y})`
-			);
-		});
+		// Validate final positions
+		this.validatePropPositions(props);
 
 		return props;
 	}
-
 	private applyFallbackPosition(prop: PropData): void {
 		// Apply strong fallback positions directly based on prop location
 		const fallbacks: Record<string, { x: number; y: number }> = {

@@ -44,19 +44,10 @@ export class DefaultPropPositioner {
 	public updateCoords(prop: PropData): void {
 		const pointName = `${prop.loc}_${this.gridMode}_hand_point`;
 
-		console.log(`🔍 Looking for grid point: "${pointName}" for ${prop.color} prop`);
-		console.log(
-			`🗺️ Available grid points:`,
-			Object.keys(this.gridData.allHandPointsNormal).slice(0, 10)
-		);
-
 		// Try to get grid point from normal points
 		const gridPoint = this.getGridPoint(pointName);
 
 		if (gridPoint && gridPoint.coordinates) {
-			console.log(
-				`✅ Found grid point "${pointName}": (${gridPoint.coordinates.x}, ${gridPoint.coordinates.y})`
-			);
 			prop.coords = gridPoint.coordinates;
 		} else {
 			// Use fallback if grid point not found
@@ -68,16 +59,16 @@ export class DefaultPropPositioner {
 		}
 	}
 
-	private getGridPoint(pointName: string): GridPoint | undefined {
+	private getGridPoint(pointName: string): GridPoint | null {
 		// Try normal points first, then strict
 		if (!this.gridData) {
 			console.error('❌ Grid data is null when looking for point:', pointName);
-			return undefined;
+			return null;
 		}
 
 		if (!this.gridData.allHandPointsNormal) {
 			console.error('❌ allHandPointsNormal is null in grid data');
-			return undefined;
+			return null;
 		}
 
 		const normalPoint = this.gridData.allHandPointsNormal[pointName];
@@ -88,7 +79,7 @@ export class DefaultPropPositioner {
 
 		const strictPoint = this.gridData.allHandPointsStrict
 			? this.gridData.allHandPointsStrict[pointName]
-			: undefined;
+			: null;
 
 		return normalPoint || strictPoint;
 	}

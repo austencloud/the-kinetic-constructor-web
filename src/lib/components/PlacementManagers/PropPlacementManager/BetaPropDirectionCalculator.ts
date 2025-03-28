@@ -1,15 +1,39 @@
-// BetaPropDirectionCalculator.ts
-
 import { Letter } from '$lib/types/Letter';
 import {
-	NORTH, EAST, SOUTH, WEST, NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST,
-	RED, BLUE, RADIAL, NONRADIAL, IN, OUT, CLOCK, COUNTER,
-	LEFT, RIGHT, UP, DOWN, UPRIGHT, UPLEFT, DOWNRIGHT, DOWNLEFT,
-	PRO, ANTI, FLOAT, DIAMOND, BOX
+	NORTH,
+	EAST,
+	SOUTH,
+	WEST,
+	NORTHEAST,
+	SOUTHEAST,
+	SOUTHWEST,
+	NORTHWEST,
+	RED,
+	BLUE,
+	RADIAL,
+	NONRADIAL,
+	IN,
+	OUT,
+	CLOCK,
+	COUNTER,
+	LEFT,
+	RIGHT,
+	UP,
+	DOWN,
+	UPRIGHT,
+	UPLEFT,
+	DOWNRIGHT,
+	DOWNLEFT,
+	PRO,
+	ANTI,
+	FLOAT,
+	DIAMOND,
+	BOX
 } from '$lib/types/Constants';
 import type { BoxLoc, Color, DiamondLoc, Direction, Loc } from '$lib/types/Types';
 import type { PictographData } from '$lib/types/PictographData';
-import type { PropData } from '../PropData';
+import type { PropData } from '$lib/components/objects/Prop/PropData';
+import type { MotionData } from '$lib/components/objects/Motion/MotionData';
 
 export class BetaPropDirectionCalculator {
 	// Special case maps for Letter I
@@ -89,11 +113,31 @@ export class BetaPropDirectionCalculator {
 
 	constructor(private pictographData: PictographData) {}
 
-	getDirection(prop: PropData): Direction | undefined {
-		if ([PRO, ANTI, FLOAT].includes(prop.motion.motionType)) {
-			return this.handleShiftMotion(prop);
+	getDirection(prop: PropData): Direction | null {
+		console.log('Getting direction for prop:', prop.id);
+		
+		// Get the associated motion data based on prop color
+		const motionData = this.getMotionDataForProp(prop);
+		if (!motionData) {
+			console.error(`No motion data found for prop ${prop.id}`);
+			return null;
+		}
+		
+		console.log('Motion type: ', motionData.motionType);
+		if ([PRO, ANTI, FLOAT].includes(motionData.motionType)) {
+			return this.handleShiftMotion(prop, motionData);
 		}
 		return this.handleStaticDashMotion(prop);
+	}
+
+	// Helper method to get the associated motion data for a prop
+	private getMotionDataForProp(prop: PropData): MotionData | null {
+		if (prop.color === RED) {
+			return this.pictographData.redMotionData;
+		} else if (prop.color === BLUE) {
+			return this.pictographData.blueMotionData;
+		}
+		return null;
 	}
 
 	endsWithRadialOrientation(): boolean {
@@ -114,23 +158,23 @@ export class BetaPropDirectionCalculator {
 		);
 	}
 
-	private handleShiftMotion(prop: PropData): Direction | undefined {
+	private handleShiftMotion(prop: PropData, motionData: MotionData): Direction | null {
 		if (this.pictographData.letter === Letter.I) {
 			if (this.endsWithRadialOrientation()) {
-				return this.directionMapRadialI[prop.motion.endLoc][prop.color];
+				return this.directionMapRadialI[prop.loc as Loc][prop.color as Color];
 			}
 			if (this.endsWithNonRadialOrientation()) {
-				return this.directionMapNonRadialI[prop.motion.endLoc][prop.color];
+				return this.directionMapNonRadialI[prop.loc as Loc][prop.color as Color];
 			}
 		}
 
 		const isRadial = prop.radialMode === RADIAL;
-		return this.getShiftDirection(isRadial, prop.motion.startLoc, prop.motion.endLoc);
+		return this.getShiftDirection(isRadial, motionData.startLoc, prop.loc);
 	}
 
-	private getShiftDirection(isRadial: boolean, startLoc: Loc, endLoc: Loc): Direction | undefined {
+	private getShiftDirection(isRadial: boolean, startLoc: Loc, endLoc: Loc): Direction | null {
 		const map = isRadial ? this.directionMapRadialShift : this.directionMapNonRadialShift;
-		return map[startLoc]?.[endLoc];
+		return map[startLoc]?.[endLoc] ?? null;
 	}
 
 	private handleStaticDashMotion(prop: PropData): Direction {
@@ -139,11 +183,11 @@ export class BetaPropDirectionCalculator {
 
 		if (gridMode === DIAMOND) {
 			const map = isRadial ? this.diamondMapRadial : this.diamondMapNonRadial;
-			return map[prop.loc as DiamondLoc][prop.color];
+			return map[prop.loc as DiamondLoc][prop.color as Color];
 		}
 
 		const map = isRadial ? this.boxMapRadial : this.boxMapNonRadial;
-		return map[prop.loc as BoxLoc][prop.color];
+		return map[prop.loc as BoxLoc][prop.color as Color];
 	}
 
 	getOppositeDirection(direction: Direction): Direction {

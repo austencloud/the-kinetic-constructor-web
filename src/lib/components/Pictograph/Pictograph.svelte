@@ -53,18 +53,89 @@
 	// Prevent infinite loading with a safety timeout
 	let safetyTimer: number;
 
+	// Add this debugging function to the Pictograph.svelte file
+	// near the updatePlacements function
 
+	async function debugPropPositioning() {
+		// Check if props exist at all
+		console.log('=== PROP POSITIONING DEBUG START ===');
+
+		if (!redProp || !blueProp) {
+			console.error('Props are not defined:', { redProp, blueProp });
+			return;
+		}
+
+		// Track prop positions at different stages
+		console.log('Initial prop positions:');
+		console.log('- Red:', JSON.stringify(redProp.coords));
+		console.log('- Blue:', JSON.stringify(blueProp.coords));
+
+		// Add position tracking before and after beta positioning
+		if (pictographManagers && pictographManagers.propPlacementManager) {
+			// Check if default positioning is applied
+			pictographManagers.propPlacementManager.defaultPositioner.updateCoords(redProp);
+			pictographManagers.propPlacementManager.defaultPositioner.updateCoords(blueProp);
+			console.log('After default positioning:');
+			console.log('- Red:', JSON.stringify(redProp.coords));
+			console.log('- Blue:', JSON.stringify(blueProp.coords));
+
+			// Clone the props to avoid reference issues
+			const redPropClone = JSON.parse(JSON.stringify(redProp));
+			const bluePropClone = JSON.parse(JSON.stringify(blueProp));
+
+			// Apply beta positioning
+			if (pictographManagers.checker.endsWithBeta()) {
+				console.log('Applying beta positioning...');
+
+				// Track the prop positions before beta positioning
+				console.log('Before beta positioning:');
+				console.log('- Red:', JSON.stringify(redProp.coords));
+				console.log('- Blue:', JSON.stringify(blueProp.coords));
+
+				// Apply beta positioning
+				pictographManagers.propPlacementManager.betaPositioner.reposition([redProp, blueProp]);
+
+				console.log('After beta positioning:');
+				console.log('- Red:', JSON.stringify(redProp.coords));
+				console.log('- Blue:', JSON.stringify(blueProp.coords));
+
+				// Check if the coordinates actually changed
+				const redChanged =
+					redPropClone.coords.x !== redProp.coords.x || redPropClone.coords.y !== redProp.coords.y;
+				const blueChanged =
+					bluePropClone.coords.x !== blueProp.coords.x ||
+					bluePropClone.coords.y !== blueProp.coords.y;
+
+				console.log('Position changes detected:', { redChanged, blueChanged });
+			} else {
+				console.log('Not ending with beta, skipping beta positioning');
+			}
+		}
+
+		// Check component positioning flags
+		console.log('Component positioning state:', componentPositioning);
+
+		// Check if props are at final positions
+		console.log('Final prop positions:');
+		console.log('- Red:', JSON.stringify(redProp.coords));
+		console.log('- Blue:', JSON.stringify(blueProp.coords));
+		console.log('=== PROP POSITIONING DEBUG END ===');
+	}
+
+	// Add this call at the end of the updatePlacements function
+	// just before checkAllComponentsPositioned()
+	(async () => {
+		await debugPropPositioning();
+	})();
 	// Handle grid data loading - CRITICAL for prop positioning
 	function handleGridDataReady(data: GridData) {
 		try {
-
 			// Store grid data globally for access
 			gridData = data;
 
 			// Log a few grid points for debugging
 			if (debug) {
 				const samplePoints = Object.entries(data.allHandPointsNormal).slice(0, 3);
-
 			}
 
 			// Store grid data in pictograph data for placement managers
@@ -90,7 +161,6 @@
 		if (initializationComplete) return;
 
 		try {
-
 			// Initialize elements first
 			initializer = new PictographInitializer(pictographDataStore);
 			elements = initializer.elements;
@@ -109,7 +179,6 @@
 			redArrow = get(pictographElements.redArrowData);
 			blueArrow = get(pictographElements.blueArrowData);
 
-
 			// Wait for managers to be ready
 			await pictographManagers.ready;
 
@@ -123,7 +192,6 @@
 				}
 			}
 		} catch (error) {
-
 			// Retry initialization a few times before giving up
 			if (retryCount < MAX_RETRIES) {
 				retryCount++;
@@ -162,10 +230,10 @@
 			dispatch('loaded');
 		}
 	}
+	// In the Pictograph.svelte file
 
 	// CRITICAL: This updates the positions of props and arrows
 	async function updatePlacements() {
-
 		if (!pictographManagers) {
 			return;
 		}
@@ -178,29 +246,42 @@
 				// Make sure we have grid data
 				const pictograph = get(pictographDataStore);
 				if (!pictograph.gridData) {
-
-					// Get grid data from elements store or global var
 					pictograph.gridData = gridData;
-
-					if (!pictograph.gridData) {
-						return;
-					}
+					if (!pictograph.gridData) return;
 				}
 
-				// Log the props before positioning
+				// In updatePlacements function
 
-				// Position the props - use temporary coordinates first to ensure change
+				// Position the props
 				if (redProp && blueProp) {
-					// Force props to be at origin to ensure positioning takes effect
-					redProp.coords = { x: 0, y: 0 };
-					blueProp.coords = { x: 0, y: 0 };
+					// First apply default positioning
+					pictographManagers.propPlacementManager.defaultPositioner.updateCoords(redProp);
+					pictographManagers.propPlacementManager.defaultPositioner.updateCoords(blueProp);
 
-					// Now position them
-					pictographManagers.propPlacementManager.updatePropPlacement([redProp, blueProp]);
+					// Then apply beta positioning if needed
+					if (pictographManagers.checker.endsWithBeta()) {
+						pictographManagers.propPlacementManager.betaPositioner.reposition([redProp, blueProp]);
+					}
+
+					// Create completely new prop objects to trigger Svelte reactivity
+					redProp = JSON.parse(JSON.stringify(redProp));
+					blueProp = JSON.parse(JSON.stringify(blueProp));
+
+					// Log final positions
+					console.log('FINAL POSITIONS:');
+					if (redProp) {
+						console.log(`Red: (${redProp.coords.x}, ${redProp.coords.y})`);
+					} else {
+						console.log('Red prop is null');
+					}
+					console.log(`Blue: (${blueProp?.coords?.x ?? 'N/A'}, ${blueProp?.coords?.y ?? 'N/A'})`);
+
 					componentPositioning.redProp = true;
 					componentPositioning.blueProp = true;
 				}
 
+				// Wait for Svelte to update the DOM
+				await tick();
 				// Position the arrows
 				if (redArrow && blueArrow) {
 					pictographManagers.arrowPlacementManager.updateArrowPlacements([redArrow, blueArrow]);
@@ -208,24 +289,18 @@
 					componentPositioning.blueArrow = true;
 				}
 
-				// Log the props after positioning
-
-
 				// Apply fallback positions if needed
 				if (redProp && redProp.coords.x === 0 && redProp.coords.y === 0) {
-
 					applyFallbackPosition(redProp, 'red');
 				}
 
 				if (blueProp && blueProp.coords.x === 0 && blueProp.coords.y === 0) {
-
 					applyFallbackPosition(blueProp, 'blue');
 				}
 
-				checkAllComponentsPositioned();
-
-				// Wait for next tick to ensure the DOM updates
+				// Wait for the DOM to update
 				await tick();
+				checkAllComponentsPositioned();
 			} catch (error) {
 				// Apply fallbacks even on error
 				if (redProp) applyFallbackPosition(redProp, 'red');
@@ -259,22 +334,19 @@
 
 		if (prop.loc && fallbacks[prop.loc]) {
 			prop.coords = {
-				x: fallbacks[prop.loc].x + offset,
+				x: fallbacks[prop.loc].x,
 				y: fallbacks[prop.loc].y
 			};
-
 		} else {
 			// Last resort center position with offset
 			prop.coords = {
 				x: 475 + offset,
 				y: 475
 			};
-
 		}
 	}
 
 	onMount(() => {
-
 		// Set a safety timeout (5 seconds maximum)
 		safetyTimer = setTimeout(() => {
 			if (stage !== 'complete') {
@@ -320,7 +392,6 @@
 
 	// If any component errors, still mark it as loaded to not block rendering
 	function handleComponentError(component: string, error?: any) {
-
 		// Mark the component as loaded despite the error
 		if (component.includes('prop')) {
 			const color = component.includes('red') ? 'red' : 'blue';
@@ -333,31 +404,6 @@
 		}
 
 		checkAllComponentsLoaded();
-	}
-
-	// Show debug information
-	function getDebugInfo() {
-		return {
-			stage,
-			componentLoading,
-			componentPositioning,
-			redProp: redProp
-				? {
-						loc: redProp.loc,
-						coords: redProp.coords,
-						id: redProp.id
-					}
-				: null,
-			blueProp: blueProp
-				? {
-						loc: blueProp.loc,
-						coords: blueProp.coords,
-						id: blueProp.id
-					}
-				: null,
-			gridData: gridData ? 'loaded' : 'not loaded',
-			managers: pictographManagers ? 'initialized' : 'not initialized'
-		};
 	}
 </script>
 
@@ -384,11 +430,6 @@
 					on:loaded={() => handlePropLoaded('red')}
 					on:error={() => handleComponentError('redProp')}
 				/>
-
-				<!-- Debug marker for red prop position -->
-				{#if debug}
-					<circle cx={redProp.coords.x} cy={redProp.coords.y} r="8" fill="red" opacity="0.5" />
-				{/if}
 			{/if}
 
 			{#if blueProp}
@@ -397,11 +438,6 @@
 					on:loaded={() => handlePropLoaded('blue')}
 					on:error={() => handleComponentError('blueProp')}
 				/>
-
-				<!-- Debug marker for blue prop position -->
-				{#if debug}
-					<circle cx={blueProp.coords.x} cy={blueProp.coords.y} r="8" fill="blue" opacity="0.5" />
-				{/if}
 			{/if}
 
 			{#if redArrow}
@@ -420,39 +456,47 @@
 				/>
 			{/if}
 
-			<!-- Debug grid point overlay -->
-			{#if debug && gridData}
-				{#each Object.entries(gridData.allHandPointsNormal || {}) as [key, point]}
-					{#if point && point.coordinates}
-						<circle
-							cx={point.coordinates.x}
-							cy={point.coordinates.y}
-							r="3"
-							fill="rgba(0,255,0,0.5)"
-							stroke="white"
-							stroke-width="0.5"
-						/>
-					{/if}
-				{/each}
-
-				{#if gridData.centerPoint && gridData.centerPoint.coordinates}
-					<circle
-						cx={gridData.centerPoint.coordinates.x}
-						cy={gridData.centerPoint.coordinates.y}
-						r="5"
-						fill="pink"
-						stroke="black"
-						stroke-width="1"
-					/>
+			<!-- Debug markers for props -->
+			{#if debug}
+				{#if redProp}
+					<circle cx={redProp.coords.x} cy={redProp.coords.y} r="8" fill="red" opacity="0.5" />
+					<text
+						x={redProp.coords.x}
+						y={redProp.coords.y - 10}
+						text-anchor="middle"
+						fill="red"
+						font-size="12"
+						stroke="white"
+						stroke-width="0.5"
+					>
+						({Math.round(redProp.coords.x)}, {Math.round(redProp.coords.y)})
+					</text>
 				{/if}
-			{/if}
-		{/if}
 
-		<!-- Status indicator -->
-		{#if debug}
-			<text x="10" y="20" font-size="12" fill="white" stroke="black" stroke-width="0.5">
-				Stage: {stage}
-			</text>
+				{#if blueProp}
+					<circle cx={blueProp.coords.x} cy={blueProp.coords.y} r="8" fill="blue" opacity="0.5" />
+					<text
+						x={blueProp.coords.x}
+						y={blueProp.coords.y - 10}
+						text-anchor="middle"
+						fill="blue"
+						font-size="12"
+						stroke="white"
+						stroke-width="0.5"
+					>
+						({Math.round(blueProp.coords.x)}, {Math.round(blueProp.coords.y)})
+					</text>
+				{/if}
+
+				<!-- Additional debug info -->
+				<text x="10" y="20" font-size="12" fill="white" stroke="black" stroke-width="0.5">
+					Stage: {stage}
+				</text>
+
+				<text x="10" y="40" font-size="12" fill="white" stroke="black" stroke-width="0.5">
+					Beta active: {pictographManagers?.checker?.endsWithBeta() ? 'Yes' : 'No'}
+				</text>
+			{/if}
 		{/if}
 	</svg>
 </div>

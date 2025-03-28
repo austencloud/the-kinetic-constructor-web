@@ -8,30 +8,36 @@ import type { TKAPosition } from './TKAPosition.js';
 import type { GridMode, VTGDir, VTGTiming } from './Types.js';
 
 export interface PictographData {
-	// TKA
-	letter: Letter | null;
-	startPos: TKAPosition | null;
-	endPos: TKAPosition | null;
+    // TKA
+    letter: Letter | null;
+    startPos: TKAPosition | null;
+    endPos: TKAPosition | null;
 
-	// VTG
-	timing: VTGTiming | null;
-	direction: VTGDir | null;
+    // VTG
+    timing: VTGTiming | null;
+    direction: VTGDir | null;
 
-	// Grid
-	gridMode: GridMode;
-	gridData: GridData | null;
+    // Grid
+    gridMode: GridMode;
+    gridData: GridData | null;
 
-	// Motion
-	blueMotionData: MotionData | null;
-	redMotionData: MotionData | null;
+    // Motion
+    blueMotionData: MotionData | null;
+    redMotionData: MotionData | null;
+    
+    // For backward compatibility
+    motions?: Motion[] | undefined;
+    redMotion?: Motion | null;
+    blueMotion?: Motion | null;
 
-	// Props
-	redPropData: PropData | null;
-	bluePropData: PropData | null;
+    // Props
+    redPropData: PropData | null;
+    bluePropData: PropData | null;
+    props?: PropData[];
 
-	// Arrows
-	redArrowData: ArrowData | null;
-	blueArrowData: ArrowData | null;
+    // Arrows
+    redArrowData: ArrowData | null;
+    blueArrowData: ArrowData | null;
 
-	grid: string;
+    grid: string;
 }

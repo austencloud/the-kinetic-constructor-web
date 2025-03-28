@@ -21,7 +21,7 @@ export function parseTurnsTupleString(
 	return [direction ?? null, topVal ?? 0, bottomVal ?? 0];
 }
 
-function parseDirection(item: string | undefined): DirRelation | PropRotDir | null {
+function parseDirection(item: string | null): DirRelation | PropRotDir | null {
 	if (!item) return null;
 	if (item === 's' || item === 'o' || item === 'cw' || item === 'ccw') {
 		return item;
@@ -29,7 +29,7 @@ function parseDirection(item: string | undefined): DirRelation | PropRotDir | nu
 	return null;
 }
 
-function parseTurnValue(item: string | undefined): TKATurns | null {
+function parseTurnValue(item: string | null): TKATurns | null {
 	if (!item) return null;
 	if (item === 'fl') return 'fl';
 	const num = Number(item);
