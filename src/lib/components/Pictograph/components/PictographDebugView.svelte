@@ -12,7 +12,6 @@
 </script>
 
 {#if visible}
-	<!-- Prop position markers -->
 	{#if redProp}
 		<circle cx={redProp.coords.x} cy={redProp.coords.y} r="8" fill="red" opacity="0.5" />
 		<text
@@ -43,7 +42,6 @@
 		</text>
 	{/if}
 
-	<!-- Render status information -->
 	<text x="10" y="20" font-size="12" fill="white" stroke="black" stroke-width="0.5">
 		Stage: {stage}
 	</text>

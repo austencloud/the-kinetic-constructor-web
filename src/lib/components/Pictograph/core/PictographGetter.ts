@@ -17,7 +17,6 @@ export class PictographGetter {
 	public async initializeMotions(): Promise<void> {
 		if (this._initialized) return;
 
-		// Preload required SVGs
 		await Promise.all([
 			this.preloadMotionSvg(this._currentData.redMotionData ?? undefined),
 			this.preloadMotionSvg(this._currentData.blueMotionData ?? undefined)
@@ -78,16 +77,13 @@ export class PictographGetter {
 				(m) => m?.motionType
 			);
 
-			return (
-				motions.find((m) => ['pro', 'anti', 'float'].includes(m!.motionType)) ?? null
-			);
+			return motions.find((m) => ['pro', 'anti', 'float'].includes(m!.motionType)) ?? null;
 		} catch (error) {
 			console.error('Shift motion detection failed:', error);
 			return null;
 		}
 	}
 
-	// Other methods remain similar but with added error handling
 	public getOtherMotion(currentMotion: Motion): Motion | null {
 		try {
 			if (!this._initialized) return null;

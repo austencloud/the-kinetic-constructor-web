@@ -14,7 +14,6 @@
 	let bluePointCoords = { x: 0, y: 0 };
 	let gridMode = 'diamond';
 
-	// Track if expected grid points exist
 	let redPointExists = false;
 	let bluePointExists = false;
 
@@ -25,16 +24,11 @@
 	function updateDebugInfo() {
 		if (!gridData) return;
 
-		// Safely determine gridMode
 		gridMode = redProp?.loc?.includes('e') || redProp?.loc?.includes('w') ? 'diamond' : 'box';
 
-		// Determine point names
 		if (redProp?.loc) {
 			redPointName = `${redProp.loc}_${gridMode}_hand_point`;
-			redPointExists = !!(
-				gridData.allHandPointsNormal && gridData.allHandPointsNormal[redPointName]
-			);
-
+			redPointExists = !!(gridData.allHandPointsNormal && gridData.allHandPointsNormal[redPointName]);
 			if (redPointExists && gridData.allHandPointsNormal[redPointName]?.coordinates) {
 				redPointCoords = gridData.allHandPointsNormal[redPointName].coordinates!;
 			}
@@ -42,10 +36,7 @@
 
 		if (blueProp?.loc) {
 			bluePointName = `${blueProp.loc}_${gridMode}_hand_point`;
-			bluePointExists = !!(
-				gridData.allHandPointsNormal && gridData.allHandPointsNormal[bluePointName]
-			);
-
+			bluePointExists = !!(gridData.allHandPointsNormal && gridData.allHandPointsNormal[bluePointName]);
 			if (bluePointExists && gridData.allHandPointsNormal[bluePointName]?.coordinates) {
 				bluePointCoords = gridData.allHandPointsNormal[bluePointName].coordinates!;
 			}
@@ -61,7 +52,6 @@
 
 {#if visible}
 	<g class="prop-position-debugger">
-		<!-- Use a div with text instead of foreignObject to avoid xmlns issue -->
 		<g transform="translate(10, 10)">
 			<rect width="300" height="200" fill="rgba(0,0,0,0.7)" rx="5" ry="5" />
 			<text x="10" y="25" fill="#ffcc00" font-family="monospace" font-size="14">
@@ -111,7 +101,6 @@
 			{/if}
 		</g>
 
-		<!-- Draw indicator lines to show target grid points -->
 		{#if redProp && redPointExists}
 			<line
 				x1={redProp.coords?.x || 0}
