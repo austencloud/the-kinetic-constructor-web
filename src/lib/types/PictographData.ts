@@ -8,6 +8,7 @@ import type { TKAPosition } from './TKAPosition.js';
 import type { GridMode, VTGDir, VTGTiming } from './Types.js';
 
 export interface PictographData {
+    mockPictographData: { endOri: "in"; };
     // TKA
     letter: Letter | null;
     startPos: TKAPosition | null;

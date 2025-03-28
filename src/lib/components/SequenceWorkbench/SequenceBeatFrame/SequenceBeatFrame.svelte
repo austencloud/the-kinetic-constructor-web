@@ -4,7 +4,7 @@
 	import StartPosBeat from './StartPosBeat.svelte';
 	import Beat from './Beat.svelte';
 	import type { BeatData } from './BeatData.js';
-	import { defaultPictographData } from '$lib/components/Pictograph/defaultPictographData.js';
+	import { defaultPictographData } from '$lib/components/Pictograph/constants/defaultPictographData.js';
 	import { resizeObserver } from '$lib/actions/resizeObserver.js';
 	import { applyLayout, autoAdjustLayout, calculateCellSize } from './beatFrameHelpers.js';
 	import { addBeat, beatsStore } from '$lib/stores/beatsStore.js';
