@@ -17,8 +17,12 @@ type ComponentsReadyCallback = () => void;
 type PositioningCompleteCallback = () => void;
 
 export class PictographComponentStatusService {
-	private componentLoading: ComponentLoadingStatus = { ...DEFAULT_COMPONENT_LOADING };
-	private componentPositioning: ComponentPositioningStatus = { ...DEFAULT_COMPONENT_POSITIONING };
+	private componentLoading: ComponentLoadingStatus = {
+		...DEFAULT_COMPONENT_LOADING
+	};
+	private componentPositioning: ComponentPositioningStatus = {
+		...DEFAULT_COMPONENT_POSITIONING
+	};
 	private getCurrentStage: () => RenderStage;
 	private onStageChange: StageChangeCallback;
 	private onComponentsReady: ComponentsReadyCallback;
@@ -45,20 +49,25 @@ export class PictographComponentStatusService {
 		type: 'loading' | 'positioning',
 		isComplete: boolean = true
 	): void {
-		if (this.debug) console.log(`📊 StatusService: Updating ${componentKey} - ${type}: ${isComplete}`);
+		if (this.debug)
+			console.log(`📊 StatusService: Updating ${componentKey} - ${type}: ${isComplete}`);
 
 		if (type === 'loading') {
 			if (componentKey in this.componentLoading) {
 				this.componentLoading[componentKey as keyof ComponentLoadingStatus] = isComplete;
 			} else {
-				console.warn(`❓ StatusService: Invalid component key "${componentKey}" for loading status.`);
+				console.warn(
+					`❓ StatusService: Invalid component key "${componentKey}" for loading status.`
+				);
 				return;
 			}
 		} else {
 			if (componentKey in this.componentPositioning) {
 				this.componentPositioning[componentKey as keyof ComponentPositioningStatus] = isComplete;
 			} else {
-				console.warn(`❓ StatusService: Invalid component key "${componentKey}" for positioning status.`);
+				console.warn(
+					`❓ StatusService: Invalid component key "${componentKey}" for positioning status.`
+				);
 				return;
 			}
 		}
@@ -73,7 +82,8 @@ export class PictographComponentStatusService {
 
 		this.componentLoading = handleComponentError(componentKey, this.componentLoading);
 
-		if (this.debug) console.log(`🚦 StatusService: Marked ${componentKey} as loaded after error to proceed.`);
+		if (this.debug)
+			console.log(`🚦 StatusService: Marked ${componentKey} as loaded after error to proceed.`);
 
 		this.checkAndTransitionStage();
 	}
@@ -86,18 +96,22 @@ export class PictographComponentStatusService {
 
 		if (nextStage !== currentStage) {
 			if (this.debug) {
-				console.log(`🚀 StatusService: Stage transition triggered: ${currentStage} -> ${nextStage}`);
-				console.log(`   Loading Status: `, this.componentLoading);
-				console.log(`   Positioning Status: `, this.componentPositioning);
+				console.log(
+					`🚀 StatusService: Stage transition triggered: ${currentStage} -> ${nextStage}`
+				);
+				console.log('   Loading Status: ', this.componentLoading);
+				console.log('   Positioning Status: ', this.componentPositioning);
 			}
 
 			this.onStageChange(nextStage);
 
 			if (nextStage === 'components_ready') {
-				if (this.debug) console.log(' MERN StatusService: All components loaded, triggering onComponentsReady.');
+				if (this.debug)
+					console.log(' MERN StatusService: All components loaded, triggering onComponentsReady.');
 				this.onComponentsReady();
 			} else if (nextStage === 'complete') {
-				if (this.debug) console.log('✅ StatusService: Positioning complete, triggering onPositioningComplete.');
+				if (this.debug)
+					console.log('✅ StatusService: Positioning complete, triggering onPositioningComplete.');
 				this.onPositioningComplete();
 			}
 		}
