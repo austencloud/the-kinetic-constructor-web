@@ -12,22 +12,13 @@
 	import { PictographManagers } from './PictographManagers';
 	import { createPictographElements } from './PictographElements';
 	import type { GridData } from '../objects/Grid/GridData';
-	import {
-		DEFAULT_COMPONENT_LOADING,
-		DEFAULT_COMPONENT_POSITIONING,
-		type RenderStage
-	} from './constants/trackingConstants';
-	import {
-		checkAllComponentsLoaded,
-		checkAllComponentsPositioned,
-		determineNextStage,
-		handleComponentError
-	} from './utils/componentStatusUtils';
-
-	// Import our new services
+	import { type RenderStage } from './constants/trackingConstants';
+	
+	// Import our services
 	import { PictographLifecycleService } from './services/PictographLifecycleService';
 	import { PictographValidationService } from './services/PictographValidationService';
 	import { PictographPositioningService } from './services/PictographPositioningService';
+	import { PictographComponentStatusService } from './services/PictographComponentStatusService';
 	import PictographDebugView from './PictographDebugView.svelte';
 
 	// Props and exports
@@ -40,9 +31,7 @@
 
 	// Rendering state
 	let stage: RenderStage = 'initializing';
-	let componentLoading = { ...DEFAULT_COMPONENT_LOADING };
-	let componentPositioning = { ...DEFAULT_COMPONENT_POSITIONING };
-
+	
 	// Component state
 	let gridData: GridData | null = null;
 	let gridDataLoaded = false;
@@ -70,6 +59,14 @@
 	const validationService = new PictographValidationService(pictographDataStore, debug);
 
 	const positioningService = new PictographPositioningService(debug);
+	
+	const componentStatusService = new PictographComponentStatusService(
+		stage,
+		(newStage) => (stage = newStage),
+		() => updatePlacements(),
+		() => dispatch('loaded'),
+		debug
+	);
 
 	// ---------------------------------
 	// Lifecycle and Initialization
@@ -105,18 +102,8 @@
 				return;
 			}
 
-			// Step 2: Initialize managers
-			pictographManagers = new PictographManagers(pictographDataStore);
-
-			// Extract components
-			const pictographElements = get(elements);
-			redProp = get(pictographElements.redPropData);
-			blueProp = get(pictographElements.bluePropData);
-			redArrow = get(pictographElements.redArrowData);
-			blueArrow = get(pictographElements.blueArrowData);
-
-			// Wait for managers to be ready
-			await pictographManagers.ready;
+			// Step 2: Initialize managers and components
+			await initializeManagersAndComponents();
 
 			initializationComplete = true;
 
@@ -132,6 +119,21 @@
 		}
 	}
 
+	async function initializeManagersAndComponents() {
+		// Initialize managers
+		pictographManagers = new PictographManagers(pictographDataStore);
+
+		// Extract components
+		const pictographElements = elements ? get(elements) : null;
+		redProp = pictographElements ? get(pictographElements.redPropData) : null;
+		blueProp = pictographElements ? get(pictographElements.bluePropData) : null;
+		redArrow = pictographElements ? get(pictographElements.redArrowData) : null;
+		blueArrow = pictographElements ? get(pictographElements.blueArrowData) : null;
+
+		// Wait for managers to be ready
+		await pictographManagers.ready;
+	}
+
 	// ---------------------------------
 	// Grid Handling
 	// ---------------------------------
@@ -140,41 +142,7 @@
 		gridData = data;
 		lifecycleService.handleGridDataReady(data, debug, initializeAll);
 		gridDataLoaded = true;
-		componentLoading.grid = true;
-	}
-
-	// ---------------------------------
-	// Component Status Management
-	// ---------------------------------
-
-	function checkComponentStatus() {
-		const allLoaded = checkAllComponentsLoaded(componentLoading);
-		const allPositioned = checkAllComponentsPositioned(componentPositioning);
-
-		const nextStage = determineNextStage(stage, allLoaded, allPositioned);
-
-		if (nextStage !== stage) {
-			if (debug) {
-				console.log(`Pictograph stage transition: ${stage} -> ${nextStage}`);
-			}
-
-			stage = nextStage;
-
-			if (stage === 'components_ready') {
-				updatePlacements();
-			} else if (stage === 'complete') {
-				dispatch('loaded');
-			}
-		}
-	}
-
-	function handlePictographComponentError(component: string, error?: any) {
-		if (debug) {
-			console.error(`Error in ${component}:`, error);
-		}
-
-		componentLoading = handleComponentError(component, componentLoading);
-		checkComponentStatus();
+		componentStatusService.updateComponentStatus('grid', 'loading');
 	}
 
 	// ---------------------------------
@@ -182,13 +150,15 @@
 	// ---------------------------------
 
 	function handlePropLoaded(color: 'red' | 'blue') {
-		componentLoading[`${color}Prop`] = true;
-		checkComponentStatus();
+		componentStatusService.updateComponentStatus(`${color}Prop`, 'loading');
 	}
 
 	function handleArrowLoaded(color: 'red' | 'blue') {
-		componentLoading[`${color}Arrow`] = true;
-		checkComponentStatus();
+		componentStatusService.updateComponentStatus(`${color}Arrow`, 'loading');
+	}
+
+	function handlePictographComponentError(component: string, error?: any) {
+		componentStatusService.handleComponentError(component, error);
 	}
 
 	// ---------------------------------
@@ -196,6 +166,8 @@
 	// ---------------------------------
 
 	async function updatePlacements() {
+		const componentPositioning = componentStatusService.getComponentPositioning();
+		
 		const result = await positioningService.updatePlacements(
 			pictographManagers,
 			redProp,
