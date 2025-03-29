@@ -12,7 +12,7 @@ export class PictographLifecycleService {
 	private retryCount = 0;
 	private safetyTimer: number | null = null;
 	private logger: Logger;
-	private readonly SAFETY_TIMEOUT = 150;
+	private readonly SAFETY_TIMEOUT = 5000;
 
 	constructor(
 		private pictographDataStore: Writable<PictographData>,
@@ -39,51 +39,10 @@ export class PictographLifecycleService {
 		}, this.SAFETY_TIMEOUT);
 	}
 
-	public handleGridDataReady(
-		data: GridData,
-		initCallback: () => Promise<void>
-	): void {
-		if (this.gridDataLoaded) {
-			this.logger.warn('Grid data already processed');
-			return;
-		}
-		this.logger.debug('Grid data ready');
-		try {
-			this.validateGridData(data);
-			this.pictographDataStore.update((existingData) => ({
-				...existingData,
-				gridData: data
-			}));
-			this.gridDataLoaded = true;
-			this.onStageChange('grid_ready');
-			this.runInitialization(initCallback);
-		} catch (error) {
-			this.handleGridDataError(error);
-		}
-	}
-
-	private validateGridData(data: GridData): void {
-		if (!data || !data.allHandPointsNormal) {
-			throw new Error('Received invalid GridData structure');
-		}
-	}
-
 	private runInitialization(initCallback: () => Promise<void>): void {
 		initCallback().catch(error => {
 			this.handleInitializationError(error, initCallback);
 		});
-	}
-
-	private handleGridDataError(error: unknown): void {
-		this.logger.error('Error handling grid data', error);
-		this.onErrorEvent({ 
-			source: 'grid_processing', 
-			error,
-			message: error instanceof Error ? error.message : 'Grid data processing failed'
-		});
-		this.clearSafetyTimer();
-		this.onStageChange('complete');
-		this.onLoadedEvent({ error: true, message: 'Grid data processing failed' });
 	}
 
 	public handleInitializationError(

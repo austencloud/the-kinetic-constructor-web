@@ -79,6 +79,7 @@ export class PictographManagers {
 			);
 
 			await this.propPlacementManager.ready;
+			console.log('propPlacementManager ready');
 			if (this.arrowPlacementManager) {
 				await this.arrowPlacementManager.ready;
 			}

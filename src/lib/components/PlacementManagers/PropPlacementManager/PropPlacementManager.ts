@@ -2,9 +2,9 @@
 import { DefaultPropPositioner } from './DefaultPropPositioner';
 import { BetaPropPositioner } from './BetaPropPositioner';
 import type { PictographData } from '$lib/types/PictographData';
-import type { PictographChecker } from '$lib/components/Pictograph/PictographChecker';
 import type { GridData } from '$lib/components/objects/Grid/GridData';
 import type { PropData } from '$lib/components/objects/Prop/PropData';
+import type { PictographChecker } from '$lib/components/Pictograph/core/PictographChecker';
 
 export class PropPlacementManager {
 	public defaultPositioner: DefaultPropPositioner;

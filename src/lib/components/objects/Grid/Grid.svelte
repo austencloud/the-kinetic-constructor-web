@@ -11,7 +11,7 @@
 	let gridLoaded = false;
 	let gridError = false;
 	let gridErrorMessage = '';
-	
+
 	const dispatch = createEventDispatcher();
 
 	$: {
@@ -32,48 +32,48 @@
 			return null;
 		}
 	}
-	
+
 	function validateGridData(data: GridData): boolean {
 		// Check essential properties
 		if (!data.allHandPointsNormal || Object.keys(data.allHandPointsNormal).length === 0) {
 			console.error('Invalid grid data: Missing hand points');
 			return false;
 		}
-		
+
 		if (!data.centerPoint || !data.centerPoint.coordinates) {
 			console.error('Invalid grid data: Missing center point');
 			return false;
 		}
-		
+
 		// Check at least some points have valid coordinates
 		const handPointKeys = Object.keys(data.allHandPointsNormal);
 		const validPointsCount = handPointKeys.filter(
-			key => data.allHandPointsNormal[key]?.coordinates !== null
+			(key) => data.allHandPointsNormal[key]?.coordinates !== null
 		).length;
-		
+
 		if (validPointsCount === 0) {
 			console.error('Invalid grid data: No valid hand points');
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	// Generate fallback grid data if parsing fails
 	function createFallbackGridData(): GridData {
 		console.warn('Creating fallback grid data');
-		
+
 		const fallbackHandPoints: Record<string, { coordinates: { x: number; y: number } | null }> = {
-			'n_diamond_hand_point': { coordinates: { x: 475, y: 330 } },
-			'e_diamond_hand_point': { coordinates: { x: 620, y: 475 } },
-			's_diamond_hand_point': { coordinates: { x: 475, y: 620 } },
-			'w_diamond_hand_point': { coordinates: { x: 330, y: 475 } },
-			'ne_diamond_hand_point': { coordinates: { x: 620, y: 330 } },
-			'se_diamond_hand_point': { coordinates: { x: 620, y: 620 } },
-			'sw_diamond_hand_point': { coordinates: { x: 330, y: 620 } },
-			'nw_diamond_hand_point': { coordinates: { x: 330, y: 330 } }
+			n_diamond_hand_point: { coordinates: { x: 475, y: 330 } },
+			e_diamond_hand_point: { coordinates: { x: 620, y: 475 } },
+			s_diamond_hand_point: { coordinates: { x: 475, y: 620 } },
+			w_diamond_hand_point: { coordinates: { x: 330, y: 475 } },
+			ne_diamond_hand_point: { coordinates: { x: 620, y: 330 } },
+			se_diamond_hand_point: { coordinates: { x: 620, y: 620 } },
+			sw_diamond_hand_point: { coordinates: { x: 330, y: 620 } },
+			nw_diamond_hand_point: { coordinates: { x: 330, y: 330 } }
 		};
-		
+
 		return {
 			allHandPointsStrict: fallbackHandPoints,
 			allHandPointsNormal: fallbackHandPoints,
@@ -86,6 +86,7 @@
 
 	onMount(async () => {
 		try {
+			console.log('Initializing grid...');
 			await tick(); // Wait for DOM to render
 
 			if (!circleCoordinates || !circleCoordinates[gridMode]) {
@@ -101,7 +102,7 @@
 						{ coordinates: parseCoordinates(value) }
 					])
 				);
-
+			console.log('Mode data:', modeData);
 			// Convert raw data into structured `GridData`
 			const gridData: GridData = {
 				allHandPointsStrict: parsePoints(modeData.hand_points.strict),
@@ -116,29 +117,29 @@
 			if (!validateGridData(gridData)) {
 				throw new Error('Grid data validation failed');
 			}
-			
+
 			// Log a subset of points for debugging
 			if (debug) {
 				const samplePoints = Object.entries(gridData.allHandPointsNormal).slice(0, 3);
-
 			}
-			
+
 			gridLoaded = true;
 			onPointsReady(gridData);
+			
 		} catch (error) {
 			console.error('Error initializing grid:', error);
 			gridError = true;
 			gridErrorMessage = error instanceof Error ? error.message : 'Unknown grid error';
-			
+
 			// Dispatch error event
 			dispatch('error', { message: gridErrorMessage });
-			
+
 			// Create and return fallback grid data
 			const fallbackData = createFallbackGridData();
 			onPointsReady(fallbackData);
 		}
 	});
-	
+
 	function handleImageError() {
 		console.error('Failed to load grid SVG image');
 		gridError = true;
@@ -148,12 +149,12 @@
 </script>
 
 <!-- We always attempt to load the grid image -->
-<image 
-	href={gridSrc} 
-	x="0" 
-	y="0" 
-	width="950" 
-	height="950" 
+<image
+	href={gridSrc}
+	x="0"
+	y="0"
+	width="950"
+	height="950"
 	preserveAspectRatio="none"
 	on:error={handleImageError}
 />
