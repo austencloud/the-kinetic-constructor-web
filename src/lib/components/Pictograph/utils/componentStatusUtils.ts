@@ -1,10 +1,9 @@
 import type { RenderStage } from '../constants/trackingConstants';
-import type {
-	ComponentLoadingStatus,
-	ComponentPositioningStatus
-} from '../constants/trackingConstants';
+import type { ComponentLoadingStatus, ComponentPositioningStatus } from '../constants/trackingConstants';
 
-export function checkAllComponentsLoaded(componentLoading: ComponentLoadingStatus): boolean {
+export function checkAllComponentsLoaded(
+	componentLoading: ComponentLoadingStatus
+): boolean {
 	return Object.values(componentLoading).every((isLoaded) => isLoaded === true);
 }
 
@@ -27,10 +26,7 @@ export function determineNextStage(
 		if (currentStage === 'grid_ready' || currentStage === 'loading') {
 			return 'components_ready';
 		}
-		if (currentStage === 'components_ready') {
-			return 'positioning'; // Transition to positioning instead of staying in place
-		}
-		if (currentStage === 'positioning') {
+		if (currentStage === 'components_ready' || currentStage === 'positioning') {
 			return currentStage;
 		}
 	}
@@ -50,13 +46,9 @@ export function handleComponentError(
 
 	if (componentKey in updatedStatus) {
 		updatedStatus[componentKey] = true;
-		console.warn(
-			`🚦 ComponentStatusUtil: Marked '${componentKey}' as loaded after an error to allow progression.`
-		);
+		console.warn(`🚦 ComponentStatusUtil: Marked '${componentKey}' as loaded after an error to allow progression.`);
 	} else {
-		console.error(
-			`❌ ComponentStatusUtil: Tried to handle error for unknown component key: ${componentKey}`
-		);
+		console.error(`❌ ComponentStatusUtil: Tried to handle error for unknown component key: ${componentKey}`);
 	}
 	return updatedStatus;
 }
