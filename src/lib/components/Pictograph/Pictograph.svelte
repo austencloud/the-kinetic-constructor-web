@@ -1,340 +1,352 @@
 <script lang="ts">
-	import { onMount, onDestroy, createEventDispatcher, tick } from 'svelte';
-	import { get, writable, type Writable, derived } from 'svelte/store';
-
-	import type { PictographData } from '$lib/types/PictographData.js';
-	import type { PropData } from '../objects/Prop/PropData';
-	import type { ArrowData } from '../objects/Arrow/ArrowData';
-	import type { GridData } from '../objects/Grid/GridData';
-	import {
-		type RenderStage,
-		type ComponentLoadingStatus,
-		type ComponentPositioningStatus
-	} from './constants/trackingConstants';
-
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import type { SvelteComponent } from 'svelte';
+	import { get, type Writable } from 'svelte/store';
+	
+	import type { PictographData } from '$lib/types/PictographData';
+	import { createPictographContext } from './context/PictographContext';
+	import { RenderState, RenderEvent, getStateMachine } from './utils/RenderStateMachine';
+	import { Logger } from '$lib/utils/Logger';
+	
 	import PictographContent from './components/PictographContent.svelte';
-
-	import { PictographInitializer } from './core/PictographInitializer';
-	import { PictographManagers } from './core/PictographManagers';
-	import type { PictographElementStores } from './core/PictographElements';
-
-	import { PictographLifecycleService } from './services/lifecycle/PictographLifecycleService';
-	import { PictographValidationService } from './services/validation/PictographValidationService';
-	import { PictographPositioningService } from './services/positioning/PictographPositioningService';
-	import { PictographComponentStatusService } from './services/status/PictographComponentStatusService';
-
+	import ErrorBoundary from './components/ErrorBoundary.svelte';
+	import FallbackErrorView from './components/FallbackErrorView.svelte';
+	
+	// Props
 	export let pictographDataStore: Writable<PictographData>;
 	export let onClick: (() => void) | undefined = undefined;
 	export let debug: boolean = false;
-
+	export let showDebugOverlay: boolean = false;
+	
+	// Initialize logger
+	const logger = new Logger('Pictograph');
+	
+	// Initialize state machine first - before trying to use it
+	const stateMachine = getStateMachine();
+	
+	// Define state helper functions before passing to context or components
+	const isLoading = () => stateMachine.isInState(
+	  RenderState.INITIALIZING, 
+	  RenderState.LOADING, 
+	  RenderState.GRID_READY
+	);
+	
+	const isError = () => stateMachine.isInState(RenderState.ERROR, RenderState.TIMEOUT);
+	
+	const isComplete = () => stateMachine.isInState(RenderState.COMPLETE);
+	
+	// Set up event dispatcher for parent components
 	const dispatch = createEventDispatcher<{
-		loaded: {
-			incompleteData?: boolean;
-			timedOut?: boolean;
-			error?: boolean;
-			message?: string;
-			[key: string]: any;
-		};
-		error: { source: string; error?: any; message?: string };
+	  stateChanged: { state: RenderState, prevState: RenderState, event: RenderEvent };
+	  loaded: { 
+		incompleteData?: boolean; 
+		timedOut?: boolean; 
+		error?: boolean; 
+		message?: string; 
+		[key: string]: any 
+	  };
+	  error: { 
+		source: string; 
+		error?: any; 
+		message?: string 
+	  };
 	}>();
-
-	let stage: RenderStage = 'initializing';
-	let initializationAttempted = false;
-	let initializationSucceeded = false;
-
-	let initializer: PictographInitializer | null = null;
-	let elementStores: Writable<PictographElementStores> | null = null;
-	let pictographManagers: PictographManagers | null = null;
-
-	const lifecycleService = new PictographLifecycleService(
-		pictographDataStore,
-		(newStage) => {
-			stage = newStage;
-		},
-		(eventData) => dispatch('loaded', eventData),
-		(eventData) => dispatch('error', eventData),
-		debug
-	);
-
-	const validationService = new PictographValidationService(pictographDataStore, debug);
-
-	const positioningService = new PictographPositioningService(debug);
-
-	const componentStatusService = new PictographComponentStatusService(
-		() => stage,
-		(newStage) => {
-			stage = newStage;
-		},
-		() => {
-			void triggerPositioning();
-		},
-		() => {
-			dispatch('loaded', { completed: true });
-		},
-		debug
-	);
-
-	let redPropStore = writable<PropData | null>(null);
-	let bluePropStore = writable<PropData | null>(null);
-	let redArrowStore = writable<ArrowData | null>(null);
-	let blueArrowStore = writable<ArrowData | null>(null);
-
-	$: redProp = $redPropStore;
-	$: blueProp = $bluePropStore;
-	$: redArrow = $redArrowStore;
-	$: blueArrow = $blueArrowStore;
-
-	onMount(() => {
-		if (debug)
-			console.log(`🚀 [${get(pictographDataStore)?.letter || 'NoLetter'}] Pictograph Mounted`);
-
-		lifecycleService.startInitialization(initializeCoreComponents);
-
-		return () => {
-			if (debug)
-				console.log(`🧹 [${get(pictographDataStore)?.letter || 'NoLetter'}] Pictograph Destroyed`);
-			lifecycleService.cleanup();
-		};
-	});
-
-	async function initializeCoreComponents(): Promise<void> {
-		if (initializationAttempted) {
-			if (debug) console.log('ℹ️ Initialization already attempted, skipping.');
-			return;
+	
+	// Create context for child components AFTER state machine is initialized
+	const context = createPictographContext(pictographDataStore, stateMachine, debug);
+	
+	// Store references
+	const { redPropStore, bluePropStore, redArrowStore, blueArrowStore } = context;
+	
+	// Reactive derived values
+	$: letter = get(pictographDataStore)?.letter;
+	$: renderState = stateMachine.getState();
+	
+	// Setup state machine listener
+	let unsubscribeFromStateChange: (() => void) | null = null;
+	
+	function setupStateChangeListener() {
+	  if (unsubscribeFromStateChange) {
+		unsubscribeFromStateChange();
+	  }
+	  
+	  unsubscribeFromStateChange = stateMachine.onStateChange((newState, prevState, event, payload) => {
+		logger.debug(`State changed: ${prevState.toUpperCase()} → ${newState.toUpperCase()} (${event.toUpperCase()})`);
+		
+		// Dispatch event to parent
+		dispatch('stateChanged', { state: newState, prevState, event });
+		
+		// Handle specific state transitions
+		if (newState === RenderState.COMPLETE) {
+		  handleComplete(event, payload);
+		} else if (newState === RenderState.ERROR) {
+		  handleError(event, payload);
+		} else if (newState === RenderState.TIMEOUT) {
+		  handleTimeout(event, payload);
 		}
-		initializationAttempted = true;
-		if (debug)
-			console.log(
-				`🛠️ [${get(pictographDataStore)?.letter || 'NoLetter'}] Initializing Core Components...`
-			);
-
-		try {
-			initializer = new PictographInitializer(pictographDataStore);
-			elementStores = initializer.elements;
-
-			redPropStore = get(elementStores).redPropData;
-			bluePropStore = get(elementStores).bluePropData;
-			redArrowStore = get(elementStores).redArrowData;
-			blueArrowStore = get(elementStores).blueArrowData;
-
-			await initializer.initialize();
-
-			if (initializer.hasIncompleteData) {
-				lifecycleService.handleIncompleteData();
-				initializationSucceeded = false;
-				return;
-			} else {
-				lifecycleService.handleInitializationSuccess();
-				initializationSucceeded = true;
-			}
-
-			pictographManagers = new PictographManagers(pictographDataStore);
-			await pictographManagers.initializePlacementManagers();
-			if (debug)
-				console.log(`✅ [${get(pictographDataStore)?.letter || 'NoLetter'}] Managers Initialized`);
-		} catch (error) {
-			console.error(
-				`❌ [${get(pictographDataStore)?.letter || 'NoLetter'}] Core Component Initialization Failed:`,
-				error
-			);
-			initializationSucceeded = false;
-			dispatch('error', { source: 'core_initialization', error });
-			stage = 'complete';
-			dispatch('loaded', { error: true, message: 'Core initialization failed' });
-		}
+	  });
 	}
-
-	function handleGridDataReady(gridData: GridData) {
-		if (debug)
-			console.log(
-				`🔌 [${get(pictographDataStore)?.letter || 'NoLetter'}] Grid Ready Event Received`
-			);
-		componentStatusService.updateComponentStatus('grid', 'loading', true);
-		lifecycleService.handleGridDataReady(gridData, initializeCoreComponents);
+	
+	/**
+	 * Handles completion events
+	 */
+	function handleComplete(event: RenderEvent, payload?: any) {
+	  logger.info('Pictograph rendering complete');
+	  
+	  const loadedEvent: { [key: string]: any } = { 
+		completed: true,
+		timeToComplete: stateMachine.getTimeInCurrentState()
+	  };
+	  
+	  if (event === RenderEvent.INCOMPLETE_DATA) {
+		loadedEvent.incompleteData = true;
+	  }
+	  
+	  if (payload) {
+		Object.assign(loadedEvent, payload);
+	  }
+	  
+	  dispatch('loaded', loadedEvent);
 	}
-
-	function handlePropLoaded(color: 'red' | 'blue') {
-		const key = `${color}Prop` as keyof ComponentLoadingStatus;
-		if (debug)
-			console.log(`🎨 [${get(pictographDataStore)?.letter || 'NoLetter'}] Prop Loaded: ${color}`);
-		componentStatusService.updateComponentStatus(key, 'loading', true);
+	
+	/**
+	 * Handles error events
+	 */
+	function handleError(event: RenderEvent, payload?: any) {
+	  const error = payload?.error;
+	  const source = payload?.source || 'unknown';
+	  const message = error instanceof Error ? error.message : 'An unknown error occurred';
+	  
+	  logger.error(`Error in ${source}: ${message}`, error);
+	  
+	  dispatch('error', {
+		source,
+		error,
+		message
+	  });
+	  
+	  dispatch('loaded', { 
+		error: true, 
+		message,
+		source
+	  });
 	}
-
-	function handleArrowLoaded(color: 'red' | 'blue') {
-		const key = `${color}Arrow` as keyof ComponentLoadingStatus;
-		if (debug)
-			console.log(`→ [${get(pictographDataStore)?.letter || 'NoLetter'}] Arrow Loaded: ${color}`);
-		componentStatusService.updateComponentStatus(key, 'loading', true);
+	
+	/**
+	 * Handles timeout events
+	 */
+	function handleTimeout(event: RenderEvent, payload?: any) {
+	  logger.warn('Pictograph rendering timed out');
+	  
+	  dispatch('error', {
+		source: 'timeout',
+		message: 'Rendering timed out'
+	  });
+	  
+	  dispatch('loaded', { 
+		timedOut: true,
+		timeoutAfter: stateMachine.getTimeInCurrentState()
+	  });
 	}
-
-	function handlePictographComponentError(componentKey: keyof ComponentLoadingStatus, error?: any) {
-		console.error(
-			`🔥 [${get(pictographDataStore)?.letter || 'NoLetter'}] Component Error: ${componentKey}`,
-			error
-		);
-		componentStatusService.reportComponentError(componentKey, error);
-		dispatch('error', { source: `component_${componentKey}`, error });
+	
+	/**
+	 * Handle errors captured by error boundary
+	 */
+	function handleCapturedError(event: CustomEvent) {
+	  const { error, info } = event.detail;
+	  stateMachine.transition(RenderEvent.ERROR_OCCURRED, { 
+		error, 
+		source: 'component_render',
+		message: info
+	  });
 	}
-
-	async function triggerPositioning() {
-		if (!initializationSucceeded) {
-			if (debug)
-				console.warn(
-					`🚫 [${get(pictographDataStore)?.letter || 'NoLetter'}] Skipping positioning: Initializatio n did not succeed or was incomplete.`
-				);
-			stage = 'complete';
-			dispatch('loaded', { positioningSkipped: true });
-			return;
-		}
-		if (debug)
-			console.log(
-				`📐 [${get(pictographDataStore)?.letter || 'NoLetter'}] Triggering Positioning...`
-			);
-
-		const updateStatusCallback = (
-			component: string | number | symbol,
-			isComplete: boolean
-		) => {
-			componentStatusService.updateComponentStatus(component as "redProp" | "blueProp" | "redArrow" | "blueArrow", 'positioning', isComplete);
-		};
-
-		try {
-			const positionedProps = await positioningService.updatePlacements(
-				pictographManagers,
-				redProp,
-				blueProp,
-				redArrow,
-				blueArrow,
-				updateStatusCallback,
-				(arrow) => validationService.validateArrowDataForPositioning(arrow),
-				isDataCompleteForRendering,
-				(newStage) => {
-					stage = newStage;
-				},
-				(data) => dispatch('loaded', data)
-			);
-
-			if (positionedProps.redProp) $redPropStore = positionedProps.redProp;
-			if (positionedProps.blueProp) $bluePropStore = positionedProps.blueProp;
-
-			if (debug)
-				console.log(
-					`✅ [${get(pictographDataStore)?.letter || 'NoLetter'}] Positioning process completed.`
-				);
-		} catch (error) {
-			console.error(
-				`❌ [${get(pictographDataStore)?.letter || 'NoLetter'}] Error during triggerPositioning:`,
-				error
-			);
-			dispatch('error', { source: 'positioning_orchestration', error });
-			stage = 'complete';
-			dispatch('loaded', { error: true, message: 'Positioning failed' });
-		}
-	}
-
-	function isDataCompleteForRendering(): boolean {
-		const isComplete = validationService.isDataCompleteForRendering(
-			redProp,
-			blueProp,
-			redArrow,
-			blueArrow,
-			stage,
-			initializationAttempted
-		);
-		return isComplete;
-	}
-
+	
+	/**
+	 * Handle click events on the pictograph wrapper
+	 */
 	function handleWrapperClick() {
-		if (onClick) {
-			onClick();
-		}
+	  if (onClick) {
+		onClick();
+	  }
 	}
-</script>
-
-<div
-	class="pictograph-wrapper"
-	on:click={handleWrapperClick}
-	on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick && onClick()}
-	role={onClick ? 'button' : undefined}
-	tabIndex={onClick ? 0 : undefined}
-	aria-label="Pictograph container for letter {get(pictographDataStore)?.letter || 'N/A'}"
->
-	<svg
+	
+	/**
+	 * Try to recover from errors
+	 */
+	function recoverFromError() {
+	  logger.info('Attempting to recover from error');
+	  context.reset();
+	  stateMachine.transition(RenderEvent.RETRY);
+	}
+	
+	/**
+	 * Initialize the pictograph on mount
+	 */
+	onMount(() => {
+	  // Set up state machine listener first
+	  setupStateChangeListener();
+	  
+	  // Start initialization process
+	  (async () => {
+		logger.debug(`Pictograph mounted for letter: ${letter || 'N/A'}`);
+		
+		// Start the initialization process
+		stateMachine.transition(RenderEvent.INIT_START);
+		
+		// Initialize context
+		try {
+		  await context.initialize();
+		} catch (error) {
+		  // Error will be handled by the state machine through handleError
+		  logger.error('Failed to initialize pictograph', error);
+		}
+	  })();
+	  
+	  return () => {
+		// Cleanup on component unmount
+		logger.debug('Pictograph unmounting, cleaning up');
+		if (unsubscribeFromStateChange) {
+		  unsubscribeFromStateChange();
+		  unsubscribeFromStateChange = null;
+		}
+	  };
+	});
+  </script>
+  
+  <ErrorBoundary 
+	on:error={handleCapturedError}
+	resetCondition={pictographDataStore}
+	fallback={FallbackErrorView as unknown as typeof SvelteComponent}
+  >
+	<div
+	  class="pictograph-wrapper"
+	  class:is-loading={isLoading()}
+	  class:is-error={isError()}
+	  class:is-complete={isComplete()}
+	  on:click={handleWrapperClick}
+	  on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick && onClick()}
+	  role={onClick ? 'button' : undefined}
+	  tabIndex={onClick ? 0 : undefined}
+	  aria-label="Pictograph visualization for {letter || 'unknown'} letter"
+	  aria-busy={isLoading()}
+	>
+	  <svg
 		class="pictograph"
 		viewBox="0 0 950 950"
 		xmlns="http://www.w3.org/2000/svg"
 		role="img"
-		aria-label="Pictograph visualization for letter {get(pictographDataStore)?.letter || 'N/A'}"
-	>
-		<PictographContent
-			{pictographDataStore}
-			{stage}
-			{debug}
-			{isDataCompleteForRendering}
-			{redProp}
-			{blueProp}
-			{redArrow}
-			{blueArrow}
-			{pictographManagers}
-			onGridDataReady={handleGridDataReady}
-			onPropLoaded={handlePropLoaded}
-			onArrowLoaded={handleArrowLoaded}
-			onComponentError={handlePictographComponentError}
+	  >
+		<title>Visual representation of letter {letter || 'unknown'}</title>
+		<desc>Pictograph visualization showing the motion pattern for the letter {letter || 'unknown'}</desc>
+		
+		<PictographContent 
+		  state={renderState}
+		  {showDebugOverlay}
+		  {isLoading}
 		/>
-	</svg>
-</div>
-
-<style>
-    .pictograph-wrapper {
-        width: 100%;
-        height: 100%;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Always set pointer cursor on hover */
-    .pictograph-wrapper:hover {
-        cursor: pointer;
-    }
-
-    .pictograph {
-        width: 100%;
-        height: 100%;
-        max-width: 100%;
-        max-height: 100%;
-        display: block;
-        background-color: white;
-        transition: transform 0.1s ease-in-out;
-        transform: scale(1);
-        z-index: 1;
-        position: relative;
-        border: 1px solid #ccc;
-        aspect-ratio: 1 / 1;
-        margin: auto;
-        overflow: visible;
-        transform-origin: center center;
-    }
-
-    .pictograph-wrapper:hover .pictograph {
-        transform: scale(1.05);
-        z-index: 4;
-        border: 4px solid gold;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    }
-
-    .pictograph-wrapper:active .pictograph {
-        transform: scale(1);
-        transition-duration: 0.05s;
-    }
-
-    .pictograph-wrapper:focus-visible {
-        outline: none;
-    }
-
-    .pictograph-wrapper:focus-visible .pictograph {
-        outline: 3px solid #4299e1;
-        outline-offset: 2px;
-    }
-</style>
+	  </svg>
+	  
+	  {#if debug}
+		<div class="debug-panel">
+		  <p>Letter: {letter || 'N/A'}</p>
+		  <p>State: {renderState}</p>
+		  <p>Time: {stateMachine.getTimeInCurrentState()}ms</p>
+		  {#if isError()}
+			<button on:click={recoverFromError}>Retry</button>
+		  {/if}
+		</div>
+	  {/if}
+	</div>
+  </ErrorBoundary>
+  
+  <style>
+	.pictograph-wrapper {
+	  width: 100%;
+	  height: 100%;
+	  position: relative;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  transition: all 0.3s ease;
+	}
+  
+	.pictograph-wrapper:hover {
+	  cursor: pointer;
+	}
+	
+	.pictograph-wrapper.is-loading {
+	  background-color: rgba(245, 245, 245, 0.5);
+	}
+	
+	.pictograph-wrapper.is-error {
+	  background-color: rgba(254, 215, 215, 0.5);
+	}
+  
+	.pictograph {
+	  width: 100%;
+	  height: 100%;
+	  max-width: 100%;
+	  max-height: 100%;
+	  display: block;
+	  background-color: white;
+	  transition: transform 0.1s ease-in-out;
+	  transform: scale(1);
+	  z-index: 1;
+	  position: relative;
+	  border: 1px solid #ccc;
+	  aspect-ratio: 1 / 1;
+	  margin: auto;
+	  overflow: visible;
+	  transform-origin: center center;
+	}
+  
+	.pictograph-wrapper:hover .pictograph {
+	  transform: scale(1.05);
+	  z-index: 4;
+	  border: 4px solid gold;
+	  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+	}
+  
+	.pictograph-wrapper:active .pictograph {
+	  transform: scale(1);
+	  transition-duration: 0.05s;
+	}
+  
+	.pictograph-wrapper:focus-visible {
+	  outline: none;
+	}
+  
+	.pictograph-wrapper:focus-visible .pictograph {
+	  outline: 3px solid #4299e1;
+	  outline-offset: 2px;
+	}
+	
+	.debug-panel {
+	  position: absolute;
+	  top: 10px;
+	  right: 10px;
+	  background-color: rgba(0, 0, 0, 0.7);
+	  color: white;
+	  padding: 10px;
+	  border-radius: 4px;
+	  font-family: monospace;
+	  font-size: 12px;
+	  z-index: 100;
+	  pointer-events: none;
+	  max-width: 300px;
+	}
+	
+	.debug-panel p {
+	  margin: 5px 0;
+	}
+	
+	.debug-panel button {
+	  pointer-events: auto;
+	  background-color: #4299e1;
+	  color: white;
+	  border: none;
+	  padding: 4px 8px;
+	  border-radius: 4px;
+	  cursor: pointer;
+	}
+  </style>

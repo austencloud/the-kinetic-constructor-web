@@ -12,7 +12,7 @@ export class PictographLifecycleService {
 	private retryCount = 0;
 	private safetyTimer: number | null = null;
 	private logger: Logger;
-	private readonly SAFETY_TIMEOUT = 5000;
+	private readonly SAFETY_TIMEOUT = 150;
 
 	constructor(
 		private pictographDataStore: Writable<PictographData>,

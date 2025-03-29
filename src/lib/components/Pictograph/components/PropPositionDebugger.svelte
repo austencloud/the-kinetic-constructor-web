@@ -28,7 +28,9 @@
 
 		if (redProp?.loc) {
 			redPointName = `${redProp.loc}_${gridMode}_hand_point`;
-			redPointExists = !!(gridData.allHandPointsNormal && gridData.allHandPointsNormal[redPointName]);
+			redPointExists = !!(
+				gridData.allHandPointsNormal && gridData.allHandPointsNormal[redPointName]
+			);
 			if (redPointExists && gridData.allHandPointsNormal[redPointName]?.coordinates) {
 				redPointCoords = gridData.allHandPointsNormal[redPointName].coordinates!;
 			}
@@ -36,7 +38,9 @@
 
 		if (blueProp?.loc) {
 			bluePointName = `${blueProp.loc}_${gridMode}_hand_point`;
-			bluePointExists = !!(gridData.allHandPointsNormal && gridData.allHandPointsNormal[bluePointName]);
+			bluePointExists = !!(
+				gridData.allHandPointsNormal && gridData.allHandPointsNormal[bluePointName]
+			);
 			if (bluePointExists && gridData.allHandPointsNormal[bluePointName]?.coordinates) {
 				bluePointCoords = gridData.allHandPointsNormal[bluePointName].coordinates!;
 			}
