@@ -13,7 +13,7 @@
 	let checker = propData ? new PropChecker(propData) : null;
 	let isLoaded = false;
 	let hasErrored = false;
-	let loadTimeout: number;
+	let loadTimeout: ReturnType<typeof setTimeout>;
 	let rotAngle = 0;
 
 	const dispatch = createEventDispatcher();

@@ -1,12 +1,10 @@
 <script lang="ts">
 	import type { PropData } from "../../objects/Prop/PropData";
-	import type { PictographManagers } from "../core/PictographManagers";
 
 
 	export let redProp: PropData | null = null;
 	export let blueProp: PropData | null = null;
 	export let stage: string = '';
-	export let pictographManagers: PictographManagers | null = null;
 	export let isDataComplete: () => boolean;
 	export let visible: boolean = true;
 </script>
@@ -50,7 +48,5 @@
 		Data Complete: {isDataComplete() ? 'Yes' : 'No'}
 	</text>
 
-	<text x="10" y="60" font-size="12" fill="white" stroke="black" stroke-width="0.5">
-		Beta active: {pictographManagers?.checker?.endsWithBeta() ? 'Yes' : 'No'}
-	</text>
+
 {/if}

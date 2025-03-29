@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PictographChecker } from '../src/lib/components/Pictograph/PictographChecker';
 import { CLOCK, COUNTER, IN, OUT } from '$lib/types/Constants';
 import type { PictographData } from '$lib/types/PictographData';
 import { LetterConditions } from '../src/lib/components/Pictograph/LetterConditions';
 import { Letter } from '$lib/types/Letter';
+import { PictographChecker } from '$lib/components/Pictograph/PictographChecker';
 
 // Mock for LetterUtils
 vi.mock('$lib/utils/LetterUtils', () => ({
