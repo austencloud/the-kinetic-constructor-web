@@ -34,7 +34,6 @@
 
 	async function loadSvg() {
 		try {
-			console.debug('Loading SVG...');
 			loadTimeout = setTimeout(() => {
 				if (!isLoaded) {
 					isLoaded = true;
@@ -54,10 +53,8 @@
 
 			clearTimeout(loadTimeout);
 			isLoaded = true;
-			console.debug('✅ SVG loaded successfully');
 			dispatch('loaded');
 		} catch (error: any) {
-			console.debug(`❌ Prop load failed: ${error}`);
 			hasErrored = true;
 
 			svgData = {

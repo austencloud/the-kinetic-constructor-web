@@ -42,26 +42,20 @@ export class DefaultPropPositioner {
 	}
 
 	public updateCoords(prop: PropData): void {
-		if (this.debugMode) {
-			console.debug(`updateCoords called for prop: ${prop.loc}`);
-		}
+
 		const pointName = `${prop.loc}_${this.gridMode}_hand_point`;
 		const gridPoint = this.getGridPoint(pointName);
 
 		if (gridPoint && gridPoint.coordinates) {
 			prop.coords = gridPoint.coordinates;
-			if (this.debugMode) {
-				console.debug(`Setting coordinates from gridPoint: (${prop.coords.x}, ${prop.coords.y})`);
-			}
+
 		} else {
 			const fallback = this.getFallbackCoordinates(prop.loc);
 			console.warn(
 				`⚠️ Grid point "${pointName}" not found, using fallback: (${fallback.x}, ${fallback.y})`
 			);
 			prop.coords = fallback;
-			if (this.debugMode) {
-				console.debug(`Setting coordinates from fallback: (${prop.coords.x}, ${prop.coords.y})`);
-			}
+
 		}
 	}
 
