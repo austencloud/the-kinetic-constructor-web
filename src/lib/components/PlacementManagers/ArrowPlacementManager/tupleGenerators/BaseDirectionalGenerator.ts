@@ -19,7 +19,6 @@ export abstract class BaseDirectionalGenerator {
 
 	protected _get_grid_mode(): GridMode {
 		const mode = this.motion.gridMode || DIAMOND;
-		console.log('grid mode:', mode);
 		if (mode !== BOX && mode !== DIAMOND) return DIAMOND;
 		return mode;
 	}

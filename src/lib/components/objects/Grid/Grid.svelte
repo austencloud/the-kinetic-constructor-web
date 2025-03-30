@@ -86,7 +86,6 @@
 
 	onMount(async () => {
 		try {
-			console.log('Initializing grid...');
 			await tick(); // Wait for DOM to render
 
 			if (!circleCoordinates || !circleCoordinates[gridMode]) {
@@ -102,7 +101,7 @@
 						{ coordinates: parseCoordinates(value) }
 					])
 				);
-			console.log('Mode data:', modeData);
+			('Mode data:', modeData);
 			// Convert raw data into structured `GridData`
 			const gridData: GridData = {
 				allHandPointsStrict: parsePoints(modeData.hand_points.strict),

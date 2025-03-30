@@ -15,6 +15,9 @@
 	import { PictographChecker } from './PictographChecker';
 	import { PictographComponentLoader } from './services/PictographComponentLoader';
 	import { PictographComponentPositioner } from './services/PictographComponentPositioner';
+	import { PictographGetter } from './PictographGetter';
+	import ArrowLocationManager from '../objects/Arrow/ArrowLocationManager/ArrowLocationManager';
+	import ArrowRotAngleManager from '../objects/Arrow/ArrowRotAngleManager/ArrowRotAngleManager';
 
 	export let pictographDataStore: Writable<PictographData>;
 	export let onClick: (() => void) | undefined = undefined;
@@ -40,9 +43,11 @@
 
 	let componentLoader: PictographComponentLoader;
 	let componentPositioner: PictographComponentPositioner;
+	let pictographGetter: PictographGetter;
 	$: pictographChecker = new PictographChecker(get(pictographDataStore));
 
 	onMount(() => {
+		pictographGetter = new PictographGetter(get(pictographDataStore));
 		componentLoader = new PictographComponentLoader(pictographDataStore);
 		componentPositioner = new PictographComponentPositioner(pictographDataStore);
 
@@ -121,6 +126,7 @@
 			if (redPropData) componentPositioner.positionProp(redPropData, gridData);
 			if (bluePropData) componentPositioner.positionProp(bluePropData, gridData);
 
+			// Apply beta positioning if needed
 			if (redPropData && bluePropData && pictographChecker.endsWithBeta()) {
 				try {
 					new BetaPropPositioner(get(pictographDataStore)).reposition([redPropData, bluePropData]);
@@ -129,11 +135,48 @@
 				}
 			}
 
-			if (redArrowData && redPropData && blueArrowData && bluePropData)
-				componentPositioner.positionArrows(redArrowData, blueArrowData, gridData, redPropData);
-			console.log('redArrowData', redArrowData);
-			console.log('blueArrowData', blueArrowData);	
+			// Position arrows using the existing positionArrows method
+			const data = get(pictographDataStore);
 
+			// Update arrow locations first using the ArrowLocationManager
+			if (redArrowData && data.redMotion) {
+				try {
+					const locationManager = new ArrowLocationManager(pictographGetter);
+					const arrowLoc = locationManager.getArrowLocation(data.redMotion);
+					if (arrowLoc) {
+						redArrowData.loc = arrowLoc;
+
+						// Calculate and set the rotation angle
+						const rotAngleManager = new ArrowRotAngleManager();
+						redArrowData.rotAngle = rotAngleManager.updateRotation(data.redMotion, arrowLoc);
+					}
+				} catch (error) {
+					console.warn(`Arrow location calculation error (red):`, error);
+				}
+			}
+
+			if (blueArrowData && data.blueMotion) {
+				try {
+					const locationManager = new ArrowLocationManager(pictographGetter);
+					const arrowLoc = locationManager.getArrowLocation(data.blueMotion);
+					if (arrowLoc) {
+						blueArrowData.loc = arrowLoc;
+
+						// Calculate and set the rotation angle
+						const rotAngleManager = new ArrowRotAngleManager();
+						blueArrowData.rotAngle = rotAngleManager.updateRotation(data.blueMotion, arrowLoc);
+					}
+				} catch (error) {
+					console.warn(`Arrow location calculation error (blue):`, error);
+				}
+			}
+
+			// Now position the arrows using the existing method
+			if (redArrowData && blueArrowData && redPropData) {
+				componentPositioner.positionArrows(redArrowData, blueArrowData, gridData, redPropData);
+			}
+
+			// Update the store with the positioned components
 			pictographDataStore.update((store) => ({
 				...store,
 				redPropData,

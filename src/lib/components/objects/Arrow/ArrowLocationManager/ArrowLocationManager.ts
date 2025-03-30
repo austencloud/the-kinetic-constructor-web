@@ -3,9 +3,9 @@ import DashLocationCalculator from './DashLocationCalculator';
 import ShiftLocationCalculator from './ShiftLocationCalculator';
 import StaticLocationCalculator from './StaticLocationCalculator';
 import { Motion } from '../../../objects/Motion/Motion';
-import type { PictographGetter } from '../../PictographGetter'; // <== import
 import type { MotionType } from '../../../../types/Types';
 import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';
+import type { PictographGetter } from '$lib/components/Pictograph/PictographGetter';
 
 export default class ArrowLocationManager {
 	getter: PictographGetter;

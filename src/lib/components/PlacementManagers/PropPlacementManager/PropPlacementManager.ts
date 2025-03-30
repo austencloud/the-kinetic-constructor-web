@@ -80,9 +80,7 @@ export class PropPlacementManager {
 			this.betaPositioner.reposition(props);
 
 			// Add this block right here
-			props.forEach((prop) => {
-				console.log(`Prop ${prop.id} final position: (${prop.coords.x}, ${prop.coords.y})`);
-			});
+
 
 			// Store coordinates after beta positioning
 			const afterBetaCoords = props.map((prop) => ({
@@ -90,17 +88,9 @@ export class PropPlacementManager {
 				coords: { ...prop.coords }
 			}));
 
-			console.log('📊 Positioning changes:', {
-				initial: initialCoords,
-				afterDefault: afterDefaultCoords,
-				afterBeta: afterBetaCoords
-			});
 
-			props.forEach((prop) => {
-				console.log(
-					`🚀 Beta position applied for ${prop.color} prop: (${prop.coords.x}, ${prop.coords.y})`
-				);
-			});
+
+
 		}
 
 		// Validate final positions

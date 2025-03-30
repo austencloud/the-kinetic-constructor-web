@@ -14,7 +14,6 @@ export class DirectionalTupleManager {
 		this.generator = this._selectGenerator();
 	}
 	private _selectGenerator(): BaseDirectionalGenerator | null {
-		console.log('motion:', this.motion);
 		switch (this.motion.motionType) {
 			case PRO:
 			case ANTI:
@@ -32,11 +31,9 @@ export class DirectionalTupleManager {
 
 	public generateDirectionalTuples(x: number, y: number): Array<[number, number]> {
 		this.generator = this._selectGenerator();
-		console.log('Selected generator:', this.generator);
 		if (!this.generator) return [];
 		
 		const tuples = this.generator.generateDirectionalTuples(x, y);
-		console.log('Generated directional tuples:', tuples);
 		return tuples;
 	}
 }

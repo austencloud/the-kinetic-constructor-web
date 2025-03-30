@@ -11,7 +11,6 @@ export class BetaPropPositioner {
 	}
 
 	public reposition(props: PropData[]): void {
-		console.log('Repositioning beta prop...');
 		if (!props || props.length === 0) {
 			console.warn('No props to reposition');
 			return;
@@ -27,19 +26,13 @@ export class BetaPropPositioner {
 		// Apply repositioning to each prop
 		props.forEach((prop) => {
 			const direction = this.dirCalculator.getDirection(prop);
-			console.log(`Direction for ${prop.color} prop: ${direction}`);
 
 			if (direction) {
 				const oldCoords = { ...prop.coords };
 				const newCoords = this.calculateNewCoords(oldCoords, direction);
-				console.log(`DEBUG: ${prop.id} new coords calculation:`, newCoords);
 				prop.coords = JSON.parse(JSON.stringify(newCoords));
 
-				console.log(
-					`Repositioned prop: ${prop.id}, Old Coords: ${JSON.stringify(
-						oldCoords
-					)}, New Coords: ${JSON.stringify(prop.coords)}, Direction: ${direction}`
-				);
+
 			} else {
 				console.warn(`No direction determined for ${prop.color} prop`);
 			}
@@ -52,9 +45,6 @@ export class BetaPropPositioner {
 			coords: { ...prop.coords }
 		}));
 
-		console.log('Beta repositioning summary:');
-		console.log('- Original:', originalPositions);
-		console.log('- New:', newPositions);
 	}
 
 	private calculateNewCoords(

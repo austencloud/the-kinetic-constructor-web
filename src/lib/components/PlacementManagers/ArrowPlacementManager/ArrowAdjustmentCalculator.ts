@@ -19,24 +19,19 @@ export class ArrowAdjustmentCalculator {
 		if (!this.pictographData.letter) {
 			return { x: 0, y: 0 };
 		}
-		console.log('pictographData:', this.pictographData);
 		const [x, y] = this.defaultPositioner.getDefaultAdjustment(arrow);
 		let directionalAdjustments: string | any[] = [];
 
-		// get the motion by looking at the pictographData to find either redMotionData from it or blueMotionData
 		const color = arrow.color;
 		if (color === 'red') {
 			let motion = this.pictographData.redMotionData;
-			console.log('motion:', motion);
 			const dtManager = new DirectionalTupleManager(motion);
 			const directionalAdjustments = dtManager.generateDirectionalTuples(x, y);
 		} else if (color === 'blue') {
 			let motion = this.pictographData.blueMotionData;
-			console.log('motion:', motion);
 			const dtManager = new DirectionalTupleManager(motion);
 			const directionalAdjustments = dtManager.generateDirectionalTuples(x, y);
 		}
-		console.log('directionalAdjustments:', directionalAdjustments);
 		if (!directionalAdjustments || directionalAdjustments.length === 0) {
 			return { x, y };
 		}

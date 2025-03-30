@@ -114,7 +114,6 @@ export class BetaPropDirectionCalculator {
 	constructor(private pictographData: PictographData) {}
 
 	getDirection(prop: PropData): Direction | null {
-		console.log('Getting direction for prop:', prop.id);
 		
 		// Get the associated motion data based on prop color
 		const motionData = this.getMotionDataForProp(prop);
@@ -123,7 +122,6 @@ export class BetaPropDirectionCalculator {
 			return null;
 		}
 		
-		console.log('Motion type: ', motionData.motionType);
 		if ([PRO, ANTI, FLOAT].includes(motionData.motionType)) {
 			return this.handleShiftMotion(prop, motionData);
 		}

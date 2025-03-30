@@ -28,6 +28,7 @@ export class ArrowInitialPosCalculator {
 
 	private getShiftCoords(arrow: ArrowData): { x: number; y: number } {
 		const pointName = `${arrow.loc}_${this.pictographData.gridMode || 'diamond'}_layer2_point`;
+		console.log('pointName', pointName);
 		let shiftCoord = this.getShiftCoordFromGrid(pointName);
 
 		if (!shiftCoord) {
