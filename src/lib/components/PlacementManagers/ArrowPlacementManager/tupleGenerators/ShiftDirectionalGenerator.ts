@@ -20,6 +20,7 @@ export class ShiftDirectionalGenerator extends BaseDirectionalGenerator {
 
 	public generateDirectionalTuples(x: number, y: number): Array<[number, number]> {
 		const gridMode = this._get_grid_mode(); // 'diamond' | 'box'
+		console.log('grid mode:', gridMode);
 		let directionalFn: (x: number, y: number) => Array<[number, number]>;
 
 		if (gridMode === DIAMOND) {

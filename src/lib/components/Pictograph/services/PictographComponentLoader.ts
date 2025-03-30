@@ -5,6 +5,7 @@ import type { PropData } from '$lib/components/objects/Prop/PropData';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 import type { Color } from '$lib/types/Types';
 import { PropType } from '$lib/types/Types';
+import type { MotionData } from '$lib/components/objects/Motion/MotionData';
 
 /**
  * Service class responsible for creating component data from motion data
@@ -15,7 +16,7 @@ export class PictographComponentLoader {
     /**
      * Creates prop data from motion data
      */
-    createPropFromMotion(motionData: any, color: Color): PropData {
+    createPropFromMotion(motionData: MotionData, color: Color): PropData {
         return {
             id: crypto.randomUUID(),
             motionId: motionData.id,

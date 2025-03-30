@@ -33,8 +33,9 @@ export class ArrowPlacementManager {
 	public updateArrowPlacements(arrows: ArrowData[]): void {
 		arrows.forEach((arrow) => {
 			const initialPos = this.initialPosCalculator.getInitialCoords(arrow);
+			console.log ('initialPos', initialPos);
 			const adjustment = this.adjustmentCalculator.getAdjustment(arrow);
-
+			console.log ('adjustment', adjustment);
 			arrow.coords = {
 				x: initialPos.x + adjustment.x,
 				y: initialPos.y + adjustment.y
@@ -42,4 +43,5 @@ export class ArrowPlacementManager {
 			// log the coords
 		});
 	}
+
 }
