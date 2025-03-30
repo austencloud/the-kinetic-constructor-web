@@ -16,7 +16,7 @@
 	let dataInitialized = false;
 
 	// Add a timeout to prevent infinite loading
-	let loadingTimeout: number;
+	let loadingTimeout: ReturnType<typeof setTimeout>;
 
 	const unsubscribe = pictographDataStore.subscribe((data) => {
 		if (!data || data.length === 0) {
