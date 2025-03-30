@@ -1,9 +1,11 @@
+// src/lib/components/objects/Arrow/Arrow.svelte
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
 	import type { ArrowData } from './ArrowData';
 	import type { ArrowSvgData } from '../../SvgManager/ArrowSvgData';
 	import { parseArrowSvg } from '../../SvgManager/parseArrowSvg';
 	import SvgManager from '../../SvgManager/SvgManager';
+	import { ArrowSvgLoader } from './services/ArrowSvgLoader';
 
 	export let arrowData: ArrowData;
 
@@ -12,20 +14,20 @@
 	let isLoaded = false;
 	let hasErrored = false;
 
-	const svgManager = new SvgManager();
-
-	// Create event dispatcher for load events
+	// Create event dispatcher for component events
 	const dispatch = createEventDispatcher();
-
-	// For tracking load state
-	let loadTimeout: number;
-
+	
+	// For tracking load timeout
+	let loadTimeout: NodeJS.Timeout;
+	
+	// Service instances
+	const svgManager = new SvgManager();
+	const svgLoader = new ArrowSvgLoader(svgManager);
 
 	// Load the SVG and set up its data
 	const loadArrowSvg = async () => {
 		try {
-
-			// Set a timeout to ensure we don't get stuck in loading state
+			// Set a timeout to ensure we don't hang in loading state
 			loadTimeout = setTimeout(() => {
 				if (!isLoaded) {
 					isLoaded = true;
@@ -33,48 +35,28 @@
 				}
 			}, 10);
 
-			const svgText = await svgManager.getArrowSvg(
-				arrowData.motionType, // ✅ Use stored motionType
-				arrowData.startOri, // ✅ Use stored startOri
-				arrowData.turns, // ✅ Use stored turns
-				arrowData.color
+			// Load the SVG using the loader service
+			const result = await svgLoader.loadSvg(
+				arrowData.motionType,
+				arrowData.startOri,
+				arrowData.turns,
+				arrowData.color,
+				arrowData.svgMirrored
 			);
-
-			if (!svgText?.includes('<svg')) {
-				throw new Error('Invalid SVG content: Missing <svg> element');
-			}
-
-			const originalSvgData = parseArrowSvg(svgText);
-
-			// Adjust center point if mirrored
-			const center = { ...originalSvgData.center };
-			if (arrowData.svgMirrored) {
-				center.x = originalSvgData.viewBox.width - center.x;
-			}
-
-			svgData = {
-				imageSrc: `data:image/svg+xml;base64,${btoa(svgText)}`,
-				viewBox: originalSvgData.viewBox,
-				center
-			};
+			
+			svgData = result.svgData;
 
 			// Clear timeout as we've loaded successfully
 			clearTimeout(loadTimeout);
 
-
-			// Mark as loaded immediately
+			// Mark as loaded and dispatch event
 			isLoaded = true;
 			dispatch('loaded');
 		} catch (error) {
 			hasErrored = true;
-
+			
 			// Use a fallback SVG for errors
-			svgData = {
-				imageSrc:
-					'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZiIgLz48dGV4dCB4PSIyMCIgeT0iNTAiIGZpbGw9IiNmMDAiPkVycm9yPC90ZXh0Pjwvc3ZnPg==',
-				viewBox: { x: 0, y: 0, width: 100, height: 100 },
-				center: { x: 50, y: 50 }
-			};
+			svgData = svgLoader.getFallbackSvgData();
 
 			// Even if we fail, mark as loaded so we don't block the UI
 			clearTimeout(loadTimeout);
@@ -84,9 +66,8 @@
 		}
 	};
 
-	// Trigger the SVG load when mounted or when properties change
+	// Trigger SVG load when mounted
 	onMount(() => {
-
 		if (arrowData.motionType) {
 			loadArrowSvg();
 		} else {
@@ -99,13 +80,16 @@
 		};
 	});
 
+	// Reactive statements
 	$: {
+		// Reload if motion type changes and not yet loaded
 		if (arrowData.motionType && !isLoaded && !hasErrored) {
 			loadArrowSvg();
 		}
 	}
 
 	$: if (svgData && (arrowData.coords || arrowData.rotAngle || arrowData.svgMirrored)) {
+		// Calculate transform for positioning and mirroring
 		const mirrorTransform = arrowData.svgMirrored ? `scale(-1, 1)` : '';
 
 		transform = `
@@ -115,14 +99,12 @@
 		`;
 	}
 
-	// Handle image load events
+	// Handle image events
 	function handleImageLoad() {
 		dispatch('imageLoaded');
 	}
 
-	// Handle image load errors
-	function handleImageError(e: Event) {
-		const errorEvent = e as ErrorEvent;
+	function handleImageError() {
 		dispatch('error', { message: 'Image failed to load' });
 	}
 </script>
