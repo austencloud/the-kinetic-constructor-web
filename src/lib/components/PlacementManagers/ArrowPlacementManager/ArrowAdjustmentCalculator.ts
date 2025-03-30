@@ -2,7 +2,7 @@
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 import type { DefaultArrowPositioner } from './DefaultArrowPositioner';
 import { QuadrantIndexHandler } from './QuadrantIndexHandler';
-import { DirectionalTupleManager } from './tupleGenerators/DirectionalTupleManager';
+import { DirectionalTupleManager } from './DirectionalTupleManager';
 import type { PictographData } from '$lib/types/PictographData';
 import type { GridData } from '$lib/components/objects/Grid/GridData';
 import type { Motion } from '$lib/components/objects/Motion/Motion';
