@@ -1,4 +1,5 @@
 import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData.js';
+import { beatsStore } from '$lib/stores/beatsStore';
 
 /**
  * Adds a new beat to the sequence.
