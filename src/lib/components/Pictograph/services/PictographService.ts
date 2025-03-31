@@ -11,7 +11,7 @@ import ArrowRotAngleManager from '$lib/components/objects/Arrow/ArrowRotAngleMan
 import ArrowLocationManager from '$lib/components/objects/Arrow/ArrowLocationManager';
 import { BetaPropPositioner } from '$lib/components/PlacementManagers/PropPlacementManager/BetaPropPositioner';
 import { PictographChecker } from './PictographChecker';
-import { ArrowPlacementManager } from '../PlacementManagers/ArrowPlacementManager/ArrowPlacementManager';
+import { ArrowPlacementManager } from '../../PlacementManagers/ArrowPlacementManager/ArrowPlacementManager';
 
 /**
  * Unified service for Pictograph operations

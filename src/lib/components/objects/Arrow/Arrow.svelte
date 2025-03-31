@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import type { ArrowData } from './ArrowData';
 	import type { ArrowSvgData } from '../../SvgManager/ArrowSvgData';
 	import { ArrowSvgLoader } from './services/ArrowSvgLoader';
@@ -7,28 +8,51 @@
 	import type { Motion } from '../Motion/Motion';
 	import { calculateArrowRotationAngle } from './ArrowRotAngleManager';
 
+	// Props with defaults
 	export let arrowData: ArrowData;
 	export let motion: Motion | null = null;
+	export let loadTimeoutMs = 1000; // Configurable timeout
 
+	// Component state
 	let svgData: ArrowSvgData | null = null;
 	let transform = '';
 	let isLoaded = false;
 	let hasErrored = false;
-	const dispatch = createEventDispatcher();
 	let loadTimeout: NodeJS.Timeout;
 
+	// Services
+	const dispatch = createEventDispatcher();
 	const svgManager = new SvgManager();
 	const svgLoader = new ArrowSvgLoader(svgManager);
 
+	// Calculate rotation angle (memoized)
+	$: rotationAngle = getRotationAngle();
+
+	// Transform calculation (memoized)
+	$: if (svgData && (arrowData.coords || motion || arrowData.svgMirrored)) {
+		const mirrorTransform = arrowData.svgMirrored ? 'scale(-1, 1)' : '';
+		transform = `
+			translate(${arrowData.coords.x}, ${arrowData.coords.y})
+			rotate(${rotationAngle})
+			${mirrorTransform}
+		`.trim();
+	}
+
+	/**
+	 * Loads the arrow SVG with error handling and timeout
+	 */
 	async function loadArrowSvg() {
 		try {
+			// Set safety timeout
 			loadTimeout = setTimeout(() => {
 				if (!isLoaded) {
+					console.warn(`Arrow loading timed out after ${loadTimeoutMs}ms`);
 					isLoaded = true;
 					dispatch('loaded', { timeout: true });
 				}
-			}, 1000);
+			}, loadTimeoutMs);
 
+			// Load the SVG
 			const result = await svgLoader.loadSvg(
 				arrowData.motionType,
 				arrowData.startOri,
@@ -37,6 +61,7 @@
 				arrowData.svgMirrored
 			);
 
+			// Update state and notify
 			svgData = result.svgData;
 			clearTimeout(loadTimeout);
 			isLoaded = true;
@@ -46,15 +71,26 @@
 		}
 	}
 
+	/**
+	 * Handles SVG loading errors with fallback
+	 */
 	function handleLoadError(error: unknown) {
+		console.error('Arrow load error:', error);
 		hasErrored = true;
 		svgData = svgLoader.getFallbackSvgData();
 		clearTimeout(loadTimeout);
 		isLoaded = true;
 		dispatch('loaded', { error: true });
-		dispatch('error', { message: (error as Error)?.message || 'Unknown error' });
+		dispatch('error', { 
+			message: (error as Error)?.message || 'Unknown error',
+			component: 'Arrow',
+			color: arrowData.color
+		});
 	}
 
+	/**
+	 * Calculates the arrow rotation angle
+	 */
 	function getRotationAngle(): number {
 		if (motion) {
 			return calculateArrowRotationAngle(motion, arrowData.loc);
@@ -62,6 +98,7 @@
 		return arrowData.rotAngle;
 	}
 
+	// Lifecycle hooks
 	onMount(() => {
 		if (arrowData.motionType) {
 			loadArrowSvg();
@@ -70,35 +107,33 @@
 			dispatch('loaded', { error: true });
 		}
 
+		// Cleanup
 		return () => clearTimeout(loadTimeout);
 	});
 
+	// Reactive loading
 	$: {
 		if (arrowData.motionType && !isLoaded && !hasErrored) {
 			loadArrowSvg();
 		}
 	}
-
-	$: if (svgData && (arrowData.coords || motion || arrowData.svgMirrored)) {
-		const mirrorTransform = arrowData.svgMirrored ? `scale(-1, 1)` : '';
-		const rotAngle = getRotationAngle();
-
-		transform = `
-			translate(${arrowData.coords.x}, ${arrowData.coords.y})
-			rotate(${rotAngle})
-			${mirrorTransform}
-		`;
-	}
 </script>
 
 {#if svgData && isLoaded}
-	<g {transform}>
+	<g 
+		{transform} 
+		data-testid="arrow-{arrowData.color}" 
+		data-motion-type={arrowData.motionType}
+		in:fade={{ duration: 300 }}
+	>
 		<image
 			href={svgData.imageSrc}
 			width={svgData.viewBox.width}
 			height={svgData.viewBox.height}
 			x={-svgData.center.x}
 			y={-svgData.center.y}
+			aria-label="Arrow showing {arrowData.motionType} motion in {arrowData.color} direction"
+			role="img"
 			on:load={() => dispatch('imageLoaded')}
 			on:error={() => dispatch('error', { message: 'Image failed to load' })}
 		/>

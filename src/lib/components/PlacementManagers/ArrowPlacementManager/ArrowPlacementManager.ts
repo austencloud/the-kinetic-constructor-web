@@ -3,9 +3,9 @@ import { ArrowAdjustmentCalculator } from './ArrowAdjustmentCalculator';
 import { ArrowInitialPosCalculator } from './ArrowInitialPositionCalculator';
 import { DefaultArrowPositioner } from './DefaultArrowPositioner';
 import type { PictographData } from '$lib/types/PictographData';
-import type { PictographChecker } from '$lib/components/Pictograph/PictographChecker';
 import type { GridData } from '$lib/components/objects/Grid/GridData';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
+import type { PictographChecker } from '$lib/components/Pictograph/services/PictographChecker';
 
 export class ArrowPlacementManager {
 	private initialPosCalculator: ArrowInitialPosCalculator;

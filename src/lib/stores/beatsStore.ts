@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { defaultPictographData } from '$lib/components/Pictograph/defaultPictographData.js';
+import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData.js';
 import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData.js';
 
 export const beatsStore = writable<BeatData[]>([]); // ✅ Start empty

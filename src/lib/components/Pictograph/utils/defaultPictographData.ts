@@ -1,3 +1,4 @@
+// src/lib/components/Pictograph/defaultPictographData.ts
 import { DIAMOND } from '$lib/types/Constants';
 import type { PictographData } from '$lib/types/PictographData';
 

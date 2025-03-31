@@ -19,7 +19,6 @@ import diamondAntiData from '$lib/data/arrow_placement/diamond/default/default_d
 import diamondFloatData from '$lib/data/arrow_placement/diamond/default/default_diamond_float_placements.json';
 import diamondDashData from '$lib/data/arrow_placement/diamond/default/default_diamond_dash_placements.json';
 import diamondStaticData from '$lib/data/arrow_placement/diamond/default/default_diamond_static_placements.json';
-
 import boxProData from '$lib/data/arrow_placement/box/default/default_box_pro_placements.json';
 import boxAntiData from '$lib/data/arrow_placement/box/default/default_box_anti_placements.json';
 import boxFloatData from '$lib/data/arrow_placement/box/default/default_box_float_placements.json';
@@ -28,10 +27,10 @@ import boxStaticData from '$lib/data/arrow_placement/box/default/default_box_sta
 import { LetterType } from '$lib/types/LetterType';
 import type { PictographData } from '$lib/types/PictographData';
 import type { MotionType } from '$lib/types/Types';
-import type { PictographChecker } from '$lib/components/Pictograph/PictographChecker';
 import type { GridData } from '$lib/components/objects/Grid/GridData';
 import { LetterUtils } from '$lib/utils/LetterUtils';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
+import type { PictographChecker } from '$lib/components/Pictograph/services/PictographChecker';
 
 export class DefaultArrowPositioner {
 	private allDefaults: {

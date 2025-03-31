@@ -1,6 +1,6 @@
 import { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
-import { LetterConditions } from '../components/Pictograph/LetterConditions';
+import { LetterConditions } from '../components/Pictograph/constants/LetterConditions';
 
 export class LetterUtils {
 	private static conditionMappings: Record<LetterConditions, Letter[]> = {
