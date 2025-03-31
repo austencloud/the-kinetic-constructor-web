@@ -1,23 +1,24 @@
 <!-- src/lib/components/SequenceWorkbench/GraphEditor/GraphEditor.svelte -->
 <script lang="ts">
-	import { writable } from 'svelte/store';
+	import { writable, derived } from 'svelte/store';
 	import TurnsBox from './TurnsBox/TurnsBox.svelte';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { DIAMOND } from '$lib/types/Constants';
-  
-	// Component props
+	
+	// Component props with defaults
 	export let isExpanded = false;
 	export let animationDuration = 300;
 	export let maxEditorHeight = 300;
-  
-	// Constants and derived values
-	const BORDER_PERCENTAGE = 0.02;
-	$: borderSize = Math.floor(maxEditorHeight * BORDER_PERCENTAGE);
+	
+	// Derived values with pure calculations
+	$: borderSize = Math.floor(maxEditorHeight * 0.02); // 2% border
 	$: contentWidth = maxEditorHeight - 2 * borderSize;
-  
-	// Create a pictograph data store for the editor
-	const pictographDataStore = writable<PictographData>({
+	$: contentHeight = contentWidth; // Square content
+	
+	// Create pictograph data store - this is local to the component
+	// and does not need to be shared with other components
+	const pictographData = writable<PictographData>({
 	  letter: null,
 	  startPos: null,
 	  endPos: null,
@@ -33,28 +34,32 @@
 	  blueArrowData: null,
 	  grid: ''
 	});
+	
+	// Helper function to update pictograph data (if needed)
+	function updatePictographData(newData: Partial<PictographData>) {
+	  pictographData.update(data => ({
+		...data,
+		...newData
+	  }));
+	}
   </script>
   
   <div
 	class="graph-editor"
 	style="
 	  --animation-duration: {animationDuration}ms; 
-	  height: {isExpanded ? maxEditorHeight + 'px' : '0px'};
+	  --editor-height: {isExpanded ? maxEditorHeight : 0}px;
+	  --border-size: {borderSize}px;
+	  --content-width: {contentWidth}px;
+	  --content-height: {contentHeight}px;
 	"
   >
 	<div class="turns-box-container">
 	  <TurnsBox color="blue" />
 	</div>
   
-	<div
-	  class="pictograph-container"
-	  style="
-		border: {borderSize}px solid gold; 
-		width: {contentWidth}px; 
-		height: {contentWidth}px;
-	  "
-	>
-	  <Pictograph {pictographDataStore} />
+	<div class="pictograph-container">
+	  <Pictograph pictographDataStore={pictographData} />
 	</div>
   
 	<div class="turns-box-container">
@@ -67,6 +72,7 @@
 	  position: relative;
 	  background-color: #f4f4f4;
 	  overflow: hidden;
+	  height: var(--editor-height);
 	  transition: height var(--animation-duration) ease-in-out;
 	  display: flex;
 	  flex-direction: row;
@@ -86,6 +92,9 @@
   
 	.pictograph-container {
 	  cursor: default;
+	  border: var(--border-size) solid gold;
+	  width: var(--content-width);
+	  height: var(--content-height);
 	  display: flex;
 	  justify-content: center;
 	  align-items: center;

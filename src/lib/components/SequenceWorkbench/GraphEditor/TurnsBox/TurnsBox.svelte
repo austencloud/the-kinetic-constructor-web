@@ -1,19 +1,27 @@
 <!-- src/lib/components/SequenceWorkbench/GraphEditor/TurnsBox/TurnsBox.svelte -->
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { turnsStore } from '$lib/stores/turnsStore';
-  
+	import { 
+	  turnsStore, 
+	  blueTurns, 
+	  redTurns, 
+	  type Direction,
+	  isMinTurns, 
+	  isMaxTurns 
+	} from '$lib/stores/turnsStore';
+	
+	// Component props
 	export let color: 'blue' | 'red';
-  
-	// State
+	
+	// Simple component state (UI only, not duplicating store data)
 	let isDialogOpen = false;
-	let isCWPressed = false;
-	let isCCWPressed = false;
 	
-	// Get the turns value from the store based on color
-	$: turnsValue = color === 'blue' ? $turnsStore.blue : $turnsStore.red;
+	// Get derived state from stores
+	$: turnsData = color === 'blue' ? $blueTurns : $redTurns;
+	$: direction = turnsData.direction;
+	$: turns = turnsData.turns;
 	
-	// Constants and computed values
+	// Color configurations
 	const COLORS = {
 	  blue: {
 		text: 'Left',
@@ -31,49 +39,33 @@
 	  }
 	};
 	
-	$: colorConfig = COLORS[color];
-	$: dialogBackground = `linear-gradient(135deg, ${colorConfig.light}, ${colorConfig.medium}), #fff`;
-  
-	// Available turns values and utility functions
+	// Available turns values for the dialog
 	const TURNS_VALUES = ['fl', '0', '0.5', '1', '1.5', '2', '2.5', '3'];
 	
+	// Computed values based on color
+	$: colorConfig = COLORS[color];
+	$: dialogBackground = `linear-gradient(135deg, ${colorConfig.light}, ${colorConfig.medium}), #fff`;
+	
+	// Icon paths
 	const iconPaths = {
 	  clockwise: '/icons/clockwise.png',
 	  counterClockwise: '/icons/counter_clockwise.png'
 	};
 	
-	// Only allow valid turns values
-	function isMinTurns(value: string | number): boolean {
-	  return value === 'fl' || value === -0.5 || value === 0;
-	}
-	
-	function isMaxTurns(value: number): boolean {
-	  return value === 3;
-	}
-	
 	// Event handlers
-	function handleCWClick() {
-	  isCWPressed = true;
-	  isCCWPressed = false;
-	  // Here you would update rotation direction in a store
-	}
-  
-	function handleCCWClick() {
-	  isCWPressed = false;
-	  isCCWPressed = true;
-	  // Here you would update rotation direction in a store
+	function handleSetDirection(newDirection: Direction) {
+	  turnsStore.setDirection(color, newDirection);
 	}
 	
 	function handleOpenDialog() {
 	  isDialogOpen = true;
 	}
-  
+	
 	function handleCloseDialog() {
 	  isDialogOpen = false;
 	}
 	
 	function handleSelectTurns(value: string) {
-	  // Convert "fl" to special value or parse float
 	  const turns = value === 'fl' ? 'fl' : parseFloat(value);
 	  turnsStore.setTurns(color, turns);
 	  isDialogOpen = false;
@@ -87,15 +79,15 @@
 	  turnsStore.decrementTurns(color);
 	}
 	
-	// Keyboard handler for dialog
+	// Close dialog on escape key
 	function handleKeydown(event: KeyboardEvent) {
-	  if (event.key === 'Escape') {
+	  if (event.key === 'Escape' && isDialogOpen) {
 		handleCloseDialog();
 	  }
 	}
   </script>
   
-  <svelte:window on:keydown={isDialogOpen ? handleKeydown : null}/>
+  <svelte:window on:keydown={handleKeydown}/>
   
   <div class="turns-box" style="--box-color: {colorConfig.primary}; --box-gradient: {colorConfig.gradient};">
 	<!-- Header with direction buttons -->
@@ -104,10 +96,10 @@
 	  <button
 		class="direction-button"
 		style="--color: {colorConfig.primary}; 
-			   --background-color: {isCCWPressed ? colorConfig.primary : 'white'};"
-		on:click={handleCCWClick}
+			   --background-color: {direction === 'counterclockwise' ? colorConfig.primary : 'white'};"
+		on:click={() => handleSetDirection('counterclockwise')}
 		aria-label="Counter-clockwise rotation"
-		aria-pressed={isCCWPressed}
+		aria-pressed={direction === 'counterclockwise'}
 	  >
 		<img class="icon" src={iconPaths.counterClockwise} alt="Counter-clockwise Icon" />
 	  </button>
@@ -119,10 +111,10 @@
 	  <button
 		class="direction-button"
 		style="--color: {colorConfig.primary}; 
-			   --background-color: {isCWPressed ? colorConfig.primary : 'white'};"
-		on:click={handleCWClick}
+			   --background-color: {direction === 'clockwise' ? colorConfig.primary : 'white'};"
+		on:click={() => handleSetDirection('clockwise')}
 		aria-label="Clockwise rotation"
-		aria-pressed={isCWPressed}
+		aria-pressed={direction === 'clockwise'}
 	  >
 		<img class="icon" src={iconPaths.clockwise} alt="Clockwise Icon" />
 	  </button>
@@ -139,7 +131,7 @@
 		  style="--color: {colorConfig.primary}"
 		  on:click={handleDecrement}
 		  aria-label="Decrease turns"
-		  disabled={isMinTurns(turnsValue.turns)}
+		  disabled={isMinTurns(turns)}
 		>
 		  −
 		</button>
@@ -151,7 +143,7 @@
 		  on:click={handleOpenDialog}
 		  aria-label="Set turns value"
 		>
-		  {turnsValue.turns}
+		  {turns}
 		</button>
 		
 		<!-- Increment button -->
@@ -160,7 +152,7 @@
 		  style="--color: {colorConfig.primary}"
 		  on:click={handleIncrement}
 		  aria-label="Increase turns"
-		  disabled={typeof turnsValue === 'number' ? isMaxTurns(turnsValue) : false}
+		  disabled={isMaxTurns(turns)}
 		>
 		  +
 		</button>

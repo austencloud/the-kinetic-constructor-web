@@ -1,121 +1,92 @@
-// src/lib/stores/turnsStore.ts
-import { adjustTurns, isMaxTurns, isMinTurns, type TurnsValue } from '$lib/components/SequenceWorkbench/GraphEditor/TurnsBox/TurnsWidget/turnsUtils';
+// stores/turnsStore.ts
 import { writable, derived } from 'svelte/store';
 
-export type PropRotation = 'clockwise' | 'counterClockwise' | null;
+// Define clear types
+export type TurnsValue = number | 'fl';
+export type Direction = 'clockwise' | 'counterclockwise' | null;
 
 interface TurnsState {
-    blue: {
-        turns: TurnsValue;
-        propRotation: PropRotation;
-    };
-    red: {
-        turns: TurnsValue;
-        propRotation: PropRotation;
-    };
+  blue: {
+    turns: TurnsValue;
+    direction: Direction;
+  };
+  red: {
+    turns: TurnsValue;
+    direction: Direction;
+  };
 }
 
 // Initial state
 const initialState: TurnsState = {
-    blue: {
-        turns: 0,
-        propRotation: null
-    },
-    red: {
-        turns: 0,
-        propRotation: null
-    }
+  blue: { turns: 0, direction: null },
+  red: { turns: 0, direction: null }
 };
 
-// Create the base store
-const { subscribe, update, set } = writable<TurnsState>(initialState);
+// Create the main store
+const turnsState = writable<TurnsState>(initialState);
 
-// Create derived stores for each color's turns
-export const blueTurns = derived(
-    { subscribe },
-    $state => $state.blue.turns
-);
+// Pure utility functions
+export const parseTurnsValue = (value: TurnsValue): number => {
+  return value === 'fl' ? -0.5 : Number(value);
+};
 
-export const redTurns = derived(
-    { subscribe },
-    $state => $state.red.turns
-);
+export const displayTurnsValue = (n: number): TurnsValue => {
+  return n === -0.5 ? 'fl' : n;
+};
 
-// Create derived stores for each color's prop rotation
-export const bluePropRotation = derived(
-    { subscribe },
-    $state => $state.blue.propRotation
-);
+export const isMinTurns = (value: TurnsValue): boolean => {
+  return parseTurnsValue(value) <= -0.5;
+};
 
-export const redPropRotation = derived(
-    { subscribe },
-    $state => $state.red.propRotation
-);
+export const isMaxTurns = (value: TurnsValue): boolean => {
+  return parseTurnsValue(value) >= 3;
+};
 
-// Actions to update the store
-function setTurns(color: 'blue' | 'red', value: TurnsValue) {
-    update(state => {
-        state[color].turns = value;
-        return state;
-    });
-}
+// Derived stores for convenient access
+export const blueTurns = derived(turnsState, $state => $state.blue);
+export const redTurns = derived(turnsState, $state => $state.red);
 
-function incrementTurns(color: 'blue' | 'red') {
-    update(state => {
-        state[color].turns = adjustTurns(state[color].turns, 0.5);
-        return state;
-    });
-}
-
-function decrementTurns(color: 'blue' | 'red') {
-    update(state => {
-        state[color].turns = adjustTurns(state[color].turns, -0.5);
-        return state;
-    });
-}
-
-function setPropRotation(color: 'blue' | 'red', rotation: PropRotation) {
-    update(state => {
-        state[color].propRotation = rotation;
-        return state;
-    });
-}
-
-function togglePropRotation(color: 'blue' | 'red', rotation: 'clockwise' | 'counterClockwise') {
-    update(state => {
-        state[color].propRotation = state[color].propRotation === rotation ? null : rotation;
-        return state;
-    });
-}
-
-// Selectors to derive state
-function canIncrementTurns(color: 'blue' | 'red'): boolean {
-    let currentTurns: TurnsValue = 0;
-    subscribe(state => {
-        currentTurns = state[color].turns;
-    })();
-    
-    return !isMaxTurns(currentTurns);
-}
-
-function canDecrementTurns(color: 'blue' | 'red'): boolean {
-    let currentTurns: TurnsValue = 0;
-    subscribe(state => {
-        currentTurns = state[color].turns;
-    })();
-    
-    return !isMinTurns(currentTurns);
-}
-
-// Export the store and its actions
+// Action creators
 export const turnsStore = {
-    subscribe,
-    setTurns,
-    incrementTurns,
-    decrementTurns,
-    setPropRotation,
-    togglePropRotation,
-    canIncrementTurns,
-    canDecrementTurns,
-    reset: () => set(initialState)
+  setTurns: (color: 'blue' | 'red', turns: TurnsValue) => {
+    turnsState.update(state => ({
+      ...state,
+      [color]: { ...state[color], turns }
+    }));
+  },
+  
+  setDirection: (color: 'blue' | 'red', direction: Direction) => {
+    turnsState.update(state => ({
+      ...state,
+      [color]: { ...state[color], direction }
+    }));
+  },
+  
+  incrementTurns: (color: 'blue' | 'red') => {
+    turnsState.update(state => {
+      const currentValue = state[color].turns;
+      const numericValue = parseTurnsValue(currentValue);
+      const newValue = Math.min(3, numericValue + 0.5);
+      return {
+        ...state,
+        [color]: { ...state[color], turns: displayTurnsValue(newValue) }
+      };
+    });
+  },
+  
+  decrementTurns: (color: 'blue' | 'red') => {
+    turnsState.update(state => {
+      const currentValue = state[color].turns;
+      const numericValue = parseTurnsValue(currentValue);
+      const newValue = Math.max(-0.5, numericValue - 0.5);
+      return {
+        ...state,
+        [color]: { ...state[color], turns: displayTurnsValue(newValue) }
+      };
+    });
+  },
+  
+  reset: () => {
+    turnsState.set(initialState);
+  }
 };
