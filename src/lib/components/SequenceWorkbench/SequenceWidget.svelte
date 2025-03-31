@@ -1,140 +1,172 @@
+<!-- src/lib/components/SequenceWorkbench/SequenceWidget.svelte -->
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
+	
+	// Components
 	import IndicatorLabel from './Labels/IndicatorLabel.svelte';
 	import CurrentWordLabel from './Labels/CurrentWordLabel.svelte';
 	import DifficultyLabel from './Labels/DifficultyLabel.svelte';
 	import SequenceWidgetButtonPanel from './ButtonPanel/SequenceWidgetButtonPanel.svelte';
-	import { browser } from '$app/environment';
 	import BeatFrame from './SequenceBeatFrame/SequenceBeatFrame.svelte';
-	import type { PictographData } from '$lib/types/PictographData.js';
-
+	
+	// Props
+	export let sequenceWorkbenchHeight: number;
+	
+	// State
 	let width = 0;
 	let height = 0;
 	let isPortrait = true;
-
-	export let sequenceWorkbenchHeight: number;
-
-	let sequenceWorkbenchElement: HTMLElement | null = null;
-
-	// Dynamically update layout and dimensions
+	let sequenceWidgetElement: HTMLElement;
+	
+	// Derived state
+	$: currentWord = 'Word:'; // This could be from a store in a real application
+	$: difficultyLevel = 3; // This could be from a store too
+	$: indicatorText = 'Ready'; // Status or other indicator text
+	
+	// Update layout when dimensions change
 	function updateLayout() {
-		if (!browser) return;
-		width = window.innerWidth;
-		height = window.innerHeight;
-		isPortrait = height > width;
-
-		// Update sequenceWorkbenchHeight dynamically
-		if (sequenceWorkbenchElement) {
-			sequenceWorkbenchHeight = sequenceWorkbenchElement.offsetHeight;
-		}
+	  if (!browser) return;
+	  
+	  width = window.innerWidth;
+	  height = window.innerHeight;
+	  isPortrait = height > width;
 	}
-
+	
+	// Initialize on mount
 	onMount(() => {
-		if (!browser) return;
-		updateLayout();
-		window.addEventListener('resize', updateLayout);
-
-		return () => {
-			window.removeEventListener('resize', updateLayout);
-		};
+	  if (!browser) return;
+	  
+	  updateLayout();
+	  window.addEventListener('resize', updateLayout);
+	  
+	  // Clean up on unmount
+	  return () => {
+		window.removeEventListener('resize', updateLayout);
+	  };
 	});
-</script>
-
-<div class="sequence-widget" bind:this={sequenceWorkbenchElement}>
+	
+	// Event handlers
+	function handleButtonAction(event: CustomEvent<{ id: string }>) {
+	  const { id } = event.detail;
+	  console.log(`Button action: ${id}`);
+	  
+	  // Handle the action based on the ID
+	  // This would dispatch to the appropriate store/service
+	  switch (id) {
+		case 'addToDictionary':
+		  // Add to dictionary logic
+		  break;
+		case 'saveImage':
+		  // Save image logic
+		  break;
+		// ... other cases
+	  }
+	}
+  </script>
+  
+  <div class="sequence-widget" bind:this={sequenceWidgetElement}>
 	<div class="main-layout" class:portrait={isPortrait}>
-		<div class="left-vbox">
-			<div class="centered-group">
-				<div class="sequence-widget-labels">
-					<CurrentWordLabel currentWord="Word:" {width} />
-					<DifficultyLabel difficultyLevel={3} {width} />
-				</div>
-				<div class="beat-frame-container">
-					<BeatFrame />
-					<!-- ✅ Forward prop to BeatFrame -->
-				</div>
-			</div>
-			<div class="indicator-label-container">
-				<IndicatorLabel {width} />
-			</div>
-
-			<!-- Button Panel in portrait mode -->
-			{#if isPortrait}
-				<SequenceWidgetButtonPanel {isPortrait} containerWidth={width} containerHeight={height} />
-			{/if}
+	  <div class="left-vbox">
+		<div class="centered-group">
+		  <div class="sequence-widget-labels">
+			<CurrentWordLabel currentWord={currentWord} {width} />
+			<DifficultyLabel difficultyLevel={difficultyLevel} {width} />
+		  </div>
+		  
+		  <div class="beat-frame-container">
+			<BeatFrame />
+		  </div>
 		</div>
-
-		<!-- Button Panel in landscape mode -->
-		{#if !isPortrait}
-			<SequenceWidgetButtonPanel
-				{isPortrait}
-				containerWidth={width}
-				containerHeight={sequenceWorkbenchHeight}
-			/>
+		
+		<div class="indicator-label-container">
+		  <IndicatorLabel text={indicatorText} {width} />
+		</div>
+  
+		<!-- Button Panel in portrait mode -->
+		{#if isPortrait}
+		  <SequenceWidgetButtonPanel 
+			{isPortrait} 
+			containerWidth={width} 
+			containerHeight={height} 
+			on:action={handleButtonAction}
+		  />
 		{/if}
+	  </div>
+  
+	  <!-- Button Panel in landscape mode -->
+	  {#if !isPortrait}
+		<SequenceWidgetButtonPanel
+		  {isPortrait}
+		  containerWidth={width}
+		  containerHeight={sequenceWorkbenchHeight}
+		  on:action={handleButtonAction}
+		/>
+	  {/if}
 	</div>
-</div>
-
-<style>
+  </div>
+  
+  <style>
 	.sequence-widget {
-		display: flex;
-		flex-direction: column;
-		height: 100%; /* Full height for the widget */
-		flex: 1;
+	  display: flex;
+	  flex-direction: column;
+	  height: 100%;
+	  flex: 1;
 	}
-
+  
 	.main-layout {
-		display: flex;
-		flex-direction: row;
-		height: 100%;
+	  display: flex;
+	  flex-direction: row;
+	  height: 100%;
 	}
-
+  
 	.main-layout.portrait {
-		flex-direction: column;
+	  flex-direction: column;
 	}
-
+  
 	.left-vbox {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		width: 100%;
-		min-height: 0;
-		flex: 14;
+	  display: flex;
+	  flex-direction: column;
+	  height: 100%;
+	  width: 100%;
+	  min-height: 0;
+	  flex: 14;
 	}
-
+  
 	.centered-group {
-		display: flex;
-		flex-direction: column;
-		align-items: center; /* Center horizontally */
-		justify-content: center; /* Center vertically */
-		height: 100%; /* Ensure it takes full height */
-		width: 100%;
+	  display: flex;
+	  flex-direction: column;
+	  align-items: center;
+	  justify-content: center;
+	  height: 100%;
+	  width: 100%;
 	}
-
+  
 	.beat-frame-container {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex: 1; /* Allow it to grow and take available space */
-		min-height: 0; /* Prevent collapsing */
-		width: 100%;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  flex: 1;
+	  min-height: 0;
+	  width: 100%;
 	}
-
+  
 	.sequence-widget-labels {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 10px; /* Add spacing between the labels */
-		color: white;
+	  display: flex;
+	  flex-direction: column;
+	  align-items: center;
+	  justify-content: center;
+	  gap: 10px;
+	  color: white;
 	}
-
+  
 	.indicator-label-container {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 10px;
-		color: white;
-		flex: 1;
+	  display: flex;
+	  flex-direction: column;
+	  align-items: center;
+	  justify-content: center;
+	  padding: 10px;
+	  color: white;
+	  flex: 1;
 	}
-</style>
+  </style>
