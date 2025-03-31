@@ -1,13 +1,22 @@
+<!-- src/lib/components/MenuBar/NavWidget/NavButton.svelte -->
 <script lang="ts">
+	import MetallicButton from '../../common/MetallicButton.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { isMobile, isPortrait } from '../../../utils/deviceUtils';
 
 	export let isActive: boolean = false;
 	export let onClick: () => void;
-
+	enum ButtonState {
+	  NORMAL = 'normal',
+	  ACTIVE = 'active',
+	  DISABLED = 'disabled'
+	}
 	let fontSize: number;
 	let buttonWidth: number;
 	let buttonHeight: number;
+	let size: "small" | "medium" | "large" | undefined;
+	let state: ButtonState | undefined;
+	let variant: "blue" | "dark" | "ghost" | undefined;
 
 	let isMobileDevice = false;
 	let isPortraitMode = false;
@@ -50,49 +59,21 @@
 	$: if (typeof window !== 'undefined') {
 		updateStyles(); // Ensure updates on reactivity
 	}
+
+	// Derive button state and size variant
+	$: state = isActive ? ButtonState.ACTIVE : ButtonState.NORMAL;
+	$: size = isMobileDevice ? 'small' : isPortraitMode ? 'small' : 'medium';
+	$: size = isMobileDevice ? 'small' : (isPortraitMode ? 'small' : 'medium');
 </script>
 
-<button
+<MetallicButton
 	on:click={onClick}
-	class={`nav-button ${isActive ? 'active' : 'inactive'}`}
-	style="font-size: {fontSize}px; 
-		   width: {buttonWidth}px; 
-		   height: {buttonHeight}px; 
-		   border-radius: {isMobileDevice || isPortraitMode ? '50%' : '10px'};"
+	state={state}
+	variant={variant}
+	size={size}
+	customClass="nav-button"
+	{...{ style: `width: ${buttonWidth}px; height: ${buttonHeight}px; font-size: ${fontSize}px;` }}
 >
 	<slot />
-</button>
+</MetallicButton>
 
-<style>
-	.nav-button {
-		font-family: Georgia, serif;
-		border: 1px solid gray;
-		cursor: pointer;
-		transition: all 0.3s ease, transform 0.2s ease;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		box-sizing: border-box;
-	}
-
-	.nav-button:hover {
-		transform: scale(1.05);
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-	}
-
-	.nav-button:active {
-		transform: scale(0.95);
-	}
-
-	.nav-button.active {
-		background-color: blue;
-		color: white;
-		font-weight: bold;
-	}
-
-	.nav-button.inactive {
-		background-color: white;
-		color: black;
-		font-weight: normal;
-	}
-</style>

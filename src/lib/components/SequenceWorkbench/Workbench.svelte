@@ -1,4 +1,3 @@
-<!-- src/lib/components/SequenceWorkbench/SequenceWorkbench.svelte -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';

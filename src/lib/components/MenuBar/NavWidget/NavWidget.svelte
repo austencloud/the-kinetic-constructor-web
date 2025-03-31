@@ -1,25 +1,31 @@
 <script lang="ts">
-	import NavButton from './NavButton.svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
+	import NavButton from './NavButton.svelte';
 	import { isMobile, isPortrait } from '../../../utils/deviceUtils';
+
+	const dispatch = createEventDispatcher();
+
 	let isMobileDevice = false;
 	let isPortraitMode = false;
 
-	export let onTabChange: (index: number) => void = () => {};
 	let activeTab = 0;
 
 	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
 	const tabEmojis = ['⚒️', '🤖', '🔍', '🧠', '✍️'];
 
 	function handleTabClick(index: number) {
+		// Update only the clicked tab as active
 		activeTab = index;
-		onTabChange(index);
+
+		// Dispatch an event to the parent component with the new tab index
+		dispatch('tabChange', index);
 	}
 
 	const updateModes = () => {
 		isMobileDevice = isMobile();
 		isPortraitMode = isPortrait();
 	};
+
 	onMount(() => {
 		updateModes();
 		if (typeof window !== 'undefined') {
@@ -30,13 +36,16 @@
 
 <div class="nav-widget">
 	{#each tabNames as name, index}
-		<NavButton isActive={index === activeTab} onClick={() => handleTabClick(index)}>
+		<NavButton 
+			isActive={index === activeTab} 
+			onClick={() => handleTabClick(index)}
+		>
 			{#if !isPortraitMode && !isMobileDevice}
-				{name} {tabEmojis[index]} <!-- Fullscreen: Full Label -->
+				{name} {tabEmojis[index]}
 			{:else if isPortraitMode}
-				{tabEmojis[index]} <!-- Mobile: Emoji only -->
+				{tabEmojis[index]}
 			{:else if isMobileDevice}
-				{tabEmojis[index]} <!-- Desktop: Full Label -->
+				{tabEmojis[index]}
 			{/if}
 		</NavButton>
 	{/each}

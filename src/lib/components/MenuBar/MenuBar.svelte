@@ -6,18 +6,15 @@
 
 	export let background: string;
 	export let onChangeBackground: (newBackground: string) => void = () => {};
-	export let onTabChange: (index: number) => void = () => {};
 
 	const dispatch = createEventDispatcher();
 
-	function handleTabChange(event: CustomEvent) {
-		const index = event.detail;
-		dispatch('tabChange', index);
-		onTabChange(index);
-	}
-
 	function handleSettingsClick() {
 		dispatch('settingsClick');
+	}
+
+	function handleTabChange(event: CustomEvent<number>) {
+		dispatch('tabChange', event.detail);
 	}
 </script>
 
@@ -28,8 +25,7 @@
 		on:click={handleSettingsClick}
 	/>
 
-	<!-- Pass isFullScreen to NavWidget -->
-	<NavWidget  on:tabChange={handleTabChange} />
+	<NavWidget on:tabChange={handleTabChange} />
 	<SettingsPlaceholder />
 </header>
 

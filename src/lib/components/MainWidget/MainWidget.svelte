@@ -20,6 +20,33 @@
 	let pictographData: any;
 	let initializationError = false;
 
+	// Current tab state
+	let currentTab = 0;
+
+	// Component for each tab
+	const tabComponents = [
+		{
+			component: SequenceWorkbench,
+			renderWithSplit: true
+		},
+		{
+			component: null, // Generate (placeholder)
+			renderWithSplit: false
+		},
+		{
+			component: null, // Browse (placeholder)
+			renderWithSplit: false
+		},
+		{
+			component: null, // Learn (placeholder)
+			renderWithSplit: false
+		},
+		{
+			component: null, // Write (placeholder)
+			renderWithSplit: false
+		}
+	];
+
 	onMount(() => {
 		// Initialize the application using our centralized initializer
 		initializeApplication().then((success) => {
@@ -55,6 +82,11 @@
 	function handleFullscreenToggle(e: CustomEvent<boolean>) {
 		isFullScreen = e.detail;
 	}
+
+	// Handler for tab changes
+	function handleTabChange(e: CustomEvent<number>) {
+		currentTab = e.detail;
+	}
 </script>
 
 <div id="main-widget">
@@ -63,7 +95,7 @@
 		<div class="background">
 			<SnowfallBackground />
 		</div>
-		
+
 		{#if $loadingState.isLoading}
 			<!-- Enhanced loading spinner with progress and text -->
 			<div class="loading-overlay">
@@ -71,16 +103,13 @@
 					<LoadingSpinner />
 					<div class="loading-progress-container">
 						<div class="loading-progress-bar">
-							<div 
-                                class="loading-progress-fill" 
-                                style="width: {$loadingState.progress}%"
-                            ></div>
+							<div class="loading-progress-fill" style="width: {$loadingState.progress}%"></div>
 						</div>
 						<p class="loading-text">{$loadingState.message}</p>
-						
+
 						{#if initializationError}
 							<p class="error-text">
-								An error occurred during initialization. 
+								An error occurred during initialization.
 								<button class="retry-button" on:click={() => window.location.reload()}>
 									Retry
 								</button>
@@ -96,23 +125,33 @@
 						{background}
 						on:settingsClick={handleSettingsClick}
 						on:changeBackground={(e) => updateBackground(e.detail)}
+						on:tabChange={handleTabChange}
 					/>
 				</div>
 
 				<div class="mainContent">
-					<div class="sequenceWorkbenchContainer">
-						<SequenceWorkbench />
-					</div>
+					{#if tabComponents[currentTab].renderWithSplit}
+						<div class="sequenceWorkbenchContainer">
+							<SequenceWorkbench />
+						</div>
 
-					<div class="optionPickerContainer">
-						{#if $selectedStartPos}
-							<OptionPicker />
-						{:else}
-							<StartPosPicker />
-						{/if}
-					</div>
+						<div class="optionPickerContainer">
+							{#if $selectedStartPos}
+								<OptionPicker />
+							{:else}
+								<StartPosPicker />
+							{/if}
+						</div>
+					{:else if tabComponents[currentTab].component}
+						<svelte:component this={tabComponents[currentTab].component} />
+					{:else}
+						<div class="placeholder-content">
+							<h2>Coming Soon</h2>
+							<p>This tab is under development.</p>
+						</div>
+					{/if}
 				</div>
-				
+
 				{#if isSettingsDialogOpen}
 					<SettingsDialog
 						isOpen={isSettingsDialogOpen}
@@ -127,117 +166,44 @@
 </div>
 
 <style>
-	#main-widget {
-		height: var(--dynamicHeight, 100vh);
+	.mainContent {
+		display: flex;
+		flex: 1; /* This will make it fill remaining space */
+		overflow: auto;
+		position: relative;
+		z-index: 0;
+		width: 100%;
+	}
+
+	#content {
 		display: flex;
 		flex-direction: column;
+		flex: 1; /* Force it to fill available space */
+		min-height: 0; /* Prevents overflow */
+	}
+
+	#main-widget {
+		display: flex;
+		flex-direction: column;
+		flex: 1; /* Ensure it fills the entire viewport */
+		min-height: 100vh;
 		position: relative;
 		background: linear-gradient(to bottom, #0b1d2a, #325078, #49708a);
 		color: light-dark(black, white);
 	}
 
-	.background {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		z-index: 0;
-	}
-
-	.loading-overlay {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
+	.placeholder-content {
 		display: flex;
+		flex-direction: column;
+		align-items: center;
 		justify-content: center;
-		align-items: center;
-		background-color: rgba(0, 0, 0, 0.4);
-		z-index: 10;
-	}
-	
-	.loading-container {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		background-color: rgba(255, 255, 255, 0.95);
-		padding: 30px;
-		border-radius: 10px;
-		box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-		max-width: 80%;
-	}
-	
-	.loading-progress-container {
-		margin-top: 20px;
+		height: 100%;
 		width: 100%;
+		padding: 20px;
 		text-align: center;
-	}
-	
-	.loading-progress-bar {
-		width: 300px;
-		height: 10px;
-		background-color: #e0e0e0;
-		border-radius: 5px;
-		overflow: hidden;
-		margin: 10px 0;
-	}
-	
-	.loading-progress-fill {
-		height: 100%;
-		background-color: #4285f4;
-		border-radius: 5px;
-		transition: width 0.3s ease;
-	}
-	
-	.loading-text {
-		font-size: 16px;
-		color: #333;
-		margin: 0;
-	}
-	
-	.error-text {
-		color: #d32f2f;
-		margin-top: 15px;
-		font-size: 14px;
-	}
-	
-	.retry-button {
-		background-color: #4285f4;
-		color: white;
-		border: none;
-		border-radius: 4px;
-		padding: 5px 10px;
-		margin-left: 10px;
-		cursor: pointer;
-		transition: background-color 0.2s;
-	}
-	
-	.retry-button:hover {
-		background-color: #2b68c9;
-	}
-
-	#content {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		z-index: 5;
-	}
-
-	.menuBar {
-		flex: 0 0 auto;
-		z-index: 1;
-	}
-
-	.mainContent {
-		display: flex;
-		overflow: auto;
-		position: relative;
-		z-index: 0;
-		height: 100%;
-		width: 100%;
+		background-color: #f0f0f0;
+		border-radius: 10px;
+		margin: 0; /* Removed margin to prevent extra space */
 	}
 
 	@media (orientation: portrait) {

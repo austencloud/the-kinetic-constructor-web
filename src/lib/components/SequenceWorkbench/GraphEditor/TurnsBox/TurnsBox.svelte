@@ -207,7 +207,6 @@
 	  flex-direction: column;
 	  background: var(--box-gradient);
 	  align-self: stretch;
-	  height: 100%;
 	  min-width: 0;
 	}
 	
