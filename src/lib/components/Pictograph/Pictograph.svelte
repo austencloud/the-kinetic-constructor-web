@@ -173,7 +173,7 @@
 
 			// Now position the arrows using the existing method
 			if (redArrowData && blueArrowData && redPropData) {
-				componentPositioner.positionArrows(redArrowData, blueArrowData, gridData, redPropData);
+				componentPositioner.positionArrows(redArrowData, blueArrowData, gridData);
 			}
 
 			// Update the store with the positioned components
