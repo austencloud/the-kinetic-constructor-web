@@ -1,6 +1,6 @@
 <!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/SequenceBeatFrame.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { writable, type Writable } from 'svelte/store';
 	import StartPosBeat from './StartPosBeat.svelte';
 	import Beat from './Beat.svelte';
@@ -51,20 +51,19 @@
 		updateCellSize();
 	}
 	
-	// Update the element size when available
-	onMount(() => {
-		if (frameElement) {
-			const rect = frameElement.getBoundingClientRect();
-			frameWidth = rect.width;
-			frameHeight = rect.height;
-			updateCellSize();
+	// Initialize immediately with a fallback size if dimensions aren't available yet
+	function initializeSize() {
+		if (frameWidth === 0 || frameHeight === 0) {
+			// Use a sensible fallback size based on potential parent container
+			frameWidth = window.innerWidth * 0.8;  // 80% of viewport width as fallback
+			frameHeight = window.innerHeight * 0.6; // 60% of viewport height as fallback
 		}
-	});
+		updateCellSize();
+	}
 	
-	// Reactive updates to layout based on beat count
+	// Immediately calculate initial layout based on beat count
 	$: {
 		[beatRows, beatCols] = applyLayout({}, $beatsStore.length, autoAdjustLayout($beatsStore.length));
-		updateCellSize();
 	}
 	
 	// Calculate the cell size based on container dimensions and grid layout
@@ -88,9 +87,19 @@
 	
 	// Use a resize observer to track container size changes
 	function resizeObserver(node: HTMLElement) {
+		// Initialize dimensions and cell size immediately
+		const rect = node.getBoundingClientRect();
+		if (rect.width > 0 && rect.height > 0) {
+			onResize(rect.width, rect.height);
+		} else {
+			initializeSize();  // Use fallback if actual dimensions aren't available
+		}
+		
 		const observer = new ResizeObserver(entries => {
 			for (const entry of entries) {
-				onResize(entry.contentRect.width, entry.contentRect.height);
+				if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+					onResize(entry.contentRect.width, entry.contentRect.height);
+				}
 			}
 		});
 		
@@ -102,6 +111,19 @@
 			}
 		};
 	}
+	
+	// Ensure we calculate the layout as soon as the component mounts
+	onMount(async () => {
+		await tick(); // Wait for the DOM to update
+		if (frameElement) {
+			const rect = frameElement.getBoundingClientRect();
+			if (rect.width > 0 && rect.height > 0) {
+				onResize(rect.width, rect.height);
+			} else {
+				initializeSize();
+			}
+		}
+	});
 </script>
 
 <div
@@ -193,7 +215,5 @@
 		z-index: 2;
 	}
 	
-	.selected {
-		/* Any additional styling for selected beats */
-	}
+
 </style>

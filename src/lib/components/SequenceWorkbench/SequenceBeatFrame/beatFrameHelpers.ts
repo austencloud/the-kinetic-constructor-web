@@ -1,3 +1,5 @@
+// src/lib/components/SequenceWorkbench/SequenceBeatFrame/beatFrameHelpers.ts
+
 export type LayoutDict = Record<string, [number, number]>;
 
 export async function fetchDefaultLayouts(url: string): Promise<LayoutDict> {
@@ -25,7 +27,15 @@ export function applyLayout(
 	return fallback;
 }
 
-// Updated calculateCellSize function
+/**
+ * Calculate the optimal cell size for the beat frame grid
+ * @param containerWidth Width of the container
+ * @param containerHeight Height of the container
+ * @param totalRows Number of rows in the grid
+ * @param totalCols Number of columns in the grid
+ * @param gap Gap between cells
+ * @returns Optimal cell size in pixels
+ */
 export function calculateCellSize(
 	containerWidth: number,
 	containerHeight: number,
@@ -33,17 +43,33 @@ export function calculateCellSize(
 	totalCols: number,
 	gap: number
 ): number {
+	// Ensure we have valid dimensions
+	if (containerWidth <= 0 || containerHeight <= 0 || totalRows <= 0 || totalCols <= 0) {
+		return 50; // Default fallback size
+	}
+
 	// Calculate available space after accounting for gaps
-	const availableWidth = containerWidth - (totalCols - 1) * gap;
-	const availableHeight = containerHeight - (totalRows - 1) * gap;
+	const totalGapWidth = gap * (totalCols - 1);
+	const totalGapHeight = gap * (totalRows - 1);
 
-	// Calculate scale factors with 1px buffer
-	const scaleX = (availableWidth - 1) / (950 * totalCols);
-	const scaleY = (availableHeight - 1) / (950 * totalRows);
+	const availableWidth = Math.max(0, containerWidth - totalGapWidth);
+	const availableHeight = Math.max(0, containerHeight - totalGapHeight);
 
-	return 950 * Math.min(scaleX, scaleY, 1);
+	// Calculate cell size based on available space
+	const cellWidthByContainer = availableWidth / totalCols;
+	const cellHeightByContainer = availableHeight / totalRows;
+
+	// Take the smaller dimension to ensure cells fit within container
+	const cellSize = Math.min(cellWidthByContainer, cellHeightByContainer);
+
+	// Apply minimum and maximum constraints
+	return Math.max(30, Math.min(cellSize, 200));
 }
+
 export function autoAdjustLayout(beatCount: number): [number, number] {
+	if (beatCount <= 0) return [1, 1]; // Empty grid
+	if (beatCount <= 4) return [2, 2]; // 2x2 grid
+	if (beatCount <= 9) return [3, 3]; // 3x3 grid
 	if (beatCount <= 16) return [4, 4]; // 4x4 grid
 	if (beatCount <= 32) return [4, 8]; // 4x8 grid
 	if (beatCount <= 48) return [6, 8]; // 6x8 grid
