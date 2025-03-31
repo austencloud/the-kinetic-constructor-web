@@ -1,77 +1,72 @@
 <!-- src/lib/components/SequenceWorkbench/ButtonPanel/SequenceWidgetButtonPanel.svelte -->
 <script lang="ts">
-	import SequenceWidgetButton from './SequenceWidgetButton.svelte';
 	import { onMount } from 'svelte';
 
-	// Define types for panel props
+	// Define types
 	type LayoutOrientation = 'vertical' | 'horizontal';
 
-	export let layout: LayoutOrientation = 'vertical';
-	export let containerWidth = 0;
-	export let containerHeight = 0;
-	export let isPortrait = true;
-
-	// Define button data with type
 	interface ButtonDefinition {
 		icon: string;
 		title: string;
 		id: string;
-		action?: () => void;
 	}
 
-	// The buttons data - could be moved to a store for better organization
+	// Component props
+	export let containerWidth = 0;
+	export let containerHeight = 0;
+	export let isPortrait = true;
+
+	// Reactive layout orientation based on isPortrait
+	$: layout = isPortrait ? 'horizontal' : 'vertical';
+
+	// Button data - could be moved to a store for better organization
 	const buttons: ButtonDefinition[] = [
 		{
 			icon: '/button_panel_icons/add_to_dictionary.png',
 			title: 'Add to Dictionary',
-			id: 'addToDictionary',
-			action: () => dispatchAction('addToDictionary')
+			id: 'addToDictionary'
 		},
 		{
 			icon: '/button_panel_icons/save_image.png',
 			title: 'Save Image',
-			id: 'saveImage',
-			action: () => dispatchAction('saveImage')
+			id: 'saveImage'
 		},
 		{
 			icon: '/button_panel_icons/eye.png',
 			title: 'View Full Screen',
-			id: 'viewFullScreen',
-			action: () => dispatchAction('viewFullScreen')
+			id: 'viewFullScreen'
 		},
 		{
 			icon: '/button_panel_icons/mirror.png',
 			title: 'Mirror Sequence',
-			id: 'mirrorSequence',
-			action: () => dispatchAction('mirrorSequence')
+			id: 'mirrorSequence'
 		},
 		{
 			icon: '/button_panel_icons/yinyang1.png',
 			title: 'Swap Colors',
-			id: 'swapColors',
-			action: () => dispatchAction('swapColors')
+			id: 'swapColors'
 		},
 		{
 			icon: '/button_panel_icons/rotate.png',
 			title: 'Rotate Sequence',
-			id: 'rotateSequence',
-			action: () => dispatchAction('rotateSequence')
+			id: 'rotateSequence'
 		},
 		{
 			icon: '/button_panel_icons/delete.png',
 			title: 'Delete Beat',
-			id: 'deleteBeat',
-			action: () => dispatchAction('deleteBeat')
+			id: 'deleteBeat'
 		},
 		{
 			icon: '/button_panel_icons/clear.png',
 			title: 'Clear Sequence',
-			id: 'clearSequence',
-			action: () => dispatchAction('clearSequence')
+			id: 'clearSequence'
 		}
 	];
 
-	// Create a custom event dispatcher
+	// Reactive button size calculation
+	$: buttonSize = calculateButtonSize(containerWidth, containerHeight, isPortrait);
+
+	// Dispatch a custom event when a button is clicked
 	function dispatchAction(action: string) {
 		const event = new CustomEvent('action', {
 			detail: { action },
@@ -80,12 +75,7 @@
 		document.dispatchEvent(event);
 	}
 
-	// Reactive button size calculation
-	$: buttonSize = calculateButtonSize(containerWidth, containerHeight, isPortrait);
-
-	// Reactive layout update
-	$: layout = isPortrait ? 'horizontal' : 'vertical';
-
+	// Calculate button size based on container dimensions and orientation
 	function calculateButtonSize(width: number, height: number, isPortrait: boolean): number {
 		const isMobile = width <= 768;
 
@@ -105,12 +95,14 @@
 	class:horizontal={layout === 'horizontal'}
 >
 	{#each buttons as button (button.id)}
-		<SequenceWidgetButton
-			icon={button.icon}
+		<button
+			class="sequence-button"
+			style="width: {buttonSize}px; height: {buttonSize}px;"
+			on:click={() => dispatchAction(button.id)}
 			title={button.title}
-			{buttonSize}
-			onClick={button.action || (() => {})}
-		/>
+		>
+			<img src={button.icon} alt={button.title} />
+		</button>
 	{/each}
 </div>
 
@@ -130,5 +122,36 @@
 
 	.horizontal {
 		flex-direction: row;
+	}
+
+	.sequence-button {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		border-radius: 50%;
+		border: 1px solid #ccc;
+		cursor: pointer;
+		box-sizing: border-box;
+		padding: 0;
+		transition: all 0.1s ease-out;
+		background-color: white;
+		aspect-ratio: 1 / 1;
+	}
+
+	.sequence-button:hover {
+		background-color: #f0f0f0;
+		transform: scale(1.1);
+		box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	.sequence-button:active {
+		transform: scale(0.9);
+		box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.2);
+	}
+
+	.sequence-button img {
+		width: 70%;
+		height: 70%;
+		object-fit: contain;
 	}
 </style>
