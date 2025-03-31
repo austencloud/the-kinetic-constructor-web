@@ -19,6 +19,7 @@
 	import { PictographGetter } from './PictographGetter';
 	import ArrowRotAngleManager from '../objects/Arrow/ArrowRotAngleManager';
 	import ArrowLocationManager from '../objects/Arrow/ArrowLocationManager';
+	import type { Color } from '$lib/types/Types';
 
 	// Props
 	export let pictographDataStore: Writable<PictographData>;
@@ -32,7 +33,6 @@
 	}>();
 
 	// Define color type for better type safety
-	type PictographColor = 'red' | 'blue';
 
 	// Use const object instead of enum (Svelte-friendly)
 	const PictographState = {
@@ -131,7 +131,7 @@
 		}
 	}
 
-	function createColorComponents(color: PictographColor, data: PictographData) {
+	function createColorComponents(color: Color, data: PictographData) {
 		const motionDataKey = `${color}MotionData` as const;
 		if (!data[motionDataKey]) return;
 
