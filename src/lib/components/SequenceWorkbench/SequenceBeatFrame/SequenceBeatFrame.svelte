@@ -1,218 +1,164 @@
 <!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/SequenceBeatFrame.svelte -->
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { writable, type Writable } from 'svelte/store';
+	import { beatsStore, selectedBeatIndexStore } from '$lib/stores/beatsStore';
+	import { selectedStartPos } from '$lib/stores/constructStores';
+	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
+	import { sequenceActions } from '$lib/stores/sequenceActions';
+	import { useResizeObserver } from '$lib/composables/useResizeObserver';
+	import { autoAdjustLayout, calculateCellSize } from './beatFrameHelpers';
+	
+	// Components
 	import StartPosBeat from './StartPosBeat.svelte';
 	import Beat from './Beat.svelte';
 	import SelectionOverlay from './SelectionOverlay.svelte';
 	import ReversalGlyph from './ReversalGlyph.svelte';
 	import BeatNumberLabel from './BeatNumberLabel.svelte';
 	
-	import { beatsStore, selectedBeatIndexStore, addBeat, selectBeat } from '$lib/stores/beatsStore';
-	import { selectedStartPos } from '$lib/stores/constructStores';
-	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
-	import { applyLayout, autoAdjustLayout, calculateCellSize } from './beatFrameHelpers';
+	// Types
 	import type { BeatData } from './BeatData';
-	import type { PictographData } from '$lib/types/PictographData';
-
-	// Create a writable for starting position
-	let startPosBeatData: BeatData = {
-		beatNumber: 0,
-		filled: false,
-		pictographData: defaultPictographData
+	
+	// Constants
+	const GAP = 10; // Gap between cells in pixels
+	
+	// ===== Setup and state =====
+	
+	// Create a local beat data for the starting position
+	$: startPosBeatData = $selectedStartPos ? {
+	  beatNumber: 0,
+	  filled: true,
+	  pictographData: $selectedStartPos
+	} : {
+	  beatNumber: 0,
+	  filled: false,
+	  pictographData: defaultPictographData
 	};
 	
-	// Subscribe to the selectedStartPos store to update our local beat data
-	selectedStartPos.subscribe(newStartPos => {
-		if (newStartPos) {
-			startPosBeatData = {
-				...startPosBeatData,
-				filled: true,
-				pictographData: newStartPos
-			};
-		}
+	// Use the resize observer hook to track container dimensions
+	const { size, resizeObserver } = useResizeObserver({
+	  width: window.innerWidth * 0.8,
+	  height: window.innerHeight * 0.6
 	});
-
-	// Element references and size variables
-	let frameElement: HTMLElement;
-	let frameWidth = 0;
-	let frameHeight = 0;
-	let cellSize = 50;
-	let gap = 10;
 	
-	// Grid layout variables
-	let beatRows = 1;
-	let beatCols = 1;
+	// Reactive layout calculations
+	$: [beatRows, beatCols] = autoAdjustLayout($beatsStore.length);
 	
-	// Handle resize of the frame container
-	function onResize(width: number, height: number) {
-		frameWidth = width;
-		frameHeight = height;
-		updateCellSize();
-	}
+	$: cellSize = calculateCellSize(
+	  $size.width, 
+	  $size.height, 
+	  beatRows, 
+	  beatCols, 
+	  GAP
+	);
 	
-	// Initialize immediately with a fallback size if dimensions aren't available yet
-	function initializeSize() {
-		if (frameWidth === 0 || frameHeight === 0) {
-			// Use a sensible fallback size based on potential parent container
-			frameWidth = window.innerWidth * 0.8;  // 80% of viewport width as fallback
-			frameHeight = window.innerHeight * 0.6; // 60% of viewport height as fallback
-		}
-		updateCellSize();
-	}
+	// ===== Event handlers =====
 	
-	// Immediately calculate initial layout based on beat count
-	$: {
-		[beatRows, beatCols] = applyLayout({}, $beatsStore.length, autoAdjustLayout($beatsStore.length));
-	}
-	
-	// Calculate the cell size based on container dimensions and grid layout
-	function updateCellSize() {
-		if (frameWidth > 0 && frameHeight > 0) {
-			cellSize = calculateCellSize(frameWidth, frameHeight, beatRows, beatCols, gap);
-		}
-	}
-	
-	// Handle beat click events
 	function handleStartPosBeatClick() {
-		// Just select the start position beat without adding a new one
-		// You might want to dispatch a custom event or update a store here
-		console.log('Start position beat clicked');
-		// If you need specific behavior, implement it here
+	  // Deselect any selected beat
+	  sequenceActions.selectBeat(-1);
+	  
+	  // Dispatch custom event for selecting start position
+	  const event = new CustomEvent('select-start-pos', {
+		bubbles: true
+	  });
+	  document.dispatchEvent(event);
 	}
 	
 	function handleBeatClick(beatIndex: number) {
-		// Select the beat when clicked
-		selectBeat(beatIndex);
+	  sequenceActions.selectBeat(beatIndex);
 	}
 	
-	// Use a resize observer to track container size changes
-	function resizeObserver(node: HTMLElement) {
-		// Initialize dimensions and cell size immediately
-		const rect = node.getBoundingClientRect();
-		if (rect.width > 0 && rect.height > 0) {
-			onResize(rect.width, rect.height);
-		} else {
-			initializeSize();  // Use fallback if actual dimensions aren't available
-		}
-		
-		const observer = new ResizeObserver(entries => {
-			for (const entry of entries) {
-				if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
-					onResize(entry.contentRect.width, entry.contentRect.height);
-				}
-			}
-		});
-		
-		observer.observe(node);
-		
-		return {
-			destroy() {
-				observer.disconnect();
-			}
-		};
-	}
-	
-	// Ensure we calculate the layout as soon as the component mounts
+	// Ensure we've calculated layout before first render
 	onMount(async () => {
-		await tick(); // Wait for the DOM to update
-		if (frameElement) {
-			const rect = frameElement.getBoundingClientRect();
-			if (rect.width > 0 && rect.height > 0) {
-				onResize(rect.width, rect.height);
-			} else {
-				initializeSize();
-			}
-		}
+	  await tick();
 	});
-</script>
-
-<div
-	bind:this={frameElement}
+  </script>
+  
+  <div
 	use:resizeObserver
 	class="beat-frame"
-	style="--total-rows: {beatRows}; --total-cols: {beatCols}; --gap: {gap}px; --cell-size: {cellSize}px;"
->
+	style="--total-rows: {beatRows}; --total-cols: {beatCols}; --gap: {GAP}px; --cell-size: {cellSize}px;"
+  >
 	<!-- Start Position Beat -->
 	<div class="beat-container start-position">
-		<StartPosBeat 
-			beatData={startPosBeatData}
-			onClick={handleStartPosBeatClick}
-		/>
+	  <StartPosBeat 
+		beatData={startPosBeatData}
+		onClick={handleStartPosBeatClick}
+	  />
 	</div>
-
+  
 	<!-- Regular Beats -->
 	{#each $beatsStore as beat, index (beat.beatNumber)}
-		<div 
-			class="beat-container" 
-			class:selected={$selectedBeatIndexStore === index}
-		>
-			<Beat 
-				{beat}
-				onClick={() => handleBeatClick(index)} 
-			/>
-			
-			<!-- Show beat number -->
-			<div class="beat-number">
-				<BeatNumberLabel 
-					beatNumber={beat.beatNumber} 
-					duration={beat.duration || 1} 
-				/>
-			</div>
-			
-			<!-- Show reversals if any -->
-			{#if beat.metadata?.blueReversal || beat.metadata?.redReversal}
-				<div class="reversal-indicator">
-					<ReversalGlyph 
-						blueReversal={beat.metadata?.blueReversal || false} 
-						redReversal={beat.metadata?.redReversal || false} 
-					/>
-				</div>
-			{/if}
-			
-			<!-- Selection overlay -->
-			<SelectionOverlay isSelected={$selectedBeatIndexStore === index} />
+	  <div 
+		class="beat-container" 
+		class:selected={$selectedBeatIndexStore === index}
+	  >
+		<Beat 
+		  {beat}
+		  onClick={() => handleBeatClick(index)} 
+		/>
+		
+		<!-- Show beat number -->
+		<div class="beat-number">
+		  <BeatNumberLabel 
+			beatNumber={beat.beatNumber} 
+			duration={beat.duration || 1} 
+		  />
 		</div>
+		
+		<!-- Show reversals if any -->
+		{#if beat.metadata?.blueReversal || beat.metadata?.redReversal}
+		  <div class="reversal-indicator">
+			<ReversalGlyph 
+			  blueReversal={beat.metadata?.blueReversal || false} 
+			  redReversal={beat.metadata?.redReversal || false} 
+			/>
+		  </div>
+		{/if}
+		
+		<!-- Selection overlay -->
+		<SelectionOverlay isSelected={$selectedBeatIndexStore === index} />
+	  </div>
 	{/each}
-</div>
-
-<style>
+  </div>
+  
+  <style>
 	.beat-frame {
-		display: grid;
-		grid-template-columns: repeat(var(--total-cols), var(--cell-size));
-		grid-template-rows: repeat(var(--total-rows), var(--cell-size));
-		gap: var(--gap);
-		justify-content: center;
-		align-content: center;
-		width: 100%;
-		height: 100%;
+	  display: grid;
+	  grid-template-columns: repeat(var(--total-cols), var(--cell-size));
+	  grid-template-rows: repeat(var(--total-rows), var(--cell-size));
+	  gap: var(--gap);
+	  justify-content: center;
+	  align-content: center;
+	  width: 100%;
+	  height: 100%;
 	}
 	
 	.beat-container {
-		position: relative;
-		width: var(--cell-size);
-		height: var(--cell-size);
-		display: flex;
-		justify-content: center;
-		align-items: center;
+	  position: relative;
+	  width: var(--cell-size);
+	  height: var(--cell-size);
+	  display: flex;
+	  justify-content: center;
+	  align-items: center;
 	}
 	
 	.start-position {
-		grid-column: 1;
-		grid-row: 1;
+	  grid-column: 1;
+	  grid-row: 1;
 	}
 	
 	.beat-number {
-		position: absolute;
-		top: 5px;
-		left: 5px;
-		z-index: 2;
+	  position: absolute;
+	  top: 5px;
+	  left: 5px;
+	  z-index: 2;
 	}
 	
 	.reversal-indicator {
-		position: absolute;
-		bottom: 5px;
-		right: 5px;
-		z-index: 2;
+	  position: absolute;
+	  bottom: 5px;
+	  right: 5px;
+	  z-index: 2;
 	}
-</style>
+  </style>
