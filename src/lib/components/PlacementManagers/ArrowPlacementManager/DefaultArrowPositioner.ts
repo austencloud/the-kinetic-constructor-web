@@ -1,3 +1,4 @@
+// src/lib/components/PlacementManagers/ArrowPlacementManager/DefaultArrowPositioner.ts
 import {
 	PRO,
 	ANTI,
@@ -63,7 +64,7 @@ export class DefaultArrowPositioner {
 		const motionType = arrowData.motionType as MotionType;
 		const gridMode = this.pictographData.gridMode || DIAMOND;
 		const defaultPlacements = this.allDefaults[gridMode][motionType] || {};
-		const key = this._get_adjustment_key(arrowData, defaultPlacements);
+		const key = this._getAdjustmentKey(arrowData, defaultPlacements);
 		const turnsString = String(arrowData.turns);
 
 		if (key in defaultPlacements && turnsString in defaultPlacements[key]) {
@@ -74,7 +75,7 @@ export class DefaultArrowPositioner {
 		return [0, 0];
 	}
 
-	private _get_adjustment_key(arrow: ArrowData, defaultPlacements: any): string {
+	private _getAdjustmentKey(arrow: ArrowData, defaultPlacements: any): string {
 		const motionType = arrow.motionType;
 		const motionEndOri = arrow.endOri;
 

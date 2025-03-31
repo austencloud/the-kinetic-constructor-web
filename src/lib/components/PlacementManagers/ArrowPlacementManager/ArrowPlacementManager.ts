@@ -1,4 +1,4 @@
-// ArrowPlacementManager.ts
+// src/lib/components/PlacementManagers/ArrowPlacementManager/ArrowPlacementManager.ts
 import { ArrowAdjustmentCalculator } from './ArrowAdjustmentCalculator';
 import { ArrowInitialPosCalculator } from './ArrowInitialPositionCalculator';
 import { DefaultArrowPositioner } from './DefaultArrowPositioner';
@@ -19,7 +19,7 @@ export class ArrowPlacementManager {
 		private checker: PictographChecker
 	) {
 		if (!gridData) {
-			throw new Error('Grid data is required to initialize PropPlacementManager');
+			throw new Error('Grid data is required to initialize ArrowPlacementManager');
 		}
 		this.defaultPositioner = new DefaultArrowPositioner(pictographData, gridData, checker);
 		this.initialPosCalculator = new ArrowInitialPosCalculator(pictographData, gridData);
@@ -38,8 +38,6 @@ export class ArrowPlacementManager {
 				x: initialPos.x + adjustment.x,
 				y: initialPos.y + adjustment.y
 			};
-			// log the coords
 		});
 	}
-
 }

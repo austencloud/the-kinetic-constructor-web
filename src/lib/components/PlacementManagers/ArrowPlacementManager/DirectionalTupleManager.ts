@@ -1,9 +1,9 @@
-// In DirectionalTupleManager.ts
+// src/lib/components/PlacementManagers/ArrowPlacementManager/DirectionalTupleManager.ts
 import {
 	generateStaticDirectionTuples,
 	generateDashDirectionTuples,
 	generateShiftDirectionTuples
-} from '$lib/components/PlacementManagers/ArrowPlacementManager/directionTuples';
+} from './directionTuples';
 
 import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';
 import type { Motion } from '$lib/components/objects/Motion/Motion';
@@ -22,7 +22,7 @@ export class DirectionalTupleManager {
 					y,
 					this.motion.motionType as MotionType,
 					this.motion.propRotDir as PropRotDir,
-					this._get_grid_mode(),
+					this._getGridMode(),
 					this.motion.handRotDirCalculator?.getHandRotDir(
 						this.motion.startLoc,
 						this.motion.endLoc
@@ -33,7 +33,7 @@ export class DirectionalTupleManager {
 					x,
 					y,
 					this.motion.propRotDir as PropRotDir,
-					this._get_grid_mode(),
+					this._getGridMode(),
 					this.motion.startOri
 				);
 			case STATIC:
@@ -41,15 +41,14 @@ export class DirectionalTupleManager {
 					x,
 					y,
 					this.motion.propRotDir as PropRotDir,
-					this._get_grid_mode()
+					this._getGridMode()
 				);
 			default:
 				return [];
 		}
 	}
 
-	// We still need this helper method from the BaseDirectionalGenerator
-	private _get_grid_mode(): GridMode {
+	private _getGridMode(): GridMode {
 		const mode = this.motion.gridMode || 'diamond';
 		if (mode !== 'box' && mode !== 'diamond') return 'diamond';
 		return mode as GridMode;

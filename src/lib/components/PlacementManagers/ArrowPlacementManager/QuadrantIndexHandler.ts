@@ -14,9 +14,8 @@ export class QuadrantIndexHandler {
 
     public getQuadrantIndex(arrow: ArrowData): number {
         const gridMode = this.pictographData.gridMode || 'diamond';
-        const motionType = arrow.motionType; // Use the property directly from the arrow
+        const motionType = arrow.motionType;
 
-        // Replace with your actual 4-case checks:
         if (gridMode === 'diamond') {
             if (['pro', 'anti', 'float'].includes(motionType)) {
                 return this.diamondShiftQuadrantIndex(arrow.loc ?? '');

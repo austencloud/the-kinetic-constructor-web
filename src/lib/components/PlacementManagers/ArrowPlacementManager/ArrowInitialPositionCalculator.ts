@@ -1,3 +1,4 @@
+// src/lib/components/PlacementManagers/ArrowPlacementManager/ArrowInitialPositionCalculator.ts
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 import type { GridData } from '$lib/components/objects/Grid/GridData';
 import { ANTI, DASH, FLOAT, PRO, STATIC } from '$lib/types/Constants';

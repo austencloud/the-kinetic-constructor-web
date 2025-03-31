@@ -1,4 +1,4 @@
-// src/lib/arrows/directionTuples.ts
+// src/lib/components/PlacementManagers/ArrowPlacementManager/directionTuples.ts
 import {
 	CLOCKWISE,
 	COUNTER_CLOCKWISE,
@@ -308,27 +308,6 @@ function generateFloatDirectionTuples(
 ): DirectionTupleSet {
 	if (!handRotDir) return [];
 
-	// Based on debugging, the class methods are returning empty arrays
-	// so we'll return empty arrays here too
-	return [];
-}
-
-function generateFloatDiamondTuples(
-	x: number,
-	y: number,
-	handRotDir: ShiftHandRotDir
-): DirectionTupleSet {
-	// This method is now unused since we always return empty arrays
-	// from generateFloatDirectionTuples, but keep it for compatibility
-	return [];
-}
-
-function generateFloatBoxTuples(
-	x: number,
-	y: number,
-	handRotDir: ShiftHandRotDir
-): DirectionTupleSet {
-	// This method is now unused since we always return empty arrays
-	// from generateFloatDirectionTuples, but keep it for compatibility
+	// Based on previous implementation, return empty arrays
 	return [];
 }

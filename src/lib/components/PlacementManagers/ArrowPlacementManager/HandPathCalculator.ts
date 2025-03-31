@@ -1,5 +1,4 @@
-// HandpathCalculator.ts
-
+// src/lib/components/PlacementManagers/ArrowPlacementManager/HandPathCalculator.ts
 import {
 	CCW_HANDPATH,
 	CW_HANDPATH,
@@ -14,8 +13,7 @@ import {
 	SOUTHEAST,
 	SOUTHWEST
 } from '$lib/types/Constants';
-import type { HandRotDir } from '../../Motion/MotionData';
-import type { Loc } from '../../Prop/PropData';
+import type { HandRotDir, Loc } from '$lib/types/Types';
 
 export class HandpathCalculator {
 	private handRotDirMap: Map<string, HandRotDir>;
