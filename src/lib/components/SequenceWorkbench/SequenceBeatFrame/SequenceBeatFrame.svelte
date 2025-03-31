@@ -75,9 +75,10 @@
 	
 	// Handle beat click events
 	function handleStartPosBeatClick() {
-		// For start position, we might want different behavior
-		// For now, just add a new beat like the original code did
-		addBeat();
+		// Just select the start position beat without adding a new one
+		// You might want to dispatch a custom event or update a store here
+		console.log('Start position beat clicked');
+		// If you need specific behavior, implement it here
 	}
 	
 	function handleBeatClick(beatIndex: number) {
@@ -214,6 +215,4 @@
 		right: 5px;
 		z-index: 2;
 	}
-	
-
 </style>
