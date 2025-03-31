@@ -16,8 +16,8 @@
 	import { PictographComponentLoader } from './services/PictographComponentLoader';
 	import { PictographComponentPositioner } from './services/PictographComponentPositioner';
 	import { PictographGetter } from './PictographGetter';
-	import ArrowLocationManager from '../objects/Arrow/ArrowLocationManager/ArrowLocationManager';
-	import ArrowRotAngleManager from '../objects/Arrow/ArrowRotAngleManager/ArrowRotAngleManager';
+	import ArrowRotAngleManager from '../objects/Arrow/ArrowRotAngleManager';
+	import ArrowLocationManager from '../objects/Arrow/ArrowLocationManager';
 
 	export let pictographDataStore: Writable<PictographData>;
 	export let onClick: (() => void) | undefined = undefined;

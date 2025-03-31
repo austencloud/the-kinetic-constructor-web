@@ -1,9 +1,10 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
+// vite.config.js
 export default defineConfig({
 	plugins: [sveltekit()],
 	optimizeDeps: {
-		exclude: ['chunk-YGTFLEU5', 'chunk-QCBUMAKQ', 'chunk-FDUFEXZF']
+		force: true // Forces complete re-optimization on every server start
 	}
 });

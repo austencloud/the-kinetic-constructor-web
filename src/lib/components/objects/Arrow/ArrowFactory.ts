@@ -4,11 +4,11 @@ import ArrowSvgMirrorManager from './ArrowSvgMirrorManager';
 
 export function createArrowData(motion: Motion): ArrowData {
 	const arrowData: ArrowData = {
-		id: generateUniqueId(),  // ✅ Generate unique ID
-		motionId: motion.id,     // ✅ Store motion ID, not full motion object
+		id: generateUniqueId(), // ✅ Generate unique ID
+		motionId: motion.id, // ✅ Store motion ID, not full motion object
 		color: motion.color,
 		coords: { x: 0, y: 0 },
-		loc: motion.startLoc,    // ✅ Use motion start location
+		loc: motion.startLoc, // ✅ Use motion start location
 		rotAngle: 0,
 		svgMirrored: false,
 		svgCenter: { x: 0, y: 0 },
@@ -17,7 +17,8 @@ export function createArrowData(motion: Motion): ArrowData {
 		motionType: motion.motionType, // ✅ Store motion properties separately
 		startOri: motion.startOri,
 		turns: motion.turns,
-		propRotDir: motion.propRotDir
+		propRotDir: motion.propRotDir,
+		endOri: motion.endOri
 	};
 
 	const mirrorManager = new ArrowSvgMirrorManager(arrowData);

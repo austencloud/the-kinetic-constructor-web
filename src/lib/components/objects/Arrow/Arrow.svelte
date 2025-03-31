@@ -5,7 +5,7 @@
 	import { ArrowSvgLoader } from './services/ArrowSvgLoader';
 	import SvgManager from '../../SvgManager/SvgManager';
 	import type { Motion } from '../Motion/Motion';
-	import { calculateArrowRotationAngle } from './ArrowRotAngleManager/arrowRotationUtils';
+	import { calculateArrowRotationAngle } from './ArrowRotAngleManager';
 
 	export let arrowData: ArrowData;
 	export let motion: Motion | null = null;
