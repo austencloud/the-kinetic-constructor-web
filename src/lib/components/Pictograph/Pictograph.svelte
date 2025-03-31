@@ -28,6 +28,13 @@
 		error: { source: string; error?: any; message?: string };
 	}>();
 
+	// Create reactive declarations from store
+	import type { Letter } from '$lib/types/Letter';
+	$: pictographData = $pictographDataStore;
+	$: letter = pictographData?.letter || null;
+	$: gridMode = pictographData?.gridMode;
+	$: pictographChecker = new PictographChecker(pictographData);
+
 	type ComponentState = 'initializing' | 'grid_only' | 'loading' | 'complete' | 'error';
 
 	let state: ComponentState = 'initializing';
@@ -44,20 +51,8 @@
 	let componentLoader: PictographComponentLoader;
 	let componentPositioner: PictographComponentPositioner;
 	let pictographGetter: PictographGetter;
-	$: pictographChecker = new PictographChecker(get(pictographDataStore));
+	
 
-	onMount(() => {
-		pictographGetter = new PictographGetter(get(pictographDataStore));
-		componentLoader = new PictographComponentLoader(pictographDataStore);
-		componentPositioner = new PictographComponentPositioner(pictographDataStore);
-
-		if (!hasRequiredMotionData(get(pictographDataStore))) {
-			state = 'grid_only';
-			return;
-		}
-
-		state = 'loading';
-	});
 
 	function hasRequiredMotionData(data: PictographData) {
 		return !!(data && data.redMotionData && data.blueMotionData);
@@ -81,6 +76,7 @@
 			const data = get(pictographDataStore);
 			requiredComponents = ['grid'];
 
+			// Batch component creation by color
 			if (data.redMotionData) {
 				redPropData = componentLoader.createPropFromMotion(data.redMotionData, 'red');
 				redArrowData = componentLoader.createArrowFromMotion(data.redMotionData, 'red');
@@ -97,6 +93,7 @@
 				requiredComponents.push('blueProp', 'blueArrow');
 			}
 
+			// Single store update instead of multiple updates
 			pictographDataStore.update((store) => ({
 				...store,
 				redPropData,
@@ -109,6 +106,20 @@
 		}
 	}
 
+	// Replace your onMount with this
+	onMount(() => {
+		pictographGetter = new PictographGetter(get(pictographDataStore));
+		componentLoader = new PictographComponentLoader(pictographDataStore);
+		componentPositioner = new PictographComponentPositioner(pictographDataStore);
+
+		const data = get(pictographDataStore);
+		if (!data || !data.redMotionData || !data.blueMotionData) {
+			state = 'grid_only';
+			return;
+		}
+
+		state = 'loading';
+	});
 	function handleComponentLoaded(component: string) {
 		componentStatus[component] = true;
 		checkLoadingComplete();
@@ -118,10 +129,12 @@
 		const allLoaded = requiredComponents.every((component) => componentStatus[component]);
 		if (allLoaded) positionComponents();
 	}
-
 	function positionComponents() {
 		try {
 			if (!gridData) throw new Error('Grid data not available');
+
+			// Get data just once instead of multiple calls to get()
+			const data = get(pictographDataStore);
 
 			if (redPropData) componentPositioner.positionProp(redPropData, gridData);
 			if (bluePropData) componentPositioner.positionProp(bluePropData, gridData);
@@ -129,14 +142,14 @@
 			// Apply beta positioning if needed
 			if (redPropData && bluePropData && pictographChecker.endsWithBeta()) {
 				try {
-					new BetaPropPositioner(get(pictographDataStore)).reposition([redPropData, bluePropData]);
+					new BetaPropPositioner(data).reposition([redPropData, bluePropData]);
 				} catch (error) {
 					console.warn('Beta positioning error:', error);
 				}
 			}
 
 			// Position arrows using the existing positionArrows method
-			const data = get(pictographDataStore);
+			// Use data reference instead of calling get() again
 
 			// Update arrow locations first using the ArrowLocationManager
 			if (redArrowData && data.redMotion) {
@@ -191,17 +204,35 @@
 			handleError('positioning', error);
 		}
 	}
-
 	function handleError(source: string, error: any) {
-		errorMessage = error instanceof Error ? error.message : String(error);
-		console.error(`Pictograph error [${source}]:`, error);
+		// Create a structured error object
+		const errorObj = {
+			source,
+			message: error instanceof Error ? error.message : String(error),
+			stack: error instanceof Error ? error.stack : undefined,
+			timestamp: new Date().toISOString()
+		};
+
+		errorMessage = errorObj.message;
+		console.error(`Pictograph error [${source}]:`, errorObj);
+
 		state = 'error';
 		dispatch('error', { source, error, message: errorMessage });
 		dispatch('loaded', { complete: false, error: true, message: errorMessage });
 	}
 
 	function handleComponentError(component: string, error: any) {
-		console.warn(`Component error (${component}):`, error);
+		// Create a structured error object
+		const errorObj = {
+			component,
+			message: error instanceof Error ? error.message : String(error),
+			stack: error instanceof Error ? error.stack : undefined,
+			timestamp: new Date().toISOString()
+		};
+
+		console.warn(`Component error (${component}):`, errorObj);
+
+		// Mark as loaded so we don't hang
 		if (requiredComponents.includes(component)) {
 			componentStatus[component] = true;
 			checkLoadingComplete();
@@ -219,14 +250,14 @@
 	on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick && onClick()}
 	role={onClick ? 'button' : undefined}
 	tabIndex={onClick ? 0 : undefined}
-	aria-label="Pictograph container for letter {get(pictographDataStore)?.letter || 'N/A'}"
+	aria-label="Pictograph container for letter {letter}"
 >
 	<svg
 		class="pictograph"
 		viewBox="0 0 950 950"
 		xmlns="http://www.w3.org/2000/svg"
 		role="img"
-		aria-label="Pictograph visualization for letter {get(pictographDataStore)?.letter || 'N/A'}"
+		aria-label="Pictograph visualization for letter {letter}"
 	>
 		{#if state === 'initializing'}
 			<text
@@ -252,53 +283,44 @@
 			</text>
 		{:else}
 			<Grid
-				gridMode={get(pictographDataStore).gridMode}
+				gridMode={gridMode}
 				onPointsReady={handleGridLoaded}
 				on:error={(e) => handleComponentError('grid', e.detail)}
 				{debug}
 			/>
 
 			{#if state !== 'grid_only'}
-				{#if get(pictographDataStore).letter}
+				<!-- Letter glyph -->
+				{#if letter}
 					<TKAGlyph
-						letter={get(pictographDataStore).letter}
+						letter={letter}
 						turnsTuple="(s, 0, 0)"
 						x={50}
 						y={800}
 					/>
 				{/if}
 
-				{#if redPropData}
-					<Prop
-						propData={redPropData}
-						on:loaded={() => handleComponentLoaded('redProp')}
-						on:error={(e) => handleComponentError('redProp', e.detail)}
-					/>
-				{/if}
+				<!-- Motion components using each loop -->
+				{#each [
+					{ color: 'red', propData: redPropData, arrowData: redArrowData },
+					{ color: 'blue', propData: bluePropData, arrowData: blueArrowData }
+				] as { color, propData, arrowData }}
+					{#if propData}
+						<Prop
+							propData={propData}
+							on:loaded={() => handleComponentLoaded(`${color}Prop`)}
+							on:error={(e) => handleComponentError(`${color}Prop`, e.detail)}
+						/>
+					{/if}
 
-				{#if bluePropData}
-					<Prop
-						propData={bluePropData}
-						on:loaded={() => handleComponentLoaded('blueProp')}
-						on:error={(e) => handleComponentError('blueProp', e.detail)}
-					/>
-				{/if}
-
-				{#if redArrowData}
-					<Arrow
-						arrowData={redArrowData}
-						on:loaded={() => handleComponentLoaded('redArrow')}
-						on:error={(e) => handleComponentError('redArrow', e.detail)}
-					/>
-				{/if}
-
-				{#if blueArrowData}
-					<Arrow
-						arrowData={blueArrowData}
-						on:loaded={() => handleComponentLoaded('blueArrow')}
-						on:error={(e) => handleComponentError('blueArrow', e.detail)}
-					/>
-				{/if}
+					{#if arrowData}
+						<Arrow
+							arrowData={arrowData}
+							on:loaded={() => handleComponentLoaded(`${color}Arrow`)}
+							on:error={(e) => handleComponentError(`${color}Arrow`, e.detail)}
+						/>
+					{/if}
+				{/each}
 			{/if}
 		{/if}
 	</svg>

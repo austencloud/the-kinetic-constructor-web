@@ -2,7 +2,7 @@
 	import { parseTurnsTupleString } from './Turns/parseTurnsTuple';
 	import type { Letter } from '$lib/types/Letter';
 	import TKADash from './Dash/TKADash.svelte';
-	import TKALetter from './Letter/TKALetter.svelte';
+import TKALetter from './Letter/TKALetter.svelte';
 	import TKADotHandler from './Dot/TKADotHandler.svelte';
 	import TKATurnsNumberGroup from './Turns/TKATurnsNumberGroup.svelte';
 	import type { DirRelation, PropRotDir, TKATurns } from '$lib/types/Types';

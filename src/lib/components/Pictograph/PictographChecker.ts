@@ -6,50 +6,56 @@ import { LetterConditions } from './LetterConditions';
 export class PictographChecker {
 	constructor(private pictographData: PictographData) {}
 
-	endsWithAlpha(): boolean {
-		return this.checkLetterCondition(LetterConditions.ALPHA_ENDING);
+	private get orientationChecks() {
+		return {
+			isRadial: (ori?: string) => [IN, OUT].includes(ori ?? ''),
+			isRotational: (ori?: string) => [CLOCK, COUNTER].includes(ori ?? '')
+		};
 	}
 
-	endsWithBeta(): boolean {
-		return this.checkLetterCondition(LetterConditions.BETA_ENDING);
+	private getMotionEndOrientation(motionKey: 'redMotionData' | 'blueMotionData') {
+		// Replace _.get with optional chaining
+		return this.pictographData[motionKey]?.endOri;
 	}
 
-	endsWithGamma(): boolean {
-		return this.checkLetterCondition(LetterConditions.GAMMA_ENDING);
-	}
-
-	private checkLetterCondition(condition: LetterConditions): boolean {
+	checkLetterCondition(condition: LetterConditions): boolean {
 		return this.pictographData.letter
 			? LetterUtils.getLettersByCondition(condition).includes(this.pictographData.letter)
 			: false;
 	}
 
+	endsWithAlpha = () => this.checkLetterCondition(LetterConditions.ALPHA_ENDING);
+	endsWithBeta = () => this.checkLetterCondition(LetterConditions.BETA_ENDING);
+	endsWithGamma = () => this.checkLetterCondition(LetterConditions.GAMMA_ENDING);
+
 	endsWithLayer3(): boolean {
-		const redEndOri = this.pictographData.redMotionData?.endOri;
-		const blueEndOri = this.pictographData.blueMotionData?.endOri;
+		const redEndOri = this.getMotionEndOrientation('redMotionData');
+		const blueEndOri = this.getMotionEndOrientation('blueMotionData');
 
-		const redIsRadial = redEndOri === IN || redEndOri === OUT;
-		const redIsRotational = redEndOri === CLOCK || redEndOri === COUNTER;
-		const blueIsRadial = blueEndOri === IN || blueEndOri === OUT;
-		const blueIsRotational = blueEndOri === CLOCK || blueEndOri === COUNTER;
+		const checks = this.orientationChecks;
 
-		return (redIsRadial && blueIsRotational) || (redIsRotational && blueIsRadial);
+		return (
+			(checks.isRadial(redEndOri) && checks.isRotational(blueEndOri)) ||
+			(checks.isRotational(redEndOri) && checks.isRadial(blueEndOri))
+		);
 	}
 
 	endsWithRadialOri(): boolean {
-		const redEndOri = this.pictographData.redMotionData?.endOri;
-		const blueEndOri = this.pictographData.blueMotionData?.endOri;
+		const redEndOri = this.getMotionEndOrientation('redMotionData');
+		const blueEndOri = this.getMotionEndOrientation('blueMotionData');
 
-		return (redEndOri === IN || redEndOri === OUT) && (blueEndOri === IN || blueEndOri === OUT);
+		return (
+			this.orientationChecks.isRadial(redEndOri) && this.orientationChecks.isRadial(blueEndOri)
+		);
 	}
 
 	endsWithNonRadialOri(): boolean {
-		const redEndOri = this.pictographData.redMotionData?.endOri;
-		const blueEndOri = this.pictographData.blueMotionData?.endOri;
+		const redEndOri = this.getMotionEndOrientation('redMotionData');
+		const blueEndOri = this.getMotionEndOrientation('blueMotionData');
 
 		return (
-			(redEndOri === CLOCK || redEndOri === COUNTER) &&
-			(blueEndOri === CLOCK || blueEndOri === COUNTER)
+			this.orientationChecks.isRotational(redEndOri) &&
+			this.orientationChecks.isRotational(blueEndOri)
 		);
 	}
 }
