@@ -6,6 +6,7 @@
 	import type { PropData } from '../objects/Prop/PropData';
 	import type { ArrowData } from '../objects/Arrow/ArrowData';
 	import type { GridData } from '../objects/Grid/GridData';
+	import type { Letter } from '$lib/types/Letter';
 
 	import Grid from '../objects/Grid/Grid.svelte';
 	import Prop from '../objects/Prop/Prop.svelte';
@@ -19,25 +20,39 @@
 	import ArrowRotAngleManager from '../objects/Arrow/ArrowRotAngleManager';
 	import ArrowLocationManager from '../objects/Arrow/ArrowLocationManager';
 
+	// Props
 	export let pictographDataStore: Writable<PictographData>;
 	export let onClick: (() => void) | undefined = undefined;
 	export let debug = false;
 
+	// Dispatch for events
 	const dispatch = createEventDispatcher<{
 		loaded: { complete: boolean; error?: boolean; message?: string };
 		error: { source: string; error?: any; message?: string };
 	}>();
 
+	// Define color type for better type safety
+	type PictographColor = 'red' | 'blue';
+
+	// Use const object instead of enum (Svelte-friendly)
+	const PictographState = {
+		Initializing: 'initializing',
+		GridOnly: 'grid_only',
+		Loading: 'loading',
+		Complete: 'complete',
+		Error: 'error'
+	} as const;
+	
+	type PictographStateType = typeof PictographState[keyof typeof PictographState];
+
 	// Create reactive declarations from store
-	import type { Letter } from '$lib/types/Letter';
 	$: pictographData = $pictographDataStore;
 	$: letter = pictographData?.letter || null;
 	$: gridMode = pictographData?.gridMode;
 	$: pictographChecker = new PictographChecker(pictographData);
 
-	type ComponentState = 'initializing' | 'grid_only' | 'loading' | 'complete' | 'error';
-
-	let state: ComponentState = 'initializing';
+	// Component state
+	let state: PictographStateType = PictographState.Initializing;
 	let gridData: GridData | null = null;
 	let redPropData: PropData | null = null;
 	let bluePropData: PropData | null = null;
@@ -45,25 +60,48 @@
 	let blueArrowData: ArrowData | null = null;
 	let errorMessage: string | null = null;
 
+	// Component loading tracking
 	let requiredComponents = ['grid'];
 	const componentStatus: Record<string, boolean> = { grid: false };
 
+	// Services
 	let componentLoader: PictographComponentLoader;
 	let componentPositioner: PictographComponentPositioner;
 	let pictographGetter: PictographGetter;
-	
 
+	// Initialize the component
+	onMount(() => {
+		initializeServices();
+		checkMotionData();
+	});
+
+	// Single-responsibility initialization functions
+	function initializeServices() {
+		pictographGetter = new PictographGetter(get(pictographDataStore));
+		componentLoader = new PictographComponentLoader(pictographDataStore);
+		componentPositioner = new PictographComponentPositioner(pictographDataStore);
+	}
+
+	function checkMotionData() {
+		const data = get(pictographDataStore);
+		if (!hasRequiredMotionData(data)) {
+			state = PictographState.GridOnly;
+			return;
+		}
+		state = PictographState.Loading;
+	}
 
 	function hasRequiredMotionData(data: PictographData) {
 		return !!(data && data.redMotionData && data.blueMotionData);
 	}
 
+	// Grid loading handler
 	function handleGridLoaded(data: GridData) {
 		gridData = data;
 		pictographDataStore.update((store) => ({ ...store, gridData: data }));
 		componentStatus.grid = true;
 
-		if (state === 'grid_only') {
+		if (state === PictographState.GridOnly) {
 			dispatch('loaded', { complete: false });
 			return;
 		}
@@ -71,27 +109,14 @@
 		createComponents();
 	}
 
+	// Component creation & initialization
 	function createComponents() {
 		try {
 			const data = get(pictographDataStore);
 			requiredComponents = ['grid'];
 
-			// Batch component creation by color
-			if (data.redMotionData) {
-				redPropData = componentLoader.createPropFromMotion(data.redMotionData, 'red');
-				redArrowData = componentLoader.createArrowFromMotion(data.redMotionData, 'red');
-				componentStatus.redProp = false;
-				componentStatus.redArrow = false;
-				requiredComponents.push('redProp', 'redArrow');
-			}
-
-			if (data.blueMotionData) {
-				bluePropData = componentLoader.createPropFromMotion(data.blueMotionData, 'blue');
-				blueArrowData = componentLoader.createArrowFromMotion(data.blueMotionData, 'blue');
-				componentStatus.blueProp = false;
-				componentStatus.blueArrow = false;
-				requiredComponents.push('blueProp', 'blueArrow');
-			}
+			createColorComponents('red', data);
+			createColorComponents('blue', data);
 
 			// Single store update instead of multiple updates
 			pictographDataStore.update((store) => ({
@@ -106,20 +131,29 @@
 		}
 	}
 
-	// Replace your onMount with this
-	onMount(() => {
-		pictographGetter = new PictographGetter(get(pictographDataStore));
-		componentLoader = new PictographComponentLoader(pictographDataStore);
-		componentPositioner = new PictographComponentPositioner(pictographDataStore);
+	function createColorComponents(color: PictographColor, data: PictographData) {
+		const motionDataKey = `${color}MotionData` as const;
+		if (!data[motionDataKey]) return;
 
-		const data = get(pictographDataStore);
-		if (!data || !data.redMotionData || !data.blueMotionData) {
-			state = 'grid_only';
-			return;
+		// Safer type handling
+		const motionData = data[motionDataKey]!;
+		
+		if (color === 'red') {
+			redPropData = componentLoader.createPropFromMotion(motionData, color);
+			redArrowData = componentLoader.createArrowFromMotion(motionData, color);
+			componentStatus.redProp = false;
+			componentStatus.redArrow = false;
+			requiredComponents.push('redProp', 'redArrow');
+		} else {
+			bluePropData = componentLoader.createPropFromMotion(motionData, color);
+			blueArrowData = componentLoader.createArrowFromMotion(motionData, color);
+			componentStatus.blueProp = false;
+			componentStatus.blueArrow = false;
+			requiredComponents.push('blueProp', 'blueArrow');
 		}
+	}
 
-		state = 'loading';
-	});
+	// Component loading tracking
 	function handleComponentLoaded(component: string) {
 		componentStatus[component] = true;
 		checkLoadingComplete();
@@ -129,65 +163,16 @@
 		const allLoaded = requiredComponents.every((component) => componentStatus[component]);
 		if (allLoaded) positionComponents();
 	}
+
+	// Component positioning 
 	function positionComponents() {
 		try {
 			if (!gridData) throw new Error('Grid data not available');
 
-			// Get data just once instead of multiple calls to get()
 			const data = get(pictographDataStore);
 
-			if (redPropData) componentPositioner.positionProp(redPropData, gridData);
-			if (bluePropData) componentPositioner.positionProp(bluePropData, gridData);
-
-			// Apply beta positioning if needed
-			if (redPropData && bluePropData && pictographChecker.endsWithBeta()) {
-				try {
-					new BetaPropPositioner(data).reposition([redPropData, bluePropData]);
-				} catch (error) {
-					console.warn('Beta positioning error:', error);
-				}
-			}
-
-			// Position arrows using the existing positionArrows method
-			// Use data reference instead of calling get() again
-
-			// Update arrow locations first using the ArrowLocationManager
-			if (redArrowData && data.redMotion) {
-				try {
-					const locationManager = new ArrowLocationManager(pictographGetter);
-					const arrowLoc = locationManager.getArrowLocation(data.redMotion);
-					if (arrowLoc) {
-						redArrowData.loc = arrowLoc;
-
-						// Calculate and set the rotation angle
-						const rotAngleManager = new ArrowRotAngleManager();
-						redArrowData.rotAngle = rotAngleManager.updateRotation(data.redMotion, arrowLoc);
-					}
-				} catch (error) {
-					console.warn(`Arrow location calculation error (red):`, error);
-				}
-			}
-
-			if (blueArrowData && data.blueMotion) {
-				try {
-					const locationManager = new ArrowLocationManager(pictographGetter);
-					const arrowLoc = locationManager.getArrowLocation(data.blueMotion);
-					if (arrowLoc) {
-						blueArrowData.loc = arrowLoc;
-
-						// Calculate and set the rotation angle
-						const rotAngleManager = new ArrowRotAngleManager();
-						blueArrowData.rotAngle = rotAngleManager.updateRotation(data.blueMotion, arrowLoc);
-					}
-				} catch (error) {
-					console.warn(`Arrow location calculation error (blue):`, error);
-				}
-			}
-
-			// Now position the arrows using the existing method
-			if (redArrowData && blueArrowData && redPropData) {
-				componentPositioner.positionArrows(redArrowData, blueArrowData, gridData);
-			}
+			positionProps(data, gridData);
+			positionArrows(data, gridData);
 
 			// Update the store with the positioned components
 			pictographDataStore.update((store) => ({
@@ -198,14 +183,74 @@
 				blueArrowData
 			}));
 
-			state = 'complete';
+			state = PictographState.Complete;
 			dispatch('loaded', { complete: true });
 		} catch (error) {
 			handleError('positioning', error);
 		}
 	}
+
+	// Remove non-null assertions by passing gridData as parameter
+	function positionProps(data: PictographData, grid: GridData) {
+		if (redPropData) componentPositioner.positionProp(redPropData, grid);
+		if (bluePropData) componentPositioner.positionProp(bluePropData, grid);
+
+		applyBetaPositioningIfNeeded(data);
+	}
+
+	function applyBetaPositioningIfNeeded(data: PictographData) {
+		if (redPropData && bluePropData && pictographChecker.endsWithBeta()) {
+			try {
+				new BetaPropPositioner(data).reposition([redPropData, bluePropData]);
+			} catch (error) {
+				console.warn('Beta positioning error:', error);
+			}
+		}
+	}
+
+	function positionArrows(data: PictographData, grid: GridData) {
+		positionRedArrow(data);
+		positionBlueArrow(data);
+
+		if (redArrowData && blueArrowData && redPropData) {
+			componentPositioner.positionArrows(redArrowData, blueArrowData, grid);
+		}
+	}
+
+	function positionRedArrow(data: PictographData) {
+		if (!redArrowData || !data.redMotion) return;
+
+		try {
+			const locationManager = new ArrowLocationManager(pictographGetter);
+			const arrowLoc = locationManager.getArrowLocation(data.redMotion);
+			if (arrowLoc) {
+				redArrowData.loc = arrowLoc;
+				const rotAngleManager = new ArrowRotAngleManager();
+				redArrowData.rotAngle = rotAngleManager.updateRotation(data.redMotion, arrowLoc);
+			}
+		} catch (error) {
+			console.warn(`Arrow location calculation error (red):`, error);
+		}
+	}
+
+	function positionBlueArrow(data: PictographData) {
+		if (!blueArrowData || !data.blueMotion) return;
+
+		try {
+			const locationManager = new ArrowLocationManager(pictographGetter);
+			const arrowLoc = locationManager.getArrowLocation(data.blueMotion);
+			if (arrowLoc) {
+				blueArrowData.loc = arrowLoc;
+				const rotAngleManager = new ArrowRotAngleManager();
+				blueArrowData.rotAngle = rotAngleManager.updateRotation(data.blueMotion, arrowLoc);
+			}
+		} catch (error) {
+			console.warn(`Arrow location calculation error (blue):`, error);
+		}
+	}
+
+	// Error handling with better structure
 	function handleError(source: string, error: any) {
-		// Create a structured error object
 		const errorObj = {
 			source,
 			message: error instanceof Error ? error.message : String(error),
@@ -216,13 +261,12 @@
 		errorMessage = errorObj.message;
 		console.error(`Pictograph error [${source}]:`, errorObj);
 
-		state = 'error';
+		state = PictographState.Error;
 		dispatch('error', { source, error, message: errorMessage });
 		dispatch('loaded', { complete: false, error: true, message: errorMessage });
 	}
 
 	function handleComponentError(component: string, error: any) {
-		// Create a structured error object
 		const errorObj = {
 			component,
 			message: error instanceof Error ? error.message : String(error),
@@ -232,6 +276,9 @@
 
 		console.warn(`Component error (${component}):`, errorObj);
 
+		// Try to recover with fallbacks
+		applyFallbackPositioning(component);
+
 		// Mark as loaded so we don't hang
 		if (requiredComponents.includes(component)) {
 			componentStatus[component] = true;
@@ -239,6 +286,29 @@
 		}
 	}
 
+	// Explicit fallback system
+	function applyFallbackPositioning(component: string) {
+		const centerX = 475;
+		const centerY = 475;
+
+		// Apply simple offsets based on component type
+		switch (component) {
+			case 'redProp':
+				if (redPropData) redPropData.coords = { x: centerX - 50, y: centerY };
+				break;
+			case 'blueProp':
+				if (bluePropData) bluePropData.coords = { x: centerX + 50, y: centerY };
+				break;
+			case 'redArrow':
+				if (redArrowData) redArrowData.coords = { x: centerX, y: centerY - 50 };
+				break;
+			case 'blueArrow':
+				if (blueArrowData) blueArrowData.coords = { x: centerX, y: centerY + 50 };
+				break;
+		}
+	}
+
+	// UI event handling
 	function handleWrapperClick() {
 		if (onClick) onClick();
 	}
@@ -259,7 +329,7 @@
 		role="img"
 		aria-label="Pictograph visualization for letter {letter}"
 	>
-		{#if state === 'initializing'}
+		{#if state === PictographState.Initializing}
 			<text
 				x="50%"
 				y="50%"
@@ -270,7 +340,7 @@
 			>
 				Loading...
 			</text>
-		{:else if state === 'error'}
+		{:else if state === PictographState.Error}
 			<text
 				x="50%"
 				y="50%"
@@ -289,7 +359,7 @@
 				{debug}
 			/>
 
-			{#if state !== 'grid_only'}
+			{#if state !== PictographState.GridOnly}
 				<!-- Letter glyph -->
 				{#if letter}
 					<TKAGlyph
