@@ -1,7 +1,7 @@
 <!-- src/lib/components/SequenceWorkbench/SequenceWidget.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
+	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout';
+	import { getSequenceContext, sequenceActions } from '$lib/context/sequence/sequenceContext';
 	
 	// Components
 	import IndicatorLabel from './Labels/IndicatorLabel.svelte';
@@ -11,67 +11,90 @@
 	import BeatFrame from './SequenceBeatFrame/SequenceBeatFrame.svelte';
 	
 	// Props
-	export let sequenceWorkbenchHeight: number;
+	export let workbenchHeight: number;
 	
-	// State
-	let width = 0;
-	let height = 0;
-	let isPortrait = true;
-	let sequenceWidgetElement: HTMLElement;
+	// Get context
+	const { state, dispatch } = getSequenceContext();
 	
-	// Derived state
-	$: currentWord = 'Word:'; // This could be from a store in a real application
-	$: difficultyLevel = 3; // This could be from a store too
-	$: indicatorText = 'Ready'; // Status or other indicator text
+	// Use responsive layout hook
+	const { dimensions, isPortrait } = useResponsiveLayout();
 	
-	// Update layout when dimensions change
-	function updateLayout() {
-	  if (!browser) return;
-	  
-	  width = window.innerWidth;
-	  height = window.innerHeight;
-	  isPortrait = height > width;
+	// Derived values from context state
+	$: ({sequenceName, difficultyLevel, status} = $state);
+	$: statusText = getStatusText(status);
+	
+	// Function to get user-friendly status text
+	function getStatusText(status: string): string {
+	  switch(status) {
+		case 'ready': return 'Ready';
+		case 'editing': return 'Editing';
+		case 'saving': return 'Saving...';
+		case 'error': return 'Error';
+		default: return 'Ready';
+	  }
 	}
 	
-	// Initialize on mount
-	onMount(() => {
-	  if (!browser) return;
-	  
-	  updateLayout();
-	  window.addEventListener('resize', updateLayout);
-	  
-	  // Clean up on unmount
-	  return () => {
-		window.removeEventListener('resize', updateLayout);
-	  };
-	});
-	
-	// Event handlers
+	// Handler for button panel actions
 	function handleButtonAction(event: CustomEvent<{ id: string }>) {
 	  const { id } = event.detail;
-	  console.log(`Button action: ${id}`);
 	  
-	  // Handle the action based on the ID
-	  // This would dispatch to the appropriate store/service
-	  switch (id) {
+	  // Map button actions to context actions
+	  switch(id) {
 		case 'addToDictionary':
-		  // Add to dictionary logic
+		  // Handle dictionary addition - might need additional logic
+		  dispatch({ type: 'SET_STATUS', payload: 'saving' });
+		  // After the operation completes:
+		  setTimeout(() => dispatch({ type: 'SET_STATUS', payload: 'ready' }), 500);
 		  break;
+		  
 		case 'saveImage':
-		  // Save image logic
+		  // Handle image saving
+		  dispatch({ type: 'SET_STATUS', payload: 'saving' });
+		  // After save completes:
+		  setTimeout(() => dispatch({ type: 'SET_STATUS', payload: 'ready' }), 500);
 		  break;
-		// ... other cases
+		  
+		case 'viewFullScreen':
+		  // Handle full screen - this would be UI only, no state change needed
+		  console.log('Entering full screen mode');
+		  break;
+		  
+		case 'mirrorSequence':
+		  dispatch(sequenceActions.mirrorSequence());
+		  break;
+		  
+		case 'swapColors':
+		  dispatch(sequenceActions.swapColors());
+		  break;
+		  
+		case 'rotateSequence':
+		  // Rotation might need additional parameters
+		  dispatch({ type: 'SET_STATUS', payload: 'editing' });
+		  // After rotation completes:
+		  setTimeout(() => dispatch({ type: 'SET_STATUS', payload: 'ready' }), 200);
+		  break;
+		  
+		case 'deleteBeat':
+		  // Delete the currently selected beat
+		  if ($state.selectedBeatIndex >= 0) {
+			dispatch(sequenceActions.removeBeat($state.selectedBeatIndex));
+		  }
+		  break;
+		  
+		case 'clearSequence':
+		  dispatch(sequenceActions.clearSequence());
+		  break;
 	  }
 	}
   </script>
   
-  <div class="sequence-widget" bind:this={sequenceWidgetElement}>
-	<div class="main-layout" class:portrait={isPortrait}>
+  <div class="sequence-widget">
+	<div class="main-layout" class:portrait={$isPortrait}>
 	  <div class="left-vbox">
 		<div class="centered-group">
 		  <div class="sequence-widget-labels">
-			<CurrentWordLabel currentWord={currentWord} {width} />
-			<DifficultyLabel difficultyLevel={difficultyLevel} {width} />
+			<CurrentWordLabel currentWord={sequenceName} width={$dimensions.width} />
+			<DifficultyLabel {difficultyLevel} width={$dimensions.width} />
 		  </div>
 		  
 		  <div class="beat-frame-container">
@@ -80,26 +103,26 @@
 		</div>
 		
 		<div class="indicator-label-container">
-		  <IndicatorLabel text={indicatorText} {width} />
+		  <IndicatorLabel text={statusText} width={$dimensions.width} />
 		</div>
   
 		<!-- Button Panel in portrait mode -->
-		{#if isPortrait}
+		{#if $isPortrait}
 		  <SequenceWidgetButtonPanel 
-			{isPortrait} 
-			containerWidth={width} 
-			containerHeight={height} 
+			isPortrait={$isPortrait} 
+			containerWidth={$dimensions.width} 
+			containerHeight={$dimensions.height} 
 			on:action={handleButtonAction}
 		  />
 		{/if}
 	  </div>
   
 	  <!-- Button Panel in landscape mode -->
-	  {#if !isPortrait}
+	  {#if !$isPortrait}
 		<SequenceWidgetButtonPanel
-		  {isPortrait}
-		  containerWidth={width}
-		  containerHeight={sequenceWorkbenchHeight}
+		  isPortrait={$isPortrait}
+		  containerWidth={$dimensions.width}
+		  containerHeight={workbenchHeight}
 		  on:action={handleButtonAction}
 		/>
 	  {/if}

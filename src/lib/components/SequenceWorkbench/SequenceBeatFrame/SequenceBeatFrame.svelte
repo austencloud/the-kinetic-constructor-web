@@ -1,11 +1,9 @@
 <!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/SequenceBeatFrame.svelte -->
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { beatsStore, selectedBeatIndexStore } from '$lib/stores/beatsStore';
-	import { selectedStartPos } from '$lib/stores/constructStores';
-	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
-	import { sequenceActions } from '$lib/stores/sequenceActions';
+	import { getSequenceContext, sequenceActions } from '$lib/context/sequence/sequenceContext';
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
+	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import { autoAdjustLayout, calculateCellSize } from './beatFrameHelpers';
 	
 	// Components
@@ -15,34 +13,33 @@
 	import ReversalGlyph from './ReversalGlyph.svelte';
 	import BeatNumberLabel from './BeatNumberLabel.svelte';
 	
-	// Types
-	import type { BeatData } from './BeatData';
-	
 	// Constants
 	const GAP = 10; // Gap between cells in pixels
 	
-	// ===== Setup and state =====
+	// Get sequence context
+	const { state, dispatch } = getSequenceContext();
 	
-	// Create a local beat data for the starting position
-	$: startPosBeatData = $selectedStartPos ? {
-	  beatNumber: 0,
-	  filled: true,
-	  pictographData: $selectedStartPos
-	} : {
-	  beatNumber: 0,
-	  filled: false,
-	  pictographData: defaultPictographData
-	};
-	
-	// Use the resize observer hook to track container dimensions
+	// Use resize observer hook
 	const { size, resizeObserver } = useResizeObserver({
+	  // Default fallback size
 	  width: window.innerWidth * 0.8,
 	  height: window.innerHeight * 0.6
 	});
 	
-	// Reactive layout calculations
-	$: [beatRows, beatCols] = autoAdjustLayout($beatsStore.length);
+	// Create derived values from context state
+	$: ({ beats, selectedBeatIndex, startPosition } = $state);
 	
+	// Create start position beat data
+	$: startPosBeatData = {
+	  beatNumber: 0,
+	  filled: !!startPosition,
+	  pictographData: startPosition || defaultPictographData
+	};
+	
+	// Reactive layout calculations based on beat count
+	$: [beatRows, beatCols] = autoAdjustLayout(beats.length);
+	
+	// Calculate cell size based on container dimensions
 	$: cellSize = calculateCellSize(
 	  $size.width, 
 	  $size.height, 
@@ -51,13 +48,12 @@
 	  GAP
 	);
 	
-	// ===== Event handlers =====
-	
+	// Event handlers
 	function handleStartPosBeatClick() {
-	  // Deselect any selected beat
-	  sequenceActions.selectBeat(-1);
+	  // Deselect current beat
+	  dispatch(sequenceActions.selectBeat(-1));
 	  
-	  // Dispatch custom event for selecting start position
+	  // Dispatch event for handling in parent component if needed
 	  const event = new CustomEvent('select-start-pos', {
 		bubbles: true
 	  });
@@ -65,10 +61,10 @@
 	}
 	
 	function handleBeatClick(beatIndex: number) {
-	  sequenceActions.selectBeat(beatIndex);
+	  dispatch(sequenceActions.selectBeat(beatIndex));
 	}
 	
-	// Ensure we've calculated layout before first render
+	// Ensure layout is calculated on mount
 	onMount(async () => {
 	  await tick();
 	});
@@ -88,10 +84,10 @@
 	</div>
   
 	<!-- Regular Beats -->
-	{#each $beatsStore as beat, index (beat.beatNumber)}
+	{#each beats as beat, index (beat.beatNumber)}
 	  <div 
 		class="beat-container" 
-		class:selected={$selectedBeatIndexStore === index}
+		class:selected={selectedBeatIndex === index}
 	  >
 		<Beat 
 		  {beat}
@@ -117,7 +113,7 @@
 		{/if}
 		
 		<!-- Selection overlay -->
-		<SelectionOverlay isSelected={$selectedBeatIndexStore === index} />
+		<SelectionOverlay isSelected={selectedBeatIndex === index} />
 	  </div>
 	{/each}
   </div>
