@@ -149,22 +149,22 @@
 	  }
 	};
   
-	// Size mappings
+	// Size mappings - UPDATED FOR LARGER BUTTONS
 	const sizes = {
 	  small: {
-		padding: '6px 12px',
-		fontSize: '0.85rem',
-		iconSize: '0.9rem'
+		padding: '8px 16px',  // Increased from 6px 12px
+		fontSize: '1rem',     // Increased from 0.85rem
+		iconSize: '1.1rem'    // Increased from 0.9rem
 	  },
 	  medium: {
-		padding: '8px 16px',
-		fontSize: '1rem',
-		iconSize: '1.1rem'
+		padding: '12px 20px', // Increased from 8px 16px
+		fontSize: '1.2rem',   // Increased from 1rem
+		iconSize: '1.3rem'    // Increased from 1.1rem
 	  },
 	  large: {
-		padding: '10px 20px',
-		fontSize: '1.15rem',
-		iconSize: '1.3rem'
+		padding: '14px 28px', // Increased from 10px 20px
+		fontSize: '1.4rem',   // Increased from 1.15rem
+		iconSize: '1.6rem'    // Increased from 1.3rem
 	  }
 	};
   
@@ -261,38 +261,40 @@
 	  align-items: center;
 	  justify-content: center;
 	  border: 1px solid;
-	  border-radius: 8px;
+	  border-radius: 10px; /* Increased from 8px */
 	  cursor: pointer;
-	  font-weight: 500;
+	  font-weight: 600; /* Increased from 500 */
 	  letter-spacing: 0.025em;
 	  transition: all 0.2s ease;
 	  position: relative;
 	  overflow: hidden;
 	  text-align: center;
 	  outline: none;
+	  min-width: 2.5em; /* Ensure buttons have minimum width */
+	  min-height: 2.5em; /* Ensure buttons have minimum height */
 	}
   
-	/* Size variants */
+	/* Size variants - UPDATED FOR LARGER BUTTONS */
 	.small {
-	  padding: 6px 12px;
-	  font-size: 0.85rem;
+	  padding: 8px 16px; /* Increased from 6px 12px */
+	  font-size: 1rem; /* Increased from 0.85rem */
 	}
   
 	.medium {
-	  padding: 8px 16px;
-	  font-size: 1rem;
+	  padding: 12px 20px; /* Increased from 8px 16px */
+	  font-size: 1.2rem; /* Increased from 1rem */
 	}
   
 	.large {
-	  padding: 10px 20px;
-	  font-size: 1.15rem;
+	  padding: 14px 28px; /* Increased from 10px 20px */
+	  font-size: 1.4rem; /* Increased from 1.15rem */
 	}
   
 	/* Hover effects by variant */
 	.blue:not(.disabled):hover {
 	  background: linear-gradient(135deg, #264f94 0%, #7baafb 30%, #5584e1 60%, #3563cf 100%);
-	  transform: translateY(-1px);
-	  box-shadow: 0 4px 12px rgba(26, 73, 173, 0.5);
+	  transform: translateY(-2px); /* Enhanced from -1px */
+	  box-shadow: 0 6px 15px rgba(26, 73, 173, 0.5); /* Enhanced shadow */
 	  border-color: white;
 	}
   
@@ -304,8 +306,8 @@
 		rgba(120, 120, 120, 0.9) 60%,
 		rgba(40, 40, 40, 0.9) 100%
 	  );
-	  transform: translateY(-1px);
-	  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+	  transform: translateY(-2px); /* Enhanced from -1px */
+	  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3); /* Enhanced shadow */
 	  border-color: rgba(255, 255, 255, 0.6);
 	}
   
@@ -313,6 +315,8 @@
 	  background: rgba(100, 100, 100, 0.8);
 	  color: white;
 	  border-color: rgba(255, 255, 255, 0.7);
+	  transform: translateY(-2px); /* Added transform effect to ghost */
+	  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2); /* Added shadow to ghost */
 	}
   
 	/* Active/pressed state - all turn blue when pressed */
@@ -320,12 +324,12 @@
 	.dark:not(.disabled):active,
 	.ghost:not(.disabled):active {
 	  transform: translateY(1px);
-	  box-shadow: 0 2px 4px rgba(26, 73, 173, 0.4);
+	  box-shadow: 0 2px 8px rgba(26, 73, 173, 0.4); /* Enhanced shadow */
 	  background: linear-gradient(135deg, #16295a 0%, #517bbd 30%, #3a62ab 60%, #1d3b8c 100%);
 	  border-color: white;
 	}
   
-	/* Icon styling */
+	/* Icon styling - UPDATED FOR LARGER ICONS */
 	.icon {
 	  display: flex;
 	  align-items: center;
@@ -333,23 +337,23 @@
 	}
   
 	.small .icon img {
-	  width: 0.9rem;
-	  height: 0.9rem;
+	  width: 1.1rem; /* Increased from 0.9rem */
+	  height: 1.1rem; /* Increased from 0.9rem */
 	}
   
 	.medium .icon img {
-	  width: 1.1rem;
-	  height: 1.1rem;
+	  width: 1.3rem; /* Increased from 1.1rem */
+	  height: 1.3rem; /* Increased from 1.1rem */
 	}
   
 	.large .icon img {
-	  width: 1.3rem;
-	  height: 1.3rem;
+	  width: 1.6rem; /* Increased from 1.3rem */
+	  height: 1.6rem; /* Increased from 1.3rem */
 	}
   
 	/* Focus state for accessibility */
 	.metallic-button:focus-visible {
 	  outline: 2px solid white;
-	  outline-offset: 2px;
+	  outline-offset: 3px; /* Increased from 2px */
 	}
   </style>
