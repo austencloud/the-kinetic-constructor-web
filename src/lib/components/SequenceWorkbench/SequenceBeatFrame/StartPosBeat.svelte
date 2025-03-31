@@ -1,22 +1,52 @@
+<!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/StartPosBeat.svelte -->
 <script lang="ts">
-    import { type Writable } from 'svelte/store';
+    import { writable } from 'svelte/store';
     import Beat from './Beat.svelte';
-    import type { BeatData } from './BeatData.js';
+    import type { BeatData } from './BeatData';
 
-    export const label: string = 'Start';
-    export let onClick: (beatData: BeatData) => void = () => {};
-    export let startPosBeatDataStore: Writable<BeatData>; // ✅ Explicitly declare prop type
+    export let beatData: BeatData;
+    export let onClick: () => void;
+    
+    // Create a label for the start position
+    
+    // Handle clicks at this level to prevent multiple event handlers
+    function handleContainerClick(event: MouseEvent) {
+        // Only handle clicks directly on the container, not on children
+        if (event.target === event.currentTarget) {
+            onClick();
+        }
+    }
 </script>
 
+<button class="start-pos-beat" on:click={handleContainerClick} type="button">
+    <Beat beat={beatData} onClick={onClick} />
+    
 
-<div class="start-pos-beat">
-	<Beat beatData={$startPosBeatDataStore} {onClick} />
-</div>
+</button>
 
 <style>
-	.start-pos-beat {
-		position: relative;
-		width: 100%;
-		height: 100%;
-	}
+    .start-pos-beat {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 2px dashed gold;
+        border-radius: 8px;
+    }
+    
+    .start-label {
+        position: absolute;
+        bottom: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.7);
+        color: gold;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        white-space: nowrap;
+    }
 </style>
