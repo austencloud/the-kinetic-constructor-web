@@ -174,7 +174,14 @@
 		z-index: 0;
 		width: 100%;
 	}
-
+	.background {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		overflow: hidden;
+	}
 	#content {
 		display: flex;
 		flex-direction: column;
@@ -182,14 +189,16 @@
 		min-height: 0; /* Prevents overflow */
 	}
 
+	/* In MainWidget.svelte */
 	#main-widget {
 		display: flex;
 		flex-direction: column;
-		flex: 1; /* Ensure it fills the entire viewport */
-		min-height: 100vh;
+		flex: 1;
+		height: 100%; /* Instead of min-height: 100vh */
 		position: relative;
 		background: linear-gradient(to bottom, #0b1d2a, #325078, #49708a);
 		color: light-dark(black, white);
+		overflow: hidden; /* Prevent any content from overflowing */
 	}
 
 	.placeholder-content {

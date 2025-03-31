@@ -58,25 +58,33 @@
 <div class="fullscreen-container {isFull ? 'isFull' : ''}" bind:this={fsContainer}>
 	<slot {isFull} />
 	{#if fullscreenSupport}
-		<button class="fs-btn" on:click={fsToggle} aria-label={isFull ? 'Exit fullscreen' : 'Enter fullscreen'}>
+		<button
+			class="fs-btn"
+			on:click={fsToggle}
+			aria-label={isFull ? 'Exit fullscreen' : 'Enter fullscreen'}
+		>
 			<i class="fa {isFull ? 'fa-compress' : 'fa-expand'}"></i>
 		</button>
 	{/if}
 </div>
+
 <style>
 	@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 
 	.fullscreen-container {
 		position: relative;
 		width: 100%;
-		height: 100%;
+		height: 100%; /* This needs to be 100% not auto */
+		display: flex; /* Add this */
+		flex-direction: column; /* Add this */
+		flex: 1; /* Add this */
 		overflow: hidden;
 	}
 
 	.fs-btn {
 		z-index: 9999;
-    /* pointer-events: all; */
-    
+		/* pointer-events: all; */
+
 		position: absolute;
 		right: 20px;
 		bottom: 20px;
@@ -88,7 +96,9 @@
 		border-radius: 50%;
 		width: 48px;
 		height: 48px;
-		transition: transform 0.2s, box-shadow 0.2s;
+		transition:
+			transform 0.2s,
+			box-shadow 0.2s;
 	}
 
 	.fs-btn:hover {
