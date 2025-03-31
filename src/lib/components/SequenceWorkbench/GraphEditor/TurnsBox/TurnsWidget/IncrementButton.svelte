@@ -1,16 +1,29 @@
-<script>
-	export let type = 'increment'; // Increment or decrement
-	export let color = 'blue'; // Button color
-	export let disabled = false; // Button disabled state
+<!-- src/lib/components/SequenceWorkbench/GraphEditor/TurnsBox/TurnsWidget/IncrementButton.svelte -->
+<script lang="ts">
+	type IncrementType = 'increment' | 'decrement';
+	
+	export let type: IncrementType = 'increment';
+	export let color: 'blue' | 'red' = 'blue';
+	export let disabled: boolean = false;
+	
+	// Determine color hex code based on color prop
+	$: colorHex = color === 'blue' ? '#2E3192' : '#ED1C24';
+	
+	// Determine button symbol based on type prop
+	$: symbol = type === 'increment' ? '+' : '−';
+	
+	// Determine button label for accessibility
+	$: ariaLabel = type === 'increment' ? 'Increase turns' : 'Decrease turns';
 </script>
+
 <button
 	class="increment-button"
-	style="--color: {color}"
+	style="--color: {colorHex}"
 	on:click
-	aria-label={type === 'increment' ? 'Increase' : 'Decrease'}
-	disabled={disabled}
+	aria-label={ariaLabel}
+	{disabled}
 >
-	{type === 'increment' ? '+' : '−'}
+	{symbol}
 </button>
 
 <style>

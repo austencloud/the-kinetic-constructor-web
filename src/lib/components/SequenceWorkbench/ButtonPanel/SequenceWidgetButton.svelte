@@ -1,33 +1,33 @@
+<!-- src/lib/components/SequenceWorkbench/ButtonPanel/SequenceWidgetButton.svelte -->
 <script lang="ts">
-	export let icon;
-	export let title;
-	export let buttonSize;
-	export let onClick;
+	// Define a clear type for button props
+	interface ButtonProps {
+		icon: string;
+		title: string;
+		buttonSize: number;
+		onClick: () => void;
+	}
 
-	let isHovered = false;
-	let isClicked = false;
+	// Use the interface for export props
+	export let icon: ButtonProps['icon'];
+	export let title: ButtonProps['title'];
+	export let buttonSize: ButtonProps['buttonSize'];
+	export let onClick: ButtonProps['onClick'];
 
-	const handleMouseEnter = () => (isHovered = true);
-	const handleMouseLeave = () => (isHovered = false);
-	const handleMouseDown = () => (isClicked = true);
-	const handleMouseUp = () => (isClicked = false);
+	// Use reactive statements for derived state
+	$: buttonStyle = {
+		width: `${buttonSize}px`,
+		height: `${buttonSize}px`,
+		aspectRatio: '1 / 1'
+	};
 </script>
 
 <button
 	class="button"
-	style="
-		width: {buttonSize}px;
-		height: {buttonSize}px;
-		background-color: {isHovered ? '#f0f0f0' : 'white'};
-		transform: {isClicked ? 'scale(0.9)' : isHovered ? 'scale(1.1)' : 'scale(1)'};
-		box-shadow: {isClicked
-			? 'inset 0px 2px 4px rgba(0, 0, 0, 0.2)'
-			: '0px 2px 4px rgba(0, 0, 0, 0.1)'};"
+	style:width={buttonStyle.width}
+	style:height={buttonStyle.height}
+	style:aspect-ratio={buttonStyle.aspectRatio}
 	on:click={onClick}
-	on:mouseenter={handleMouseEnter}
-	on:mouseleave={handleMouseLeave}
-	on:mousedown={handleMouseDown}
-	on:mouseup={handleMouseUp}
 	{title}
 >
 	<img src={icon} alt={title} />
@@ -35,6 +35,7 @@
 
 <style>
 	.button {
+		/* Base styles that never change */
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -43,19 +44,24 @@
 		cursor: pointer;
 		box-sizing: border-box;
 		padding: 0;
-		transition: background-color 0.2s, transform 0.2s;
-		transition-duration: 0.1s;
-		aspect-ratio: 1 / 1;
-		
+		transition: all 0.1s ease-out;
+		background-color: white;
+	}
+
+	.button:hover {
+		background-color: #f0f0f0;
+		transform: scale(1.1);
+		box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	.button:active {
+		transform: scale(0.9);
+		box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.2);
 	}
 
 	.button img {
 		width: 70%;
 		height: 70%;
 		object-fit: contain;
-	}
-
-	.button:active {
-		transform: scale(0.9);
 	}
 </style>

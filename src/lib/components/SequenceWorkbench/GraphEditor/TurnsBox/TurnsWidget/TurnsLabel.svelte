@@ -1,30 +1,22 @@
+<!-- src/lib/components/SequenceWorkbench/GraphEditor/TurnsBox/TurnsWidget/TurnsLabel.svelte -->
 <script lang="ts">
-	import { parseTurnsValue, displayTurnsValue } from './turnsUtils';
+	import type { TurnsValue } from './turnsUtils';
 
-	export let turns: string | number = 0;
-	export let color: 'blue' | 'red' = 'blue';
-
-	// This is how we open the "DirectSetTurnsDialog":
+	export let turns: TurnsValue;
+	export let color: 'blue' | 'red';
 	export let onClick: () => void;
 
-	// We'll maintain a numeric version internally
-	let numericTurns = 0;
-
-	// Whenever 'turns' changes, parse it into -0.5 for "fl", or else a float
-	$: numericTurns = parseTurnsValue(turns);
-
-	function handleClick() {
-		onClick?.();
-	}
+	// Determine the color for styling
+	$: colorHex = color === 'blue' ? '#2E3192' : '#ED1C24';
 </script>
 
 <button
 	class="turns-label"
-	style="--color: {color}"
-	on:click={handleClick}
+	style="--color: {colorHex}"
+	on:click={onClick}
+	aria-label="Set turns value"
 >
-	<!-- For display, convert -0.5 => "fl", etc. -->
-	{displayTurnsValue(numericTurns)}
+	{typeof turns === 'number' ? turns : turns}
 </button>
 
 <style>
@@ -41,11 +33,14 @@
 		border-radius: 50%;
 		height: 100%;
 		align-items: center;
-		transition: transform 0.1s, background-color 0.2s;
+		transition:
+			transform 0.1s,
+			background-color 0.2s;
 	}
 	.turns-label:hover {
 		transform: scale(1.1);
-		box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3),
+		box-shadow:
+			0px 4px 8px rgba(0, 0, 0, 0.3),
 			inset 0px 1px 3px rgba(255, 255, 255, 0.5);
 	}
 	.turns-label:active {

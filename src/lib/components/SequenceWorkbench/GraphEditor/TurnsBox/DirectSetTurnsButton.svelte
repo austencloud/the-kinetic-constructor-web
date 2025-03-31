@@ -1,25 +1,15 @@
+<!-- src/lib/components/SequenceWorkbench/GraphEditor/TurnsBox/DirectSetTurnsButton.svelte -->
 <script lang="ts">
-	// Define the prop types explicitly
 	export let value: string;
 	export let borderColor: string;
 	export let onClick: () => void;
-
-	let isHovered: boolean = false;
-	let isActive: boolean = false;
-
-	// Calculate the font size based on button size
 </script>
 
 <button
-	class="button {isHovered ? 'hovered' : ''} {isActive ? 'active' : ''}"
-	style="
-    border: 4px solid {borderColor};
-  "
-	on:mouseenter={() => (isHovered = true)}
-	on:mouseleave={() => (isHovered = false)}
-	on:mousedown={() => (isActive = true)}
-	on:mouseup={() => (isActive = false)}
+	class="button"
+	style="border-color: {borderColor};"
 	on:click={onClick}
+	aria-label={`Set turns to ${value}`}
 >
 	{value}
 </button>
@@ -39,16 +29,17 @@
 			transform 0.2s,
 			box-shadow 0.2s;
 		aspect-ratio: 1 / 1;
-		font-size: 2em
+		font-size: 2em;
+		border: 4px solid;
 	}
 
-	.button.hovered {
+	.button:hover {
 		background-color: #e0e7ff;
 		box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 		transform: scale(1.1);
 	}
 
-	.button.active {
+	.button:active {
 		background-color: #c7d2fe;
 		box-shadow: inset 0px 4px 8px rgba(0, 0, 0, 0.2);
 	}

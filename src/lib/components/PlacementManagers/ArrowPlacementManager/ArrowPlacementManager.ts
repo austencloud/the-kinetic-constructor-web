@@ -1,43 +1,45 @@
 // src/lib/components/PlacementManagers/ArrowPlacementManager/ArrowPlacementManager.ts
-import { ArrowAdjustmentCalculator } from './ArrowAdjustmentCalculator';
-import { ArrowInitialPosCalculator } from './ArrowInitialPositionCalculator';
-import { DefaultArrowPositioner } from './DefaultArrowPositioner';
-import type { PictographData } from '$lib/types/PictographData';
-import type { GridData } from '$lib/components/objects/Grid/GridData';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
-import type { PictographChecker } from '$lib/components/Pictograph/services/PictographChecker';
+import type { ArrowPlacementConfig, Coordinates } from './types';
+import { getInitialPosition } from './utils/positionCalculator';
+import { calculateAdjustment } from './utils/adjustmentCalculator';
 
+/**
+ * Main manager class that handles arrow placement calculations.
+ * This class coordinates the initial position and adjustment calculations
+ * for arrows in a pictograph.
+ */
 export class ArrowPlacementManager {
-	private initialPosCalculator: ArrowInitialPosCalculator;
-	private adjustmentCalculator: ArrowAdjustmentCalculator;
-	public defaultPositioner: DefaultArrowPositioner;
-	ready: any;
+  private config: ArrowPlacementConfig;
 
-	constructor(
-		private pictographData: PictographData,
-		private gridData: GridData | null,
-		private checker: PictographChecker
-	) {
-		if (!gridData) {
-			throw new Error('Grid data is required to initialize ArrowPlacementManager');
-		}
-		this.defaultPositioner = new DefaultArrowPositioner(pictographData, gridData, checker);
-		this.initialPosCalculator = new ArrowInitialPosCalculator(pictographData, gridData);
-		this.adjustmentCalculator = new ArrowAdjustmentCalculator(
-			this.defaultPositioner,
-			pictographData,
-			gridData
-		);
-	}
+  constructor(config: ArrowPlacementConfig) {
+    const { gridData } = config;
+    
+    if (!gridData) {
+      throw new Error('Grid data is required to initialize ArrowPlacementManager');
+    }
+    
+    this.config = config;
+  }
 
-	public updateArrowPlacements(arrows: ArrowData[]): void {
-		arrows.forEach((arrow) => {
-			const initialPos = this.initialPosCalculator.getInitialCoords(arrow);
-			const adjustment = this.adjustmentCalculator.getAdjustment(arrow);
-			arrow.coords = {
-				x: initialPos.x + adjustment.x,
-				y: initialPos.y + adjustment.y
-			};
-		});
-	}
+  /**
+   * Updates the position of all arrows based on their current properties
+   * and the pictograph configuration.
+   */
+  public updateArrowPlacements(arrows: ArrowData[]): void {
+    arrows.forEach(this.updateArrowPlacement);
+  }
+
+  /**
+   * Updates the position of a single arrow.
+   */
+  private updateArrowPlacement = (arrow: ArrowData): void => {
+    const initialPos = getInitialPosition(arrow, this.config);
+    const adjustment = calculateAdjustment(arrow, this.config);
+    
+    arrow.coords = {
+      x: initialPos.x + adjustment.x,
+      y: initialPos.y + adjustment.y
+    };
+  };
 }

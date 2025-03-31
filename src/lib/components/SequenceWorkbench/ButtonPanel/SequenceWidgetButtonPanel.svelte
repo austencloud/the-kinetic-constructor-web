@@ -1,86 +1,115 @@
+<!-- src/lib/components/SequenceWorkbench/ButtonPanel/SequenceWidgetButtonPanel.svelte -->
 <script lang="ts">
 	import SequenceWidgetButton from './SequenceWidgetButton.svelte';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 
-	export let layout: 'vertical' | 'horizontal' = 'vertical';
-	export let containerWidth: number = 0;
-	export let containerHeight: number = 0;
-	export let isPortrait: boolean = true;
+	// Define types for panel props
+	type LayoutOrientation = 'vertical' | 'horizontal';
 
-	let buttonSize = 60; // Default size
-	let panelRef: HTMLElement | null = null;
-	let isMobile = false;
+	export let layout: LayoutOrientation = 'vertical';
+	export let containerWidth = 0;
+	export let containerHeight = 0;
+	export let isPortrait = true;
 
-	// Detect mobile devices
-	function updateIsMobile() {
-		isMobile = window.innerWidth <= 768; // Example threshold for mobile
+	// Define button data with type
+	interface ButtonDefinition {
+		icon: string;
+		title: string;
+		id: string;
+		action?: () => void;
 	}
 
-	// Update button size dynamically
-	function updateButtonSize() {
-		if (isMobile) {
-			buttonSize = Math.max(30, Math.min(60, containerWidth / 10)); // Smaller size for mobile
-		} else if (isPortrait) {
-			buttonSize = Math.max(30, Math.min(60, containerWidth / 10)); // Portrait layout
-		} else {
-			buttonSize = Math.max(30, Math.min(60, containerHeight / 14)); // Landscape layout
-		}
-	}
-
-	// ResizeObserver to track container size
-	let resizeObserver: ResizeObserver | null;
-	onMount(() => {
-		updateIsMobile();
-
-		if (panelRef) {
-			resizeObserver = new ResizeObserver((entries) => {
-				for (const entry of entries) {
-					containerWidth = entry.contentRect.width;
-					containerHeight = entry.contentRect.height;
-					updateButtonSize();
-				}
-			});
-			resizeObserver.observe(panelRef);
-		}
-
-		window.addEventListener('resize', updateIsMobile);
-
-		return () => {
-			resizeObserver?.disconnect();
-			window.removeEventListener('resize', updateIsMobile);
-		};
-	});
-
-	onDestroy(() => {
-		resizeObserver?.disconnect();
-	});
-
-	$: layout = isPortrait ? 'horizontal' : 'vertical';
-	$: updateButtonSize();
-
-	const buttons = [
+	// The buttons data - could be moved to a store for better organization
+	const buttons: ButtonDefinition[] = [
 		{
 			icon: '/button_panel_icons/add_to_dictionary.png',
 			title: 'Add to Dictionary',
-			id: 'addToDictionary'
+			id: 'addToDictionary',
+			action: () => dispatchAction('addToDictionary')
 		},
-		{ icon: '/button_panel_icons/save_image.png', title: 'Save Image', id: 'saveImage' },
-		{ icon: '/button_panel_icons/eye.png', title: 'View Full Screen', id: 'viewFullScreen' },
-		{ icon: '/button_panel_icons/mirror.png', title: 'Mirror Sequence', id: 'mirrorSequence' },
-		{ icon: '/button_panel_icons/yinyang1.png', title: 'Swap Colors', id: 'swapColors' },
-		{ icon: '/button_panel_icons/rotate.png', title: 'Rotate Sequence', id: 'rotateSequence' },
-		{ icon: '/button_panel_icons/delete.png', title: 'Delete Beat', id: 'deleteBeat' },
-		{ icon: '/button_panel_icons/clear.png', title: 'Clear Sequence', id: 'clearSequence' }
+		{
+			icon: '/button_panel_icons/save_image.png',
+			title: 'Save Image',
+			id: 'saveImage',
+			action: () => dispatchAction('saveImage')
+		},
+		{
+			icon: '/button_panel_icons/eye.png',
+			title: 'View Full Screen',
+			id: 'viewFullScreen',
+			action: () => dispatchAction('viewFullScreen')
+		},
+		{
+			icon: '/button_panel_icons/mirror.png',
+			title: 'Mirror Sequence',
+			id: 'mirrorSequence',
+			action: () => dispatchAction('mirrorSequence')
+		},
+		{
+			icon: '/button_panel_icons/yinyang1.png',
+			title: 'Swap Colors',
+			id: 'swapColors',
+			action: () => dispatchAction('swapColors')
+		},
+		{
+			icon: '/button_panel_icons/rotate.png',
+			title: 'Rotate Sequence',
+			id: 'rotateSequence',
+			action: () => dispatchAction('rotateSequence')
+		},
+		{
+			icon: '/button_panel_icons/delete.png',
+			title: 'Delete Beat',
+			id: 'deleteBeat',
+			action: () => dispatchAction('deleteBeat')
+		},
+		{
+			icon: '/button_panel_icons/clear.png',
+			title: 'Clear Sequence',
+			id: 'clearSequence',
+			action: () => dispatchAction('clearSequence')
+		}
 	];
+
+	// Create a custom event dispatcher
+	function dispatchAction(action: string) {
+		const event = new CustomEvent('action', {
+			detail: { action },
+			bubbles: true
+		});
+		document.dispatchEvent(event);
+	}
+
+	// Reactive button size calculation
+	$: buttonSize = calculateButtonSize(containerWidth, containerHeight, isPortrait);
+
+	// Reactive layout update
+	$: layout = isPortrait ? 'horizontal' : 'vertical';
+
+	function calculateButtonSize(width: number, height: number, isPortrait: boolean): number {
+		const isMobile = width <= 768;
+
+		if (isMobile) {
+			return Math.max(30, Math.min(60, width / 10));
+		} else if (isPortrait) {
+			return Math.max(30, Math.min(60, width / 10));
+		} else {
+			return Math.max(30, Math.min(60, height / 14));
+		}
+	}
 </script>
 
-<div class="button-panel {layout}" bind:this={panelRef}>
-	{#each buttons as button}
+<div
+	class="button-panel"
+	class:vertical={layout === 'vertical'}
+	class:horizontal={layout === 'horizontal'}
+>
+	{#each buttons as button (button.id)}
 		<SequenceWidgetButton
 			icon={button.icon}
 			title={button.title}
 			{buttonSize}
-			onClick={() => console.log(`${button.title} clicked`)}
+			onClick={button.action || (() => {})}
 		/>
 	{/each}
 </div>
@@ -95,11 +124,11 @@
 		padding: 5px;
 	}
 
-	.button-panel.vertical {
+	.vertical {
 		flex-direction: column;
 	}
 
-	.button-panel.horizontal {
+	.horizontal {
 		flex-direction: row;
 	}
 </style>

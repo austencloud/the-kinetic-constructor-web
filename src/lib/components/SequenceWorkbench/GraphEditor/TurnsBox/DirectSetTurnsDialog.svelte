@@ -1,58 +1,95 @@
+<!-- src/lib/components/SequenceWorkbench/GraphEditor/TurnsBox/DirectSetTurnsDialog.svelte -->
 <script lang="ts">
 	import DirectSetTurnsButton from './DirectSetTurnsButton.svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
+	import { fly } from 'svelte/transition';
 
 	export let onSelectTurns: (value: string) => void;
 	export let onClose: () => void;
 	export let color: 'blue' | 'red';
 
-	const turnsValues = ['fl', '0', '0.5', '1', '1.5', '2', '2.5', '3'];
+	const TURNS_VALUES = ['fl', '0', '0.5', '1', '1.5', '2', '2.5', '3'];
+	const COLORS = {
+		blue: {
+			primary: '#2E3192',
+			light: 'rgba(46,49,146,0.4)',
+			medium: 'rgba(46,49,146,0.8)'
+		},
+		red: {
+			primary: '#ED1C24',
+			light: 'rgba(237,28,36,0.4)',
+			medium: 'rgba(237,28,36,0.8)'
+		}
+	};
 
-	const HEX_RED = '#ED1C24';
-	const HEX_BLUE = '#2E3192';
+	$: colorConfig = COLORS[color];
+	$: dialogBackground = `linear-gradient(135deg, ${colorConfig.light}, ${colorConfig.medium}), #fff`;
 
-	$: borderColor = color === 'blue' ? HEX_BLUE : HEX_RED;
+	// Close on escape key
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			onClose();
+		}
+	}
 
-	import { lighten } from 'polished';
-
-	$: dialogBackground =
-		color === 'blue'
-			? `linear-gradient(135deg, ${lighten(0.4, 'rgba(46,49,146,0.4)')}, ${lighten(0.2, 'rgba(46,49,146,0.8)')}), #fff`
-			: `linear-gradient(135deg, ${lighten(0.4, 'rgba(237,28,36,0.4)')}, ${lighten(0.2, 'rgba(237,28,36,0.8)')}), #fff`;
+	// Mount event listener and clean up
+	onMount(() => {
+		document.addEventListener('keydown', handleKeydown);
+		return () => {
+			document.removeEventListener('keydown', handleKeydown);
+		};
+	});
 </script>
-<button
-	class="overlay"
-	on:click={onClose}
-	on:keydown={(e) => e.key === 'Enter' && onClose()}
-	aria-label="Close dialog"
-></button>
 
-<!-- The .dialog has the multi-layer background: gradient over white. -->
-<div
-	class="dialog"
-	style="
-		border-color: {borderColor};
-		background: {dialogBackground};
-	"
->
-	{#each turnsValues as value}
-		<DirectSetTurnsButton {value} {borderColor}  onClick={() => onSelectTurns(value)} />
-	{/each}
+<div class="dialog-container" transition:fly={{ y: 20, duration: 200 }}>
+	<!-- Overlay for closing on outside click -->
+	<div
+		class="overlay"
+		on:click|stopPropagation={onClose}
+		on:keydown={(e) => e.key === 'Enter' && onClose()}
+		aria-label="Close dialog"
+		tabindex="0"
+		role="button"
+	></div>
+
+	<!-- Dialog content -->
+	<div
+		class="dialog"
+		style="
+			border-color: {colorConfig.primary};
+			background: {dialogBackground};
+		"
+	>
+		{#each TURNS_VALUES as value}
+			<DirectSetTurnsButton
+				{value}
+				borderColor={colorConfig.primary}
+				onClick={() => onSelectTurns(value)}
+			/>
+		{/each}
+	</div>
 </div>
 
 <style>
+	.dialog-container {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 10;
+	}
+
 	.overlay {
 		position: absolute;
-		inset: 0; /* shorthand for top: 0; left: 0; right: 0; bottom: 0 */
+		inset: 0;
 		background-color: rgba(0, 0, 0, 0.2);
 		z-index: 0;
 		cursor: pointer;
 	}
 
 	.dialog {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
+		position: relative;
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
 		gap: 3%;
@@ -64,9 +101,5 @@
 		width: 80%;
 		align-items: center;
 		justify-content: space-evenly;
-		/* 
-		   Because the gradient uses transparency, you’ll see the solid #fff behind it,
-		   creating a subtle fade effect.
-		*/
 	}
 </style>

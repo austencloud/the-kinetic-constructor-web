@@ -1,3 +1,4 @@
+<!-- src/lib/components/SequenceWorkbench/GraphEditor/TurnsBox/TurnsBoxHeader/PropRotDirButton.svelte -->
 <script lang="ts">
 	export let icon: string;
 	export let color: string;

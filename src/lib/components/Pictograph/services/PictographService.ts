@@ -184,6 +184,11 @@ export class PictographService {
 	/**
 	 * Position arrows based on motions
 	 */
+	// Inside the positionArrows method of PictographService.ts
+
+	/**
+	 * Position arrows based on motions
+	 */
 	positionArrows(redArrow: ArrowData | null, blueArrow: ArrowData | null, grid: GridData): void {
 		// Position red arrow
 		if (redArrow && this.data.redMotion) {
@@ -210,10 +215,18 @@ export class PictographService {
 		}
 
 		// Apply advanced arrow positioning if both arrows exist
-		if (redArrow && blueArrow) {
+		if (redArrow || blueArrow) {
 			try {
-				const placementManager = new ArrowPlacementManager(this.data, grid, this.checker);
-				placementManager.updateArrowPlacements([redArrow, blueArrow]);
+				// Use the new config object pattern for ArrowPlacementManager
+				const placementManager = new ArrowPlacementManager({
+					pictographData: this.data,
+					gridData: grid,
+					checker: this.checker
+				});
+
+				// Filter out nulls and create an array of existing arrows
+				const arrows = [redArrow, blueArrow].filter(Boolean) as ArrowData[];
+				placementManager.updateArrowPlacements(arrows);
 			} catch (error) {
 				console.warn('Arrow placement error:', error);
 			}

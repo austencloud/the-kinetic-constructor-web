@@ -1,55 +1,49 @@
+<!-- src/lib/components/SequenceWorkbench/GraphEditor/TurnsBox/TurnsWidget/TurnsDisplayFrame.svelte -->
 <script lang="ts">
 	import IncrementButton from './IncrementButton.svelte';
 	import TurnsLabel from './TurnsLabel.svelte';
-	import { parseTurnsValue, displayTurnsValue } from './turnsUtils';
+	import { turnsStore, blueTurns, redTurns } from '$lib/stores/turnsStore';
+	import { isMaxTurns, isMinTurns } from './turnsUtils';
 
-	export let color: 'blue' | 'red' = 'blue';
-	export let turns: number | string;
+	
+	export let color: 'blue' | 'red';
 	export let onOpenDialog: () => void;
 	export let width: number;
 
-	let numericTurns = 0;
-
-	// Keep the numeric version
-	$: numericTurns = parseTurnsValue(turns);
-
+	// Get the appropriate turns store based on color
+	$: turnsValue = color === 'blue' ? $blueTurns : $redTurns;
+	
 	// Calculate font size based on width with a minimum value of 20px
 	$: fontSize = Math.min(width / 20, 20) + 'px';
-
-	/**
-	 * adjustTurns: add or subtract 0.5, then clamp to -0.5..3
-	 */
-	function adjustTurns(delta: number) {
-		let newVal = numericTurns + delta;
-		if (newVal < -0.5) newVal = -0.5; // "fl"
-		if (newVal > 3) newVal = 3;
-		numericTurns = newVal;
-		// Convert back to string => if -0.5 => "fl"
-		turns = displayTurnsValue(numericTurns);
+	
+	// Handle increment/decrement actions
+	function handleIncrement() {
+		turnsStore.incrementTurns(color);
 	}
-
-	function incrementTurns() { adjustTurns(0.5); }
-	function decrementTurns() { adjustTurns(-0.5); }
+	
+	function handleDecrement() {
+		turnsStore.decrementTurns(color);
+	}
 </script>
 
 <div class="turns-display-frame" style="font-size: {fontSize};">
-	<!-- Decrement button: disable if numericTurns <= -0.5 (i.e. "fl") -->
+	<!-- Decrement button -->
 	<IncrementButton
 		type="decrement"
-		on:click={decrementTurns}
+		on:click={handleDecrement}
 		{color}
-		disabled={numericTurns <= -0.5}
+		disabled={isMinTurns(turnsValue)}
 	/>
 
 	<!-- The middle "label" that opens the direct-set dialog -->
-	<TurnsLabel {turns} {color} onClick={onOpenDialog} />
+	<TurnsLabel turns={turnsValue} {color} onClick={onOpenDialog} />
 
-	<!-- Increment button: disable if numericTurns >= 3 -->
+	<!-- Increment button -->
 	<IncrementButton
 		type="increment"
-		on:click={incrementTurns}
+		on:click={handleIncrement}
 		{color}
-		disabled={numericTurns >= 3}
+		disabled={isMaxTurns(turnsValue)}
 	/>
 </div>
 

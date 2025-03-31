@@ -1,3 +1,4 @@
+<!-- src/lib/components/SequenceWorkbench/GraphEditor/TurnsBox/TurnsBoxHeader/TurnsBoxHeader.svelte -->
 <script lang="ts">
 	import PropRotDirButton from './PropRotDirButton.svelte';
   
@@ -27,7 +28,7 @@
 	$: labelData = labelMap[color] || { text: '', color: '#000000' };
   
 	const iconPaths = {
-	  clockwise: '/icons/clockwise.png', // Use relative paths for static assets
+	  clockwise: '/icons/clockwise.png',
 	  counterClockwise: '/icons/counter_clockwise.png',
 	};
   </script>
@@ -63,4 +64,3 @@
 	  transition: color 0.3s ease;
 	}
   </style>
-  
