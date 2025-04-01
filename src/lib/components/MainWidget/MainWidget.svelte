@@ -1,4 +1,10 @@
 <script lang="ts">
+	import { writable, derived } from 'svelte/store';
+	import { onMount } from 'svelte';
+	import { fade, fly, scale, slide } from 'svelte/transition';
+	import { quintOut, elasticOut } from 'svelte/easing';
+	
+	// Components
 	import MenuBar from '../MenuBar/MenuBar.svelte';
 	import SequenceWorkbench from '../SequenceWorkbench/Workbench.svelte';
 	import OptionPicker from '../OptionPicker/OptionPicker.svelte';
@@ -6,68 +12,84 @@
 	import SettingsDialog from '../SettingsDialog/SettingsDialog.svelte';
 	import FullScreen from '$lib/FullScreen.svelte';
 	import LoadingSpinner from './LoadingSpinner.svelte';
-	import { writable } from 'svelte/store';
-	import { onMount } from 'svelte';
-	import { fade, fly, scale, slide } from 'svelte/transition';
-	import { quintOut, elasticOut } from 'svelte/easing';
-	import { selectedStartPos } from '$lib/stores/constructStores.js';
 	import StartPosPicker from '../StartPosPicker/StartPosPicker.svelte';
+	
+	// Stores
+	import { selectedStartPos } from '$lib/stores/constructStores';
 	import { loadingState } from '$lib/stores/loadingStateStore';
+	
+	// Utils
 	import { initializeApplication } from '$lib/utils/appInitializer';
 
-	let dynamicHeight = '100vh';
-	let isSettingsDialogOpen = false;
-	let isFullScreen = false;
-	let background = 'Snowfall';
-	let pictographData: any;
-	let initializationError = false;
-	let previousTab = 0;
-	let contentVisible = true;
+	// ===== Application State =====
+	const appState = writable({
+		isSettingsDialogOpen: false,
+		isFullScreen: false,
+		background: 'Snowfall',
+		initializationError: false,
+		currentTab: 0,
+		previousTab: 0,
+		contentVisible: true,
+		dynamicHeight: '100vh'
+	});
 
-	// Track our transitions and timeouts
-	let currentTab = 0;
-	let displayedTab = 0;
-	let currentTransitionTimeouts: number[] = []; // Store all timeout IDs
-	
-	// Component for each tab - needed to define this!
-	const tabComponents = [
+	// Tab definitions - using a more declarative approach
+	const tabs = [
 		{
+			id: 'sequence',
 			component: SequenceWorkbench,
-			renderWithSplit: true
+			icon: '🧬',
+			title: 'Sequence',
+			splitView: true
 		},
 		{
-			component: null, // Generate (placeholder)
-			renderWithSplit: false
+			id: 'generate',
+			component: null,
+			icon: '🤖',
+			title: 'Generate',
+			splitView: false
 		},
 		{
-			component: null, // Browse (placeholder)
-			renderWithSplit: false
+			id: 'browse',
+			component: null,
+			icon: '🔍',
+			title: 'Browse',
+			splitView: false
 		},
 		{
-			component: null, // Learn (placeholder)
-			renderWithSplit: false
+			id: 'learn',
+			component: null, 
+			icon: '🧠',
+			title: 'Learn',
+			splitView: false
 		},
 		{
-			component: null, // Write (placeholder)
-			renderWithSplit: false
+			id: 'write',
+			component: null,
+			icon: '✍️',
+			title: 'Write',
+			splitView: false
 		}
 	];
 
-	// Animation direction - true = right to left, false = left to right
-	$: slideDirection = currentTab > previousTab;
-
+	// ===== Derived State =====
+	// Create derived stores for specific pieces of state
+	const activeTab = derived(appState, $state => tabs[$state.currentTab]);
+	const slideDirection = derived(appState, $state => $state.currentTab > $state.previousTab);
+	
+	// ===== Lifecycle =====
 	onMount(() => {
-		// Initialize the application using our centralized initializer
-		initializeApplication().then((success) => {
+		// Initialize the application
+		initializeApplication().then(success => {
 			if (!success) {
-				initializationError = true;
+				appState.update(state => ({ ...state, initializationError: true }));
 			}
 		});
 
-		// Set up window resize handling for height adjustment
-		function updateHeight() {
-			dynamicHeight = `${window.innerHeight}px`;
-		}
+		// Set up window resize handling
+		const updateHeight = () => {
+			appState.update(state => ({ ...state, dynamicHeight: `${window.innerHeight}px` }));
+		};
 
 		window.addEventListener('resize', updateHeight);
 		updateHeight();
@@ -77,133 +99,128 @@
 		};
 	});
 
-	const backgroundStore = writable('Snowfall');
-	backgroundStore.subscribe((value) => (background = value));
+	// ===== Event Handlers =====
+	const handleSettingsClick = () => {
+		appState.update(state => ({ ...state, isSettingsDialogOpen: true }));
+	};
+
+	const handleFullscreenToggle = (e: CustomEvent<boolean>) => {
+		appState.update(state => ({ ...state, isFullScreen: e.detail }));
+	};
+
+	const handleTabChange = (e: CustomEvent<number>) => {
+		const newTabIndex = e.detail;
+		
+		appState.update(state => {
+			// Skip if we're already on this tab
+			if (newTabIndex === state.currentTab) return state;
+			
+			return { 
+				...state, 
+				previousTab: state.currentTab,
+				currentTab: newTabIndex,
+				// Immediately hide content for transition
+				contentVisible: false
+			};
+		});
+		
+		// Use a simple timeout to show content after a brief delay
+		// This provides a cleaner, more declarative approach than multiple nested timeouts
+		setTimeout(() => {
+			appState.update(state => ({ ...state, contentVisible: true }));
+		}, 300);
+	};
 
 	const updateBackground = (newBackground: string) => {
-		backgroundStore.set(newBackground);
+		appState.update(state => ({ ...state, background: newBackground }));
 	};
 
-	const handleSettingsClick = () => {
-		isSettingsDialogOpen = true;
+	const closeSettingsDialog = () => {
+		appState.update(state => ({ ...state, isSettingsDialogOpen: false }));
 	};
-
-	function handleFullscreenToggle(e: CustomEvent<boolean>) {
-		isFullScreen = e.detail;
-	}
-
-	// Clear all currently running transition timeouts
-	function clearAllTransitions() {
-		// Clear all timeouts
-		for (const timeoutId of currentTransitionTimeouts) {
-			clearTimeout(timeoutId);
-		}
-		// Reset the array
-		currentTransitionTimeouts = [];
-	}
-
-	// Enhanced handler for tab changes with interrupt support
-	function handleTabChange(e: CustomEvent<number>) {
-		const newTabIndex = e.detail;
-
-		// Skip if we're already on this tab
-		if (newTabIndex === currentTab) return;
-
-		// If we're in the middle of a transition, interrupt it
-		clearAllTransitions();
-
-		// Setup animation state
-		previousTab = currentTab;
-		currentTab = newTabIndex;
-
-		// STEP 1: Fade out current content immediately
-		contentVisible = false;
-
-		// STEP 2: Create flash transition effect
-		const timeoutId1 = setTimeout(() => {
-			createPageTransition();
-
-			// STEP 3: After fade out, update the displayed tab
-			const timeoutId2 = setTimeout(() => {
-				displayedTab = currentTab; // NOW we change what's displayed
-
-				// STEP 4: A little delay before showing the new content
-				const timeoutId3 = setTimeout(() => {
-					contentVisible = true; // Fade in the new content
-				}, 100);
-
-				// Track this timeout
-				currentTransitionTimeouts.push(timeoutId3 as unknown as number);
-			}, 300); // Matches our fade-out duration
-
-			// Track this timeout
-			currentTransitionTimeouts.push(timeoutId2 as unknown as number);
-		}, 50);
-
-		// Track this timeout
-		currentTransitionTimeouts.push(timeoutId1 as unknown as number);
-	}
-
-	// Create cool page transition effect
-	function createPageTransition() {
-		// Create flash element
-		const flash = document.createElement('div');
-		flash.className = 'page-transition-flash';
-		flash.style.animationName = slideDirection ? 'flash-right' : 'flash-left';
-
-		// Add to DOM and set up auto-removal
-		document.getElementById('main-widget')?.appendChild(flash);
-
-		// Store timeout for removal
-		const timeoutId = setTimeout(() => flash.remove(), 700);
-		currentTransitionTimeouts.push(timeoutId as unknown as number);
-	}
-
-	// Function to determine which animation to use based on tab index
-	function getTransitionProps(tabIndex: number) {
-		// Different animations for different tabs
+	
+	// ===== Transition Helpers =====
+	// Pure function to determine transition properties based on tab index
+	const getTransitionProps = (tabIndex: number, isSlideRight: boolean) => {
 		const transitions = [
-			{ fn: slide, props: { duration: 500, easing: quintOut, x: slideDirection ? 100 : -100 } },
-			{ fn: scale, props: { duration: 500, easing: elasticOut, start: 0.8, opacity: 0.2 } },
+			{ 
+				fn: slide, 
+				props: { 
+					duration: 500, 
+					easing: quintOut, 
+					x: isSlideRight ? 100 : -100 
+				} 
+			},
+			{ 
+				fn: scale, 
+				props: { 
+					duration: 500, 
+					easing: elasticOut, 
+					start: 0.8, 
+					opacity: 0.2 
+				} 
+			},
 			{
 				fn: fly,
 				props: {
 					duration: 600,
-					x: slideDirection ? 100 : -100,
-					y: slideDirection ? -50 : 50,
+					x: isSlideRight ? 100 : -100,
+					y: isSlideRight ? -50 : 50,
 					opacity: 0.2
 				}
 			},
-			{ fn: fade, props: { duration: 400, delay: 100 } },
-			{ fn: slide, props: { duration: 500, easing: quintOut, y: slideDirection ? 100 : -100 } }
+			{ 
+				fn: fade, 
+				props: { 
+					duration: 400, 
+					delay: 100 
+				} 
+			},
+			{ 
+				fn: slide, 
+				props: { 
+					duration: 500, 
+					easing: quintOut, 
+					y: isSlideRight ? 100 : -100 
+				} 
+			}
 		];
 
 		return transitions[tabIndex % transitions.length];
-	}
+	};
 </script>
 
-<div id="main-widget">
-	<!-- Background is always loaded immediately to give a nice visual during loading -->
+<div 
+	id="main-widget" 
+	style="height: {$appState.dynamicHeight}"
+>
 	<FullScreen on:toggleFullscreen={handleFullscreenToggle}>
+		<!-- Background always loads first for visual appeal -->
 		<div class="background">
 			<SnowfallBackground />
 		</div>
 
 		{#if $loadingState.isLoading}
-			<!-- Enhanced loading spinner with progress and text -->
+			<!-- Loading state -->
 			<div class="loading-overlay">
 				<div class="loading-container">
 					<LoadingSpinner />
 					<div class="loading-progress-container">
 						<div class="loading-progress-bar">
-							<div class="loading-progress-fill" style="width: {$loadingState.progress}%"></div>
+							<div 
+								class="loading-progress-fill" 
+								style="width: {$loadingState.progress}%"
+							></div>
 						</div>
 						<p class="loading-text">{$loadingState.message}</p>
 
-						{#if initializationError}
+						{#if $appState.initializationError}
 							<p class="error-text">
 								An error occurred during initialization.
-								<button class="retry-button" on:click={() => window.location.reload()}>
+								<button 
+									class="retry-button" 
+									on:click={() => window.location.reload()}
+								>
 									Retry
 								</button>
 							</p>
@@ -213,31 +230,50 @@
 			</div>
 		{:else}
 			<div id="content">
+				<!-- Menu Bar -->
 				<div class="menuBar">
 					<MenuBar
-						{background}
+						background={$appState.background}
 						on:settingsClick={handleSettingsClick}
 						on:changeBackground={(e) => updateBackground(e.detail)}
 						on:tabChange={handleTabChange}
 					/>
 				</div>
 
-				<div class="mainContent" class:hidden={!contentVisible}>
-					<!-- Critical fix: Using displayedTab instead of currentTab -->
-					{#key displayedTab}
-						{#if tabComponents[displayedTab].renderWithSplit}
+				<!-- Main Content Area -->
+				<div 
+					class="mainContent" 
+					class:hidden={!$appState.contentVisible}
+				>
+					<!-- Use key to force re-render on tab change -->
+					{#key $appState.currentTab}
+						{#if $activeTab.splitView}
+							<!-- Split view layout for sequence workbench -->
 							<div
 								class="sequenceWorkbenchContainer"
-								in:fly={{ duration: 500, x: slideDirection ? 100 : -100 }}
-								out:fly={{ duration: 400, x: slideDirection ? -100 : 100 }}
+								in:fly={{ 
+									duration: 500, 
+									x: $slideDirection ? 100 : -100 
+								}}
+								out:fly={{ 
+									duration: 400, 
+									x: $slideDirection ? -100 : 100 
+								}}
 							>
 								<SequenceWorkbench />
 							</div>
 
 							<div
 								class="optionPickerContainer"
-								in:fly={{ duration: 500, delay: 200, x: slideDirection ? 100 : -100 }}
-								out:fly={{ duration: 400, x: slideDirection ? -100 : 100 }}
+								in:fly={{ 
+									duration: 500, 
+									delay: 200, 
+									x: $slideDirection ? 100 : -100 
+								}}
+								out:fly={{ 
+									duration: 400, 
+									x: $slideDirection ? -100 : 100 
+								}}
 							>
 								{#if $selectedStartPos}
 									<OptionPicker />
@@ -245,43 +281,48 @@
 									<StartPosPicker />
 								{/if}
 							</div>
-						{:else if tabComponents[displayedTab].component}
+						{:else if $activeTab.component}
+							<!-- Full view for components that don't need split view -->
 							<div
-								in:getTransitionProps(displayedTab).fn={getTransitionProps(displayedTab).props}
+								in:fly={{ 
+									duration: 500, 
+									x: $slideDirection ? 100 : -100,
+									opacity: 0.2
+								}}
 								out:fade={{ duration: 300 }}
 							>
-								<svelte:component this={tabComponents[displayedTab].component} />
+								<svelte:component this={$activeTab.component} />
 							</div>
 						{:else}
+							<!-- Placeholder for features under development -->
 							<div
 								class="placeholder-content"
-								in:getTransitionProps(displayedTab).fn={getTransitionProps(displayedTab).props}
+								in:fly={{ 
+									duration: 500, 
+									x: $slideDirection ? 100 : -100,
+									opacity: 0.2
+								}}
 								out:fade={{ duration: 300 }}
 							>
 								<div class="placeholder-card">
 									<div class="placeholder-icon">
-										{#if displayedTab === 1}
-											<div in:scale={{ duration: 400, delay: 200 }} class="emoji-glow">🤖</div>
-										{:else if displayedTab === 2}
-											<div in:scale={{ duration: 400, delay: 200 }} class="emoji-glow">🔍</div>
-										{:else if displayedTab === 3}
-											<div in:scale={{ duration: 400, delay: 200 }} class="emoji-glow">🧠</div>
-										{:else if displayedTab === 4}
-											<div in:scale={{ duration: 400, delay: 200 }} class="emoji-glow">✍️</div>
-										{/if}
+										<div 
+											in:scale={{ duration: 400, delay: 200 }} 
+											class="emoji-glow"
+										>
+											{$activeTab.icon}
+										</div>
 									</div>
-									<h2 in:fly={{ duration: 300, delay: 100, y: 20 }} class="placeholder-title">
-										{#if displayedTab === 1}
-											Generate
-										{:else if displayedTab === 2}
-											Browse
-										{:else if displayedTab === 3}
-											Learn
-										{:else if displayedTab === 4}
-											Write
-										{/if}
+									<h2 
+										in:fly={{ duration: 300, delay: 100, y: 20 }} 
+										class="placeholder-title"
+									>
+										{$activeTab.title}
 									</h2>
-									<p in:fade={{ duration: 300, delay: 300 }} class="placeholder-text">
+									<p 
+										in:fade={{ duration: 300, delay: 300 }} 
+										class="placeholder-text"
+									>
 										This feature is under development and will be available soon.
 									</p>
 									<div
@@ -305,12 +346,13 @@
 					{/key}
 				</div>
 
-				{#if isSettingsDialogOpen}
+				<!-- Settings Dialog -->
+				{#if $appState.isSettingsDialogOpen}
 					<SettingsDialog
-						isOpen={isSettingsDialogOpen}
-						{background}
+						isOpen={$appState.isSettingsDialogOpen}
+						background={$appState.background}
 						onChangeBackground={updateBackground}
-						onClose={() => (isSettingsDialogOpen = false)}
+						onClose={closeSettingsDialog}
 					/>
 				{/if}
 			</div>
@@ -319,10 +361,85 @@
 </div>
 
 <style>
+	/* Loading overlay styling */
+	.loading-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 999;
+		background: rgba(11, 29, 42, 0.9);
+	}
+
+	.loading-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 20px;
+		padding: 30px;
+		border-radius: 12px;
+		background: rgba(30, 40, 60, 0.7);
+		backdrop-filter: blur(5px);
+		max-width: 400px;
+		width: 100%;
+	}
+
+	.loading-progress-container {
+		width: 100%;
+		text-align: center;
+	}
+
+	.loading-progress-bar {
+		width: 100%;
+		height: 10px;
+		background-color: rgba(255, 255, 255, 0.2);
+		border-radius: 5px;
+		overflow: hidden;
+		margin-bottom: 10px;
+	}
+
+	.loading-progress-fill {
+		height: 100%;
+		background: linear-gradient(90deg, #6c9ce9, #1e3c72);
+		border-radius: 5px;
+		transition: width 0.3s ease;
+	}
+
+	.loading-text {
+		font-size: 16px;
+		color: white;
+		margin: 0;
+	}
+
+	.error-text {
+		color: #ff6b6b;
+		margin-top: 10px;
+	}
+
+	.retry-button {
+		margin-left: 10px;
+		padding: 5px 15px;
+		background: #3a7bd5;
+		color: white;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 14px;
+		transition: background 0.2s;
+	}
+
+	.retry-button:hover {
+		background: #2a5298;
+	}
+
 	.mainContent {
 		display: flex;
-		flex: 1; /* This will make it fill remaining space */
-		overflow: hidden; /* Changed from auto to hidden to prevent animations from causing scrollbars */
+		flex: 1;
+		overflow: hidden;
 		position: relative;
 		z-index: 0;
 		width: 100%;
@@ -346,43 +463,18 @@
 	#content {
 		display: flex;
 		flex-direction: column;
-		flex: 1; /* Force it to fill available space */
-		min-height: 0; /* Prevents overflow */
+		flex: 1;
+		min-height: 0;
 	}
 
-	/* In MainWidget.svelte */
 	#main-widget {
 		display: flex;
 		flex-direction: column;
 		flex: 1;
-		height: 100%; /* Instead of min-height: 100vh */
 		position: relative;
 		background: linear-gradient(to bottom, #0b1d2a, #325078, #49708a);
 		color: light-dark(black, white);
-		overflow: hidden; /* Prevent any content from overflowing */
-	}
-
-
-	@keyframes flash-right {
-		0% {
-			transform: translateX(-100%);
-			opacity: 0.7;
-		}
-		100% {
-			transform: translateX(100%);
-			opacity: 0;
-		}
-	}
-
-	@keyframes flash-left {
-		0% {
-			transform: translateX(100%);
-			opacity: 0.7;
-		}
-		100% {
-			transform: translateX(-100%);
-			opacity: 0;
-		}
+		overflow: hidden;
 	}
 
 	/* Enhanced placeholder styling */
@@ -394,7 +486,7 @@
 		height: 100%;
 		width: 100%;
 		padding: 20px;
-		perspective: 1000px; /* Add perspective for 3D animations */
+		perspective: 1000px;
 	}
 
 	.placeholder-card {
@@ -534,6 +626,7 @@
 		}
 	}
 
+	/* Responsive layouts */
 	@media (orientation: portrait) {
 		.mainContent {
 			flex-direction: column;
