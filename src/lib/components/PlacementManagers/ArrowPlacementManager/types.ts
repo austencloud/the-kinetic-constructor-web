@@ -6,14 +6,14 @@ import type { GridMode, PropRotDir, ShiftHandRotDir, MotionType } from '$lib/typ
 import type { Motion } from '$lib/components/objects/Motion/Motion';
 
 export type ArrowPlacementConfig = {
-  pictographData: PictographData;
-  gridData: GridData;
-  checker: PictographChecker;
+	pictographData: PictographData;
+	gridData: GridData;
+	checker: PictographChecker;
 };
 
 export type Coordinates = {
-  x: number;
-  y: number;
+	x: number;
+	y: number;
 };
 
 export type DirectionTuple = [number, number];

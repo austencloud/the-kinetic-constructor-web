@@ -16,7 +16,7 @@
 
 	// Props with defaults - unchanged
 	import type { Writable } from 'svelte/store';
-	import { errorService, ErrorSeverity } from './services/ErrorHandlingService';
+	import { errorService, ErrorSeverity } from '../../services/ErrorHandlingService';
 
 	export let pictographDataStore: Writable<PictographData>;
 	export let onClick: (() => void) | undefined = undefined;

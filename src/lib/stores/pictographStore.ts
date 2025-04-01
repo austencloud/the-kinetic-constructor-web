@@ -5,11 +5,17 @@ import type { GridData } from '$lib/components/objects/Grid/GridData';
 import type { PropData } from '$lib/components/objects/Prop/PropData';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 
-// Define the structure of the pictograph store state
 export interface PictographStoreState {
-	status: 'idle' | 'loading' | 'complete' | 'error';
+	status:
+		| 'idle'
+		| 'initializing'
+		| 'grid_loading'
+		| 'props_loading'
+		| 'arrows_loading'
+		| 'complete'
+		| 'error';
 	data: PictographData | null;
-	error: Error | null;
+	error: { message: string; component?: string; timestamp: number } | null;
 	loadProgress: number;
 	components: {
 		grid: boolean;
@@ -18,6 +24,12 @@ export interface PictographStoreState {
 		redArrow: boolean;
 		blueArrow: boolean;
 	};
+	stateHistory: {
+		from: string;
+		to: string;
+		reason?: string;
+		timestamp: number;
+	}[];
 }
 
 function createPictographStore() {
@@ -32,102 +44,114 @@ function createPictographStore() {
 			blueProp: false,
 			redArrow: false,
 			blueArrow: false
-		}
+		},
+		stateHistory: []
 	});
+
+	function transitionTo(newState: PictographStoreState['status'], reason?: string) {
+		update((state) => {
+			if (state.status === newState) return state;
+
+			const newTransition = {
+				from: state.status,
+				to: newState,
+				reason,
+				timestamp: Date.now()
+			};
+
+			const updatedHistory = [...state.stateHistory, newTransition].slice(-10);
+
+			return {
+				...state,
+				status: newState,
+				stateHistory: updatedHistory
+			};
+		});
+	}
+
+	function calculateProgress(components: Record<string, boolean>): number {
+		const loadedCount = Object.values(components).filter(Boolean).length;
+		const totalComponents = Object.keys(components).length;
+		return Math.floor((loadedCount / totalComponents) * 100);
+	}
 
 	return {
 		subscribe,
 
-		// Update the pictograph data
-		setData: (data: PictographData) => update((state) => ({ ...state, data, status: 'loading' })),
+		setData: (data: PictographData) => {
+			transitionTo('initializing', 'Starting to load pictograph');
+			update((state) => ({ ...state, data, status: 'grid_loading' }));
+		},
 
-		// Mark a specific component as loaded
-		updateComponentLoaded: (component: keyof PictographStoreState['components']) =>
+		updateComponentLoaded: (component: keyof PictographStoreState['components']) => {
 			update((state) => {
 				const updatedComponents = {
 					...state.components,
 					[component]: true
 				};
-
-				const loadedCount = Object.values(updatedComponents).filter(Boolean).length;
-				const totalComponents = Object.keys(updatedComponents).length;
-
+				const newProgress = calculateProgress(updatedComponents);
+				const allLoaded = Object.values(updatedComponents).every(Boolean);
+				const newState = allLoaded ? 'complete' : state.status;
+				if (allLoaded && newState !== 'complete') transitionTo('complete', 'All components loaded');
 				return {
 					...state,
 					components: updatedComponents,
-					loadProgress: Math.floor((loadedCount / totalComponents) * 100),
-					status: loadedCount === totalComponents ? 'complete' : 'loading'
+					loadProgress: newProgress,
+					status: newState
 				};
-			}),
+			});
+		},
 
-		// Set an error state
-		setError: (error: Error) =>
+		setError: (message: string, component?: string) => {
+			const timestamp = Date.now();
+			transitionTo('error', message);
 			update((state) => ({
 				...state,
-				status: 'error',
-				error,
+				error: { message, component, timestamp },
 				loadProgress: 0
-			})),
+			}));
+		},
 
-		// Update grid data
-		updateGridData: (gridData: GridData) =>
+		updateGridData: (gridData: GridData) => {
 			update((state) => {
-				if (state.data) {
-					return {
-						...state,
-						data: { ...state.data, gridData },
-						components: { ...state.components, grid: true }
-					};
-				}
-				return state;
-			}),
+				if (!state.data) return state;
+				transitionTo('props_loading', 'Grid data loaded');
+				return {
+					...state,
+					data: { ...state.data, gridData },
+					components: { ...state.components, grid: true }
+				};
+			});
+		},
 
-		// Update prop data
-		updatePropData: (color: 'red' | 'blue', propData: PropData) =>
+		updatePropData: (color: 'red' | 'blue', propData: PropData) => {
 			update((state) => {
-				if (state.data) {
-					const key = color === 'red' ? 'redPropData' : 'bluePropData';
-					const componentKey = color === 'red' ? 'redProp' : 'blueProp';
+				if (!state.data) return state;
+				const key = color === 'red' ? 'redPropData' : 'bluePropData';
+				const componentKey = color === 'red' ? 'redProp' : 'blueProp';
+				transitionTo('arrows_loading', `${color} prop loaded`);
+				return {
+					...state,
+					data: { ...state.data, [key]: propData },
+					components: { ...state.components, [componentKey]: true }
+				};
+			});
+		},
 
-					return {
-						...state,
-						data: {
-							...state.data,
-							[key]: propData
-						},
-						components: {
-							...state.components,
-							[componentKey]: true
-						}
-					};
-				}
-				return state;
-			}),
-
-		// Update arrow data
-		updateArrowData: (color: 'red' | 'blue', arrowData: ArrowData) =>
+		updateArrowData: (color: 'red' | 'blue', arrowData: ArrowData) => {
 			update((state) => {
-				if (state.data) {
-					const key = color === 'red' ? 'redArrowData' : 'blueArrowData';
-					const componentKey = color === 'red' ? 'redArrow' : 'blueArrow';
+				if (!state.data) return state;
+				const key = color === 'red' ? 'redArrowData' : 'blueArrowData';
+				const componentKey = color === 'red' ? 'redArrow' : 'blueArrow';
+				return {
+					...state,
+					data: { ...state.data, [key]: arrowData },
+					components: { ...state.components, [componentKey]: true }
+				};
+			});
+		},
 
-					return {
-						...state,
-						data: {
-							...state.data,
-							[key]: arrowData
-						},
-						components: {
-							...state.components,
-							[componentKey]: true
-						}
-					};
-				}
-				return state;
-			}),
-
-		// Reset the store to initial state
-		reset: () =>
+		reset: () => {
 			set({
 				status: 'idle',
 				data: null,
@@ -139,8 +163,12 @@ function createPictographStore() {
 					blueProp: false,
 					redArrow: false,
 					blueArrow: false
-				}
-			})
+				},
+				stateHistory: []
+			});
+		},
+
+		transitionTo
 	};
 }
 

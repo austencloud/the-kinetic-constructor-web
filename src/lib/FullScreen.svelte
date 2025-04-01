@@ -10,28 +10,41 @@
 	const dispatch = createEventDispatcher<{ toggleFullscreen: boolean }>();
 
 	onMount(() => {
+		const doc = document as Document & {
+			webkitFullscreenEnabled?: boolean;
+			mozFullScreenEnabled?: boolean;
+			msFullscreenEnabled?: boolean;
+			mozCancelFullScreen?: () => void;
+			webkitExitFullscreen?: () => void;
+			msExitFullscreen?: () => void;
+		};
+
 		fullscreenSupport = !!(
 			document.fullscreenEnabled ||
-			(document as any).webkitFullscreenEnabled ||
-			(document as any).mozFullScreenEnabled ||
-			(document as any).msFullscreenEnabled
+			doc.webkitFullscreenEnabled ||
+			doc.mozFullScreenEnabled ||
+			doc.msFullscreenEnabled
 		);
 
 		exitFullscreen =
 			document.exitFullscreen ||
-			(document as any).mozCancelFullScreen ||
-			(document as any).webkitExitFullscreen ||
-			(document as any).msExitFullscreen ||
+			doc.mozCancelFullScreen ||
+			doc.webkitExitFullscreen ||
+			doc.msExitFullscreen ||
 			(() => {});
 
 		requestFullscreen = () => {
-			const el = fsContainer;
-			if (!el) return;
+			if (!fsContainer) return;
+			const el = fsContainer as HTMLElement & {
+				mozRequestFullScreen?: () => void;
+				webkitRequestFullscreen?: () => void;
+				msRequestFullscreen?: () => void;
+			};
 			const req =
 				el.requestFullscreen ||
-				(el as any).mozRequestFullScreen ||
-				(el as any).webkitRequestFullscreen ||
-				(el as any).msRequestFullscreen ||
+				el.mozRequestFullScreen ||
+				el.webkitRequestFullscreen ||
+				el.msRequestFullscreen ||
 				(() => {});
 			req.call(el);
 		};
@@ -39,19 +52,12 @@
 
 	function fsToggle() {
 		if (!fullscreenSupport) return;
-		if (isFull) {
-			exitFullscreen.call(document);
-		} else {
-			requestFullscreen();
-		}
+		isFull ? exitFullscreen.call(document) : requestFullscreen();
 		isFull = !isFull;
 
-		// Emit the fullscreen state
 		dispatch('toggleFullscreen', isFull);
 
-		// Trigger a resize event to ensure all components adjust their layout
-		const resizeEvent = new Event('resize');
-		window.dispatchEvent(resizeEvent);
+		window.dispatchEvent(new Event('resize'));
 	}
 </script>
 
@@ -74,17 +80,15 @@
 	.fullscreen-container {
 		position: relative;
 		width: 100%;
-		height: 100%; /* This needs to be 100% not auto */
-		display: flex; /* Add this */
-		flex-direction: column; /* Add this */
-		flex: 1; /* Add this */
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		flex: 1;
 		overflow: hidden;
 	}
 
 	.fs-btn {
 		z-index: 9999;
-		/* pointer-events: all; */
-
 		position: absolute;
 		right: 20px;
 		bottom: 20px;

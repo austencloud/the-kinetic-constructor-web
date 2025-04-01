@@ -14,7 +14,6 @@ export class PictographChecker {
 	}
 
 	private getMotionEndOrientation(motionKey: 'redMotionData' | 'blueMotionData') {
-		// Replace _.get with optional chaining
 		return this.pictographData[motionKey]?.endOri;
 	}
 
@@ -23,10 +22,6 @@ export class PictographChecker {
 			? LetterUtils.getLettersByCondition(condition).includes(this.pictographData.letter)
 			: false;
 	}
-
-	endsWithAlpha = () => this.checkLetterCondition(LetterConditions.ALPHA_ENDING);
-	endsWithBeta = () => this.checkLetterCondition(LetterConditions.BETA_ENDING);
-	endsWithGamma = () => this.checkLetterCondition(LetterConditions.GAMMA_ENDING);
 
 	endsWithLayer3(): boolean {
 		const redEndOri = this.getMotionEndOrientation('redMotionData');

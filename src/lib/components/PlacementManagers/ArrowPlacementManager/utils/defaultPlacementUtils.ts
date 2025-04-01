@@ -31,15 +31,18 @@ import boxAntiData from '$lib/data/arrow_placement/box/default/default_box_anti_
 import boxFloatData from '$lib/data/arrow_placement/box/default/default_box_float_placements.json';
 import boxDashData from '$lib/data/arrow_placement/box/default/default_box_dash_placements.json';
 import boxStaticData from '$lib/data/arrow_placement/box/default/default_box_static_placements.json';
+import type { PictographChecker } from '$lib/components/Pictograph/services/PictographChecker';
+import { LetterConditions } from '$lib/components/Pictograph/constants/LetterConditions';
+import type { PictographData } from '$lib/types/PictographData';
 
 // Define type for the actual JSON structure
 // This better matches what we get from the JSON files
 interface TurnAdjustment {
-  [turn: string]: [number, number];
+	[turn: string]: [number, number];
 }
 
 interface PlacementData {
-  [key: string]: TurnAdjustment;
+	[key: string]: TurnAdjustment;
 }
 
 // Consolidated default placement data with proper typing
@@ -94,16 +97,16 @@ export function getDefaultAdjustment(
 function getAdjustmentKey(
 	arrow: ArrowData,
 	defaultPlacements: PlacementData,
-	pictographData: any,
-	checker: any
+	pictographData: PictographData,
+	checker: PictographChecker
 ): string {
 	const motionType = arrow.motionType as string;
 	const motionEndOri = arrow.endOri as string;
 
 	// Check for different orientation types
-	const hasBetaProps = checker.endsWithBeta();
-	const hasAlphaProps = checker.endsWithAlpha();
-	const hasGammaProps = checker.endsWithGamma();
+	const hasBetaProps = checker.checkLetterCondition(LetterConditions.BETA_ENDING);
+	const hasAlphaProps = checker.checkLetterCondition(LetterConditions.ALPHA_ENDING);
+	const hasGammaProps = checker.checkLetterCondition(LetterConditions.GAMMA_ENDING);
 	const hasHybridOrientation = checker.endsWithLayer3();
 	const hasRadialProps = checker.endsWithRadialOri();
 	const hasNonRadialProps = checker.endsWithNonRadialOri();

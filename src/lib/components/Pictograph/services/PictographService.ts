@@ -1,3 +1,4 @@
+// src/lib/services/PictographService.ts
 import type { PictographData } from '$lib/types/PictographData';
 import type { PropData } from '$lib/components/objects/Prop/PropData';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
@@ -10,11 +11,11 @@ import { RED, BLUE } from '$lib/types/Constants';
 
 import { PictographChecker } from './PictographChecker';
 import { pictographStore } from '$lib/stores/pictographStore';
-import { pictographStateMachine } from '$lib/services/PictographStateMachine';
 import ArrowLocationManager from '$lib/components/objects/Arrow/ArrowLocationManager';
 import { BetaPropPositioner } from '$lib/components/PlacementManagers/PropPlacementManager/BetaPropPositioner';
 import ArrowRotAngleManager from '$lib/components/objects/Arrow/ArrowRotAngleManager';
 import { ArrowPlacementManager } from '$lib/components/PlacementManagers/ArrowPlacementManager';
+import { LetterConditions } from '../constants/LetterConditions';
 
 export class PictographService {
 	private data: PictographData;
@@ -28,17 +29,12 @@ export class PictographService {
 
 	private initialize(): void {
 		try {
-			pictographStateMachine.transitionTo('initializing');
-
 			this.initializeMotions();
-
 			pictographStore.setData(this.data);
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : 'Pictograph initialization failed';
-
-			pictographStateMachine.handleError(errorMessage, 'initialization');
-			pictographStore.setError(error as Error);
+			pictographStore.setError(errorMessage, 'initialization');
 		}
 	}
 
@@ -65,13 +61,11 @@ export class PictographService {
 		};
 
 		pictographStore.updatePropData(color, propData);
-
 		return propData;
 	}
 
 	createArrowData(motionData: MotionData, color: Color): ArrowData {
 		const motion = color === 'red' ? this.data.redMotion : this.data.blueMotion;
-
 		const arrowLoc = motion
 			? this.calculateArrowLocation(motion, motionData.endLoc)
 			: motionData.endLoc;
@@ -91,13 +85,11 @@ export class PictographService {
 		};
 
 		pictographStore.updateArrowData(color, arrowData);
-
 		return arrowData;
 	}
 
 	private calculateArrowLocation(motion: Motion | null, defaultLoc: Loc): Loc {
 		if (!motion) return defaultLoc;
-
 		try {
 			const locationManager = new ArrowLocationManager(this);
 			return locationManager.getArrowLocation(motion) ?? defaultLoc;
@@ -115,23 +107,17 @@ export class PictographService {
 		grid: GridData
 	): void {
 		try {
-			pictographStateMachine.transitionTo('props_loading');
-
 			if (redProp) this.positionProp(redProp, grid);
 			if (blueProp) this.positionProp(blueProp, grid);
 
-			if (redProp && blueProp && this.checker.endsWithBeta()) {
+			if (redProp && blueProp && this.checker.checkLetterCondition(LetterConditions.BETA_ENDING)) {
 				new BetaPropPositioner(this.data).reposition([redProp, blueProp]);
 			}
 
 			this.positionArrows(redArrow, blueArrow, grid);
-
-			pictographStateMachine.transitionTo('arrows_loading');
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : 'Component positioning failed';
-
-			pictographStateMachine.handleError(errorMessage, 'positioning');
-			pictographStore.setError(error as Error);
+			pictographStore.setError(errorMessage, 'positioning');
 		}
 	}
 
@@ -201,13 +187,11 @@ export class PictographService {
 
 	getShiftMotion(): Motion | null {
 		const motions = [this.data.redMotion, this.data.blueMotion].filter((m): m is Motion => !!m);
-
 		return motions.find((m) => ['pro', 'anti', 'float'].includes(m.motionType)) ?? null;
 	}
 
 	getOtherMotion(motion: Motion): Motion | null {
 		if (!motion) return null;
-
 		const otherColor = motion.color === RED ? BLUE : RED;
 		return otherColor === RED ? (this.data.redMotion ?? null) : (this.data.blueMotion ?? null);
 	}

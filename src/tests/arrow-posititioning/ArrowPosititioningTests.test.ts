@@ -25,20 +25,20 @@ const mockGridData: GridData = {
 };
 
 const mockPictographData: PictographData = {
-    letter: Letter.A,
-    gridMode: 'diamond',
-    startPos: 'alpha1',
-    endPos: 'alpha2',
-    timing: 'split',
-    direction: 'same',
-    gridData: null,
-    blueMotionData: null,
-    redMotionData: null,
-    redPropData: null,
-    bluePropData: null,
-    redArrowData: null,
-    blueArrowData: null,
-    grid: ''
+	letter: Letter.A,
+	gridMode: 'diamond',
+	startPos: 'alpha1',
+	endPos: 'alpha2',
+	timing: 'split',
+	direction: 'same',
+	gridData: null,
+	blueMotionData: null,
+	redMotionData: null,
+	redPropData: null,
+	bluePropData: null,
+	redArrowData: null,
+	blueArrowData: null,
+	grid: ''
 };
 
 const mockArrowData: ArrowData = {
