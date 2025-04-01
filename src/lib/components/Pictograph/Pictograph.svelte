@@ -13,7 +13,8 @@
 	import PictographLoading from './components/PictographLoading.svelte';
 	import PictographError from './components/PictographError.svelte';
 	import PictographDebug from './components/PictographDebug.svelte';
-
+	import InitializingSpinner from './components/InitializingSpinner.svelte';
+	import LoadingProgress from './components/LoadingProgress.svelte';
 	// Props with defaults - unchanged
 	import type { Writable } from 'svelte/store';
 	import { errorService, ErrorSeverity } from '../../services/ErrorHandlingService';
@@ -21,7 +22,7 @@
 	export let pictographDataStore: Writable<PictographData>;
 	export let onClick: (() => void) | undefined = undefined;
 	export let debug = false;
-	export let animationDuration = 300;
+	export let animationDuration: 300 = 300;
 	export let showLoadingIndicator = true;
 
 	// Event dispatcher - unchanged
@@ -335,9 +336,8 @@
 			onClick();
 		}
 	}
+	
 </script>
-
-<!-- Template remains completely unchanged to ensure compatibility -->
 <div
 	class="pictograph-wrapper"
 	on:click={handleWrapperClick}
@@ -355,7 +355,7 @@
 	>
 		{#if state === 'initializing'}
 			{#if showLoadingIndicator}
-				<PictographLoading {animationDuration} initializing={true} />
+				<InitializingSpinner {animationDuration} />
 			{/if}
 		{:else if state === 'error'}
 			<PictographError {errorMessage} {animationDuration} />
@@ -415,7 +415,11 @@
 	</svg>
 
 	{#if state === 'loading' && showLoadingIndicator}
-		<PictographLoading {loadProgress} {animationDuration} showText={true} initializing={false} />
+		<LoadingProgress 
+			{loadProgress} 
+			{animationDuration} 
+			showText={true} 
+		/>
 	{/if}
 </div>
 
