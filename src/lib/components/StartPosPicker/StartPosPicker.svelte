@@ -6,7 +6,7 @@
 	import pictographDataStore from '$lib/stores/pictographDataStore.js';
 	import { selectedStartPos } from '$lib/stores/constructStores.js';
 	import { writable, type Writable } from 'svelte/store';
-	import LoadingSpinner from '../MainWidget/LoadingSpinner.svelte';
+	import LoadingSpinner from '../MainWidget/loading/LoadingSpinner.svelte';
 
 	let gridMode = 'diamond';
 	let startPositionDataStoreSet: Writable<PictographData>[] = [];
