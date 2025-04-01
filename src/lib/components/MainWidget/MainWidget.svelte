@@ -2,7 +2,7 @@
 	import MenuBar from '../MenuBar/MenuBar.svelte';
 	import SequenceWorkbench from '../SequenceWorkbench/Workbench.svelte';
 	import OptionPicker from '../OptionPicker/OptionPicker.svelte';
-	import SnowfallBackground from '../Backgrounds/SnowfallBackground.svelte';
+	import SnowfallBackground from '../SnowfallBackground.svelte';
 	import SettingsDialog from '../SettingsDialog/SettingsDialog.svelte';
 	import FullScreen from '$lib/FullScreen.svelte';
 	import LoadingSpinner from './LoadingSpinner.svelte';
