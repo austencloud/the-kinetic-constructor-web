@@ -9,8 +9,8 @@
 	import MainLayout from './layout/MainLayout.svelte';
 	import SequenceWorkbench from '../SequenceWorkbench/Workbench.svelte';
 
-	// State and Stores
-	import { loadingState } from '$lib/stores/loadingStateStore';
+	// State and Stores - UPDATED IMPORTS
+	import { loadingState } from '$lib/stores/ui/loadingStore'; // Updated path
 	import { appState, activeTab, tabs } from './state/appState';
 	import {
 		createActions,
@@ -46,6 +46,17 @@
 		// This is a workaround since we can't directly modify the readonly tabs array
 		// In a real implementation, you might use a different approach to component registration
 	};
+
+	// CHANGE: Calculate initial height immediately to avoid layout shift
+	let initialHeight = typeof window !== 'undefined' ? `${window.innerHeight}px` : '100vh';
+	
+	// Immediately set the initial height in appState
+	if (typeof window !== 'undefined') {
+		appState.update((state) => ({
+			...state,
+			dynamicHeight: initialHeight
+		}));
+	}
 
 	// ===== Lifecycle =====
 	onMount(() => {
@@ -84,7 +95,8 @@
 		};
 
 		window.addEventListener('resize', handleResize);
-		handleResize(); // Initial call
+		// REMOVED: Initial call to handleResize is no longer needed as we set the height earlier
+		// handleResize(); 
 
 		// Cleanup function
 		return () => {

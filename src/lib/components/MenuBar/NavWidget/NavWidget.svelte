@@ -13,31 +13,32 @@
 
 	let activeTab = 0;
 	let previousTab = 0;
-	let isAnimating = false;
+	let lastClickTime = 0; // Track when the last click happened
 
 	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
 	const tabEmojis = ['⚒️', '🤖', '🔍', '🧠', '✍️'];
 
 	function handleTabClick(index: number) {
-		// Don't do anything if we're already animating
-		if (isAnimating || index === activeTab) return;
-
-		// Set flag to prevent multiple rapid clicks
-		isAnimating = true;
+		// Skip if clicking the already active tab
+		if (index === activeTab) return;
+		
+		// CHANGE: Allow rapid clicks by not blocking based on animation
+		// Instead, track click time to prevent programmatic issues
+		const now = Date.now();
+		if (now - lastClickTime < 50) {
+			// If clicks are impossibly fast (programmatic or glitch), ignore
+			return;
+		}
+		lastClickTime = now;
 
 		// Store previous tab for animation direction
 		previousTab = activeTab;
 
-		// Update active tab
+		// Update active tab immediately
 		activeTab = index;
 
 		// Dispatch an event to the parent component with the new tab index
 		dispatch('tabChange', index);
-
-		// Reset the animation flag after animation completes
-		setTimeout(() => {
-			isAnimating = false;
-		}, 750); // Bit longer than our longest animation
 	}
 
 	const updateModes = () => {
@@ -71,7 +72,7 @@
 <div class="nav-widget">
 	{#each tabNames as name, index}
 		<div class="button-wrapper" class:active={index === activeTab}>
-			{#key activeTab}
+			{#key `tab-${index}-${activeTab === index}`}
 				<NavButton isActive={index === activeTab} onClick={() => handleTabClick(index)}>
 					{#if !isPortraitMode && !isMobileDevice}
 						{#if index === activeTab}

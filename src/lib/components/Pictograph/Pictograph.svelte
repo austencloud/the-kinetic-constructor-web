@@ -63,9 +63,6 @@
 		? { role: 'button', tabIndex: 0, 'aria-label': `Pictograph for letter ${letter || 'unknown'}` }
 		: {};
 
-	/**
-	 * Get the ARIA label based on component state - new helper function
-	 */
 	function getPictographAriaLabel(): string {
 		if (state === 'error') return `Pictograph error: ${errorMessage}`;
 		const letterPart = letter ? `for letter ${letter}` : '';
@@ -73,9 +70,6 @@
 		return `Pictograph visualization ${letterPart} - ${statePart}`;
 	}
 
-	/**
-	 * Check if data has required motion information - new helper function
-	 */
 	function hasRequiredMotionData(data: PictographData): boolean {
 		return Boolean(data?.redMotionData || data?.blueMotionData);
 	}
@@ -106,9 +100,6 @@
 		};
 	});
 
-	/**
-	 * Handle grid loading completion - mostly unchanged
-	 */
 	function handleGridLoaded(data: GridData) {
 		try {
 			// Update state
@@ -135,9 +126,6 @@
 		}
 	}
 
-	/**
-	 * Create and position components - better organized but same logic
-	 */
 	function createAndPositionComponents() {
 		try {
 			// Initialize required components
@@ -186,9 +174,6 @@
 		}
 	}
 
-	/**
-	 * Handle component loading - unchanged
-	 */
 	function handleComponentLoaded(component: string) {
 		loadedComponents.add(component);
 		componentsLoaded++;
@@ -197,16 +182,11 @@
 		checkLoadingComplete();
 	}
 
-	/**
-	 * Update load progress - unchanged
-	 */
 	function updateLoadProgress() {
 		componentsLoadedStore.set(++componentsLoaded);
 		totalComponentsStore.set(totalComponentsToLoad);
 	}
-	/**
-	 * Check if loading is complete - unchanged
-	 */
+
 	function checkLoadingComplete() {
 		const startCheck = performance.now();
 		const allLoaded = requiredComponents.every((component) => loadedComponents.has(component));
@@ -224,9 +204,6 @@
 		}
 	}
 
-	/**
-	 * Handle component error - unchanged
-	 */
 	function handleComponentError(component: string, error: any) {
 		if (debug) console.warn(`Component error (${component}):`, error);
 
@@ -239,9 +216,6 @@
 		checkLoadingComplete();
 	}
 
-	/**
-	 * Apply fallback positioning - unchanged
-	 */
 	function applyFallbackPositioning(component: string) {
 		const centerX = 475;
 		const centerY = 475;
@@ -277,12 +251,6 @@
 		}
 	}
 
-	/**
-	 * Handle error - improved with better organization
-	 */
-	/**
-	 * Handle error - improved with better organization using ErrorHandlingService
-	 */
 	function handleError(source: string, error: any) {
 		// Create an error object using the new error service
 		const errorObj = errorService.createError(
@@ -317,16 +285,10 @@
 		dispatch('loaded', { complete: false, error: true, message: errorMessage });
 	}
 
-	/**
-	 * Handle wrapper click - unchanged
-	 */
 	function handleWrapperClick() {
 		if (onClick) onClick();
 	}
 
-	/**
-	 * Handle key presses for accessibility - unchanged
-	 */
 	function handleKeydown(e: KeyboardEvent) {
 		if (onClick && (e.key === 'Enter' || e.key === ' ')) {
 			e.preventDefault();
@@ -417,7 +379,6 @@
 </div>
 
 <style>
-	/* Styles completely unchanged */
 	.pictograph-wrapper {
 		width: 100%;
 		height: 100%;

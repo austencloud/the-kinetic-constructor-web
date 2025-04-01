@@ -1,7 +1,7 @@
 <!-- src/lib/components/MainWidget/loading/LoadingOverlay.svelte -->
 <script lang="ts">
-    import { loadingState } from '$lib/stores/loadingStateStore';
-	import LoadingSpinner from './LoadingSpinner.svelte';
+    import { loadingState } from '$lib/stores/ui/loadingStore'; // Updated path
+    import LoadingSpinner from './LoadingSpinner.svelte';
     
     export let onRetry: () => void;
     export let showInitializationError: boolean = false;

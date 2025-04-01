@@ -6,7 +6,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { writable } from 'svelte/store';
-	import { setPictographLoaded } from '$lib/stores/loadingStateStore';
+	import { setPictographLoaded } from '$lib/stores/ui/loadingStore';
 
 	export let options: { name: string; pictographData: any }[] = [];
 	let isLoading = true;

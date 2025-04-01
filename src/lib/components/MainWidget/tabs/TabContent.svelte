@@ -1,7 +1,7 @@
 <!-- src/lib/components/MainWidget/tabs/TabContent.svelte -->
 <script lang="ts">
     import { fly, fade } from 'svelte/transition';
-    import { activeTab, slideDirection, tabs } from '../state/appState';
+    import { activeTab, slideDirection, tabs, appState } from '../state/appState';
     import { selectedStartPos } from '$lib/stores/constructStores';
     import PlaceholderTab from './PlaceholderTab.svelte';
     import SequenceWorkbench from '$lib/components/SequenceWorkbench/Workbench.svelte';
@@ -9,21 +9,40 @@
     import StartPosPicker from '$lib/components/StartPosPicker/StartPosPicker.svelte';
     
     export let isVisible: boolean = true;
+    
+    // ADDED: Track what content we're displaying
+    let currentTabId = $activeTab.id;
+    let isTransitioning = false;
+    
+    // ADDED: Handle rapid tab transitions
+    $: if ($activeTab.id !== currentTabId) {
+        // Tab has changed, update immediately
+        currentTabId = $activeTab.id;
+        isTransitioning = true;
+        
+        // Reset transition state after animation completes
+        setTimeout(() => {
+            isTransitioning = false;
+        }, 600); // Set this higher than your animation duration
+    }
+    
+    // ADDED: Use shorter animation durations for rapid tab switching
+    $: animationDuration = isTransitioning ? 300 : 500;
 </script>
 
-<!-- Use key to force re-render on tab change -->
+<!-- Use currentTabId as key instead of directly using $activeTab -->
 {#if isVisible}
-    {#key $activeTab.id}
+    {#key currentTabId}
         {#if $activeTab.splitView}
             <!-- Split view layout for sequence workbench -->
             <div
                 class="sequenceWorkbenchContainer"
                 in:fly={{ 
-                    duration: 500, 
+                    duration: animationDuration, 
                     x: $slideDirection ? 100 : -100 
                 }}
                 out:fly={{ 
-                    duration: 400, 
+                    duration: 200, // Faster exit animation
                     x: $slideDirection ? -100 : 100 
                 }}
             >
@@ -33,12 +52,12 @@
             <div
                 class="optionPickerContainer"
                 in:fly={{ 
-                    duration: 500, 
-                    delay: 200, 
+                    duration: animationDuration, 
+                    delay: Math.min(100, isTransitioning ? 0 : 200), // Reduce delay on rapid changes
                     x: $slideDirection ? 100 : -100 
                 }}
                 out:fly={{ 
-                    duration: 400, 
+                    duration: 200, // Faster exit animation
                     x: $slideDirection ? -100 : 100 
                 }}
             >
@@ -54,24 +73,22 @@
             <div
                 class="fullViewComponent"
                 in:fly={{ 
-                    duration: 500, 
+                    duration: animationDuration, 
                     x: $slideDirection ? 100 : -100,
                     opacity: 0.2
                 }}
-                out:fade={{ duration: 300 }}
-            >
+                out:fade={{ duration: 150 }}>
                 <svelte:component this={$activeTab.component} />
             </div>
         {:else}
             <!-- Placeholder for features under development -->
             <div
                 in:fly={{ 
-                    duration: 500, 
+                    duration: animationDuration, 
                     x: $slideDirection ? 100 : -100,
                     opacity: 0.2
                 }}
-                out:fade={{ duration: 300 }}
-            >
+                out:fade={{ duration: 150 }}>
                 <PlaceholderTab icon={$activeTab.icon} title={$activeTab.title} />
             </div>
         {/if}
@@ -81,11 +98,13 @@
 <style>
     .sequenceWorkbenchContainer, .optionPickerContainer {
         flex: 1;
+        position: relative; /* Added to ensure proper stacking */
     }
     
     .fullViewComponent {
         width: 100%;
         height: 100%;
+        position: relative; /* Added to ensure proper stacking */
     }
     
     /* Responsive layouts */

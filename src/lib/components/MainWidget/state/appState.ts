@@ -1,6 +1,6 @@
 // src/lib/components/MainWidget/state/appState.ts
 import { writable, derived, type Readable } from 'svelte/store';
-import { beatsStore } from '$lib/stores/beatsStore';
+import { beatsStore } from '$lib/stores/sequence/beatsStore';
 
 // Define the Tab type
 export type Tab = {
@@ -81,23 +81,14 @@ export const tabs: ReadonlyArray<Tab> = [
 export const appState = writable<AppState>(initialState);
 
 // Create derived stores for commonly used values
-export const activeTab: Readable<Tab> = derived(
-	appState, 
-	($state) => tabs[$state.currentTab]
-);
+export const activeTab: Readable<Tab> = derived(appState, ($state) => tabs[$state.currentTab]);
 
 export const slideDirection: Readable<boolean> = derived(
 	appState,
 	($state) => $state.currentTab > $state.previousTab
 );
 
-export const isTabTransitionInProgress = derived(
-	appState, 
-	($state) => $state.transitionInProgress
-);
+export const isTabTransitionInProgress = derived(appState, ($state) => $state.transitionInProgress);
 
 // Compute whether sequence is empty for conditional UI
-export const isSequenceEmpty = derived(
-	beatsStore,
-	$beats => $beats.length === 0
-);
+export const isSequenceEmpty = derived(beatsStore, ($beats) => $beats.length === 0);

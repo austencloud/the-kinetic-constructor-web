@@ -27,7 +27,7 @@
 		const pictographData = data as PictographData[];
 		const defaultStartPosKeys =
 			gridMode === 'diamond'
-				? ['alpha1_alpha3', 'beta5_beta5', 'gamma11_gamma11']
+				? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
 				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
 
 		const filteredPictographs = pictographData.filter(

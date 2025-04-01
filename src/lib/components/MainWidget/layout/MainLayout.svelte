@@ -1,6 +1,6 @@
 <!-- src/lib/components/MainWidget/layout/MainLayout.svelte -->
 <script lang="ts">
-    import { loadingState } from '$lib/stores/loadingStateStore';
+    import { loadingState } from '$lib/stores/ui/loadingStore'; // Updated path
     import MenuBar from '$lib/components/MenuBar/MenuBar.svelte';
     import LoadingOverlay from '../loading/LoadingOverlay.svelte';
     import SettingsDialog from '$lib/components/SettingsDialog/SettingsDialog.svelte';

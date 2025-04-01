@@ -37,13 +37,17 @@
 <style>
 	.placeholder-content {
 		display: flex;
-		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		height: 100%;
 		width: 100%;
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
 		padding: 20px;
-		perspective: 1000px;
+		box-sizing: border-box;
 	}
 
 	.placeholder-card {
