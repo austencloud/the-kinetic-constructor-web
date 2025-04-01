@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
+	import { derived, writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { PropData } from '../objects/Prop/PropData';
 	import type { ArrowData } from '../objects/Arrow/ArrowData';
@@ -15,7 +16,6 @@
 	import PictographDebug from './components/PictographDebug.svelte';
 	import InitializingSpinner from './components/InitializingSpinner.svelte';
 	import LoadingProgress from './components/LoadingProgress.svelte';
-	// Props with defaults - unchanged
 	import type { Writable } from 'svelte/store';
 	import { errorService, ErrorSeverity } from '../../services/ErrorHandlingService';
 
@@ -25,6 +25,13 @@
 	export let animationDuration: 300 = 300;
 	export let showLoadingIndicator = true;
 
+	const componentsLoadedStore = writable(0);
+	const totalComponentsStore = writable(1);
+
+	const loadProgressStore = derived(
+		[componentsLoadedStore, totalComponentsStore],
+		([$loaded, $total]) => Math.floor(($loaded / Math.max($total, 1)) * 100)
+	);
 	// Event dispatcher - unchanged
 	const dispatch = createEventDispatcher<{
 		loaded: { complete: boolean; error?: boolean; message?: string };
@@ -33,7 +40,7 @@
 	}>();
 
 	// Component state variables - unchanged but better organized
-	let state = 'initializing'; // 'initializing', 'grid_only', 'loading', 'complete', 'error'
+	let state = 'initializing';
 	let errorMessage: string | null = null;
 	let gridData: GridData | null = null;
 	let redPropData: PropData | null = null;
@@ -44,33 +51,23 @@
 	let requiredComponents: string[] = ['grid'];
 	let totalComponentsToLoad = 1;
 	let componentsLoaded = 0;
-	let loadProgress = 0;
 	let renderCount = 0;
 	let service: PictographService;
-
 	// Reactive values derived from pictographDataStore - unchanged
+	$: loadProgress = $loadProgressStore;
 	$: pictographData = $pictographDataStore;
 	$: letter = pictographData?.letter || null;
 	$: gridMode = pictographData?.gridMode || 'diamond';
-
-	// Improve aria-label logic with a helper function
 	$: pictographAriaLabel = getPictographAriaLabel();
 	$: interactiveProps = onClick
-		? {
-				role: 'button',
-				tabIndex: 0,
-				'aria-label': `Pictograph for letter ${letter || 'unknown'}`
-			}
+		? { role: 'button', tabIndex: 0, 'aria-label': `Pictograph for letter ${letter || 'unknown'}` }
 		: {};
 
 	/**
 	 * Get the ARIA label based on component state - new helper function
 	 */
 	function getPictographAriaLabel(): string {
-		if (state === 'error') {
-			return `Pictograph error: ${errorMessage}`;
-		}
-
+		if (state === 'error') return `Pictograph error: ${errorMessage}`;
 		const letterPart = letter ? `for letter ${letter}` : '';
 		const statePart = state === 'complete' ? 'complete' : 'loading';
 		return `Pictograph visualization ${letterPart} - ${statePart}`;
@@ -204,9 +201,9 @@
 	 * Update load progress - unchanged
 	 */
 	function updateLoadProgress() {
-		loadProgress = Math.floor((componentsLoaded / Math.max(totalComponentsToLoad, 1)) * 100);
+		componentsLoadedStore.set(++componentsLoaded);
+		totalComponentsStore.set(totalComponentsToLoad);
 	}
-
 	/**
 	 * Check if loading is complete - unchanged
 	 */
@@ -336,8 +333,8 @@
 			onClick();
 		}
 	}
-	
 </script>
+
 <div
 	class="pictograph-wrapper"
 	on:click={handleWrapperClick}
@@ -415,11 +412,7 @@
 	</svg>
 
 	{#if state === 'loading' && showLoadingIndicator}
-		<LoadingProgress 
-			{loadProgress} 
-			{animationDuration} 
-			showText={true} 
-		/>
+		<LoadingProgress {loadProgress} showText={true} />
 	{/if}
 </div>
 

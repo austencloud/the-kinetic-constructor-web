@@ -1,7 +1,6 @@
 <!-- src/lib/components/Pictograph/components/LoadingProgress.svelte -->
 <script lang="ts">
 	export let loadProgress = 0;
-	export const animationDuration = 300;
 	export let showText = true;
 </script>
 
