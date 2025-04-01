@@ -1,6 +1,11 @@
-import { PerformanceManager } from './PerformanceTracker';
+// src/lib/components/Backgrounds/SantaManager.ts
+import { AnimationComponent } from './AnimationComponent';
 
-export default class SantaManager extends PerformanceManager {
+/**
+ * Manages Santa animation for seasonal effects
+ * Refactored to extend AnimationComponent
+ */
+export default class SantaManager extends AnimationComponent {
   private static instance: SantaManager | null = null;
   
   santaImage: HTMLImageElement | null = null;
@@ -22,7 +27,9 @@ export default class SantaManager extends PerformanceManager {
     this.loadSantaImage();
   }
 
-  // Singleton pattern
+  /**
+   * Get the singleton instance of SantaManager
+   */
   static getInstance(): SantaManager {
     if (!this.instance) {
       this.instance = new SantaManager();
@@ -30,8 +37,11 @@ export default class SantaManager extends PerformanceManager {
     return this.instance;
   }
 
+  /**
+   * Load the Santa image
+   */
   private loadSantaImage() {
-    // Optimize image loading
+    // Only load in December and in browser environment
     if (typeof window !== 'undefined' && this.isDecember()) {
       this.santaImage = new Image();
       this.santaImage.src = 'santa.png';
@@ -49,7 +59,9 @@ export default class SantaManager extends PerformanceManager {
     }
   }
 
-  // Optional pre-rendering method
+  /**
+   * Optional method to pre-render the Santa image for optimization
+   */
   private preRenderSanta() {
     if (!this.santaImage) return;
 
@@ -64,26 +76,40 @@ export default class SantaManager extends PerformanceManager {
     offscreenCanvas.height = this.santaImage.height;
     offscreenCtx.drawImage(this.santaImage, 0, 0);
     
-    // You could apply additional optimizations here
-    // For example, adjust brightness, apply a subtle filter, etc.
+    // Additional optimizations could be applied here
   }
 
+  /**
+   * Check if the current month is December
+   */
   private isDecember(): boolean {
     return new Date().getMonth() === 11; // 11 = December
   }
 
+  /**
+   * Initialize Santa animation
+   * Implements abstract method from AnimationComponent
+   */
   initialize(width: number, height: number) {
-    this.santa = { x: -0.2, y: 0.2, speed: 0.001, active: false, direction: 1, opacity: 0.8 };
+    this.santa = { 
+      x: -0.2, 
+      y: 0.2, 
+      speed: 0.001, 
+      active: false, 
+      direction: 1, 
+      opacity: 0.8 
+    };
     this.santaTimer = 0;
     this.santaInterval = this.randomInt(200, 300);
+    this.initialized = true;
   }
 
-  randomInt(min: number, max: number) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
-
-  animateSanta() {
-    // Performance check
+  /**
+   * Animate Santa for the next frame
+   * Implements abstract method from AnimationComponent
+   */
+  animate(width: number, height: number) {
+    // Skip if performance is low or it's not December
     if (!this.shouldRender() || !this.isDecember()) return;
 
     if (this.santa.active) {
@@ -108,10 +134,13 @@ export default class SantaManager extends PerformanceManager {
     }
   }
 
+  /**
+   * Draw Santa to the canvas
+   * Implements abstract method from AnimationComponent
+   */
   draw(ctx: CanvasRenderingContext2D, width: number, height: number) {
-    // Performance and December check
+    // Skip if performance is low, it's not December, or Santa isn't active
     if (!this.shouldRender() || !this.isDecember()) return;
-
     if (!this.santa.active || !this.imageLoaded || !this.santaImage) return;
 
     const santaWidth = Math.max(50, Math.min(width * 0.05, 100));

@@ -1,4 +1,11 @@
-export default class ShootingStarManager {
+// src/lib/components/Backgrounds/ShootingStarManager.ts
+import { AnimationComponent } from './AnimationComponent';
+
+/**
+ * Manages shooting star animations
+ * Refactored to extend AnimationComponent
+ */
+export default class ShootingStarManager extends AnimationComponent {
   shootingStar: {
     x: number;
     y: number;
@@ -20,33 +27,46 @@ export default class ShootingStarManager {
   interval: number;
 
   constructor() {
-    this.interval = this.getInterval(); // Use getInterval function
+    super();
+    this.interval = this.getInterval();
   }
 
-  private randomInt(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+  /**
+   * Get a random interval time for shooting star appearances
+   */
+  private getInterval(): number {
+    return this.randomInt(1000, 1500); // Adjusted for debugging (set to 1000+ in production)
   }
 
-  private randomFloat(min: number, max: number): number {
-    return Math.random() * (max - min) + min;
-  }
-
+  /**
+   * Get a random color for the shooting star
+   */
   private getRandomColor(): string {
     const colors = ['#FFD700', '#FFFFFF', '#FFA500', '#00FFFF'];
     return colors[Math.floor(Math.random() * colors.length)];
   }
 
-  private getInterval(): number {
-    return this.randomInt(1000, 1500); // Adjusted for debugging (set to 1000+ in production)
+  /**
+   * Initialize the shooting star manager
+   * Implements abstract method from AnimationComponent
+   */
+  initialize(width: number, height: number): void {
+    // Initialization happens when stars are spawned
+    this.timer = 0;
+    this.interval = this.getInterval();
+    this.initialized = true;
   }
 
+  /**
+   * Spawn a new shooting star
+   */
   spawnShootingStar(width: number, height: number): void {
     const middleY = height / 2;
 
     // Initial position (from left or right)
     const startOptions = [
       { x: -0.1 * width, y: this.randomFloat(0.2, 0.8) * height }, // Left
-      { x: 1.1 * width, y: this.randomFloat(0.2, 0.8) * height } // Right
+      { x: 1.1 * width, y: this.randomFloat(0.2, 0.8) * height }   // Right
     ];
     const startPos = startOptions[Math.floor(Math.random() * startOptions.length)];
 
@@ -81,7 +101,23 @@ export default class ShootingStarManager {
     };
   }
 
-  animateShootingStar(width: number, height: number): void {
+  /**
+   * Animate the shooting star for the next frame
+   * Implements abstract method from AnimationComponent
+   */
+  animate(width: number, height: number): void {
+    // Check if we should render based on performance before processing animation
+    if (!this.shouldRender()) return;
+    
+    // Manage shooting star timing
+    this.timer += 1;
+    if (!this.shootingStar && this.timer >= this.interval) {
+      this.spawnShootingStar(width, height);
+      this.timer = 0;
+      this.interval = this.getInterval();
+    }
+    
+    // Animate existing shooting star
     if (!this.shootingStar) return;
 
     const star = this.shootingStar;
@@ -89,7 +125,7 @@ export default class ShootingStarManager {
     const newY = star.y + star.dy * star.speed * height;
 
     // Add interpolated positions to make the tail denser
-    const steps = 50; // Increase the number of steps for denser tail
+    const steps = 50; // Increased for denser tail
     for (let i = 0; i < steps; i++) {
       const interpX = star.prevX + (newX - star.prevX) * (i / steps);
       const interpY = star.prevY + (newY - star.prevY) * (i / steps);
@@ -125,12 +161,17 @@ export default class ShootingStarManager {
 
     // Trim tail length
     if (star.tail.length > star.tailLength * steps) {
-      star.tail.splice(0, steps); // Remove multiple segments at once to keep tail length consistent
+      star.tail.splice(0, steps); // Remove multiple segments at once
     }
   }
 
+  /**
+   * Draw the shooting star to the canvas
+   * Implements abstract method from AnimationComponent
+   */
   draw(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-    if (!this.shootingStar) return;
+    // Check if we should render based on performance
+    if (!this.shouldRender() || !this.shootingStar) return;
 
     const star = this.shootingStar;
 
@@ -168,14 +209,5 @@ export default class ShootingStarManager {
     ctx.restore();
 
     ctx.globalAlpha = 1.0;
-  }
-
-  manageShootingStar(width: number, height: number): void {
-    this.timer += 1;
-    if (!this.shootingStar && this.timer >= this.interval) {
-      this.spawnShootingStar(width, height);
-      this.timer = 0;
-      this.interval = this.getInterval(); // Use getInterval function
-    }
   }
 }

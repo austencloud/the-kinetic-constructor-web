@@ -27,13 +27,13 @@ export class ArrowPlacementManager {
    * and the pictograph configuration.
    */
   public updateArrowPlacements(arrows: ArrowData[]): void {
-    arrows.forEach(this.updateArrowPlacement);
+    arrows.forEach(this.updateArrowPlacement.bind(this));
   }
 
   /**
    * Updates the position of a single arrow.
    */
-  private updateArrowPlacement = (arrow: ArrowData): void => {
+  private updateArrowPlacement(arrow: ArrowData): void {
     const initialPos = getInitialPosition(arrow, this.config);
     const adjustment = calculateAdjustment(arrow, this.config);
     
@@ -41,5 +41,5 @@ export class ArrowPlacementManager {
       x: initialPos.x + adjustment.x,
       y: initialPos.y + adjustment.y
     };
-  };
+  }
 }
