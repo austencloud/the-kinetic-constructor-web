@@ -1,4 +1,3 @@
-
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
@@ -59,7 +58,7 @@
 				role: 'button',
 				tabIndex: 0,
 				'aria-label': `Pictograph for letter ${letter || 'unknown'}`
-		  }
+			}
 		: {};
 
 	/**
@@ -117,13 +116,13 @@
 			gridData = data;
 			componentsLoaded++;
 			loadedComponents.add('grid');
-			
+
 			// Update progress
 			updateLoadProgress();
 
 			// Update pictograph data store
 			pictographDataStore.update((store) => ({ ...store, gridData: data }));
-			
+
 			// Exit if grid-only mode
 			if (state === 'grid_only') {
 				dispatch('loaded', { complete: false });
