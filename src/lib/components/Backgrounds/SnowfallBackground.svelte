@@ -1,16 +1,19 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { PerformanceTracker } from './PerformanceTracker';
 	import SnowflakeManager from './SnowflakeManager';
 	import SantaManager from './SantaManager';
 	import ShootingStarManager from './ShootingStarManager';
 
 	let canvas: HTMLCanvasElement | null = null;
 	let ctx: CanvasRenderingContext2D | null = null;
+	let animationFrameId: number | null = null;
 
-	// Managers
-	let snowflakeManager: SnowflakeManager;
-	let santaManager: SantaManager;
-	let shootingStarManager: ShootingStarManager;
+	// Create managers directly to avoid potential import issues
+	const performanceTracker = PerformanceTracker.getInstance();
+	const snowflakeManager = new SnowflakeManager();
+	const santaManager = SantaManager.getInstance();
+	const shootingStarManager = new ShootingStarManager();
 
 	const initializeCanvas = () => {
 		if (!canvas) return;
@@ -19,14 +22,12 @@
 		canvas.height = window.innerHeight;
 		ctx = canvas.getContext('2d');
 
-		// Initialize managers
-		snowflakeManager = new SnowflakeManager();
-		snowflakeManager.initialize(canvas.width, canvas.height);
-
-		santaManager = new SantaManager();
-		santaManager.initialize(canvas.width, canvas.height);
-
-		shootingStarManager = new ShootingStarManager();
+		// Null checks to prevent runtime errors
+		if (ctx) {
+			// Initialize managers
+			snowflakeManager.initialize(canvas.width, canvas.height);
+			santaManager.initialize(canvas.width, canvas.height);
+		}
 	};
 
 	const resizeCanvas = () => {
@@ -39,8 +40,19 @@
 		snowflakeManager.adjustPositions(canvas.width, canvas.height);
 	};
 
+	const throttledResize = (() => {
+		let timeout: number | null = null;
+		return () => {
+			if (timeout) cancelAnimationFrame(timeout);
+			timeout = requestAnimationFrame(resizeCanvas);
+		};
+	})();
+
 	const animate = () => {
 		if (!ctx || !canvas) return;
+
+		// Update performance tracking
+		performanceTracker.update();
 
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -53,30 +65,33 @@
 		ctx.fillStyle = gradient;
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-		// Draw snowflakes
+		// Draw elements
 		snowflakeManager.draw(ctx, canvas.width, canvas.height);
-
-		// Manage and draw shooting stars
+		
 		shootingStarManager.manageShootingStar(canvas.width, canvas.height);
 		shootingStarManager.animateShootingStar(canvas.width, canvas.height);
 		shootingStarManager.draw(ctx, canvas.width, canvas.height);
-
-		// Animate and draw Santa
+		
 		santaManager.animateSanta();
 		santaManager.draw(ctx, canvas.width, canvas.height);
 
-		requestAnimationFrame(animate);
+		animationFrameId = requestAnimationFrame(animate);
 	};
 
 	onMount(() => {
 		initializeCanvas();
-		requestAnimationFrame(animate);
+		animationFrameId = requestAnimationFrame(animate);
 
-		window.addEventListener('resize', resizeCanvas);
+		window.addEventListener('resize', throttledResize);
 
 		return () => {
-			window.removeEventListener('resize', resizeCanvas);
+			if (animationFrameId) cancelAnimationFrame(animationFrameId);
+			window.removeEventListener('resize', throttledResize);
 		};
+	});
+
+	onDestroy(() => {
+		if (animationFrameId) cancelAnimationFrame(animationFrameId);
 	});
 </script>
 

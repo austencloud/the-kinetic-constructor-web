@@ -375,12 +375,60 @@ export class LetterUtils {
 		return this.conditionMappings[condition] || [];
 	}
 
+	private static letterMappings: Record<string, Letter> = {
+		α: Letter.α,
+		beta: Letter.β,
+		β: Letter.β,
+		alpha: Letter.α,
+		gamma: Letter.Γ,
+		Γ: Letter.Γ,
+		γ: Letter.Γ
+	};
+
 	static fromString(letterStr: string): Letter {
-		const normalizedStr = letterStr.replace('-', '_DASH');
-		if (normalizedStr in Letter) {
-			return Letter[normalizedStr as keyof typeof Letter];
+		if (!letterStr) {
+			throw new Error('Cannot convert empty input to Letter');
 		}
+
+		// Trim and preprocess the input
+		const normalizedStr = letterStr
+			.trim()
+			.toLowerCase()
+			.replace(/^([ωφψλ])-?$/, '$1_dash')
+			.replace(/-/g, '_dash');
+
+		// Direct mapping for known variations
+		if (this.letterMappings[normalizedStr]) {
+			return this.letterMappings[normalizedStr];
+		}
+
+		// Try direct enum match (uppercase)
+		const uppercaseStr = normalizedStr.toUpperCase();
+		if (uppercaseStr in Letter) {
+			return Letter[uppercaseStr as keyof typeof Letter];
+		}
+
+		// Log more context for debugging
+		console.warn(`Could not convert letter: "${letterStr}"`, {
+			normalizedStr,
+			availableLetters: Object.keys(Letter)
+		});
+
 		throw new Error(`No matching enum member for string: ${letterStr}`);
+	}
+
+	// More forgiving version that returns null instead of throwing
+	static tryFromString(letterStr: string): Letter | null {
+		try {
+			return this.fromString(letterStr);
+		} catch {
+			return null;
+		}
+	}
+
+	// Optional: Add methods to help with debugging
+	static listAllLetters(): string[] {
+		return Object.keys(Letter);
 	}
 
 	static getLetter(letterStr: string): Letter {

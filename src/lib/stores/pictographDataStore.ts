@@ -1,6 +1,6 @@
-import { LetterUtils } from '$lib/utils/LetterUtils.js';
-import type { MotionData } from '$lib/components/objects/Motion/MotionData.js';
-import type { PictographData } from '$lib/types/PictographData.js';
+import { LetterUtils } from '$lib/utils/LetterUtils';
+import type { MotionData } from '$lib/components/objects/Motion/MotionData';
+import type { PictographData } from '$lib/types/PictographData';
 import { writable } from 'svelte/store';
 
 function toCamelCase(str: string): string {
@@ -51,31 +51,62 @@ function parseCsvToJson(csv: string, gridMode: string) {
 }
 
 function groupPictographsByLetter(pictographs: Record<string, any>[]): PictographData[] {
-    return pictographs.map((record) => {
-        const redMotionData = extractAttributes(record, 'red');
-        const blueMotionData = extractAttributes(record, 'blue');
+    const processedPictographs: PictographData[] = [];
+    let skippedCount = 0;
 
-        return {
-            letter: LetterUtils.fromString(record.letter),
-            startPos: record.startPos,
-            endPos: record.endPos,
-            timing: record.timing,
-            direction: record.direction,
-            redMotionData,
-            blueMotionData,
-            gridMode: record.gridMode,
-            grid: '',
-            gridData: null, // Initialize as null instead of empty array
-            redArrowData: null, // Initialize as null instead of empty array
-            blueArrowData: null, // Initialize as null instead of empty array
-            motions: [], // Keep for backward compatibility
-            redMotion: null,
-            blueMotion: null,
-            props: [],
-            redPropData: null,
-            bluePropData: null
-        };
+    pictographs.forEach((record) => {
+        // Normalize letter input
+        const rawLetter = record.letter ? record.letter.trim() : '';
+
+        // Skip completely empty records
+        if (!rawLetter) {
+            skippedCount++;
+            return;
+        }
+
+        try {
+            // Attempt to convert letter with more lenient parsing
+            const letter = LetterUtils.tryFromString(rawLetter);
+            
+            if (!letter) {
+                skippedCount++;
+                return;
+            }
+
+            const redMotionData = extractAttributes(record, 'red');
+            const blueMotionData = extractAttributes(record, 'blue');
+
+            processedPictographs.push({
+                letter,
+                startPos: record.startPos,
+                endPos: record.endPos,
+                timing: record.timing,
+                direction: record.direction,
+                redMotionData,
+                blueMotionData,
+                gridMode: record.gridMode,
+                grid: '',
+                gridData: null,
+                redArrowData: null,
+                blueArrowData: null,
+                motions: [],
+                redMotion: null,
+                blueMotion: null,
+                props: [],
+                redPropData: null,
+                bluePropData: null
+            });
+        } catch {
+            skippedCount++;
+        }
     });
+
+    // Log summary of skipped records
+    if (skippedCount > 0) {
+        console.warn(`Skipped ${skippedCount} out of ${pictographs.length} records`);
+    }
+
+    return processedPictographs;
 }
 
 const defaultMotionData: MotionData = {
@@ -94,7 +125,6 @@ const defaultMotionData: MotionData = {
     prefloatPropRotDir: null,
 };
 
-// Modify the extractAttributes function
 function extractAttributes(record: Record<string, any>, prefix: string): MotionData {
     return {
         ...defaultMotionData,
