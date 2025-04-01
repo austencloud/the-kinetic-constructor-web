@@ -16,6 +16,7 @@
 
 	// Props with defaults - unchanged
 	import type { Writable } from 'svelte/store';
+	import { errorService, ErrorSeverity } from './services/ErrorHandlingService';
 
 	export let pictographDataStore: Writable<PictographData>;
 	export let onClick: (() => void) | undefined = undefined;
@@ -281,27 +282,39 @@
 	/**
 	 * Handle error - improved with better organization
 	 */
+	/**
+	 * Handle error - improved with better organization using ErrorHandlingService
+	 */
 	function handleError(source: string, error: any) {
-		const errorObj = {
-			source,
-			message: error instanceof Error ? error.message : String(error),
-			stack: error instanceof Error ? error.stack : undefined,
-			timestamp: new Date().toISOString(),
-			componentState: {
-				loadedCount: componentsLoaded,
-				totalCount: totalComponentsToLoad
-			}
+		// Create an error object using the new error service
+		const errorObj = errorService.createError(
+			`Pictograph:${source}`,
+			error,
+			// Determine severity based on the source
+			source === 'initialization' ? ErrorSeverity.CRITICAL : ErrorSeverity.ERROR
+		);
+
+		// Add additional context specific to Pictograph
+		errorObj.context = {
+			loadedCount: componentsLoaded,
+			totalCount: totalComponentsToLoad
 		};
 
+		// Log the error using the service
+		errorService.log(errorObj);
+
+		// Set local error message (maintaining existing behavior)
 		errorMessage = errorObj.message;
 		state = 'error';
 
+		// Maintain existing debug logging
 		if (debug) {
 			console.error(`Pictograph error [${source}]:`, errorObj);
 		} else {
 			console.error(`Pictograph error: ${errorMessage}`);
 		}
 
+		// Dispatch events exactly as before
 		dispatch('error', { source, error, message: errorMessage });
 		dispatch('loaded', { complete: false, error: true, message: errorMessage });
 	}
