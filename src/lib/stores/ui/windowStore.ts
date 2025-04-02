@@ -1,7 +1,11 @@
-// src/lib/stores/ui/windowStore.ts
-import { writable } from 'svelte/store';
+import { writable, readable } from 'svelte/store';
 
 function createWindowHeight() {
+	if (typeof window === 'undefined') {
+		// SSR-safe fallback
+		return readable('100vh');
+	}
+
 	const { subscribe, set } = writable(`${window.innerHeight}px`);
 
 	function update() {
@@ -11,7 +15,11 @@ function createWindowHeight() {
 	window.addEventListener('resize', update);
 	update();
 
-	return { subscribe };
+	return {
+		subscribe,
+		// Optional: call this in onDestroy if you want to clean up
+		_destroy: () => window.removeEventListener('resize', update)
+	};
 }
 
 export const windowHeight = createWindowHeight();

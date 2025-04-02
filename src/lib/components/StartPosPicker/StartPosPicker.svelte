@@ -202,7 +202,7 @@
 	}
 
 	.pictograph-container {
-		width: 30%;
+		width: 25%;
 		aspect-ratio: 1 / 1;
 		height: auto;
 		position: relative;
