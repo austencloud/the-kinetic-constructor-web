@@ -1,3 +1,4 @@
+
 // src/lib/components/objects/Arrow/ArrowLocationManager.ts
 import type { PictographService } from '$lib/components/Pictograph/services/PictographService';
 import type { Motion } from '../Motion/Motion';

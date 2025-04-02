@@ -7,9 +7,10 @@
 	import FullScreen from '$lib/FullScreen.svelte';
 	import SnowfallBackground from '../SnowfallBackground.svelte';
 	import MainLayout from './layout/MainLayout.svelte';
+	import LoadingOverlay from './loading/LoadingOverlay.svelte';
 	import SequenceWorkbench from '../SequenceWorkbench/Workbench.svelte';
 
-	// State and Stores - UPDATED IMPORTS
+	// State and Stores
 	import { loadingState } from '$lib/stores/ui/loadingStore';
 	import { appState, activeTab, tabs } from './state/appState';
 	import {
@@ -22,7 +23,7 @@
 	// Utils
 	import { initializeApplication } from '$lib/utils/appInitializer';
 
-	// NEW: Declarative dynamicHeight from derived store
+	// Declarative dynamicHeight from derived store
 	import { windowHeight } from '$lib/stores/ui/windowStore';
 
 	const dispatch = createEventDispatcher<{
@@ -36,38 +37,52 @@
 	const tabComponentOverrides = new Map<string, typeof SequenceWorkbench>();
 	tabComponentOverrides.set('construct', SequenceWorkbench);
 
-	onMount(() => {
-		const initApp = async () => {
-			try {
-				const success = await initializeApplication();
-				if (!success) {
-					actions.setInitializationError(true);
-				}
-			} catch (error) {
-				console.error('Application initialization failed:', error);
+	// Initialize background first, then the app
+	let backgroundReady = false;
+
+	function handleBackgroundReady() {
+		backgroundReady = true;
+		// Once background is ready, initialize the application
+		initApp();
+	}
+
+	const initApp = async () => {
+		try {
+			const success = await initializeApplication();
+			if (!success) {
 				actions.setInitializationError(true);
 			}
-		};
-
-		initApp();
-	});
+		} catch (error) {
+			console.error('Application initialization failed:', error);
+			actions.setInitializationError(true);
+		}
+	};
 
 	const handleRetry = () => window.location.reload();
 </script>
 
 <div id="main-widget" style="height: {$windowHeight}" class="main-widget">
 	<FullScreen on:toggleFullscreen={(e) => actions.setFullScreen(e.detail)}>
+		<!-- Background ALWAYS renders first, independent of loading state -->
 		<div class="background">
-			<SnowfallBackground />
+			<SnowfallBackground on:ready={handleBackgroundReady} />
 		</div>
 
-		<MainLayout
-			background={$appState.background}
-			onSettingsClick={actions.openSettings}
-			on:changeBackground={(e) => actions.updateBackground(e.detail)}
-			on:tabChange={(e) => actions.changeTab(e.detail)}
-			onRetry={handleRetry}
-		/>
+		<!-- Show LoadingOverlay on top of the background during loading -->
+		{#if $loadingState.isLoading}
+			<LoadingOverlay 
+				onRetry={handleRetry} 
+				showInitializationError={$appState.initializationError} 
+			/>
+		{:else}
+			<!-- Main content only shown when not loading -->
+			<MainLayout
+				background={$appState.background}
+				onSettingsClick={actions.openSettings}
+				on:changeBackground={(e) => actions.updateBackground(e.detail)}
+				on:tabChange={(e) => actions.changeTab(e.detail)}
+			/>
+		{/if}
 	</FullScreen>
 </div>
 
@@ -89,5 +104,6 @@
 		right: 0;
 		bottom: 0;
 		overflow: hidden;
+		z-index: 0; /* Ensure background is behind everything */
 	}
 </style>

@@ -1,6 +1,6 @@
 <!-- src/lib/components/MainWidget/loading/LoadingOverlay.svelte -->
 <script lang="ts">
-    import { loadingState } from '$lib/stores/ui/loadingStore'; // Updated path
+    import { loadingState } from '$lib/stores/ui/loadingStore';
     import LoadingSpinner from './LoadingSpinner.svelte';
     
     export let onRetry: () => void;
@@ -45,7 +45,10 @@
         align-items: center;
         justify-content: center;
         z-index: 999;
-        background: rgba(11, 29, 42, 0.9);
+        /* Reduced background opacity to make snowfall more visible */
+        background: rgba(11, 29, 42, 0.4); 
+        /* Reduced blur to make animation more visible */
+        backdrop-filter: blur(2px);
     }
     
     .loading-container {
@@ -55,10 +58,18 @@
         gap: 20px;
         padding: 30px;
         border-radius: 12px;
-        background: rgba(30, 40, 60, 0.7);
+        /* Increased contrast with a darker background for the container itself */
+        background: rgba(30, 40, 60, 0.85); 
         backdrop-filter: blur(5px);
         max-width: 400px;
         width: 100%;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     .loading-progress-container {
