@@ -1,6 +1,5 @@
 // src/lib/components/Backgrounds/core/BackgroundFactory.ts
 import { SnowfallBackgroundSystem } from '../snowfall/SnowfallBackgroundSystem';
-import { DiamondBackgroundSystem } from '../diamond/DiamondBackgroundSystem';
 import type {
   BackgroundSystem,
   BackgroundType,
@@ -49,12 +48,9 @@ export class BackgroundFactory {
       case 'snowfall':
         backgroundSystem = new SnowfallBackgroundSystem();
         break;
-      case 'diamond':
-        backgroundSystem = new DiamondBackgroundSystem();
-        break;
       case 'starfield':
-        console.warn('Starfield background not yet implemented, using diamond instead');
-        backgroundSystem = new DiamondBackgroundSystem();
+        console.warn('Starfield background not yet implemented, using snowfall instead');
+        backgroundSystem = new SnowfallBackgroundSystem();
         break;
       default:
         // Default to snowfall if type is unknown
@@ -70,25 +66,10 @@ export class BackgroundFactory {
 
   public static createOptimalBackgroundSystem(): BackgroundSystem {
     const quality = detectAppropriateQuality();
-
-    let optimalType: BackgroundType = 'snowfall';
-
-    if (quality === 'high' || quality === 'medium') {
-      if (typeof navigator !== 'undefined' && 'deviceMemory' in navigator) {
-        const memory = (navigator as any).deviceMemory as number;
-
-        if (memory >= 4) {
-          optimalType = 'diamond';
-        } else if (memory >= 2) {
-          optimalType = 'snowfall';
-        }
-      } else {
-        optimalType = quality === 'high' ? 'diamond' : 'snowfall';
-      }
-    }
-
+    
+    // Since we only have snowfall now, we'll just return that
     return this.createBackgroundSystem({
-      type: optimalType,
+      type: 'snowfall',
       initialQuality: quality
     });
   }
@@ -99,10 +80,8 @@ export class BackgroundFactory {
     switch (type) {
       case 'snowfall':
         return quality !== 'minimal';
-      case 'diamond':
-        return quality === 'high' || quality === 'medium';
       case 'starfield':
-        return false;
+        return false; // Not implemented yet
       default:
         return false;
     }

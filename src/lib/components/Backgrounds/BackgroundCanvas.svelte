@@ -73,7 +73,6 @@
 	}
 </script>
 
-// src/lib/components/Backgrounds/BackgroundCanvas.svelte
 <canvas
 	bind:this={canvas}
 	style="

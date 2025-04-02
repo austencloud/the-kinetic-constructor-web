@@ -14,7 +14,8 @@ export type Dimensions = {
   
   export type QualityLevel = 'high' | 'medium' | 'low' | 'minimal';
   
-  export type BackgroundType = 'snowfall' | 'starfield' | 'diamond';
+  // Updated to remove diamond and only keep snowfall and future-proof with starfield
+  export type BackgroundType = 'snowfall' | 'starfield';
   
   export interface GradientStop {
 	position: number;
@@ -25,7 +26,6 @@ export type Dimensions = {
 	densityMultiplier: number;
 	enableShootingStars: boolean;
 	enableSeasonal: boolean;
-	enableDiamonds: boolean;
 	particleComplexity: 'high' | 'medium' | 'low' | 'minimal';
 	enableBloom: boolean;
 	enableReflections: boolean;
@@ -55,23 +55,6 @@ export type Dimensions = {
 	opacity: number;
 	shape: Path2D;
 	color: string;
-  }
-  
-  export interface Diamond {
-	x: number;
-	y: number;
-	size: number;
-	speed: number;
-	horizontalSpeed: number;
-	rotationAngle: number;
-	rotationSpeed: number;
-	shape: Path2D;
-	color: string;
-	opacity: number;
-	shimmerFactor: number;
-	shimmerDirection: number;
-	shimmerActive: boolean;
-	shimmerDuration: number;
   }
   
   export interface ShootingStar {
