@@ -22,6 +22,7 @@ export interface AppState {
 	contentVisible: boolean;
 	dynamicHeight: string;
 	transitionInProgress: boolean;
+	contentFadeOut: boolean;
 }
 
 // Create the initial state
@@ -34,7 +35,8 @@ const initialState: AppState = {
 	previousTab: 0,
 	contentVisible: true,
 	dynamicHeight: '100vh',
-	transitionInProgress: false
+	transitionInProgress: false,
+	contentFadeOut: false
 };
 
 // Define the tabs configuration - pure data

@@ -1,4 +1,3 @@
-// src/lib/components/MainWidget/state/actions.ts
 import { appState, tabs } from './appState';
 import { get } from 'svelte/store';
 
@@ -51,52 +50,57 @@ export const createActions = (dispatch: AppDispatch) => ({
 				return;
 			}
 
-			// CHANGE: If a transition is in progress, we need to handle it differently
+			// If a transition is already in progress, complete it immediately
 			if (currentState.transitionInProgress) {
-				// Immediately complete the current transition
 				appState.update((s) => ({
 					...s,
 					previousTab: newTabIndex > s.currentTab ? s.currentTab : s.previousTab,
 					currentTab: newTabIndex,
-					contentVisible: true, // Make content immediately visible
-					transitionInProgress: true // Keep transition flag true
+					contentVisible: true,
+					transitionInProgress: true
 				}));
 
-				// Dispatch event for the new tab
 				dispatch('tabChange', {
 					index: newTabIndex,
 					id: tabs[newTabIndex].id
 				});
 
-				// Don't wait for a full transition cycle, just resolve
 				resolve();
 				return;
 			}
 
-			// Normal case - no transition in progress
+			// Start the transition: fade out current content
 			appState.update((s) => ({
 				...s,
 				previousTab: s.currentTab,
-				currentTab: newTabIndex,
-				contentVisible: false,
-				transitionInProgress: true
+				transitionInProgress: true,
+				contentFadeOut: true
 			}));
 
-			// Dispatch event
-			dispatch('tabChange', {
-				index: newTabIndex,
-				id: tabs[newTabIndex].id
-			});
-
-			// Complete the transition after a delay
+			// Wait for fade-out to complete before switching tabs
 			setTimeout(() => {
+				// Switch tabs after fade-out
 				appState.update((s) => ({
 					...s,
-					contentVisible: true,
-					transitionInProgress: false
+					currentTab: newTabIndex,
+					contentFadeOut: false // Prepare for fade-in
 				}));
-				resolve();
-			}, 300);
+
+				// Dispatch tab change event
+				dispatch('tabChange', {
+					index: newTabIndex,
+					id: tabs[newTabIndex].id
+				});
+
+				// Complete transition after a short delay
+				setTimeout(() => {
+					appState.update((s) => ({
+						...s,
+						transitionInProgress: false
+					}));
+					resolve();
+				}, 300);
+			}, 300); // Match the fade duration
 		});
 	}
 });

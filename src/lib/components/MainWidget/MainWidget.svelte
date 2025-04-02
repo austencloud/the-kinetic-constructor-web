@@ -10,7 +10,7 @@
 	import SequenceWorkbench from '../SequenceWorkbench/Workbench.svelte';
 
 	// State and Stores - UPDATED IMPORTS
-	import { loadingState } from '$lib/stores/ui/loadingStore'; // Updated path
+	import { loadingState } from '$lib/stores/ui/loadingStore';
 	import { appState, activeTab, tabs } from './state/appState';
 	import {
 		createActions,
@@ -22,48 +22,21 @@
 	// Utils
 	import { initializeApplication } from '$lib/utils/appInitializer';
 
-	// ===== Event Dispatch =====
-	// Create a properly typed dispatch function
+	// NEW: Declarative dynamicHeight from derived store
+	import { windowHeight } from '$lib/stores/ui/windowStore';
+
 	const dispatch = createEventDispatcher<{
 		tabChange: TabChangeEvent;
 		settingsChange: SettingsChangeEvent;
 	}>();
 
-	// Create actions with the dispatch function (cast to match the expected type)
 	const actions = createActions(dispatch as AppDispatch);
 
-	// Initialize tab components
-	const initializeTabComponents = () => {
-		// We need to make a mutable copy of the readonly tabs array
-		const mutableTabs = [...tabs];
+	// Local mutable tab component map
+	const tabComponentOverrides = new Map<string, typeof SequenceWorkbench>();
+	tabComponentOverrides.set('construct', SequenceWorkbench);
 
-		// Set component references
-		mutableTabs[0].component = SequenceWorkbench;
-
-		// Other tabs remain with null components for now since they're placeholders
-
-		// Update component references in other modules that need them
-		// This is a workaround since we can't directly modify the readonly tabs array
-		// In a real implementation, you might use a different approach to component registration
-	};
-
-	// CHANGE: Calculate initial height immediately to avoid layout shift
-	let initialHeight = typeof window !== 'undefined' ? `${window.innerHeight}px` : '100vh';
-	
-	// Immediately set the initial height in appState
-	if (typeof window !== 'undefined') {
-		appState.update((state) => ({
-			...state,
-			dynamicHeight: initialHeight
-		}));
-	}
-
-	// ===== Lifecycle =====
 	onMount(() => {
-		// Initialize tab components
-		initializeTabComponents();
-
-		// Initialize the application
 		const initApp = async () => {
 			try {
 				const success = await initializeApplication();
@@ -77,70 +50,28 @@
 		};
 
 		initApp();
-
-		// Set up window resize handler with debounce
-		let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
-
-		const handleResize = () => {
-			if (resizeTimeout) {
-				clearTimeout(resizeTimeout);
-			}
-
-			resizeTimeout = setTimeout(() => {
-				appState.update((state) => ({
-					...state,
-					dynamicHeight: `${window.innerHeight}px`
-				}));
-			}, 100);
-		};
-
-		window.addEventListener('resize', handleResize);
-		// REMOVED: Initial call to handleResize is no longer needed as we set the height earlier
-		// handleResize(); 
-
-		// Cleanup function
-		return () => {
-			window.removeEventListener('resize', handleResize);
-			if (resizeTimeout) {
-				clearTimeout(resizeTimeout);
-			}
-		};
 	});
-
-	// ===== Event Handlers =====
-	const handleSettingsClick = () => actions.openSettings();
-
-	const handleFullscreenToggle = (e: CustomEvent<boolean>) => actions.setFullScreen(e.detail);
-
-	const handleTabChange = (e: CustomEvent<number>) => {
-		actions.changeTab(e.detail);
-	};
-
-	const handleBackgroundChange = (e: CustomEvent<string>) => actions.updateBackground(e.detail);
 
 	const handleRetry = () => window.location.reload();
 </script>
 
-<div id="main-widget" style="height: {$appState.dynamicHeight}" class="main-widget">
-	<FullScreen on:toggleFullscreen={handleFullscreenToggle}>
-		<!-- Background always loads first for visual appeal -->
+<div id="main-widget" style="height: {$windowHeight}" class="main-widget">
+	<FullScreen on:toggleFullscreen={(e) => actions.setFullScreen(e.detail)}>
 		<div class="background">
 			<SnowfallBackground />
 		</div>
 
-		<!-- Main content with loading state and tab management -->
 		<MainLayout
 			background={$appState.background}
-			onSettingsClick={handleSettingsClick}
-			on:changeBackground={handleBackgroundChange}
-			on:tabChange={handleTabChange}
+			onSettingsClick={actions.openSettings}
+			on:changeBackground={(e) => actions.updateBackground(e.detail)}
+			on:tabChange={(e) => actions.changeTab(e.detail)}
 			onRetry={handleRetry}
 		/>
 	</FullScreen>
 </div>
 
 <style>
-	/* Base layout */
 	.main-widget {
 		display: flex;
 		flex-direction: column;
