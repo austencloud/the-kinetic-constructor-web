@@ -24,7 +24,7 @@
 
 	// Declarative dynamicHeight from derived store
 	import { windowHeight } from '$lib/stores/ui/windowStore';
-	import BackgroundCanvas from '../Backgrounds/snowfall/BackgroundCanvas.svelte';
+	import BackgroundCanvas from '../Backgrounds/BackgroundCanvas.svelte';
 
 	const dispatch = createEventDispatcher<{
 		tabChange: TabChangeEvent;

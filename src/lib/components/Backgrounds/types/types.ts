@@ -1,26 +1,27 @@
+// src/lib/components/Backgrounds/types/types.ts
 export type Dimensions = {
 	width: number;
 	height: number;
-};
-
-export type PerformanceMetrics = {
+  };
+  
+  export type PerformanceMetrics = {
 	fps: number;
 	warnings: string[];
 	particleCount?: number;
 	renderTime?: number;
 	memoryUsage?: number;
-};
-
-export type QualityLevel = 'high' | 'medium' | 'low' | 'minimal';
-
-export type BackgroundType = 'snowfall' | 'starfield' | 'gradient' | 'diamond';
-
-export interface GradientStop {
+  };
+  
+  export type QualityLevel = 'high' | 'medium' | 'low' | 'minimal';
+  
+  export type BackgroundType = 'snowfall' | 'starfield' | 'diamond';
+  
+  export interface GradientStop {
 	position: number;
 	color: string;
-}
-
-export interface QualitySettings {
+  }
+  
+  export interface QualitySettings {
 	densityMultiplier: number;
 	enableShootingStars: boolean;
 	enableSeasonal: boolean;
@@ -28,24 +29,24 @@ export interface QualitySettings {
 	particleComplexity: 'high' | 'medium' | 'low' | 'minimal';
 	enableBloom: boolean;
 	enableReflections: boolean;
-}
-
-export interface AccessibilitySettings {
+  }
+  
+  export interface AccessibilitySettings {
 	reducedMotion: boolean;
 	highContrast: boolean;
 	visibleParticleSize: number;
-}
-
-export interface AnimationComponent {
+  }
+  
+  export interface AnimationComponent {
 	initialize: (dimensions: Dimensions, quality: QualityLevel) => void;
 	update: (dimensions: Dimensions) => void;
 	draw: (ctx: CanvasRenderingContext2D, dimensions: Dimensions) => void;
 	cleanup: () => void;
 	setQuality: (quality: QualityLevel) => void;
 	setAccessibility?: (settings: AccessibilitySettings) => void;
-}
-
-export interface Snowflake {
+  }
+  
+  export interface Snowflake {
 	x: number;
 	y: number;
 	speed: number;
@@ -54,9 +55,9 @@ export interface Snowflake {
 	opacity: number;
 	shape: Path2D;
 	color: string;
-}
-
-export interface Diamond {
+  }
+  
+  export interface Diamond {
 	x: number;
 	y: number;
 	size: number;
@@ -71,9 +72,9 @@ export interface Diamond {
 	shimmerDirection: number;
 	shimmerActive: boolean;
 	shimmerDuration: number;
-}
-
-export interface ShootingStar {
+  }
+  
+  export interface ShootingStar {
 	x: number;
 	y: number;
 	dx: number;
@@ -81,10 +82,10 @@ export interface ShootingStar {
 	size: number;
 	speed: number;
 	tail: Array<{
-		x: number;
-		y: number;
-		size: number;
-		color: string;
+	  x: number;
+	  y: number;
+	  size: number;
+	  color: string;
 	}>;
 	prevX: number;
 	prevY: number;
@@ -93,15 +94,15 @@ export interface ShootingStar {
 	offScreen: boolean;
 	color: string;
 	twinkle: boolean;
-}
-
-export interface ShootingStarState {
+  }
+  
+  export interface ShootingStarState {
 	star: ShootingStar | null;
 	timer: number;
 	interval: number;
-}
-
-export interface SantaState {
+  }
+  
+  export interface SantaState {
 	x: number;
 	y: number;
 	speed: number;
@@ -109,24 +110,24 @@ export interface SantaState {
 	direction: number;
 	opacity: number;
 	imageLoaded?: boolean;
-}
-
-export interface AnimationSystem<T> {
+  }
+  
+  export interface AnimationSystem<T> {
 	initialize: (dimensions: Dimensions, quality: QualityLevel) => T;
 	update: (state: T, dimensions: Dimensions) => T;
 	draw: (state: T, ctx: CanvasRenderingContext2D, dimensions: Dimensions) => void;
 	cleanup?: () => void;
 	setQuality?: (quality: QualityLevel) => void;
 	adjustToResize?: (
-		state: T,
-		oldDimensions: Dimensions,
-		newDimensions: Dimensions,
-		quality: QualityLevel
+	  state: T,
+	  oldDimensions: Dimensions,
+	  newDimensions: Dimensions,
+	  quality: QualityLevel
 	) => T;
 	setAccessibility?: (settings: AccessibilitySettings) => void;
-}
-
-export interface BackgroundSystem {
+  }
+  
+  export interface BackgroundSystem {
 	initialize: (dimensions: Dimensions, quality: QualityLevel) => void;
 	update: (dimensions: Dimensions) => void;
 	draw: (ctx: CanvasRenderingContext2D, dimensions: Dimensions) => void;
@@ -135,23 +136,23 @@ export interface BackgroundSystem {
 	handleResize?: (oldDimensions: Dimensions, newDimensions: Dimensions) => void;
 	setAccessibility?: (settings: AccessibilitySettings) => void;
 	getMetrics?: () => PerformanceMetrics;
-}
-
-export interface BackgroundFactoryParams {
+  }
+  
+  export interface BackgroundFactoryParams {
 	type: BackgroundType;
 	initialQuality?: QualityLevel;
 	accessibility?: AccessibilitySettings;
 	customConfig?: any;
-}
-
-export type BackgroundEvent =
+  }
+  
+  export type BackgroundEvent =
 	| { type: 'ready' }
 	| { type: 'performanceReport'; metrics: PerformanceMetrics }
 	| { type: 'qualityChanged'; quality: QualityLevel }
 	| { type: 'error'; message: string; stack?: string };
-
-export interface ResourceTracker {
+  
+  export interface ResourceTracker {
 	trackResource: (resource: any) => void;
 	untrackResource: (resource: any) => void;
 	disposeAll: () => void;
-}
+  }

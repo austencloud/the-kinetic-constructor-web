@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { get } from 'svelte/store';
-	import { createBackgroundManager } from '../core/BackgroundManager';
-	import { BackgroundFactory } from '../core/BackgroundFactory';
-	import type { BackgroundType, PerformanceMetrics, QualityLevel } from '../types/types';
+	import { createBackgroundManager } from './core/BackgroundManager';
+	import { BackgroundFactory } from './core/BackgroundFactory';
+	import type { BackgroundType, PerformanceMetrics, QualityLevel } from './types/types';
 
 	const dispatch = createEventDispatcher<{
 		ready: void;
@@ -72,6 +72,8 @@
 		}
 	}
 </script>
+
+// src/lib/components/Backgrounds/BackgroundCanvas.svelte
 <canvas
 	bind:this={canvas}
 	style="

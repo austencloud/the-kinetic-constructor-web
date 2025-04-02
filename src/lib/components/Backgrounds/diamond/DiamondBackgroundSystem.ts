@@ -1,182 +1,160 @@
-import { getOptimizedConfig, isWebGL2Supported } from '../core/AnimationConfig';
+// src/lib/components/Backgrounds/diamond/DiamondBackgroundSystem.ts
+import { getOptimizedConfig, isWebGL2Supported } from '../config';
 import { drawBackgroundGradient } from '../snowfall/utils/backgroundUtils';
 import { createDiamondSystem } from '../systems/DiamondSystem';
-import { createShootingStarSystem } from '../systems/ShootingStarSystem';
 import type {
-	BackgroundSystem,
-	Dimensions,
-	Diamond,
-	QualityLevel,
-	ShootingStarState
+  BackgroundSystem,
+  Dimensions,
+  Diamond,
+  QualityLevel
 } from '../types/types';
 
 export class DiamondBackgroundSystem implements BackgroundSystem {
-	private diamondSystem = createDiamondSystem();
-	private shootingStarSystem = createShootingStarSystem();
+  private diamondSystem = createDiamondSystem();
+  private diamonds: Diamond[] = [];
+  private quality: QualityLevel = 'medium';
+  private webGL2Available: boolean = false;
 
-	private diamonds: Diamond[] = [];
-	private shootingStarState: ShootingStarState;
+  private effectsCanvas: HTMLCanvasElement | null = null;
+  private effectsContext: CanvasRenderingContext2D | null = null;
 
-	private quality: QualityLevel = 'medium';
-	private webGL2Available: boolean = false;
+  constructor() {
+    this.webGL2Available = isWebGL2Supported();
+  }
 
-	private effectsCanvas: HTMLCanvasElement | null = null;
-	private effectsContext: CanvasRenderingContext2D | null = null;
+  public initialize(dimensions: Dimensions, quality: QualityLevel): void {
+    this.quality = quality;
+    const { qualitySettings } = getOptimizedConfig(quality);
+    this.diamonds = this.diamondSystem.initialize(dimensions, quality);
 
-	constructor() {
-		this.shootingStarState = this.shootingStarSystem.initialState;
+    if (qualitySettings.enableBloom && this.webGL2Available) {
+      this.setupEffectsCanvas(dimensions);
+    } else {
+      this.cleanupEffectsCanvas();
+    }
+  }
 
-		this.webGL2Available = isWebGL2Supported();
-	}
+  private setupEffectsCanvas(dimensions: Dimensions): void {
+    if (!this.effectsCanvas) {
+      this.effectsCanvas = document.createElement('canvas');
+      this.effectsContext = this.effectsCanvas.getContext('2d');
+    }
 
-	public initialize(dimensions: Dimensions, quality: QualityLevel): void {
-		this.quality = quality;
+    if (this.effectsCanvas && this.effectsContext) {
+      this.effectsCanvas.width = dimensions.width;
+      this.effectsCanvas.height = dimensions.height;
+    }
+  }
 
-		const { qualitySettings } = getOptimizedConfig(quality);
+  private cleanupEffectsCanvas(): void {
+    if (this.effectsCanvas) {
+      this.effectsCanvas = null;
+      this.effectsContext = null;
+    }
+  }
 
-		this.diamonds = this.diamondSystem.initialize(dimensions, quality);
+  private applyBloomEffect(
+    sourceCtx: CanvasRenderingContext2D,
+    targetCtx: CanvasRenderingContext2D,
+    dimensions: Dimensions
+  ): void {
+    if (!this.effectsContext) return;
 
-		this.shootingStarState = this.shootingStarSystem.initialState;
+    const { width, height } = dimensions;
 
-		if (qualitySettings.enableBloom && this.webGL2Available) {
-			this.setupEffectsCanvas(dimensions);
-		} else {
-			this.cleanupEffectsCanvas();
-		}
-	}
+    this.effectsContext.clearRect(0, 0, width, height);
+    this.effectsContext.drawImage(sourceCtx.canvas, 0, 0);
 
-	private setupEffectsCanvas(dimensions: Dimensions): void {
-		if (!this.effectsCanvas) {
-			this.effectsCanvas = document.createElement('canvas');
-			this.effectsContext = this.effectsCanvas.getContext('2d');
-		}
+    const imageData = this.effectsContext.getImageData(0, 0, width, height);
+    const data = imageData.data;
 
-		if (this.effectsCanvas && this.effectsContext) {
-			this.effectsCanvas.width = dimensions.width;
-			this.effectsCanvas.height = dimensions.height;
-		}
-	}
+    const thresholdR = 200;
+    const thresholdG = 200;
+    const thresholdB = 200;
 
-	private cleanupEffectsCanvas(): void {
-		if (this.effectsCanvas) {
-			this.effectsCanvas = null;
-			this.effectsContext = null;
-		}
-	}
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i] < thresholdR && data[i + 1] < thresholdG && data[i + 2] < thresholdB) {
+        data[i] = 0;
+        data[i + 1] = 0;
+        data[i + 2] = 0;
+        data[i + 3] = 0;
+      }
+    }
 
-	private applyBloomEffect(
-		sourceCtx: CanvasRenderingContext2D,
-		targetCtx: CanvasRenderingContext2D,
-		dimensions: Dimensions
-	): void {
-		if (!this.effectsContext) return;
+    this.effectsContext.putImageData(imageData, 0, 0);
 
-		const { width, height } = dimensions;
+    this.effectsContext.filter = 'blur(4px)';
+    this.effectsContext.globalCompositeOperation = 'lighter';
+    this.effectsContext.drawImage(this.effectsContext.canvas, 0, 0);
+    this.effectsContext.filter = 'blur(2px)';
+    this.effectsContext.drawImage(this.effectsContext.canvas, 0, 0);
 
-		this.effectsContext.clearRect(0, 0, width, height);
-		this.effectsContext.drawImage(sourceCtx.canvas, 0, 0);
+    this.effectsContext.filter = 'none';
+    this.effectsContext.globalCompositeOperation = 'source-over';
 
-		const imageData = this.effectsContext.getImageData(0, 0, width, height);
-		const data = imageData.data;
+    targetCtx.globalCompositeOperation = 'lighter';
+    targetCtx.drawImage(this.effectsContext.canvas, 0, 0);
+    targetCtx.globalCompositeOperation = 'source-over';
+  }
 
-		const thresholdR = 200;
-		const thresholdG = 200;
-		const thresholdB = 200;
+  public update(dimensions: Dimensions): void {
+    const { qualitySettings } = getOptimizedConfig(this.quality);
 
-		for (let i = 0; i < data.length; i += 4) {
-			if (data[i] < thresholdR && data[i + 1] < thresholdG && data[i + 2] < thresholdB) {
-				data[i] = 0;
-				data[i + 1] = 0;
-				data[i + 2] = 0;
-				data[i + 3] = 0;
-			}
-		}
+    this.diamonds = this.diamondSystem.update(this.diamonds, dimensions);
 
-		this.effectsContext.putImageData(imageData, 0, 0);
+    if (
+      this.effectsCanvas &&
+      (this.effectsCanvas.width !== dimensions.width ||
+        this.effectsCanvas.height !== dimensions.height)
+    ) {
+      this.setupEffectsCanvas(dimensions);
+    }
+  }
 
-		this.effectsContext.filter = 'blur(4px)';
-		this.effectsContext.globalCompositeOperation = 'lighter';
-		this.effectsContext.drawImage(this.effectsContext.canvas, 0, 0);
-		this.effectsContext.filter = 'blur(2px)';
-		this.effectsContext.drawImage(this.effectsContext.canvas, 0, 0);
+  public draw(ctx: CanvasRenderingContext2D, dimensions: Dimensions): void {
+    const { config, qualitySettings } = getOptimizedConfig(this.quality);
 
-		this.effectsContext.filter = 'none';
-		this.effectsContext.globalCompositeOperation = 'source-over';
+    drawBackgroundGradient(ctx, dimensions, config.core.background.gradientStops);
+    this.diamondSystem.draw(this.diamonds, ctx, dimensions);
 
-		targetCtx.globalCompositeOperation = 'lighter';
-		targetCtx.drawImage(this.effectsContext.canvas, 0, 0);
-		targetCtx.globalCompositeOperation = 'source-over';
-	}
+    if (qualitySettings.enableBloom && this.webGL2Available && this.effectsContext) {
+      this.applyBloomEffect(ctx, ctx, dimensions);
+    }
+  }
 
-	public update(dimensions: Dimensions): void {
-		const { qualitySettings } = getOptimizedConfig(this.quality);
+  public setQuality(quality: QualityLevel): void {
+    if (this.quality !== quality) {
+      this.quality = quality;
+      this.diamondSystem.setQuality(quality);
 
-		this.diamonds = this.diamondSystem.update(this.diamonds, dimensions);
+      const { qualitySettings } = getOptimizedConfig(quality);
+      if (qualitySettings.enableBloom && this.webGL2Available) {
+        if (this.effectsCanvas) {
+          this.setupEffectsCanvas({
+            width: this.effectsCanvas.width,
+            height: this.effectsCanvas.height
+          });
+        }
+      } else {
+        this.cleanupEffectsCanvas();
+      }
+    }
+  }
 
-		if (qualitySettings.enableShootingStars) {
-			this.shootingStarState = this.shootingStarSystem.update(this.shootingStarState, dimensions);
-		}
+  public handleResize(oldDimensions: Dimensions, newDimensions: Dimensions): void {
+    this.diamonds = this.diamondSystem.adjustToResize(
+      this.diamonds,
+      oldDimensions,
+      newDimensions,
+      this.quality
+    );
 
-		if (
-			this.effectsCanvas &&
-			(this.effectsCanvas.width !== dimensions.width ||
-				this.effectsCanvas.height !== dimensions.height)
-		) {
-			this.setupEffectsCanvas(dimensions);
-		}
-	}
+    if (this.effectsCanvas) {
+      this.setupEffectsCanvas(newDimensions);
+    }
+  }
 
-	public draw(ctx: CanvasRenderingContext2D, dimensions: Dimensions): void {
-		const { baseConfig, qualitySettings } = getOptimizedConfig(this.quality);
-
-		drawBackgroundGradient(ctx, dimensions, baseConfig.background.gradientStops);
-
-		this.diamondSystem.draw(this.diamonds, ctx, dimensions);
-
-		if (qualitySettings.enableShootingStars) {
-			this.shootingStarSystem.draw(this.shootingStarState, ctx);
-		}
-
-		if (qualitySettings.enableBloom && this.webGL2Available && this.effectsContext) {
-			this.applyBloomEffect(ctx, ctx, dimensions);
-		}
-	}
-
-	public setQuality(quality: QualityLevel): void {
-		if (this.quality !== quality) {
-			this.quality = quality;
-			this.diamondSystem.setQuality(quality);
-
-			const { qualitySettings } = getOptimizedConfig(quality);
-			if (qualitySettings.enableBloom && this.webGL2Available) {
-				if (this.effectsCanvas) {
-					this.setupEffectsCanvas({
-						width: this.effectsCanvas.width,
-						height: this.effectsCanvas.height
-					});
-				}
-			} else {
-				this.cleanupEffectsCanvas();
-			}
-		}
-	}
-
-	public handleResize(oldDimensions: Dimensions, newDimensions: Dimensions): void {
-		this.diamonds = this.diamondSystem.adjustToResize(
-			this.diamonds,
-			oldDimensions,
-			newDimensions,
-			this.quality
-		);
-
-		this.shootingStarState = this.shootingStarSystem.initialState;
-
-		if (this.effectsCanvas) {
-			this.setupEffectsCanvas(newDimensions);
-		}
-	}
-
-	public cleanup(): void {
-		this.cleanupEffectsCanvas();
-	}
+  public cleanup(): void {
+    this.cleanupEffectsCanvas();
+  }
 }
