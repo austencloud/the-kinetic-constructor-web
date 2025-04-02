@@ -1,7 +1,3 @@
-/**
- * Common type definitions for background systems
- */
-
 export type Dimensions = {
 	width: number;
 	height: number;
@@ -10,11 +6,14 @@ export type Dimensions = {
 export type PerformanceMetrics = {
 	fps: number;
 	warnings: string[];
+	particleCount?: number;
+	renderTime?: number;
+	memoryUsage?: number;
 };
 
-export type QualityLevel = 'high' | 'medium' | 'low';
+export type QualityLevel = 'high' | 'medium' | 'low' | 'minimal';
 
-export type BackgroundType = 'snowfall' | 'starfield' | 'gradient';
+export type BackgroundType = 'snowfall' | 'starfield' | 'gradient' | 'diamond';
 
 export interface GradientStop {
 	position: number;
@@ -25,21 +24,27 @@ export interface QualitySettings {
 	densityMultiplier: number;
 	enableShootingStars: boolean;
 	enableSeasonal: boolean;
+	enableDiamonds: boolean;
+	particleComplexity: 'high' | 'medium' | 'low' | 'minimal';
+	enableBloom: boolean;
+	enableReflections: boolean;
 }
 
-/**
- * Interfaces for animation components
- */
+export interface AccessibilitySettings {
+	reducedMotion: boolean;
+	highContrast: boolean;
+	visibleParticleSize: number;
+}
 
-// Base interface for all animation components
 export interface AnimationComponent {
 	initialize: (dimensions: Dimensions, quality: QualityLevel) => void;
 	update: (dimensions: Dimensions) => void;
 	draw: (ctx: CanvasRenderingContext2D, dimensions: Dimensions) => void;
 	cleanup: () => void;
+	setQuality: (quality: QualityLevel) => void;
+	setAccessibility?: (settings: AccessibilitySettings) => void;
 }
 
-// Snowflake-specific types
 export interface Snowflake {
 	x: number;
 	y: number;
@@ -51,7 +56,23 @@ export interface Snowflake {
 	color: string;
 }
 
-// Shooting star types
+export interface Diamond {
+	x: number;
+	y: number;
+	size: number;
+	speed: number;
+	horizontalSpeed: number;
+	rotationAngle: number;
+	rotationSpeed: number;
+	shape: Path2D;
+	color: string;
+	opacity: number;
+	shimmerFactor: number;
+	shimmerDirection: number;
+	shimmerActive: boolean;
+	shimmerDuration: number;
+}
+
 export interface ShootingStar {
 	x: number;
 	y: number;
@@ -80,7 +101,6 @@ export interface ShootingStarState {
 	interval: number;
 }
 
-// Santa types
 export interface SantaState {
 	x: number;
 	y: number;
@@ -88,21 +108,50 @@ export interface SantaState {
 	active: boolean;
 	direction: number;
 	opacity: number;
+	imageLoaded?: boolean;
 }
 
-// Animation system interfaces
 export interface AnimationSystem<T> {
 	initialize: (dimensions: Dimensions, quality: QualityLevel) => T;
 	update: (state: T, dimensions: Dimensions) => T;
 	draw: (state: T, ctx: CanvasRenderingContext2D, dimensions: Dimensions) => void;
 	cleanup?: () => void;
+	setQuality?: (quality: QualityLevel) => void;
+	adjustToResize?: (
+		state: T,
+		oldDimensions: Dimensions,
+		newDimensions: Dimensions,
+		quality: QualityLevel
+	) => T;
+	setAccessibility?: (settings: AccessibilitySettings) => void;
 }
 
-// Background system interface
 export interface BackgroundSystem {
 	initialize: (dimensions: Dimensions, quality: QualityLevel) => void;
 	update: (dimensions: Dimensions) => void;
 	draw: (ctx: CanvasRenderingContext2D, dimensions: Dimensions) => void;
 	setQuality: (quality: QualityLevel) => void;
 	cleanup: () => void;
+	handleResize?: (oldDimensions: Dimensions, newDimensions: Dimensions) => void;
+	setAccessibility?: (settings: AccessibilitySettings) => void;
+	getMetrics?: () => PerformanceMetrics;
+}
+
+export interface BackgroundFactoryParams {
+	type: BackgroundType;
+	initialQuality?: QualityLevel;
+	accessibility?: AccessibilitySettings;
+	customConfig?: any;
+}
+
+export type BackgroundEvent =
+	| { type: 'ready' }
+	| { type: 'performanceReport'; metrics: PerformanceMetrics }
+	| { type: 'qualityChanged'; quality: QualityLevel }
+	| { type: 'error'; message: string; stack?: string };
+
+export interface ResourceTracker {
+	trackResource: (resource: any) => void;
+	untrackResource: (resource: any) => void;
+	disposeAll: () => void;
 }

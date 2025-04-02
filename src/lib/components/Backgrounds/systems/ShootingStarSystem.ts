@@ -1,8 +1,7 @@
-import { AnimationConfig } from '../../AnimationConfig';
-import type { Dimensions, ShootingStar, ShootingStarState } from '../../types/types';
+import { AnimationConfig } from '../core/AnimationConfig';
+import type { Dimensions, ShootingStar, ShootingStarState } from '../types/types';
 
 export const createShootingStarSystem = () => {
-	// Helper functions
 	function getRandomInterval(): number {
 		const config = AnimationConfig.shootingStar;
 		return (
@@ -19,27 +18,22 @@ export const createShootingStarSystem = () => {
 		return colors[Math.floor(Math.random() * colors.length)];
 	}
 
-	// Create a new shooting star
 	const spawnShootingStar = ({ width, height }: Dimensions): ShootingStar => {
 		const config = AnimationConfig.shootingStar;
 		const middleY = height / 2;
 
-		// Initial position (from left or right)
 		const startOptions = [
-			{ x: -0.1 * width, y: randomFloat(0.2, 0.8) * height }, // Left
-			{ x: 1.1 * width, y: randomFloat(0.2, 0.8) * height } // Right
+			{ x: -0.1 * width, y: randomFloat(0.2, 0.8) * height },
+			{ x: 1.1 * width, y: randomFloat(0.2, 0.8) * height }
 		];
 		const startPos = startOptions[Math.floor(Math.random() * startOptions.length)];
 
-		// Direction and speed
-		let dx = randomFloat(0.3, 0.5) * (startPos.x > 0 ? -1 : 1); // Left or right
+		let dx = randomFloat(0.3, 0.5) * (startPos.x > 0 ? -1 : 1);
 		let dy = Math.random() < 0.5 ? -randomFloat(0.05, 0.2) : randomFloat(0.05, 0.2);
 
-		// Adjust to gravitate towards the middle
 		if (startPos.y > middleY) dy -= randomFloat(0.02, 0.05);
 		else dy += randomFloat(0.02, 0.05);
 
-		// Normalize the direction vector
 		const norm = Math.sqrt(dx * dx + dy * dy);
 		dx /= norm;
 		dy /= norm;
@@ -62,7 +56,6 @@ export const createShootingStarSystem = () => {
 		};
 	};
 
-	// Update existing shooting star
 	const updateShootingStar = (
 		star: ShootingStar | null,
 		{ width, height }: Dimensions
@@ -72,8 +65,7 @@ export const createShootingStarSystem = () => {
 		const newX = star.x + star.dx * star.speed * width;
 		const newY = star.y + star.dy * star.speed * height;
 
-		// Add interpolated positions to make the tail denser
-		const steps = 5; // Reduced for better performance
+		const steps = 5;
 		const newTail = [...star.tail];
 
 		for (let i = 0; i < steps; i++) {
@@ -87,16 +79,13 @@ export const createShootingStarSystem = () => {
 			});
 		}
 
-		// Trim tail length
 		if (newTail.length > star.tailLength * steps) {
 			newTail.splice(0, steps);
 		}
 
-		// Check if star is off-screen
 		const offScreen =
 			newX < -width * 0.1 || newX > width * 1.1 || newY < -height * 0.1 || newY > height * 1.1;
 
-		// If already off-screen, reduce opacity
 		let opacity = star.opacity;
 		if (offScreen) {
 			opacity -= AnimationConfig.shootingStar.fadeRate;
@@ -115,11 +104,9 @@ export const createShootingStarSystem = () => {
 		};
 	};
 
-	// Draw shooting star
 	const drawShootingStar = (star: ShootingStar | null, ctx: CanvasRenderingContext2D): void => {
 		if (!star || !ctx) return;
 
-		// Draw tail
 		ctx.save();
 		const tailLength = star.tail.length;
 
@@ -134,13 +121,11 @@ export const createShootingStarSystem = () => {
 			ctx.fill();
 		});
 
-		// Draw head
 		ctx.globalAlpha = star.opacity;
 		ctx.beginPath();
 		ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
 		ctx.fillStyle = star.color;
 
-		// Twinkling effect
 		if (star.twinkle && Math.random() > 0.5) {
 			ctx.shadowColor = star.color;
 			ctx.shadowBlur = star.size / 2;
@@ -150,11 +135,9 @@ export const createShootingStarSystem = () => {
 		ctx.restore();
 	};
 
-	// Manage shooting star state
 	const update = (state: ShootingStarState, dimensions: Dimensions): ShootingStarState => {
 		const timer = state.timer + 1;
 
-		// Check if we need to spawn a new star
 		if (!state.star && timer >= state.interval) {
 			return {
 				star: spawnShootingStar(dimensions),
@@ -163,7 +146,6 @@ export const createShootingStarSystem = () => {
 			};
 		}
 
-		// Update existing star
 		return {
 			star: updateShootingStar(state.star, dimensions),
 			timer: state.star ? timer : 0,

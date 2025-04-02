@@ -1,12 +1,11 @@
-import type { Dimensions, Snowflake } from '../../types/types';
+import type { Dimensions, Snowflake } from '../types/types';
 
 export const createSnowflakeSystem = () => {
-	const density = 0.0001; // Base density - still looks good but performant
+	const density = 0.0001;
 	let windStrength = 0;
 	let windChangeTimer = 0;
 	const windChangeInterval = 200;
 
-	// Pure functions for snowflake operations
 	const generateSnowflakeShape = (size: number): Path2D => {
 		const path = new Path2D();
 		const spikes = 6 + Math.floor(Math.random() * 4);
@@ -44,16 +43,12 @@ export const createSnowflakeSystem = () => {
 		};
 	};
 
-	// Initialization function
 	const initialize = ({ width, height }: Dimensions, quality: string): Snowflake[] => {
-		// Adjust density based on quality and screen size
 		let adjustedDensity = density;
 
-		// Scale density based on screen size for better performance on smaller devices
 		const screenSizeFactor = Math.min(1, (width * height) / (1920 * 1080));
 		adjustedDensity *= screenSizeFactor;
 
-		// Adjust for quality setting
 		if (quality === 'low') {
 			adjustedDensity *= 0.5;
 		} else if (quality === 'medium') {
@@ -64,25 +59,21 @@ export const createSnowflakeSystem = () => {
 		return Array.from({ length: count }, () => createSnowflake(width, height));
 	};
 
-	// Update function
 	const update = (flakes: Snowflake[], { width, height }: Dimensions): Snowflake[] => {
-		// Update wind
 		windChangeTimer++;
 		if (windChangeTimer >= windChangeInterval) {
 			windChangeTimer = 0;
 			windStrength = (Math.random() * 0.5 - 0.25) * width * 0.00005;
 		}
 
-		// Update snowflakes
 		return flakes.map((flake) => {
 			const newX = flake.x + flake.sway + windStrength;
 			const newY = flake.y + flake.speed;
 
-			// Reset if out of bounds
 			if (newY > height) {
 				return {
 					...flake,
-					y: Math.random() * -20, // Slightly above viewport
+					y: Math.random() * -20,
 					x: Math.random() * width
 				};
 			}
@@ -98,7 +89,6 @@ export const createSnowflakeSystem = () => {
 		});
 	};
 
-	// Drawing function
 	const draw = (
 		flakes: Snowflake[],
 		ctx: CanvasRenderingContext2D,
@@ -107,7 +97,6 @@ export const createSnowflakeSystem = () => {
 		if (!ctx) return;
 		ctx.globalAlpha = 1.0;
 
-		// Batch rendering by color for better performance
 		const colorGroups = new Map<string, Snowflake[]>();
 
 		flakes.forEach((flake) => {
@@ -117,7 +106,6 @@ export const createSnowflakeSystem = () => {
 			colorGroups.get(flake.color)!.push(flake);
 		});
 
-		// Draw each color group together
 		colorGroups.forEach((groupFlakes, color) => {
 			ctx.fillStyle = color;
 
@@ -131,7 +119,6 @@ export const createSnowflakeSystem = () => {
 		});
 	};
 
-	// Resize handler
 	const adjustToResize = (
 		flakes: Snowflake[],
 		oldDimensions: Dimensions,
@@ -148,7 +135,6 @@ export const createSnowflakeSystem = () => {
 		const currentCount = flakes.length;
 
 		if (targetCount > currentCount) {
-			// Add more snowflakes
 			return [
 				...flakes,
 				...Array.from({ length: targetCount - currentCount }, () =>
@@ -156,7 +142,6 @@ export const createSnowflakeSystem = () => {
 				)
 			];
 		} else if (targetCount < currentCount) {
-			// Remove excess snowflakes
 			return flakes.slice(0, targetCount);
 		}
 
