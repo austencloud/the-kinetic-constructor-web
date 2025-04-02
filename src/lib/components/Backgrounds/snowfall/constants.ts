@@ -1,16 +1,15 @@
-import { AnimationConfig } from '../core/AnimationConfig';
+// src/lib/components/Backgrounds/snowfall/constants.ts
+import { CoreConfig } from '../config';
 
-export const backgroundGradient = AnimationConfig.background.gradientStops.map((stop) => ({
+export const backgroundGradient = CoreConfig.background.gradientStops.map((stop) => ({
 	stop: stop.position,
 	color: stop.color
 }));
 
 export const performanceThresholds = {
 	minRenderFps: 30,
-
-	lowPerformanceThreshold: AnimationConfig.performance.lowPerformanceThreshold,
-
-	criticalPerformanceThreshold: AnimationConfig.performance.criticalPerformanceThreshold
+	lowPerformanceThreshold: CoreConfig.performance.lowPerformanceThreshold,
+	criticalPerformanceThreshold: CoreConfig.performance.criticalPerformanceThreshold
 };
 
 export const qualitySettings = {
@@ -33,6 +32,5 @@ export const qualitySettings = {
 
 export const resizeConfig = {
 	qualityRestoreDelay: 500,
-
 	resizeQuality: 'low' as 'high' | 'medium' | 'low'
 };
