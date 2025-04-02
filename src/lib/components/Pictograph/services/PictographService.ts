@@ -136,23 +136,23 @@ export class PictographService {
 			const locationManager = new ArrowLocationManager(this);
 			const arrowLoc = locationManager.getArrowLocation(this.data.redMotion);
 
-			if (arrowLoc) {
-				redArrow.loc = arrowLoc;
-				const rotAngleManager = new ArrowRotAngleManager();
-				redArrow.rotAngle = rotAngleManager.updateRotation(this.data.redMotion, arrowLoc);
-			}
-		}
+      if (arrowLoc) {
+        redArrow.loc = arrowLoc;
+        const rotAngleManager = new ArrowRotAngleManager();
+        redArrow.rotAngle = rotAngleManager.updateRotation(this.data.redMotion, arrowLoc);
+      }
+    }
 
 		if (blueArrow && this.data.blueMotion) {
 			const locationManager = new ArrowLocationManager(this);
 			const arrowLoc = locationManager.getArrowLocation(this.data.blueMotion);
 
-			if (arrowLoc) {
-				blueArrow.loc = arrowLoc;
-				const rotAngleManager = new ArrowRotAngleManager();
-				blueArrow.rotAngle = rotAngleManager.updateRotation(this.data.blueMotion, arrowLoc);
-			}
-		}
+      if (arrowLoc) {
+        blueArrow.loc = arrowLoc;
+        const rotAngleManager = new ArrowRotAngleManager();
+        blueArrow.rotAngle = rotAngleManager.updateRotation(this.data.blueMotion, arrowLoc);
+      }
+    }
 
 		if (redArrow || blueArrow) {
 			try {
@@ -182,8 +182,8 @@ export class PictographService {
 			nw: { x: 330, y: 330 }
 		};
 
-		return loc && fallbackPositions[loc] ? fallbackPositions[loc] : { x: 475, y: 475 };
-	}
+    return loc && fallbackPositions[loc] ? fallbackPositions[loc] : { x: 475, y: 475 };
+  }
 
 	getShiftMotion(): Motion | null {
 		const motions = [this.data.redMotion, this.data.blueMotion].filter((m): m is Motion => !!m);
