@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { numBeatsStore, currentLayoutStore } from '../../../stores/layoutStore';
+	import { numBeatsStore, currentLayoutStore } from '../../../stores/sequence/layoutStore';
 
 	import LayoutControls from './LayoutControls.svelte';
 	import GridPreview from './LayoutGridPreview.svelte';

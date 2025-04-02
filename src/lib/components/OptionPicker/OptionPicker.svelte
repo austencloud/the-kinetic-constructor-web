@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { selectedPictograph } from '$lib/stores/selectedPictographStore';
+	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
 	import Pictograph from '../Pictograph/Pictograph.svelte';
 	import Option from './Option.svelte';
 	import LoadingSpinner from '../MainWidget/loading/LoadingSpinner.svelte';

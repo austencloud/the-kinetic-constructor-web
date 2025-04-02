@@ -2,7 +2,7 @@
 	import TabsNavigation from './TabsNavigation.svelte';
 	import TabContent from './TabContent.svelte';
 	import DialogActions from './DialogActions.svelte';
-	import { activeTabStore } from './../../stores/settingsStore';
+	import { activeTabStore } from '../../stores/ui/settingsStore';
 	import { get } from 'svelte/store';
     import { createEventDispatcher } from 'svelte';
 
