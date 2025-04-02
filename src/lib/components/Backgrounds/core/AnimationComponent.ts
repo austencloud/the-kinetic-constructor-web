@@ -1,4 +1,4 @@
-// src/lib/components/Backgrounds/AnimationComponent.ts
+import type { Dimensions, QualityLevel } from '../types/types';
 import { PerformanceTracker } from './PerformanceTracker';
 
 /**
@@ -8,32 +8,44 @@ import { PerformanceTracker } from './PerformanceTracker';
 export abstract class AnimationComponent {
   protected performanceTracker: PerformanceTracker;
   protected initialized: boolean = false;
+  protected quality: QualityLevel = 'medium';
   
   constructor() {
     this.performanceTracker = PerformanceTracker.getInstance();
   }
   
   /**
-   * Initialize the component with dimensions
-   * @param width Canvas width
-   * @param height Canvas height
+   * Initialize the component with dimensions and quality
+   * @param dimensions Canvas dimensions
+   * @param quality Animation quality
    */
-  abstract initialize(width: number, height: number): void;
+  abstract initialize(dimensions: Dimensions, quality: QualityLevel): void;
   
   /**
    * Update component state for the next frame
-   * @param width Current canvas width
-   * @param height Current canvas height
+   * @param dimensions Current canvas dimensions
    */
-  abstract animate(width: number, height: number): void;
+  abstract update(dimensions: Dimensions): void;
   
   /**
    * Draw the component to the canvas
    * @param ctx Canvas rendering context
-   * @param width Current canvas width
-   * @param height Current canvas height
+   * @param dimensions Current canvas dimensions
    */
-  abstract draw(ctx: CanvasRenderingContext2D, width: number, height: number): void;
+  abstract draw(ctx: CanvasRenderingContext2D, dimensions: Dimensions): void;
+  
+  /**
+   * Clean up any resources used by the component
+   */
+  abstract cleanup(): void;
+  
+  /**
+   * Update quality settings
+   * @param quality The new quality level
+   */
+  setQuality(quality: QualityLevel): void {
+    this.quality = quality;
+  }
   
   /**
    * Check if this component should render based on performance metrics

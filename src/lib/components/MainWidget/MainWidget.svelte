@@ -5,7 +5,6 @@
 
 	// Components
 	import FullScreen from '$lib/FullScreen.svelte';
-	import SnowfallBackground from '../SnowfallBackground.svelte';
 	import MainLayout from './layout/MainLayout.svelte';
 	import LoadingOverlay from './loading/LoadingOverlay.svelte';
 	import SequenceWorkbench from '../SequenceWorkbench/Workbench.svelte';
@@ -25,6 +24,7 @@
 
 	// Declarative dynamicHeight from derived store
 	import { windowHeight } from '$lib/stores/ui/windowStore';
+	import BackgroundCanvas from '../Backgrounds/snowfall/BackgroundCanvas.svelte';
 
 	const dispatch = createEventDispatcher<{
 		tabChange: TabChangeEvent;
@@ -65,7 +65,7 @@
 	<FullScreen on:toggleFullscreen={(e) => actions.setFullScreen(e.detail)}>
 		<!-- Background ALWAYS renders first, independent of loading state -->
 		<div class="background">
-			<SnowfallBackground on:ready={handleBackgroundReady} />
+			<BackgroundCanvas on:ready={handleBackgroundReady} />
 		</div>
 
 		<!-- Show LoadingOverlay on top of the background during loading -->
