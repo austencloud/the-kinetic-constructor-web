@@ -8,7 +8,7 @@
 	  type Direction,
 	  isMinTurns, 
 	  isMaxTurns 
-	} from '$lib/stores/turnsStore';
+	} from '$lib/stores/sequence/turnsStore';
 	
 	// Component props
 	export let color: 'blue' | 'red';

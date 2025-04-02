@@ -3,10 +3,10 @@
 	import { onMount, onDestroy } from 'svelte';
 	import StartPositionLabel from './StartPosLabel.svelte';
 	import type { PictographData } from '$lib/types/PictographData.js';
-	import pictographDataStore from '$lib/stores/pictographDataStore.js';
-	import { selectedStartPos } from '$lib/stores/constructStores.js';
 	import { writable, type Writable } from 'svelte/store';
-	import LoadingSpinner from '../MainWidget/LoadingSpinner.svelte';
+	import LoadingSpinner from '../MainWidget/loading/LoadingSpinner.svelte';
+	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	import pictographDataStore from '$lib/stores/pictograph/pictographStore';
 
 	let gridMode = 'diamond';
 	let startPositionDataStoreSet: Writable<PictographData>[] = [];
@@ -27,7 +27,7 @@
 		const pictographData = data as PictographData[];
 		const defaultStartPosKeys =
 			gridMode === 'diamond'
-				? ['alpha1_alpha3', 'beta5_beta5', 'gamma11_gamma11']
+				? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
 				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
 
 		const filteredPictographs = pictographData.filter(
@@ -202,7 +202,7 @@
 	}
 
 	.pictograph-container {
-		width: 30%;
+		width: 25%;
 		aspect-ratio: 1 / 1;
 		height: auto;
 		position: relative;

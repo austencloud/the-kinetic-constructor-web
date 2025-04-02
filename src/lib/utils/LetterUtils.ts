@@ -382,19 +382,47 @@ export class LetterUtils {
 		alpha: Letter.α,
 		gamma: Letter.Γ,
 		Γ: Letter.Γ,
-		γ: Letter.Γ
+		γ: Letter.Γ,
+		theta: Letter.θ,
+		theta_dash: Letter.θ_DASH,
+		omega: Letter.Ω,
+		omega_dash: Letter.Ω_DASH,
+		phi: Letter.Φ,
+		phi_dash: Letter.Φ_DASH,
+		psi: Letter.Ψ,
+		psi_dash: Letter.Ψ_DASH,
+		lambda: Letter.Λ,
+		lambda_dash: Letter.Λ_DASH,
+		sigma: Letter.Σ,
+		sigma_dash: Letter.Σ_DASH,
+		delta: Letter.Δ,
+		delta_dash: Letter.Δ_DASH
 	};
-
 	static fromString(letterStr: string): Letter {
 		if (!letterStr) {
 			throw new Error('Cannot convert empty input to Letter');
 		}
 
 		// Trim and preprocess the input
-		const normalizedStr = letterStr
+		let normalizedStr = letterStr
 			.trim()
+			// Convert unicode and common alternatives
+			.replace(/θ/g, 'theta')
+			.replace(/Θ/g, 'Theta')
+			.replace(/ω/g, 'omega')
+			.replace(/Ω/g, 'Omega')
+			.replace(/φ/g, 'phi')
+			.replace(/Φ/g, 'Phi')
+			.replace(/ψ/g, 'psi')
+			.replace(/Ψ/g, 'Psi')
+			.replace(/λ/g, 'lambda')
+			.replace(/Λ/g, 'Lambda')
+			.replace(/σ/g, 'sigma')
+			.replace(/Σ/g, 'Sigma')
+			.replace(/δ/g, 'delta')
+			.replace(/Δ/g, 'Delta')
+			// Normalize dashes and case
 			.toLowerCase()
-			.replace(/^([ωφψλ])-?$/, '$1_dash')
 			.replace(/-/g, '_dash');
 
 		// Direct mapping for known variations
@@ -402,13 +430,14 @@ export class LetterUtils {
 			return this.letterMappings[normalizedStr];
 		}
 
-		// Try direct enum match (uppercase)
-		const uppercaseStr = normalizedStr.toUpperCase();
-		if (uppercaseStr in Letter) {
-			return Letter[uppercaseStr as keyof typeof Letter];
+		// Try direct enum match (with dash variants)
+		const enumKey = Object.keys(Letter).find((key) => key.toLowerCase() === normalizedStr);
+
+		if (enumKey) {
+			return Letter[enumKey as keyof typeof Letter];
 		}
 
-		// Log more context for debugging
+		// Logging with comprehensive context for easier debugging
 		console.warn(`Could not convert letter: "${letterStr}"`, {
 			normalizedStr,
 			availableLetters: Object.keys(Letter)

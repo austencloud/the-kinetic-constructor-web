@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { selectedPictograph } from '$lib/stores/selectedPictographStore';
+	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
 	import Pictograph from '../Pictograph/Pictograph.svelte';
 	import Option from './Option.svelte';
-	import LoadingSpinner from '../MainWidget/LoadingSpinner.svelte';
+	import LoadingSpinner from '../MainWidget/loading/LoadingSpinner.svelte';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { writable } from 'svelte/store';
-	import { setPictographLoaded } from '$lib/stores/loadingStateStore';
+	import { setPictographLoaded } from '$lib/stores/ui/loadingStore';
 
 	export let options: { name: string; pictographData: any }[] = [];
 	let isLoading = true;

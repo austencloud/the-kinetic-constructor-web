@@ -2,22 +2,28 @@
 	import TabsNavigation from './TabsNavigation.svelte';
 	import TabContent from './TabContent.svelte';
 	import DialogActions from './DialogActions.svelte';
-	import { activeTabStore } from './../../stores/settingsStore';
+	import { activeTabStore } from '../../stores/ui/settingsStore';
 	import { get } from 'svelte/store';
+    import { createEventDispatcher } from 'svelte';
 
 	export let isOpen: boolean;
 	export let onClose: () => void;
 	export let background: string;
-	export let onChangeBackground: (newBackground: string) => void;
+	
+	// Create event dispatcher for change background events
+	const dispatch = createEventDispatcher<{
+        changeBackground: string;
+    }>();
+    
+    // Function to dispatch changeBackground event
+    const handleChangeBackground = (newBackground: string) => {
+        dispatch('changeBackground', newBackground);
+    };
 
 	let activeTab = get(activeTabStore);
 
 	// Update the store whenever the activeTab changes
 	$: activeTabStore.set(activeTab);
-
-	// Custom transition combining fade and scale
-	// Adjust the dialogTransition function
-
 </script>
 
 {#if isOpen}
@@ -34,15 +40,13 @@
 		<div class="dialog" role="dialog">
 			<h2 class="dialog-title">Settings</h2>
 			<TabsNavigation {activeTab} on:changeTab={(e) => (activeTab = e.detail)} />
-			<TabContent {activeTab} {background} {onChangeBackground} />
+			<TabContent {activeTab} {background} onChangeBackground={handleChangeBackground} />
 			<DialogActions {onClose} />
 		</div>
 	</div>
 {/if}
 
 <style>
-
-
 	.dialog-backdrop {
 		position: fixed;
 		inset: 0;

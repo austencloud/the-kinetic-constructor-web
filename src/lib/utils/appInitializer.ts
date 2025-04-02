@@ -1,6 +1,6 @@
 // src/lib/utils/appInitializer.ts
-import { loadPictographData } from '$lib/stores/pictographDataStore';
-import { updateLoadingProgress, setLoading } from '$lib/stores/loadingStateStore';
+import { loadPictographData } from '$lib/stores/pictograph/pictographStore';
+import { updateLoadingProgress, setLoading } from '$lib/stores/ui/loadingStore';
 
 /**
  * Initialize the application with loading indicators

@@ -1,6 +1,6 @@
 // src/lib/stores/sequenceActions.ts
 import { beatsStore, selectedBeatIndexStore } from './beatsStore';
-import type { PictographData } from '../types/PictographData';
+import type { PictographData } from '../../types/PictographData';
 import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData';
 
 // Action types as constants

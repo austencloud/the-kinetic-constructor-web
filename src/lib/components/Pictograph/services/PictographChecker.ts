@@ -15,20 +15,15 @@ export class PictographChecker {
     };
   }
 
-  private getMotionEndOrientation(motionKey: 'redMotionData' | 'blueMotionData'): Orientation | undefined {
-    // Replace _.get with optional chaining
-    return this.pictographData[motionKey]?.endOri;
-  }
+	private getMotionEndOrientation(motionKey: 'redMotionData' | 'blueMotionData') {
+		return this.pictographData[motionKey]?.endOri;
+	}
 
-  checkLetterCondition(condition: LetterConditions): boolean {
-    return this.pictographData.letter
-      ? LetterUtils.getLettersByCondition(condition).includes(this.pictographData.letter)
-      : false;
-  }
-
-  endsWithAlpha = (): boolean => this.checkLetterCondition(LetterConditions.ALPHA_ENDING);
-  endsWithBeta = (): boolean => this.checkLetterCondition(LetterConditions.BETA_ENDING);
-  endsWithGamma = (): boolean => this.checkLetterCondition(LetterConditions.GAMMA_ENDING);
+	checkLetterCondition(condition: LetterConditions): boolean {
+		return this.pictographData.letter
+			? LetterUtils.getLettersByCondition(condition).includes(this.pictographData.letter)
+			: false;
+	}
 
   endsWithLayer3(): boolean {
     const redEndOri = this.getMotionEndOrientation('redMotionData');

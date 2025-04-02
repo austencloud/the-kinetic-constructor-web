@@ -100,8 +100,7 @@
 						key,
 						{ coordinates: parseCoordinates(value) }
 					])
-				);
-			('Mode data:', modeData);
+				); 
 			// Convert raw data into structured `GridData`
 			const gridData: GridData = {
 				allHandPointsStrict: parsePoints(modeData.hand_points.strict),

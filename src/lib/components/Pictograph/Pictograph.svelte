@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
+	import { derived, writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { PropData } from '../objects/Prop/PropData';
 	import type { ArrowData } from '../objects/Arrow/ArrowData';
@@ -13,16 +14,24 @@
 	import PictographLoading from './components/PictographLoading.svelte';
 	import PictographError from './components/PictographError.svelte';
 	import PictographDebug from './components/PictographDebug.svelte';
-
-	// Props with defaults - unchanged
+	import InitializingSpinner from './components/InitializingSpinner.svelte';
+	import LoadingProgress from './components/LoadingProgress.svelte';
 	import type { Writable } from 'svelte/store';
+	import { errorService, ErrorSeverity } from '../../services/ErrorHandlingService';
 
 	export let pictographDataStore: Writable<PictographData>;
 	export let onClick: (() => void) | undefined = undefined;
 	export let debug = false;
-	export let animationDuration = 300;
+	export let animationDuration: 300 = 300;
 	export let showLoadingIndicator = true;
 
+	const componentsLoadedStore = writable(0);
+	const totalComponentsStore = writable(1);
+
+	const loadProgressStore = derived(
+		[componentsLoadedStore, totalComponentsStore],
+		([$loaded, $total]) => Math.floor(($loaded / Math.max($total, 1)) * 100)
+	);
 	// Event dispatcher - unchanged
 	const dispatch = createEventDispatcher<{
 		loaded: { complete: boolean; error?: boolean; message?: string };
@@ -31,7 +40,7 @@
 	}>();
 
 	// Component state variables - unchanged but better organized
-	let state = 'initializing'; // 'initializing', 'grid_only', 'loading', 'complete', 'error'
+	let state = 'initializing';
 	let errorMessage: string | null = null;
 	let gridData: GridData | null = null;
 	let redPropData: PropData | null = null;
@@ -42,41 +51,25 @@
 	let requiredComponents: string[] = ['grid'];
 	let totalComponentsToLoad = 1;
 	let componentsLoaded = 0;
-	let loadProgress = 0;
 	let renderCount = 0;
 	let service: PictographService;
-
 	// Reactive values derived from pictographDataStore - unchanged
+	$: loadProgress = $loadProgressStore;
 	$: pictographData = $pictographDataStore;
 	$: letter = pictographData?.letter || null;
 	$: gridMode = pictographData?.gridMode || 'diamond';
-
-	// Improve aria-label logic with a helper function
 	$: pictographAriaLabel = getPictographAriaLabel();
 	$: interactiveProps = onClick
-		? {
-				role: 'button',
-				tabIndex: 0,
-				'aria-label': `Pictograph for letter ${letter || 'unknown'}`
-			}
+		? { role: 'button', tabIndex: 0, 'aria-label': `Pictograph for letter ${letter || 'unknown'}` }
 		: {};
 
-	/**
-	 * Get the ARIA label based on component state - new helper function
-	 */
 	function getPictographAriaLabel(): string {
-		if (state === 'error') {
-			return `Pictograph error: ${errorMessage}`;
-		}
-
+		if (state === 'error') return `Pictograph error: ${errorMessage}`;
 		const letterPart = letter ? `for letter ${letter}` : '';
 		const statePart = state === 'complete' ? 'complete' : 'loading';
 		return `Pictograph visualization ${letterPart} - ${statePart}`;
 	}
 
-	/**
-	 * Check if data has required motion information - new helper function
-	 */
 	function hasRequiredMotionData(data: PictographData): boolean {
 		return Boolean(data?.redMotionData || data?.blueMotionData);
 	}
@@ -107,9 +100,6 @@
 		};
 	});
 
-	/**
-	 * Handle grid loading completion - mostly unchanged
-	 */
 	function handleGridLoaded(data: GridData) {
 		try {
 			// Update state
@@ -136,9 +126,6 @@
 		}
 	}
 
-	/**
-	 * Create and position components - better organized but same logic
-	 */
 	function createAndPositionComponents() {
 		try {
 			// Initialize required components
@@ -187,9 +174,6 @@
 		}
 	}
 
-	/**
-	 * Handle component loading - unchanged
-	 */
 	function handleComponentLoaded(component: string) {
 		loadedComponents.add(component);
 		componentsLoaded++;
@@ -198,16 +182,11 @@
 		checkLoadingComplete();
 	}
 
-	/**
-	 * Update load progress - unchanged
-	 */
 	function updateLoadProgress() {
-		loadProgress = Math.floor((componentsLoaded / Math.max(totalComponentsToLoad, 1)) * 100);
+		componentsLoadedStore.set(++componentsLoaded);
+		totalComponentsStore.set(totalComponentsToLoad);
 	}
 
-	/**
-	 * Check if loading is complete - unchanged
-	 */
 	function checkLoadingComplete() {
 		const startCheck = performance.now();
 		const allLoaded = requiredComponents.every((component) => loadedComponents.has(component));
@@ -225,9 +204,6 @@
 		}
 	}
 
-	/**
-	 * Handle component error - unchanged
-	 */
 	function handleComponentError(component: string, error: any) {
 		if (debug) console.warn(`Component error (${component}):`, error);
 
@@ -240,9 +216,6 @@
 		checkLoadingComplete();
 	}
 
-	/**
-	 * Apply fallback positioning - unchanged
-	 */
 	function applyFallbackPositioning(component: string) {
 		const centerX = 475;
 		const centerY = 475;
@@ -278,44 +251,44 @@
 		}
 	}
 
-	/**
-	 * Handle error - improved with better organization
-	 */
 	function handleError(source: string, error: any) {
-		const errorObj = {
-			source,
-			message: error instanceof Error ? error.message : String(error),
-			stack: error instanceof Error ? error.stack : undefined,
-			timestamp: new Date().toISOString(),
-			componentState: {
-				loadedCount: componentsLoaded,
-				totalCount: totalComponentsToLoad
-			}
+		// Create an error object using the new error service
+		const errorObj = errorService.createError(
+			`Pictograph:${source}`,
+			error,
+			// Determine severity based on the source
+			source === 'initialization' ? ErrorSeverity.CRITICAL : ErrorSeverity.ERROR
+		);
+
+		// Add additional context specific to Pictograph
+		errorObj.context = {
+			loadedCount: componentsLoaded,
+			totalCount: totalComponentsToLoad
 		};
 
+		// Log the error using the service
+		errorService.log(errorObj);
+
+		// Set local error message (maintaining existing behavior)
 		errorMessage = errorObj.message;
 		state = 'error';
 
+		// Maintain existing debug logging
 		if (debug) {
 			console.error(`Pictograph error [${source}]:`, errorObj);
 		} else {
 			console.error(`Pictograph error: ${errorMessage}`);
 		}
 
+		// Dispatch events exactly as before
 		dispatch('error', { source, error, message: errorMessage });
 		dispatch('loaded', { complete: false, error: true, message: errorMessage });
 	}
 
-	/**
-	 * Handle wrapper click - unchanged
-	 */
 	function handleWrapperClick() {
 		if (onClick) onClick();
 	}
 
-	/**
-	 * Handle key presses for accessibility - unchanged
-	 */
 	function handleKeydown(e: KeyboardEvent) {
 		if (onClick && (e.key === 'Enter' || e.key === ' ')) {
 			e.preventDefault();
@@ -324,7 +297,6 @@
 	}
 </script>
 
-<!-- Template remains completely unchanged to ensure compatibility -->
 <div
 	class="pictograph-wrapper"
 	on:click={handleWrapperClick}
@@ -342,7 +314,7 @@
 	>
 		{#if state === 'initializing'}
 			{#if showLoadingIndicator}
-				<PictographLoading {animationDuration} initializing={true} />
+				<InitializingSpinner {animationDuration} />
 			{/if}
 		{:else if state === 'error'}
 			<PictographError {errorMessage} {animationDuration} />
@@ -402,12 +374,11 @@
 	</svg>
 
 	{#if state === 'loading' && showLoadingIndicator}
-		<PictographLoading {loadProgress} {animationDuration} showText={true} initializing={false} />
+		<LoadingProgress {loadProgress} showText={true} />
 	{/if}
 </div>
 
 <style>
-	/* Styles completely unchanged */
 	.pictograph-wrapper {
 		width: 100%;
 		height: 100%;
