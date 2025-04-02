@@ -31,7 +31,7 @@
 		void pageTransition.offsetWidth;
 
 		// Start animation
-		pageTransition.style.animation = `page-transition-${direction} 0.5s ${cubicInOut} forwards`;
+		pageTransition.style.animation = `page-transition-${direction} 0.8s ${cubicInOut} forwards`;
 		pageTransition.addEventListener('animationend', handleAnimationEnd, { once: true });
 
 		// Dispatch animation start event

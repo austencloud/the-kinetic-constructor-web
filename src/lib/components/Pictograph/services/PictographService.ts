@@ -10,7 +10,7 @@ import { Motion } from '$lib/components/objects/Motion/Motion';
 import { RED, BLUE } from '$lib/types/Constants';
 
 import { PictographChecker } from './PictographChecker';
-import { pictographStore } from '$lib/stores/pictographStore';
+import { pictographStore } from '$lib/stores/pictograph/pictographStore';
 import ArrowLocationManager from '$lib/components/objects/Arrow/ArrowLocationManager';
 import { BetaPropPositioner } from '$lib/components/PlacementManagers/PropPlacementManager/BetaPropPositioner';
 import ArrowRotAngleManager from '$lib/components/objects/Arrow/ArrowRotAngleManager';

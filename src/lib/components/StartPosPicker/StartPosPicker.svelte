@@ -4,9 +4,9 @@
 	import StartPositionLabel from './StartPosLabel.svelte';
 	import type { PictographData } from '$lib/types/PictographData.js';
 	import pictographDataStore from '$lib/stores/pictographDataStore.js';
-	import { selectedStartPos } from '$lib/stores/constructStores.js';
 	import { writable, type Writable } from 'svelte/store';
 	import LoadingSpinner from '../MainWidget/loading/LoadingSpinner.svelte';
+	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 
 	let gridMode = 'diamond';
 	let startPositionDataStoreSet: Writable<PictographData>[] = [];
