@@ -25,6 +25,9 @@ export interface PictographData {
     blueMotionData: MotionData | null;
     redMotionData: MotionData | null;
     
+    motions?: Motion[] | undefined;
+    redMotion?: Motion | null;
+    blueMotion?: Motion | null;
 
     // Props
     redPropData: PropData | null;

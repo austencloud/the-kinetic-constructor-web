@@ -7,6 +7,7 @@
 	import SvgManager from '../../SvgManager/SvgManager';
 	import type { Motion } from '../Motion/Motion';
 	import { calculateArrowRotationAngle } from './ArrowRotAngleManager';
+	import ArrowSvgMirrorManager from './ArrowSvgMirrorManager';
 
 	// Props with defaults
 	export let arrowData: ArrowData;
@@ -25,12 +26,18 @@
 	const svgManager = new SvgManager();
 	const svgLoader = new ArrowSvgLoader(svgManager);
 
+	// Initialize mirror manager and update mirror state
+	const mirrorManager = new ArrowSvgMirrorManager(arrowData);
+
 	// Calculate rotation angle (memoized)
 	$: rotationAngle = getRotationAngle();
 
 	// Transform calculation (memoized)
 	$: if (svgData && (arrowData.coords || motion || arrowData.svgMirrored)) {
+		// Apply mirroring as a transform
 		const mirrorTransform = arrowData.svgMirrored ? 'scale(-1, 1)' : '';
+
+		// First translate to center, then rotate, then mirror (if needed)
 		transform = `
 			translate(${arrowData.coords.x}, ${arrowData.coords.y})
 			rotate(${rotationAngle})
@@ -52,7 +59,10 @@
 				}
 			}, loadTimeoutMs);
 
-			// Load the SVG
+			// Update mirror state before loading SVG
+			mirrorManager.updateMirror();
+
+			// Load the SVG with the current mirror state
 			const result = await svgLoader.loadSvg(
 				arrowData.motionType,
 				arrowData.startOri,
@@ -81,7 +91,7 @@
 		clearTimeout(loadTimeout);
 		isLoaded = true;
 		dispatch('loaded', { error: true });
-		dispatch('error', { 
+		dispatch('error', {
 			message: (error as Error)?.message || 'Unknown error',
 			component: 'Arrow',
 			color: arrowData.color
@@ -119,11 +129,14 @@
 	}
 </script>
 
+// src/lib/components/objects/Arrow/Arrow.svelte - Modified version
+
 {#if svgData && isLoaded}
-	<g 
-		{transform} 
-		data-testid="arrow-{arrowData.color}" 
+	<g
+		{transform}
+		data-testid="arrow-{arrowData.color}"
 		data-motion-type={arrowData.motionType}
+		data-mirrored={arrowData.svgMirrored ? 'true' : 'false'}
 		in:fade={{ duration: 300 }}
 	>
 		<image
