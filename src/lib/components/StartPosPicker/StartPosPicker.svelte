@@ -8,7 +8,7 @@
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import pictographDataStore from '$lib/stores/pictograph/pictographStore';
 	import { debugLog } from '$lib/utils/debugUtils';
-
+	import startPositionService from '$lib/services/StartPositionService';
 	// DEBUG: Log component initialization
 	debugLog('StartPosPicker', 'Component initialized');
 
@@ -41,8 +41,11 @@
 				defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
 		);
 
-		debugLog('StartPosPicker', `Filtered pictographs: ${filteredPictographs.length}`, 
-			filteredPictographs.map(p => p.startPos + '_' + p.endPos));
+		debugLog(
+			'StartPosPicker',
+			`Filtered pictographs: ${filteredPictographs.length}`,
+			filteredPictographs.map((p) => p.startPos + '_' + p.endPos)
+		);
 
 		if (filteredPictographs.length === 0) {
 			if (pictographData.length > 0) {
@@ -65,7 +68,7 @@
 		if (loadingTimeout !== null) {
 			clearTimeout(loadingTimeout);
 		}
-		
+
 		loadingTimeout = window.setTimeout(() => {
 			if (isLoading) {
 				isLoading = false;
@@ -81,27 +84,35 @@
 		debugLog('StartPosPicker', 'Component destroyed');
 	});
 
-	const handleSelect = (startPosPictograph: PictographData) => {
+	const handleSelect = async (startPosPictograph: PictographData) => {
 		// Log the selection
 		debugLog('StartPosPicker', 'Start position selected', {
 			startPos: startPosPictograph.startPos,
 			endPos: startPosPictograph.endPos
 		});
 
-		// Update the selected start position in the store
-		selectedStartPos.set({ ...startPosPictograph });
-		
-		// Log the current state of the store after update
-		debugLog('StartPosPicker', 'selectedStartPos store updated', get(selectedStartPos));
-		
-		// Dispatch a custom event for components that might be listening
-		const customEvent = new CustomEvent('start-position-selected', {
-			detail: { startPosition: { ...startPosPictograph } },
-			bubbles: true
-		});
-		document.dispatchEvent(customEvent);
-		
-		debugLog('StartPosPicker', 'Custom event dispatched: start-position-selected');
+		try {
+			// Add start position to the sequence
+			await startPositionService.addStartPosition(startPosPictograph);
+
+			// Update the selected start position in the store
+			selectedStartPos.set({ ...startPosPictograph });
+
+			// Log the current state of the store after update
+			debugLog('StartPosPicker', 'selectedStartPos store updated', get(selectedStartPos));
+
+			// Dispatch a custom event for components that might be listening
+			const customEvent = new CustomEvent('start-position-selected', {
+				detail: { startPosition: { ...startPosPictograph } },
+				bubbles: true
+			});
+			document.dispatchEvent(customEvent);
+
+			debugLog('StartPosPicker', 'Custom event dispatched: start-position-selected');
+		} catch (error) {
+			console.error('Error adding start position:', error);
+			// Optionally show an error message to the user
+		}
 	};
 
 	function handlePictographLoaded(event: CustomEvent) {

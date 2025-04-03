@@ -1,4 +1,4 @@
 import { writable } from 'svelte/store';
+import type { PictographData } from '$lib/types/PictographData';
 
-// Shared store to manage the selected pictograph
-export const selectedPictograph = writable(null);
+export const selectedPictograph = writable<PictographData | null>(null);
