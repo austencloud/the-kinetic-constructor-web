@@ -47,7 +47,7 @@ import {
 	BOX_DASH_ANGLE_MAP,
 	OPPOSITE_LOCATION_MAP
 } from './constants/ArrowRotationConstants';
-import type { PictographService } from '$lib/services/PictographService';
+import type { PictographService } from '$lib/components/Pictograph/PictographService';
 import { calculateShiftLocation } from './ArrowLocationManager';
 import type { PictographData } from '$lib/types/PictographData';
 

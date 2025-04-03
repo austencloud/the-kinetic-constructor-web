@@ -1,7 +1,7 @@
 <script lang="ts">
 	import LoadingSpinner from '../MainWidget/loading/LoadingSpinner.svelte';
-	import ReversalFilter from './components/ReversalFilter.svelte';
-	import Option from './components/Option.svelte'; // Ensure correct path to Option.svelte
+	import SortOptions from './components/SortOptions.svelte'; // Add the new component
+	import Option from './components/Option.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { fade, crossfade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
@@ -9,40 +9,71 @@
 	import { beatsStore } from '$lib/stores/sequence/beatsStore';
 	import { setPictographLoaded } from '$lib/stores/ui/loadingStore';
 	import optionPickerStore, {
-		type OptionPickerState,
-		type ReversalFilterType
+		type ReversalFilterType,
+		type SortMethodType
 	} from '$lib/components/OptionPicker/optionPickerStore';
 	import { isMobile, isPortrait } from '$lib/utils/deviceUtils';
+	import {
+		getResponsiveLayout,
+		getOptimalGridColumns,
+		type GridConfiguration
+	} from '$lib/components/OptionPicker/optionPickerLayoutUtils';
 
 	const { optionsByLetterType } = optionPickerStore;
 
-	// Setup crossfade transition
 	const [send, receive] = crossfade({
 		duration: 600,
 		easing: cubicOut,
 		fallback(node, params) {
-			return fade(node, {
-				duration: 600, 
-				easing: cubicOut
-			});
+			return fade(node, { duration: 600, easing: cubicOut });
 		}
 	});
 
 	let isLoading = true;
 	let selectedFilter: ReversalFilterType = 'all';
+	let selectedSortMethod: SortMethodType = 'type'; // Add this state variable
 	let previewLoading = true;
 	let containerHeight: number;
 	let containerWidth: number;
-
-	// Device detection
 	let isMobileDevice = false;
 	let isPortraitMode = false;
-
 	let selectedTab: string = 'Type1';
-	const letterTypes = ['Type1', 'Type2', 'Type3', 'Type4', 'Type5', 'Type6'];
+
+	// This will need to be dynamic based on sort method
+	let categoryTypes = ['Type1', 'Type2', 'Type3', 'Type4', 'Type5', 'Type6'];
+
+	let headerHeight = 0;
+	let headerRef: HTMLElement;
+	let optionsContainer: HTMLElement;
 
 	const unsubscribeOptionPicker = optionPickerStore.subscribe((state) => {
 		isLoading = state.isLoading;
+		selectedSortMethod = state.sortMethod; // Track sort method
+
+		// Update category types based on sort method
+		if (state.sortMethod === 'type') {
+			categoryTypes = ['Type1', 'Type2', 'Type3', 'Type4', 'Type5', 'Type6'];
+			// Ensure we stay on a valid tab
+			if (!categoryTypes.includes(selectedTab)) {
+				selectedTab = categoryTypes[0];
+			}
+		} else if (state.sortMethod === 'endPosition') {
+			// Get unique end positions from filtered options
+			const endPositions = Array.from(
+				new Set(state.filteredOptions.map((opt) => opt.endPos || 'Unknown'))
+			).sort();
+			categoryTypes = endPositions.length > 0 ? endPositions : ['Unknown'];
+			// Ensure we stay on a valid tab
+			if (!categoryTypes.includes(selectedTab)) {
+				selectedTab = categoryTypes[0];
+			}
+		} else if (state.sortMethod === 'reversals') {
+			categoryTypes = ['Continuous', 'One Reversal', 'Two Reversals'];
+			// Ensure we stay on a valid tab
+			if (!categoryTypes.includes(selectedTab)) {
+				selectedTab = categoryTypes[0];
+			}
+		}
 	});
 
 	const unsubscribeBeats = beatsStore.subscribe((beats) => {
@@ -58,27 +89,13 @@
 		}
 	});
 
-	// Update device detection
 	const updateDeviceDetection = () => {
 		isMobileDevice = isMobile();
 		isPortraitMode = isPortrait();
 	};
 
-	import {
-		getResponsiveLayout,
-		getOptimalGridColumns,
-		getOptionSize,
-		getGridGap,
-		getGridClass,
-		type GridConfiguration
-	} from '$lib/components/OptionPicker/optionPickerLayoutUtils';
-
 	$: currentOptions = $optionsByLetterType[selectedTab] || [];
-	$: gridConfig = getOptimalGridColumns(
-		currentOptions.length,
-		isMobileDevice,
-		isPortraitMode
-	);
+	$: gridConfig = getOptimalGridColumns(currentOptions.length, isMobileDevice, isPortraitMode);
 	$: layout = getResponsiveLayout(
 		currentOptions.length,
 		containerHeight,
@@ -97,14 +114,26 @@
 		}
 	});
 
-	const optionPickerId = 'option-picker-pictograph';
-
 	onMount(() => {
-		setPictographLoaded(optionPickerId, false);
+		setPictographLoaded('option-picker-pictograph', false);
 		updateDeviceDetection();
 
 		if (typeof window !== 'undefined') {
 			window.addEventListener('resize', updateDeviceDetection);
+		}
+
+		if (headerRef) {
+			headerHeight = headerRef.offsetHeight;
+		}
+
+		const resizeObserver = new ResizeObserver(() => {
+			if (headerRef) {
+				headerHeight = headerRef.offsetHeight;
+			}
+		});
+
+		if (headerRef) {
+			resizeObserver.observe(headerRef);
 		}
 
 		if (typeof ResizeObserver !== 'undefined') {
@@ -119,17 +148,22 @@
 				resizeObserver.disconnect();
 			};
 		}
-	});
 
-	let optionsContainer: HTMLElement;
+		return () => {
+			resizeObserver.disconnect();
+		};
+	});
 </script>
 
 <div class="optionPicker">
-	<div class="header" class:mobile={isMobileDevice}>
+	<!-- Add the Sort Options dropdown -->
+	<SortOptions isMobile={isMobileDevice} />
+
+	<div class="header" bind:this={headerRef} class:mobile={isMobileDevice}>
 		<div class="title">Next Options</div>
 		<div class="tabs-container">
 			<div class="tabs" class:mobile-tabs={isMobileDevice}>
-				{#each letterTypes as type}
+				{#each categoryTypes as type}
 					<button
 						class="tab {selectedTab === type ? 'active' : ''} {isMobileDevice ? 'mobile' : ''}"
 						on:click={() => (selectedTab = type)}
@@ -139,9 +173,6 @@
 					</button>
 				{/each}
 			</div>
-		</div>
-		<div class="filter-container">
-			<ReversalFilter bind:selectedFilter disabled={isLoading} isMobile={isMobileDevice} />
 		</div>
 	</div>
 
@@ -155,6 +186,7 @@
 			{#key selectedTab}
 				<div
 					class="options-container"
+					style="margin-top: -{headerHeight}px"
 					in:receive={{ key: selectedTab }}
 					out:send={{ key: selectedTab }}
 				>
@@ -198,6 +230,7 @@
 		height: 100%;
 		background: transparent;
 		padding: 20px;
+		position: relative; /* Add this to ensure proper positioning for the SortOptions component */
 	}
 
 	.header {
@@ -236,12 +269,6 @@
 	.filter-container {
 		grid-column: 3;
 		justify-self: end;
-	}
-
-	.header.mobile .filter-container {
-		grid-column: 1;
-		grid-row: 2;
-		justify-self: center;
 	}
 
 	.tabs {
@@ -301,27 +328,63 @@
 		right: 0;
 		bottom: 0;
 		z-index: 1;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 
 	.options-grid {
 		display: grid;
 		width: 100%;
-		min-height: 100px;
-		position: relative;
-		overflow: hidden;
-	}
-
-	.mobile-grid {
-		width: 100%;
-		max-width: 100%;
-		padding: 0.2rem;
+		height: 100%;
+		position: relative; /* Establishes stacking context */
+		overflow: hidden; /* Or visible if needed, but careful */
+		justify-content: center;
+		align-content: center;
+		/* Add grid-template-columns and gap here or via inline style */
 	}
 
 	.options-grid > div {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		padding: 0.0rem;
+		padding: 0.1rem;
+		/* --- Modifications Start --- */
+		position: relative; /* Ensure z-index works correctly */
+		z-index: 1; /* Default stacking level */
+		transition: z-index 0s 0.2s; /* Delay z-index change until transition ends maybe? Or remove delay: transition: z-index 0.2s ease; */
+		/* --- Modifications End --- */
+	}
+
+	.mobile-grid {
+		width: 100%;
+		max-width: 100%;
+		padding: 0.2rem;
+		justify-content: center;
+		align-content: center;
+	}
+    .options-grid > div:hover {
+        z-index: 10; /* Make it higher than the default z-index: 1 */
+        transition-delay: 0s; /* Apply z-index immediately on hover */
+    }
+
+    /* Ensure the :hover on the div triggers the styles in Pictograph.svelte */
+    /* (The styles below likely already exist in Pictograph.svelte and should remain there) */
+    /* --- Reference: Pictograph.svelte styles (Keep these in Pictograph.svelte) ---
+    .pictograph-wrapper:hover .pictograph {
+        transform: scale(1.05);
+        z-index: 4;  <-- This z-index is less critical now for grid stacking, but harmless
+        border: 4px solid gold;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    --- End Reference --- */
+
+	.option-container-selected {
+		z-index: 10;
+	}
+
+	.options-grid.option-selected > div:not(.option-container-selected) {
+		opacity: 0.6;
 	}
 
 	.small-count {
@@ -345,7 +408,6 @@
 	}
 
 	.single-item-grid {
-		min-height: 260px;
 		display: flex;
 		justify-content: center;
 		align-items: center;

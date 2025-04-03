@@ -9,13 +9,13 @@ import { PropType, type Color, type Loc } from '$lib/types/Types';
 import { Motion } from '$lib/components/objects/Motion/Motion';
 import { RED, BLUE } from '$lib/types/Constants';
 
-import { PictographChecker } from '../components/Pictograph/services/PictographChecker';
+import { PictographChecker } from './services/PictographChecker';
 import { pictographStore } from '$lib/stores/pictograph/pictographStore';
 import ArrowLocationManager from '$lib/components/objects/Arrow/ArrowLocationManager';
 import { BetaPropPositioner } from '$lib/components/PlacementManagers/PropPlacementManager/BetaPropPositioner';
 import ArrowRotAngleManager from '$lib/components/objects/Arrow/ArrowRotAngleManager';
 import { ArrowPlacementManager } from '$lib/components/PlacementManagers/ArrowPlacementManager';
-import { LetterConditions } from '../components/Pictograph/constants/LetterConditions';
+import { LetterConditions } from './constants/LetterConditions';
 
 export class PictographService {
 	private data: PictographData;

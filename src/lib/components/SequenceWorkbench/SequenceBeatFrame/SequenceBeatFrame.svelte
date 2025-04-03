@@ -188,30 +188,31 @@
 	}
 	
 	.beat-container {
-	  position: relative;
-	  width: var(--cell-size);
-	  height: var(--cell-size);
-	  display: flex;
-	  justify-content: center;
-	  align-items: center;
+		position: relative;
+		width: var(--cell-size);
+		height: var(--cell-size);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background-color: transparent;
 	}
 	
 	.start-position {
-	  grid-column: 1;
-	  grid-row: 1;
+		grid-column: 1;
+		grid-row: 1;
 	}
 	
 	.beat-number {
-	  position: absolute;
-	  top: 5px;
-	  left: 5px;
-	  z-index: 2;
+		position: absolute;
+		top: 5px;
+		left: 5px;
+		z-index: 2;
 	}
 	
 	.reversal-indicator {
-	  position: absolute;
-	  bottom: 5px;
-	  right: 5px;
-	  z-index: 2;
+		position: absolute;
+		bottom: 5px;
+		right: 5px;
+		z-index: 2;
 	}
   </style>

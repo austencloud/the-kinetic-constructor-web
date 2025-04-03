@@ -100,7 +100,9 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		border: 2px dashed gold;
 		border-radius: 8px;
+		background-color: transparent	;
+		border:none;
+
 	}
 </style>

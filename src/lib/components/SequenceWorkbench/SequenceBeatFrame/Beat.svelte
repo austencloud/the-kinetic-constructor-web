@@ -64,6 +64,6 @@
 	}
 	
 	.filled {
-		box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+		box-shadow: 0 0 8px transparent
 	}
 </style>

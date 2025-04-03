@@ -4,6 +4,7 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import { optionPickerStore } from '$lib/components/OptionPicker/optionPickerStore';
 	import { isMobile } from '$lib/utils/deviceUtils';
+	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
 
 	export let pictographData: PictographData;
 	export let selectedPictographStore: Writable<PictographData | null> | undefined = undefined;
@@ -11,13 +12,16 @@
 
 	// Create a writable store from the pictograph data
 	const pictographDataStore = writable(pictographData);
-	
+
 	// Check if we're on mobile
 	let isMobileDevice = false;
-	
+
+	// Track if this option is currently selected
+	$: isSelected = $selectedPictograph === pictographData;
+
 	// Set mobile state on mount
 	import { onMount } from 'svelte';
-	
+
 	onMount(() => {
 		isMobileDevice = isMobile();
 	});
@@ -28,12 +32,12 @@
 			selectedPictographStore.set(pictographData);
 		}
 	}
-	
+
 	import { getPictographScaleFactor } from '$lib/components/OptionPicker/optionPickerLayoutUtils';
-	
+
 	// Handle single option case
 	export let isSingleOption: boolean = false;
-	
+
 	// Get scale factor from utility
 	$: scaleFactor = isSingleOption ? 1.2 : getPictographScaleFactor(isMobileDevice);
 </script>
@@ -41,6 +45,7 @@
 <div
 	class="option"
 	class:mobile={isMobileDevice}
+	class:selected={isSelected}
 	style="height: {size}; width: {size};"
 	role="button"
 	tabindex="0"
@@ -55,42 +60,38 @@
 
 <style>
 	.option {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		background-color: transparent;
-		border: none;
-		border-radius: 8px;
-		cursor: pointer;
-		overflow: visible;
-		padding: 0;
-		margin: 0;
 		position: relative;
-		transition: transform 0.2s ease, opacity 0.5s ease-in-out;
-		opacity: 1;
+		z-index: 1;
+		transition:
+			transform 0.2s ease,
+			z-index 0.2s ease;
 	}
-	
+
 	.option:hover {
+		z-index: 10;
 		transform: scale(1.05);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 	}
-	
+	.pictograph-container {
+		position: relative;
+		z-index: inherit; /* This ensures the container follows the parent's z-index */
+	}
+	.option:not(:hover) {
+		z-index: 1;
+	}
 	.option.mobile {
 		border-radius: 6px;
 	}
-	
+
 	.option.mobile:hover {
 		transform: scale(1.02); /* Less dramatic hover on mobile */
 	}
 
 	.pictograph-container {
 		position: relative;
-		width: 95%;
-		height: 95%;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		max-width: 95%;
-		max-height: 95%;
 		transition: transform 0.2s ease;
 	}
 

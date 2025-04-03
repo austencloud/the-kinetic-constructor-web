@@ -11,7 +11,7 @@
 	import Prop from '../objects/Prop/Prop.svelte';
 	import Arrow from '../objects/Arrow/Arrow.svelte';
 	import TKAGlyph from '../objects/Glyphs/TKAGlyph/TKAGlyph.svelte';
-	import { PictographService } from '../../services/PictographService';
+	import { PictographService } from './PictographService';
 	import PictographError from './components/PictographError.svelte';
 	import PictographDebug from './components/PictographDebug.svelte';
 	import InitializingSpinner from './components/InitializingSpinner.svelte';
@@ -54,7 +54,7 @@
 	let componentsLoaded = 0;
 	let renderCount = 0;
 	let service: PictographService;
-	
+
 	// Store tracked data snapshot for comparison
 	interface TrackedDataSnapshot {
 		letter: string | null;
@@ -79,7 +79,7 @@
 			motionType: string;
 		} | null;
 	}
-	
+
 	let lastDataSnapshot: TrackedDataSnapshot | null = null;
 
 	// Reactive values derived from pictographDataStore
@@ -96,17 +96,17 @@
 	$: {
 		// Use a safe comparison method that avoids circular references
 		const hasChanged = checkForDataChanges(pictographData);
-		
+
 		// Only process if there's a real change and service is initialized
 		if (hasChanged && service) {
 			if (debug) console.debug('Pictograph data changed, updating components');
-			
+
 			// Update the service with new data
 			service.updateData(pictographData);
-			
+
 			// Update local state
 			updateComponentsFromData();
-			
+
 			// Notify parent about the update
 			dispatch('dataUpdated', { type: 'all' });
 		}
@@ -218,7 +218,7 @@
 
 		try {
 			service = new PictographService(pictographData);
-			
+
 			// Initialize data snapshot
 			updateLastKnownValues(pictographData);
 
@@ -446,10 +446,13 @@
 	function handleError(this: any, source: string, error: any) {
 		try {
 			// Create a safe error message that won't have circular references
-			const errorMessage = error instanceof Error 
-				? error.message 
-				: (typeof error === 'string' ? error : 'Unknown error');
-				
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: typeof error === 'string'
+						? error
+						: 'Unknown error';
+
 			// Create an error object using the error service with safe data
 			const errorObj = errorService.createError(
 				`Pictograph:${source}`,
@@ -487,7 +490,11 @@
 			errorMessage = 'Error in Pictograph component';
 			state = 'error';
 			dispatch('error', { source, error: null, message: 'Error in Pictograph component' });
-			dispatch('loaded', { complete: false, error: true, message: 'Error in Pictograph component' });
+			dispatch('loaded', {
+				complete: false,
+				error: true,
+				message: 'Error in Pictograph component'
+			});
 		}
 	}
 
@@ -619,7 +626,7 @@
 	.pictograph-wrapper:hover .pictograph {
 		transform: scale(1.05);
 		z-index: 4;
-		border: 4px solid gold;
+		border: 4px solid #48bb78;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
@@ -642,7 +649,5 @@
 		box-shadow: 0 0 0 1px #fc8181;
 	}
 
-	.pictograph-wrapper[data-state='complete'] .pictograph {
-		border-color: #48bb78;
-	}
+
 </style>

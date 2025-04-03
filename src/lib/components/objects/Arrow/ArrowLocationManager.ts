@@ -25,7 +25,7 @@ import { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
 import type { Loc, Color } from '$lib/types/Types';
 import { LetterUtils } from '$lib/utils/LetterUtils';
-import type { PictographService } from '$lib/services/PictographService';
+import type { PictographService } from '$lib/components/Pictograph/PictographService';
 
 export type LocationPairMap = {
 	[key: string]: Loc;
