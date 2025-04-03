@@ -1,62 +1,45 @@
+<!-- src/lib/components/OptionPicker/Option.svelte -->
 <script lang="ts">
 	import { writable, type Writable } from 'svelte/store';
-	import { fade } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import Pictograph from '../Pictograph/Pictograph.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { optionPickerStore } from '$lib/stores/optionPicker/optionPickerStore';
+	import { OptionDataService } from '$lib/services/OptionDataService';
 
-	export let name: string;
-	export let pictographData: PictographData; // Changed from 'option' to 'pictographData'
-	export let selectedPictographStore: Writable<PictographData | null>;
+	export let pictographData: PictographData;
+	export let selectedPictographStore: Writable<PictographData | null> | undefined = undefined;
 
-	// Create a local writable store for this pictograph
-	const localPictographStore = writable(pictographData);
+	// Create a writable store from the pictograph data
+	const pictographDataStore = writable(pictographData);
 
-	// Track if this option is selected
-	$: isSelected = $selectedPictographStore?.letter === pictographData.letter;
+	// Derive the display number from the letter
+	$: displayNumber = pictographData.letter
+		? OptionDataService.getLetterNumber(pictographData.letter)
+		: 1;
 
-	// Track if the pictograph is loading
-	let isLoading = true;
-
-	// Handle selection
 	function handleSelect() {
 		optionPickerStore.selectOption(pictographData);
-	}
-
-	// Handle pictograph loaded
-	function handlePictographLoaded() {
-		isLoading = false;
+		if (selectedPictographStore) {
+			selectedPictographStore.set(pictographData);
+		}
 	}
 </script>
 
-<div
+<button
+	type="button"
 	class="option"
-	class:selected={isSelected}
-	role="option"
-	aria-selected={isSelected}
-	tabindex="0"
 	on:click={handleSelect}
-	on:keydown={(e) => {
-		if (e.key === 'Enter' || e.key === ' ') handleSelect();
-	}}
-	transition:fade={{ duration: 200 }}
+	transition:fly={{ y: 20, duration: 300 }}
+	aria-label="Select option"
 >
-	<div class="pictograph-preview" class:loading={isLoading}>
-		<Pictograph
-			pictographDataStore={localPictographStore}
-			onClick={handleSelect}
-			showLoadingIndicator={false}
-			on:loaded={handlePictographLoaded}
-		/>
-
-		{#if isLoading}
-			<div class="loading-indicator"></div>
-		{/if}
+	<div class="pictograph-container">
+		<Pictograph {pictographDataStore} />
 	</div>
-
-	<div class="option-details">
-		<span class="letter-label">{name}</span>
-	</div>
+</button>
+<div class="option-details">
+	<span class="number-badge">{displayNumber}</span>
+	<span class="letter-label">{pictographData.letter || 'Option'}</span>
 </div>
 
 <style>
@@ -64,75 +47,54 @@
 		display: flex;
 		flex-direction: column;
 		background-color: white;
-		border: 2px solid #ddd;
-		border-radius: 6px;
-		overflow: hidden;
+		border: 1px solid #ddd;
+		border-radius: 4px;
 		cursor: pointer;
 		transition: all 0.2s ease;
+		overflow: hidden;
 		height: 100%;
+		width: 100%;
+		padding: 0;
+		margin: 0;
 	}
 
 	.option:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-		border-color: #b3d4fc;
-	}
-
-	.option.selected {
 		border-color: #4299e1;
-		background-color: #ebf8ff;
-		box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.3);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 	}
 
-	.pictograph-preview {
-		height: 100px;
-		width: 100%;
-		background-color: #f9f9f9;
-		position: relative;
-		overflow: hidden;
-	}
-
-	.loading-indicator {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(255, 255, 255, 0.7);
+	.pictograph-container {
+		flex-grow: 1;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-	}
-
-	.loading-indicator::after {
-		content: '';
-		width: 24px;
-		height: 24px;
-		border: 3px solid #ddd;
-		border-top-color: #4299e1;
-		border-radius: 50%;
-		animation: spin 1s linear infinite;
-	}
-
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
+		padding: 0.5rem;
 	}
 
 	.option-details {
-		padding: 8px;
-		text-align: center;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0.5rem;
 		border-top: 1px solid #eee;
+		background-color: #f9f9f9;
+	}
+
+	.number-badge {
+		background-color: #4299e1;
+		color: white;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		font-weight: bold;
+		font-size: 0.8rem;
 	}
 
 	.letter-label {
 		font-weight: 600;
-		font-size: 0.9rem;
-	}
-
-	.option:focus {
-		outline: none;
-		box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.4);
+		color: #333;
 	}
 </style>

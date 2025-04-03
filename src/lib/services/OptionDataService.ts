@@ -1,185 +1,135 @@
 // src/lib/services/OptionDataService.ts
 import type { PictographData } from '$lib/types/PictographData';
-import type { MotionData } from '$lib/components/objects/Motion/MotionData';
-import { BLUE, RED, NO_ROT } from '$lib/types/Constants';
-import pictographDataStore from '$lib/stores/pictograph/pictographStore';
-import { get } from 'svelte/store';
+import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData';
+import { LetterType } from '$lib/types/LetterType';
+import { NO_ROT } from '$lib/types/Constants';
+import { LetterUtils } from '$lib/utils/LetterUtils';
 
-/**
- * Service responsible for fetching and manipulating option data for the Option Picker
- */
 export class OptionDataService {
-  /**
-   * Get all valid next options for the current sequence
-   */
-  static getNextOptions(
-    sequence: PictographData[], 
-    selectedFilter: string | null = null
-  ): PictographData[] {
-    if (!sequence.length) {
-      return [];
-    }
+	/**
+	 * Get the next possible options based on the current sequence
+	 */
+	static getNextOptions(sequence: PictographData[]): PictographData[] {
+		// If sequence is empty, return initial options
+		if (!sequence || sequence.length === 0) {
+			return this.getInitialOptions();
+		}
 
-    try {
-      const allOptions = this.loadAllNextOptionDicts(sequence);
-      
-      // Apply filter if specified
-      let filteredOptions = allOptions;
-      if (selectedFilter !== null && selectedFilter !== 'all') {
-        filteredOptions = allOptions.filter(option => 
-          this.determineReversalFilter(sequence, option) === selectedFilter
-        );
-      }
-      
-      // Update orientations for each option
-      this.updateOrientations(sequence, filteredOptions);
-      
-      return filteredOptions;
-    } catch (error) {
-      console.error('Error getting next options:', error);
-      return [];
-    }
-  }
+		// Get the last beat in the sequence
+		const lastBeat = sequence[sequence.length - 1];
 
-  /**
-   * Load all possible next options based on the current sequence
-   */
-  private static loadAllNextOptionDicts(
-    sequence: PictographData[]
-  ): PictographData[] {
-    // Ensure we have a valid sequence
-    if (!sequence.length) {
-      return [];
-    }
+		// Find options that can follow the last beat
+		const nextOptions = this.findNextOptions(lastBeat);
 
-    // Get the last item in the sequence (or second-to-last if last is a placeholder)
-    const last = sequence[sequence.length - 1].letter === null && sequence.length > 1
-      ? sequence[sequence.length - 2]
-      : sequence[sequence.length - 1];
+		return nextOptions;
+	}
 
-    // Get the end position from the last pictograph
-    const start = last.endPos;
-    if (!start) {
-      return [];
-    }
+	/**
+	 * Get initial options when starting a new sequence
+	 */
+	private static getInitialOptions(): PictographData[] {
+		// Return all initial pictograph options
+		// This would typically come from a pre-loaded dataset
+		// For now, we'll use a placeholder implementation
+		return [];
+	}
 
-    try {
-      // Get all possible options from the dataset
-      const allPictographs = get(pictographDataStore);
-      
-      // Filter to only those that start at the current end position
-      const nextOptions = allPictographs.filter(item => item.startPos === start);
-      
-      // Update orientation information
-      nextOptions.forEach(option => {
-        // Set start orientations from the last pictograph's end orientations
-        if (option.redMotionData && last.redMotionData) {
-          option.redMotionData.startOri = last.redMotionData.endOri;
-        }
-        
-        if (option.blueMotionData && last.blueMotionData) {
-          option.blueMotionData.startOri = last.blueMotionData.endOri;
-        }
-      });
-      
-      return nextOptions;
-    } catch (error) {
-      console.error('Error loading next options:', error);
-      return [];
-    }
-  }
+	/**
+	 * Find options that can follow a given beat
+	 */
+	private static findNextOptions(lastBeat: PictographData): PictographData[] {
+		// Placeholder for actual option finding logic
+		// This would involve checking:
+		// 1. Start position matching end position of last beat
+		// 2. Orientation continuity
+		// 3. Rotation continuity
+		// 4. Other sequence-specific rules
+		return [];
+	}
 
-  /**
-   * Update orientation values for a set of options
-   */
-  static updateOrientations(
-    sequence: PictographData[], 
-    options: PictographData[]
-  ): void {
-    if (!sequence.length || !options.length) {
-      return;
-    }
+	/**
+	 * Determine the reversal filter type for a potential next option
+	 */
+	static determineReversalFilter(
+		sequence: PictographData[],
+		option: PictographData
+	): 'continuous' | 'one_reversal' | 'two_reversals' {
+		// Check continuity for blue and red prop rotation
+		const blueContinuous = this.checkColorContinuity(sequence, option, 'blue');
+		const redContinuous = this.checkColorContinuity(sequence, option, 'red');
 
-    const last = sequence[sequence.length - 1];
-    
-    options.forEach(option => {
-      // Update red prop orientations
-      if (option.redMotionData && last.redMotionData) {
-        option.redMotionData.startOri = last.redMotionData.endOri;
-        // For this simplified implementation, we're not calculating endOri
-      }
-      
-      // Update blue prop orientations
-      if (option.blueMotionData && last.blueMotionData) {
-        option.blueMotionData.startOri = last.blueMotionData.endOri;
-        // For this simplified implementation, we're not calculating endOri
-      }
-    });
-  }
+		if (blueContinuous && redContinuous) {
+			return 'continuous';
+		} else if (blueContinuous || redContinuous) {
+			return 'one_reversal';
+		}
 
-  /**
-   * Determine the reversal filter category for an option
-   */
-  static determineReversalFilter(
-    sequence: PictographData[], 
-    option: PictographData
-  ): string {
-    if (!sequence.length || !option) {
-      return 'continuous';
-    }
-    
-    const [blueContinuous, redContinuous] = this.checkContinuity(sequence, option);
-    
-    if (blueContinuous && redContinuous) {
-      return 'continuous';
-    } else if (blueContinuous !== redContinuous) {
-      return 'one_reversal';
-    }
-    
-    return 'two_reversals';
-  }
+		return 'two_reversals';
+	}
 
-  /**
-   * Check if motion is continuous between the sequence and next option
-   */
-  private static checkContinuity(
-    sequence: PictographData[], 
-    option: PictographData
-  ): [boolean, boolean] {
-    // Helper function to get the last rotation direction in the sequence
-    const getLastRot = (seq: PictographData[], color: 'red' | 'blue'): string | null => {
-      for (let i = seq.length - 1; i >= 0; i--) {
-        const item = seq[i];
-        const motionData = color === 'blue' 
-          ? item.blueMotionData 
-          : item.redMotionData;
-        
-        if (motionData && motionData.propRotDir && motionData.propRotDir !== NO_ROT) {
-          return motionData.propRotDir;
-        }
-      }
-      return null;
-    };
+	/**
+	 * Check continuity of rotation for a specific color
+	 */
+	private static checkColorContinuity(
+		sequence: PictographData[],
+		option: PictographData,
+		color: 'blue' | 'red'
+	): boolean {
+		const motionDataKey = color === 'blue' ? 'blueMotionData' : 'redMotionData';
 
-    // Get last rotation directions from sequence
-    const lastBlue = getLastRot(sequence, 'blue');
-    const lastRed = getLastRot(sequence, 'red');
-    
-    // Get current rotation directions from option
-    const currBlue = option.blueMotionData?.propRotDir || NO_ROT;
-    const currRed = option.redMotionData?.propRotDir || NO_ROT;
-    
-    // If current direction is NO_ROT, use the last direction
-    const effectiveBlue = currBlue === NO_ROT ? lastBlue : currBlue;
-    const effectiveRed = currRed === NO_ROT ? lastRed : currRed;
-    
-    // Determine continuity
-    const blueContinuous = 
-      lastBlue === null || effectiveBlue === null || effectiveBlue === lastBlue;
-    
-    const redContinuous = 
-      lastRed === null || effectiveRed === null || effectiveRed === lastRed;
-    
-    return [blueContinuous, redContinuous];
-  }
+		// Find the last non-static rotation in the sequence
+		const lastRotation = this.findLastRotation(sequence, color);
+
+		// Current option's proposed rotation
+		const currentRotation = option[motionDataKey]?.propRotDir || NO_ROT;
+
+		// Compare rotations
+		return (
+			lastRotation === NO_ROT || currentRotation === NO_ROT || lastRotation === currentRotation
+		);
+	}
+
+	/**
+	 * Find the last non-static rotation for a specific color
+	 */
+	private static findLastRotation(sequence: PictographData[], color: 'blue' | 'red'): string {
+		const motionDataKey = color === 'blue' ? 'blueMotionData' : 'redMotionData';
+
+		// Iterate through sequence in reverse to find last non-static rotation
+		for (let i = sequence.length - 1; i >= 0; i--) {
+			const rotation = sequence[i][motionDataKey]?.propRotDir;
+			if (rotation && rotation !== NO_ROT) {
+				return rotation;
+			}
+		}
+
+		return NO_ROT;
+	}
+
+	/**
+	 * Get the number associated with a letter
+	 */
+	static getLetterNumber(letter: string): number {
+		const parsedLetter = LetterUtils.tryFromString(letter);
+		const letterType = parsedLetter ? LetterUtils.getLetterType(parsedLetter) : null;
+
+		if (!letterType) return 1;
+
+		switch (letterType.folderName) {
+			case 'Type1':
+				return 1;
+			case 'Type2':
+				return 2;
+			case 'Type3':
+				return 3;
+			case 'Type4':
+				return 4;
+			case 'Type5':
+				return 5;
+			case 'Type6':
+				return 6;
+			default:
+				return 1;
+		}
+	}
 }
