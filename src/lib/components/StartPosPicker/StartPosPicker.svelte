@@ -7,10 +7,8 @@
 	import LoadingSpinner from '../MainWidget/loading/LoadingSpinner.svelte';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import pictographDataStore from '$lib/stores/pictograph/pictographStore';
-	import { debugLog } from '$lib/utils/debugUtils';
 	import startPositionService from '$lib/services/StartPositionService';
 	// DEBUG: Log component initialization
-	debugLog('StartPosPicker', 'Component initialized');
 
 	let gridMode = 'diamond';
 	let startPositionDataStoreSet: Writable<PictographData>[] = [];
@@ -41,16 +39,11 @@
 				defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
 		);
 
-		debugLog(
-			'StartPosPicker',
-			`Filtered pictographs: ${filteredPictographs.length}`,
-			filteredPictographs.map((p) => p.startPos + '_' + p.endPos)
-		);
+
 
 		if (filteredPictographs.length === 0) {
 			if (pictographData.length > 0) {
 				startPositionDataStoreSet = [writable(pictographData[0])];
-				debugLog('StartPosPicker', 'Using first available pictograph as fallback');
 			} else {
 				isLoading = false;
 				return;
@@ -81,15 +74,11 @@
 		if (loadingTimeout !== null) {
 			clearTimeout(loadingTimeout);
 		}
-		debugLog('StartPosPicker', 'Component destroyed');
 	});
 
 	const handleSelect = async (startPosPictograph: PictographData) => {
 		// Log the selection
-		debugLog('StartPosPicker', 'Start position selected', {
-			startPos: startPosPictograph.startPos,
-			endPos: startPosPictograph.endPos
-		});
+
 
 		try {
 			// Add start position to the sequence
@@ -99,7 +88,6 @@
 			selectedStartPos.set({ ...startPosPictograph });
 
 			// Log the current state of the store after update
-			debugLog('StartPosPicker', 'selectedStartPos store updated', get(selectedStartPos));
 
 			// Dispatch a custom event for components that might be listening
 			const customEvent = new CustomEvent('start-position-selected', {
@@ -108,7 +96,6 @@
 			});
 			document.dispatchEvent(customEvent);
 
-			debugLog('StartPosPicker', 'Custom event dispatched: start-position-selected');
 		} catch (error) {
 			console.error('Error adding start position:', error);
 			// Optionally show an error message to the user
@@ -118,17 +105,11 @@
 	function handlePictographLoaded(event: CustomEvent) {
 		loadedPictographs++;
 
-		if (loadedPictographs >= totalPictographs) {
-			setTimeout(() => {
-				isLoading = false;
-				debugLog('StartPosPicker', 'All pictographs loaded', { total: totalPictographs });
-			}, 200);
-		}
+
 	}
 
 	function handlePictographError(event: CustomEvent) {
 		loadedPictographs++;
-		debugLog('StartPosPicker', 'Pictograph loading error', event.detail);
 
 		if (loadedPictographs >= totalPictographs) {
 			setTimeout(() => {
@@ -140,12 +121,10 @@
 	let fallbackDisplayed = false;
 
 	onMount(() => {
-		debugLog('StartPosPicker', 'Component mounted');
 		const initialDataTimeout = setTimeout(() => {
 			if (!dataInitialized) {
 				fallbackDisplayed = true;
 				isLoading = false;
-				debugLog('StartPosPicker', 'Data initialization timeout reached');
 			}
 		}, 10000);
 

@@ -136,7 +136,6 @@ function getAdjustmentKey(
 		} else {
 			letterSuffix = `_${letterVal}`;
 		}
-		console.log(`Letter: ${letterVal}, Type: ${letterType?.folderName || 'unknown'}`);
 	}
 
 	// Build the key middle part

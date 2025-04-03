@@ -11,7 +11,7 @@
 	import Prop from '../objects/Prop/Prop.svelte';
 	import Arrow from '../objects/Arrow/Arrow.svelte';
 	import TKAGlyph from '../objects/Glyphs/TKAGlyph/TKAGlyph.svelte';
-	import { PictographService } from './services/PictographService';
+	import { PictographService } from '../../services/PictographService';
 	import PictographError from './components/PictographError.svelte';
 	import PictographDebug from './components/PictographDebug.svelte';
 	import InitializingSpinner from './components/InitializingSpinner.svelte';

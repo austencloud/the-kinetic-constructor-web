@@ -54,8 +54,6 @@ function createOptionPickerStore() {
 				const letterValue = LetterUtils.tryFromString(option.letter as Letter);
 				const letterType = letterValue ? LetterType.getLetterType(letterValue) : null;
 
-				// Debug logging (can be removed later)
-				console.log(`Letter: ${letterValue}, Type: ${letterType?.folderName || 'unknown'}`);
 
 				// Fallback to Type1 if no letter type is found
 				const typeName = letterType?.folderName || 'Type1';
@@ -89,7 +87,6 @@ function createOptionPickerStore() {
 
 			try {
 				const options = OptionDataService.getNextOptions(sequence);
-				console.log('Options returned from service:', options); // Add this line
 
 				update((state) => {
 					const filteredOptions =
@@ -101,7 +98,6 @@ function createOptionPickerStore() {
 										state.selectedFilter
 								);
 
-					console.log('Filtered options:', filteredOptions); // Add this line
 
 					return {
 						...state,

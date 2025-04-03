@@ -41,9 +41,7 @@
 		}
 	});
 
-	const unsubscribeOptionsByLetterType = optionsByLetterType.subscribe((grouped) => {
-		console.log('Grouped Options:', grouped);
-	});
+
 
 	$: currentOptions = $optionsByLetterType[selectedTab] || [];
 	$: gridColumns = getOptimalGridColumns(currentOptions.length);
@@ -122,7 +120,6 @@
 		unsubscribeOptionPicker();
 		unsubscribeBeats();
 		unsubscribeSelected();
-		unsubscribeOptionsByLetterType();
 	});
 
 	const optionPickerId = 'option-picker-pictograph';

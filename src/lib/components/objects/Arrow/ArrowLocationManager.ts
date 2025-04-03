@@ -1,6 +1,4 @@
-
 // src/lib/components/objects/Arrow/ArrowLocationManager.ts
-import type { PictographService } from '$lib/components/Pictograph/services/PictographService';
 import type { Motion } from '../Motion/Motion';
 import {
 	NORTH,
@@ -27,6 +25,7 @@ import { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
 import type { Loc, Color } from '$lib/types/Types';
 import { LetterUtils } from '$lib/utils/LetterUtils';
+import type { PictographService } from '$lib/services/PictographService';
 
 export type LocationPairMap = {
 	[key: string]: Loc;
@@ -258,8 +257,15 @@ export function calculateDashLocation(
 ): Loc | null {
 	const letter = motion.letter ? LetterUtils.getLetter(motion.letter) : null;
 	const letterType = motion.letter ? LetterType.getLetterType(motion.letter) : null;
-
+	console.debug('Letter:', letter, 'Type:', letterType, 'motion turns:', motion.turns);
 	if (letterType === LetterType.Type3 && motion.turns === 0 && getShiftMotion) {
+		console.debug('Type3 Arrow Location:', {
+			startLoc: motion.startLoc,
+			endLoc: motion.endLoc,
+			letter: motion.letter,
+			letterType,
+			gridMode: motion.gridMode
+		});
 		return calculateDashLocationBasedOnShift(motion, getShiftMotion, getOtherMotion);
 	}
 
@@ -330,24 +336,44 @@ function calculateDashLocationBasedOnShift(
 	getOtherMotion?: (motion: Motion) => Motion | null
 ): Loc | null {
 	const shiftMotion = getShiftMotion();
+
+	// This is the key difference - in Python version, we get the dash motion
+	// by getting the other motion from shift, not from motion directly
 	const dashMotion = shiftMotion && getOtherMotion ? getOtherMotion(shiftMotion) : null;
 
 	if (!shiftMotion || !dashMotion) {
 		return null;
 	}
 
+	// Get shift location from the shift motion's start and end locations
 	const shiftLocation = calculateShiftLocation(shiftMotion.startLoc, shiftMotion.endLoc);
+
+	// Get the dash start location from the dash motion
 	const dashStartLoc = dashMotion.startLoc;
 	const gridMode = motion.gridMode;
+
+	// Debug to help with troubleshooting
+	console.debug('Type3 Arrow Location:', {
+		shiftMotionLoc: shiftLocation,
+		dashStartLoc,
+		gridMode
+	});
 
 	if (!shiftLocation || !dashStartLoc) {
 		return null;
 	}
 
+	// Using the correct key format based on Python implementation
 	if (gridMode === DIAMOND) {
-		return DIAMOND_DASH_LOCATION_MAP[dashStartLoc]?.[shiftLocation] || null;
+		// In the Python code, the key is (dashStartLoc, shiftLocation)
+		const result = DIAMOND_DASH_LOCATION_MAP[dashStartLoc]?.[shiftLocation];
+		console.debug('Diamond map result:', result);
+		return result || null;
 	} else if (gridMode === BOX) {
-		return BOX_DASH_LOCATION_MAP[dashStartLoc]?.[shiftLocation] || null;
+		// Same key format for box mode
+		const result = BOX_DASH_LOCATION_MAP[dashStartLoc]?.[shiftLocation];
+		console.debug('Box map result:', result);
+		return result || null;
 	}
 
 	return null;

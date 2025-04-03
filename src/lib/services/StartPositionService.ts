@@ -48,7 +48,6 @@ export class StartPositionService {
 			);
 		});
 
-		console.log('[StartPositionService] Updating beatsStore with:', beatDataList);
 		beatsStore.set(beatDataList);
 	}
 }

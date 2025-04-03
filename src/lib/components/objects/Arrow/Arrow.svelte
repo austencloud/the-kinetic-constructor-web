@@ -25,24 +25,31 @@
 	const dispatch = createEventDispatcher();
 	const svgManager = new SvgManager();
 	const svgLoader = new ArrowSvgLoader(svgManager);
-
-	// Initialize mirror manager and update mirror state
 	const mirrorManager = new ArrowSvgMirrorManager(arrowData);
+
+	// Update mirror state whenever motion data or arrow data changes
+	$: if (arrowData) {
+		mirrorManager.updateMirror();
+	}
 
 	// Calculate rotation angle (memoized)
 	$: rotationAngle = getRotationAngle();
 
 	// Transform calculation (memoized)
-	$: if (svgData && (arrowData.coords || motion || arrowData.svgMirrored)) {
-		// Apply mirroring as a transform
+	$: if (svgData && arrowData.coords) {
+		// Apply transformations in the correct order:
+		// 1. Translate to position
+		// 2. Rotate according to motion type and location
+		// 3. Apply mirroring if needed
 		const mirrorTransform = arrowData.svgMirrored ? 'scale(-1, 1)' : '';
-
-		// First translate to center, then rotate, then mirror (if needed)
+		
 		transform = `
 			translate(${arrowData.coords.x}, ${arrowData.coords.y})
 			rotate(${rotationAngle})
 			${mirrorTransform}
 		`.trim();
+		
+
 	}
 
 	/**
@@ -62,7 +69,7 @@
 			// Update mirror state before loading SVG
 			mirrorManager.updateMirror();
 
-			// Load the SVG with the current mirror state
+			// Load the SVG with current configuration
 			const result = await svgLoader.loadSvg(
 				arrowData.motionType,
 				arrowData.startOri,
@@ -91,7 +98,7 @@
 		clearTimeout(loadTimeout);
 		isLoaded = true;
 		dispatch('loaded', { error: true });
-		dispatch('error', {
+		dispatch('error', { 
 			message: (error as Error)?.message || 'Unknown error',
 			component: 'Arrow',
 			color: arrowData.color
@@ -103,8 +110,10 @@
 	 */
 	function getRotationAngle(): number {
 		if (motion) {
+			// Use advanced rotation angle calculation
 			return calculateArrowRotationAngle(motion, arrowData.loc);
 		}
+		// Fall back to the simple rotation angle from data
 		return arrowData.rotAngle;
 	}
 
@@ -129,14 +138,14 @@
 	}
 </script>
 
-// src/lib/components/objects/Arrow/Arrow.svelte - Modified version
-
 {#if svgData && isLoaded}
-	<g
-		{transform}
-		data-testid="arrow-{arrowData.color}"
+	<g 
+		{transform} 
+		data-testid="arrow-{arrowData.color}" 
 		data-motion-type={arrowData.motionType}
 		data-mirrored={arrowData.svgMirrored ? 'true' : 'false'}
+		data-loc={arrowData.loc}
+		data-rot-angle={rotationAngle}
 		in:fade={{ duration: 300 }}
 	>
 		<image

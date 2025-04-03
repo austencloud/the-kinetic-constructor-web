@@ -1,3 +1,4 @@
+// src/lib/components/objects/Arrow/ArrowRotAngleManager.ts
 import {
 	PRO,
 	ANTI,
@@ -11,9 +12,18 @@ import {
 	CLOCKWISE,
 	COUNTER_CLOCKWISE,
 	NO_ROT,
-	CW_HANDPATH
+	CW_HANDPATH,
+	DIAMOND,
+	BOX
 } from '$lib/types/Constants';
-import type { Loc, PropRotDir, Orientation, TKATurns, HandRotDir } from '$lib/types/Types';
+import type {
+	Loc,
+	PropRotDir,
+	Orientation,
+	TKATurns,
+	HandRotDir,
+	GridMode
+} from '$lib/types/Types';
 import type { Motion } from '../Motion/Motion';
 import { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
@@ -32,13 +42,26 @@ import {
 	RADIAL_STATIC_DIRECTION_MAP,
 	NONRADIAL_STATIC_DIRECTION_MAP,
 	STATIC_FROM_RADIAL_ANGLE_OVERRIDE_MAP,
-	STATIC_FROM_NONRADIAL_ANGLE_OVERRIDE_MAP
+	STATIC_FROM_NONRADIAL_ANGLE_OVERRIDE_MAP,
+	PHI_DASH_PSI_DASH_ANGLE_MAP,
+	LAMBDA_ZERO_TURNS_ANGLE_MAP,
+	DIAMOND_DASH_ANGLE_MAP,
+	BOX_DASH_ANGLE_MAP,
+	OPPOSITE_LOCATION_MAP
 } from './constants/ArrowRotationConstants';
+import type { PictographService } from '$lib/services/PictographService';
+import { calculateShiftLocation } from './ArrowLocationManager';
 
 /**
  * Class for managing arrow rotation angles
  */
 export default class ArrowRotAngleManager {
+	private service?: PictographService;
+
+	constructor(service?: PictographService) {
+		this.service = service;
+	}
+
 	/**
 	 * Updates the rotation angle for an arrow
 	 * @param motion The motion data
@@ -46,7 +69,7 @@ export default class ArrowRotAngleManager {
 	 * @returns The calculated rotation angle
 	 */
 	updateRotation(motion: Motion, arrowLoc: Loc): number {
-		return calculateArrowRotationAngle(motion, arrowLoc);
+		return calculateArrowRotationAngle(motion, arrowLoc, this.service);
 	}
 }
 
@@ -54,9 +77,14 @@ export default class ArrowRotAngleManager {
  * Calculates rotation angle for arrow based on motion data
  * @param motion Motion data
  * @param arrowLoc Arrow location
+ * @param service Optional PictographService for additional context
  * @returns Rotation angle in degrees
  */
-export function calculateArrowRotationAngle(motion: Motion, arrowLoc: Loc): number {
+export function calculateArrowRotationAngle(
+	motion: Motion,
+	arrowLoc: Loc,
+	service?: PictographService
+): number {
 	const { motionType } = motion;
 
 	switch (motionType) {
@@ -67,7 +95,7 @@ export function calculateArrowRotationAngle(motion: Motion, arrowLoc: Loc): numb
 		case FLOAT:
 			return calculateFloatRotationAngle(arrowLoc, motion.handRotDir);
 		case DASH:
-			return calculateDashRotationAngle(arrowLoc, motion);
+			return calculateDashRotationAngle(arrowLoc, motion, service);
 		case STATIC:
 			return calculateStaticRotationAngle(arrowLoc, motion);
 		default:
@@ -111,15 +139,74 @@ function calculateFloatRotationAngle(loc: Loc, handRotDir?: HandRotDir): number 
 /**
  * Calculates rotation angle for DASH motion
  */
-function calculateDashRotationAngle(loc: Loc, motion: Motion): number {
-	const { startOri, propRotDir, startLoc, endLoc } = motion;
+function calculateDashRotationAngle(loc: Loc, motion: Motion, service?: PictographService): number {
+	const { startOri, propRotDir, startLoc, endLoc, turns, letter, gridMode, color } = motion;
 
+	// Handle special cases based on letter
+	if (letter && service) {
+		const letterValue = LetterUtils.getLetter(letter);
+		const letterType = LetterType.getLetterType(letter);
+
+		// Case 1: Phi Dash and Psi Dash special letters
+		if ([Letter.Φ_DASH, Letter.Ψ_DASH].includes(letterValue)) {
+			// For zero turns case
+			if (turns === 0) {
+				const key = `${color}_${startLoc}_${endLoc}`;
+				if (PHI_DASH_PSI_DASH_ANGLE_MAP[key] !== undefined) {
+					return PHI_DASH_PSI_DASH_ANGLE_MAP[key];
+				}
+
+				// If other motion exists and has non-zero turns, use opposite of its location angle
+				const otherMotion = service.getOtherMotion(motion);
+				if (otherMotion && otherMotion.turns !== 0) {
+					// Calculate other motion's dash location angle
+					const otherAngle = calculateDashRotationAngle(loc, otherMotion, service);
+					// Get opposite angle (180 degrees rotated)
+					return (otherAngle + 180) % 360;
+				}
+			}
+		}
+
+		// Case 2: Lambda and Lambda Dash with zero turns
+		if ([Letter.Λ, Letter.Λ_DASH].includes(letterValue) && turns === 0) {
+			const otherMotion = service.getOtherMotion(motion);
+			if (otherMotion) {
+				const key = `${startLoc}_${endLoc}_${otherMotion.endLoc}`;
+				if (LAMBDA_ZERO_TURNS_ANGLE_MAP[key] !== undefined) {
+					return LAMBDA_ZERO_TURNS_ANGLE_MAP[key];
+				}
+			}
+		}
+
+		// Case 3: Type3 letters with grid modes
+		if (letterType === LetterType.Type3 && turns === 0) {
+			const shiftMotion = service.getShiftMotion();
+			if (shiftMotion) {
+				const shiftLoc = calculateShiftLocation(shiftMotion.startLoc, shiftMotion.endLoc);
+
+				if (gridMode === DIAMOND) {
+					const key = `${startLoc}_${shiftLoc}`;
+					if (DIAMOND_DASH_ANGLE_MAP[key] !== undefined) {
+						return DIAMOND_DASH_ANGLE_MAP[key];
+					}
+				} else if (gridMode === BOX) {
+					const key = `${startLoc}_${shiftLoc}`;
+					if (BOX_DASH_ANGLE_MAP[key] !== undefined) {
+						return BOX_DASH_ANGLE_MAP[key];
+					}
+				}
+			}
+		}
+	}
+
+	// Handle standard rotation angle calculations
 	if (hasRotationAngleOverride(motion)) {
 		return getDashRotAngleOverride(loc, propRotDir);
 	}
 
-	if (propRotDir === NO_ROT) {
-		return DASH_NO_ROTATION_MAP[`${startLoc}-${endLoc}`] ?? 0;
+	if (propRotDir === NO_ROT || turns === 0) {
+		const key = `${startLoc}-${endLoc}`;
+		return DASH_NO_ROTATION_MAP[key] ?? 0;
 	}
 
 	return DASH_ORIENTATION_MAP[startOri]?.[propRotDir]?.[loc] ?? 0;
@@ -173,6 +260,13 @@ function getStaticRotAngleOverride(
 		return locAngle[propRotDir] ?? 0;
 	}
 	return locAngle ?? 0;
+}
+
+/**
+ * Gets the opposite location for a given location
+ */
+function getOppositeLocation(loc: Loc): Loc {
+	return OPPOSITE_LOCATION_MAP[loc] || loc;
 }
 
 /**

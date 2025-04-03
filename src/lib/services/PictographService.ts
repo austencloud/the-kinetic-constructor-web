@@ -1,4 +1,4 @@
-// src/lib/services/PictographService.ts
+// src/lib/services/PictographService.ts (Updated)
 import type { PictographData } from '$lib/types/PictographData';
 import type { PropData } from '$lib/components/objects/Prop/PropData';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
@@ -9,13 +9,13 @@ import { PropType, type Color, type Loc } from '$lib/types/Types';
 import { Motion } from '$lib/components/objects/Motion/Motion';
 import { RED, BLUE } from '$lib/types/Constants';
 
-import { PictographChecker } from './PictographChecker';
+import { PictographChecker } from '../components/Pictograph/services/PictographChecker';
 import { pictographStore } from '$lib/stores/pictograph/pictographStore';
 import ArrowLocationManager from '$lib/components/objects/Arrow/ArrowLocationManager';
 import { BetaPropPositioner } from '$lib/components/PlacementManagers/PropPlacementManager/BetaPropPositioner';
 import ArrowRotAngleManager from '$lib/components/objects/Arrow/ArrowRotAngleManager';
 import { ArrowPlacementManager } from '$lib/components/PlacementManagers/ArrowPlacementManager';
-import { LetterConditions } from '../constants/LetterConditions';
+import { LetterConditions } from '../components/Pictograph/constants/LetterConditions';
 
 export class PictographService {
 	private data: PictographData;
@@ -136,23 +136,25 @@ export class PictographService {
 			const locationManager = new ArrowLocationManager(this);
 			const arrowLoc = locationManager.getArrowLocation(this.data.redMotion);
 
-      if (arrowLoc) {
-        redArrow.loc = arrowLoc;
-        const rotAngleManager = new ArrowRotAngleManager();
-        redArrow.rotAngle = rotAngleManager.updateRotation(this.data.redMotion, arrowLoc);
-      }
-    }
+			if (arrowLoc) {
+				redArrow.loc = arrowLoc;
+				// Pass this service to the rotation manager
+				const rotAngleManager = new ArrowRotAngleManager(this);
+				redArrow.rotAngle = rotAngleManager.updateRotation(this.data.redMotion, arrowLoc);
+			}
+		}
 
 		if (blueArrow && this.data.blueMotion) {
 			const locationManager = new ArrowLocationManager(this);
 			const arrowLoc = locationManager.getArrowLocation(this.data.blueMotion);
 
-      if (arrowLoc) {
-        blueArrow.loc = arrowLoc;
-        const rotAngleManager = new ArrowRotAngleManager();
-        blueArrow.rotAngle = rotAngleManager.updateRotation(this.data.blueMotion, arrowLoc);
-      }
-    }
+			if (arrowLoc) {
+				blueArrow.loc = arrowLoc;
+				// Pass this service to the rotation manager
+				const rotAngleManager = new ArrowRotAngleManager(this);
+				blueArrow.rotAngle = rotAngleManager.updateRotation(this.data.blueMotion, arrowLoc);
+			}
+		}
 
 		if (redArrow || blueArrow) {
 			try {
@@ -182,8 +184,8 @@ export class PictographService {
 			nw: { x: 330, y: 330 }
 		};
 
-    return loc && fallbackPositions[loc] ? fallbackPositions[loc] : { x: 475, y: 475 };
-  }
+		return loc && fallbackPositions[loc] ? fallbackPositions[loc] : { x: 475, y: 475 };
+	}
 
 	getShiftMotion(): Motion | null {
 		const motions = [this.data.redMotion, this.data.blueMotion].filter((m): m is Motion => !!m);

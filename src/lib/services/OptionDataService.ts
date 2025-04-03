@@ -14,7 +14,6 @@ export class OptionDataService {
     
     const lastBeat = sequence[sequence.length - 1];
     const nextOptions = this.findNextOptions(lastBeat);
-    console.log('Found next options:', nextOptions.length, nextOptions);
     return nextOptions;
   }
   
@@ -32,7 +31,6 @@ export class OptionDataService {
     
     // Get the end position from the last beat - this will be used to find matching starts
     const targetStartPos = lastBeat.endPos;
-    console.log('Finding options with start position:', targetStartPos);
     
     // Get all available pictograph data from the store
     const allPictographs = get(pictographDataStore);

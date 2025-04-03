@@ -3,7 +3,6 @@
 	import { writable } from 'svelte/store';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import type { BeatData } from './BeatData';
-	import { debugLog } from '$lib/utils/debugUtils';
 
 	export let beat: BeatData;
 	export let onClick: () => void;
@@ -11,26 +10,12 @@
 	// Create a local pictograph data store
 	const pictographDataStore = writable(beat.pictographData);
 	
-	// Log initial data
-	debugLog('Beat', 'Component initialized', { 
-		beatNumber: beat.beatNumber,
-		filled: beat.filled,
-		pictographData: {
-			letter: beat.pictographData.letter,
-			startPos: beat.pictographData.startPos,
-			endPos: beat.pictographData.endPos
-		}
-	});
+
 	
 	// This is important: update the store whenever the beat's pictograph data changes
 	$: {
 		if (beat.pictographData) {
-			debugLog('Beat', 'Updating pictographDataStore from reactive beat data', {
-				beatNumber: beat.beatNumber,
-				letter: beat.pictographData.letter,
-				startPos: beat.pictographData.startPos,
-				endPos: beat.pictographData.endPos
-			});
+
 			pictographDataStore.set(beat.pictographData);
 		}
 	}
@@ -39,7 +24,6 @@
 	function handleClick(event: MouseEvent) {
 		// Prevent the event from propagating to avoid double-handling
 		event.stopPropagation();
-		debugLog('Beat', 'Beat clicked', { beatNumber: beat.beatNumber });
 		onClick();
 	}
 </script>
