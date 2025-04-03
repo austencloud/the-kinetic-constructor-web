@@ -6,6 +6,7 @@
 	import { appState } from '../state/appState';
 	import { derived } from 'svelte/store';
 	import { createEventDispatcher } from 'svelte';
+	import SequenceInspector from '$lib/components/Developer/SequenceInspector.svelte';
 
 	export let background: string = 'Snowfall';
 	export let onSettingsClick: () => void;
@@ -29,6 +30,9 @@
 			on:changeBackground={(e) => dispatch('changeBackground', e.detail)}
 			on:tabChange={(e) => dispatch('tabChange', e.detail)}
 		/>
+		{#if import.meta.env.DEV}
+			<SequenceInspector />
+		{/if}
 	</div>
 
 	<div class="mainContent" class:hidden={!$contentVisible}>

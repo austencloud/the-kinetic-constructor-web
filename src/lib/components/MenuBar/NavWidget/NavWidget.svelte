@@ -21,7 +21,7 @@
 	function handleTabClick(index: number) {
 		// Skip if clicking the already active tab
 		if (index === activeTab) return;
-		
+
 		// CHANGE: Allow rapid clicks by not blocking based on animation
 		// Instead, track click time to prevent programmatic issues
 		const now = Date.now();
@@ -59,14 +59,6 @@
 		};
 	});
 
-	// Helper function to get animation for a specific tab
-	function getTabPosition(index: number) {
-		const direction = index > activeTab ? 1 : -1;
-		return {
-			x: direction * 50,
-			y: 0
-		};
-	}
 </script>
 
 <div class="nav-widget">
