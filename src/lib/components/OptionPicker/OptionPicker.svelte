@@ -1,3 +1,4 @@
+
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { writable } from 'svelte/store';
@@ -34,7 +35,6 @@
 		isLoading = state.isLoading;
 	});
 
-	// If needed, adjust expandedSections logic; here we’re using tabs so we show only one section.
 	const unsubscribeBeats = beatsStore.subscribe((beats) => {
 		if (beats.length > 0) {
 			const sequence = beats.map((beat) => beat.pictographData);
@@ -48,7 +48,11 @@
 		}
 	});
 
-	// Handle when pictograph is loaded
+	// Debug the optionsByLetterType store
+	const unsubscribeOptionsByLetterType = optionsByLetterType.subscribe((grouped) => {
+		console.log('Grouped Options:', grouped);
+	});
+
 	function handlePictographLoaded() {
 		previewLoading = false;
 		setPictographLoaded(optionPickerId, true);
@@ -59,9 +63,9 @@
 		unsubscribeOptionPicker();
 		unsubscribeBeats();
 		unsubscribeSelected();
+		unsubscribeOptionsByLetterType();
 	});
 
-	// Create a unique ID for the option picker's pictograph
 	const optionPickerId = 'option-picker-pictograph';
 
 	onMount(() => {
@@ -94,7 +98,7 @@
 		</div>
 	{:else}
 		<div class="scrollArea">
-			<!-- Show only the section for the selected letter type -->
+			<!-- Display the section for the selected letter type -->
 			<OptionSection
 				title={selectedTab}
 				options={$optionsByLetterType[selectedTab] || []}
@@ -187,3 +191,4 @@
 		}
 	}
 </style>
+

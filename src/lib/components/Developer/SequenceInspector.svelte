@@ -77,7 +77,7 @@
 </script>
 
 <!-- Toggle Button -->
-<button class="dev-tab-button" on:click={toggleInspector}> 🧪 Sequence JSON </button>
+<button class="dev-tab-button" on:click={toggleInspector}> 🧪 JSON </button>
 
 <!-- Inspector UI -->
 {#if visible}

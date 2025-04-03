@@ -59,7 +59,9 @@
 		<div class="section-content" transition:fly={{ y: -20, duration: 300 }}>
 			{#if safeOptions.length === 0}
 				<div class="empty-message" in:fade={{ duration: 200 }}>
-					No options available in this section
+					No options available for {title} letters
+					<!-- Add this line for debugging -->
+					<small>(Debug: {options ? options.length : 0} options received)</small>
 				</div>
 			{:else}
 				<div class="options-grid">
@@ -140,3 +142,4 @@
 		}
 	}
 </style>
+

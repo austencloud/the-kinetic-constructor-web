@@ -1,3 +1,4 @@
+
 <!-- src/lib/components/OptionPicker/Option.svelte -->
 <script lang="ts">
 	import { writable, type Writable } from 'svelte/store';

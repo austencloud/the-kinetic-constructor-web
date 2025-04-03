@@ -3,9 +3,9 @@ import { writable, derived } from 'svelte/store';
 import type { PictographData } from '$lib/types/PictographData';
 import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
 import { OptionDataService } from '$lib/services/OptionDataService';
-import { LetterUtils } from '$lib/utils/LetterUtils';
 import type { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
+import { LetterUtils } from '$lib/utils/LetterUtils';
 
 export type ReversalFilterType = 'all' | 'continuous' | 'one_reversal' | 'two_reversals';
 
@@ -30,6 +30,8 @@ const initialState: OptionPickerState = {
 
 function createOptionPickerStore() {
 	const { subscribe, set, update } = writable<OptionPickerState>(initialState);
+
+	// Updated optionsByLetterType derived store implementation
 	const optionsByLetterType = derived({ subscribe }, ($state) => {
 		const grouped: Record<string, PictographData[]> = {
 			Type1: [],
@@ -41,46 +43,42 @@ function createOptionPickerStore() {
 		};
 
 		$state.filteredOptions.forEach((option) => {
-			if (!option || !option.letter) return;
+			try {
+				if (!option || !option.letter) return;
 
-			const letterType = LetterType.getLetterType(option.letter);
+				// Convert letter to string if it's not already
 
-			if (letterType) {
-				grouped[letterType.folderName].push(option);
+				// use the letter utils to convert the letter to its enum value
+				// Get letter type - use a more robust approach
+
+				const letterValue = LetterUtils.tryFromString(option.letter as Letter);
+				const letterType = letterValue ? LetterType.getLetterType(letterValue) : null;
+
+				// Debug logging (can be removed later)
+				console.log(`Letter: ${letterValue}, Type: ${letterType?.folderName || 'unknown'}`);
+
+				// Fallback to Type1 if no letter type is found
+				const typeName = letterType?.folderName || 'Type1';
+
+				// Make sure the array exists before pushing
+				if (!grouped[typeName]) {
+					grouped[typeName] = [];
+				}
+
+				grouped[typeName].push(option);
+			} catch (error) {
+				console.error('Error processing option:', error, option);
+				// Put unclassified options in Type1 as fallback
+				grouped.Type1.push(option);
 			}
 		});
 
 		return grouped;
 	});
 
-	function getLetterType(letter: Letter | null): LetterType | null {
-		if (!letter) return null;
-
-		const letterType = LetterUtils.getLetterType(letter);
-
-		if (!letterType) return null;
-
-		switch (letterType.folderName) {
-			case 'Type1':
-				return LetterType.Type1;
-			case 'Type2':
-				return LetterType.Type2;
-			case 'Type3':
-				return LetterType.Type3;
-			case 'Type4':
-				return LetterType.Type4;
-			case 'Type5':
-				return LetterType.Type5;
-			case 'Type6':
-				return LetterType.Type6;
-			default:
-				return null;
-		}
-	}
-
 	return {
 		subscribe,
-		optionsByLetterType, // Exporting the derived store
+		optionsByLetterType,
 		loadOptions: (sequence: PictographData[]) => {
 			update((state) => ({
 				...state,
@@ -91,6 +89,7 @@ function createOptionPickerStore() {
 
 			try {
 				const options = OptionDataService.getNextOptions(sequence);
+				console.log('Options returned from service:', options); // Add this line
 
 				update((state) => {
 					const filteredOptions =
@@ -101,6 +100,8 @@ function createOptionPickerStore() {
 										OptionDataService.determineReversalFilter(sequence, opt) ===
 										state.selectedFilter
 								);
+
+					console.log('Filtered options:', filteredOptions); // Add this line
 
 					return {
 						...state,

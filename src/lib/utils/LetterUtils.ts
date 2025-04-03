@@ -464,7 +464,5 @@ export class LetterUtils {
 		return this.fromString(letterStr);
 	}
 
-	static getLetterType(letter: Letter): LetterType | null {
-		return LetterType.getLetterType(letter);
-	}
+
 }
