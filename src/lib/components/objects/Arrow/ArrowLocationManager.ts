@@ -191,12 +191,13 @@ export const OPPOSITE_LOCATION_MAP: Record<string, string> = {
 export default class ArrowLocationManager {
 	constructor(private service: PictographService) {}
 
-	getArrowLocation(motion: Motion): Loc | null {
-		return calculateArrowLocation(
-			motion,
-			(m) => this.service.getOtherMotion(m),
-			() => this.service.getShiftMotion()
-		);
+	getArrowLocation(
+		motion: Motion,
+		getOtherMotion?: (motion: Motion) => Motion | null,
+		getShiftMotion?: () => Motion | null,
+		letter?: Letter | null
+	): Loc | null {
+		return calculateArrowLocation(motion, getOtherMotion, getShiftMotion, letter);
 	}
 }
 
@@ -220,7 +221,8 @@ export function createDirectionPairsMap(): LocationPairsMap {
 export function calculateArrowLocation(
 	motion: Motion,
 	getOtherMotion?: (motion: Motion) => Motion | null,
-	getShiftMotion?: () => Motion | null
+	getShiftMotion?: () => Motion | null,
+	letter?: Letter | null
 ): Loc | null {
 	const { motionType } = motion;
 
@@ -230,7 +232,7 @@ export function calculateArrowLocation(
 		case FLOAT:
 			return calculateShiftLocation(motion.startLoc, motion.endLoc);
 		case DASH:
-			return calculateDashLocation(motion, getOtherMotion, getShiftMotion);
+			return calculateDashLocation(motion, getOtherMotion, getShiftMotion, letter);
 		case STATIC:
 			return motion.startLoc;
 		default:
@@ -253,33 +255,37 @@ export function calculateShiftLocation(startLoc: Loc, endLoc: Loc): Loc | null {
 export function calculateDashLocation(
 	motion: Motion,
 	getOtherMotion?: (motion: Motion) => Motion | null,
-	getShiftMotion?: () => Motion | null
+	getShiftMotion?: () => Motion | null,
+	letter?: Letter | null
 ): Loc | null {
-	const letter = motion.letter ? LetterUtils.getLetter(motion.letter) : null;
-	const letterType = motion.letter ? LetterType.getLetterType(motion.letter) : null;
-	console.debug('Letter:', letter, 'Type:', letterType, 'motion turns:', motion.turns);
+	// Use the passed letter or default to null
+	const currentLetter = letter ? LetterUtils.getLetter(letter) : null;
+	const letterType = letter ? LetterType.getLetterType(letter) : null;
+
+	console.debug('Letter:', currentLetter, 'Type:', letterType, 'motion turns:', motion.turns);
+
 	if (letterType === LetterType.Type3 && motion.turns === 0 && getShiftMotion) {
 		console.debug('Type3 Arrow Location:', {
 			startLoc: motion.startLoc,
 			endLoc: motion.endLoc,
-			letter: motion.letter,
+			letter,
 			letterType,
 			gridMode: motion.gridMode
 		});
 		return calculateDashLocationBasedOnShift(motion, getShiftMotion, getOtherMotion);
 	}
 
-	if (letter && [Letter.Φ_DASH, Letter.Ψ_DASH].includes(letter) && getOtherMotion) {
-		return calculatePhiDashPsiDashLocation(motion, getOtherMotion);
+	if (currentLetter && [Letter.Φ_DASH, Letter.Ψ_DASH].includes(currentLetter) && getOtherMotion) {
+		return calculatePhiDashPsiDashLocation(motion, getOtherMotion, currentLetter);
 	}
 
 	if (
-		letter &&
-		[Letter.Λ, Letter.Λ_DASH].includes(letter) &&
+		currentLetter &&
+		[Letter.Λ, Letter.Λ_DASH].includes(currentLetter) &&
 		motion.turns === 0 &&
 		getOtherMotion
 	) {
-		return calculateLambdaZeroTurnsLocation(motion, getOtherMotion);
+		return calculateLambdaZeroTurnsLocation(motion, getOtherMotion, currentLetter);
 	}
 
 	if (motion.turns === 0) {
@@ -291,7 +297,8 @@ export function calculateDashLocation(
 
 function calculatePhiDashPsiDashLocation(
 	motion: Motion,
-	getOtherMotion: (motion: Motion) => Motion | null
+	getOtherMotion: (motion: Motion) => Motion | null,
+	letter: Letter
 ): Loc | null {
 	const otherMotion = getOtherMotion(motion);
 
@@ -310,7 +317,8 @@ function calculatePhiDashPsiDashLocation(
 
 function calculateLambdaZeroTurnsLocation(
 	motion: Motion,
-	getOtherMotion: (motion: Motion) => Motion | null
+	getOtherMotion: (motion: Motion) => Motion | null,
+	letter: Letter
 ): Loc | null {
 	const otherMotion = getOtherMotion(motion);
 	const key = `${motion.startLoc}_${motion.endLoc}_${otherMotion?.endLoc || ''}`;
@@ -337,11 +345,11 @@ function calculateDashLocationBasedOnShift(
 ): Loc | null {
 	const shiftMotion = getShiftMotion();
 
-	// This is the key difference - in Python version, we get the dash motion
-	// by getting the other motion from shift, not from motion directly
+	// Get the dash motion by getting the other motion from shift
 	const dashMotion = shiftMotion && getOtherMotion ? getOtherMotion(shiftMotion) : null;
 
 	if (!shiftMotion || !dashMotion) {
+		console.debug('No shift or dash motion found');
 		return null;
 	}
 
@@ -352,29 +360,45 @@ function calculateDashLocationBasedOnShift(
 	const dashStartLoc = dashMotion.startLoc;
 	const gridMode = motion.gridMode;
 
-	// Debug to help with troubleshooting
-	console.debug('Type3 Arrow Location:', {
-		shiftMotionLoc: shiftLocation,
+	// Debug logging
+	console.debug('Dash Location Calculation:', {
+		shiftMotion: {
+			startLoc: shiftMotion.startLoc,
+			endLoc: shiftMotion.endLoc
+		},
+		dashMotion: {
+			startLoc: dashMotion.startLoc,
+			endLoc: dashMotion.endLoc
+		},
+		shiftLocation,
 		dashStartLoc,
 		gridMode
 	});
 
 	if (!shiftLocation || !dashStartLoc) {
+		console.debug('Missing shift location or dash start location');
 		return null;
 	}
 
-	// Using the correct key format based on Python implementation
+	// Lookup in grid-specific maps
 	if (gridMode === DIAMOND) {
-		// In the Python code, the key is (dashStartLoc, shiftLocation)
 		const result = DIAMOND_DASH_LOCATION_MAP[dashStartLoc]?.[shiftLocation];
-		console.debug('Diamond map result:', result);
+		console.debug('Diamond map lookup:', {
+			dashStartLoc,
+			shiftLocation,
+			result
+		});
 		return result || null;
 	} else if (gridMode === BOX) {
-		// Same key format for box mode
 		const result = BOX_DASH_LOCATION_MAP[dashStartLoc]?.[shiftLocation];
-		console.debug('Box map result:', result);
+		console.debug('Box map lookup:', {
+			dashStartLoc,
+			shiftLocation,
+			result
+		});
 		return result || null;
 	}
 
+	console.debug('No location found for grid mode:', gridMode);
 	return null;
 }

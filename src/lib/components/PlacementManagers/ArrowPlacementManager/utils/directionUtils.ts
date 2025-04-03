@@ -8,7 +8,15 @@ import {
 	ANTI,
 	FLOAT,
 	DASH,
-	STATIC
+	STATIC,
+	NORTHEAST,
+	SOUTHEAST,
+	SOUTHWEST,
+	NORTHWEST,
+	WEST,
+	SOUTH,
+	EAST,
+	NORTH
 } from '$lib/types/Constants';
 import type { DirectionTupleSet, TupleMapDefinition } from '../types';
 import type { GridMode, PropRotDir, MotionType, ShiftHandRotDir } from '$lib/types/Types';
@@ -150,7 +158,6 @@ const ANTI_BOX_MAP: TupleMapDefinition = {
 	],
 	[NO_ROT]: []
 };
-
 export function getDirectionTuples(
 	x: number,
 	y: number,
@@ -159,6 +166,7 @@ export function getDirectionTuples(
 	gridMode: GridMode,
 	options?: { startOri?: string; handRotDir?: ShiftHandRotDir }
 ): DirectionTupleSet {
+	// No rotation special case
 	if (propRotDir === NO_ROT && motionType !== STATIC) {
 		return [
 			[x, -y],
@@ -172,7 +180,7 @@ export function getDirectionTuples(
 		case STATIC:
 			return getStaticTuples(x, y, propRotDir, gridMode);
 		case DASH:
-			return getDashTuples(x, y, propRotDir, gridMode, options?.startOri);
+			return getDashTuples(x, y, propRotDir, gridMode);
 		case PRO:
 			return getProTuples(x, y, propRotDir, gridMode);
 		case ANTI:
@@ -182,6 +190,65 @@ export function getDirectionTuples(
 		default:
 			return [];
 	}
+}
+
+function getDashTuples(
+	x: number,
+	y: number,
+	propRotDir: PropRotDir,
+	gridMode: GridMode
+): DirectionTupleSet {
+	const dashMappings: Record<string, Record<PropRotDir, DirectionTupleSet>> = {
+		[DIAMOND]: {
+			[CLOCKWISE]: [
+				[x, -y],
+				[y, x],
+				[-x, y],
+				[-y, -x]
+			],
+			[COUNTER_CLOCKWISE]: [
+				[-x, -y],
+				[y, -x],
+				[x, y],
+				[-y, x]
+			],
+			[NO_ROT]: [
+				[x, y],
+				[-y, -x],
+				[x, -y],
+				[y, x]
+			]
+		},
+		[BOX]: {
+			[CLOCKWISE]: [
+				[-y, x],
+				[-x, -y],
+				[y, -x],
+				[x, y]
+			],
+			[COUNTER_CLOCKWISE]: [
+				[-x, y],
+				[-y, -x],
+				[x, -y],
+				[y, x]
+			],
+			[NO_ROT]: [
+				[x, y],
+				[-y, x],
+				[-x, -y],
+				[y, -x]
+			]
+		}
+	};
+
+	return (
+		dashMappings[gridMode]?.[propRotDir] || [
+			[x, y],
+			[-x, -y],
+			[-y, x],
+			[y, -x]
+		]
+	);
 }
 
 function applyDirectionMap(
@@ -203,17 +270,6 @@ function getStaticTuples(
 	gridMode: GridMode
 ): DirectionTupleSet {
 	const map = gridMode === DIAMOND ? STATIC_DIAMOND_MAP : STATIC_BOX_MAP;
-	return applyDirectionMap(x, y, propRotDir, map);
-}
-
-function getDashTuples(
-	x: number,
-	y: number,
-	propRotDir: PropRotDir,
-	gridMode: GridMode,
-	startOri?: string
-): DirectionTupleSet {
-	const map = gridMode === DIAMOND ? DASH_DIAMOND_MAP : DASH_BOX_MAP;
 	return applyDirectionMap(x, y, propRotDir, map);
 }
 
@@ -253,28 +309,41 @@ export function getQuadrantIndex(
 	const { loc = '', motionType } = arrow;
 
 	if (gridMode === DIAMOND) {
-		if ([PRO, ANTI, FLOAT].includes(motionType)) {
+		if ([STATIC, DASH].includes(motionType)) {
 			switch (loc) {
-				case 'ne':
+				case 'n':
+				case NORTH:
 					return 0;
-				case 'se':
+				case 'e':
+				case EAST:
 					return 1;
-				case 'sw':
+				case 's':
+				case SOUTH:
 					return 2;
-				case 'nw':
+				case 'w':
+				case WEST:
 					return 3;
 				default:
 					return 0;
 			}
-		} else if ([STATIC, DASH].includes(motionType)) {
+		}
+	}
+
+	// Existing logic for other cases remains the same
+	if (gridMode === DIAMOND) {
+		if ([PRO, ANTI, FLOAT].includes(motionType)) {
 			switch (loc) {
-				case 'n':
+				case 'ne':
+				case NORTHEAST:
 					return 0;
-				case 'e':
+				case 'se':
+				case SOUTHEAST:
 					return 1;
-				case 's':
+				case 'sw':
+				case SOUTHWEST:
 					return 2;
-				case 'w':
+				case 'nw':
+				case NORTHWEST:
 					return 3;
 				default:
 					return 0;
@@ -284,12 +353,16 @@ export function getQuadrantIndex(
 		if ([PRO, ANTI, FLOAT].includes(motionType)) {
 			switch (loc) {
 				case 'n':
+				case NORTH:
 					return 0;
 				case 'e':
+				case EAST:
 					return 1;
 				case 's':
+				case SOUTH:
 					return 2;
 				case 'w':
+				case WEST:
 					return 3;
 				default:
 					return 0;
@@ -297,12 +370,16 @@ export function getQuadrantIndex(
 		} else if ([STATIC, DASH].includes(motionType)) {
 			switch (loc) {
 				case 'ne':
+				case NORTHEAST:
 					return 0;
 				case 'se':
+				case SOUTHEAST:
 					return 1;
 				case 'sw':
+				case SOUTHWEST:
 					return 2;
 				case 'nw':
+				case NORTHWEST:
 					return 3;
 				default:
 					return 0;

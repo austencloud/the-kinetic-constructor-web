@@ -92,7 +92,14 @@ export class PictographService {
 		if (!motion) return defaultLoc;
 		try {
 			const locationManager = new ArrowLocationManager(this);
-			return locationManager.getArrowLocation(motion) ?? defaultLoc;
+			return (
+				locationManager.getArrowLocation(
+					motion,
+					(m) => this.getOtherMotion(m),
+					() => this.getShiftMotion(),
+					this.data.letter
+				) ?? defaultLoc
+			);
 		} catch (error) {
 			console.warn('Arrow location calculation failed:', error);
 			return defaultLoc;
@@ -134,7 +141,7 @@ export class PictographService {
 	): void {
 		if (redArrow && this.data.redMotion) {
 			const locationManager = new ArrowLocationManager(this);
-			const arrowLoc = locationManager.getArrowLocation(this.data.redMotion);
+			const arrowLoc = redArrow.loc
 
 			if (arrowLoc) {
 				redArrow.loc = arrowLoc;
@@ -146,7 +153,7 @@ export class PictographService {
 
 		if (blueArrow && this.data.blueMotion) {
 			const locationManager = new ArrowLocationManager(this);
-			const arrowLoc = locationManager.getArrowLocation(this.data.blueMotion);
+			const arrowLoc = blueArrow.loc
 
 			if (arrowLoc) {
 				blueArrow.loc = arrowLoc;
