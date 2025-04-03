@@ -19,7 +19,6 @@ import type { Letter } from '$lib/types/Letter';
 import type { ArrowData } from '../Arrow/ArrowData';
 import type { MotionData } from './MotionData';
 
-
 export class Motion implements MotionData {
 	id: string;
 	arrowId: string | null = null;
@@ -54,7 +53,8 @@ export class Motion implements MotionData {
 		this.startLoc = motionData.startLoc;
 		this.endLoc = motionData.endLoc;
 		this.startOri = motionData.startOri;
-		this.endOri = motionData.endOri;
+		this.oriCalculator = new MotionOriCalculator(this);
+		this.endOri = this.oriCalculator.calculateEndOri();
 		this.propRotDir = motionData.propRotDir;
 		this.color = motionData.color;
 		this.turns = motionData.turns;
@@ -70,7 +70,9 @@ export class Motion implements MotionData {
 		// Validate properties
 		this.validatePrefloatProperties();
 	}
-
+	calculateFinalEndOrientation(): Orientation {
+		return this.oriCalculator.calculateEndOri();
+	}
 	assignLeadStates(): void {
 		const { redMotionData, blueMotionData } = this;
 

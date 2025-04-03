@@ -1,13 +1,8 @@
 import { CLOCK, COUNTER, FLOAT, IN, OUT, PRO, STATIC } from '$lib/types/Constants';
+import type { HandRotDir, Orientation, ShiftHandRotDir } from '$lib/types/Types';
 import type { Motion } from './Motion';
-import type {
-	MotionType,
-	HandRotDir,
-	ShiftMotionType,
-	ShiftMotionInterface,
-	ShiftHandRotDir,
-	Orientation
-} from './MotionData';
+import type { ShiftMotionInterface } from './MotionData';
+
 
 export class MotionOriCalculator {
 	motion: any;

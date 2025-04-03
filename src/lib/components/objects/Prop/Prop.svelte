@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount, createEventDispatcher, tick } from 'svelte';
 	import { parsePropSvg } from '../../SvgManager/PropSvgParser';
 	import SvgManager from '../../SvgManager/SvgManager';
 	import type { PropData } from './PropData';
@@ -18,6 +18,33 @@
 
 	const dispatch = createEventDispatcher();
 	const svgManager = new SvgManager();
+
+	// Reactive statement to compute rotation angle
+    $: {
+        // Ensure we have both loc and ori, and the SVG is loaded
+        if (propData) {
+            // Always try to calculate, even if loc or ori might be undefined
+            try {
+                const rotAngleManager = new PropRotAngleManager({
+                    loc: propData.loc,
+                    ori: propData.ori
+                });
+                
+                // Update rotAngle even if loc or ori are potentially undefined
+                rotAngle = rotAngleManager.getRotationAngle();
+                propData.rotAngle = rotAngle;
+
+                // Add some logging to understand what's happening
+                console.log('Prop Data:', {
+                    loc: propData.loc, 
+                    ori: propData.ori, 
+                    rotAngle: rotAngle
+                });
+            } catch (error) {
+                console.warn('Error calculating rotation angle:', error);
+            }
+        }
+    }
 
 	onMount(() => {
 		if (propData.propType) {
@@ -69,12 +96,6 @@
 			dispatch('loaded', { error: true });
 			dispatch('error', { message: (error as Error)?.message || 'Unknown error' });
 		}
-	}
-
-	$: if (svgData) {
-		const rotAngleManager = new PropRotAngleManager({ loc: propData.loc, ori: propData.ori });
-		rotAngle = rotAngleManager.getRotationAngle();
-		propData.rotAngle = rotAngle;
 	}
 
 	function handleImageLoad() {

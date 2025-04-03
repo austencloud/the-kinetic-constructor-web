@@ -262,16 +262,7 @@ export function calculateDashLocation(
 	const currentLetter = letter ? LetterUtils.getLetter(letter) : null;
 	const letterType = letter ? LetterType.getLetterType(letter) : null;
 
-	console.debug('Letter:', currentLetter, 'Type:', letterType, 'motion turns:', motion.turns);
-
 	if (letterType === LetterType.Type3 && motion.turns === 0 && getShiftMotion) {
-		console.debug('Type3 Arrow Location:', {
-			startLoc: motion.startLoc,
-			endLoc: motion.endLoc,
-			letter,
-			letterType,
-			gridMode: motion.gridMode
-		});
 		return calculateDashLocationBasedOnShift(motion, getShiftMotion, getOtherMotion);
 	}
 
@@ -349,7 +340,6 @@ function calculateDashLocationBasedOnShift(
 	const dashMotion = shiftMotion && getOtherMotion ? getOtherMotion(shiftMotion) : null;
 
 	if (!shiftMotion || !dashMotion) {
-		console.debug('No shift or dash motion found');
 		return null;
 	}
 
@@ -360,45 +350,18 @@ function calculateDashLocationBasedOnShift(
 	const dashStartLoc = dashMotion.startLoc;
 	const gridMode = motion.gridMode;
 
-	// Debug logging
-	console.debug('Dash Location Calculation:', {
-		shiftMotion: {
-			startLoc: shiftMotion.startLoc,
-			endLoc: shiftMotion.endLoc
-		},
-		dashMotion: {
-			startLoc: dashMotion.startLoc,
-			endLoc: dashMotion.endLoc
-		},
-		shiftLocation,
-		dashStartLoc,
-		gridMode
-	});
-
 	if (!shiftLocation || !dashStartLoc) {
-		console.debug('Missing shift location or dash start location');
 		return null;
 	}
 
 	// Lookup in grid-specific maps
 	if (gridMode === DIAMOND) {
 		const result = DIAMOND_DASH_LOCATION_MAP[dashStartLoc]?.[shiftLocation];
-		console.debug('Diamond map lookup:', {
-			dashStartLoc,
-			shiftLocation,
-			result
-		});
 		return result || null;
 	} else if (gridMode === BOX) {
 		const result = BOX_DASH_LOCATION_MAP[dashStartLoc]?.[shiftLocation];
-		console.debug('Box map lookup:', {
-			dashStartLoc,
-			shiftLocation,
-			result
-		});
 		return result || null;
 	}
 
-	console.debug('No location found for grid mode:', gridMode);
 	return null;
 }

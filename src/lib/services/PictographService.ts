@@ -48,13 +48,18 @@ export class PictographService {
 	}
 
 	createPropData(motionData: MotionData, color: Color): PropData {
+		// Find the corresponding motion object
+		const motion = color === 'red' ? this.data.redMotion : this.data.blueMotion;
+
+		// Use the motion's calculated end orientation
+		const endOri = motion ? motion.calculateFinalEndOrientation() : motionData.endOri;
 		const propData: PropData = {
 			id: crypto.randomUUID(),
 			motionId: motionData.id,
 			color,
 			propType: PropType.STAFF,
-			radialMode: ['in', 'out'].includes(motionData.endOri) ? 'radial' : 'nonradial',
-			ori: motionData.endOri,
+			ori: endOri,
+			radialMode: ['in', 'out'].includes(endOri) ? 'radial' : 'nonradial',
 			coords: { x: 0, y: 0 },
 			loc: motionData.endLoc,
 			rotAngle: 0
@@ -63,7 +68,6 @@ export class PictographService {
 		pictographStore.updatePropData(color, propData);
 		return propData;
 	}
-
 	createArrowData(motionData: MotionData, color: Color): ArrowData {
 		const motion = color === 'red' ? this.data.redMotion : this.data.blueMotion;
 		const arrowLoc = motion
