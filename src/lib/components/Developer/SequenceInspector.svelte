@@ -9,29 +9,70 @@
 	let jsonText = '';
 	const error = writable('');
 
+	function formatBeatForExport(beat: any) {
+		return {
+			beat: beat.beatNumber,
+			letter: beat.pictographData.letter ?? undefined,
+			sequence_start_position: beat.beatNumber === 0 ? beat.pictographData.startPos?.replace(/\d+/g, '') : undefined,
+			end_pos: beat.pictographData.endPos,
+			timing: beat.pictographData.timing,
+			direction: beat.pictographData.direction,
+			blue_attributes: {
+				start_loc: beat.pictographData.blueMotionData?.startLoc,
+				end_loc: beat.pictographData.blueMotionData?.endLoc,
+				start_ori: beat.pictographData.blueMotionData?.startOri,
+				end_ori: beat.pictographData.blueMotionData?.endOri,
+				prop_rot_dir: beat.pictographData.blueMotionData?.propRotDir,
+				turns: beat.pictographData.blueMotionData?.turns,
+				motion_type: beat.pictographData.blueMotionData?.motionType
+			},
+			red_attributes: {
+				start_loc: beat.pictographData.redMotionData?.startLoc,
+				end_loc: beat.pictographData.redMotionData?.endLoc,
+				start_ori: beat.pictographData.redMotionData?.startOri,
+				end_ori: beat.pictographData.redMotionData?.endOri,
+				prop_rot_dir: beat.pictographData.redMotionData?.propRotDir,
+				turns: beat.pictographData.redMotionData?.turns,
+				motion_type: beat.pictographData.redMotionData?.motionType
+			}
+		};
+	}
+
+	function formatSequence() {
+		const beats = getBeats();
+		const metadata = {
+			word: '',
+			author: 'Austen Cloud',
+			level: 0,
+			prop_type: 'staff',
+			grid_mode: 'diamond',
+			is_circular: false,
+			can_be_CAP: false,
+			is_strict_rotated_CAP: false,
+			is_strict_mirrored_CAP: false,
+			is_strict_swapped_CAP: false,
+			is_mirrored_swapped_CAP: false,
+			is_rotated_swapped_CAP: false
+		};
+		return [metadata, ...beats.map(formatBeatForExport)];
+	}
+
 	function toggleInspector() {
 		visible = !visible;
 		if (visible) {
-			jsonText = JSON.stringify(getBeats(), null, 2);
+			jsonText = JSON.stringify(formatSequence(), null, 2);
 		}
 	}
 
 	function handleSave() {
 		try {
 			const updated = JSON.parse(jsonText);
-			beatsStore.set(updated);
+			// NOTE: Doesn't rehydrate BeatData properly, just replaces store with raw JSON structure.
+			beatsStore.set(updated.slice(1));
 			error.set('');
 		} catch (e) {
 			error.set('Invalid JSON: ' + (e as Error).message);
 		}
-	}
-
-	let unsubscribe: () => void;
-
-	$: if (visible) {
-		const current = getBeats();
-		console.log('[SequenceInspector] visible + getBeats re-triggered:', current);
-		jsonText = JSON.stringify(current, null, 2);
 	}
 </script>
 
