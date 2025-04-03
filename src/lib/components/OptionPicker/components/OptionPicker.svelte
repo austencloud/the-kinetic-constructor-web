@@ -82,7 +82,7 @@
 		if (count === 8) {
 			// Calculate maximum size that fits both width and height constraints
 			const availableHeight = containerHeight - 40; // Reduced padding for 8 items
-			const availableWidth = containerWidth - 80 ; // Reduced container padding
+			const availableWidth = containerWidth - 80; // Reduced container padding
 
 			// For 8 items in 4×2 grid
 			const maxHeightBasedOnContainer = Math.floor(availableHeight / 2 - 0); // 2 rows, smaller gap
@@ -151,8 +151,8 @@
 
 <div class="optionPicker">
 	<div class="header">
-		<div class="selectors">
-			<ReversalFilter bind:selectedFilter disabled={isLoading} />
+		<div class="title">Next Options</div>
+		<div class="tabs-container">
 			<div class="tabs">
 				{#each letterTypes as type}
 					<button
@@ -164,6 +164,9 @@
 					</button>
 				{/each}
 			</div>
+		</div>
+		<div class="filter-container">
+			<ReversalFilter bind:selectedFilter disabled={isLoading} />
 		</div>
 	</div>
 
@@ -211,16 +214,29 @@
 	}
 
 	.header {
-		display: flex;
-		justify-content: center;
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
 		align-items: center;
 		margin-bottom: 1rem;
+		width: 100%;
 	}
 
-	.selectors {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
+	.title {
+		font-size: 1.25rem;
+		font-weight: bold;
+		grid-column: 1;
+		justify-self: start;
+		visibility: hidden; /* Hidden but preserves space */
+	}
+
+	.tabs-container {
+		grid-column: 2;
+		justify-self: center;
+	}
+
+	.filter-container {
+		grid-column: 3;
+		justify-self: end;
 	}
 
 	.tabs {
@@ -234,20 +250,18 @@
 		padding: 0.6rem 1.2rem;
 		cursor: pointer;
 		font-weight: bold;
-		font-size: 1.1rem; /* Slightly increased font size */
+		font-size: 1.35rem;
 		border-bottom: 2px solid transparent;
-		transition:
-			border-color 0.3s,
-			color 0.3s;
+		transition: border-color 0.3s, color 0.3s;
 	}
 
 	.tab.active {
-		border-color: #4299e1;
-		color: #4299e1;
+		border-color: #38a169;
+		color: #38a169;
 	}
 
 	.tab:hover {
-		border-color: #4299e1;
+		border-color: #38a169;
 	}
 
 	.options-outer-container {
@@ -277,6 +291,18 @@
 		padding: 0.1rem;
 	}
 
+	.small-count {
+		align-content: center;
+		justify-content: center;
+	}
+    
+	.exactly-eight {
+		align-content: center;
+		justify-content: center;
+		margin: 0 auto;
+		max-width: 95%;
+	}
+
 	.loading-container {
 		display: flex;
 		flex-direction: column;
@@ -296,5 +322,49 @@
 		text-align: center;
 		color: #666;
 		font-style: italic;
+	}
+
+	@media (max-width: 768px) {
+		.header {
+			grid-template-columns: 1fr;
+			grid-template-rows: auto auto;
+			gap: 1rem;
+		}
+
+		.title {
+			display: none;
+		}
+
+		.tabs-container {
+			grid-column: 1;
+			grid-row: 1;
+			justify-self: center;
+		}
+
+		.filter-container {
+			grid-column: 1;
+			grid-row: 2;
+			justify-self: center;
+		}
+		
+		.options-grid:not(.exactly-eight) {
+			grid-template-columns: repeat(4, 1fr) !important;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.tabs {
+			flex-wrap: wrap;
+		}
+		
+		.tab {
+			padding: 0.3rem 0.6rem;
+			font-size: 0.9rem;
+		}
+		
+		.options-grid:not(.exactly-eight) {
+			grid-template-columns: repeat(3, 1fr) !important;
+			gap: 0.5rem;
+		}
 	}
 </style>
