@@ -52,7 +52,7 @@
 				</div>
 			{:else}
 				<div class="options-grid">
-					{#each options as option, i (option.letter)}
+					{#each options as option, i (`${option.letter}-${i}`)}
 						<div animate:flip={{ duration: 200 }}>
 							<Option
 								name={option.letter || `Option ${i + 1}`}

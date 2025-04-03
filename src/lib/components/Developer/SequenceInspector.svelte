@@ -1,8 +1,9 @@
-<!-- src/lib/components/DevTools/SequenceInspector.svelte -->
 <script lang="ts">
 	import { getBeats, beatsStore } from '$lib/stores/sequence/beatsStore';
-	import { onMount } from 'svelte';
+	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	import { onMount, onDestroy } from 'svelte';
 	import { writable } from 'svelte/store';
+	import { get } from 'svelte/store';
 
 	let visible = false;
 	let jsonText = '';
@@ -23,6 +24,14 @@
 		} catch (e) {
 			error.set('Invalid JSON: ' + (e as Error).message);
 		}
+	}
+
+	let unsubscribe: () => void;
+
+	$: if (visible) {
+		const current = getBeats();
+		console.log('[SequenceInspector] visible + getBeats re-triggered:', current);
+		jsonText = JSON.stringify(current, null, 2);
 	}
 </script>
 
