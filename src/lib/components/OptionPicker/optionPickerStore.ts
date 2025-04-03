@@ -2,7 +2,7 @@
 import { writable, derived } from 'svelte/store';
 import type { PictographData } from '$lib/types/PictographData';
 import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
-import { OptionDataService } from '$lib/services/OptionDataService';
+import { OptionDataService } from '$lib/components/OptionPicker/OptionDataService';
 import type { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
 import { LetterUtils } from '$lib/utils/LetterUtils';

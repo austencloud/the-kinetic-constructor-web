@@ -1,17 +1,17 @@
 <script lang="ts">
-	import LoadingSpinner from './../../MainWidget/loading/LoadingSpinner.svelte';
-	import ReversalFilter from './ReversalFilter.svelte';
+	import LoadingSpinner from '../MainWidget/loading/LoadingSpinner.svelte';
+	import ReversalFilter from './components/ReversalFilter.svelte';
+	import Option from './components/Option.svelte'; // Ensure correct path to Option.svelte
 	import { onMount, onDestroy } from 'svelte';
 	import { fade, crossfade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
-	import Option from './Option.svelte';
 	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
 	import { beatsStore } from '$lib/stores/sequence/beatsStore';
 	import { setPictographLoaded } from '$lib/stores/ui/loadingStore';
 	import optionPickerStore, {
 		type OptionPickerState,
 		type ReversalFilterType
-	} from '$lib/stores/optionPicker/optionPickerStore';
+	} from '$lib/components/OptionPicker/optionPickerStore';
 	import { isMobile, isPortrait } from '$lib/utils/deviceUtils';
 
 	const { optionsByLetterType } = optionPickerStore;
@@ -22,7 +22,7 @@
 		easing: cubicOut,
 		fallback(node, params) {
 			return fade(node, {
-				duration: 600,
+				duration: 600, 
 				easing: cubicOut
 			});
 		}
@@ -69,10 +69,16 @@
 		getOptimalGridColumns,
 		getOptionSize,
 		getGridGap,
-		getGridClass
-	} from '$lib/utils/optionPickerLayoutUtils';
+		getGridClass,
+		type GridConfiguration
+	} from '$lib/components/OptionPicker/optionPickerLayoutUtils';
 
 	$: currentOptions = $optionsByLetterType[selectedTab] || [];
+	$: gridConfig = getOptimalGridColumns(
+		currentOptions.length,
+		isMobileDevice,
+		isPortraitMode
+	);
 	$: layout = getResponsiveLayout(
 		currentOptions.length,
 		containerHeight,
@@ -315,7 +321,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		padding: 0.1rem;
+		padding: 0.0rem;
 	}
 
 	.small-count {

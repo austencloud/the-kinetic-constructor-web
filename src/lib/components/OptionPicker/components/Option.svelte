@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Pictograph from './../../Pictograph/Pictograph.svelte';
+	import Pictograph from '../../Pictograph/Pictograph.svelte';
 	import { writable, type Writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { optionPickerStore } from '$lib/stores/optionPicker/optionPickerStore';
+	import { optionPickerStore } from '$lib/components/OptionPicker/optionPickerStore';
 	import { isMobile } from '$lib/utils/deviceUtils';
 
 	export let pictographData: PictographData;
@@ -29,7 +29,7 @@
 		}
 	}
 	
-	import { getPictographScaleFactor } from '$lib/utils/optionPickerLayoutUtils';
+	import { getPictographScaleFactor } from '$lib/components/OptionPicker/optionPickerLayoutUtils';
 	
 	// Handle single option case
 	export let isSingleOption: boolean = false;

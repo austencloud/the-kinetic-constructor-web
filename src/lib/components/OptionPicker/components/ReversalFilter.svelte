@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { optionPickerStore, type ReversalFilterType } from '$lib/stores/optionPicker/optionPickerStore';
+  import { optionPickerStore, type ReversalFilterType } from '$lib/components/OptionPicker/optionPickerStore';
   
   export let selectedFilter: ReversalFilterType = 'all';
   export let disabled: boolean = false;
