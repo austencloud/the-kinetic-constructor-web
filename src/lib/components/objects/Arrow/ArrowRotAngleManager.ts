@@ -49,22 +49,26 @@ import {
 } from './constants/ArrowRotationConstants';
 import type { PictographService } from '$lib/services/PictographService';
 import { calculateShiftLocation } from './ArrowLocationManager';
+import type { PictographData } from '$lib/types/PictographData';
 
 export default class ArrowRotAngleManager {
 	private service?: PictographService;
+	private data: PictographData;
 
-	constructor(service?: PictographService) {
+	constructor(data: PictographData, service?: PictographService) {
+		this.data = data;
 		this.service = service;
 	}
 
 	updateRotation(motion: Motion, arrowLoc: Loc): number {
-		return calculateArrowRotationAngle(motion, arrowLoc, this.service);
+		return calculateArrowRotationAngle(motion, arrowLoc, this.data, this.service);
 	}
 }
 
 export function calculateArrowRotationAngle(
 	motion: Motion,
 	arrowLoc: Loc,
+	data: PictographData,
 	service?: PictographService
 ): number {
 	const { motionType } = motion;
@@ -77,7 +81,7 @@ export function calculateArrowRotationAngle(
 		case FLOAT:
 			return calculateFloatRotationAngle(arrowLoc, motion.handRotDir);
 		case DASH:
-			return calculateDashRotationAngle(arrowLoc, motion, service);
+			return data.letter ? calculateDashRotationAngle(arrowLoc, motion, data.letter, service) : 0;
 		case STATIC:
 			return calculateStaticRotationAngle(arrowLoc, motion);
 		default:
@@ -109,9 +113,21 @@ function calculateFloatRotationAngle(loc: Loc, handRotDir?: HandRotDir): number 
 	return FLOAT_DIRECTION_MAP[activeRotDirection]?.[loc] ?? 0;
 }
 
-function calculateDashRotationAngle(loc: Loc, motion: Motion, service?: PictographService): number {
-	const { startOri, propRotDir, startLoc, endLoc, turns, letter, gridMode, color } = motion;
+function calculateDashRotationAngle(
+	loc: Loc,
+	motion: Motion,
+	letter: Letter,
+	service?: PictographService
+): number {
+	const { startOri, propRotDir, startLoc, endLoc, turns, gridMode, color } = motion;
 
+	// First, handle zero-turn no-rotation case uniformly
+	if (turns === 0 && propRotDir === NO_ROT) {
+		const key = `${startLoc}-${endLoc}`;
+		return DASH_NO_ROTATION_MAP[key] ?? 0;
+	}
+
+	// Special letter handling (unchanged from previous implementation)
 	if (letter && service) {
 		const letterValue = LetterUtils.getLetter(letter);
 		const letterType = LetterType.getLetterType(letter);
@@ -125,8 +141,7 @@ function calculateDashRotationAngle(loc: Loc, motion: Motion, service?: Pictogra
 
 				const otherMotion = service.getOtherMotion(motion);
 				if (otherMotion && otherMotion.turns !== 0) {
-					const otherAngle = calculateDashRotationAngle(loc, otherMotion, service);
-
+					const otherAngle = calculateDashRotationAngle(loc, otherMotion, letter, service);
 					return (otherAngle + 180) % 360;
 				}
 			}
@@ -162,15 +177,12 @@ function calculateDashRotationAngle(loc: Loc, motion: Motion, service?: Pictogra
 		}
 	}
 
+	// Rotation angle override for special cases
 	if (hasRotationAngleOverride(motion)) {
 		return getDashRotAngleOverride(loc, propRotDir);
 	}
 
-	if (propRotDir === NO_ROT || turns === 0) {
-		const key = `${startLoc}-${endLoc}`;
-		return DASH_NO_ROTATION_MAP[key] ?? 0;
-	}
-
+	// Default orientation-based rotation
 	return DASH_ORIENTATION_MAP[startOri]?.[propRotDir]?.[loc] ?? 0;
 }
 

@@ -503,8 +503,41 @@ Z-,gamma3,beta7,none,none,anti,cw,n,w,dash,no_rot,e,w
 Z-,gamma7,beta3,none,none,anti,cw,s,e,dash,no_rot,w,e
 Z-,gamma5,beta1,none,none,anti,cw,e,n,dash,no_rot,s,n
 
+Σ-,beta3,gamma13,none,none,dash,no_rot,e,w,pro,cw,e,s
 Σ-,beta5,gamma15,none,none,dash,no_rot,s,n,pro,cw,s,w
+Σ-,beta7,gamma9,none,none,dash,no_rot,w,e,pro,cw,w,n
+Σ-,beta1,gamma11,none,none,dash,no_rot,n,s,pro,cw,n,e
+Σ-,beta7,gamma5,none,none,dash,no_rot,w,e,pro,ccw,w,s
+Σ-,beta1,gamma7,none,none,dash,no_rot,n,s,pro,ccw,n,w
+Σ-,beta5,gamma3,none,none,dash,no_rot,s,n,pro,ccw,s,e
+Σ-,beta3,gamma1,none,none,dash,no_rot,e,w,pro,ccw,e,n
 
+Σ-,beta3,gamma7,none,none,pro,cw,e,s,dash,no_rot,e,w
+Σ-,beta5,gamma1,none,none,pro,cw,s,w,dash,no_rot,s,n
+Σ-,beta7,gamma3,none,none,pro,cw,w,n,dash,no_rot,w,e
+Σ-,beta1,gamma5,none,none,pro,cw,n,e,dash,no_rot,n,s
+Σ-,beta7,gamma11,none,none,pro,ccw,w,s,dash,no_rot,w,e
+Σ-,beta1,gamma13,none,none,pro,ccw,n,w,dash,no_rot,n,s
+Σ-,beta5,gamma9,none,none,pro,ccw,s,e,dash,no_rot,s,n
+Σ-,beta3,gamma15,none,none,pro,ccw,e,n,dash,no_rot,e,w
+
+Δ-,beta3,gamma13,none,none,dash,no_rot,e,w,anti,ccw,e,s
+Δ-,beta5,gamma15,none,none,dash,no_rot,s,n,anti,ccw,s,w
+Δ-,beta7,gamma9,none,none,dash,no_rot,w,e,anti,ccw,w,n
+Δ-,beta1,gamma11,none,none,dash,no_rot,n,s,anti,ccw,n,e
+Δ-,beta7,gamma5,none,none,dash,no_rot,w,e,anti,cw,w,s
+Δ-,beta1,gamma7,none,none,dash,no_rot,n,s,anti,cw,n,w
+Δ-,beta5,gamma3,none,none,dash,no_rot,s,n,anti,cw,s,e
+Δ-,beta3,gamma1,none,none,dash,no_rot,e,w,anti,cw,e,n
+
+Δ-,beta3,gamma7,none,none,anti,ccw,e,s,dash,no_rot,e,w
+Δ-,beta5,gamma1,none,none,anti,ccw,s,w,dash,no_rot,s,n
+Δ-,beta7,gamma3,none,none,anti,ccw,w,n,dash,no_rot,w,e
+Δ-,beta1,gamma5,none,none,anti,ccw,n,e,dash,no_rot,n,s
+Δ-,beta7,gamma11,none,none,anti,cw,w,s,dash,no_rot,w,e
+Δ-,beta1,gamma13,none,none,anti,cw,n,w,dash,no_rot,n,s
+Δ-,beta5,gamma9,none,none,anti,cw,s,e,dash,no_rot,s,n
+Δ-,beta3,gamma15,none,none,anti,cw,e,n,dash,no_rot,e,w
 
 θ-,alpha3,gamma5,none,none,dash,no_rot,w,e,pro,cw,e,s
 θ-,alpha5,gamma7,none,none,dash,no_rot,n,s,pro,cw,s,w

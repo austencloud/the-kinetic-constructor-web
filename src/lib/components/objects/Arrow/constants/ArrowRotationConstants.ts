@@ -400,7 +400,7 @@ export const DIAMOND_DASH_ANGLE_MAP: { [key: string]: number } = {
 	[`${SOUTH}_${NORTHWEST}`]: 90,
 	[`${SOUTH}_${NORTHEAST}`]: 270,
 	[`${SOUTH}_${SOUTHEAST}`]: 270,
-	[`${SOUTH}_${SOUTHWEST}`]: 90,
+	[`${SOUTH}_${SOUTHWEST}`]: 270,
 	[`${WEST}_${NORTHWEST}`]: 180,
 	[`${WEST}_${NORTHEAST}`]: 180,
 	[`${WEST}_${SOUTHEAST}`]: 0,

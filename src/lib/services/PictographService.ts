@@ -141,24 +141,24 @@ export class PictographService {
 	): void {
 		if (redArrow && this.data.redMotion) {
 			const locationManager = new ArrowLocationManager(this);
-			const arrowLoc = redArrow.loc
+			const arrowLoc = redArrow.loc;
 
 			if (arrowLoc) {
 				redArrow.loc = arrowLoc;
 				// Pass this service to the rotation manager
-				const rotAngleManager = new ArrowRotAngleManager(this);
+				const rotAngleManager = new ArrowRotAngleManager(this.data, this);
 				redArrow.rotAngle = rotAngleManager.updateRotation(this.data.redMotion, arrowLoc);
 			}
 		}
 
 		if (blueArrow && this.data.blueMotion) {
 			const locationManager = new ArrowLocationManager(this);
-			const arrowLoc = blueArrow.loc
+			const arrowLoc = blueArrow.loc;
 
 			if (arrowLoc) {
 				blueArrow.loc = arrowLoc;
 				// Pass this service to the rotation manager
-				const rotAngleManager = new ArrowRotAngleManager(this);
+				const rotAngleManager = new ArrowRotAngleManager(this.data, this);
 				blueArrow.rotAngle = rotAngleManager.updateRotation(this.data.blueMotion, arrowLoc);
 			}
 		}
