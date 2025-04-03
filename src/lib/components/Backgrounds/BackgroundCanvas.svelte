@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { get } from 'svelte/store';
-	import { createBackgroundManager } from './core/BackgroundManager';
+	import { getBackgroundContext } from './contexts/BackgroundContext';
 	import { BackgroundFactory } from './core/BackgroundFactory';
 	import type { BackgroundType, PerformanceMetrics, QualityLevel } from './types/types';
 
@@ -10,66 +10,104 @@
 		performanceReport: PerformanceMetrics;
 	}>();
 
+	// Props (maintaining the same API)
 	export let backgroundType: BackgroundType = 'snowfall';
 	export let appIsLoading = true;
 
-	const manager = createBackgroundManager();
-	let canvas: HTMLCanvasElement;
-
-	$: if (appIsLoading !== undefined) {
+	// Get the context (if it exists)
+	const context = getBackgroundContext();
+	
+	// Set the background type in the context when it changes
+	$: if (context && backgroundType) {
+		context.setBackgroundType(backgroundType);
+	}
+	
+	// Handle loading state changes
+	$: if (context && appIsLoading !== undefined) {
 		const quality: QualityLevel = appIsLoading ? 'medium' : 'high';
-		manager.setQuality(quality);
-		manager.setLoading(appIsLoading);
+		context.setQuality(quality);
+		context.setLoading(appIsLoading);
 	}
 
-	let backgroundSystem = BackgroundFactory.createBackgroundSystem(backgroundType);
+	// Use the background system from the context
+	$: backgroundSystem = context ? get(context.backgroundSystem) : 
+		BackgroundFactory.createBackgroundSystem(backgroundType);
 
-	$: if (backgroundType) {
-		if (backgroundSystem) {
-			backgroundSystem.cleanup();
-		}
-		backgroundSystem = BackgroundFactory.createBackgroundSystem(backgroundType);
-
-		if (canvas) {
-			const dimensions = get(manager.dimensions);
-			const quality = get(manager.qualityMode);
-			backgroundSystem.initialize(dimensions, quality);
-		}
-	}
+	let canvas: HTMLCanvasElement;
 
 	onMount(() => {
 		if (!canvas) return;
 
-		manager.initializeCanvas(canvas, () => {
-			const dimensions = get(manager.dimensions);
-			const quality = get(manager.qualityMode);
-			backgroundSystem.initialize(dimensions, quality);
-			dispatch('ready');
-		});
+		if (context) {
+			// Use the context for initialization and animation
+			context.initializeCanvas(canvas, () => {
+				const dimensions = get(context.dimensions);
+				const quality = get(context.qualityLevel);
+				backgroundSystem.initialize(dimensions, quality);
+				dispatch('ready');
+			});
 
-		manager.startAnimation(
-			(ctx, dimensions) => {
-				backgroundSystem.update(dimensions);
-				backgroundSystem.draw(ctx, dimensions);
-			},
-			(metrics) => {
-				dispatch('performanceReport', metrics);
-			}
-		);
+			context.startAnimation(
+				(ctx, dimensions) => {
+					backgroundSystem.update(dimensions);
+					backgroundSystem.draw(ctx, dimensions);
+				},
+				(metrics) => {
+					dispatch('performanceReport', metrics);
+				}
+			);
+		} else {
+			// Fallback to direct instantiation for backward compatibility
+			const manager = createBackgroundManagerFallback();
+			
+			manager.initializeCanvas(canvas, () => {
+				const dimensions = get(manager.dimensions);
+				const quality = get(manager.qualityMode);
+				backgroundSystem.initialize(dimensions, quality);
+				dispatch('ready');
+			});
+
+			manager.startAnimation(
+				(ctx, dimensions) => {
+					backgroundSystem.update(dimensions);
+					backgroundSystem.draw(ctx, dimensions);
+				},
+				(metrics) => {
+					dispatch('performanceReport', metrics);
+				}
+			);
+		}
 	});
 
 	onDestroy(() => {
 		if (backgroundSystem) {
 			backgroundSystem.cleanup();
 		}
-		manager.cleanup();
+		
+		// Use context cleanup if available, otherwise do nothing
+		// (the manager has its own cleanup in the other branch)
+		if (context) {
+			context.cleanup();
+		}
 	});
 
+	// Maintain the same public API
 	export function setQuality(quality: QualityLevel) {
-		manager.setQuality(quality);
+		if (context) {
+			context.setQuality(quality);
+		}
+		
 		if (backgroundSystem) {
 			backgroundSystem.setQuality(quality);
 		}
+	}
+	
+	// Import the old manager for backward compatibility
+	// This is only used if the component is used outside of a BackgroundProvider
+	import { createBackgroundManager } from './core/BackgroundManager';
+	function createBackgroundManagerFallback() {
+		console.warn('BackgroundCanvas is being used without a BackgroundProvider. Consider updating your code to use the new context-based API.');
+		return createBackgroundManager();
 	}
 </script>
 

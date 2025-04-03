@@ -1,4 +1,3 @@
-<!-- src/lib/components/MainWidget/MainWidget.svelte -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
@@ -8,6 +7,8 @@
 	import MainLayout from './layout/MainLayout.svelte';
 	import LoadingOverlay from './loading/LoadingOverlay.svelte';
 	import SequenceWorkbench from '../SequenceWorkbench/Workbench.svelte';
+	import BackgroundCanvas from '../Backgrounds/BackgroundCanvas.svelte';
+	import BackgroundProvider from '../Backgrounds/BackgroundProvider.svelte';
 
 	// State and Stores
 	import { loadingState } from '$lib/stores/ui/loadingStore';
@@ -24,7 +25,6 @@
 
 	// Declarative dynamicHeight from derived store
 	import { windowHeight } from '$lib/stores/ui/windowStore';
-	import BackgroundCanvas from '../Backgrounds/BackgroundCanvas.svelte';
 
 	const dispatch = createEventDispatcher<{
 		tabChange: TabChangeEvent;
@@ -39,11 +39,21 @@
 
 	// Initialize background first, then the app
 	let backgroundReady = false;
+	let appIsLoading = $loadingState.isLoading;
+
+	// Sync the appIsLoading variable with the loadingState store
+	$: appIsLoading = $loadingState.isLoading;
 
 	function handleBackgroundReady() {
 		backgroundReady = true;
 		// Once background is ready, initialize the application
 		initApp();
+	}
+
+	function handlePerformanceReport(event: CustomEvent<{ fps: number }>) {
+		// Optional: Handle performance metrics if needed
+		// const metrics = event.detail;
+		// console.log('Background performance:', metrics.fps);
 	}
 
 	const initApp = async () => {
@@ -65,14 +75,24 @@
 	<FullScreen on:toggleFullscreen={(e) => actions.setFullScreen(e.detail)}>
 		<!-- Background ALWAYS renders first, independent of loading state -->
 		<div class="background">
-			<BackgroundCanvas on:ready={handleBackgroundReady} />
+			<BackgroundProvider
+				backgroundType="snowfall"
+				isLoading={appIsLoading}
+				initialQuality={appIsLoading ? 'medium' : 'high'}
+			>
+				<BackgroundCanvas
+					on:ready={handleBackgroundReady}
+					on:performanceReport={handlePerformanceReport}
+					{appIsLoading}
+				/>
+			</BackgroundProvider>
 		</div>
 
 		<!-- Show LoadingOverlay on top of the background during loading -->
 		{#if $loadingState.isLoading}
-			<LoadingOverlay 
-				onRetry={handleRetry} 
-				showInitializationError={$appState.initializationError} 
+			<LoadingOverlay
+				onRetry={handleRetry}
+				showInitializationError={$appState.initializationError}
 			/>
 		{:else}
 			<!-- Main content only shown when not loading -->
