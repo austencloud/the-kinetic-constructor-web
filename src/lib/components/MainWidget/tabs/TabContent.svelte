@@ -2,7 +2,7 @@
 	import { activeTab, slideDirection, appState } from '../state/appState';
 	import PlaceholderTab from './PlaceholderTab.svelte';
 	import SequenceWorkbench from '$lib/components/SequenceWorkbench/Workbench.svelte';
-	import OptionPicker from '$lib/components/OptionPicker/OptionPicker.svelte';
+	import OptionPicker from '$lib/components/OptionPicker/components/OptionPicker.svelte';
 	import StartPosPicker from '$lib/components/StartPosPicker/StartPosPicker.svelte';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import { derived } from 'svelte/store';

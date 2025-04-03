@@ -12,7 +12,6 @@
 	import Arrow from '../objects/Arrow/Arrow.svelte';
 	import TKAGlyph from '../objects/Glyphs/TKAGlyph/TKAGlyph.svelte';
 	import { PictographService } from './services/PictographService';
-	import PictographLoading from './components/PictographLoading.svelte';
 	import PictographError from './components/PictographError.svelte';
 	import PictographDebug from './components/PictographDebug.svelte';
 	import InitializingSpinner from './components/InitializingSpinner.svelte';

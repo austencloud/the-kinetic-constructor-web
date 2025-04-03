@@ -25,10 +25,6 @@ export interface PictographData {
     blueMotionData: MotionData | null;
     redMotionData: MotionData | null;
     
-    // For backward compatibility
-    motions?: Motion[] | undefined;
-    redMotion?: Motion | null;
-    blueMotion?: Motion | null;
 
     // Props
     redPropData: PropData | null;
