@@ -2,8 +2,8 @@
 	import LoadingSpinner from './../../MainWidget/loading/LoadingSpinner.svelte';
 	import ReversalFilter from './ReversalFilter.svelte';
 	import { onMount, onDestroy } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
-	import { flip } from 'svelte/animate';
+	import { fade, crossfade } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import Option from './Option.svelte';
 	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
 	import { beatsStore } from '$lib/stores/sequence/beatsStore';
@@ -12,14 +12,31 @@
 		type OptionPickerState,
 		type ReversalFilterType
 	} from '$lib/stores/optionPicker/optionPickerStore';
+	import { isMobile, isPortrait } from '$lib/utils/deviceUtils';
 
 	const { optionsByLetterType } = optionPickerStore;
+
+	// Setup crossfade transition
+	const [send, receive] = crossfade({
+		duration: 600,
+		easing: cubicOut,
+		fallback(node, params) {
+			return fade(node, {
+				duration: 600,
+				easing: cubicOut
+			});
+		}
+	});
 
 	let isLoading = true;
 	let selectedFilter: ReversalFilterType = 'all';
 	let previewLoading = true;
 	let containerHeight: number;
 	let containerWidth: number;
+
+	// Device detection
+	let isMobileDevice = false;
+	let isPortraitMode = false;
 
 	let selectedTab: string = 'Type1';
 	const letterTypes = ['Type1', 'Type2', 'Type3', 'Type4', 'Type5', 'Type6'];
@@ -41,96 +58,49 @@
 		}
 	});
 
+	// Update device detection
+	const updateDeviceDetection = () => {
+		isMobileDevice = isMobile();
+		isPortraitMode = isPortrait();
+	};
 
+	import {
+		getResponsiveLayout,
+		getOptimalGridColumns,
+		getOptionSize,
+		getGridGap,
+		getGridClass
+	} from '$lib/utils/optionPickerLayoutUtils';
 
 	$: currentOptions = $optionsByLetterType[selectedTab] || [];
-	$: gridColumns = getOptimalGridColumns(currentOptions.length);
-	$: optionSize = getOptionSize(currentOptions.length, containerHeight, containerWidth);
-	$: gridGap = getGridGap(currentOptions.length);
-	$: gridClass = getGridClass(currentOptions.length);
-
-	function getOptimalGridColumns(count: number): string {
-		if (count <= 4) return 'repeat(4, 1fr)';
-		if (count <= 8) return 'repeat(4, 1fr)';
-		if (count <= 12) return 'repeat(6, 1fr)';
-		if (count <= 16) return 'repeat(8, 1fr)';
-		if (count <= 24) return 'repeat(8, 1fr)';
-		return 'repeat(auto-fill, minmax(80px, 1fr))';
-	}
-
-	function getGridClass(count: number): string {
-		if (count === 8) return 'exactly-eight';
-		if (count <= 8) return 'small-count';
-		return '';
-	}
-
-	function getGridGap(count: number): string {
-		if (count === 8) return '0.5rem';
-		return '0.75rem';
-	}
-
-	function getOptionSize(
-		count: number,
-		containerHeight: number = 0,
-		containerWidth: number = 0
-	): string {
-		if (!containerHeight || !containerWidth) return 'auto';
-
-		// Special case for exactly 8 pictographs (4×2 grid)
-		if (count === 8) {
-			// Calculate maximum size that fits both width and height constraints
-			const availableHeight = containerHeight - 40; // Reduced padding for 8 items
-			const availableWidth = containerWidth - 80; // Reduced container padding
-
-			// For 8 items in 4×2 grid
-			const maxHeightBasedOnContainer = Math.floor(availableHeight / 2 - 0); // 2 rows, smaller gap
-			const maxWidthBasedOnContainer = Math.floor(availableWidth / 4 - 0); // 4 columns, smaller gap
-
-			// Use the smaller of width or height to maintain square aspect ratio
-			const size = Math.min(maxHeightBasedOnContainer, maxWidthBasedOnContainer);
-
-			// Ensure reasonable minimum size
-			return `${Math.max(100, size)}px`; // Increased minimum size
-		}
-
-		// For other small counts (1-7)
-		if (count < 8) {
-			const availableHeight = containerHeight - 140;
-			const rowCount = count <= 4 ? 1 : 2;
-			const rowGap = 12;
-			const itemHeight = Math.floor(availableHeight / rowCount - rowGap);
-			return `${Math.max(80, itemHeight)}px`;
-		}
-
-		// For larger counts
-		if (count <= 24) {
-			const availableHeight = containerHeight - 140; // Define availableHeight here
-			const rowCount = count <= 16 ? 2 : 3;
-			const rowGap = 12;
-			const itemHeight = Math.floor(availableHeight / rowCount - rowGap);
-			if (itemHeight >= 60) {
-				return `${itemHeight}px`;
-			}
-		}
-
-		return 'auto';
-	}
+	$: layout = getResponsiveLayout(
+		currentOptions.length,
+		containerHeight,
+		containerWidth,
+		isMobileDevice,
+		isPortraitMode
+	);
+	$: ({ gridColumns, optionSize, gridGap, gridClass, scaleFactor } = layout);
 
 	onDestroy(() => {
 		unsubscribeOptionPicker();
 		unsubscribeBeats();
 		unsubscribeSelected();
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('resize', updateDeviceDetection);
+		}
 	});
 
 	const optionPickerId = 'option-picker-pictograph';
 
 	onMount(() => {
 		setPictographLoaded(optionPickerId, false);
-	});
+		updateDeviceDetection();
 
-	let optionsContainer: HTMLElement;
+		if (typeof window !== 'undefined') {
+			window.addEventListener('resize', updateDeviceDetection);
+		}
 
-	onMount(() => {
 		if (typeof ResizeObserver !== 'undefined') {
 			const resizeObserver = new ResizeObserver((entries) => {
 				for (let entry of entries) {
@@ -144,16 +114,18 @@
 			};
 		}
 	});
+
+	let optionsContainer: HTMLElement;
 </script>
 
 <div class="optionPicker">
-	<div class="header">
+	<div class="header" class:mobile={isMobileDevice}>
 		<div class="title">Next Options</div>
 		<div class="tabs-container">
-			<div class="tabs">
+			<div class="tabs" class:mobile-tabs={isMobileDevice}>
 				{#each letterTypes as type}
 					<button
-						class="tab {selectedTab === type ? 'active' : ''}"
+						class="tab {selectedTab === type ? 'active' : ''} {isMobileDevice ? 'mobile' : ''}"
 						on:click={() => (selectedTab = type)}
 						aria-label={`Show ${type} options`}
 					>
@@ -163,7 +135,7 @@
 			</div>
 		</div>
 		<div class="filter-container">
-			<ReversalFilter bind:selectedFilter disabled={isLoading} />
+			<ReversalFilter bind:selectedFilter disabled={isLoading} isMobile={isMobileDevice} />
 		</div>
 	</div>
 
@@ -174,28 +146,40 @@
 				<p class="loading-text">Loading options...</p>
 			</div>
 		{:else}
-			<div class="options-container" in:fade={{ duration: 300 }}>
-				{#if currentOptions.length === 0}
-					<div class="empty-message">
-						No options available for {selectedTab}
-					</div>
-				{:else}
-					<div
-						class="options-grid {gridClass}"
-						style="grid-template-columns: {gridColumns}; gap: {gridGap};"
-					>
-						{#each currentOptions as option, i (`${option.letter || 'unknown'}-${i}`)}
-							<div animate:flip={{ duration: 200 }}>
-								<Option
-									pictographData={option}
-									selectedPictographStore={selectedPictograph}
-									size={optionSize}
-								/>
-							</div>
-						{/each}
-					</div>
-				{/if}
-			</div>
+			{#key selectedTab}
+				<div
+					class="options-container"
+					in:receive={{ key: selectedTab }}
+					out:send={{ key: selectedTab }}
+				>
+					{#if currentOptions.length === 0}
+						<div class="empty-message">
+							No options available for {selectedTab}
+						</div>
+					{:else}
+						<div
+							class="options-grid {gridClass} {isMobileDevice
+								? 'mobile-grid'
+								: ''} {currentOptions.length === 1 ? 'single-item-grid' : ''}"
+							style="grid-template-columns: {gridColumns}; gap: {gridGap};"
+						>
+							{#each currentOptions as option, i (`${option.letter || 'unknown'}-${i}`)}
+								<div
+									class:single-item={currentOptions.length === 1}
+									in:fade={{ duration: 400, delay: 200 }}
+								>
+									<Option
+										pictographData={option}
+										selectedPictographStore={selectedPictograph}
+										size={optionSize}
+										isSingleOption={currentOptions.length === 1}
+									/>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{/key}
 		{/if}
 	</div>
 </div>
@@ -218,6 +202,12 @@
 		width: 100%;
 	}
 
+	.header.mobile {
+		grid-template-columns: 1fr;
+		grid-template-rows: auto auto;
+		gap: 0.5rem;
+	}
+
 	.title {
 		font-size: 1.25rem;
 		font-weight: bold;
@@ -231,13 +221,30 @@
 		justify-self: center;
 	}
 
+	.header.mobile .tabs-container {
+		grid-column: 1;
+		grid-row: 1;
+		width: 100%;
+	}
+
 	.filter-container {
 		grid-column: 3;
 		justify-self: end;
 	}
 
+	.header.mobile .filter-container {
+		grid-column: 1;
+		grid-row: 2;
+		justify-self: center;
+	}
+
 	.tabs {
 		display: flex;
+		justify-content: center;
+	}
+
+	.mobile-tabs {
+		flex-wrap: wrap;
 		justify-content: center;
 	}
 
@@ -249,7 +256,14 @@
 		font-weight: bold;
 		font-size: 1.35rem;
 		border-bottom: 2px solid transparent;
-		transition: border-color 0.3s, color 0.3s;
+		transition:
+			border-color 0.3s,
+			color 0.3s;
+	}
+
+	.tab.mobile {
+		padding: 0.4rem 0.8rem;
+		font-size: 1rem;
 	}
 
 	.tab.active {
@@ -266,19 +280,35 @@
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
+		position: relative;
 	}
 
 	.options-container {
 		flex: 1;
-		overflow-y: auto;
+		overflow: hidden;
 		background: transparent;
 		border-radius: 8px;
 		padding: 0.5rem;
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 1;
 	}
 
 	.options-grid {
 		display: grid;
 		width: 100%;
+		min-height: 100px;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.mobile-grid {
+		width: 100%;
+		max-width: 100%;
+		padding: 0.2rem;
 	}
 
 	.options-grid > div {
@@ -292,12 +322,34 @@
 		align-content: center;
 		justify-content: center;
 	}
-    
+
 	.exactly-eight {
 		align-content: center;
 		justify-content: center;
 		margin: 0 auto;
 		max-width: 95%;
+	}
+
+	.single-option {
+		align-content: center;
+		justify-content: center;
+		height: 100%;
+		display: flex;
+		margin: 0 auto;
+	}
+
+	.single-item-grid {
+		min-height: 260px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.single-item {
+		margin: auto;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 
 	.loading-container {
@@ -322,44 +374,21 @@
 	}
 
 	@media (max-width: 768px) {
-		.header {
-			grid-template-columns: 1fr;
-			grid-template-rows: auto auto;
-			gap: 1rem;
+		.optionPicker {
+			padding: 10px;
 		}
 
-		.title {
-			display: none;
-		}
-
-		.tabs-container {
-			grid-column: 1;
-			grid-row: 1;
-			justify-self: center;
-		}
-
-		.filter-container {
-			grid-column: 1;
-			grid-row: 2;
-			justify-self: center;
-		}
-		
-		.options-grid:not(.exactly-eight) {
+		.options-grid:not(.mobile-grid):not(.exactly-eight) {
 			grid-template-columns: repeat(4, 1fr) !important;
 		}
 	}
 
 	@media (max-width: 480px) {
-		.tabs {
-			flex-wrap: wrap;
+		.optionPicker {
+			padding: 8px;
 		}
-		
-		.tab {
-			padding: 0.3rem 0.6rem;
-			font-size: 0.9rem;
-		}
-		
-		.options-grid:not(.exactly-eight) {
+
+		.options-grid:not(.mobile-grid):not(.exactly-eight) {
 			grid-template-columns: repeat(3, 1fr) !important;
 			gap: 0.5rem;
 		}

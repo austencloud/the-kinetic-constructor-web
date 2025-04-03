@@ -1,17 +1,16 @@
-
-<!-- src/lib/components/OptionPicker/components/ReversalFilter.svelte -->
 <script lang="ts">
   import { optionPickerStore, type ReversalFilterType } from '$lib/stores/optionPicker/optionPickerStore';
   
   export let selectedFilter: ReversalFilterType = 'all';
   export let disabled: boolean = false;
+  export let isMobile: boolean = false;
 
   // Filter options
-  const filters: { value: ReversalFilterType, label: string }[] = [
-    { value: 'all', label: 'All Options' },
-    { value: 'continuous', label: 'Continuous' },
-    { value: 'one_reversal', label: 'One Reversal' },
-    { value: 'two_reversals', label: 'Two Reversals' }
+  const filters: { value: ReversalFilterType, label: string, shortLabel: string }[] = [
+    { value: 'all', label: 'All Options', shortLabel: 'All' },
+    { value: 'continuous', label: 'Continuous', shortLabel: 'Cont.' },
+    { value: 'one_reversal', label: 'One Reversal', shortLabel: '1 Rev' },
+    { value: 'two_reversals', label: 'Two Reversals', shortLabel: '2 Rev' }
   ];
 
   // Handle filter change
@@ -23,16 +22,17 @@
   }
 </script>
 
-<div class="reversal-filter">
-  <label for="reversal-filter">Filter Options:</label>
+<div class="reversal-filter" class:mobile={isMobile}>
+  <label for="reversal-filter">{isMobile ? 'Filter:' : 'Filter Options:'}</label>
   <select 
     id="reversal-filter" 
     {disabled}
     bind:value={selectedFilter}
     on:change={handleFilterChange}
+    class:mobile-select={isMobile}
   >
     {#each filters as filter}
-      <option value={filter.value}>{filter.label}</option>
+      <option value={filter.value}>{isMobile ? filter.shortLabel : filter.label}</option>
     {/each}
   </select>
 </div>
@@ -43,6 +43,11 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+  
+  .mobile {
+    margin-bottom: 0.5rem;
+    gap: 0.3rem;
   }
   
   label {
@@ -57,6 +62,12 @@
     background-color: white;
     font-size: 1rem;
     min-width: 150px;
+  }
+  
+  .mobile-select {
+    padding: 0.4rem;
+    font-size: 0.9rem;
+    min-width: 100px;
   }
   
   select:disabled {

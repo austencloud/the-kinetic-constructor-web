@@ -140,6 +140,7 @@ function createOptionPickerStore() {
 		reset: () => {
 			set(initialState);
 		}
+		
 	};
 }
 
