@@ -1,18 +1,104 @@
 <!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/StartPosBeat.svelte -->
 <script lang="ts">
-	import { writable } from 'svelte/store';
+	import { onDestroy, onMount } from 'svelte';
 	import Beat from './Beat.svelte';
 	import type { BeatData } from './BeatData';
+	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
+	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	import { debugLog } from '$lib/utils/debugUtils';
+	import { writable } from 'svelte/store';
 
 	export let beatData: BeatData;
 	export let onClick: () => void;
 
-	// Create a label for the start position
+	// Debug log on init
+	debugLog('StartPosBeat', 'Component initialized', { 
+		beatNumber: beatData.beatNumber,
+		filled: beatData.filled
+	});
+
+	// Create a local store for the pictograph data for the Pictograph component
+	const pictographStore = writable(beatData.pictographData);
+	
+	// Subscribe to the selectedStartPos store directly from the global store
+	const unsubscribeStartPos = selectedStartPos.subscribe((startPos) => {
+		debugLog('StartPosBeat', 'selectedStartPos store update received', startPos);
+		
+		if (startPos) {
+			// Update the local pictograph data when the start position changes
+			debugLog('StartPosBeat', 'Updating beat data with new start position', {
+				startPos: startPos.startPos,
+				endPos: startPos.endPos
+			});
+			
+			pictographStore.set(startPos);
+			
+			// Also update the beat data directly
+			beatData = {
+				...beatData,
+				pictographData: startPos,
+				filled: true
+			};
+		} else {
+			debugLog('StartPosBeat', 'No start position, using default data');
+			
+			// If no start position is set, use default data
+			pictographStore.set(defaultPictographData);
+			
+			// Update the beat data accordingly
+			beatData = {
+				...beatData,
+				pictographData: defaultPictographData,
+				filled: false
+			};
+		}
+	});
+	
+	// Listen for the custom event as an alternative way to receive updates
+	onMount(() => {
+		const handleStartPosSelectedEvent = (event: CustomEvent) => {
+			debugLog('StartPosBeat', 'Custom event received: start-position-selected', event.detail);
+			
+			if (event.detail?.startPosition) {
+				const newStartPos = event.detail.startPosition;
+				
+				// Update the pictograph store with the new data
+				pictographStore.set(newStartPos);
+				
+				// Update the beat data
+				beatData = {
+					...beatData,
+					pictographData: newStartPos,
+					filled: true
+				};
+				
+				debugLog('StartPosBeat', 'Beat data updated from custom event', {
+					beatNumber: beatData.beatNumber,
+					filled: beatData.filled
+				});
+			}
+		};
+		
+		// Add event listener
+		document.addEventListener('start-position-selected', handleStartPosSelectedEvent as EventListener);
+		
+		return () => {
+			// Clean up event listener
+			document.removeEventListener('start-position-selected', handleStartPosSelectedEvent as EventListener);
+		};
+	});
+	
+	// Clean up subscription when component is destroyed
+	onDestroy(() => {
+		unsubscribeStartPos();
+		debugLog('StartPosBeat', 'Component destroyed');
+	});
 
 	// Handle clicks at this level to prevent multiple event handlers
 	function handleContainerClick(event: MouseEvent) {
 		// Only handle clicks directly on the container, not on children
 		if (event.target === event.currentTarget) {
+			debugLog('StartPosBeat', 'Container clicked');
 			onClick();
 		}
 	}

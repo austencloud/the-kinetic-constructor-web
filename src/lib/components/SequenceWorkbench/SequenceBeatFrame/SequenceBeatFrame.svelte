@@ -1,10 +1,13 @@
 <!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/SequenceBeatFrame.svelte -->
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
-	import { getSequenceContext, sequenceActions } from '$lib/context/sequence/sequenceContext';
+	import { onMount, tick, onDestroy } from 'svelte';
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import { autoAdjustLayout, calculateCellSize } from './beatFrameHelpers';
+	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	import { writable } from 'svelte/store';
+	import type { PictographData } from '$lib/types/PictographData';
+	import type { BeatData } from './BeatData';
 	
 	// Components
 	import StartPosBeat from './StartPosBeat.svelte';
@@ -16,8 +19,27 @@
 	// Constants
 	const GAP = 10; // Gap between cells in pixels
 	
-	// Get sequence context
-	const { state, dispatch } = getSequenceContext();
+	// Local state stores (work without context)
+	const beatsStore = writable<BeatData[]>([]);
+	const selectedBeatIndexStore = writable<number>(-1);
+	const startPositionStore = writable<PictographData | null>(null);
+	
+	// Local state variables
+	let beats: BeatData[] = [];
+	let selectedBeatIndex: number = -1;
+	let startPosition: PictographData | null = null;
+	
+	// Subscribe to the stores
+	const unsubscribeBeats = beatsStore.subscribe(value => beats = value);
+	const unsubscribeSelectedBeat = selectedBeatIndexStore.subscribe(value => selectedBeatIndex = value);
+	const unsubscribeStartPos = startPositionStore.subscribe(value => startPosition = value);
+	
+	// Also subscribe to the global selectedStartPos store
+	const unsubscribeGlobalStartPos = selectedStartPos.subscribe((startPos) => {
+	  if (startPos) {
+		startPositionStore.set(startPos);
+	  }
+	});
 	
 	// Use resize observer hook
 	const { size, resizeObserver } = useResizeObserver({
@@ -26,8 +48,13 @@
 	  height: window.innerHeight * 0.6
 	});
 	
-	// Create derived values from context state
-	$: ({ beats, selectedBeatIndex, startPosition } = $state);
+	// Clean up on component destroy
+	onDestroy(() => {
+		unsubscribeBeats();
+		unsubscribeSelectedBeat();
+		unsubscribeStartPos();
+		unsubscribeGlobalStartPos();
+	});
 	
 	// Create start position beat data
 	$: startPosBeatData = {
@@ -51,23 +78,53 @@
 	// Event handlers
 	function handleStartPosBeatClick() {
 	  // Deselect current beat
-	  dispatch(sequenceActions.selectBeat(-1));
+	  selectedBeatIndexStore.set(-1);
 	  
-	  // Dispatch event for handling in parent component if needed
+	  // Dispatch a custom event to trigger the start position selector
 	  const event = new CustomEvent('select-start-pos', {
-		bubbles: true
+		bubbles: true,
+		detail: { currentStartPos: startPosition }
 	  });
 	  document.dispatchEvent(event);
 	}
 	
 	function handleBeatClick(beatIndex: number) {
-	  dispatch(sequenceActions.selectBeat(beatIndex));
+	  selectedBeatIndexStore.set(beatIndex);
 	}
 	
-	// Ensure layout is calculated on mount
-	onMount(async () => {
-	  await tick();
+	// Handle start position selection
+	function updateStartPosition(newStartPos: PictographData) {
+	  if (newStartPos) {
+		startPositionStore.set(newStartPos);
+	  }
+	}
+	
+	// Set up event listener for when a start position is selected
+	onMount(() => {
+	  // Listen for the custom event when a start position is selected
+	  const handleStartPosSelected = (event: CustomEvent) => {
+		if (event.detail?.startPosition) {
+		  updateStartPosition(event.detail.startPosition);
+		}
+	  };
+	  
+	  document.addEventListener('start-position-selected', handleStartPosSelected as EventListener);
+	  
+	  return () => {
+		document.removeEventListener('start-position-selected', handleStartPosSelected as EventListener);
+	  };
 	});
+	
+	// Add a method to add beats (could be called from parent)
+	export function addBeat(beatData: BeatData) {
+	  beatsStore.update(beats => [...beats, beatData]);
+	}
+	
+	// Add a method to clear beats (could be called from parent)
+	export function clearBeats() {
+	  beatsStore.set([]);
+	  selectedBeatIndexStore.set(-1);
+	}
   </script>
   
   <div

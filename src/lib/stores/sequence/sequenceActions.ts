@@ -1,7 +1,11 @@
-// src/lib/stores/sequenceActions.ts
+// src/lib/stores/sequence/sequenceActions.ts
 import { beatsStore, selectedBeatIndexStore } from './beatsStore';
 import type { PictographData } from '../../types/PictographData';
 import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData';
+import { writable, get, type Writable } from 'svelte/store';
+
+// Create a store for the start position
+export const startPositionStore: Writable<PictographData | null> = writable<PictographData | null>(null);
 
 // Action types as constants
 export const ActionTypes = {
@@ -12,7 +16,9 @@ export const ActionTypes = {
 	CLEAR_SEQUENCE: 'CLEAR_SEQUENCE',
 	MIRROR_SEQUENCE: 'MIRROR_SEQUENCE',
 	ROTATE_SEQUENCE: 'ROTATE_SEQUENCE',
-	SWAP_COLORS: 'SWAP_COLORS'
+	SWAP_COLORS: 'SWAP_COLORS',
+	UPDATE_START_POSITION: 'UPDATE_START_POSITION',
+	SET_STATUS: 'SET_STATUS'
 } as const;
 
 // Action type definitions using discriminated unions
@@ -24,7 +30,9 @@ export type SequenceAction =
 	| { type: 'CLEAR_SEQUENCE' }
 	| { type: 'MIRROR_SEQUENCE'; payload?: { direction: 'horizontal' | 'vertical' } }
 	| { type: 'ROTATE_SEQUENCE'; payload?: { degrees: number } }
-	| { type: 'SWAP_COLORS' };
+	| { type: 'SWAP_COLORS' }
+	| { type: 'UPDATE_START_POSITION'; payload: PictographData }
+	| { type: 'SET_STATUS'; payload: string };
 
 // Action creators - pure functions that dispatch store updates
 export const sequenceActions = {
@@ -61,6 +69,7 @@ export const sequenceActions = {
 	clearSequence(): SequenceAction {
 		beatsStore.set([]);
 		selectedBeatIndexStore.set(-1);
+		startPositionStore.set(null);
 		return { type: 'CLEAR_SEQUENCE' };
 	},
 
@@ -134,6 +143,17 @@ export const sequenceActions = {
 		});
 
 		return { type: 'SWAP_COLORS' };
+	},
+
+	// New action for updating the start position
+	updateStartPosition(pictographData: PictographData): SequenceAction {
+		startPositionStore.set(pictographData);
+		return { type: 'UPDATE_START_POSITION', payload: pictographData };
+	},
+
+	// Set status action
+	setStatus(status: string): SequenceAction {
+		return { type: 'SET_STATUS', payload: status };
 	}
 };
 

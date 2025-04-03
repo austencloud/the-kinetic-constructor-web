@@ -3,10 +3,30 @@ import { writable, derived, type Readable } from 'svelte/store';
 import type { PictographData } from '$lib/types/PictographData';
 import { beatsStore } from './beatsStore';
 import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData';
+import { debugLog } from '$lib/utils/debugUtils';
+
+// Create a custom store with debug logging for selectedStartPos
+function createSelectedStartPosStore() {
+    const { subscribe, set, update } = writable<PictographData | null>(null);
+    
+    return {
+        subscribe,
+        set: (value: PictographData | null) => {
+            debugLog('selectionStore', 'selectedStartPos updated', value ? 
+                {
+                    letter: value.letter,
+                    startPos: value.startPos,
+                    endPos: value.endPos
+                } : 'null');
+            set(value);
+        },
+        update
+    };
+}
 
 // Primary selection stores
 export const selectedBeatIndexStore = writable<number | null>(null);
-export const selectedStartPosStore = writable<PictographData | null>(null);
+export const selectedStartPosStore = createSelectedStartPosStore();
 
 // Derived store for the selected beat data
 export const selectedBeat: Readable<BeatData | null> = derived(

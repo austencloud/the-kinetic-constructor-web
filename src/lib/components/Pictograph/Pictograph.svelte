@@ -1,3 +1,4 @@
+<!-- src/lib/components/Pictograph/Pictograph.svelte -->
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
@@ -32,14 +33,15 @@
 		[componentsLoadedStore, totalComponentsStore],
 		([$loaded, $total]) => Math.floor(($loaded / Math.max($total, 1)) * 100)
 	);
-	// Event dispatcher - unchanged
+	// Event dispatcher
 	const dispatch = createEventDispatcher<{
 		loaded: { complete: boolean; error?: boolean; message?: string };
 		error: { source: string; error?: any; message?: string };
 		componentLoaded: { componentName: string };
+		dataUpdated: { type: 'props' | 'arrows' | 'letter' | 'all' };
 	}>();
 
-	// Component state variables - unchanged but better organized
+	// Component state variables
 	let state = 'initializing';
 	let errorMessage: string | null = null;
 	let gridData: GridData | null = null;
@@ -53,7 +55,35 @@
 	let componentsLoaded = 0;
 	let renderCount = 0;
 	let service: PictographService;
-	// Reactive values derived from pictographDataStore - unchanged
+	
+	// Store tracked data snapshot for comparison
+	interface TrackedDataSnapshot {
+		letter: string | null;
+		gridMode: string;
+		startPos: string | null;
+		endPos: string | null;
+		direction: string | null;
+		redMotionData: {
+			id: string;
+			startLoc: string;
+			endLoc: string;
+			startOri: string;
+			endOri: string;
+			motionType: string;
+		} | null;
+		blueMotionData: {
+			id: string;
+			startLoc: string;
+			endLoc: string;
+			startOri: string;
+			endOri: string;
+			motionType: string;
+		} | null;
+	}
+	
+	let lastDataSnapshot: TrackedDataSnapshot | null = null;
+
+	// Reactive values derived from pictographDataStore
 	$: loadProgress = $loadProgressStore;
 	$: pictographData = $pictographDataStore;
 	$: letter = pictographData?.letter || null;
@@ -62,6 +92,115 @@
 	$: interactiveProps = onClick
 		? { role: 'button', tabIndex: 0, 'aria-label': `Pictograph for letter ${letter || 'unknown'}` }
 		: {};
+
+	// Watch for changes to pictographData and update components when it changes
+	$: {
+		// Use a safe comparison method that avoids circular references
+		const hasChanged = checkForDataChanges(pictographData);
+		
+		// Only process if there's a real change and service is initialized
+		if (hasChanged && service) {
+			if (debug) console.debug('Pictograph data changed, updating components');
+			
+			// Update the service with new data
+			service.updateData(pictographData);
+			
+			// Update local state
+			updateComponentsFromData();
+			
+			// Notify parent about the update
+			dispatch('dataUpdated', { type: 'all' });
+		}
+	}
+
+	// Safe comparison function that avoids circular references
+	function checkForDataChanges(newData: PictographData): boolean {
+		// If this is the first time, always return true
+		if (!lastDataSnapshot) {
+			// Update last known values for safe comparison next time
+			updateLastKnownValues(newData);
+			return true;
+		}
+
+		try {
+			// Compare important fields directly - add any fields that should trigger a rerender
+			const fieldsChanged =
+				lastDataSnapshot.letter !== newData.letter ||
+				lastDataSnapshot.gridMode !== newData.gridMode ||
+				lastDataSnapshot.startPos !== newData.startPos ||
+				lastDataSnapshot.endPos !== newData.endPos ||
+				lastDataSnapshot.direction !== newData.direction ||
+				compareMotionData('red') ||
+				compareMotionData('blue');
+
+			// Update last known values if changed
+			if (fieldsChanged) {
+				updateLastKnownValues(newData);
+			}
+
+			return fieldsChanged;
+		} catch (error) {
+			console.warn('Error comparing pictograph data:', error);
+			return true; // Assume changed on error to be safe
+		}
+
+		// Helper function to compare motion data
+		function compareMotionData(color: 'red' | 'blue'): boolean {
+			const key = `${color}MotionData` as 'redMotionData' | 'blueMotionData';
+			const oldMotion = lastDataSnapshot![key];
+			const newMotion = newData[key];
+
+			// If both null/undefined or same reference, no change
+			if (oldMotion === newMotion) return false;
+
+			// If one exists and the other doesn't, changed
+			if ((!oldMotion && newMotion) || (oldMotion && !newMotion)) return true;
+
+			// Compare critical motion properties
+			if (oldMotion && newMotion) {
+				return (
+					oldMotion.id !== newMotion.id ||
+					oldMotion.startLoc !== newMotion.startLoc ||
+					oldMotion.endLoc !== newMotion.endLoc ||
+					oldMotion.startOri !== newMotion.startOri ||
+					oldMotion.endOri !== newMotion.endOri ||
+					oldMotion.motionType !== newMotion.motionType
+				);
+			}
+
+			return false;
+		}
+	}
+
+	function updateLastKnownValues(data: PictographData): void {
+		lastDataSnapshot = {
+			letter: data.letter,
+			gridMode: data.gridMode,
+			startPos: data.startPos,
+			endPos: data.endPos,
+			direction: data.direction,
+			redMotionData: data.redMotionData
+				? {
+						id: data.redMotionData.id,
+						startLoc: data.redMotionData.startLoc,
+						endLoc: data.redMotionData.endLoc,
+						startOri: data.redMotionData.startOri,
+						endOri: data.redMotionData.endOri,
+						motionType: data.redMotionData.motionType
+					}
+				: null,
+			blueMotionData: data.blueMotionData
+				? {
+						id: data.blueMotionData.id,
+						startLoc: data.blueMotionData.startLoc,
+						endLoc: data.blueMotionData.endLoc,
+						startOri: data.blueMotionData.startOri,
+						endOri: data.blueMotionData.endOri,
+						motionType: data.blueMotionData.motionType
+					}
+				: null
+		};
+	}
 
 	function getPictographAriaLabel(): string {
 		if (state === 'error') return `Pictograph error: ${errorMessage}`;
@@ -74,12 +213,15 @@
 		return Boolean(data?.redMotionData || data?.blueMotionData);
 	}
 
-	// Component initialization - mostly unchanged, slight improvements
+	// Component initialization
 	onMount(() => {
 		const startTime = performance.now();
 
 		try {
 			service = new PictographService(pictographData);
+			
+			// Initialize data snapshot
+			updateLastKnownValues(pictographData);
 
 			if (hasRequiredMotionData(pictographData)) {
 				state = 'loading';
@@ -100,6 +242,41 @@
 		};
 	});
 
+	// Function to update components when pictographData changes
+	function updateComponentsFromData() {
+		try {
+			// Reset state if needed
+			if (state === 'error') {
+				state = 'loading';
+				errorMessage = null;
+			}
+
+			// Update state based on available motion data
+			if (hasRequiredMotionData(pictographData)) {
+				if (state === 'grid_only') state = 'loading';
+			} else {
+				state = 'grid_only';
+			}
+
+			// Only recreate components if grid data is available
+			if (gridData) {
+				// Create and position components
+				createAndPositionComponents();
+
+				// Update rendering count
+				renderCount++;
+
+				// If all required components were already loaded previously,
+				// mark as complete immediately
+				if (requiredComponents.every((comp) => loadedComponents.has(comp))) {
+					state = 'complete';
+				}
+			}
+		} catch (error) {
+			handleError('data update', error);
+		}
+	}
+
 	function handleGridLoaded(data: GridData) {
 		try {
 			// Update state
@@ -110,7 +287,7 @@
 			// Update progress
 			updateLoadProgress();
 
-			// Update pictograph data store
+			// Update pictograph data store with a shallow copy to avoid circular refs
 			pictographDataStore.update((store) => ({ ...store, gridData: data }));
 
 			// Exit if grid-only mode
@@ -130,22 +307,38 @@
 		try {
 			// Initialize required components
 			requiredComponents = ['grid'];
-			totalComponentsToLoad = 1;
+
+			// Don't reset total components to load since we may already have loaded some
+			if (state !== 'complete') totalComponentsToLoad = 1;
 
 			// Create red components if needed
 			if (pictographData.redMotionData) {
 				redPropData = service.createPropData(pictographData.redMotionData, 'red');
 				redArrowData = service.createArrowData(pictographData.redMotionData, 'red');
-				requiredComponents.push('redProp', 'redArrow');
-				totalComponentsToLoad += 2;
+
+				if (!requiredComponents.includes('redProp')) {
+					requiredComponents.push('redProp', 'redArrow');
+					if (state !== 'complete') totalComponentsToLoad += 2;
+				}
+			} else {
+				// Clear red components if no longer needed
+				redPropData = null;
+				redArrowData = null;
 			}
 
 			// Create blue components if needed
 			if (pictographData.blueMotionData) {
 				bluePropData = service.createPropData(pictographData.blueMotionData, 'blue');
 				blueArrowData = service.createArrowData(pictographData.blueMotionData, 'blue');
-				requiredComponents.push('blueProp', 'blueArrow');
-				totalComponentsToLoad += 2;
+
+				if (!requiredComponents.includes('blueProp')) {
+					requiredComponents.push('blueProp', 'blueArrow');
+					if (state !== 'complete') totalComponentsToLoad += 2;
+				}
+			} else {
+				// Clear blue components if no longer needed
+				bluePropData = null;
+				blueArrowData = null;
 			}
 
 			// Position components if grid data is available
@@ -183,7 +376,7 @@
 	}
 
 	function updateLoadProgress() {
-		componentsLoadedStore.set(++componentsLoaded);
+		componentsLoadedStore.set(componentsLoaded);
 		totalComponentsStore.set(totalComponentsToLoad);
 	}
 
@@ -251,38 +444,52 @@
 		}
 	}
 
-	function handleError(source: string, error: any) {
-		// Create an error object using the new error service
-		const errorObj = errorService.createError(
-			`Pictograph:${source}`,
-			error,
-			// Determine severity based on the source
-			source === 'initialization' ? ErrorSeverity.CRITICAL : ErrorSeverity.ERROR
-		);
+	function handleError(this: any, source: string, error: any) {
+		try {
+			// Create a safe error message that won't have circular references
+			const errorMessage = error instanceof Error 
+				? error.message 
+				: (typeof error === 'string' ? error : 'Unknown error');
+				
+			// Create an error object using the error service with safe data
+			const errorObj = errorService.createError(
+				`Pictograph:${source}`,
+				{ message: errorMessage }, // Avoid passing the original error that might have circular refs
+				// Determine severity based on the source
+				source === 'initialization' ? ErrorSeverity.CRITICAL : ErrorSeverity.ERROR
+			);
 
-		// Add additional context specific to Pictograph
-		errorObj.context = {
-			loadedCount: componentsLoaded,
-			totalCount: totalComponentsToLoad
-		};
+			// Add additional context specific to Pictograph
+			errorObj.context = {
+				loadedCount: componentsLoaded,
+				totalCount: totalComponentsToLoad
+			};
 
-		// Log the error using the service
-		errorService.log(errorObj);
+			// Log the error using the service
+			errorService.log(errorObj);
 
-		// Set local error message (maintaining existing behavior)
-		errorMessage = errorObj.message;
-		state = 'error';
+			// Set local error message
+			this.errorMessage = errorObj.message;
+			state = 'error';
 
-		// Maintain existing debug logging
-		if (debug) {
-			console.error(`Pictograph error [${source}]:`, errorObj);
-		} else {
-			console.error(`Pictograph error: ${errorMessage}`);
+			// Debug logging
+			if (debug) {
+				console.error(`Pictograph error [${source}]:`, errorObj);
+			} else {
+				console.error(`Pictograph error: ${errorMessage}`);
+			}
+
+			// Dispatch events
+			dispatch('error', { source, error: { message: errorMessage }, message: errorMessage });
+			dispatch('loaded', { complete: false, error: true, message: errorMessage });
+		} catch (errorHandlingError) {
+			// If error handling itself fails, use a simpler approach
+			console.error('Error in error handler:', errorHandlingError);
+			errorMessage = 'Error in Pictograph component';
+			state = 'error';
+			dispatch('error', { source, error: null, message: 'Error in Pictograph component' });
+			dispatch('loaded', { complete: false, error: true, message: 'Error in Pictograph component' });
 		}
-
-		// Dispatch events exactly as before
-		dispatch('error', { source, error, message: errorMessage });
-		dispatch('loaded', { complete: false, error: true, message: errorMessage });
 	}
 
 	function handleWrapperClick() {
@@ -328,7 +535,7 @@
 
 			{#if state !== 'grid_only'}
 				{#if letter}
-					<g in:fade={{ duration: animationDuration, delay: 100 }}>
+					<g transition:fade={{ duration: animationDuration, delay: 100 }}>
 						<TKAGlyph {letter} turnsTuple="(s, 0, 0)" x={50} y={800} />
 					</g>
 				{/if}
@@ -336,7 +543,7 @@
 				{#each [{ color: 'red', propData: redPropData, arrowData: redArrowData, delay: 150 }, { color: 'blue', propData: bluePropData, arrowData: blueArrowData, delay: 200 }] as { color, propData, arrowData, delay }}
 					{#if propData}
 						<g
-							in:fade={{ duration: animationDuration, delay }}
+							transition:fade={{ duration: animationDuration, delay }}
 							style="transform-origin: center center;"
 						>
 							<Prop
@@ -349,7 +556,7 @@
 
 					{#if arrowData}
 						<g
-							in:fade={{ duration: animationDuration, delay }}
+							transition:fade={{ duration: animationDuration, delay }}
 							style="transform-origin: center center;"
 						>
 							<Arrow

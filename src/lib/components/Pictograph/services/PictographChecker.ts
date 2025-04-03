@@ -6,14 +6,28 @@ import { LetterConditions } from '../constants/LetterConditions';
 import type { Orientation } from '$lib/types/Types';
 
 export class PictographChecker {
-  constructor(private pictographData: PictographData) {}
+	private _pictographData: PictographData;
 
-  private get orientationChecks() {
-    return {
-      isRadial: (ori?: string) => [IN, OUT].includes(ori ?? ''),
-      isRotational: (ori?: string) => [CLOCK, COUNTER].includes(ori ?? '')
-    };
-  }
+	constructor(pictographData: PictographData) {
+		this._pictographData = pictographData;
+	}
+
+	// Use a getter to access the most up-to-date pictograph data
+	get pictographData(): PictographData {
+		return this._pictographData;
+	}
+
+	// Method to update the pictograph data when it changes
+	updateData(newData: PictographData): void {
+		this._pictographData = newData;
+	}
+
+	private get orientationChecks() {
+		return {
+			isRadial: (ori?: string) => [IN, OUT].includes(ori ?? ''),
+			isRotational: (ori?: string) => [CLOCK, COUNTER].includes(ori ?? '')
+		};
+	}
 
 	private getMotionEndOrientation(motionKey: 'redMotionData' | 'blueMotionData') {
 		return this.pictographData[motionKey]?.endOri;
@@ -25,34 +39,34 @@ export class PictographChecker {
 			: false;
 	}
 
-  endsWithLayer3(): boolean {
-    const redEndOri = this.getMotionEndOrientation('redMotionData');
-    const blueEndOri = this.getMotionEndOrientation('blueMotionData');
+	endsWithLayer3(): boolean {
+		const redEndOri = this.getMotionEndOrientation('redMotionData');
+		const blueEndOri = this.getMotionEndOrientation('blueMotionData');
 
-    const checks = this.orientationChecks;
+		const checks = this.orientationChecks;
 
-    return (
-      (checks.isRadial(redEndOri) && checks.isRotational(blueEndOri)) ||
-      (checks.isRotational(redEndOri) && checks.isRadial(blueEndOri))
-    );
-  }
+		return (
+			(checks.isRadial(redEndOri) && checks.isRotational(blueEndOri)) ||
+			(checks.isRotational(redEndOri) && checks.isRadial(blueEndOri))
+		);
+	}
 
-  endsWithRadialOri(): boolean {
-    const redEndOri = this.getMotionEndOrientation('redMotionData');
-    const blueEndOri = this.getMotionEndOrientation('blueMotionData');
+	endsWithRadialOri(): boolean {
+		const redEndOri = this.getMotionEndOrientation('redMotionData');
+		const blueEndOri = this.getMotionEndOrientation('blueMotionData');
 
-    return (
-      this.orientationChecks.isRadial(redEndOri) && this.orientationChecks.isRadial(blueEndOri)
-    );
-  }
+		return (
+			this.orientationChecks.isRadial(redEndOri) && this.orientationChecks.isRadial(blueEndOri)
+		);
+	}
 
-  endsWithNonRadialOri(): boolean {
-    const redEndOri = this.getMotionEndOrientation('redMotionData');
-    const blueEndOri = this.getMotionEndOrientation('blueMotionData');
+	endsWithNonRadialOri(): boolean {
+		const redEndOri = this.getMotionEndOrientation('redMotionData');
+		const blueEndOri = this.getMotionEndOrientation('blueMotionData');
 
-    return (
-      this.orientationChecks.isRotational(redEndOri) &&
-      this.orientationChecks.isRotational(blueEndOri)
-    );
-  }
+		return (
+			this.orientationChecks.isRotational(redEndOri) &&
+			this.orientationChecks.isRotational(blueEndOri)
+		);
+	}
 }
