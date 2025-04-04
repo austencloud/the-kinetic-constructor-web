@@ -92,5 +92,3 @@ export const slideDirection: Readable<boolean> = derived(
 
 export const isTabTransitionInProgress = derived(appState, ($state) => $state.transitionInProgress);
 
-// Compute whether sequence is empty for conditional UI
-export const isSequenceEmpty = derived(beatsStore, ($beats) => $beats.length === 0);

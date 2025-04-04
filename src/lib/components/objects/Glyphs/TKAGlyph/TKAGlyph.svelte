@@ -37,17 +37,6 @@ import TKALetter from './Letter/TKALetter.svelte';
 </script>
 
 <g class="tka-glyph" bind:this={glyphEl} transform={`translate(${x}, ${y})`}>
-	<!-- Uncomment for debugging -->
-	<!-- <rect
-		fill="none"
-		stroke="red"
-		stroke-width="1"
-		x={glyphBBox.x}
-		y={glyphBBox.y}
-		width={glyphBBox.width}
-		height={glyphBBox.height}
-	/> -->
-
 	<TKALetter {letter} on:letterBBox={handleLetterBBox} />
 
 	<!-- Only show dash and dots after letter is loaded with proper dimensions -->

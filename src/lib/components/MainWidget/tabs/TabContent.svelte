@@ -5,9 +5,11 @@
 	import OptionPicker from '$lib/components/OptionPicker/OptionPicker.svelte';
 	import StartPosPicker from '$lib/components/StartPosPicker/StartPosPicker.svelte';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
 	import { derived } from 'svelte/store';
 	import { getTransitionProps } from '../utils/transitionHelpers';
 	import { fly } from 'svelte/transition';
+	import { fade } from 'svelte/transition';
 
 	export let isVisible: boolean = true;
 	export let useTransitions: boolean = false;
@@ -16,10 +18,7 @@
 	const contentFadeOut = derived(appState, (s) => s.contentFadeOut);
 </script>
 
-<div 
-	class="tab-content-container" 
-	class:content-fade-out={$contentFadeOut}
->
+<div class="tab-content-container" class:content-fade-out={$contentFadeOut}>
 	{#if isVisible}
 		{#key $activeTab.id}
 			{#if $activeTab.splitView}
@@ -39,11 +38,15 @@
 							? getTransitionProps($activeTabIndex, $slideDirection).props
 							: undefined}
 					>
-						{#if $selectedStartPos}
-							<OptionPicker />
-						{:else}
-							<StartPosPicker />
-						{/if}
+						{#key $isSequenceEmpty}
+							<div class="picker-container" transition:fade={{ duration: 300 }}>
+								{#if $isSequenceEmpty}
+									<StartPosPicker />
+								{:else}
+									<OptionPicker />
+								{/if}
+							</div>
+						{/key}
 					</div>
 				</div>
 			{:else if $activeTab.component}
@@ -107,7 +110,13 @@
 		height: 100%;
 		position: relative;
 	}
-
+	.picker-container {
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
 	/* Responsive layouts */
 	@media (orientation: portrait) {
 		.split-view-container {
@@ -115,7 +124,7 @@
 		}
 
 		.sequenceWorkbenchContainer {
-			flex:1;
+			flex: 1;
 		}
 
 		.optionPickerContainer {

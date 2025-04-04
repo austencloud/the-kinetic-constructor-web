@@ -8,6 +8,7 @@
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import pictographDataStore from '$lib/stores/pictograph/pictographStore';
 	import startPositionService from '$lib/services/StartPositionService';
+	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
 	// DEBUG: Log component initialization
 
 	let gridMode = 'diamond';
@@ -38,8 +39,6 @@
 				entry.blueMotionData &&
 				defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
 		);
-
-
 
 		if (filteredPictographs.length === 0) {
 			if (pictographData.length > 0) {
@@ -75,11 +74,7 @@
 			clearTimeout(loadingTimeout);
 		}
 	});
-
 	const handleSelect = async (startPosPictograph: PictographData) => {
-		// Log the selection
-
-
 		try {
 			// Add start position to the sequence
 			await startPositionService.addStartPosition(startPosPictograph);
@@ -87,7 +82,8 @@
 			// Update the selected start position in the store
 			selectedStartPos.set({ ...startPosPictograph });
 
-			// Log the current state of the store after update
+			// Update sequence state to not empty
+			isSequenceEmpty.set(false);
 
 			// Dispatch a custom event for components that might be listening
 			const customEvent = new CustomEvent('start-position-selected', {
@@ -95,7 +91,6 @@
 				bubbles: true
 			});
 			document.dispatchEvent(customEvent);
-
 		} catch (error) {
 			console.error('Error adding start position:', error);
 			// Optionally show an error message to the user
@@ -104,8 +99,6 @@
 
 	function handlePictographLoaded(event: CustomEvent) {
 		loadedPictographs++;
-
-
 	}
 
 	function handlePictographError(event: CustomEvent) {

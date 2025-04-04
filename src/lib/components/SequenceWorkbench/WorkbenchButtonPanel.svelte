@@ -1,4 +1,5 @@
-<!-- src/lib/components/SequenceWorkbench/ButtonPanel/SequenceWidgetButtonPanel.svelte -->
+<!-- src/lib/components/SequenceWorkbench/ButtonPanel/WorkbenchButtonPanel.svelte -->
+
 <script context="module" lang="ts">
 	// Type declarations for MDB
 	interface MdbRipple {
@@ -16,7 +17,9 @@
 
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-
+	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
+	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	import { beatsStore } from '$lib/stores/sequence/beatsStore';
 	// Define types
 	type LayoutOrientation = 'vertical' | 'horizontal';
 
@@ -97,17 +100,25 @@
 
 	// Handle button click and create ripple effect
 	function handleButtonClick(id: string) {
-		// Dispatch to both event listeners and document events for backward compatibility
+		// Dispatch action to parent components
 		dispatch('action', { id });
 
-		// Legacy event dispatch for backward compatibility
-		const customEvent = new CustomEvent('action', {
-			detail: { action: id },
-			bubbles: true
-		});
-		document.dispatchEvent(customEvent);
-	}
+		// Handle specific actions here directly
+		if (id === 'clearSequence') {
+			// Clear the sequence
+			selectedStartPos.set(null);
+			isSequenceEmpty.set(true);
 
+			// Also clear the beats store
+			beatsStore.update((beats) => []);
+
+			// Dispatch additional event if needed for other components
+			const customEvent = new CustomEvent('sequence-cleared', {
+				bubbles: true
+			});
+			document.dispatchEvent(customEvent);
+		}
+	}
 	// Calculate button size based on container dimensions and orientation
 	function calculateButtonSize(width: number, height: number, isPortrait: boolean): number {
 		const isMobile = width <= 768;

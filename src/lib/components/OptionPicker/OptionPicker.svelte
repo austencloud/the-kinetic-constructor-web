@@ -19,6 +19,7 @@
 	import { detectDeviceState } from './utils/deviceUtils';
 	import { getResponsiveLayout } from './utils/layoutUtils';
 	import type { PictographData } from '$lib/types/PictographData';
+	import { debounce } from '$lib/utils/debounceUtils';
 
 	// --- Local State ---
 	let selectedTab: string | null = null;
@@ -85,15 +86,16 @@
 	function setupContainerResizeObserver() {
 		if (typeof ResizeObserver === 'undefined' || !optionsOuterContainerRef) return;
 
-		resizeObserver = new ResizeObserver((entries) => {
+		const handleResize = debounce((entries: ResizeObserverEntry[]) => {
 			const entry = entries[0];
 			if (entry) {
 				const { width, height } = entry.contentRect;
 				containerWidth = width;
 				containerHeight = height;
 			}
-		});
+		}, 100);
 
+		resizeObserver = new ResizeObserver(handleResize);
 		resizeObserver.observe(optionsOuterContainerRef);
 
 		// Initial measurement
