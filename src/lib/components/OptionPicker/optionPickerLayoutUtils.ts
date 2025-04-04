@@ -285,6 +285,16 @@ export function getResponsiveLayout(
 	isMobile: boolean = false,
 	isPortrait: boolean = false
 ): ResponsiveLayoutConfig {
+	if (containerHeight <= 0 || containerWidth <= 0) {
+		// Provide a sensible default layout
+		return {
+			gridColumns: 'repeat(auto-fit, minmax(100px, 1fr))', // Flexible grid
+			optionSize: '100px', // Default size
+			gridGap: '0.5rem',
+			gridClass: isMobile ? 'mobile-grid' : '',
+			scaleFactor: isMobile ? 0.95 : 1.0
+		};
+	}
 	const gridConfig = calculateGridConfiguration(count, isMobile, isPortrait);
 	let finalGridColumns = gridConfig.template;
 

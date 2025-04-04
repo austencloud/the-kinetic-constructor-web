@@ -11,12 +11,12 @@
 	// Stores & Types
 	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore'; // Used directly by Option component
 	import { beatsStore } from '$lib/stores/sequence/beatsStore';
-	import optionPickerStore, { type SortMethodType } from './optionPickerStore';
 	import type { PictographData } from '$lib/types/PictographData';
 
 	// Utilities & Layout
 	import { isMobile, isPortrait } from '$lib/utils/deviceUtils';
 	import { getResponsiveLayout, type ResponsiveLayoutConfig } from './optionPickerLayoutUtils';
+	import { optionPickerStore } from './optionPickerStore';
 
 	// --- Transitions ---
 	const [send, receive] = crossfade({
@@ -38,7 +38,7 @@
 	let optionsOuterContainerRef: HTMLElement;
 
 	// --- Store Access ---
-	const { optionsByLetterType: optionsByCategory, loadOptions } = optionPickerStore;
+	const { groupedOptions, loadOptions } = optionPickerStore;
 
 	// Subscribe to beat changes
 	const unsubscribeBeats = beatsStore.subscribe((beats) => {
@@ -47,8 +47,8 @@
 	});
 
 	// --- Reactive Declarations ---
-	$: categoryKeys = $optionsByCategory ? Object.keys($optionsByCategory).sort() : [];
-
+	$: categoryKeys = $groupedOptions ? Object.keys($groupedOptions).sort() : [];
+	$: currentOptions = (selectedTab && $groupedOptions?.[selectedTab]) || [];
 	$: {
 		if (categoryKeys.length > 0) {
 			if (!selectedTab || !categoryKeys.includes(selectedTab)) {
@@ -58,9 +58,6 @@
 			selectedTab = null;
 		}
 	}
-
-	$: currentOptions = (selectedTab && $optionsByCategory?.[selectedTab]) || [];
-
 	$: layout = getResponsiveLayout(
 		currentOptions.length,
 		containerHeight,
@@ -422,7 +419,6 @@
 
 	/* Make sure the existing single-item styles are still present */
 
-
 	/* Special centering for single item */
 	.single-item-grid {
 		display: flex; /* Override grid */
@@ -430,7 +426,6 @@
 		align-items: center;
 		height: 100%; /* Fill panel height */
 	}
-
 
 	/* --- Grid Layout Classes (from layout utils) --- */
 	.mobile-grid {

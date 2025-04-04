@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { optionPickerStore, type SortMethodType } from '../optionPickerStore';
+	import { optionPickerStore, type SortMethod } from '../optionPickerStore';
 	import { fade } from 'svelte/transition';
 	import { clickOutside } from '$lib/actions/clickOutside';
 
@@ -35,7 +35,7 @@
 		isOpen = false;
 	}
 
-	function handleSort(method: SortMethodType) {
+	function handleSort(method: SortMethod) {
 		optionPickerStore.setSortMethod(method); // Update the store
 		closeDropdown(); // Close dropdown after selection
 	}
