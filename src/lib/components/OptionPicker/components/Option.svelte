@@ -5,10 +5,13 @@
 	import { optionPickerStore } from '$lib/components/OptionPicker/optionPickerStore';
 	import { isMobile } from '$lib/utils/deviceUtils';
 	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
+	import { onMount } from 'svelte';
+	import { getPictographScaleFactor } from '$lib/components/OptionPicker/optionPickerLayoutUtils';
 
 	export let pictographData: PictographData;
 	export let selectedPictographStore: Writable<PictographData | null> | undefined = undefined;
 	export let size: string = 'auto';
+	export let isSingleOption: boolean = false; // Handle single option case
 
 	// Create a writable store from the pictograph data
 	const pictographDataStore = writable(pictographData);
@@ -19,9 +22,10 @@
 	// Track if this option is currently selected
 	$: isSelected = $selectedPictograph === pictographData;
 
-	// Set mobile state on mount
-	import { onMount } from 'svelte';
+	// Get scale factor from utility
+	$: scaleFactor = isSingleOption ? 1.2 : getPictographScaleFactor(isMobileDevice);
 
+	// Set mobile state on mount
 	onMount(() => {
 		isMobileDevice = isMobile();
 	});
@@ -32,14 +36,6 @@
 			selectedPictographStore.set(pictographData);
 		}
 	}
-
-	import { getPictographScaleFactor } from '$lib/components/OptionPicker/optionPickerLayoutUtils';
-
-	// Handle single option case
-	export let isSingleOption: boolean = false;
-
-	// Get scale factor from utility
-	$: scaleFactor = isSingleOption ? 1.2 : getPictographScaleFactor(isMobileDevice);
 </script>
 
 <div
@@ -61,42 +57,50 @@
 <style>
 	.option {
 		position: relative;
-		z-index: 1;
-		transition:
-			transform 0.2s ease,
-			z-index 0.2s ease;
+		display: flex; /* Ensure it fills the parent div space for hover */
+		justify-content: center; /* Center content */
+		align-items: center; /* Center content */
+		width: 100%; /* Fill parent width */
+		height: 100%; /* Fill parent height */
+		cursor: pointer;
+		/*
+			Removed z-index and transform from base style.
+			Z-index is handled by the parent grid item.
+			Transform is applied on hover.
+		*/
+		transition: transform 0.2s ease; /* Only transition transform */
 	}
 
+	/* Apply scaling and shadow on hover */
 	.option:hover {
-		z-index: 10;
-		transform: scale(1.05);
+		/* z-index: 10; <-- Removed: z-index is controlled by the parent grid item hover */
+		transform: scale(1.05); /* Apply scaling directly to the option container */
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-	}
-	.pictograph-container {
-		position: relative;
-		z-index: inherit; /* This ensures the container follows the parent's z-index */
-	}
-	.option:not(:hover) {
-		z-index: 1;
-	}
-	.option.mobile {
-		border-radius: 6px;
 	}
 
 	.option.mobile:hover {
 		transform: scale(1.02); /* Less dramatic hover on mobile */
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* Adjusted shadow for mobile */
 	}
 
 	.pictograph-container {
+		/* Inherit position characteristics if needed, but mainly for centering */
 		position: relative;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		transition: transform 0.2s ease;
+		width: 100%;
+		height: 100%;
+		/* Removed transition: transform - parent handles transform now */
 	}
 
+	/* Keep focus style */
 	.option:focus-visible {
 		outline: 3px solid #4299e1;
 		outline-offset: 2px;
+		border-radius: 4px; /* Optional: makes focus ring look nicer */
 	}
+
+	/* Style for selected state if needed */
+
 </style>
