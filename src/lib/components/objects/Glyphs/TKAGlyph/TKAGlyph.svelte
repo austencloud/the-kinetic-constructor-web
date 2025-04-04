@@ -1,48 +1,85 @@
+<!-- src/lib/components/objects/Glyphs/TKAGlyph/TKAGlyph.svelte -->
 <script lang="ts">
-	import { parseTurnsTupleString } from './Turns/parseTurnsTuple';
+	import { onMount, createEventDispatcher } from 'svelte';
+	import { parseTurnsTupleString } from './utils/parseTurnsTuple';
+	import { preloadCommonAssets, assetCache, type Rect } from '$lib/stores/glyphStore';
 	import type { Letter } from '$lib/types/Letter';
-	import TKADash from './Dash/TKADash.svelte';
-import TKALetter from './Letter/TKALetter.svelte';
-	import TKADotHandler from './Dot/TKADotHandler.svelte';
-	import TKATurnsNumberGroup from './Turns/TKATurnsNumberGroup.svelte';
 	import type { DirRelation, PropRotDir, TKATurns } from '$lib/types/Types';
-
-	export let letter: Letter | null = null;
-	export let turnsTuple: string = '';
-
-	export let x: number = 0;
-	export let y: number = 0;
-
-	let letterRect = new DOMRect();
-	let firstTupleItem: DirRelation | PropRotDir | null = null;
-	let topTurn: TKATurns = 0;
-	let bottomTurn: TKATurns = 0;
-	let glyphBBox = { x: 0, y: 0, width: 0, height: 0 };
-	let glyphEl: SVGGElement | null = null;
-	let letterLoaded = false; // Track when letter is loaded
-
-	$: {
-		if (turnsTuple) {
-			const [dir, top, bottom] = parseTurnsTupleString(turnsTuple);
-			firstTupleItem = dir ?? null;
-			topTurn = top ?? 0;
-			bottomTurn = bottom ?? 0;
-		}
+	import LetterRenderer from './components/LetterRenderer.svelte';
+	import DashRenderer from './components/DashRenderer.svelte';
+	import DotsRenderer from './components/DotsRenderer.svelte';
+	import TurnsRenderer from './components/TurnsRenderer.svelte';
+  
+	// Props with TypeScript interface
+	interface TKAGlyphProps {
+	  letter: Letter | null;
+	  turnsTuple: string;
+	  x: number;
+	  y: number;
+	  scale?: number;
 	}
-
-	function handleLetterBBox(e: CustomEvent) {
-		letterRect = e.detail;
-		letterLoaded = true;
+	
+	export let letter: TKAGlyphProps['letter'] = null;
+	export let turnsTuple: TKAGlyphProps['turnsTuple'] = '';
+	export let x: TKAGlyphProps['x'] = 0;
+	export let y: TKAGlyphProps['y'] = 0;
+	export let scale: TKAGlyphProps['scale'] = 1;
+	
+	// Local state
+	let letterRect: Rect | null = null;
+	let letterLoaded = false;
+	
+	// Parse the turnsTuple
+	$: parsedTurns = parseTurnsTuple(turnsTuple);
+	
+	// Destructure for easier access
+	$: direction = parsedTurns?.direction || null;
+	$: topTurn = parsedTurns?.top || 0 as TKATurns;
+	$: bottomTurn = parsedTurns?.bottom || 0 as TKATurns;
+	
+	// Ensure common assets are loaded
+	onMount(() => {
+	  if (!$assetCache.dotSVG || !$assetCache.dashSVG) {
+		preloadCommonAssets();
+	  }
+	});
+	
+	// Helper functions
+	function parseTurnsTuple(tuple: string) {
+	  if (!tuple) return { direction: null, top: 0 as TKATurns, bottom: 0 as TKATurns };
+	  
+	  const [dir, top, bottom] = parseTurnsTupleString(tuple);
+	  return { direction: dir, top, bottom };
 	}
-</script>
-
-<g class="tka-glyph" bind:this={glyphEl} transform={`translate(${x}, ${y})`}>
-	<TKALetter {letter} on:letterBBox={handleLetterBBox} />
-
-	<!-- Only show dash and dots after letter is loaded with proper dimensions -->
-	{#if letterLoaded}
-		<TKADash {letter} {letterRect} />
-		<TKADotHandler dir={firstTupleItem} {letterRect} {letter} />
-		<TKATurnsNumberGroup topValue={topTurn} bottomValue={bottomTurn} {letterRect} />
+	
+	function handleLetterLoaded(event: CustomEvent<Rect>) {
+	  letterRect = event.detail;
+	  letterLoaded = true;
+	}
+  </script>
+  
+  <g class="tka-glyph" transform={`translate(${x}, ${y}) scale(${scale})`}>
+	<LetterRenderer 
+	  {letter} 
+	  on:letterLoaded={handleLetterLoaded} 
+	/>
+	
+	{#if letterLoaded && letterRect}
+	  <DashRenderer 
+		{letter} 
+		letterRect={letterRect} 
+	  />
+	  
+	  <DotsRenderer 
+		direction={direction} 
+		letterRect={letterRect} 
+		{letter} 
+	  />
+	  
+	  <TurnsRenderer 
+		topValue={topTurn} 
+		bottomValue={bottomTurn} 
+		letterRect={letterRect} 
+	  />
 	{/if}
-</g>
+  </g>
