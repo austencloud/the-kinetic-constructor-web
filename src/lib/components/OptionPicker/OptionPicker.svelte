@@ -136,37 +136,38 @@
 	});
 </script>
 
+
 <div class="option-picker">
-	<SortOptions {isMobileDevice} />
+	<div class="header-container">
+		<SortOptions {isMobileDevice} />
 
-	<div class="header" bind:this={headerRef} class:mobile={isMobileDevice}>
-		<div class="title" aria-hidden="true">Next Options</div>
-
-		<div class="tabs-container">
-			<div
-				class="tabs"
-				class:mobile-tabs={isMobileDevice}
-				role="tablist"
-				aria-label="Option Categories"
-			>
-				{#if categoryKeys.length > 0}
-					{#each categoryKeys as categoryKey (categoryKey)}
-						<button
-							class="tab"
-							class:active={selectedTab === categoryKey}
-							class:mobile={isMobileDevice}
-							on:click={() => (selectedTab = categoryKey)}
-							role="tab"
-							aria-selected={selectedTab === categoryKey}
-							aria-controls="options-panel-{categoryKey}"
-							id="tab-{categoryKey}"
-						>
-							{categoryKey}
-						</button>
-					{/each}
-				{:else if !$optionPickerStore.isLoading}
-					<span class="no-categories-message">No categories available</span>
-				{/if}
+		<div class="header" bind:this={headerRef} class:mobile={isMobileDevice}>
+			<div class="tabs-container">
+				<div
+					class="tabs"
+					class:mobile-tabs={isMobileDevice}
+					role="tablist"
+					aria-label="Option Categories"
+				>
+					{#if categoryKeys.length > 0}
+						{#each categoryKeys as categoryKey (categoryKey)}
+							<button
+								class="tab"
+								class:active={selectedTab === categoryKey}
+								class:mobile={isMobileDevice}
+								on:click={() => (selectedTab = categoryKey)}
+								role="tab"
+								aria-selected={selectedTab === categoryKey}
+								aria-controls="options-panel-{categoryKey}"
+								id="tab-{categoryKey}"
+							>
+								{categoryKey}
+							</button>
+						{/each}
+					{:else if !$optionPickerStore.isLoading}
+						<span class="no-categories-message">No categories available</span>
+					{/if}
+				</div>
 			</div>
 		</div>
 	</div>
@@ -237,87 +238,73 @@
 		background-color: var(--background-color, transparent); /* Use CSS var or default */
 	}
 
-	.header {
-		display: grid;
-		grid-template-columns: auto 1fr auto; /* Allow space for sort button, center tabs */
-		align-items: center;
-		margin-bottom: clamp(0.8rem, 1.5vw, 1.2rem); /* Responsive margin */
+	.header-container {
+		position: relative;
 		width: 100%;
-		position: relative; /* For absolute positioning of SortOptions */
-		flex-shrink: 0; /* Prevent header from shrinking */
-		gap: 1rem;
+		margin-bottom: 0;
 	}
 
-	.header.mobile {
-		grid-template-columns: 1fr; /* Stack elements */
-		grid-template-rows: auto auto;
-		gap: 0.5rem;
-		margin-bottom: 0.8rem;
+	.header {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		width: 100%;
+		position: relative;
+		margin-bottom: clamp(0.5rem, 1vw, 0.8rem); /* Reduced margin */
 	}
 
-	/* Keep title in DOM for structure but hide visually */
-	.title {
-		font-size: 1.25rem;
-		font-weight: 600;
-		grid-column: 1; /* Position left */
-		justify-self: start;
-		visibility: hidden; /* Hide but maintain layout space */
-		pointer-events: none; /* Prevent interaction */
-		width: 0; /* Collapse width */
-		opacity: 0;
+	/* Existing SortOptions now absolutely positioned within header-container */
+	:global(.sort-options) {
+		position: absolute;
+		top: 0;
+		right: 0;
+		z-index: 10;
 	}
 
 	.tabs-container {
-		grid-column: 2; /* Center column */
-		justify-self: center; /* Center within the column */
-		overflow: hidden; /* Prevent tabs overflowing container */
-	}
-
-	.header.mobile .tabs-container {
-		grid-column: 1;
-		grid-row: 1; /* Tabs appear first on mobile */
+		display: flex;
+		justify-content: center;
 		width: 100%;
-		justify-self: stretch; /* Take full width */
+		overflow: hidden;
 	}
 
 	.tabs {
 		display: flex;
 		justify-content: center;
-		flex-wrap: nowrap; /* Prevent wrapping by default */
-		overflow-x: auto; /* Allow horizontal scrolling if needed */
-		-webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-		scrollbar-width: none; /* Hide scrollbar (Firefox) */
-		padding-bottom: 4px; /* Space for focus ring */
-		margin-bottom: -4px; /* Counteract padding */
-	}
-	.tabs::-webkit-scrollbar {
-		display: none; /* Hide scrollbar (Chrome, Safari) */
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		scrollbar-width: none;
+		padding: 0;
+		margin: 0;
 	}
 
+	.tabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* Rest of the existing styles remain the same */
 	.mobile-tabs {
-		/* On mobile, allow wrapping if too many tabs */
 		flex-wrap: wrap;
-		justify-content: flex-start; /* Align tabs left on mobile */
-		overflow-x: hidden; /* Disable horizontal scroll when wrapping */
+		justify-content: center;
+		overflow-x: hidden;
 	}
 
 	.tab {
 		background: none;
 		border: none;
-		padding: 0.6rem clamp(0.8rem, 2vw, 1.2rem); /* Responsive padding */
+		padding: 0.6rem clamp(0.8rem, 2vw, 1.2rem);
 		cursor: pointer;
-		font-weight: 500; /* Medium weight */
-		font-size: clamp(0.9rem, 1.8vw, 1.1rem); /* Responsive font size */
-		color: #4b5563; /* Tailwind gray-600 */
-		border-bottom: 3px solid transparent; /* Underline indicator */
+		font-weight: 500;
+		font-size: clamp(0.9rem, 1.8vw, 1.1rem);
+		color: #4b5563;
+		border-bottom: 3px solid transparent;
 		transition:
 			border-color 0.2s ease-in-out,
 			color 0.2s ease-in-out;
-		white-space: nowrap; /* Prevent text wrapping */
-		flex-shrink: 0; /* Prevent tabs from shrinking */
-		border-radius: 4px 4px 0 0; /* Slight rounding at top */
+		white-space: nowrap;
+		flex-shrink: 0;
+		border-radius: 4px 4px 0 0;
 	}
-
 	.tab.mobile {
 		padding: 0.5rem 0.8rem;
 		font-size: 0.95rem;
