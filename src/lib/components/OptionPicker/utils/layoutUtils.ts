@@ -42,8 +42,8 @@ const LAYOUT_CONFIG = {
 		'1-4': { columns: 4 },
 		'5-8': { columns: 4 },
 		'9-12': { columns: 6 },
-		'13-16': { columns: 8 },
-		'17-24': { columns: 8 },
+		'13-16': { columns: 4 },
+		'17-24': { columns: 4 },
 		'25+': { columns: 0 }
 	}
 } as const;
@@ -66,7 +66,18 @@ const SCALE_FACTOR_CONFIG = {
 	mobile: 0.95,
 	desktop: 1.0
 };
+type ContainerAspect = 'tall' | 'square' | 'wide';
 
+// Function to determine container aspect ratio
+function getContainerAspect(width: number, height: number): ContainerAspect {
+	if (!width || !height) return 'square'; // Default when dimensions aren't ready
+
+	const ratio = width / height;
+
+	if (ratio < 0.8) return 'tall'; // Height significantly greater than width
+	if (ratio > 1.3) return 'wide'; // Width significantly greater than height
+	return 'square'; // Roughly square container
+}
 function parseRangeString(rangeString: string): { min: number; max: number } {
 	if (rangeString.includes('+')) {
 		const min = parseInt(rangeString.replace('+', ''), 10);
@@ -110,32 +121,6 @@ function getGridGapPixels(count: number, isMobile: boolean): number {
 function pixelsToRem(pixels: number): string {
 	if (pixels === 0) return '0';
 	return `${(pixels / 16).toFixed(3)}rem`;
-}
-
-function calculateGridConfiguration(
-	count: number,
-	isMobile: boolean,
-	isPortrait: boolean
-): GridConfiguration {
-	const configSet = getLayoutConfigSet(isMobile, isPortrait);
-
-	const rangeKey = Object.keys(configSet).find((key) => {
-		const { min, max } = parseRangeString(key);
-		return count >= min && count <= max;
-	}) as keyof typeof configSet | undefined;
-
-	const effectiveKey = rangeKey ?? (Object.keys(configSet).pop() as keyof typeof configSet);
-
-	let columns = (configSet[effectiveKey] as { columns: number }).columns;
-
-	if (columns === 0) {
-		columns = Math.max(4, Math.ceil(Math.sqrt(count)));
-	}
-
-	const rows = Math.ceil(count / columns);
-	const template = `repeat(${columns}, minmax(0, 1fr))`;
-
-	return { columns, rows, template };
 }
 
 // 🌟 Declarative Sizing Strategy 🌟
@@ -186,7 +171,6 @@ function selectSizingStrategy(config: {
 	return strategies.desktopLargeCount;
 }
 
-// Specific sizing strategies
 function calculateSingleOrTwoItemSize(config: {
 	count: number;
 	containerWidth: number;
@@ -194,24 +178,67 @@ function calculateSingleOrTwoItemSize(config: {
 	isMobile: boolean;
 	gridConfig: GridConfiguration;
 }): string {
+	if (config.count === 2) {
+		console.log('FORCING SIZE FOR 2 ITEMS');
+		return config.isMobile ? '150px' : '200px'; // Use obvious sizes
+	}
 	const containerPadding = getContainerPadding(config.isMobile);
 	const scaleFactor = config.isMobile ? SCALE_FACTOR_CONFIG.mobile : SCALE_FACTOR_CONFIG.desktop;
 	const gridGapValue = getGridGapPixels(config.count, config.isMobile);
 
-	const availableWidth = config.containerWidth;
-	const availableHeight = config.containerHeight;
+	const availableWidth =
+		config.containerWidth - containerPadding.horizontal - containerPadding.gridPadding * 2;
+	const availableHeight =
+		config.containerHeight - containerPadding.vertical - containerPadding.gridPadding * 2;
 
-	const potentialSize =
-		config.count === 1
-			? Math.min(availableWidth / 2, availableHeight / 2)
-			: Math.min((availableWidth - gridGapValue) / 1.5, availableHeight);
+	let potentialSize;
+	const containerAspect = getContainerAspect(config.containerWidth, config.containerHeight);
+
+	if (config.count === 1) {
+		// Single item - larger size
+		potentialSize = Math.min(availableWidth / 1.2, availableHeight / 1.2);
+	} else {
+		// Two items
+		// Use larger proportions (smaller divisors) to make them bigger
+		if (containerAspect === 'wide') {
+			// For wide containers, place items side by side with more space
+			potentialSize = Math.min((availableWidth - gridGapValue) / 2.2, availableHeight * 0.85);
+		} else if (containerAspect === 'tall') {
+			// For tall containers, stack items vertically
+			potentialSize = Math.min(availableWidth * 0.85, (availableHeight - gridGapValue) / 2.2);
+		} else {
+			// square
+			potentialSize = Math.min(
+				(availableWidth - gridGapValue) / 2.2,
+				(availableHeight - gridGapValue) / 2.2
+			);
+		}
+
+		// Mobile specific adjustments
+		if (config.isMobile) {
+			// On mobile, make sure items are larger relative to available space
+			if (containerAspect === 'wide') {
+				potentialSize = Math.min((availableWidth - gridGapValue) / 2.5, availableHeight * 0.95);
+			} else if (containerAspect === 'tall') {
+				potentialSize = Math.min(availableWidth * 0.95, (availableHeight - gridGapValue) / 2.5);
+			} else {
+				potentialSize = Math.min(availableWidth * 0.8, availableHeight * 0.8) / 1.8;
+			}
+		}
+	}
 
 	let calculatedSize = Math.floor(potentialSize * scaleFactor) - containerPadding.itemPadding * 2;
-	calculatedSize = Math.max(80, calculatedSize);
 
-	return `${calculatedSize}px`;
+	// Higher minimum sizes, especially for mobile
+	let minSize;
+	if (config.isMobile) {
+		minSize = config.count === 2 ? 120 : 100; // Mobile minimums
+	} else {
+		minSize = config.count === 2 ? 140 : 120; // Desktop minimums
+	}
+
+	return `${Math.max(minSize, calculatedSize)}px`;
 }
-
 function calculateMobilePortraitSize(config: {
 	count: number;
 	containerWidth: number;
@@ -307,56 +334,140 @@ export function getPictographScaleFactor(isMobile: boolean): number {
 	return isMobile ? SCALE_FACTOR_CONFIG.mobile : SCALE_FACTOR_CONFIG.desktop;
 }
 
-export function getGridClass(count: number, isMobile: boolean): string {
-	if (count === 2 && !isMobile) return 'two-item-grid';
-	if (isMobile) return 'mobile-grid';
-	if (count === 8) return 'exactly-eight';
-
-	if (count > 2 && count < 8) return 'small-count';
-
-	return '';
+function getDefaultLayoutConfig(isMobile: boolean): ResponsiveLayoutConfig {
+	return {
+		gridColumns: 'repeat(2, 1fr)',
+		optionSize: isMobile ? '80px' : '100px',
+		gridGap: pixelsToRem(isMobile ? GAP_CONFIG.mobile : GAP_CONFIG.desktopSmallCount),
+		gridClass: 'default-grid',
+		scaleFactor: isMobile ? SCALE_FACTOR_CONFIG.mobile : SCALE_FACTOR_CONFIG.desktop
+	};
 }
 
 export function getResponsiveLayout(
 	count: number,
 	containerHeight: number = 0,
 	containerWidth: number = 0,
-	isMobile: boolean = false,
-	isPortrait: boolean = false
+	isMobileDevice: boolean = false,
+	isPortraitMode: boolean = false
 ): ResponsiveLayoutConfig {
+	// Early return for invalid dimensions
 	if (containerHeight <= 0 || containerWidth <= 0) {
-		// Provide a sensible default layout
-		return {
-			gridColumns: 'repeat(auto-fit, minmax(100px, 1fr))', // Flexible grid
-			optionSize: '100px', // Default size
-			gridGap: '0.5rem',
-			gridClass: isMobile ? 'mobile-grid' : '',
-			scaleFactor: isMobile ? 0.95 : 1.0
-		};
+		return getDefaultLayoutConfig(isMobileDevice);
 	}
 
-	const gridConfig = calculateGridConfiguration(count, isMobile, isPortrait);
-	let finalGridColumns = gridConfig.template;
+	// Determine aspect ratio of container
+	const containerAspect = getContainerAspect(containerWidth, containerHeight);
 
-	const optionSizePx = calculateResponsiveOptionSize({
-		count,
-		containerHeight,
-		containerWidth,
-		isMobile,
-		isPortrait,
-		gridConfig
-	});
+	// Choose columns based on aspect ratio and item count
+	let columns = getColumnsByAspect(containerAspect, count, isMobileDevice);
 
-	const gridGapPx = getGridGapPixels(count, isMobile);
-	const gridGapRem = pixelsToRem(gridGapPx);
-	const gridClass = getGridClass(count, isMobile);
-	const scaleFactor = getPictographScaleFactor(isMobile);
+	// Calculate optimal item size
+	const optionSize = calculateItemSize(containerWidth, containerHeight, columns, count);
 
+	// Create responsive layout config
 	return {
-		gridColumns: finalGridColumns,
-		optionSize: optionSizePx,
-		gridGap: gridGapRem,
-		gridClass: gridClass,
-		scaleFactor: scaleFactor
+		gridColumns: `repeat(${columns}, 1fr)`,
+		optionSize: `${optionSize}px`,
+		gridGap: pixelsToRem(getGridGapPixels(count, isMobileDevice)),
+		gridClass: getGridClass(containerAspect, count),
+		scaleFactor: isMobileDevice ? 0.95 : 1.0
 	};
+}
+
+// Helper function to determine column count by aspect ratio
+function getColumnsByAspect(aspect: ContainerAspect, count: number, isMobile: boolean): number {
+	if (count <= 2) return count; // Special case for 1-2 items
+
+	if (aspect === 'tall') {
+		return isMobile ? 2 : Math.min(2, count);
+	} else if (aspect === 'wide') {
+		const maxColumns = Math.min(8, count);
+		return isMobile ? Math.min(4, maxColumns) : maxColumns;
+	} else {
+		// square
+		if (count <= 4) return 2;
+		if (count <= 9) return 3;
+		if (count <= 16) return 4;
+		return Math.min(6, Math.ceil(Math.sqrt(count)));
+	}
+}
+
+// Calculate item size to ensure proper fit within container
+// Calculate item size to ensure proper fit within container
+function calculateItemSize(width: number, height: number, columns: number, count: number): number {
+	if (count === 2) {
+		console.log('Responsive sizing for 2 items');
+
+		// Get container aspect ratio
+		const containerAspect = getContainerAspect(width, height);
+
+		// Calculate available space with reduced padding for 2-item case
+		const paddingH = 40;
+		const paddingV = 40;
+		const gapSize = 16; // Slightly larger gap for two items
+
+		const availableWidth = width - paddingH;
+		const availableHeight = height - paddingV;
+
+		let size;
+
+		if (containerAspect === 'wide') {
+			// Side-by-side layout
+			size = Math.min(
+				(availableWidth - gapSize) / 2.5, // Use 2.5 instead of 2 to leave some margin
+				availableHeight * 0.8 // Use 80% of height
+			);
+		} else if (containerAspect === 'tall') {
+			// Stacked layout
+			size = Math.min(
+				availableWidth * 0.8, // Use 80% of width
+				(availableHeight - gapSize) / 2.5 // Use 2.5 instead of 2 to leave some margin
+			);
+		} else {
+			// Square container - use whichever layout gives larger items
+			const sideSize = (availableWidth - gapSize) / 2.5;
+			const stackedSize = (availableHeight - gapSize) / 2.5;
+			size = Math.max(sideSize, stackedSize);
+		}
+
+		// Apply a minimum size but keep it responsive to container
+		const minSize = Math.min(120, Math.max(availableWidth, availableHeight) * 0.3);
+		const maxSize = Math.min(300, Math.max(availableWidth, availableHeight) * 0.6);
+
+		return Math.max(minSize, Math.min(size, maxSize));
+	}
+
+	// Regular case (non-two items) continues with the original logic
+	const rows = Math.ceil(count / columns);
+
+	// Account for padding and gaps
+	const paddingH = 40;
+	const paddingV = 40;
+	const gapSize = 8;
+
+	// Calculate available dimensions
+	const availableWidth = width - paddingH - gapSize * (columns - 1);
+	const availableHeight = height - paddingV - gapSize * (rows - 1);
+
+	// Calculate size ensuring square aspect ratio
+	const sizeByWidth = availableWidth / columns;
+	const sizeByHeight = availableHeight / rows;
+
+	// Use the smaller of the two dimensions to ensure items fit
+	const size = Math.floor(Math.min(sizeByWidth, sizeByHeight));
+
+	// Apply constraints
+	return Math.max(60, Math.min(size, 160));
+}
+// Add grid class based on aspect ratio
+function getGridClass(aspect: ContainerAspect, count: number): string {
+	if (count === 1) return 'single-item-grid';
+	if (count === 2) return 'two-item-grid';
+	if (count === 3) return 'three-item-grid';
+	if (count === 4) return 'four-item-grid';
+	if (count === 8) return 'eight-item-grid';
+	if (count === 12) return 'twelve-item-grid';
+	if (count === 16) return 'sixteen-item-grid';
+	return `${aspect}-aspect-grid`;
 }

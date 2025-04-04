@@ -44,7 +44,12 @@
 				class:single-item={options.length === 1}
 				transition:fade={{ duration: 250, delay: 30 * i, easing: cubicOut }}
 			>
-				<Option pictographData={option} size={optionSize} isSingleOption={options.length === 1} />
+				<Option
+					pictographData={option}
+					size={optionSize}
+					isSingleOption={options.length === 1}
+					isPartOfTwoItems={options.length === 2}
+				/>
 			</div>
 		{/each}
 	</div>
@@ -76,6 +81,7 @@
 	}
 
 	.grid-item-wrapper {
+		aspect-ratio: 1 / 1;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -121,5 +127,38 @@
 
 	.exactly-eight {
 		align-content: center;
+	} /* Add these aspect-specific classes for two-item grid */
+	.wide-aspect-grid.two-item-grid {
+		flex-direction: row;
+	}
+
+	.tall-aspect-grid.two-item-grid {
+		flex-direction: column;
+	}
+
+	.square-aspect-grid.two-item-grid {
+		flex-direction: row;
+	}
+
+	/* Enhance existing two-item-grid styling */
+	.two-item-grid {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		width: 100%;
+		height: 100%;
+		gap: var(--grid-gap, 1rem);
+	}
+
+	/* Special mobile handling for two-item grid */
+	.mobile-grid.two-item-grid {
+		padding: 1rem;
+	}
+
+	.two-item-grid .grid-item-wrapper {
+		flex-grow: 0;
+		flex-shrink: 0;
+		width: auto;
+		aspect-ratio: 1/1;
 	}
 </style>
