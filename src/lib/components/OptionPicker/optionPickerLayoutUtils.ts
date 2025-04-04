@@ -11,133 +11,134 @@ interface ContainerPadding {
 	itemPadding: number;
 }
 
-const layoutConfig = {
+export interface ResponsiveLayoutConfig {
+	gridColumns: string;
+	optionSize: string;
+	gridGap: string;
+	gridClass: string;
+	scaleFactor: number;
+}
+
+const LAYOUT_CONFIG = {
 	mobilePortrait: {
 		'1-4': { columns: 2 },
-		'5-8': { columns: 3 },
+		'5-8': { columns: 2 },
 		'9+': { columns: 4 }
 	},
-
 	mobileLandscape: {
-		'1-4': { columns: 2 },
-		'5-12': { columns: 2 },
+		'1-2': { columns: 1 },
+		'3-8': { columns: 2 },
+		'7-12': { columns: 4 },
 		'13+': { columns: 4 }
 	},
-
 	desktopPortrait: {
 		'1-4': { columns: 2 },
-		'5-16': { columns: 4 },
-		'17+': { columns: 6 }
+		'5-9': { columns: 3 },
+		'10-16': { columns: 4 },
+		'17+': { columns: 4 }
 	},
-
 	desktopLandscape: {
 		'1-4': { columns: 4 },
-		'5-8': { columns: 2 },
+		'5-8': { columns: 4 },
 		'9-12': { columns: 6 },
-		'13-24': { columns: 8 },
+		'13-16': { columns: 8 },
+		'17-24': { columns: 8 },
 		'25+': { columns: 0 }
 	}
+} as const;
+
+const PADDING_CONFIG: { mobile: ContainerPadding; desktop: ContainerPadding } = {
+	mobile: { horizontal: 16, vertical: 16, gridPadding: 8, itemPadding: 2 },
+	desktop: { horizontal: 24, vertical: 24, gridPadding: 12, itemPadding: 2 }
 };
 
-const paddingConfig = {
-	mobile: {
-		horizontal: 20,
-		vertical: 20,
-		gridPadding: 10,
-		itemPadding: 2
-	},
-	desktop: {
-		horizontal: 40,
-		vertical: 40,
-		gridPadding: 10,
-		itemPadding: 2
-	}
+const GAP_CONFIG = {
+	mobile: 8,
+	desktopSingle: 0,
+	desktopTwo: 24,
+	desktopSmallCount: 16,
+	desktopLargeCount: 12,
+	desktopExactlyEight: 12
 };
 
-const gapConfig = {
-	mobile: 0,
-	desktopNormal: 15,
-	desktopEight: 10
-};
-
-const scaleFactorConfig = {
-	mobile: 1.0,
+const SCALE_FACTOR_CONFIG = {
+	mobile: 0.95,
 	desktop: 1.0
 };
 
 function parseRangeString(rangeString: string): { min: number; max: number } {
 	if (rangeString.includes('+')) {
-		const min = parseInt(rangeString.split('+')[0]);
-		return { min, max: 1000 };
+		const min = parseInt(rangeString.replace('+', ''), 10);
+		return { min, max: Infinity };
 	}
-
 	if (rangeString.includes('-')) {
 		const [min, max] = rangeString.split('-').map(Number);
 		return { min, max };
 	}
 
-	const single = parseInt(rangeString);
-	return { min: single, max: single };
+	const single = parseInt(rangeString, 10);
+	if (!isNaN(single)) {
+		return { min: single, max: single };
+	}
+	console.error('Invalid range string:', rangeString);
+	return { min: 0, max: 0 };
 }
 
-export function getOptimalGridColumns(
+function getLayoutConfigSet(isMobile: boolean, isPortrait: boolean) {
+	if (isMobile) {
+		return isPortrait ? LAYOUT_CONFIG.mobilePortrait : LAYOUT_CONFIG.mobileLandscape;
+	} else {
+		return isPortrait ? LAYOUT_CONFIG.desktopPortrait : LAYOUT_CONFIG.desktopLandscape;
+	}
+}
+
+function getContainerPadding(isMobile: boolean): ContainerPadding {
+	return isMobile ? PADDING_CONFIG.mobile : PADDING_CONFIG.desktop;
+}
+
+function getGridGapPixels(count: number, isMobile: boolean): number {
+	if (isMobile) return GAP_CONFIG.mobile;
+	if (count === 1) return GAP_CONFIG.desktopSingle;
+	if (count === 2) return GAP_CONFIG.desktopTwo;
+	if (count === 8) return GAP_CONFIG.desktopExactlyEight;
+
+	if (count <= 12) return GAP_CONFIG.desktopSmallCount;
+	return GAP_CONFIG.desktopLargeCount;
+}
+
+function pixelsToRem(pixels: number): string {
+	if (pixels === 0) return '0';
+
+	return `${(pixels / 16).toFixed(3)}rem`;
+}
+
+function calculateGridConfiguration(
 	count: number,
 	isMobile: boolean,
 	isPortrait: boolean
 ): GridConfiguration {
-	let configSet: Record<string, { columns: number }>;
+	const configSet = getLayoutConfigSet(isMobile, isPortrait);
 
-	if (isMobile && isPortrait) {
-		configSet = layoutConfig.mobilePortrait;
-	} else if (isMobile && !isPortrait) {
-		configSet = layoutConfig.mobileLandscape;
-	} else if (!isMobile && isPortrait) {
-		configSet = layoutConfig.desktopPortrait;
-	} else {
-		configSet = layoutConfig.desktopLandscape;
-	}
+	const rangeKey = Object.keys(configSet).find((key) => {
+		const { min, max } = parseRangeString(key);
+		return count >= min && count <= max;
+	}) as keyof typeof configSet | undefined;
 
-	const rangeKey =
-		Object.keys(configSet).find((key) => {
-			const { min, max } = parseRangeString(key);
-			return count >= min && count <= max;
-		}) || Object.keys(configSet)[Object.keys(configSet).length - 1];
+	const effectiveKey = rangeKey ?? (Object.keys(configSet).pop() as keyof typeof configSet);
 
-	let columns = configSet[rangeKey].columns;
+	let columns = (configSet[effectiveKey] as { columns: number }).columns;
 
 	if (columns === 0) {
-		columns = Math.ceil(Math.sqrt(count));
+		columns = Math.max(4, Math.ceil(Math.sqrt(count)));
 	}
 
 	const rows = Math.ceil(count / columns);
-
-	const template = `repeat(${columns}, 1fr)`;
+	const template = `repeat(${columns}, minmax(0, 1fr))`;
 
 	return { columns, rows, template };
 }
 
-export function getGridClass(count: number, isMobile: boolean): string {
-	if (count === 8 && !isMobile) return 'exactly-eight';
-	if (count <= 8) return 'small-count';
-	return '';
-}
-
-export function getGridGap(count: number, isMobile: boolean): string {
-	if (isMobile) return `${gapConfig.mobile / 16}rem`;
-	if (count === 8) return `${gapConfig.desktopEight / 16}rem`;
-	return `${gapConfig.desktopNormal / 16}rem`;
-}
-
-function getGridGapPixels(count: number, isMobile: boolean): number {
-	if (isMobile) return gapConfig.mobile;
-	if (count === 8) return gapConfig.desktopEight;
-	return gapConfig.desktopNormal;
-}
-
-function getContainerPadding(isMobile: boolean): ContainerPadding {
-	return isMobile ? paddingConfig.mobile : paddingConfig.desktop;
-}
-export function getOptionSize(
+export function calculateOptionSize(
 	count: number,
 	containerHeight: number = 0,
 	containerWidth: number = 0,
@@ -145,46 +146,64 @@ export function getOptionSize(
 	isMobile: boolean = false,
 	isPortrait: boolean = false
 ): string {
-	if (!containerHeight || !containerWidth) return 'auto';
+	if (!containerHeight || !containerWidth || containerHeight <= 0 || containerWidth <= 0) {
+		console.warn('Invalid container dimensions for size calculation.');
+		return 'auto';
+	}
 
 	const { columns, rows } = gridConfig;
 	const containerPadding = getContainerPadding(isMobile);
 	const gridGapValue = getGridGapPixels(count, isMobile);
-	const scaleFactor = isMobile ? scaleFactorConfig.mobile : scaleFactorConfig.desktop;
+	const scaleFactor = isMobile ? SCALE_FACTOR_CONFIG.mobile : SCALE_FACTOR_CONFIG.desktop;
+
+	if (count === 1 || count === 2) {
+		const availableWidth = containerWidth;
+		const availableHeight = containerHeight;
+
+		let potentialSize: number;
+
+		if (count === 1) {
+			potentialSize = Math.min(availableWidth / 2, availableHeight / 2);
+		} else {
+			const totalHorizontalGap = gridGapValue;
+			const maxWidthPerItem = (availableWidth - totalHorizontalGap) / 1.5;
+			const maxHeightPerItem = availableHeight;
+
+			potentialSize = Math.min(maxWidthPerItem, maxHeightPerItem);
+		}
+
+		let calculatedSize = Math.floor(potentialSize * scaleFactor) - containerPadding.itemPadding * 2;
+
+		calculatedSize = Math.max(80, calculatedSize);
+
+		return `${calculatedSize}px`;
+	}
 
 	if (isMobile) {
-		// For mobile, use both dimensions to get the best fit
 		const availableWidth =
 			containerWidth - containerPadding.horizontal - containerPadding.gridPadding * 2;
 		const availableHeight =
 			containerHeight - containerPadding.vertical - containerPadding.gridPadding * 2;
 
-		// For landscape, we generally want more rows visible
 		if (!isPortrait) {
-			// Calculate how much height each row can have
-			const rowGaps = gridGapValue * (rows - 1);
-			const maxHeightPerRow = (availableHeight - rowGaps) / rows;
+			const rowGaps = Math.max(0, rows - 1) * gridGapValue;
+			const maxHeightPerRow = rows > 0 ? (availableHeight - rowGaps) / rows : availableHeight;
+			const columnGaps = Math.max(0, columns - 1) * gridGapValue;
+			const maxWidthPerColumn =
+				columns > 0 ? (availableWidth - columnGaps) / columns : availableWidth;
 
-			// Calculate how much width each column can have
-			const columnGaps = gridGapValue * (columns - 1);
-			const maxWidthPerColumn = (availableWidth - columnGaps) / columns;
-
-			// Use the smaller dimension to maintain square aspect ratio
 			const itemSize = Math.min(maxHeightPerRow, maxWidthPerColumn);
+
 			const size = Math.floor(itemSize * scaleFactor) - containerPadding.itemPadding * 2;
+			return `${Math.max(60, Math.floor(size))}px`;
+		} else {
+			const columnGaps = Math.max(0, columns - 1) * gridGapValue;
+			const itemSize = columns > 0 ? (availableWidth - columnGaps) / columns : availableWidth;
 
-			// For many items in landscape, set a reasonable max size
-			return `${Math.max(60, Math.min(size, size))}px`;
+			const size = Math.floor(itemSize * scaleFactor) - containerPadding.itemPadding * 2;
+			const maxSize = count > 12 ? 80 : 100;
+			return `${Math.max(60, Math.min(maxSize, Math.floor(size)))}px`;
 		}
-
-		// For portrait, prioritize width-based sizing
-		const columnGaps = gridGapValue * (columns - 1);
-		const itemSize = (availableWidth - columnGaps) / columns;
-		const size = Math.floor(itemSize * scaleFactor) - containerPadding.itemPadding * 2;
-
-		// For portrait, let it be a bit bigger but still cap for many items
-		const maxSize = count > 12 ? 80 : 100;
-		return `${Math.max(60, Math.min(maxSize, size))}px`;
 	}
 
 	if (count === 8 && !isMobile) {
@@ -192,35 +211,53 @@ export function getOptionSize(
 			containerHeight - containerPadding.vertical - containerPadding.gridPadding * 2;
 		const availableWidth =
 			containerWidth - containerPadding.horizontal - containerPadding.gridPadding * 2;
-
-		const rowGaps = gridGapValue * (rows - 1);
-		const columnGaps = gridGapValue * (columns - 1);
-
+		const rowGaps = Math.max(0, rows - 1) * gridGapValue;
+		const columnGaps = Math.max(0, columns - 1) * gridGapValue;
 		const maxHeightBasedOnContainer =
-			(availableHeight - rowGaps) / rows - containerPadding.itemPadding * 2;
+			rows > 0
+				? (availableHeight - rowGaps) / rows - containerPadding.itemPadding * 2
+				: availableHeight;
 		const maxWidthBasedOnContainer =
-			(availableWidth - columnGaps) / columns - containerPadding.itemPadding * 2;
-
+			columns > 0
+				? (availableWidth - columnGaps) / columns - containerPadding.itemPadding * 2
+				: availableWidth;
 		const size = Math.min(maxHeightBasedOnContainer, maxWidthBasedOnContainer);
-
 		return `${Math.max(100, Math.floor(size))}px`;
 	}
 
-	if (count < 8 && !isMobile) {
+	if (count >= 3 && count < 8 && !isMobile) {
 		const availableHeight =
 			containerHeight - containerPadding.vertical - containerPadding.gridPadding * 2 - 140;
-		const rowGaps = gridGapValue * (rows - 1);
-		const itemHeight = (availableHeight - rowGaps) / rows - containerPadding.itemPadding * 2;
+		const rowGaps = Math.max(0, rows - 1) * gridGapValue;
+		const itemHeight =
+			rows > 0
+				? (availableHeight - rowGaps) / rows - containerPadding.itemPadding * 2
+				: availableHeight;
 		return `${Math.max(80, Math.floor(itemHeight))}px`;
 	}
 
-	if (count <= 24 && !isMobile) {
+	if (count > 8 && count <= 24 && !isMobile) {
 		const availableHeight =
 			containerHeight - containerPadding.vertical - containerPadding.gridPadding * 2 - 140;
-		const rowGaps = gridGapValue * (rows - 1);
-		const itemHeight = (availableHeight - rowGaps) / rows - containerPadding.itemPadding * 2;
+		const rowGaps = Math.max(0, rows - 1) * gridGapValue;
+		const itemHeight =
+			rows > 0
+				? (availableHeight - rowGaps) / rows - containerPadding.itemPadding * 2
+				: availableHeight;
 		if (itemHeight >= 60) {
 			return `${Math.floor(itemHeight)}px`;
+		}
+	}
+	if (count == 1) {
+		const availableHeight =
+			containerHeight - containerPadding.vertical - containerPadding.gridPadding * 2;
+		const rowGaps = Math.max(0, rows - 1) * gridGapValue;
+		const itemHeight =
+			rows > 0
+				? (availableHeight - rowGaps) / rows - containerPadding.itemPadding * 2
+				: availableHeight;
+		if (itemHeight >= 60) {
+			return `${Math.floor(itemHeight / 2)}px`;
 		}
 	}
 
@@ -228,15 +265,17 @@ export function getOptionSize(
 }
 
 export function getPictographScaleFactor(isMobile: boolean): number {
-	return isMobile ? scaleFactorConfig.mobile : scaleFactorConfig.desktop;
+	return isMobile ? SCALE_FACTOR_CONFIG.mobile : SCALE_FACTOR_CONFIG.desktop;
 }
 
-export interface ResponsiveLayoutConfig {
-	gridColumns: string;
-	optionSize: string;
-	gridGap: string;
-	gridClass: string;
-	scaleFactor: number;
+export function getGridClass(count: number, isMobile: boolean): string {
+	if (count === 2 && !isMobile) return 'two-item-grid';
+	if (isMobile) return 'mobile-grid';
+	if (count === 8) return 'exactly-eight';
+
+	if (count > 2 && count < 8) return 'small-count';
+
+	return '';
 }
 
 export function getResponsiveLayout(
@@ -246,20 +285,27 @@ export function getResponsiveLayout(
 	isMobile: boolean = false,
 	isPortrait: boolean = false
 ): ResponsiveLayoutConfig {
-	const gridConfig = getOptimalGridColumns(count, isMobile, isPortrait);
+	const gridConfig = calculateGridConfiguration(count, isMobile, isPortrait);
+	let finalGridColumns = gridConfig.template;
+
+	const optionSizePx = calculateOptionSize(
+		count,
+		containerHeight,
+		containerWidth,
+		gridConfig,
+		isMobile,
+		isPortrait
+	);
+	const gridGapPx = getGridGapPixels(count, isMobile);
+	const gridGapRem = pixelsToRem(gridGapPx);
+	const gridClass = getGridClass(count, isMobile);
+	const scaleFactor = getPictographScaleFactor(isMobile);
 
 	return {
-		gridColumns: gridConfig.template,
-		optionSize: getOptionSize(
-			count,
-			containerHeight,
-			containerWidth,
-			gridConfig,
-			isMobile,
-			isPortrait
-		),
-		gridGap: getGridGap(count, isMobile),
-		gridClass: getGridClass(count, isMobile),
-		scaleFactor: getPictographScaleFactor(isMobile)
+		gridColumns: finalGridColumns,
+		optionSize: optionSizePx,
+		gridGap: gridGapRem,
+		gridClass: gridClass,
+		scaleFactor: scaleFactor
 	};
 }

@@ -1,34 +1,32 @@
 <script lang="ts">
 	import { optionPickerStore, type SortMethodType } from '../optionPickerStore';
-	import { onMount, onDestroy } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { clickOutside } from '$lib/actions/clickOutside';
 
-	export let isMobile: boolean = false;
+	// --- Props ---
+	export let isMobileDevice: boolean = false;
 
-	let isOpen = false;
-	let buttonRef: HTMLElement;
+	// --- State ---
+	let isOpen = false; // Controls dropdown visibility
+	let buttonRef: HTMLElement; // Reference to the button for positioning/actions
 
-	// Define sort options
-	const sortOptions: { value: SortMethodType; label: string; icon: string }[] = [
-		{ value: 'type', label: 'Sort by Type', icon: '📋' },
+	// --- Data ---
+	// Define available sorting options with associated metadata
+	const sortOptions = [
+		{ value: 'type', label: 'Sort by Type', icon: '📁' }, // Using folder icon for type
 		{ value: 'endPosition', label: 'Sort by End Position', icon: '🏁' },
 		{ value: 'reversals', label: 'Sort by Reversals', icon: '🔄' }
-	];
+	] as const; // Use 'as const' for stricter typing on 'value'
 
-	let selectedSort: SortMethodType = 'type'; // Default sort method
+	// --- Reactive Computations ---
+	// Get the currently selected sort method directly from the store
+	$: selectedSortMethod = $optionPickerStore.sortMethod;
 
-	onMount(() => {
-		// Subscribe to store to get current sort method
-		const unsubscribe = optionPickerStore.subscribe((state) => {
-			selectedSort = state.sortMethod;
-		});
+	// Find the icon corresponding to the currently selected sort method
+	$: selectedOptionIcon =
+		sortOptions.find((opt) => opt.value === selectedSortMethod)?.icon ?? sortOptions[0].icon;
 
-		return () => {
-			unsubscribe();
-		};
-	});
-
+	// --- Event Handlers ---
 	function toggleDropdown() {
 		isOpen = !isOpen;
 	}
@@ -38,41 +36,45 @@
 	}
 
 	function handleSort(method: SortMethodType) {
-		selectedSort = method;
-		optionPickerStore.setSortMethod(method);
-		closeDropdown();
-	}
-
-	function getSelectedOptionIcon() {
-		const option = sortOptions.find((opt) => opt.value === selectedSort);
-		return option ? option.icon : '📋';
+		optionPickerStore.setSortMethod(method); // Update the store
+		closeDropdown(); // Close dropdown after selection
 	}
 </script>
 
-<div class="sort-options" class:mobile={isMobile} use:clickOutside={() => closeDropdown()}>
+<div class="sort-options" class:mobile={isMobileDevice} use:clickOutside={closeDropdown}>
 	<button
 		class="sort-button"
-		class:mobile={isMobile}
+		class:mobile={isMobileDevice}
 		bind:this={buttonRef}
 		on:click={toggleDropdown}
-		aria-label="Sort options"
+		aria-label="Change sorting method"
 		aria-expanded={isOpen}
-		aria-haspopup="true"
+		aria-haspopup="listbox"
 	>
-		<span class="sort-icon">{getSelectedOptionIcon()}</span>
-		<span class="sort-text">{isMobile ? '' : 'Sort'}</span>
-		<span class="dropdown-arrow">▼</span>
+		<span class="sort-icon" aria-hidden="true">{selectedOptionIcon}</span>
+		{#if !isMobileDevice}
+			<span class="sort-text">Sort</span>
+		{/if}
+		<span class="dropdown-arrow" aria-hidden="true">{isOpen ? '▲' : '▼'}</span>
 	</button>
 
 	{#if isOpen}
-		<div class="dropdown" class:mobile={isMobile} transition:fade={{ duration: 150 }}>
-			{#each sortOptions as option}
+		<div
+			class="dropdown"
+			class:mobile={isMobileDevice}
+			transition:fade={{ duration: 150 }}
+			role="listbox"
+			aria-label="Sorting options"
+		>
+			{#each sortOptions as option (option.value)}
 				<button
 					class="dropdown-item"
-					class:selected={selectedSort === option.value}
+					class:selected={selectedSortMethod === option.value}
 					on:click={() => handleSort(option.value)}
+					role="option"
+					aria-selected={selectedSortMethod === option.value}
 				>
-					<span class="option-icon">{option.icon}</span>
+					<span class="option-icon" aria-hidden="true">{option.icon}</span>
 					<span class="option-text">{option.label}</span>
 				</button>
 			{/each}
@@ -82,10 +84,10 @@
 
 <style>
 	.sort-options {
-		position: absolute;
+		position: absolute; /* Position relative to parent */
 		top: 15px;
 		left: 15px;
-		z-index: 10;
+		z-index: 20; /* Ensure it's above options */
 	}
 
 	.sort-options.mobile {
@@ -96,75 +98,102 @@
 	.sort-button {
 		display: flex;
 		align-items: center;
+		gap: 6px; /* Space between elements */
 		background-color: #ffffff;
-		border: 1px solid #e2e8f0;
+		border: 1px solid #e2e8f0; /* Tailwind gray-200 */
 		border-radius: 6px;
 		padding: 8px 12px;
-		font-size: 0.95rem;
+		font-size: 0.9rem; /* Slightly smaller */
+		font-weight: 500;
+		color: #374151; /* Tailwind gray-700 */
 		cursor: pointer;
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-		transition: all 0.2s ease;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+		transition:
+			background-color 0.2s ease,
+			box-shadow 0.2s ease;
 	}
 
 	.sort-button.mobile {
 		padding: 6px 10px;
-		font-size: 0.85rem;
+		gap: 4px;
 	}
 
 	.sort-button:hover {
-		background-color: #f8fafc;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		background-color: #f9fafb; /* Tailwind gray-50 */
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 	}
 
+    .sort-button:focus-visible {
+        outline: 2px solid #4299e1; /* Focus ring */
+        outline-offset: 1px;
+    }
+
 	.sort-icon {
-		margin-right: 6px;
+		font-size: 1.1em; /* Relative size */
+        line-height: 1; /* Prevent extra space */
 	}
 
 	.dropdown-arrow {
-		font-size: 0.7rem;
-		margin-left: 6px;
-		opacity: 0.6;
+		font-size: 0.7em;
+		opacity: 0.7;
+        margin-left: auto; /* Push arrow to the right if space allows */
+        padding-left: 4px;
 	}
 
 	.dropdown {
 		position: absolute;
-		top: calc(100% + 5px);
+		top: calc(100% + 6px); /* Position below the button */
 		left: 0;
 		background-color: white;
 		border-radius: 6px;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-		min-width: 180px;
-		z-index: 100;
+		border: 1px solid #e2e8f0;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		min-width: 200px; /* Slightly wider */
+		z-index: 100; /* Above other elements */
 		overflow: hidden;
 	}
 
 	.dropdown.mobile {
-		min-width: 160px;
+		min-width: 180px;
 	}
 
 	.dropdown-item {
 		display: flex;
 		align-items: center;
+		gap: 8px;
 		width: 100%;
 		text-align: left;
-		padding: 10px 12px;
+		padding: 10px 14px; /* Slightly more padding */
 		border: none;
 		background: none;
 		cursor: pointer;
-		transition: background-color 0.2s;
+		font-size: 0.9rem;
+		color: #374151;
+		transition: background-color 0.15s ease;
 	}
 
 	.dropdown-item:hover {
-		background-color: #f1f5f9;
+		background-color: #f1f5f9; /* Tailwind slate-100 */
 	}
 
 	.dropdown-item.selected {
-		background-color: #edf2f7;
-		font-weight: 500;
+		background-color: #e5e7eb; /* Tailwind gray-200 */
+		font-weight: 600; /* Bolder selected item */
+		color: #1f2937; /* Tailwind gray-800 */
 	}
 
+    .dropdown-item:focus-visible {
+        background-color: #f1f5f9;
+        outline: none;
+    }
+
 	.option-icon {
-		margin-right: 8px;
 		font-size: 1.1rem;
+        width: 1.2em; /* Ensure alignment */
+        text-align: center;
+        line-height: 1;
 	}
+    .option-text {
+        flex-grow: 1; /* Take remaining space */
+    }
 </style>

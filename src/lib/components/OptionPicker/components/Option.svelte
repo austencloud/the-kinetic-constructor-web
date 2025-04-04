@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Pictograph from '../../Pictograph/Pictograph.svelte';
-	import { writable, type Writable } from 'svelte/store';
+	import { writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { optionPickerStore } from '$lib/components/OptionPicker/optionPickerStore';
 	import { isMobile } from '$lib/utils/deviceUtils';
@@ -8,99 +8,104 @@
 	import { onMount } from 'svelte';
 	import { getPictographScaleFactor } from '$lib/components/OptionPicker/optionPickerLayoutUtils';
 
+	// --- Props ---
 	export let pictographData: PictographData;
-	export let selectedPictographStore: Writable<PictographData | null> | undefined = undefined;
-	export let size: string = 'auto';
-	export let isSingleOption: boolean = false; // Handle single option case
+	export let size: string = 'auto'; // Controlled by parent layout
+	export let isSingleOption: boolean = false; // Special styling/scaling for single option
 
-	// Create a writable store from the pictograph data
-	const pictographDataStore = writable(pictographData);
-
-	// Check if we're on mobile
+	// --- State ---
 	let isMobileDevice = false;
 
-	// Track if this option is currently selected
+	// --- Reactive Computations ---
+	// Determine if this option is the currently selected one globally
 	$: isSelected = $selectedPictograph === pictographData;
 
-	// Get scale factor from utility
+	// Calculate the scale factor based on context
 	$: scaleFactor = isSingleOption ? 1.2 : getPictographScaleFactor(isMobileDevice);
 
-	// Set mobile state on mount
+	// --- Lifecycle ---
 	onMount(() => {
+		// Detect mobile status once the component mounts
 		isMobileDevice = isMobile();
 	});
 
+	// --- Event Handlers ---
 	function handleSelect() {
+		// Use the central store action to handle selection
 		optionPickerStore.selectOption(pictographData);
-		if (selectedPictographStore) {
-			selectedPictographStore.set(pictographData);
-		}
 	}
+
+	// Create a store *only* for the Pictograph component if it requires a store prop
+	// If Pictograph can accept pictographData directly, this is unnecessary.
+	const pictographDataStore = writable(pictographData);
+	$: pictographDataStore.set(pictographData); // Keep store updated if prop changes
 </script>
 
 <div
 	class="option"
 	class:mobile={isMobileDevice}
 	class:selected={isSelected}
-	style="height: {size}; width: {size};"
+	style:height={size}
+	style:width={size}
 	role="button"
 	tabindex="0"
 	on:click={handleSelect}
 	on:keydown={(e) => e.key === 'Enter' && handleSelect()}
-	aria-label="Select option {pictographData.letter || 'Option'}"
+	aria-label="Select option {pictographData.letter || 'Unnamed'}"
+	aria-pressed={isSelected}
 >
-	<div class="pictograph-container" style="transform: scale({scaleFactor});">
-		<Pictograph {pictographDataStore} onClick={handleSelect} />
-	</div>
+	<div class="pictograph-container" style:transform="scale({scaleFactor})">
+		<Pictograph {pictographDataStore} />
+		</div>
 </div>
 
 <style>
 	.option {
-		position: relative;
-		display: flex; /* Ensure it fills the parent div space for hover */
-		justify-content: center; /* Center content */
-		align-items: center; /* Center content */
-		width: 100%; /* Fill parent width */
-		height: 100%; /* Fill parent height */
-		cursor: pointer;
-		/*
-			Removed z-index and transform from base style.
-			Z-index is handled by the parent grid item.
-			Transform is applied on hover.
-		*/
-		transition: transform 0.2s ease; /* Only transition transform */
-	}
-
-	/* Apply scaling and shadow on hover */
-	.option:hover {
-		/* z-index: 10; <-- Removed: z-index is controlled by the parent grid item hover */
-		transform: scale(1.05); /* Apply scaling directly to the option container */
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-	}
-
-	.option.mobile:hover {
-		transform: scale(1.02); /* Less dramatic hover on mobile */
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* Adjusted shadow for mobile */
-	}
-
-	.pictograph-container {
-		/* Inherit position characteristics if needed, but mainly for centering */
 		position: relative;
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		width: 100%;
 		height: 100%;
-		/* Removed transition: transform - parent handles transform now */
+		cursor: pointer;
+		transition: transform 0.2s ease-in-out; /* Smooth scaling transition */
+		border-radius: 6px; /* Added for visual consistency */
+		outline: none; /* Remove default outline, handled by focus-visible */
 	}
 
-	/* Keep focus style */
+	/* Hover effect: scale up and add shadow */
+	.option:hover {
+		transform: scale(1.05);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		/* z-index is handled by parent grid item hover */
+	}
+
+	/* Subtle hover effect for mobile */
+	.option.mobile:hover {
+		transform: scale(1.02);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	}
+
+	/* Visual indication for the selected option */
+	.option.selected {
+		/* Example: Add a distinct border or background */
+		/* box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.5); */
+        /* border: 2px solid #38a169; */
+        background-color: rgba(56, 161, 105, 0.1);
+	}
+
+	/* Container for the pictograph itself, handles scaling */
+	.pictograph-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		width: 100%;
+		height: 100%;
+		transition: transform 0.2s ease-in-out; /* Ensure smooth scaling */
+	}
+
+	/* Accessibility: Clear focus indicator */
 	.option:focus-visible {
-		outline: 3px solid #4299e1;
-		outline-offset: 2px;
-		border-radius: 4px; /* Optional: makes focus ring look nicer */
+		box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.6); /* Tailwind's focus blue */
 	}
-
-	/* Style for selected state if needed */
-
 </style>

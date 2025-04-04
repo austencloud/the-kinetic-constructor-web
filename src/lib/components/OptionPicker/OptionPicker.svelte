@@ -1,97 +1,65 @@
 <script lang="ts">
-	// Import statements...
-	import LoadingSpinner from '../MainWidget/loading/LoadingSpinner.svelte';
-	import SortOptions from './components/SortOptions.svelte';
-	import Option from './components/Option.svelte';
-	import { onMount, onDestroy } from 'svelte';
-	// *** Re-added crossfade and cubicOut ***
+	import { onMount, onDestroy, tick } from 'svelte';
 	import { fade, crossfade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
-	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
+
+	// Components
+	import LoadingSpinner from '../MainWidget/loading/LoadingSpinner.svelte';
+	import SortOptions from './components/SortOptions.svelte';
+	import Option from './components/Option.svelte'; // Expects pictographData, size, isSingleOption
+
+	// Stores & Types
+	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore'; // Used directly by Option component
 	import { beatsStore } from '$lib/stores/sequence/beatsStore';
-	import { setPictographLoaded } from '$lib/stores/ui/loadingStore';
-	import optionPickerStore, {
-		type ReversalFilterType,
-		type SortMethodType
-	} from '$lib/components/OptionPicker/optionPickerStore';
+	import optionPickerStore, { type SortMethodType } from './optionPickerStore';
+	import type { PictographData } from '$lib/types/PictographData';
+
+	// Utilities & Layout
 	import { isMobile, isPortrait } from '$lib/utils/deviceUtils';
-	import {
-		getResponsiveLayout,
-		type GridConfiguration
-	} from '$lib/components/OptionPicker/optionPickerLayoutUtils';
+	import { getResponsiveLayout, type ResponsiveLayoutConfig } from './optionPickerLayoutUtils';
 
-	// --- State and Store Subscriptions ---
-	const { optionsByLetterType, loadOptions } = optionPickerStore;
+	// --- Transitions ---
+	const [send, receive] = crossfade({
+		duration: 500,
+		easing: cubicOut,
+		fallback: (node, params) => fade(node, { duration: 300, easing: cubicOut })
+	});
 
-	let isLoading = true;
-	let selectedSortMethod: SortMethodType = 'type';
-	let previewLoading = true;
+	// --- State ---
 	let containerHeight: number = 0;
 	let containerWidth: number = 0;
-	let isMobileDevice = false;
+	let isMobileDevice = isMobile();
 	let isPortraitMode = false;
-	let selectedTab: string = 'Type1';
-	let categoryTypes: string[] = [];
+	let selectedTab: string | null = null;
 	let headerHeight: number = 0;
 
-	// Refs for element binding
+	// Refs
 	let headerRef: HTMLElement;
 	let optionsOuterContainerRef: HTMLElement;
 
-	// --- Transitions ---
-	// *** Reinstated crossfade definition ***
-	const [send, receive] = crossfade({
-		duration: 600, // Adjust duration as needed
-		easing: cubicOut,
-		fallback(node, params) {
-			// Fallback to fade if crossfade fails
-			return fade(node, { duration: 600, easing: cubicOut });
-		}
-	});
+	// --- Store Access ---
+	const { optionsByLetterType: optionsByCategory, loadOptions } = optionPickerStore;
 
-	// --- Store Subscriptions (Simplified) ---
-	const unsubscribeOptionPicker = optionPickerStore.subscribe((state) => {
-		isLoading = state.isLoading;
-		selectedSortMethod = state.sortMethod;
-	});
-
+	// Subscribe to beat changes
 	const unsubscribeBeats = beatsStore.subscribe((beats) => {
-		if (beats && beats.length > 0) {
-			const sequence = beats.map((beat) => beat.pictographData);
-			loadOptions(sequence);
-		} else {
-			loadOptions([]);
-		}
-	});
-
-	const unsubscribeSelected = selectedPictograph.subscribe((selected) => {
-		if (selected) {
-			previewLoading = true;
-		}
+		const sequence = beats?.map((beat) => beat.pictographData) ?? [];
+		loadOptions(sequence);
 	});
 
 	// --- Reactive Declarations ---
+	$: categoryKeys = $optionsByCategory ? Object.keys($optionsByCategory).sort() : [];
+
 	$: {
-		const groupedOptions = $optionsByLetterType;
-		if (groupedOptions) {
-			const newCategoryTypes = Object.keys(groupedOptions).sort();
-			if (JSON.stringify(categoryTypes) !== JSON.stringify(newCategoryTypes)) {
-				categoryTypes = newCategoryTypes;
-				if (!categoryTypes.includes(selectedTab) && categoryTypes.length > 0) {
-					selectedTab = categoryTypes[0];
-				} else if (categoryTypes.length === 0) {
-					selectedTab = '';
-				}
+		if (categoryKeys.length > 0) {
+			if (!selectedTab || !categoryKeys.includes(selectedTab)) {
+				selectedTab = categoryKeys[0];
 			}
 		} else {
-			if (categoryTypes.length > 0) {
-				categoryTypes = [];
-				selectedTab = '';
-			}
+			selectedTab = null;
 		}
 	}
 
-	$: currentOptions = $optionsByLetterType[selectedTab] || [];
+	$: currentOptions = (selectedTab && $optionsByCategory?.[selectedTab]) || [];
 
 	$: layout = getResponsiveLayout(
 		currentOptions.length,
@@ -103,7 +71,7 @@
 
 	$: ({ gridColumns, optionSize, gridGap, gridClass } = layout);
 
-	// --- Lifecycle Hooks ---
+	// --- Lifecycle & Observers ---
 	let headerResizeObserver: ResizeObserver | null = null;
 	let containerResizeObserver: ResizeObserver | null = null;
 
@@ -113,93 +81,93 @@
 	};
 
 	onMount(() => {
-		setPictographLoaded('option-picker-pictograph', false);
 		updateDeviceDetection();
+		window.addEventListener('resize', updateDeviceDetection);
 
-		if (typeof window !== 'undefined') {
-			window.addEventListener('resize', updateDeviceDetection);
-		}
-
-		// --- Corrected ResizeObserver Setup ---
 		if (typeof ResizeObserver !== 'undefined') {
-			// Observer for Header Height (if still needed for calculations)
+			// Observe header
 			headerResizeObserver = new ResizeObserver(() => {
-				if (headerRef) {
-					const newHeight = headerRef.offsetHeight;
-					if (newHeight !== headerHeight) {
-						headerHeight = newHeight;
-					}
-				}
+				if (headerRef) headerHeight = headerRef.offsetHeight;
 			});
 			if (headerRef) {
 				headerResizeObserver.observe(headerRef);
 				headerHeight = headerRef.offsetHeight;
 			}
 
-			// Observer for Container Dimensions
+			// Observe the main options container
 			containerResizeObserver = new ResizeObserver((entries) => {
-				for (let entry of entries) {
-					const newHeight = entry.contentRect.height;
-					const newWidth = entry.contentRect.width;
-					if (newHeight !== containerHeight) {
-						containerHeight = newHeight;
+				const entry = entries[0];
+				if (entry) {
+					const { width, height } = entry.contentRect;
+					if (width !== containerWidth) {
+						containerWidth = width;
 					}
-					if (newWidth !== containerWidth) {
-						containerWidth = newWidth;
+					if (height !== containerHeight) {
+						containerHeight = height;
 					}
 				}
 			});
 			if (optionsOuterContainerRef) {
 				containerResizeObserver.observe(optionsOuterContainerRef);
-				containerHeight = optionsOuterContainerRef.clientHeight;
-				containerWidth = optionsOuterContainerRef.clientWidth;
+				tick().then(() => {
+					if (optionsOuterContainerRef) {
+						containerWidth = optionsOuterContainerRef.clientWidth;
+						containerHeight = optionsOuterContainerRef.clientHeight;
+					}
+				});
 			}
 		} else {
 			// Fallback
-			const updateDimensions = () => {
+			const updateDimensionsFallback = () => {
 				if (headerRef) headerHeight = headerRef.offsetHeight;
 				if (optionsOuterContainerRef) {
-					containerHeight = optionsOuterContainerRef.clientHeight;
 					containerWidth = optionsOuterContainerRef.clientWidth;
+					containerHeight = optionsOuterContainerRef.clientHeight;
 				}
 			};
-			window.addEventListener('resize', updateDimensions);
-			updateDimensions();
+			window.addEventListener('resize', updateDimensionsFallback);
+			tick().then(updateDimensionsFallback);
 		}
 
-		// Cleanup function
+		// Cleanup
 		return () => {
-			if (typeof window !== 'undefined') {
-				window.removeEventListener('resize', updateDeviceDetection);
-			}
-			if (headerResizeObserver) headerResizeObserver.disconnect();
-			if (containerResizeObserver) containerResizeObserver.disconnect();
-			unsubscribeOptionPicker();
+			window.removeEventListener('resize', updateDeviceDetection);
+			headerResizeObserver?.disconnect();
+			containerResizeObserver?.disconnect();
 			unsubscribeBeats();
-			unsubscribeSelected();
 		};
 	});
 </script>
 
-<div class="optionPicker">
-	<SortOptions isMobile={isMobile()} />
+<div class="option-picker">
+	<SortOptions {isMobileDevice} />
+
 	<div class="header" bind:this={headerRef} class:mobile={isMobileDevice}>
-		<div class="title">Next Options</div>
+		<div class="title" aria-hidden="true">Next Options</div>
+
 		<div class="tabs-container">
-			<div class="tabs" class:mobile-tabs={isMobileDevice}>
-				{#if categoryTypes.length > 0}
-					{#each categoryTypes as type}
+			<div
+				class="tabs"
+				class:mobile-tabs={isMobileDevice}
+				role="tablist"
+				aria-label="Option Categories"
+			>
+				{#if categoryKeys.length > 0}
+					{#each categoryKeys as categoryKey (categoryKey)}
 						<button
 							class="tab"
-							class:active={selectedTab === type}
+							class:active={selectedTab === categoryKey}
 							class:mobile={isMobileDevice}
-							on:click={() => (selectedTab = type)}
-							aria-label={`Show ${type} options`}
+							on:click={() => (selectedTab = categoryKey)}
+							role="tab"
+							aria-selected={selectedTab === categoryKey}
+							aria-controls="options-panel-{categoryKey}"
+							id="tab-{categoryKey}"
 						>
-							{type}
+							{categoryKey}
 						</button>
 					{/each}
-				{:else if !isLoading}
+				{:else if !$optionPickerStore.isLoading}
 					<span class="no-categories-message">No categories available</span>
 				{/if}
 			</div>
@@ -207,37 +175,41 @@
 	</div>
 
 	<div class="options-outer-container" bind:this={optionsOuterContainerRef}>
-		{#if isLoading}
-			<div class="loading-container" transition:fade={{ duration: 200 }}>
+		{#if $optionPickerStore.isLoading}
+			<div class="message-container loading" transition:fade={{ duration: 200 }}>
 				<LoadingSpinner />
-				<p class="loading-text">Loading options...</p>
+				<p>Loading options...</p>
 			</div>
-		{:else}
+		{:else if selectedTab && currentOptions}
 			{#key selectedTab}
 				<div
-					class="options-container"
+					class="options-panel"
+					role="tabpanel"
+					aria-labelledby="tab-{selectedTab}"
+					id="options-panel-{selectedTab}"
 					out:send={{ key: selectedTab }}
 					in:receive={{ key: selectedTab }}
 				>
 					{#if currentOptions.length === 0}
-						<div class="empty-message">No options available for {selectedTab}</div>
+						<div class="message-container empty">
+							No options available for {selectedTab}
+						</div>
 					{:else}
 						<div
 							class="options-grid {gridClass}"
 							class:mobile-grid={isMobileDevice}
 							class:single-item-grid={currentOptions.length === 1}
-							class:eight-item-grid={currentOptions.length === 8}
-							style="grid-template-columns: {gridColumns}; gap: {gridGap};"
+							style:grid-template-columns={gridColumns}
+							style:gap={gridGap}
 						>
-							{#each currentOptions as option, i (`${option.letter || 'unknown'}-${i}-${option.startPos}-${option.endPos}`)}
+							{#each currentOptions as option, i (`${option.letter}-${option.startPos}-${option.endPos}-${i}`)}
 								<div
 									class="grid-item-wrapper"
 									class:single-item={currentOptions.length === 1}
-									transition:fade={{ duration: 300, delay: 50 * i }}
+									transition:fade={{ duration: 250, delay: 30 * i, easing: cubicOut }}
 								>
 									<Option
 										pictographData={option}
-										selectedPictographStore={selectedPictograph}
 										size={optionSize}
 										isSingleOption={currentOptions.length === 1}
 									/>
@@ -247,206 +219,236 @@
 					{/if}
 				</div>
 			{/key}
+		{:else if !selectedTab && categoryKeys.length > 0}
+			<div class="message-container initial">Select a category above.</div>
+		{:else if categoryKeys.length === 0}
+			<div class="message-container empty">No options generated.</div>
 		{/if}
 	</div>
 </div>
 
 <style>
-	/* Styles remain the same as option_picker_svelte_update_06 */
-	.optionPicker {
+	.option-picker {
 		display: flex;
 		flex-direction: column;
 		width: 100%;
-		height: 100%;
-		background: transparent;
-		padding: 20px;
+		height: 100%; /* Ensure it fills parent */
+		padding: clamp(10px, 2vw, 20px); /* Responsive padding */
 		position: relative;
 		box-sizing: border-box;
-		overflow: hidden;
+		overflow: hidden; /* Prevent content spillover */
+		background-color: var(--background-color, transparent); /* Use CSS var or default */
 	}
 
 	.header {
 		display: grid;
-		grid-template-columns: 1fr auto 1fr;
+		grid-template-columns: auto 1fr auto; /* Allow space for sort button, center tabs */
 		align-items: center;
-		margin-bottom: 1rem;
+		margin-bottom: clamp(0.8rem, 1.5vw, 1.2rem); /* Responsive margin */
 		width: 100%;
-		position: relative;
-		flex-shrink: 0;
+		position: relative; /* For absolute positioning of SortOptions */
+		flex-shrink: 0; /* Prevent header from shrinking */
+		gap: 1rem;
 	}
 
 	.header.mobile {
-		grid-template-columns: 1fr;
+		grid-template-columns: 1fr; /* Stack elements */
 		grid-template-rows: auto auto;
 		gap: 0.5rem;
+		margin-bottom: 0.8rem;
 	}
 
+	/* Keep title in DOM for structure but hide visually */
 	.title {
 		font-size: 1.25rem;
-		font-weight: bold;
-		grid-column: 1;
+		font-weight: 600;
+		grid-column: 1; /* Position left */
 		justify-self: start;
-		visibility: hidden; /* Keep hidden title */
+		visibility: hidden; /* Hide but maintain layout space */
+		pointer-events: none; /* Prevent interaction */
+		width: 0; /* Collapse width */
+		opacity: 0;
 	}
+
 	.tabs-container {
-		grid-column: 2; /* Original positioning */
-		justify-self: center;
+		grid-column: 2; /* Center column */
+		justify-self: center; /* Center within the column */
+		overflow: hidden; /* Prevent tabs overflowing container */
 	}
+
 	.header.mobile .tabs-container {
-		grid-column: 1; /* Original mobile positioning */
-		grid-row: 1;
+		grid-column: 1;
+		grid-row: 1; /* Tabs appear first on mobile */
 		width: 100%;
+		justify-self: stretch; /* Take full width */
 	}
+
 	.tabs {
 		display: flex;
 		justify-content: center;
-		flex-wrap: nowrap;
-		overflow-x: auto;
-		-webkit-overflow-scrolling: touch;
-		scrollbar-width: none;
+		flex-wrap: nowrap; /* Prevent wrapping by default */
+		overflow-x: auto; /* Allow horizontal scrolling if needed */
+		-webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+		scrollbar-width: none; /* Hide scrollbar (Firefox) */
+		padding-bottom: 4px; /* Space for focus ring */
+		margin-bottom: -4px; /* Counteract padding */
 	}
 	.tabs::-webkit-scrollbar {
-		display: none;
+		display: none; /* Hide scrollbar (Chrome, Safari) */
 	}
+
 	.mobile-tabs {
-		flex-wrap: wrap; /* Original mobile wrapping */
-		overflow-x: hidden;
+		/* On mobile, allow wrapping if too many tabs */
+		flex-wrap: wrap;
+		justify-content: flex-start; /* Align tabs left on mobile */
+		overflow-x: hidden; /* Disable horizontal scroll when wrapping */
 	}
+
 	.tab {
 		background: none;
 		border: none;
-		padding: 0.6rem 1.2rem; /* Original padding */
+		padding: 0.6rem clamp(0.8rem, 2vw, 1.2rem); /* Responsive padding */
 		cursor: pointer;
-		font-weight: bold; /* Original font-weight */
-		font-size: 1.35rem; /* Original font-size */
-		color: #555;
-		border-bottom: 2px solid transparent; /* Original border */
+		font-weight: 500; /* Medium weight */
+		font-size: clamp(0.9rem, 1.8vw, 1.1rem); /* Responsive font size */
+		color: #4b5563; /* Tailwind gray-600 */
+		border-bottom: 3px solid transparent; /* Underline indicator */
 		transition:
-			border-color 0.3s,
-			color 0.3s;
-		white-space: nowrap;
-		flex-shrink: 0;
+			border-color 0.2s ease-in-out,
+			color 0.2s ease-in-out;
+		white-space: nowrap; /* Prevent text wrapping */
+		flex-shrink: 0; /* Prevent tabs from shrinking */
+		border-radius: 4px 4px 0 0; /* Slight rounding at top */
 	}
+
 	.tab.mobile {
-		padding: 0.4rem 0.8rem; /* Original mobile padding */
-		font-size: 1rem; /* Original mobile font-size */
+		padding: 0.5rem 0.8rem;
+		font-size: 0.95rem;
 	}
+
 	.tab.active {
-		border-color: #38a169; /* Original active style */
-		color: #38a169;
+		border-color: #3b82f6; /* Tailwind blue-500 */
+		color: #1e40af; /* Tailwind blue-800 */
+		font-weight: 600;
 	}
+
 	.tab:hover:not(.active) {
-		border-color: #aaa; /* Adjusted hover border for non-active */
-		color: #333;
+		color: #1f2937; /* Tailwind gray-800 */
+		border-color: #d1d5db; /* Tailwind gray-300 */
 	}
+
+	.tab:focus-visible {
+		outline: 2px solid #60a5fa; /* Tailwind blue-400 */
+		outline-offset: -2px; /* Inside border */
+		background-color: rgba(59, 130, 246, 0.1);
+	}
+
 	.no-categories-message {
-		color: #888;
+		color: #6b7280; /* Tailwind gray-500 */
 		font-style: italic;
-		padding: 0.5rem 1rem;
+		padding: 0.6rem 1rem;
+		white-space: nowrap;
 	}
 
-	/* --- Layout Changes Start --- */
-
+	/* --- Options Area Layout --- */
 	.options-outer-container {
-		flex: 1; /* Takes up remaining vertical space */
-		display: flex; /* Still use flex to define space */
-		overflow: hidden;
-		position: relative; /* *** Added: Needed for absolute child positioning *** */
-		border: 1px solid #eee;
+		flex: 1; /* Grow to fill available space */
+		display: flex; /* Use flex for centering content */
+		overflow: hidden; /* Crucial: Prevent grid from overflowing */
+		position: relative; /* Needed for absolute positioning of options-panel */
+		border: 1px solid #e5e7eb; /* Tailwind gray-200 */
 		border-radius: 8px;
+		background-color: transparent; /* White background for options area */
 	}
 
-	.options-container {
-		/* *** Changed: Use absolute positioning to fill parent *** */
-		position: absolute;
+	.options-panel {
+		position: absolute; /* Fill the outer container */
 		top: 0;
 		left: 0;
 		width: 100%;
 		height: 100%;
-		/* Removed flex: 1 */
-		overflow: auto; /* Allow this container to scroll if grid overflows */
-		background: transparent;
-		border-radius: 8px;
-		padding: 0.5rem;
-		display: flex; /* Keep flex for centering content */
+		overflow-y: auto; /* Allow vertical scrolling *within* the panel */
+		overflow-x: hidden; /* Prevent horizontal scrolling */
+		padding: clamp(0.5rem, 1vw, 1rem); /* Responsive padding inside panel */
+		display: flex; /* To center grid or messages */
 		justify-content: center;
 		align-items: flex-start; /* Align grid to top */
 		box-sizing: border-box;
-		/* z-index might be needed if other positioned elements overlap */
-		/* z-index: 1; */
 	}
-
-	/* --- Layout Changes End --- */
 
 	.options-grid {
 		display: grid;
-		max-width: 100%;
-		position: relative;
-		justify-content: center;
-		align-content: flex-start;
+		width: 100%; /* Take full width of panel */
+		max-width: 1200px; /* Optional: max width for very large screens */
+		justify-content: center; /* Center grid items horizontally */
+		align-content: flex-start; /* Align rows to the top */
+		position: relative; /* For z-index context */
 	}
 
+	/* --- Grid Item Styling --- */
 	.grid-item-wrapper {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		padding: 0.1rem;
-		position: relative;
+		/* Padding handled by Option size/gap */
+		position: relative; /* Needed for z-index */
 		z-index: 1;
-		transition: z-index 0s 0.2s;
+		transition: z-index 0s 0.2s; /* Delay z-index change on leave */
 	}
 
+	/* Elevate item on hover */
 	.grid-item-wrapper:hover {
 		z-index: 10;
-		transition-delay: 0s;
+		transition-delay: 0s; /* Apply z-index immediately on hover */
+	}
+	/* Add this to your OptionPicker.svelte <style> block */
+
+	.two-item-grid {
+		/* Override display: grid if needed, or use grid properties */
+		display: flex; /* Use flexbox for easy centering */
+		justify-content: center; /* Center items horizontally */
+		align-items: center; /* Center items vertically */
+		width: 100%;
+		height: 100%; /* Ensure it fills the panel for vertical centering */
+		gap: var(--grid-gap, 1rem); /* Use gap from JS if possible, or set default */
 	}
 
-	.mobile-grid {
-		width: 100%;
-		max-width: 100%;
-		padding: 0.2rem;
+	/* Ensure the wrappers in a two-item grid don't force expansion */
+	.two-item-grid .grid-item-wrapper {
+		flex-grow: 0;
+		flex-shrink: 0;
+		width: auto; /* Let the Option component's size dictate width */
+	}
+
+	/* Make sure the existing single-item styles are still present */
+
+
+	/* Special centering for single item */
+	.single-item-grid {
+		display: flex; /* Override grid */
 		justify-content: center;
-		align-content: center;
+		align-items: center;
+		height: 100%; /* Fill panel height */
 	}
-	.option-container-selected {
-		z-index: 10;
-	}
-	.options-grid.option-selected > div:not(.option-container-selected) {
-		opacity: 0.6;
+
+
+	/* --- Grid Layout Classes (from layout utils) --- */
+	.mobile-grid {
+		/* Mobile specific overrides if needed */
+		padding: 0.2rem; /* Tighter padding on mobile */
 	}
 	.small-count {
+		/* Styles for grids with few items (e.g., center vertically) */
 		align-content: center;
-		justify-content: center;
 	}
 	.exactly-eight {
+		/* Specific styles for 8 items (often a common case) */
 		align-content: center;
-		justify-content: center;
-		margin: 0 auto;
-		max-width: 95%;
-	}
-	.single-option {
-
-		align-content: center;
-		justify-content: center;
-		height: 100%;
-		display: flex;
-		margin: 0 auto;
-	}
-	.single-item-grid {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		height: 100%;
-	}
-	.single-item {
-		margin: auto;
-		display: flex;
-		justify-content: center;
-		align-items: center;
+		/* max-width: 95%; */ /* Example adjustment */
 	}
 
-	.loading-container,
-	.empty-message {
+	/* --- Loading/Empty/Message States --- */
+	.message-container {
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
@@ -455,38 +457,31 @@
 		height: 100%;
 		padding: 2rem;
 		text-align: center;
-		color: #666;
+		color: #6b7280; /* Tailwind gray-500 */
 		box-sizing: border-box;
-	}
-	.loading-text {
-		margin-top: 1rem;
 		font-size: 1.1rem;
 	}
-	.empty-message {
+	.message-container.loading p {
+		margin-top: 1rem;
+	}
+	.message-container.empty {
 		font-style: italic;
 	}
+	.message-container.initial {
+		font-style: italic;
+		color: #9ca3af; /* Lighter gray */
+	}
 
-	/* Media Queries remain the same */
+	/* --- Media Queries --- */
 	@media (max-width: 768px) {
-		.optionPicker {
-			padding: 10px;
-		}
-		.options-grid:not(.mobile-grid):not(.exactly-eight) {
-			grid-template-columns: repeat(4, 1fr) !important;
-		}
+		/* Tablet overrides */
 	}
 	@media (max-width: 480px) {
-		.optionPicker {
-			padding: 8px;
-		}
-		.options-grid:not(.mobile-grid):not(.exactly-eight) {
-			grid-template-columns: repeat(3, 1fr) !important;
-			gap: 0.5rem;
-		}
-		.tab {
-			/* Adjust mobile tab styles if needed */
-			font-size: 0.9rem;
-			padding: 0.4rem 0.6rem;
-		}
+		/* Mobile overrides */
+		/* Removed potentially problematic override */
+		/* .options-grid:not(.mobile-grid) { */
+		/* grid-template-columns: repeat(3, 1fr) !important; */
+		/* gap: 0.5rem; */
+		/* } */
 	}
 </style>
