@@ -70,6 +70,7 @@
 	"dependencies": {
 		"lodash": "^4.17.21",
 		"lucide-svelte": "^0.486.0",
-		"polished": "^4.3.1"
+		"polished": "^4.3.1",
+		"svelte-motion": "^0.12.2"
 	}
 }
