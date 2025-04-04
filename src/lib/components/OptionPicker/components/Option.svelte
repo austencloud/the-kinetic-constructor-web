@@ -2,7 +2,7 @@
 	import Pictograph from '../../Pictograph/Pictograph.svelte';
 	import { writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { optionPickerStore } from '$lib/components/OptionPicker/optionPickerStore';
+	import { optionPickerStore } from '$lib/components/OptionPicker/stores/optionPickerStore';
 	import { isMobile } from '$lib/utils/deviceUtils';
 	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
 	import { onMount } from 'svelte';

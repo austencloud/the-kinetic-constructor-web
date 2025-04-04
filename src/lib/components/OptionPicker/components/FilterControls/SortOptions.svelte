@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { optionPickerStore, type SortMethod } from '../optionPickerStore';
+	import { optionPickerStore, type SortMethod } from '../../stores/optionPickerStore';
 	import { fade } from 'svelte/transition';
 	import { clickOutside } from '$lib/actions/clickOutside';
 
@@ -84,16 +84,12 @@
 
 <style>
 	.sort-options {
-		position: absolute; /* Position relative to parent */
-		top: 15px;
-		left: 15px;
-		z-index: 20; /* Ensure it's above options */
+		/* REMOVED: position, top, left, z-index */
+		/* These are now controlled by OptionPicker.svelte */
+		/* Keep display or other properties if needed, but position is handled externally */
+		display: inline-block; /* Or block, depending on desired flow */
 	}
 
-	.sort-options.mobile {
-		top: 10px;
-		left: 10px;
-	}
 
 	.sort-button {
 		display: flex;
@@ -123,27 +119,28 @@
 		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 	}
 
-    .sort-button:focus-visible {
-        outline: 2px solid #4299e1; /* Focus ring */
-        outline-offset: 1px;
-    }
+	.sort-button:focus-visible {
+		outline: 2px solid #4299e1; /* Focus ring */
+		outline-offset: 1px;
+	}
 
 	.sort-icon {
 		font-size: 1.1em; /* Relative size */
-        line-height: 1; /* Prevent extra space */
+		line-height: 1; /* Prevent extra space */
 	}
 
 	.dropdown-arrow {
 		font-size: 0.7em;
 		opacity: 0.7;
-        margin-left: auto; /* Push arrow to the right if space allows */
-        padding-left: 4px;
+		margin-left: auto; /* Push arrow to the right if space allows */
+		padding-left: 4px;
 	}
 
 	.dropdown {
 		position: absolute;
 		top: calc(100% + 6px); /* Position below the button */
-		left: 0;
+		/* Changed left: 0 to right: 0 to align dropdown with the button on the right */
+		right: 0;
 		background-color: white;
 		border-radius: 6px;
 		border: 1px solid #e2e8f0;
@@ -182,18 +179,18 @@
 		color: #1f2937; /* Tailwind gray-800 */
 	}
 
-    .dropdown-item:focus-visible {
-        background-color: #f1f5f9;
-        outline: none;
-    }
+	.dropdown-item:focus-visible {
+		background-color: #f1f5f9;
+		outline: none;
+	}
 
 	.option-icon {
 		font-size: 1.1rem;
-        width: 1.2em; /* Ensure alignment */
-        text-align: center;
-        line-height: 1;
+		width: 1.2em; /* Ensure alignment */
+		text-align: center;
+		line-height: 1;
 	}
-    .option-text {
-        flex-grow: 1; /* Take remaining space */
-    }
+	.option-text {
+		flex-grow: 1; /* Take remaining space */
+	}
 </style>
