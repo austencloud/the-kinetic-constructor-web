@@ -4,21 +4,21 @@
 	import DialogActions from './DialogActions.svelte';
 	import { activeTabStore } from '../../stores/ui/settingsStore';
 	import { get } from 'svelte/store';
-    import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 
 	export let isOpen: boolean;
 	export let onClose: () => void;
 	export let background: string;
-	
+
 	// Create event dispatcher for change background events
 	const dispatch = createEventDispatcher<{
-        changeBackground: string;
-    }>();
-    
-    // Function to dispatch changeBackground event
-    const handleChangeBackground = (newBackground: string) => {
-        dispatch('changeBackground', newBackground);
-    };
+		changeBackground: string;
+	}>();
+
+	// Function to dispatch changeBackground event
+	const handleChangeBackground = (newBackground: string) => {
+		dispatch('changeBackground', newBackground);
+	};
 
 	let activeTab = get(activeTabStore);
 
@@ -57,6 +57,8 @@
 		height: 100%;
 		width: 100%;
 		cursor: pointer;
+		z-index: 1000;
+		pointer-events: auto;
 	}
 
 	.dialog {
@@ -65,15 +67,22 @@
 		display: flex;
 		flex-direction: column;
 		padding: 20px;
-		background: white;
-		background-size: 400% 400%;
 		font-family: Arial, sans-serif;
 		border-radius: 12px;
-		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 		overflow: hidden;
 		cursor: default;
 		transform-origin: center;
-		z-index: 100;
+		z-index: 1001;
+		position: relative;
+		pointer-events: auto;
+
+		/* Gradient matching your snowfall background */
+		background: linear-gradient(to bottom, #0b1d2a 0%, #1e3a5f 40%, #0b1d2a 100%);
+		color: white;
+		border: 1px solid rgba(108, 156, 233, 0.2);
+		box-shadow:
+			0 10px 25px rgba(0, 0, 0, 0.4),
+			0 0 0 1px rgba(255, 255, 255, 0.05);
 	}
 
 	.dialog-title {
@@ -81,6 +90,8 @@
 		font-size: 1.8rem;
 		text-align: center;
 		padding: 10px 0;
-		border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+		color: #6c9ce9;
+		border-bottom: 2px solid rgba(108, 156, 233, 0.3);
+		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 	}
 </style>

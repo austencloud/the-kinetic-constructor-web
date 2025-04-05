@@ -37,7 +37,9 @@
 		border: none;
 		cursor: pointer;
 		font-size: 1.2rem;
-		transition: background-color 0.3s, transform 0.3s;
+		transition:
+			background-color 0.3s,
+			transform 0.3s;
 	}
 	.tab-button:hover {
 		transform: scale(1.05);

@@ -6,56 +6,44 @@
 	import SequenceInspector from '$lib/components/Developer/SequenceInspector.svelte';
 
 	// --- XState Imports ---
-	import { appService } from '../state/store'; // Import service
-	import { useSelector } from '@xstate/svelte'; // Import selector hook
-	import { actions } from '../state/actions'; // Import refactored actions
+	import { selectIsSettingsOpen, selectContentVisible } from '../state/store';
+	import { actions } from '../state/actions';
 
 	// --- Props & Events ---
-	// The background prop might still be useful if passed down from MainWidget,
-	// or it could be selected directly here. Let's keep it passed down for now.
 	export let background: string;
-	export let onSettingsClick: () => void; // Keep as prop, triggered from MainWidget via actions
+	export let onSettingsClick: () => void;
 
-	// Events emitted *up* from this component to MainWidget
+	// --- Events Emitted Up ---
+	// Adjust the event type here if needed, though dispatching 'tabChange' is fine
 	const dispatch = createEventDispatcher<{
 		changeBackground: string;
-		tabChange: { index: number };
+		tabChange: number; // Dispatching the index number directly
 	}>();
 
-	// --- Get State from XState ---
-	const state = useSelector(appService, s => s); // Get full snapshot
-	// Or select specific context values:
-	// const isSettingsDialogOpen = useSelector(appService, s => s.context.isSettingsOpen);
-	// const contentVisible = useSelector(appService, s => s.context.contentVisible);
-
-	// Reactive vars from snapshot
-	$: isSettingsDialogOpen = $state.context.isSettingsOpen;
-	$: contentVisible = $state.context.contentVisible; // Use machine's visibility flag
+	// --- Get State from XState using specific selectors ---
+	const isSettingsDialogOpen = selectIsSettingsOpen();
+	// const contentVisible = selectContentVisible(); // Still using simplified version
 
 	// --- Event Handlers ---
 	function handleCloseSettings() {
-		// Send event to the machine via actions
 		actions.closeSettings();
 	}
 
 	function handleBackgroundChange(event: CustomEvent<string>) {
-		// Validate background type (Keep validation logic)
 		const validBackgrounds = ['snowfall'];
 		const requestedBackground = event.detail;
 		const backgroundType = requestedBackground.toLowerCase();
-
 		if (validBackgrounds.includes(backgroundType)) {
-			// Dispatch up to MainWidget, which will call the action
 			dispatch('changeBackground', backgroundType);
 		} else {
 			console.warn(`Invalid background type: ${requestedBackground}. Using default.`);
-			// Dispatch default up to MainWidget
 			dispatch('changeBackground', 'snowfall');
 		}
 	}
 
-	function handleTabChange(event: CustomEvent<{ index: number }>) {
-		// Dispatch up to MainWidget
+	// *** FIX: Update handler signature and dispatch call ***
+	function handleTabChange(event: CustomEvent<number>) {
+		// Directly dispatch the received number (index)
 		dispatch('tabChange', event.detail);
 	}
 </script>
@@ -73,13 +61,13 @@
 		{/if}
 	</div>
 
-	<div class="mainContent" class:hidden={!contentVisible}>
-        <TabContent />
-    </div>
+	<div class="mainContent">
+		<TabContent />
+	</div>
 
-	{#if isSettingsDialogOpen}
+	{#if $isSettingsDialogOpen}
 		<SettingsDialog
-			isOpen={isSettingsDialogOpen}
+			isOpen={$isSettingsDialogOpen}
 			{background}
 			on:changeBackground={handleBackgroundChange}
 			onClose={handleCloseSettings}
@@ -88,7 +76,21 @@
 </div>
 
 <style>
-	.content { display: flex; flex-direction: column; flex: 1; min-height: 0; z-index: 1; }
-	.mainContent { display: flex; flex: 1; overflow: hidden; position: relative; z-index: 0; width: 100%; opacity: 1; transition: opacity 0.3s ease; }
-	.mainContent.hidden { opacity: 0; }
+	/* Styles remain the same */
+	.content {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-height: 0;
+		z-index: 1;
+	}
+	.mainContent {
+		display: flex;
+		flex: 1;
+		overflow: hidden;
+		position: relative;
+		z-index: 0;
+		width: 100%;
+		opacity: 1;
+	}
 </style>

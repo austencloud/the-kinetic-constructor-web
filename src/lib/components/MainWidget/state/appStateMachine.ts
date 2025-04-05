@@ -1,13 +1,10 @@
 // src/lib/components/MainWidget/state/appStateMachine.ts
-
-// 1. Fix import: Remove 'send'
-import { createMachine, assign, fromPromise } from 'xstate'; // Import fromPromise
-import { tabs, type BackgroundType } from './appState';
+import { createMachine, assign, fromCallback } from 'xstate';
+import type { BackgroundType } from './appState';
 import { initializeApplication } from '$lib/utils/appInitializer';
-// Import specific types for actor system if needed (might be complex)
-// Alternatively, rely on inference where possible.
-import type { ActorRefFrom, AnyActorLogic, ActorSystemInfo } from 'xstate';
+import type { AnyActorLogic, EventObject } from 'xstate';
 
+// --- Context Definition ---
 export interface AppMachineContext {
 	currentTab: number;
 	previousTab: number;
@@ -17,85 +14,68 @@ export interface AppMachineContext {
 	initializationError: string | null;
 	loadingProgress: number;
 	loadingMessage: string;
-	contentVisible: boolean;
+	contentVisible: boolean; // Will be kept true once ready
+	backgroundIsReady: boolean;
 }
 
+// --- Event Definitions ---
 export type AppMachineEvents =
-	| { type: 'INITIALIZE' } // Note: This event isn't explicitly used to trigger the machine, it starts in 'initializing'
+	| { type: 'BACKGROUND_READY' }
 	| { type: 'INITIALIZATION_SUCCESS' }
 	| { type: 'INITIALIZATION_FAILURE'; error: string }
 	| { type: 'UPDATE_PROGRESS'; progress: number; message: string }
 	| { type: 'RETRY_INITIALIZATION' }
 	| { type: 'CHANGE_TAB'; tab: number }
-	| { type: 'TAB_TRANSITION_START' }
-	| { type: 'TAB_TRANSITION_FINISH' }
 	| { type: 'TOGGLE_FULLSCREEN' }
 	| { type: 'OPEN_SETTINGS' }
 	| { type: 'CLOSE_SETTINGS' }
 	| { type: 'UPDATE_BACKGROUND'; background: string };
 
-// Define the output type of the initialization promise actor
-type InitializationActorOutput =
+// --- Actor Logic Definition ---
+type InitializationActorInput = undefined | { someData?: string };
+type InitializationCallbackEvents =
+	| { type: 'UPDATE_PROGRESS'; progress: number; message: string }
 	| { type: 'INITIALIZATION_SUCCESS' }
 	| { type: 'INITIALIZATION_FAILURE'; error: string };
 
-// Define the input type for the initialization actor (if any data is passed via invoke.input)
-type InitializationActorInput = undefined | { someData?: string }; // Example if input is used
-
-// Define the actor logic using fromPromise
-const initializeApplicationActor = fromPromise<InitializationActorOutput, InitializationActorInput>(
-	// 6. Add types for input and system (get system type from ActorRef maybe?)
-	async ({ input, system }) => {
-		// system is implicitly complex, need better typing or usage pattern
-		const progressCallback = (progress: number, message: string) => {
-			// The 'system' object isn't directly available here with fromPromise's signature.
-			// Instead, the promise should only resolve or reject.
-			// To send events *during* the promise execution, it needs a different structure,
-			// perhaps invoking a callback actor or managing progress differently.
-
-			// --- Let's simplify: Assume initializeApplication only resolves/rejects ---
-			// --- and progress is handled externally or via a different pattern ---
-			// --- For now, we remove the progressCallback from the core promise logic ---
-			// --- and handle UPDATE_PROGRESS if sent from *outside* the promise ---
-			// system.send({ type: 'UPDATE_PROGRESS', progress, message }); // This won't work directly here
-			console.log(`Progress (from callback): ${progress}% - ${message}`); // Log for now
-		};
-
-		try {
-			// Pass undefined or an actual callback if initializeApplication needs it for side effects,
-			// but don't rely on it sending events *back* to the parent machine via 'system'.
-			const success = await initializeApplication(progressCallback); // Or pass undefined if callback not needed by initializeApplication itself now
-
-			if (success) {
-				// Resolve with the success shape
-				return { type: 'INITIALIZATION_SUCCESS' } as const;
-			} else {
-				// Reject with the failure shape
-				throw { type: 'INITIALIZATION_FAILURE', error: 'Initialization returned false.' };
-			}
-		} catch (error) {
+export const initializeApplicationActorLogic = fromCallback<
+	AppMachineEvents,
+	InitializationActorInput
+>(({ sendBack, receive }) => {
+	const progressCallback = (progress: number, message: string) => {
+		sendBack({ type: 'UPDATE_PROGRESS', progress, message });
+	};
+	initializeApplication(progressCallback)
+		.then((success) => {
+			sendBack(
+				success
+					? { type: 'INITIALIZATION_SUCCESS' }
+					: { type: 'INITIALIZATION_FAILURE', error: 'Initialization returned false.' }
+			);
+		})
+		.catch((error) => {
 			const errorMessage = error instanceof Error ? error.message : 'Unknown initialization error';
-			// Reject with the failure shape
-			throw { type: 'INITIALIZATION_FAILURE', error: errorMessage };
-		}
-	}
-);
+			sendBack({ type: 'INITIALIZATION_FAILURE', error: errorMessage });
+		});
+	return () => {
+		console.log('Initialization actor cleanup.');
+	};
+});
 
+// --- State Machine Definition ---
 export const appStateMachine = createMachine(
 	{
 		id: 'appMachine',
-		// 2. Fix types definition for actors
+		// Define machine types
 		types: {} as {
 			context: AppMachineContext;
 			events: AppMachineEvents;
-			// Define the actor source and its potential output/input
 			actors: {
-				src: 'initializeApplication'; // Keep the key used in invoke
-				logic: typeof initializeApplicationActor; // Reference the actor logic type
-				// input: InitializationActorInput; // Define input type if needed
-				// output: InitializationActorOutput; // Define output type
+				src: 'initializeApplication';
+				logic: typeof initializeApplicationActorLogic;
 			};
 		},
+		// Initial context
 		context: {
 			currentTab: 0,
 			previousTab: 0,
@@ -103,24 +83,45 @@ export const appStateMachine = createMachine(
 			isFullScreen: false,
 			isSettingsOpen: false,
 			initializationError: null,
-			loadingProgress: 0, // Progress might need to be updated differently now
+			loadingProgress: 0,
 			loadingMessage: 'Initializing...',
-			contentVisible: true
+			contentVisible: false, // Start hidden
+			backgroundIsReady: false
 		},
-		initial: 'initializing',
+		initial: 'initializingBackground',
+		// Define states
 		states: {
-			initializing: {
+			initializingBackground: {
+				entry: assign({
+					backgroundIsReady: false,
+					initializationError: null,
+					loadingProgress: 0,
+					loadingMessage: 'Loading background...',
+					contentVisible: false
+				}),
+				on: {
+					BACKGROUND_READY: {
+						target: 'initializingApp',
+						actions: assign({ backgroundIsReady: true })
+					}
+				}
+			},
+			initializingApp: {
 				entry: assign({
 					initializationError: null,
 					loadingProgress: 0,
 					loadingMessage: 'Initializing application...',
 					contentVisible: false
 				}),
-				invoke: {
-					id: 'initApp',
-					src: 'initializeApplication', // Matches key in actors config
-					// input: ({ context, event }) => { /* prepare input data if needed */ return undefined; },
-					onDone: {
+				invoke: { id: 'initApp', src: 'initializeApplication' },
+				on: {
+					UPDATE_PROGRESS: {
+						actions: assign({
+							loadingProgress: ({ event }) => event.progress,
+							loadingMessage: ({ event }) => event.message
+						})
+					},
+					INITIALIZATION_SUCCESS: {
 						target: 'ready',
 						actions: assign({
 							loadingProgress: 100,
@@ -128,91 +129,46 @@ export const appStateMachine = createMachine(
 							initializationError: null
 						})
 					},
-					onError: {
+					INITIALIZATION_FAILURE: {
 						target: 'initializationFailed',
-						actions: assign({
-							initializationError: ({ event }) => {
-								// In v5 onError for actors/promises, the thrown/rejected value
-								// is typically available on event.error
-								const rejectionReason = event.error;
-
-								// Safely check if the rejectionReason has the shape we expect
-								// (the object we threw from fromPromise)
-								if (
-									typeof rejectionReason === 'object' &&
-									rejectionReason !== null &&
-									'error' in rejectionReason &&
-									typeof rejectionReason.error === 'string'
-								) {
-									return rejectionReason.error; // Extract the message
-								}
-
-								// Provide a fallback message if the error shape is unexpected
-								return 'An unknown initialization error occurred.';
-							},
-							loadingProgress: 0 // Reset progress on error
-						})
-					}
-				},
-				on: {
-					// UPDATE_PROGRESS would now likely be sent from outside, if needed at all
-					UPDATE_PROGRESS: {
-						actions: assign({
-							loadingProgress: ({ event }) => event.progress,
-							loadingMessage: ({ event }) => event.message
-						})
+						actions: assign({ initializationError: ({ event }) => event.error, loadingProgress: 0 })
 					}
 				}
 			},
 			initializationFailed: {
 				on: {
 					RETRY_INITIALIZATION: {
-						target: 'initializing'
+						target: 'initializingApp',
+						guard: ({ context }) => context.backgroundIsReady
 					}
 				}
 			},
 			ready: {
-				entry: assign({ contentVisible: true }),
-				initial: 'idle',
-				states: {
-					idle: {},
-					tabTransitioning: {
-						on: { CHANGE_TAB: undefined },
-						after: { 600: { target: 'idle', actions: 'finishTabTransition' } }
-					}
-				},
+				// Set contentVisible true on entry and keep it true
+				entry: assign({
+					contentVisible: true,
+					loadingProgress: 0,
+					loadingMessage: ''
+				}),
 				on: {
 					CHANGE_TAB: {
-						target: '.tabTransitioning',
-						actions: 'startTabTransition',
+						target: 'ready', // Stay in ready state
+						actions: 'startTabTransition', // Run action to update context
 						guard: ({ context, event }) => context.currentTab !== event.tab
 					},
+					// Other events handled in the ready state
 					TOGGLE_FULLSCREEN: {
-						actions: assign({
-							isFullScreen: ({ context }) => !context.isFullScreen
-						})
+						actions: assign({ isFullScreen: ({ context }) => !context.isFullScreen })
 					},
-					OPEN_SETTINGS: {
-						actions: assign({ isSettingsOpen: true })
-					},
-					CLOSE_SETTINGS: {
-						actions: assign({ isSettingsOpen: false })
-					},
+					OPEN_SETTINGS: { actions: assign({ isSettingsOpen: true }) },
+					CLOSE_SETTINGS: { actions: assign({ isSettingsOpen: false }) },
 					UPDATE_BACKGROUND: {
 						actions: assign({
-							// 3. & 4. Fix assign function signature and context usage
 							background: ({ event, context: currentContext }) => {
-								const validBackgrounds: BackgroundType[] = [
-									'snowfall',
-								];
-								if (validBackgrounds.includes(event.background as BackgroundType)) {
-									return event.background as BackgroundType;
-								}
-								console.warn(
-									`Invalid background type in event: ${event.background}. Keeping previous.`
-								);
-								// Return previous value correctly
-								return currentContext.background;
+								const validBackgrounds: BackgroundType[] = ['snowfall'];
+								return validBackgrounds.includes(event.background as BackgroundType)
+									? (event.background as BackgroundType)
+									: currentContext.background;
 							}
 						})
 					}
@@ -220,25 +176,34 @@ export const appStateMachine = createMachine(
 			}
 		}
 	},
+	// Implementation options
 	{
 		actions: {
+			// Add logging inside the action that updates the context
 			startTabTransition: assign(({ context, event }) => {
 				if (event.type === 'CHANGE_TAB') {
-					return {
+					// --- Add Log ---
+					// Log the incoming tab index and the current index before update
+					console.log(
+						`[StateMachine] startTabTransition: Received event.tab = ${event.tab}, current context.currentTab = ${context.currentTab}`
+					);
+					// --- End Log ---
+					const newState = {
 						previousTab: context.currentTab,
-						currentTab: event.tab,
-						contentVisible: false
+						currentTab: event.tab // This is the new index
 					};
+					// --- Add Log ---
+					// Log the specific context changes being returned by assign
+					console.log('[StateMachine] startTabTransition: New context will be:', newState);
+					// --- End Log ---
+					return newState; // Return the changes for XState to merge into context
 				}
+				// Should not happen if guard works, but good practice
 				return {};
-			}),
-			finishTabTransition: assign({
-				contentVisible: true
 			})
 		},
-		// 2. Implement the actor using the defined logic
 		actors: {
-			initializeApplication: initializeApplicationActor
+			initializeApplication: initializeApplicationActorLogic
 		},
 		guards: {},
 		delays: {}

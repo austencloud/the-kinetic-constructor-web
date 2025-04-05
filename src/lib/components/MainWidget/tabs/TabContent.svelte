@@ -1,57 +1,61 @@
 <script lang="ts">
+	// Import necessary components
 	import PlaceholderTab from './PlaceholderTab.svelte';
 	import SequenceWorkbench from '$lib/components/SequenceWorkbench/Workbench.svelte';
 	import OptionPicker from '$lib/components/OptionPicker/OptionPicker.svelte';
 	import StartPosPicker from '$lib/components/StartPosPicker/StartPosPicker.svelte';
-	import { getTransitionProps } from '../utils/transitionHelpers'; // Keep transition helpers
-	import { fly, fade } from 'svelte/transition';
+	// Import fade transition and potentially others if needed
+	import { crossfade, fade } from 'svelte/transition'; // Keep fade
 
 	// --- XState Imports ---
-	import { appService } from '../state/store';
-	import { useSelector } from '@xstate/svelte';
-	import { tabs } from '../state/appState'; // Import tabs definition
+	import {
+		selectCurrentTab,
+		selectPreviousTab, // Kept for potential future logic
+		selectActiveTabData
+	} from '../state/store';
 
-	// --- Svelte Stores (If unrelated to main app state) ---
-	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore'; // Keep if separate concern
+	// --- Svelte Stores ---
+	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
 
-	// --- Props ---
-	// isVisible can be passed down or selected here. Let's select it here for independence.
-	// export let isVisible: boolean = true;
-	export let useTransitions: boolean = true; // Keep transition flag
+	// --- Get State from XState using specific selectors ---
+	const currentTabIndex = selectCurrentTab();
+	const previousTabIndex = selectPreviousTab();
+	const currentActiveTab = selectActiveTabData(); // Get the data object for the active tab
 
-	// --- Get State from XState ---
-	const state = useSelector(appService, (s) => s);
+	// --- Reactive derivations ---
+	$: isEmpty = $isSequenceEmpty;
 
-	// Reactive variables from state snapshot
-	$: currentTabIndex = $state.context.currentTab;
-	$: previousTabIndex = $state.context.previousTab;
-	$: isVisible = $state.context.contentVisible; // Use visibility from machine
-	$: currentActiveTab = tabs[currentTabIndex]; // Get tab data using index from context
-	$: isSlideRight = currentTabIndex > previousTabIndex;
-
-	// Other reactive stores
-	$: isEmpty = $isSequenceEmpty; // Keep if needed
-
-	// Computed transition properties
-	$: transitionProps = useTransitions
-		? getTransitionProps(currentTabIndex, isSlideRight).props
-		: undefined;
-
-	// Determine if content should fade out (handled by machine's contentVisible now)
-	// $: isContentFadeOut = $state.matches('ready.tabTransitioning'); // Or based on contentVisible directly
+	// Define fade transition properties for the main tab content swap
+	// Use a slightly shorter duration for a typical cross-fade effect
+	const fadeDuration = 300; // Adjust as needed (e.g., 300ms)
+	const fadeTransitionProps = { duration: fadeDuration };
+	// Define separate props for the inner picker fade if desired
+	const pickerFadeProps = { duration: 200 }; // Create a crossfade transition
+	const [send, receive] = crossfade({
+		duration: 400,
+		fallback(node, params) {
+			return fade(node, { duration: 300 });
+		}
+	});
 </script>
 
 <div class="tab-content-container">
-	{#if isVisible}
-		{#key currentActiveTab.id}
-			{#if currentActiveTab.splitView}
-				<div class="split-view-container">
-					<div class="sequenceWorkbenchContainer" transition:fly={transitionProps}>
+	{#if $currentActiveTab}
+		{#key $currentActiveTab.id}
+			<div
+				in:receive={{ key: $currentActiveTab.id }}
+				out:send={{ key: $currentActiveTab.id }}
+				class={$currentActiveTab.id === 'construct'
+					? 'split-view-container'
+					: 'placeholderContainer'}
+			>
+				{#if $currentActiveTab.id === 'construct'}
+					<div class="sequenceWorkbenchContainer">
 						<SequenceWorkbench />
 					</div>
-					<div class="optionPickerContainer" transition:fly={transitionProps}>
+					<div class="optionPickerContainer">
 						{#key isEmpty}
-							<div class="picker-container" transition:fade={{ duration: 300 }}>
+							<div class="picker-container" transition:fade={pickerFadeProps}>
 								{#if isEmpty}
 									<StartPosPicker />
 								{:else}
@@ -60,55 +64,64 @@
 							</div>
 						{/key}
 					</div>
-				</div>
-			{:else if currentActiveTab.component}
-				<div class="fullViewComponent" transition:fly={transitionProps}>
-					<svelte:component this={currentActiveTab.component} />
-				</div>
-			{:else}
-				<div class="placeholderContainer" transition:fly={transitionProps}>
-					<PlaceholderTab icon={currentActiveTab.icon} title={currentActiveTab.title} />
-				</div>
-			{/if}
+				{:else}
+					<PlaceholderTab icon={$currentActiveTab.icon} title={$currentActiveTab.title} />
+				{/if}
+			</div>
 		{/key}
 	{/if}
 </div>
 
 <style>
 	.tab-content-container {
-		position: relative;
+		position: relative; /* Crucial for absolute positioning of children during transition */
 		width: 100%;
 		height: 100%;
-		overflow: hidden; /* Opacity transition handled by parent MainLayout now */
+		overflow: hidden; /* Prevent content spill during transition */
 	}
-	/* .tab-content-container.content-fade-out { opacity: 0; } */ /* Remove this */
-	.split-view-container {
-		display: flex;
+
+	/* Ensure the direct children of the #key block can overlap during transition */
+	.split-view-container,
+	.placeholderContainer {
+		position: absolute; /* Changed from relative to absolute */
+		top: 0;
+		left: 0;
 		width: 100%;
 		height: 100%;
-		position: relative;
+		display: flex; /* Keep flex for split-view */
+		box-sizing: border-box; /* Include padding/border in element's total width and height */
 	}
+
+	/* Styles for split view content */
+
 	.sequenceWorkbenchContainer,
 	.optionPickerContainer {
 		flex: 1;
-		position: relative;
+		position: relative; /* Relative for picker-container positioning */
 		height: 100%;
-		display: flex;
-		overflow: hidden;
+		display: flex; /* Keep display:flex */
+		overflow: hidden; /* Keep overflow hidden */
 	}
-	.fullViewComponent,
+
+	/* Styles for the placeholder content */
 	.placeholderContainer {
-		width: 100%;
-		height: 100%;
-		position: relative;
+		/* display: flex; is already set above */
+		/* width: 100%; height: 100%; position: absolute; are set above */
+		/* Ensure placeholder content inside is centered if needed */
+		align-items: center;
+		justify-content: center;
 	}
+
 	.picker-container {
+		/* Allows pickers to overlay within optionPickerContainer */
 		width: 100%;
 		height: 100%;
-		position: absolute;
+		position: absolute; /* Keep absolute positioning */
 		top: 0;
 		left: 0;
 	}
+
+	/* Responsive styles */
 	@media (orientation: portrait) {
 		.split-view-container {
 			flex-direction: column;
@@ -116,18 +129,19 @@
 		.sequenceWorkbenchContainer,
 		.optionPickerContainer {
 			flex: 1;
-			width: 100%;
+			width: 100%; /* Ensure full width in column layout */
 		}
 	}
+
 	@media (orientation: landscape) {
 		.split-view-container {
 			flex-direction: row;
 		}
 		.sequenceWorkbenchContainer {
-			width: 50%;
+			flex: 1;
 		}
 		.optionPickerContainer {
-			width: 50%;
+			flex: 1;
 		}
 	}
 </style>

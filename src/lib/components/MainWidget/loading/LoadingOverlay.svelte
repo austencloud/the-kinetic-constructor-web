@@ -1,7 +1,8 @@
 <script lang="ts">
+	import LoadingSpinner from "./LoadingSpinner.svelte";
+
 	// Remove loadingStore import
 	// import { loadingState } from '$lib/stores/ui/loadingStore';
-	import LoadingSpinner from './LoadingSpinner.svelte';
 
 	// --- Props ---
 	export let onRetry: () => void;

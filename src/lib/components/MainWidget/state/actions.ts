@@ -44,9 +44,9 @@ export const actions = {
 
 	retryInitialization: (): void => {
 		appService.send({ type: 'RETRY_INITIALIZATION' });
-	}
+	},
 
-	// NOTE: Setting initialization error is now handled *within* the machine's
-	// invoked service onError handler. No need for an external action.
-	// setInitializationError: (hasError: boolean) => { ... } // REMOVE THIS
+    backgroundReady: (): void => {
+        appService.send({ type: 'BACKGROUND_READY' });
+    }
 };

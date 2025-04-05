@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import type { ComponentType, SvelteComponent } from 'svelte';
 
 	// Components
@@ -11,15 +12,20 @@
 	import BackgroundProvider from '../Backgrounds/BackgroundProvider.svelte';
 
 	// State (XState)
-	import { appService } from './state/store'; // Import the XState service/actor
-	import { useSelector } from '@xstate/svelte'; // Use the selector from the adapter
-	import { actions } from './state/actions'; // Import refactored actions
+	import {
+		selectIsLoading,
+		selectIsInitializingApp,
+		selectHasInitializationFailed,
+		selectIsReady,
+		selectBackground,
+		selectInitializationError,
+		selectLoadingProgress,
+		selectLoadingMessage
+	} from './state/store';
+	import { actions } from './state/actions';
 	import type { BackgroundType } from './state/appState';
 
-	// Utils (Keep if needed, but initialization is now in the machine)
-	// import { initializeApplication } from '$lib/utils/appInitializer'; // No longer called directly here
-
-	// Window Store (Keep if needed for height separate from app logic)
+	// Window Store
 	import { windowHeight } from '$lib/stores/ui/windowStore';
 
 	// Types
@@ -27,67 +33,48 @@
 		fps: number;
 		memory?: { used: number; total: number };
 	}
-
+	// Adjust event map if needed, though dispatching 'tabChange' is internal here
 	type Events = {
-		tabChange: { index: number; id: string }; // Keep events dispatched *out* of the widget
+		// tabChange: { index: number; id: string }; // This component dispatches other events upwards
 		changeBackground: string;
 		toggleFullscreen: boolean;
 	};
 
 	const dispatch = createEventDispatcher<Events>();
 
-	// --- Get State from XState ---
-	// Use selectors from the adapter
-	const state = useSelector(appService, (snapshot) => snapshot); // Get the whole state snapshot
-	// Or select specific parts if preferred (using selectors from store.ts)
-	// const context = useSelector(appService, s => s.context);
-	// const matches = (query: string) => useSelector(appService, s => s.matches(query));
-
-	// Derive reactive variables from the state snapshot
-	$: isInitializing = $state.matches('initializing');
-	$: hasFailed = $state.matches('initializationFailed');
-	$: isReady = $state.matches('ready');
-	$: currentBackground = $state.context.background;
-	$: initializationErrorMsg = $state.context.initializationError;
-	$: loadingProgress = $state.context.loadingProgress;
-	$: loadingMessage = $state.context.loadingMessage;
-	$: currentTab = $state.context.currentTab; // Needed for dispatching event out
+	// --- Get State from XState using specific selectors ---
+	const isLoading = selectIsLoading();
+	const isInitializingApp = selectIsInitializingApp();
+	const hasFailed = selectHasInitializationFailed();
+	const isReady = selectIsReady();
+	const currentBackground = selectBackground();
+	const initializationErrorMsg = selectInitializationError();
+	const loadingProgress = selectLoadingProgress();
+	const loadingMessage = selectLoadingMessage();
 
 	// --- Event Handlers ---
 	function handleFullScreenToggle(event: CustomEvent<boolean>) {
-		actions.setFullScreen(event.detail); // Assumes TOGGLE_FULLSCREEN event
+		actions.setFullScreen(event.detail);
 		dispatch('toggleFullscreen', event.detail);
 	}
-
 	function handleBackgroundChange(event: CustomEvent<string>) {
 		actions.updateBackground(event.detail);
 		dispatch('changeBackground', event.detail);
 	}
 
-	function handleTabChange(event: CustomEvent<{ index: number }>) {
-		const newIndex = event.detail.index;
-		actions.changeTab(newIndex);
-		// Dispatch out immediately (machine handles internal state)
-		// You might want to dispatch out based on state changes instead if needed
-		// This requires subscribing to the service directly or using reactive statements on selectors
-		// dispatch('tabChange', { index: newIndex, id: tabs[newIndex].id }); // Dispatch requires tabs import
+	// *** FIX: Update handler signature and call to actions.changeTab ***
+	function handleTabChange(event: CustomEvent<number>) {
+		// event.detail is now the number (index)
+		actions.changeTab(event.detail);
 	}
-
-	// Watch for context changes to dispatch external events if needed
-	// Example: Dispatch tabChange *after* the machine context updates
-	// $: dispatch('tabChange', { index: $state.context.currentTab, id: tabs[$state.context.currentTab].id });
 
 	function handleRetry(): void {
 		actions.retryInitialization();
 	}
-
 	function handleBackgroundReady(): void {
-		// This might not be strictly necessary if the background
-		// rendering doesn't gate the main app initialization.
-		// The machine now controls the initialization flow.
-		console.log('Background Canvas Ready');
+		console.log('Background Canvas Ready - Sending event to state machine.');
+		actions.backgroundReady();
 	}
-
 	function handlePerformanceReport(event: CustomEvent<PerformanceReportEvent>): void {
 		const fps = event.detail?.fps ?? 0;
 		if (fps < 30) {
@@ -97,45 +84,46 @@
 
 	// --- Lifecycle ---
 	onMount(() => {
-		// Service is started in store.ts
-		// No need to explicitly call initializeApplication here
-		// The machine handles it via its invoke definition.
+		// Service started in store.ts
 	});
 </script>
 
 <div id="main-widget" style="height: {$windowHeight}" class="main-widget">
 	<FullScreen on:toggleFullscreen={handleFullScreenToggle}>
-		<div class="background">
+		<div class="background" class:blur-background={$isInitializingApp || $hasFailed}>
 			<BackgroundProvider
-				backgroundType={currentBackground ?? 'snowfall'}
-				isLoading={isInitializing || hasFailed}
-				initialQuality={isInitializing || hasFailed ? 'medium' : 'high'}
+				backgroundType={$currentBackground || 'snowfall'}
+				isLoading={$isInitializingApp || $hasFailed}
+				initialQuality={$isInitializingApp || $hasFailed ? 'medium' : 'high'}
 			>
 				<BackgroundCanvas
+					appIsLoading={$isInitializingApp || $hasFailed}
 					on:ready={handleBackgroundReady}
 					on:performanceReport={handlePerformanceReport}
-					appIsLoading={isInitializing || hasFailed}
 				/>
 			</BackgroundProvider>
 		</div>
 
-		{#if isInitializing || hasFailed}
-			<LoadingOverlay
-				message={loadingMessage}
-				progress={loadingProgress}
-				onRetry={handleRetry}
-				showInitializationError={hasFailed}
-				errorMessage={initializationErrorMsg}
-			/>
+		{#if $isInitializingApp || $hasFailed}
+			<div class="loading-overlay-wrapper" transition:fade={{ duration: 300 }}>
+				<LoadingOverlay
+					message={$loadingMessage}
+					progress={$loadingProgress}
+					onRetry={handleRetry}
+					showInitializationError={$hasFailed}
+					errorMessage={$initializationErrorMsg}
+				/>
+			</div>
 		{/if}
 
-		{#if isReady}
-			<MainLayout
-				background={currentBackground}
-				onSettingsClick={actions.openSettings}
-				on:changeBackground={handleBackgroundChange}
-				on:tabChange={handleTabChange}
-			/>
+		{#if $isReady}
+			<div class="main-layout-wrapper" transition:fade={{ duration: 500, delay: 100 }}>
+				<MainLayout
+					background={$currentBackground}
+					onSettingsClick={actions.openSettings}
+					on:changeBackground={handleBackgroundChange}
+					on:tabChange={handleTabChange} />
+			</div>
 		{/if}
 	</FullScreen>
 </div>
@@ -150,11 +138,32 @@
 		color-scheme: light dark;
 		color: light-dark(black, white);
 		overflow: hidden;
+		background-color: rgb(11, 29, 42);
 	}
 	.background {
 		position: absolute;
 		inset: 0;
 		overflow: hidden;
 		z-index: 0;
+		transition: filter 0.3s ease-in-out;
+		filter: blur(0px);
+	}
+	.background.blur-background {
+		filter: blur(4px);
+	}
+	.loading-overlay-wrapper {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 999;
+	}
+	.main-layout-wrapper {
+		flex: 1;
+		display: flex;
+		min-height: 0;
+		position: relative;
+		z-index: 1;
 	}
 </style>
