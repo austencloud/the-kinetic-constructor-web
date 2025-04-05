@@ -16,7 +16,7 @@
 	const dispatch = createEventDispatcher();
 
 	// Use Redux selectors instead of derived stores
-	$: isSettingsDialogOpen = useSelector((state) => state.app.isSettingsDialogOpen);
+	$: isSettingsDialogOpen = useSelector((state) => state.app.isSettingsOpen);
 	$: contentVisible = useSelector((state) => state.app.contentVisible);
 
 	// Event handlers with improved type safety

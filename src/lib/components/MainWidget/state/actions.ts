@@ -1,4 +1,4 @@
-// src/lib/components/MainWidget/state/actions.ts
+// FILE: src/lib/components/MainWidget/state/actions.ts
 import { store } from './store';
 import {
 	changeTab,
@@ -18,7 +18,10 @@ export type TabChangeEventDetail = {
 
 export type BackgroundChangeEventDetail = string;
 
-export const createActions = (onTabChange: (event: TabChangeEventDetail) => void, onBackgroundChange: (background: BackgroundChangeEventDetail) => void) => ({
+export const createActions = (
+	onTabChange: (event: TabChangeEventDetail) => void, 
+	onBackgroundChange: (background: BackgroundChangeEventDetail) => void
+) => ({
 	changeTab: (newTabIndex: number): Promise<void> => {
 		return new Promise((resolve) => {
 			store.dispatch(changeTab(newTabIndex));
