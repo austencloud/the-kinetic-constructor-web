@@ -1,4 +1,5 @@
-import { appState, tabs } from './appState';
+// src/lib/components/MainWidget/state/actions.ts
+import { appState, tabs, type BackgroundType } from './appState';
 import { get } from 'svelte/store';
 
 // Define the event types more precisely
@@ -11,11 +12,13 @@ export type SettingsChangeEvent = {
 	background: string;
 };
 
-// Define a more specific type for the dispatch function
-export type AppDispatch = {
-	(type: 'tabChange', detail?: TabChangeEvent): void;
-	(type: 'settingsChange', detail?: SettingsChangeEvent): void;
+// Define a more specific type for the dispatch function using generics
+export type EventMap = {
+	tabChange: TabChangeEvent;
+	settingsChange: SettingsChangeEvent;
 };
+
+export type AppDispatch = <K extends keyof EventMap>(type: K, detail?: EventMap[K]) => void;
 
 // Pure action creators that update state immutably
 export const createActions = (dispatch: AppDispatch) => ({

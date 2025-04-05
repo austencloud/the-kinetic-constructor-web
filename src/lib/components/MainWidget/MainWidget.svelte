@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
+	import type { ComponentType, SvelteComponent } from 'svelte';
 
 	// Components
 	import FullScreen from '$lib/FullScreen.svelte';
@@ -12,11 +13,18 @@
 
 	// State and Stores
 	import { loadingState } from '$lib/stores/ui/loadingStore';
-	import { appState, activeTab, tabs } from './state/appState';
+	import { 
+		appState, 
+		activeTab, 
+		tabs, 
+		type BackgroundType,
+		type TabComponentType 
+	} from './state/appState';
 	import {
 		createActions,
 		type TabChangeEvent,
 		type SettingsChangeEvent,
+		type EventMap,
 		type AppDispatch
 	} from './state/actions';
 
@@ -26,37 +34,45 @@
 	// Declarative dynamicHeight from derived store
 	import { windowHeight } from '$lib/stores/ui/windowStore';
 
-	const dispatch = createEventDispatcher<{
-		tabChange: TabChangeEvent;
-		settingsChange: SettingsChangeEvent;
-	}>();
+	// Define performance report event type
+	interface PerformanceReportEvent {
+		fps: number;
+		memory?: {
+			used: number;
+			total: number;
+		};
+	}
+
+	const dispatch = createEventDispatcher<EventMap>();
 
 	const actions = createActions(dispatch as AppDispatch);
 
-	// Local mutable tab component map
-	const tabComponentOverrides = new Map<string, typeof SequenceWorkbench>();
+	// Local mutable tab component map with proper typing
+	// Use any to bypass the type checking issues with Svelte components
+	const tabComponentOverrides = new Map<string, any>();
 	tabComponentOverrides.set('construct', SequenceWorkbench);
 
 	// Initialize background first, then the app
 	let backgroundReady = false;
 	let appIsLoading = $loadingState.isLoading;
+	let selectedBackgroundType: BackgroundType = "snowfall";
 
 	// Sync the appIsLoading variable with the loadingState store
 	$: appIsLoading = $loadingState.isLoading;
 
-	function handleBackgroundReady() {
+	function handleBackgroundReady(): void {
 		backgroundReady = true;
 		// Once background is ready, initialize the application
 		initApp();
 	}
 
-	function handlePerformanceReport(event: CustomEvent<{ fps: number }>) {
+	function handlePerformanceReport(event: CustomEvent<PerformanceReportEvent>): void {
 		// Optional: Handle performance metrics if needed
 		// const metrics = event.detail;
 		// console.log('Background performance:', metrics.fps);
 	}
 
-	const initApp = async () => {
+	const initApp = async (): Promise<void> => {
 		try {
 			const success = await initializeApplication();
 			if (!success) {
@@ -68,7 +84,7 @@
 		}
 	};
 
-	const handleRetry = () => window.location.reload();
+	const handleRetry = (): void => window.location.reload();
 </script>
 
 <div id="main-widget" style="height: {$windowHeight}" class="main-widget">
@@ -76,7 +92,7 @@
 		<!-- Background ALWAYS renders first, independent of loading state -->
 		<div class="background">
 			<BackgroundProvider
-				backgroundType="snowfall"
+				backgroundType={selectedBackgroundType}
 				isLoading={appIsLoading}
 				initialQuality={appIsLoading ? 'medium' : 'high'}
 			>

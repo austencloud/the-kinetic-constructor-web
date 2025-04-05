@@ -1,15 +1,22 @@
 // src/lib/components/MainWidget/state/appState.ts
 import { writable, derived, type Readable } from 'svelte/store';
+import type { ComponentType, SvelteComponent } from 'svelte';
 import { beatsStore } from '$lib/stores/sequence/beatsStore';
 
-// Define the Tab type
+// Define a more compatible component type using ComponentType
+export type TabComponentType = ComponentType<SvelteComponent>;
+
+// Define the Tab type with proper component typing
 export type Tab = {
 	id: string;
-	component: any; // Component constructor type
+	component: TabComponentType | null; // Component constructor type
 	icon: string;
 	title: string;
 	splitView: boolean;
 };
+
+// Define background types for better type safety
+export type BackgroundType = 'snowfall' | 'particles' | 'gradient' | 'waves';
 
 // Define the application state type
 export interface AppState {
@@ -91,4 +98,3 @@ export const slideDirection: Readable<boolean> = derived(
 );
 
 export const isTabTransitionInProgress = derived(appState, ($state) => $state.transitionInProgress);
-
