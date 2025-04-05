@@ -1,5 +1,4 @@
 <script lang="ts">
-	// Use $ syntax for reactive declarations
 	import { onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
 	import type { ComponentType, SvelteComponent } from 'svelte';
@@ -12,22 +11,30 @@
 	import BackgroundCanvas from '../Backgrounds/BackgroundCanvas.svelte';
 	import BackgroundProvider from '../Backgrounds/BackgroundProvider.svelte';
 
-	// Use the enhanced store directly
+	// State and Stores
 	import { loadingState } from '$lib/stores/ui/loadingStore';
-	import {
-		appStore, // Now using our enhanced store
-		TABS,
+	import { 
+		appState, 
+		activeTab, 
+		tabs, 
 		type BackgroundType,
-		type TabId
+		type TabComponentType 
 	} from './state/appState';
+	import {
+		createActions,
+		type TabChangeEvent,
+		type SettingsChangeEvent,
+		type EventMap,
+		type AppDispatch
+	} from './state/actions';
 
 	// Utils
 	import { initializeApplication } from '$lib/utils/appInitializer';
 
-	// Using the reactive $ syntax for windowHeight
+	// Declarative height from derived store
 	import { windowHeight } from '$lib/stores/ui/windowStore';
 
-	// Define types
+	// Define performance report event type
 	interface PerformanceReportEvent {
 		fps: number;
 		memory?: {
@@ -36,79 +43,54 @@
 		};
 	}
 
-	type EventMap = {
-		tabChange: { index: number; id: TabId };
-		settingsChange: { background: BackgroundType };
-	};
-
 	const dispatch = createEventDispatcher<EventMap>();
 
-	// Component registry using Map with more permissive typing
-	const tabComponents = new Map<TabId, any>();
-	tabComponents.set('construct', SequenceWorkbench);
+	const actions = createActions(dispatch as AppDispatch);
 
-	// Alternatively, you can use a type assertion if you want to maintain stricter typing:
-	// tabComponents.set('construct', SequenceWorkbench as unknown as ComponentType<SvelteComponent>);
+	// Use any type to avoid component type issues
+	const tabComponentOverrides = new Map<string, any>();
+	tabComponentOverrides.set('construct', SequenceWorkbench);
 
-	// State variables with reactive declarations
+	// Initialize background first, then the app
 	let backgroundReady = false;
-	let selectedBackgroundType: BackgroundType = 'snowfall';
+	let appIsLoading = $loadingState.isLoading;
+	let selectedBackgroundType: BackgroundType = "snowfall";
+
+	// Sync the appIsLoading variable with the loadingState store
 	$: appIsLoading = $loadingState.isLoading;
-	$: appState = $appStore;
 
-	// Lifecycle method
-	onMount(async () => {
-		// Component is now mounted - can add any initialization here
-	});
-
-	// Event handlers
-	function handleBackgroundReady() {
+	function handleBackgroundReady(): void {
 		backgroundReady = true;
+		// Once background is ready, initialize the application
 		initApp();
 	}
 
-	function handlePerformanceReport(event: CustomEvent<PerformanceReportEvent>) {
-		// Using optional chaining and nullish coalescing for safer code
+	function handlePerformanceReport(event: CustomEvent<PerformanceReportEvent>): void {
+		// Optional: Handle performance metrics if needed
 		const fps = event.detail?.fps ?? 0;
-		// Could dispatch performance metrics to parent if needed
-	}
-
-	async function initApp() {
-		try {
-			const success = await initializeApplication();
-			if (!success) {
-				appStore.setInitializationError(true);
-			}
-		} catch (error) {
-			console.error('Application initialization failed:', error);
-			appStore.setInitializationError(true);
+		if (fps < 30) {
+			console.warn('Low performance detected in background animation');
 		}
 	}
 
-	function handleRetry() {
-		window.location.reload();
-	}
+	const initApp = async (): Promise<void> => {
+		try {
+			const success = await initializeApplication();
+			if (!success) {
+				actions.setInitializationError(true);
+			}
+		} catch (error) {
+			console.error('Application initialization failed:', error);
+			actions.setInitializationError(true);
+		}
+	};
 
-	// Event forwarding handlers
-	function handleTabChange(event: CustomEvent<{ index: number }>) {
-		const tabId = TABS[event.detail.index].id;
-		dispatch('tabChange', {
-			index: event.detail.index,
-			id: tabId
-		});
-	}
-
-	function handleBackgroundChange(event: CustomEvent<BackgroundType>) {
-		appStore.updateBackground(event.detail);
-		dispatch('settingsChange', {
-			background: event.detail
-		});
-	}
+	const handleRetry = (): void => window.location.reload();
 </script>
 
-<div id="main-widget" style:height={$windowHeight} class="main-widget">
-	<FullScreen on:toggleFullscreen={(e) => appStore.setFullScreen(e.detail)}>
-		<!-- Background container -->
+<div id="main-widget" style="height: {$windowHeight}" class="main-widget">
+	<FullScreen on:toggleFullscreen={(e) => actions.setFullScreen(e.detail)}>
+		<!-- Background ALWAYS renders first, independent of loading state -->
 		<div class="background">
 			<BackgroundProvider
 				backgroundType={selectedBackgroundType}
@@ -123,18 +105,19 @@
 			</BackgroundProvider>
 		</div>
 
-		<!-- Conditional content rendering with transitions -->
-		{#if appIsLoading}
+		<!-- Show LoadingOverlay on top of the background during loading -->
+		{#if $loadingState.isLoading}
 			<LoadingOverlay
 				onRetry={handleRetry}
-				showInitializationError={appState.initializationError}
+				showInitializationError={$appState.initializationError}
 			/>
 		{:else}
+			<!-- Main content only shown when not loading -->
 			<MainLayout
-				background={appState.background}
-				onSettingsClick={() => appStore.openSettings()}
-				on:changeBackground={handleBackgroundChange}
-				on:tabChange={handleTabChange}
+				background={$appState.background}
+				onSettingsClick={actions.openSettings}
+				on:changeBackground={(e) => actions.updateBackground(e.detail)}
+				on:tabChange={(e) => actions.changeTab(e.detail)}
 			/>
 		{/if}
 	</FullScreen>
@@ -146,16 +129,9 @@
 		flex-direction: column;
 		flex: 1;
 		position: relative;
-		/* Using modern CSS color-mix for gradients */
-		background: linear-gradient(
-			to bottom,
-			color-mix(in srgb, #0b1d2a 80%, black),
-			color-mix(in srgb, #325078 70%, #49708a),
-			#49708a
-		);
-		/* Using the modern color-scheme and light-dark() function */
+
 		color-scheme: light dark;
-		color: light-dark(#000, #fff);
+		color: light-dark(black, white);
 		overflow: hidden;
 	}
 
@@ -163,6 +139,6 @@
 		position: absolute;
 		inset: 0; /* Modern shorthand for top, right, bottom, left */
 		overflow: hidden;
-		z-index: 0;
+		z-index: 0; /* Ensure background is behind everything */
 	}
 </style>
