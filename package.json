@@ -51,6 +51,7 @@
 		"@testing-library/user-event": "^14.6.1",
 		"@types/lodash": "^4.17.16",
 		"@types/node": "^22.13.14",
+		"@types/redux-logger": "^3.0.13",
 		"@vitest/ui": "^3.1.1",
 		"autoprefixer": "^10.4.20",
 		"eslint": "^9.23.0",
@@ -60,6 +61,7 @@
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.10",
 		"publint": "^0.3.2",
+		"redux-logger": "^3.0.6",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
 		"tailwindcss": "^3.4.17",
@@ -68,9 +70,13 @@
 		"vitest": "^3.1.1"
 	},
 	"dependencies": {
+		"@reduxjs/toolkit": "^2.6.1",
+		"@types/redux-persist": "^4.3.1",
 		"lodash": "^4.17.21",
 		"lucide-svelte": "^0.486.0",
 		"polished": "^4.3.1",
+		"react-redux": "^9.2.0",
+		"redux-persist": "^6.0.0",
 		"svelte-motion": "^0.12.2"
 	}
 }

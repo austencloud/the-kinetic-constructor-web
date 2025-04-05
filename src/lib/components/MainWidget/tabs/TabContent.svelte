@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { activeTab, slideDirection, appState } from '../state/appState';
 	import PlaceholderTab from './PlaceholderTab.svelte';
 	import SequenceWorkbench from '$lib/components/SequenceWorkbench/Workbench.svelte';
 	import OptionPicker from '$lib/components/OptionPicker/OptionPicker.svelte';
@@ -8,24 +7,26 @@
 	import { getTransitionProps } from '../utils/transitionHelpers';
 	import { fly } from 'svelte/transition';
 	import { fade } from 'svelte/transition';
+	import {  selectActiveTab, selectSlideDirection, useSelector } from '../state/store';
+	import { selectAppState } from '../state/store';
 
 	export let isVisible: boolean = true;
 	export let useTransitions: boolean = false;
 
-	// Reactive store values (these are the store subscriptions)
-	$: currentActiveTab = $activeTab;
-	$: isSlideRight = $slideDirection;
+	// Reactive store values
+	$: currentActiveTab = useSelector(selectActiveTab);
+	$: isSlideRight = useSelector(selectSlideDirection);
 	$: isEmpty = $isSequenceEmpty;
-	$: currentState = $appState;
-	
+	$: currentState = useSelector(selectAppState);
+
 	// Derived values from the store's data (not stores themselves)
 	$: currentTabIndex = currentState.currentTab;
 	$: previousTabIndex = currentState.previousTab;
 	$: isContentFadeOut = currentState.contentFadeOut;
-	
+
 	// Computed transition properties
-	$: transitionProps = useTransitions 
-		? getTransitionProps(currentTabIndex, isSlideRight).props 
+	$: transitionProps = useTransitions
+		? getTransitionProps(currentTabIndex, isSlideRight).props
 		: undefined;
 </script>
 
@@ -34,17 +35,11 @@
 		{#key currentActiveTab.id}
 			{#if currentActiveTab.splitView}
 				<div class="split-view-container">
-					<div
-						class="sequenceWorkbenchContainer"
-						in:fly={transitionProps}
-					>
+					<div class="sequenceWorkbenchContainer" in:fly={transitionProps}>
 						<SequenceWorkbench />
 					</div>
 
-					<div
-						class="optionPickerContainer"
-						in:fly={transitionProps}
-					>
+					<div class="optionPickerContainer" in:fly={transitionProps}>
 						{#key isEmpty}
 							<div class="picker-container" transition:fade={{ duration: 300 }}>
 								{#if isEmpty}
@@ -57,17 +52,11 @@
 					</div>
 				</div>
 			{:else if currentActiveTab.component}
-				<div
-					class="fullViewComponent"
-					in:fly={transitionProps}
-				>
+				<div class="fullViewComponent" in:fly={transitionProps}>
 					<svelte:component this={currentActiveTab.component} />
 				</div>
 			{:else}
-				<div
-					class="placeholderContainer"
-					in:fly={transitionProps}
-				>
+				<div class="placeholderContainer" in:fly={transitionProps}>
 					<PlaceholderTab icon={currentActiveTab.icon} title={currentActiveTab.title} />
 				</div>
 			{/if}
@@ -114,7 +103,7 @@
 		height: 100%;
 		position: relative;
 	}
-	
+
 	.picker-container {
 		width: 100%;
 		height: 100%;
@@ -122,7 +111,7 @@
 		top: 0;
 		left: 0;
 	}
-	
+
 	/* Keep your original media queries for responsive layouts */
 	@media (orientation: portrait) {
 		.split-view-container {

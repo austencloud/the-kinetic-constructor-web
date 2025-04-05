@@ -14,9 +14,6 @@
 	// State and Stores
 	import { loadingState } from '$lib/stores/ui/loadingStore';
 	import { 
-		appState, 
-		activeTab, 
-		tabs, 
 		type BackgroundType,
 		type TabComponentType 
 	} from './state/appState';
@@ -27,6 +24,12 @@
 		type EventMap,
 		type AppDispatch
 	} from './state/actions';
+	import { 
+		selectAppState, 
+		selectActiveTab, 
+		useSelector
+
+	} from './state/store';
 
 	// Utils
 	import { initializeApplication } from '$lib/utils/appInitializer';
@@ -55,6 +58,11 @@
 	let backgroundReady = false;
 	let appIsLoading = $loadingState.isLoading;
 	let selectedBackgroundType: BackgroundType = "snowfall";
+
+	// Reactive variables from Redux store
+	const appState = useSelector(selectAppState);
+	const background = useSelector((state) => state.app.background);
+	const initializationError = useSelector((state) => state.app.initializationError);
 
 	// Sync the appIsLoading variable with the loadingState store
 	$: appIsLoading = $loadingState.isLoading;
@@ -109,12 +117,12 @@
 		{#if $loadingState.isLoading}
 			<LoadingOverlay
 				onRetry={handleRetry}
-				showInitializationError={$appState.initializationError}
+				showInitializationError={initializationError}
 			/>
 		{:else}
 			<!-- Main content only shown when not loading -->
 			<MainLayout
-				background={$appState.background}
+				background={background}
 				onSettingsClick={actions.openSettings}
 				on:changeBackground={(e) => actions.updateBackground(e.detail)}
 				on:tabChange={(e) => actions.changeTab(e.detail)}

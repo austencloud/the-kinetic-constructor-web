@@ -2,11 +2,12 @@
 	import MenuBar from '$lib/components/MenuBar/MenuBar.svelte';
 	import SettingsDialog from '$lib/components/SettingsDialog/SettingsDialog.svelte';
 	import TabContent from '../tabs/TabContent.svelte';
-	import { appState } from '../state/appState';
-	import { derived } from 'svelte/store';
+	import { useSelector } from '../state/store';
 	import { createEventDispatcher } from 'svelte';
 	import SequenceInspector from '$lib/components/Developer/SequenceInspector.svelte';
 	import type { BackgroundType } from '../state/appState';
+	import { store } from '../state/store';
+	import { closeSettings, updateBackground } from '../state/appSlice';
 
 	// Props with TypeScript types
 	export let background: string = 'Snowfall';
@@ -14,27 +15,30 @@
 
 	const dispatch = createEventDispatcher();
 
-	// Keep your original store derivations
-	const isSettingsDialogOpen = derived(appState, (s) => s.isSettingsDialogOpen);
-	const contentVisible = derived(appState, (s) => s.contentVisible);
+	// Use Redux selectors instead of derived stores
+	$: isSettingsDialogOpen = useSelector((state) => state.app.isSettingsDialogOpen);
+	$: contentVisible = useSelector((state) => state.app.contentVisible);
 
 	// Event handlers with improved type safety
 	function handleCloseSettings() {
-		appState.update((s) => ({ ...s, isSettingsDialogOpen: false }));
+		store.dispatch(closeSettings());
 	}
-	
+
 	function handleBackgroundChange(event: CustomEvent<string>) {
 		// Validate background type
 		const validBackgrounds = ['snowfall', 'particles', 'gradient', 'waves'];
-		
-		if (validBackgrounds.includes(event.detail.toLowerCase())) {
-			dispatch('changeBackground', event.detail);
+
+		const backgroundType = event.detail.toLowerCase();
+		if (validBackgrounds.includes(backgroundType)) {
+			store.dispatch(updateBackground(backgroundType));
+			dispatch('changeBackground', backgroundType);
 		} else {
 			console.warn(`Invalid background type: ${event.detail}. Using default.`);
+			store.dispatch(updateBackground('snowfall'));
 			dispatch('changeBackground', 'Snowfall');
 		}
 	}
-	
+
 	function handleTabChange(event: CustomEvent<{ index: number }>) {
 		dispatch('tabChange', event.detail);
 	}
@@ -53,13 +57,13 @@
 		{/if}
 	</div>
 
-	<div class="mainContent" class:hidden={!$contentVisible}>
-		<TabContent isVisible={$contentVisible} />
+	<div class="mainContent" class:hidden={!contentVisible}>
+		<TabContent isVisible={contentVisible} />
 	</div>
 
-	{#if $isSettingsDialogOpen}
+	{#if isSettingsDialogOpen}
 		<SettingsDialog
-			isOpen={$isSettingsDialogOpen}
+			isOpen={isSettingsDialogOpen}
 			{background}
 			on:changeBackground={handleBackgroundChange}
 			onClose={handleCloseSettings}
@@ -68,7 +72,6 @@
 </div>
 
 <style>
-	/* Keep your original flex layout but with improved properties */
 	.content {
 		display: flex;
 		flex-direction: column;

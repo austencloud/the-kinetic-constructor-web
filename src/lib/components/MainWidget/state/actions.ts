@@ -1,8 +1,16 @@
 // src/lib/components/MainWidget/state/actions.ts
-import { appState, tabs, type BackgroundType } from './appState';
-import { get } from 'svelte/store';
+import { store } from './store';
+import {
+	changeTab,
+	updateBackground,
+	setFullScreen,
+	openSettings,
+	closeSettings,
+	setInitializationError
+} from './appSlice';
+import { tabs } from './appState';
 
-// Define the event types more precisely
+// Define event types
 export type TabChangeEvent = {
 	index: number;
 	id: string;
@@ -12,7 +20,6 @@ export type SettingsChangeEvent = {
 	background: string;
 };
 
-// Define a more specific type for the dispatch function using generics
 export type EventMap = {
 	tabChange: TabChangeEvent;
 	settingsChange: SettingsChangeEvent;
@@ -20,90 +27,39 @@ export type EventMap = {
 
 export type AppDispatch = <K extends keyof EventMap>(type: K, detail?: EventMap[K]) => void;
 
-// Pure action creators that update state immutably
-export const createActions = (dispatch: AppDispatch) => ({
-	openSettings: () => {
-		appState.update((state) => ({ ...state, isSettingsDialogOpen: true }));
-	},
+export const createActions = (eventDispatch: AppDispatch) => ({
+	changeTab: (newTabIndex: number): Promise<void> => {
+		return new Promise((resolve) => {
+			store.dispatch(changeTab(newTabIndex));
 
-	closeSettings: () => {
-		appState.update((state) => ({ ...state, isSettingsDialogOpen: false }));
+			eventDispatch('tabChange', {
+				index: newTabIndex,
+				id: tabs[newTabIndex].id
+			});
+
+			// Animation timing
+			setTimeout(resolve, 600);
+		});
 	},
 
 	updateBackground: (newBackground: string) => {
-		appState.update((state) => ({ ...state, background: newBackground }));
-		dispatch('settingsChange', { background: newBackground });
+		store.dispatch(updateBackground(newBackground));
+		eventDispatch('settingsChange', { background: newBackground });
 	},
 
 	setFullScreen: (isFullScreen: boolean) => {
-		appState.update((state) => ({ ...state, isFullScreen }));
+		store.dispatch(setFullScreen(isFullScreen));
+	},
+
+	openSettings: () => {
+		store.dispatch(openSettings());
+	},
+
+	closeSettings: () => {
+		store.dispatch(closeSettings());
 	},
 
 	setInitializationError: (hasError: boolean) => {
-		appState.update((state) => ({ ...state, initializationError: hasError }));
-	},
-
-	changeTab: (newTabIndex: number): Promise<void> => {
-		return new Promise((resolve) => {
-			const currentState = get(appState);
-
-			// Skip if already on this tab
-			if (newTabIndex === currentState.currentTab) {
-				resolve();
-				return;
-			}
-
-			// If a transition is already in progress, complete it immediately
-			if (currentState.transitionInProgress) {
-				appState.update((s) => ({
-					...s,
-					previousTab: newTabIndex > s.currentTab ? s.currentTab : s.previousTab,
-					currentTab: newTabIndex,
-					contentVisible: true,
-					transitionInProgress: true
-				}));
-
-				dispatch('tabChange', {
-					index: newTabIndex,
-					id: tabs[newTabIndex].id
-				});
-
-				resolve();
-				return;
-			}
-
-			// Start the transition: fade out current content
-			appState.update((s) => ({
-				...s,
-				previousTab: s.currentTab,
-				transitionInProgress: true,
-				contentFadeOut: true
-			}));
-
-			// Wait for fade-out to complete before switching tabs
-			setTimeout(() => {
-				// Switch tabs after fade-out
-				appState.update((s) => ({
-					...s,
-					currentTab: newTabIndex,
-					contentFadeOut: false // Prepare for fade-in
-				}));
-
-				// Dispatch tab change event
-				dispatch('tabChange', {
-					index: newTabIndex,
-					id: tabs[newTabIndex].id
-				});
-
-				// Complete transition after a short delay
-				setTimeout(() => {
-					appState.update((s) => ({
-						...s,
-						transitionInProgress: false
-					}));
-					resolve();
-				}, 300);
-			}, 300); // Match the fade duration
-		});
+		store.dispatch(setInitializationError(hasError));
 	}
 });
