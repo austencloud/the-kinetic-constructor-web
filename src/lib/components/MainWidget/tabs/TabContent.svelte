@@ -1,71 +1,83 @@
 <script lang="ts">
-	import { activeTab, slideDirection, appState } from '../state/appState';
+	import { appStore, activeTab, slideDirection } from '../state/appState';
 	import PlaceholderTab from './PlaceholderTab.svelte';
 	import SequenceWorkbench from '$lib/components/SequenceWorkbench/Workbench.svelte';
 	import OptionPicker from '$lib/components/OptionPicker/OptionPicker.svelte';
 	import StartPosPicker from '$lib/components/StartPosPicker/StartPosPicker.svelte';
-	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
-	import { derived } from 'svelte/store';
 	import { getTransitionProps } from '../utils/transitionHelpers';
-	import { fly } from 'svelte/transition';
-	import { fade } from 'svelte/transition';
+	import { fly, fade } from 'svelte/transition';
+	
+	// Using property destructuring with defaults
+	export let isVisible = true;
+	export let useTransitions = true;
 
-	export let isVisible: boolean = true;
-	export let useTransitions: boolean = false;
-
-	const activeTabIndex = derived(appState, (s) => s.currentTab);
-	const contentFadeOut = derived(appState, (s) => s.contentFadeOut);
+	// Using reactive declarations with $ syntax
+	$: currentTabIndex = $appStore.currentTab;
+	$: contentFadeOut = $appStore.contentFadeOut;
+	$: currentTab = $activeTab;
+	$: direction = $slideDirection;
+	$: isEmpty = $isSequenceEmpty;
+	
+	// Memoized computed property
+	$: transitionProps = useTransitions 
+		? getTransitionProps(currentTabIndex, direction).props 
+		: undefined;
 </script>
 
-<div class="tab-content-container" class:content-fade-out={$contentFadeOut}>
+<div 
+	class="tab-content-container" 
+	class:content-fade-out={contentFadeOut}
+	role="tabpanel"
+	aria-label="{currentTab.title} content"
+>
 	{#if isVisible}
-		{#key $activeTab.id}
-			{#if $activeTab.splitView}
+		{#key currentTab.id}
+			{#if currentTab.splitView}
 				<div class="split-view-container">
-					<div
+					<!-- Workbench Panel -->
+					<section
 						class="sequenceWorkbenchContainer"
-						in:fly={useTransitions
-							? getTransitionProps($activeTabIndex, $slideDirection).props
-							: undefined}
+						in:fly={transitionProps}
 					>
 						<SequenceWorkbench />
-					</div>
+					</section>
 
-					<div
+					<!-- Options Panel with conditional rendering -->
+					<section
 						class="optionPickerContainer"
-						in:fly={useTransitions
-							? getTransitionProps($activeTabIndex, $slideDirection).props
-							: undefined}
+						in:fly={transitionProps}
 					>
-						{#key $isSequenceEmpty}
-							<div class="picker-container" transition:fade={{ duration: 300 }}>
-								{#if $isSequenceEmpty}
-									<StartPosPicker />
-								{:else}
-									<OptionPicker />
-								{/if}
+						{#key isEmpty}
+							<div 
+								class="picker-container" 
+								transition:fade={{ duration: 300 }}
+							>
+								<svelte:component 
+									this={isEmpty ? StartPosPicker : OptionPicker} 
+								/>
 							</div>
 						{/key}
-					</div>
+					</section>
 				</div>
-			{:else if $activeTab.component}
+			{:else if currentTab.component}
+				<!-- Full view component with dynamic component loading -->
 				<div
 					class="fullViewComponent"
-					in:fly={useTransitions
-						? getTransitionProps($activeTabIndex, $slideDirection).props
-						: undefined}
+					in:fly={transitionProps}
 				>
-					<svelte:component this={$activeTab.component} />
+					<svelte:component this={currentTab.component} />
 				</div>
 			{:else}
+				<!-- Fallback placeholder for undefined tabs -->
 				<div
 					class="placeholderContainer"
-					in:fly={useTransitions
-						? getTransitionProps($activeTabIndex, $slideDirection).props
-						: undefined}
+					in:fly={transitionProps}
 				>
-					<PlaceholderTab icon={$activeTab.icon} title={$activeTab.title} />
+					<PlaceholderTab 
+						icon={currentTab.icon} 
+						title={currentTab.title} 
+					/>
 				</div>
 			{/if}
 		{/key}
@@ -73,31 +85,31 @@
 </div>
 
 <style>
-	/* NEW: Fixed container to prevent layout shifts */
 	.tab-content-container {
 		position: relative;
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
 		opacity: 1;
-		transition: opacity 0.3s ease;
+		transition: opacity 0.3s ease-in-out;
 	}
 
 	.tab-content-container.content-fade-out {
 		opacity: 0;
 	}
 
-	/* NEW: Container for split view to maintain consistent layout */
 	.split-view-container {
-		display: flex;
+		display: grid;
 		width: 100%;
 		height: 100%;
 		position: relative;
+		/* Using CSS Grid for better responsive layout */
+		grid-template-columns: 1fr;
+		grid-template-rows: 1fr 1fr;
 	}
 
 	.sequenceWorkbenchContainer,
 	.optionPickerContainer {
-		flex: 1;
 		position: relative;
 		height: 100%;
 		display: flex;
@@ -110,39 +122,34 @@
 		height: 100%;
 		position: relative;
 	}
+	
 	.picker-container {
 		width: 100%;
 		height: 100%;
 		position: absolute;
-		top: 0;
-		left: 0;
+		inset: 0;
 	}
-	/* Responsive layouts */
+	
+	/* Responsive layouts using modern container queries where supported */
+	@container (min-width: 768px) {
+		.split-view-container {
+			grid-template-columns: 1fr 1fr;
+			grid-template-rows: 1fr;
+		}
+	}
+
+	/* Fallback for browsers without container queries */
 	@media (orientation: portrait) {
 		.split-view-container {
-			flex-direction: column;
-		}
-
-		.sequenceWorkbenchContainer {
-			flex: 1;
-		}
-
-		.optionPickerContainer {
-			flex: 1;
+			grid-template-columns: 1fr;
+			grid-template-rows: 1fr 1fr;
 		}
 	}
 
 	@media (orientation: landscape) {
 		.split-view-container {
-			flex-direction: row;
-		}
-
-		.sequenceWorkbenchContainer {
-			width: 50%;
-		}
-
-		.optionPickerContainer {
-			width: 50%;
+			grid-template-columns: 1fr 1fr;
+			grid-template-rows: 1fr;
 		}
 	}
 </style>

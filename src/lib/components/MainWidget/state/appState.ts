@@ -1,33 +1,29 @@
 // src/lib/components/MainWidget/state/appState.ts
-import { writable, derived, type Readable } from 'svelte/store';
+import { writable, derived, type Readable, get } from 'svelte/store';
 import type { ComponentType, SvelteComponent } from 'svelte';
-import { beatsStore } from '$lib/stores/sequence/beatsStore';
 
-// Define a more compatible component type using ComponentType
-export type TabComponentType = ComponentType<SvelteComponent>;
+// Define types with TypeScript template literals for more specific typing
+export type BackgroundType = 'snowfall' | 'particles' | 'gradient' | 'waves';
+export type TabId = 'construct' | 'generate' | 'browse' | 'learn' | 'write';
 
-// Define the Tab type with proper component typing
+// Define the Tab type with more flexible component typing
 export type Tab = {
-	id: string;
-	component: TabComponentType | null; // Component constructor type
+	id: TabId;
+	component: any | null; // Using 'any' for component to avoid type conflicts
 	icon: string;
 	title: string;
 	splitView: boolean;
 };
 
-// Define background types for better type safety
-export type BackgroundType = 'snowfall' | 'particles' | 'gradient' | 'waves';
-
 // Define the application state type
 export interface AppState {
 	isSettingsDialogOpen: boolean;
 	isFullScreen: boolean;
-	background: string;
+	background: BackgroundType;
 	initializationError: boolean;
 	currentTab: number;
 	previousTab: number;
 	contentVisible: boolean;
-	dynamicHeight: string;
 	transitionInProgress: boolean;
 	contentFadeOut: boolean;
 }
@@ -36,19 +32,17 @@ export interface AppState {
 const initialState: AppState = {
 	isSettingsDialogOpen: false,
 	isFullScreen: false,
-	background: 'Snowfall',
+	background: 'snowfall',
 	initializationError: false,
 	currentTab: 0,
 	previousTab: 0,
 	contentVisible: true,
-	dynamicHeight: '100vh',
 	transitionInProgress: false,
 	contentFadeOut: false
 };
 
-// Define the tabs configuration - pure data
-// Components will be set in the MainWidget component
-export const tabs: ReadonlyArray<Tab> = [
+// Define the tabs configuration as a constant
+export const TABS: ReadonlyArray<Tab> = [
 	{
 		id: 'construct',
 		component: null, // Will be set in MainWidget.svelte
@@ -86,15 +80,73 @@ export const tabs: ReadonlyArray<Tab> = [
 	}
 ] as const;
 
-// Create the writable store
-export const appState = writable<AppState>(initialState);
+// Create the app store with a custom store pattern for better encapsulation
+function createAppStore() {
+	const { subscribe, update, set } = writable<AppState>(initialState);
+	
+	return {
+		subscribe,
+		
+		// Actions as methods on the store itself
+		openSettings: () => update(state => ({ ...state, isSettingsDialogOpen: true })),
+		
+		closeSettings: () => update(state => ({ ...state, isSettingsDialogOpen: false })),
+		
+		updateBackground: (newBackground: BackgroundType) => 
+			update(state => ({ ...state, background: newBackground })),
+		
+		setFullScreen: (isFullScreen: boolean) => 
+			update(state => ({ ...state, isFullScreen })),
+		
+		setInitializationError: (hasError: boolean) => 
+			update(state => ({ ...state, initializationError: hasError })),
+		
+		async changeTab(newTabIndex: number): Promise<void> {
+			const currentState = get({ subscribe });
+			
+			// Skip if already on this tab
+			if (newTabIndex === currentState.currentTab) {
+				return;
+			}
+			
+			// Start transition
+			update(state => ({
+				...state,
+				previousTab: state.currentTab,
+				transitionInProgress: true,
+				contentFadeOut: true
+			}));
+			
+			// Use async/await with Promise for better readability
+			await new Promise(resolve => setTimeout(resolve, 300)); // Match fade duration
+			
+			// Switch tabs after fade-out
+			update(state => ({
+				...state,
+				currentTab: newTabIndex,
+				contentFadeOut: false
+			}));
+			
+			// Complete transition after animation completes
+			await new Promise(resolve => setTimeout(resolve, 300));
+			
+			update(state => ({
+				...state,
+				transitionInProgress: false
+			}));
+		}
+	};
+}
+
+// Create the store
+export const appStore = createAppStore();
 
 // Create derived stores for commonly used values
-export const activeTab: Readable<Tab> = derived(appState, ($state) => tabs[$state.currentTab]);
+export const activeTab = derived(appStore, ($state) => TABS[$state.currentTab]);
 
-export const slideDirection: Readable<boolean> = derived(
-	appState,
+export const slideDirection = derived(
+	appStore,
 	($state) => $state.currentTab > $state.previousTab
 );
 
-export const isTabTransitionInProgress = derived(appState, ($state) => $state.transitionInProgress);
+export const isTabTransitionInProgress = derived(appStore, ($state) => $state.transitionInProgress);

@@ -1,72 +1,104 @@
-<!-- src/lib/components/MainWidget/layout/MainLayout.svelte -->
 <script lang="ts">
 	import MenuBar from '$lib/components/MenuBar/MenuBar.svelte';
 	import SettingsDialog from '$lib/components/SettingsDialog/SettingsDialog.svelte';
 	import TabContent from '../tabs/TabContent.svelte';
-	import { appState } from '../state/appState';
-	import { derived } from 'svelte/store';
+	import { appStore } from '../state/appState';
 	import { createEventDispatcher } from 'svelte';
 	import SequenceInspector from '$lib/components/Developer/SequenceInspector.svelte';
+	import type { BackgroundType } from '../state/appState';
 
-	export let background: string = 'Snowfall';
+	// Props with TypeScript types and defaults
+	export let background: BackgroundType = 'snowfall';
 	export let onSettingsClick: () => void;
-	// Removed the unused onRetry prop
 
+	// Event dispatcher
 	const dispatch = createEventDispatcher();
 
-	const isSettingsDialogOpen = derived(appState, (s) => s.isSettingsDialogOpen);
-	const contentVisible = derived(appState, (s) => s.contentVisible);
+	// Reactive state using $ syntax
+	$: isSettingsOpen = $appStore.isSettingsDialogOpen;
+	$: isContentVisible = $appStore.contentVisible;
+	$: isDevMode = import.meta.env.DEV;
 
-	const handleCloseSettings = () => {
-		appState.update((s) => ({ ...s, isSettingsDialogOpen: false }));
-	};
+	// Event handlers
+	function handleCloseSettings() {
+		appStore.closeSettings();
+	}
+
+	function handleBackgroundChange(event: CustomEvent<string>) {
+		// Validate that it's a valid background type
+		const validBackgrounds: BackgroundType[] = ['snowfall', 'particles', 'gradient', 'waves'];
+
+		if (validBackgrounds.includes(event.detail as BackgroundType)) {
+			// Type assertion after validation
+			const background = event.detail as BackgroundType;
+			dispatch('changeBackground', background);
+		} else {
+			console.warn(`Invalid background type: ${event.detail}. Using default.`);
+			// Use a default value if invalid
+			dispatch('changeBackground', 'snowfall');
+		}
+	}
+
+	function handleTabChange(event: CustomEvent<{ index: number }>) {
+		dispatch('tabChange', event.detail);
+	}
 </script>
 
-<div class="content">
-	<div class="menuBar">
+<div class="layout-container">
+	<header class="menuBar">
 		<MenuBar
 			{background}
 			on:settingsClick={onSettingsClick}
-			on:changeBackground={(e) => dispatch('changeBackground', e.detail)}
-			on:tabChange={(e) => dispatch('tabChange', e.detail)}
+			on:changeBackground={handleBackgroundChange}
+			on:tabChange={handleTabChange}
 		/>
-		{#if import.meta.env.DEV}
+
+		{#if isDevMode}
 			<SequenceInspector />
 		{/if}
-	</div>
+	</header>
 
-	<div class="mainContent" class:hidden={!$contentVisible}>
-		<TabContent isVisible={$contentVisible} />
-	</div>
+	<main class="mainContent" class:hidden={!isContentVisible}>
+		<TabContent isVisible={isContentVisible} />
+	</main>
 
-	{#if $isSettingsDialogOpen}
+	{#if isSettingsOpen}
 		<SettingsDialog
-			isOpen={$isSettingsDialogOpen}
+			isOpen={isSettingsOpen}
 			{background}
-			on:changeBackground={(e) => dispatch('changeBackground', e.detail)}
+			on:changeBackground={handleBackgroundChange}
 			onClose={handleCloseSettings}
 		/>
 	{/if}
 </div>
 
 <style>
-	.content {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		min-height: 0;
-		z-index: 1; /* Ensure content appears above the background */
+	.layout-container {
+		display: grid;
+		grid-template-rows: auto 1fr;
+		height: 100%;
+		width: 100%;
+		z-index: 1;
+
+		/* Container query context for child components */
+		container-type: inline-size;
+		container-name: layout;
+	}
+
+	.menuBar {
+		grid-row: 1;
+		width: 100%;
+		z-index: 2;
 	}
 
 	.mainContent {
+		grid-row: 2;
 		display: flex;
-		flex: 1;
-		overflow: hidden;
 		position: relative;
-		z-index: 0;
+		overflow: hidden;
 		width: 100%;
 		opacity: 1;
-		transition: opacity 0.3s ease;
+		transition: opacity 0.3s ease-in-out;
 	}
 
 	.mainContent.hidden {
