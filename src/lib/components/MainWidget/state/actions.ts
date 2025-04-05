@@ -10,29 +10,20 @@ import {
 } from './appSlice';
 import { tabs } from './appState';
 
-// Define event types
-export type TabChangeEvent = {
-	index: number;
-	id: string;
+// Define event types more explicitly
+export type TabChangeEventDetail = { 
+    index: number; 
+    id: string 
 };
 
-export type SettingsChangeEvent = {
-	background: string;
-};
+export type BackgroundChangeEventDetail = string;
 
-export type EventMap = {
-	tabChange: TabChangeEvent;
-	settingsChange: SettingsChangeEvent;
-};
-
-export type AppDispatch = <K extends keyof EventMap>(type: K, detail?: EventMap[K]) => void;
-
-export const createActions = (eventDispatch: AppDispatch) => ({
+export const createActions = (onTabChange: (event: TabChangeEventDetail) => void, onBackgroundChange: (background: BackgroundChangeEventDetail) => void) => ({
 	changeTab: (newTabIndex: number): Promise<void> => {
 		return new Promise((resolve) => {
 			store.dispatch(changeTab(newTabIndex));
 
-			eventDispatch('tabChange', {
+			onTabChange({
 				index: newTabIndex,
 				id: tabs[newTabIndex].id
 			});
@@ -44,7 +35,7 @@ export const createActions = (eventDispatch: AppDispatch) => ({
 
 	updateBackground: (newBackground: string) => {
 		store.dispatch(updateBackground(newBackground));
-		eventDispatch('settingsChange', { background: newBackground });
+		onBackgroundChange(newBackground);
 	},
 
 	setFullScreen: (isFullScreen: boolean) => {

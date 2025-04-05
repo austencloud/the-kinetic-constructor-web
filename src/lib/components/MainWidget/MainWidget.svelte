@@ -13,29 +13,17 @@
 
 	// State and Stores
 	import { loadingState } from '$lib/stores/ui/loadingStore';
-	import { 
-		type BackgroundType,
-		type TabComponentType 
-	} from './state/appState';
-	import {
-		createActions,
-		type TabChangeEvent,
-		type SettingsChangeEvent,
-		type EventMap,
-		type AppDispatch
-	} from './state/actions';
-	import { 
-		selectAppState, 
-		selectActiveTab, 
-		useSelector
+	import { type BackgroundType, type TabComponentType } from './state/appState';
 
-	} from './state/store';
+	import { selectAppState, selectActiveTab, useSelector, type AppDispatch } from './state/store';
 
 	// Utils
 	import { initializeApplication } from '$lib/utils/appInitializer';
 
 	// Declarative height from derived store
 	import { windowHeight } from '$lib/stores/ui/windowStore';
+	import type { EventMap } from './state/types';
+	import { createActions } from './state/actions';
 
 	// Define performance report event type
 	interface PerformanceReportEvent {
@@ -46,9 +34,25 @@
 		};
 	}
 
-	const dispatch = createEventDispatcher<EventMap>();
+	// Define explicit event types
+	type Events = {
+		tabChange: { index: number; id: string };
+		changeBackground: string;
+		toggleFullscreen: boolean;
+	};
 
-	const actions = createActions(dispatch as AppDispatch);
+	const dispatch = createEventDispatcher<Events>();
+
+	const actions = createActions(
+		(tabChangeEvent) => dispatch('tabChange', tabChangeEvent),
+		(background) => dispatch('changeBackground', background)
+	);
+
+	// Update the full screen handler
+	function handleFullScreenToggle(event: CustomEvent<boolean>) {
+		actions.setFullScreen(event.detail);
+		dispatch('toggleFullscreen', event.detail);
+	}
 
 	// Use any type to avoid component type issues
 	const tabComponentOverrides = new Map<string, any>();
@@ -57,7 +61,7 @@
 	// Initialize background first, then the app
 	let backgroundReady = false;
 	let appIsLoading = $loadingState.isLoading;
-	let selectedBackgroundType: BackgroundType = "snowfall";
+	let selectedBackgroundType: BackgroundType = 'snowfall';
 
 	// Reactive variables from Redux store
 	const appState = useSelector(selectAppState);
@@ -115,14 +119,11 @@
 
 		<!-- Show LoadingOverlay on top of the background during loading -->
 		{#if $loadingState.isLoading}
-			<LoadingOverlay
-				onRetry={handleRetry}
-				showInitializationError={initializationError}
-			/>
+			<LoadingOverlay onRetry={handleRetry} showInitializationError={initializationError} />
 		{:else}
 			<!-- Main content only shown when not loading -->
 			<MainLayout
-				background={background}
+				{background}
 				onSettingsClick={actions.openSettings}
 				on:changeBackground={(e) => actions.updateBackground(e.detail)}
 				on:tabChange={(e) => actions.changeTab(e.detail)}

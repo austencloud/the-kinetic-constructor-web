@@ -15,7 +15,6 @@ import storage from 'redux-persist/lib/storage/createWebStorage';
 // Import reducers
 import appReducer from './appSlice';
 import { tabs } from './appState';
-import { writable } from 'svelte/store';
 
 // Persist configuration
 const persistConfig = {
@@ -102,4 +101,3 @@ export const selectActiveTab = (state: RootState) => {
 };
 export const selectSlideDirection = (state: RootState) =>
 	state.app.currentTab > state.app.previousTab;
-export const reduxStore = writable(store.getState());

@@ -1,14 +1,8 @@
-// src/lib/components/MainWidget/state/appState.ts
-import type { ComponentType, SvelteComponent } from 'svelte';
 
-// Define strict types but use 'any' for component type to avoid compatibility issues
 export type TabComponentType = any;
-
-// Define background types for better type safety
 export type BackgroundType = 'snowfall' | 'particles' | 'gradient' | 'waves';
 export type TabId = 'construct' | 'generate' | 'browse' | 'learn' | 'write';
 
-// Tab interface with flexible component typing
 export type Tab = {
 	id: TabId;
 	component: TabComponentType | null;
@@ -17,11 +11,10 @@ export type Tab = {
 	splitView: boolean;
 };
 
-// Define the tabs configuration
 export const tabs: ReadonlyArray<Tab> = [
 	{
 		id: 'construct',
-		component: null, // Will be set dynamically
+		component: null,
 		icon: '⚒️',
 		title: 'Construct',
 		splitView: true
