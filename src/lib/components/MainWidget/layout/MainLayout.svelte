@@ -2,44 +2,60 @@
 	import MenuBar from '$lib/components/MenuBar/MenuBar.svelte';
 	import SettingsDialog from '$lib/components/SettingsDialog/SettingsDialog.svelte';
 	import TabContent from '../tabs/TabContent.svelte';
-	import { useSelector } from '../state/store';
 	import { createEventDispatcher } from 'svelte';
 	import SequenceInspector from '$lib/components/Developer/SequenceInspector.svelte';
-	import type { BackgroundType } from '../state/appState';
-	import { store } from '../state/store';
-	import { closeSettings, updateBackground } from '../state/appSlice';
 
-	// Props with TypeScript types
-	export let background: string = 'Snowfall';
-	export let onSettingsClick: () => void;
+	// --- XState Imports ---
+	import { appService } from '../state/store'; // Import service
+	import { useSelector } from '@xstate/svelte'; // Import selector hook
+	import { actions } from '../state/actions'; // Import refactored actions
 
-	const dispatch = createEventDispatcher();
+	// --- Props & Events ---
+	// The background prop might still be useful if passed down from MainWidget,
+	// or it could be selected directly here. Let's keep it passed down for now.
+	export let background: string;
+	export let onSettingsClick: () => void; // Keep as prop, triggered from MainWidget via actions
 
-	// Use Redux selectors instead of derived stores
-	$: isSettingsDialogOpen = useSelector((state) => state.app.isSettingsOpen);
-	$: contentVisible = useSelector((state) => state.app.contentVisible);
+	// Events emitted *up* from this component to MainWidget
+	const dispatch = createEventDispatcher<{
+		changeBackground: string;
+		tabChange: { index: number };
+	}>();
 
-	// Event handlers with improved type safety
+	// --- Get State from XState ---
+	const state = useSelector(appService, s => s); // Get full snapshot
+	// Or select specific context values:
+	// const isSettingsDialogOpen = useSelector(appService, s => s.context.isSettingsOpen);
+	// const contentVisible = useSelector(appService, s => s.context.contentVisible);
+
+	// Reactive vars from snapshot
+	$: isSettingsDialogOpen = $state.context.isSettingsOpen;
+	$: contentVisible = $state.context.contentVisible; // Use machine's visibility flag
+
+	// --- Event Handlers ---
 	function handleCloseSettings() {
-		store.dispatch(closeSettings());
+		// Send event to the machine via actions
+		actions.closeSettings();
 	}
 
 	function handleBackgroundChange(event: CustomEvent<string>) {
-		// Validate background type
-		const validBackgrounds = ['snowfall', 'particles', 'gradient', 'waves'];
+		// Validate background type (Keep validation logic)
+		const validBackgrounds = ['snowfall'];
+		const requestedBackground = event.detail;
+		const backgroundType = requestedBackground.toLowerCase();
 
-		const backgroundType = event.detail.toLowerCase();
 		if (validBackgrounds.includes(backgroundType)) {
-			store.dispatch(updateBackground(backgroundType));
+			// Dispatch up to MainWidget, which will call the action
 			dispatch('changeBackground', backgroundType);
 		} else {
-			console.warn(`Invalid background type: ${event.detail}. Using default.`);
-			store.dispatch(updateBackground('snowfall'));
-			dispatch('changeBackground', 'Snowfall');
+			console.warn(`Invalid background type: ${requestedBackground}. Using default.`);
+			// Dispatch default up to MainWidget
+			dispatch('changeBackground', 'snowfall');
 		}
 	}
 
 	function handleTabChange(event: CustomEvent<{ index: number }>) {
+		// Dispatch up to MainWidget
 		dispatch('tabChange', event.detail);
 	}
 </script>
@@ -58,8 +74,8 @@
 	</div>
 
 	<div class="mainContent" class:hidden={!contentVisible}>
-		<TabContent isVisible={contentVisible} />
-	</div>
+        <TabContent />
+    </div>
 
 	{#if isSettingsDialogOpen}
 		<SettingsDialog
@@ -72,26 +88,7 @@
 </div>
 
 <style>
-	.content {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		min-height: 0;
-		z-index: 1;
-	}
-
-	.mainContent {
-		display: flex;
-		flex: 1;
-		overflow: hidden;
-		position: relative;
-		z-index: 0;
-		width: 100%;
-		opacity: 1;
-		transition: opacity 0.3s ease;
-	}
-
-	.mainContent.hidden {
-		opacity: 0;
-	}
+	.content { display: flex; flex-direction: column; flex: 1; min-height: 0; z-index: 1; }
+	.mainContent { display: flex; flex: 1; overflow: hidden; position: relative; z-index: 0; width: 100%; opacity: 1; transition: opacity 0.3s ease; }
+	.mainContent.hidden { opacity: 0; }
 </style>

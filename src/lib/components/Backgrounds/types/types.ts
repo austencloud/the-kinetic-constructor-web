@@ -15,7 +15,7 @@ export type Dimensions = {
   export type QualityLevel = 'high' | 'medium' | 'low' | 'minimal';
   
   // Updated to remove diamond and only keep snowfall and future-proof with starfield
-  export type BackgroundType = 'snowfall' | 'starfield';
+  export type BackgroundType = 'snowfall';
   
   export interface GradientStop {
 	position: number;

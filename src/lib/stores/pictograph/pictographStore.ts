@@ -41,22 +41,30 @@ function toCamelCase(str: string): string {
 
 const pictographDataStore = writable<PictographData[]>([]);
 
-export const loadPictographData = async () => {
-	try {
-		const diamondData = await fetch('/DiamondPictographDataframe.csv').then((res) => res.text());
-		const boxData = await fetch('/BoxPictographDataframe.csv').then((res) => res.text());
 
-		const diamondPictographs = parseCsvToJson(diamondData, 'diamond');
-		const boxPictographs = parseCsvToJson(boxData, 'box');
+export const initializePictographData = (csvData: {
+	diamondData: string;
+	boxData: string;
+}): PictographData[] | null => {
+	try {
+		if (!csvData.diamondData && !csvData.boxData) {
+			console.warn('No CSV data provided for initialization.');
+			return null;
+		}
+
+		const diamondPictographs = parseCsvToJson(csvData.diamondData || '', 'diamond');
+		const boxPictographs = parseCsvToJson(csvData.boxData || '', 'box');
 		const combinedData = [...diamondPictographs, ...boxPictographs];
 
 		const allPictographData = groupPictographsByLetter(combinedData);
 
 		pictographDataStore.set(allPictographData);
-		return allPictographData;
+		console.log(`Pictograph store initialized with ${allPictographData.length} items.`);
+		return allPictographData; // Return the data if needed
 	} catch (error) {
-		console.error('Error loading pictograph data:', error);
-		throw error;
+		console.error('Error initializing pictograph store:', error);
+		pictographDataStore.set([]); // Set to empty on error
+		return null;
 	}
 };
 

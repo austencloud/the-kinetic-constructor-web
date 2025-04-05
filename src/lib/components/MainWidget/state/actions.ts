@@ -1,59 +1,52 @@
-// FILE: src/lib/components/MainWidget/state/actions.ts
-import { store } from './store';
-import {
-	changeTab,
-	updateBackground,
-	setFullScreen,
-	openSettings,
-	closeSettings,
-	setInitializationError
-} from './appSlice';
-import { tabs } from './appState';
+// src/lib/components/MainWidget/state/actions.ts
+import { appService } from './store';
+import { tabs } from './appState'; // Keep for tab id
 
-// Define event types more explicitly
-export type TabChangeEventDetail = { 
-    index: number; 
-    id: string 
+// Define event types more explicitly (if needed, often inferred)
+export type TabChangeEventDetail = {
+	index: number;
+	id: string;
 };
-
 export type BackgroundChangeEventDetail = string;
 
-export const createActions = (
-	onTabChange: (event: TabChangeEventDetail) => void, 
-	onBackgroundChange: (background: BackgroundChangeEventDetail) => void
-) => ({
-	changeTab: (newTabIndex: number): Promise<void> => {
-		return new Promise((resolve) => {
-			store.dispatch(changeTab(newTabIndex));
+// No longer needs callbacks passed in, but you might keep them if the *caller* needs them
+// For simplicity, let's assume side effects are handled elsewhere or triggered by state changes
+export const actions = {
+	changeTab: (newTabIndex: number): void => {
+		// The machine handles the logic (guards, context updates, transitions)
+		appService.send({ type: 'CHANGE_TAB', tab: newTabIndex });
 
-			onTabChange({
-				index: newTabIndex,
-				id: tabs[newTabIndex].id
-			});
-
-			// Animation timing
-			setTimeout(resolve, 600);
-		});
+		// If the caller still needs this info immediately (less common with state machines)
+		// You could return info or the caller could select it from the state
+		// onTabChange({ index: newTabIndex, id: tabs[newTabIndex].id });
 	},
 
-	updateBackground: (newBackground: string) => {
-		store.dispatch(updateBackground(newBackground));
-		onBackgroundChange(newBackground);
+	updateBackground: (newBackground: string): void => {
+		appService.send({ type: 'UPDATE_BACKGROUND', background: newBackground });
+		// onBackgroundChange(newBackground);
 	},
 
-	setFullScreen: (isFullScreen: boolean) => {
-		store.dispatch(setFullScreen(isFullScreen));
+	setFullScreen: (isFullScreen: boolean): void => {
+		// If you only toggle, a single event is better:
+		appService.send({ type: 'TOGGLE_FULLSCREEN' });
+		// If you need to set explicitly:
+		// This would require adding SET_FULLSCREEN event/logic to the machine
+		// appService.send({ type: 'SET_FULLSCREEN', fullscreen: isFullScreen });
 	},
 
-	openSettings: () => {
-		store.dispatch(openSettings());
+	openSettings: (): void => {
+		appService.send({ type: 'OPEN_SETTINGS' });
 	},
 
-	closeSettings: () => {
-		store.dispatch(closeSettings());
+	closeSettings: (): void => {
+		appService.send({ type: 'CLOSE_SETTINGS' });
 	},
 
-	setInitializationError: (hasError: boolean) => {
-		store.dispatch(setInitializationError(hasError));
+	retryInitialization: (): void => {
+		appService.send({ type: 'RETRY_INITIALIZATION' });
 	}
-});
+
+	// NOTE: Setting initialization error is now handled *within* the machine's
+	// invoked service onError handler. No need for an external action.
+	// setInitializationError: (hasError: boolean) => { ... } // REMOVE THIS
+};

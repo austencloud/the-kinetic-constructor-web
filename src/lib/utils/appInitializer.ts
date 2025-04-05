@@ -1,72 +1,58 @@
 // src/lib/utils/appInitializer.ts
-import { loadPictographData } from '$lib/stores/pictograph/pictographStore';
-import { updateLoadingProgress, setLoading } from '$lib/stores/ui/loadingStore';
+
+// REMOVE imports from the deleted loadingStore
+// import { updateLoadingProgress, setLoading } from '$lib/stores/ui/loadingStore';
 
 /**
- * Initialize the application with loading indicators
- */
-export async function initializeApplication(): Promise<boolean> {
-	// Start with loading at 0%
-	updateLoadingProgress(0, 'Starting initialization...');
-	setLoading(true);
+ * Initialize the application, reporting progress via callback for XState
+ * @param progressCallback Callback function provided by the XState actor for progress updates
+ */ export async function initializeApplication(
+	progressCallback?: (progress: number, message: string) => void
+): Promise<boolean> {
+	const reportProgress = (progress: number, message: string) => {
+		progressCallback?.(progress, message);
+	};
+
+	reportProgress(0, 'Starting initialization...');
 
 	try {
-		// Check if we're in the browser
 		const isBrowser = typeof window !== 'undefined';
+		let preloadingPromise: Promise<any> = Promise.resolve();
 
-		// Phase 1: Begin SVG preloading only in browser context
-		let preloadingPromise = Promise.resolve();
-
+		// Phase 1: SVG Preloading (Browser only)
 		if (isBrowser) {
-			updateLoadingProgress(10, 'Preloading SVG resources...');
-			// Dynamically import to avoid SSR issues
+			reportProgress(10, 'Preloading SVG resources...'); // Adjust progress %
 			const { initSvgPreloading } = await import('./SvgPreloader');
 			preloadingPromise = initSvgPreloading();
 		} else {
-			updateLoadingProgress(10, 'Server-side rendering...');
+			reportProgress(10, 'Server-side rendering (skipping SVG preload)...');
 		}
 
-		// Phase 2: Load pictograph data
-		updateLoadingProgress(20, 'Loading pictograph data...');
-		const pictographData = await loadPictographData();
-		updateLoadingProgress(60, 'Processing pictograph data...');
+		// Phase 2: Pictograph Data Loading is REMOVED from here
+		// reportProgress(20, 'Loading pictograph data...');
+		// await loadPictographData(); // <--- REMOVE THIS CALL
+		// reportProgress(60, 'Processing pictograph data...'); // Remove or adjust progress
 
-		// Phase 3: Wait for SVG preloading to complete (only in browser)
+		// Phase 3: Wait for SVG Preloading (Browser only)
+		const preloadProgress = 70; // Adjust progress %
 		if (isBrowser) {
-			updateLoadingProgress(70, 'Finalizing resource loading...');
+			reportProgress(preloadProgress, 'Finalizing resource loading...');
 			await preloadingPromise;
+		} else {
+			reportProgress(preloadProgress, 'Skipping SVG finalize...');
 		}
 
-		// Phase 4: Final preparations
-		updateLoadingProgress(90, 'Preparing user interface...');
-
-		// Small delay for UI to catch up (only in browser)
+		// Phase 4: Final Preparations
+		reportProgress(90, 'Preparing user interface...');
 		if (isBrowser) {
-			await new Promise((resolve) => setTimeout(resolve, 500));
+			await new Promise((resolve) => setTimeout(resolve, 100));
 		}
 
-		// Complete loading
-		updateLoadingProgress(100, 'Ready!');
-
-		// Small delay before hiding loading screen for smoother transition (only in browser)
-		if (isBrowser) {
-			await new Promise((resolve) => setTimeout(resolve, 300));
-		}
-
-		setLoading(false);
+		// Phase 5: Complete
+		reportProgress(100, 'Ready!');
 		return true;
 	} catch (error) {
 		console.error('Initialization failed:', error);
-
-		// Update loading state to show error
-		updateLoadingProgress(100, 'Error loading application. Please try refreshing.');
-
-		// Keep showing the loading screen with the error for a moment
-		if (typeof window !== 'undefined') {
-			await new Promise((resolve) => setTimeout(resolve, 2000));
-		}
-
-		setLoading(false);
-		return false;
+		throw error;
 	}
 }

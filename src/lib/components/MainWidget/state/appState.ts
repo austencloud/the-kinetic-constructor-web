@@ -1,6 +1,5 @@
-
 export type TabComponentType = any;
-export type BackgroundType = 'snowfall' | 'particles' | 'gradient' | 'waves';
+export type BackgroundType = 'snowfall';
 export type TabId = 'construct' | 'generate' | 'browse' | 'learn' | 'write';
 
 export type Tab = {

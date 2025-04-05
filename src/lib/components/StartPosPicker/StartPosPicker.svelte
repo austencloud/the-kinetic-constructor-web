@@ -9,71 +9,83 @@
 	import pictographDataStore from '$lib/stores/pictograph/pictographStore';
 	import startPositionService from '$lib/services/StartPositionService';
 	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
-	// DEBUG: Log component initialization
+	import { browser } from '$app/environment'; // Import browser check
 
-	let gridMode = 'diamond';
-	let startPositionDataStoreSet: Writable<PictographData>[] = [];
-	let isLoading = true;
-	let loadedPictographs = 0;
-	let totalPictographs = 0;
-	let dataInitialized = false;
+	let gridMode = 'diamond'; // TODO: Make this dynamic if necessary
+	let startPositionPictographs: PictographData[] = []; // Store the processed data directly
+	let filteredDataAvailable = false; // Flag to know if filtering yielded results
+	let dataInitializationChecked = false; // Flag to know if we've processed the store data at least once
+	let isLoading = true; // Start loading until store data is processed
+	let loadingError = false; // Flag for loading timeout/error
 
-	// Add a timeout to prevent infinite loading
-	let loadingTimeout: number | null = null;
+	// Timeout for initial data load
+	let initialDataTimeout: number | null = null;
 
 	const unsubscribe = pictographDataStore.subscribe((data) => {
-		if (!data || data.length === 0) {
-			isLoading = true;
-			return;
-		}
+		// Only process if running in the browser
+		if (!browser) return;
 
-		const pictographData = data as PictographData[];
-		const defaultStartPosKeys =
-			gridMode === 'diamond'
-				? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
-				: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
-
-		const filteredPictographs = pictographData.filter(
-			(entry) =>
-				entry.redMotionData &&
-				entry.blueMotionData &&
-				defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
-		);
-
-		if (filteredPictographs.length === 0) {
-			if (pictographData.length > 0) {
-				startPositionDataStoreSet = [writable(pictographData[0])];
-			} else {
-				isLoading = false;
-				return;
+		if (data && data.length > 0) {
+			// Data is available from the store
+			if (!dataInitializationChecked) {
+				console.log('StartPosPicker: Received initial data from pictographDataStore.');
 			}
-		} else {
-			startPositionDataStoreSet = filteredPictographs.map((entry) => writable(entry));
+			dataInitializationChecked = true; // Mark that we've seen data
+
+			const pictographData = data as PictographData[];
+			const defaultStartPosKeys =
+				gridMode === 'diamond'
+					? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
+					: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
+
+			const filteredPictographs = pictographData.filter(
+				(entry) =>
+					entry.redMotionData &&
+					entry.blueMotionData &&
+					defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
+			);
+
+			console.log(`StartPosPicker: Filtered ${filteredPictographs.length} start positions.`);
+
+			startPositionPictographs = filteredPictographs;
+			filteredDataAvailable = filteredPictographs.length > 0;
+
+			// Stop loading *after* processing
+			isLoading = false;
+			if (initialDataTimeout) clearTimeout(initialDataTimeout); // Clear safety timeout
+		} else if (dataInitializationChecked) {
+			// Data was previously available but is now empty (e.g., store reset)
+			console.log('StartPosPicker: pictographDataStore became empty after initialization.');
+			startPositionPictographs = [];
+			filteredDataAvailable = false;
+			isLoading = false; // Still not loading, just no data
 		}
-
-		totalPictographs = startPositionDataStoreSet.length;
-		loadedPictographs = 0;
-		dataInitialized = true;
-
-		isLoading = true;
-
-		if (loadingTimeout !== null) {
-			clearTimeout(loadingTimeout);
-		}
-
-		loadingTimeout = window.setTimeout(() => {
-			if (isLoading) {
-				isLoading = false;
-			}
-		}, 100);
+		// If data is initially empty/null, isLoading remains true until data arrives or timeout occurs
 	});
 
-	onDestroy(() => {
-		unsubscribe();
-		if (loadingTimeout !== null) {
-			clearTimeout(loadingTimeout);
-		}
+	onMount(() => {
+		// Safety timeout: If data hasn't been checked/processed after 10s, show error
+		initialDataTimeout = window.setTimeout(() => {
+			if (isLoading && !dataInitializationChecked) {
+				console.error('StartPosPicker: Timeout waiting for pictographDataStore initialization.');
+				isLoading = false;
+				loadingError = true; // Set error flag
+			}
+		}, 10000); // 10 seconds
+
+		return () => {
+			unsubscribe();
+			if (initialDataTimeout) {
+				clearTimeout(initialDataTimeout);
+			}
+		};
 	});
+
+	// No longer need individual stores for each pictograph here
+	// let startPositionDataStoreSet: Writable<PictographData>[] = [];
+	// let loadedPictographs = 0; // Removed - Pictograph loading state handled internally
+	// let totalPictographs = 0; // Removed
+
 	const handleSelect = async (startPosPictograph: PictographData) => {
 		try {
 			// Add start position to the sequence
@@ -85,46 +97,24 @@
 			// Update sequence state to not empty
 			isSequenceEmpty.set(false);
 
-			// Dispatch a custom event for components that might be listening
-			const customEvent = new CustomEvent('start-position-selected', {
-				detail: { startPosition: { ...startPosPictograph } },
-				bubbles: true
-			});
-			document.dispatchEvent(customEvent);
+			// Dispatch a custom event for components that might be listening (browser only)
+			if (browser) {
+				const customEvent = new CustomEvent('start-position-selected', {
+					detail: { startPosition: { ...startPosPictograph } },
+					bubbles: true
+				});
+				document.dispatchEvent(customEvent);
+			}
 		} catch (error) {
 			console.error('Error adding start position:', error);
-			// Optionally show an error message to the user
 		}
 	};
 
-	function handlePictographLoaded(event: CustomEvent) {
-		loadedPictographs++;
-	}
+	// These handlers are now managed within the Pictograph component itself
+	// function handlePictographLoaded(event: CustomEvent) {}
+	// function handlePictographError(event: CustomEvent) {}
 
-	function handlePictographError(event: CustomEvent) {
-		loadedPictographs++;
-
-		if (loadedPictographs >= totalPictographs) {
-			setTimeout(() => {
-				isLoading = false;
-			}, 200);
-		}
-	}
-
-	let fallbackDisplayed = false;
-
-	onMount(() => {
-		const initialDataTimeout = setTimeout(() => {
-			if (!dataInitialized) {
-				fallbackDisplayed = true;
-				isLoading = false;
-			}
-		}, 10000);
-
-		return () => {
-			clearTimeout(initialDataTimeout);
-		};
-	});
+	// let fallbackDisplayed = false; // Replaced by loadingError flag
 </script>
 
 <div class="start-pos-picker">
@@ -133,42 +123,38 @@
 	{#if isLoading}
 		<div class="loading-container">
 			<LoadingSpinner />
-			<p class="loading-text">
-				{#if !dataInitialized}
-					Loading Start Positions...
-				{:else if loadedPictographs === 0}
-					Preparing pictographs...
-				{:else}
-					Loading pictographs ({loadedPictographs}/{totalPictographs})
-				{/if}
-			</p>
+			<p class="loading-text">Loading Start Positions...</p>
 		</div>
-	{:else if startPositionDataStoreSet.length === 0 && fallbackDisplayed}
+	{:else if loadingError}
 		<div class="error-container">
 			<p>Unable to load start positions. Please try refreshing the page.</p>
-			<button on:click={() => window.location.reload()}>Refresh</button>
+			<button
+				on:click={() => {
+					if (browser) window.location.reload();
+				}}>Refresh</button
+			>
+		</div>
+	{:else if !filteredDataAvailable}
+		<div class="error-container">
+			<p>No valid start positions found for the current configuration.</p>
 		</div>
 	{:else}
 		<div class="pictograph-row">
-			{#each startPositionDataStoreSet as startPositionStore}
+			{#each startPositionPictographs as pictograph (pictograph.letter + '_' + pictograph.startPos + '_' + pictograph.endPos)}
+				{@const pictographStore = writable(pictograph)}
 				<div
 					class="pictograph-container"
 					role="button"
 					tabindex="0"
-					on:click={() => {
-						startPositionStore.subscribe((data) => handleSelect(data))();
-					}}
+					on:click={() => handleSelect(pictograph)}
 					on:keydown={(e) => {
 						if (e.key === 'Enter' || e.key === ' ') {
-							startPositionStore.subscribe((data) => handleSelect(data))();
+							e.preventDefault(); // Prevent space scrolling
+							handleSelect(pictograph);
 						}
 					}}
 				>
-					<Pictograph
-						pictographDataStore={startPositionStore}
-						on:loaded={handlePictographLoaded}
-						on:error={handlePictographError}
-					/>
+					<Pictograph pictographDataStore={pictographStore} showLoadingIndicator={false} />
 				</div>
 			{/each}
 		</div>

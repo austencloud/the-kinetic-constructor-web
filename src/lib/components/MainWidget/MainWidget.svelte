@@ -7,147 +7,154 @@
 	import FullScreen from '$lib/FullScreen.svelte';
 	import MainLayout from './layout/MainLayout.svelte';
 	import LoadingOverlay from './loading/LoadingOverlay.svelte';
-	import SequenceWorkbench from '../SequenceWorkbench/Workbench.svelte';
 	import BackgroundCanvas from '../Backgrounds/BackgroundCanvas.svelte';
 	import BackgroundProvider from '../Backgrounds/BackgroundProvider.svelte';
 
-	// State and Stores
-	import { loadingState } from '$lib/stores/ui/loadingStore';
-	import { type BackgroundType, type TabComponentType } from './state/appState';
+	// State (XState)
+	import { appService } from './state/store'; // Import the XState service/actor
+	import { useSelector } from '@xstate/svelte'; // Use the selector from the adapter
+	import { actions } from './state/actions'; // Import refactored actions
+	import type { BackgroundType } from './state/appState';
 
-	import { selectAppState, selectActiveTab, useSelector, type AppDispatch } from './state/store';
+	// Utils (Keep if needed, but initialization is now in the machine)
+	// import { initializeApplication } from '$lib/utils/appInitializer'; // No longer called directly here
 
-	// Utils
-	import { initializeApplication } from '$lib/utils/appInitializer';
-
-	// Declarative height from derived store
+	// Window Store (Keep if needed for height separate from app logic)
 	import { windowHeight } from '$lib/stores/ui/windowStore';
-	import type { EventMap } from './state/types';
-	import { createActions } from './state/actions';
 
-	// Define performance report event type
+	// Types
 	interface PerformanceReportEvent {
 		fps: number;
-		memory?: {
-			used: number;
-			total: number;
-		};
+		memory?: { used: number; total: number };
 	}
 
-	// Define explicit event types
 	type Events = {
-		tabChange: { index: number; id: string };
+		tabChange: { index: number; id: string }; // Keep events dispatched *out* of the widget
 		changeBackground: string;
 		toggleFullscreen: boolean;
 	};
 
 	const dispatch = createEventDispatcher<Events>();
 
-	const actions = createActions(
-		(tabChangeEvent) => dispatch('tabChange', tabChangeEvent),
-		(background) => dispatch('changeBackground', background)
-	);
+	// --- Get State from XState ---
+	// Use selectors from the adapter
+	const state = useSelector(appService, (snapshot) => snapshot); // Get the whole state snapshot
+	// Or select specific parts if preferred (using selectors from store.ts)
+	// const context = useSelector(appService, s => s.context);
+	// const matches = (query: string) => useSelector(appService, s => s.matches(query));
 
-	// Update the full screen handler
+	// Derive reactive variables from the state snapshot
+	$: isInitializing = $state.matches('initializing');
+	$: hasFailed = $state.matches('initializationFailed');
+	$: isReady = $state.matches('ready');
+	$: currentBackground = $state.context.background;
+	$: initializationErrorMsg = $state.context.initializationError;
+	$: loadingProgress = $state.context.loadingProgress;
+	$: loadingMessage = $state.context.loadingMessage;
+	$: currentTab = $state.context.currentTab; // Needed for dispatching event out
+
+	// --- Event Handlers ---
 	function handleFullScreenToggle(event: CustomEvent<boolean>) {
-		actions.setFullScreen(event.detail);
+		actions.setFullScreen(event.detail); // Assumes TOGGLE_FULLSCREEN event
 		dispatch('toggleFullscreen', event.detail);
 	}
 
-	// Use any type to avoid component type issues
-	const tabComponentOverrides = new Map<string, any>();
-	tabComponentOverrides.set('construct', SequenceWorkbench);
+	function handleBackgroundChange(event: CustomEvent<string>) {
+		actions.updateBackground(event.detail);
+		dispatch('changeBackground', event.detail);
+	}
 
-	// Initialize background first, then the app
-	let backgroundReady = false;
-	let appIsLoading = $loadingState.isLoading;
-	let selectedBackgroundType: BackgroundType = 'snowfall';
+	function handleTabChange(event: CustomEvent<{ index: number }>) {
+		const newIndex = event.detail.index;
+		actions.changeTab(newIndex);
+		// Dispatch out immediately (machine handles internal state)
+		// You might want to dispatch out based on state changes instead if needed
+		// This requires subscribing to the service directly or using reactive statements on selectors
+		// dispatch('tabChange', { index: newIndex, id: tabs[newIndex].id }); // Dispatch requires tabs import
+	}
 
-	// Reactive variables from Redux store
-	const appState = useSelector(selectAppState);
-	const background = useSelector((state) => state.app.background);
-	const initializationError = useSelector((state) => state.app.initializationError);
+	// Watch for context changes to dispatch external events if needed
+	// Example: Dispatch tabChange *after* the machine context updates
+	// $: dispatch('tabChange', { index: $state.context.currentTab, id: tabs[$state.context.currentTab].id });
 
-	// Sync the appIsLoading variable with the loadingState store
-	$: appIsLoading = $loadingState.isLoading;
+	function handleRetry(): void {
+		actions.retryInitialization();
+	}
 
 	function handleBackgroundReady(): void {
-		backgroundReady = true;
-		// Once background is ready, initialize the application
-		initApp();
+		// This might not be strictly necessary if the background
+		// rendering doesn't gate the main app initialization.
+		// The machine now controls the initialization flow.
+		console.log('Background Canvas Ready');
 	}
 
 	function handlePerformanceReport(event: CustomEvent<PerformanceReportEvent>): void {
-		// Optional: Handle performance metrics if needed
 		const fps = event.detail?.fps ?? 0;
 		if (fps < 30) {
 			console.warn('Low performance detected in background animation');
 		}
 	}
 
-	const initApp = async (): Promise<void> => {
-		try {
-			const success = await initializeApplication();
-			if (!success) {
-				actions.setInitializationError(true);
-			}
-		} catch (error) {
-			console.error('Application initialization failed:', error);
-			actions.setInitializationError(true);
-		}
-	};
-
-	const handleRetry = (): void => window.location.reload();
+	// --- Lifecycle ---
+	onMount(() => {
+		// Service is started in store.ts
+		// No need to explicitly call initializeApplication here
+		// The machine handles it via its invoke definition.
+	});
 </script>
 
 <div id="main-widget" style="height: {$windowHeight}" class="main-widget">
-	<FullScreen on:toggleFullscreen={(e) => actions.setFullScreen(e.detail)}>
-		<!-- Background ALWAYS renders first, independent of loading state -->
+	<FullScreen on:toggleFullscreen={handleFullScreenToggle}>
 		<div class="background">
 			<BackgroundProvider
-				backgroundType={selectedBackgroundType}
-				isLoading={appIsLoading}
-				initialQuality={appIsLoading ? 'medium' : 'high'}
+				backgroundType={currentBackground ?? 'snowfall'}
+				isLoading={isInitializing || hasFailed}
+				initialQuality={isInitializing || hasFailed ? 'medium' : 'high'}
 			>
 				<BackgroundCanvas
 					on:ready={handleBackgroundReady}
 					on:performanceReport={handlePerformanceReport}
-					{appIsLoading}
+					appIsLoading={isInitializing || hasFailed}
 				/>
 			</BackgroundProvider>
 		</div>
 
-		<!-- Show LoadingOverlay on top of the background during loading -->
-		{#if $loadingState.isLoading}
-			<LoadingOverlay onRetry={handleRetry} showInitializationError={initializationError} />
-		{:else}
-			<!-- Main content only shown when not loading -->
+		{#if isInitializing || hasFailed}
+			<LoadingOverlay
+				message={loadingMessage}
+				progress={loadingProgress}
+				onRetry={handleRetry}
+				showInitializationError={hasFailed}
+				errorMessage={initializationErrorMsg}
+			/>
+		{/if}
+
+		{#if isReady}
 			<MainLayout
-				{background}
+				background={currentBackground}
 				onSettingsClick={actions.openSettings}
-				on:changeBackground={(e) => actions.updateBackground(e.detail)}
-				on:tabChange={(e) => actions.changeTab(e.detail)}
+				on:changeBackground={handleBackgroundChange}
+				on:tabChange={handleTabChange}
 			/>
 		{/if}
 	</FullScreen>
 </div>
 
 <style>
+	/* Styles remain the same */
 	.main-widget {
 		display: flex;
 		flex-direction: column;
 		flex: 1;
 		position: relative;
-
 		color-scheme: light dark;
 		color: light-dark(black, white);
 		overflow: hidden;
 	}
-
 	.background {
 		position: absolute;
-		inset: 0; /* Modern shorthand for top, right, bottom, left */
+		inset: 0;
 		overflow: hidden;
-		z-index: 0; /* Ensure background is behind everything */
+		z-index: 0;
 	}
 </style>
