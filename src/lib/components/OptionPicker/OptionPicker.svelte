@@ -223,11 +223,11 @@
 			initialTabToSet = availableKeys[0]; // Default to first if nothing stored
 		}
 
-		selectedTab.set(initialTabToSet);
+		selectedTab.set(preferredTab ? preferredTab : initialTabToSet);
 
 		// Update storage if we defaulted
 		if (preferredTab !== initialTabToSet) {
-			actions.setLastSelectedTabForSort(initialSortMethod, initialTabToSet);
+			actions.setLastSelectedTabForSort(initialSortMethod, preferredTab ?? null);
 		}
 		// ************************************
 

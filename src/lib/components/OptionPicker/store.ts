@@ -27,41 +27,48 @@ function getStoredState() {
 	try {
 		const stored = localStorage.getItem('optionPickerUIState');
 		console.log('📱 RETRIEVED from localStorage:', stored);
-		return stored ? JSON.parse(stored) : {};
+
+		if (!stored) return {};
+
+		const parsed = JSON.parse(stored);
+
+		// Convert from simple format to the structure your code expects
+		return {
+			[parsed.sortMethod]: parsed.currentTab
+		};
 	} catch (e) {
 		console.error('Error reading from localStorage:', e);
 		return {};
 	}
 }
-
 // THEN get the stored state
-const storedState = getStoredState();
+const storedState: { sortMethod?: SortMethod; lastSelectedTab?: LastSelectedTabState } = getStoredState();
 
 // THEN initialize uiState with the stored values
 export const uiState = writable({
 	sortMethod: storedState.sortMethod || ('type' as SortMethod),
-	reversalFilter: storedState.reversalFilter || ('all' as ReversalFilter),
 	isLoading: false,
 	error: null as string | null,
-	lastSelectedTab: storedState.lastSelectedTabPerSortMethod || ({} as LastSelectedTabState)
+	lastSelectedTab: storedState.lastSelectedTab || ({} as LastSelectedTabState)
 });
 
 // FINALLY set up the localStorage subscription
 if (browser) {
 	uiState.subscribe((state) => {
 		try {
+			// Streamlined data - just what you need
 			const saveData = {
-				sortMethod: state.sortMethod,
-				lastSelectedTab: state.lastSelectedTab
+				currentTab:
+					(state.lastSelectedTab as Partial<Record<SortMethod, string | null>>)[
+						state.sortMethod as SortMethod
+					] || 'all'
 			};
-			console.log('💾 SAVING to localStorage:', saveData);
 			localStorage.setItem('optionPickerUIState', JSON.stringify(saveData));
 		} catch (e) {
 			console.error('Error writing to localStorage:', e);
 		}
 	});
 }
-
 // Rest of the file remains the same...
 // ===== UI State =====
 // Type for storing the last selected tab per sort method
@@ -129,10 +136,8 @@ export const actions = {
 
 		uiState.set({
 			sortMethod: 'type',
-			reversalFilter: 'all',
 			isLoading: false,
 			error: null,
-			// Preserve the last selected tabs
 			lastSelectedTab: currentState.lastSelectedTab || {}
 		});
 
@@ -147,11 +152,7 @@ export const filteredOptionsStore = derived(
 	[optionsStore, sequenceStore, uiState],
 	([$options, $sequence, $ui]) => {
 		let options = [...$options];
-		if ($ui.reversalFilter !== 'all') {
-			options = options.filter(
-				(option) => determineReversalCategory($sequence, option) === $ui.reversalFilter
-			);
-		}
+
 		options.sort(getSorter($ui.sortMethod, $sequence));
 		return options;
 	}
@@ -184,10 +185,8 @@ export const optionPickerStore = {
 		allOptions: $options,
 		currentSequence: $sequence,
 		sortMethod: $ui.sortMethod,
-		reversalFilter: $ui.reversalFilter,
 		isLoading: $ui.isLoading,
 		error: $ui.error
-		// Note: lastSelectedTabPerSortMethod is not exposed here directly,
 		// components interact via actions or specific selectors if needed.
 	})).subscribe,
 	...actions
