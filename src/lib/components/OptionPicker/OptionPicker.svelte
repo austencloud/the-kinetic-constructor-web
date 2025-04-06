@@ -1,207 +1,169 @@
 <!-- src/lib/components/OptionPicker/OptionPicker.svelte -->
 <script lang="ts">
-	import { onMount, onDestroy, tick } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	// Store Imports
 	import { beatsStore } from '$lib/stores/sequence/beatsStore';
+	import {
+		optionsStore,
+		sequenceStore,
+		uiState,
+		filteredOptionsStore,
+		groupedOptionsStore,
+		actions
+	} from './store';
+	import { getResponsiveLayout } from './utils/layoutUtils';
 
 	// Component Imports
 	import OptionPickerHeader from './components/OptionPickerHeader.svelte';
 	import OptionDisplayArea from './components/OptionDisplayArea.svelte';
 
 	// Utility Imports
-	import { debounce } from '$lib/utils/debounceUtils';
-	import { getResponsiveLayout } from './utils/layoutUtils';
 	import type { DeviceType } from './config';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { filteredOptionsStore, groupedOptionsStore, optionPickerStore } from './store';
 	import SimpleDebug from './components/SimpleDebug.svelte';
+	import { resize } from './actions/resize';
 
 	// --- Props ---
 	export let debugMode: boolean = true;
 
 	// --- State ---
-	let selectedTab: string | null = null;
-	let containerHeight: number = 0;
-	let containerWidth: number = 0;
-	let isMobileDevice = false;
-	let isPortraitMode = false;
-	let deviceType: DeviceType = 'desktop';
+	let viewState = {
+		selectedTab: null as string | null,
+		deviceType: 'desktop' as DeviceType,
+		isMobile: false,
+		isPortrait: false,
+		container: { width: 0, height: 0 }
+	};
 
-	// --- Refs ---
-	let containerRef: HTMLElement;
-	let headerRef: HTMLDivElement | null = null;
-
-	// --- Store Actions ---
-	const { loadOptions, toggleShowAll } = optionPickerStore;
-
-	// --- Reactive State from Stores ---
-	let showAllActive: boolean;
-	let isLoading: boolean;
-
-	// Store Subscriptions
-	const unsubscribeStore = optionPickerStore.subscribe((state) => {
-		showAllActive = state.showAllActive;
-		isLoading = state.isLoading;
-	});
-
-	const unsubscribeBeats = beatsStore.subscribe((beats) => {
-		const sequence = beats?.map((beat) => beat.pictographData) ?? [];
-		loadOptions(sequence);
-	});
-
-	// --- Reactive Derived Values ---
+	// Reactive display state
 	$: categoryKeys = $groupedOptionsStore ? Object.keys($groupedOptionsStore) : [];
 	$: currentOptions =
-		selectedTab && $groupedOptionsStore ? $groupedOptionsStore[selectedTab] || [] : [];
-	$: displayedOptionsCount = (showAllActive ? $filteredOptionsStore : currentOptions).length;
+		viewState.selectedTab && $groupedOptionsStore
+			? $groupedOptionsStore[viewState.selectedTab] || []
+			: [];
+	$: displayOptions = $uiState.showAllActive ? $filteredOptionsStore : currentOptions;
 
-	// --- Layout Calculation ---
+	// Layout calculation
 	$: layout = getResponsiveLayout(
-		displayedOptionsCount,
-		containerHeight,
-		containerWidth,
-		isMobileDevice,
-		isPortraitMode
+		displayOptions.length,
+		viewState.container.height,
+		viewState.container.width,
+		viewState.isMobile,
+		viewState.isPortrait
 	);
 
-	// --- Device/Display Management ---
+	// Auto tab selection logic
+	$: if (!$uiState.isLoading && !$uiState.showAllActive && categoryKeys.length > 0) {
+		if (!viewState.selectedTab || !categoryKeys.includes(viewState.selectedTab)) {
+			viewState.selectedTab = categoryKeys[0];
+		}
+	} else if (categoryKeys.length === 0 || $uiState.showAllActive) {
+		viewState.selectedTab = null;
+	}
+
+	// --- Event Handlers ---
+	function handleContainerResize(width: number, height: number) {
+		viewState.container.width = width;
+		viewState.container.height = height;
+	}
+
+	function handleTabSelect(event: CustomEvent<string>) {
+		viewState.selectedTab = event.detail;
+	}
+
 	function updateDeviceState() {
 		if (typeof window === 'undefined') return;
 
-		isMobileDevice = window.innerWidth <= 480;
-		isPortraitMode = window.innerHeight > window.innerWidth;
+		const width = window.innerWidth;
+
+		viewState.isMobile = width <= 480;
+		viewState.isPortrait = window.innerHeight > window.innerWidth;
 
 		// Simple device type detection
-		if (window.innerWidth < 375) deviceType = 'smallMobile';
-		else if (window.innerWidth < 480) deviceType = 'mobile';
-		else if (window.innerWidth < 768) deviceType = 'tablet';
-		else if (window.innerWidth < 1280) deviceType = 'desktop';
-		else deviceType = 'largeDesktop';
+		if (width < 375) viewState.deviceType = 'smallMobile';
+		else if (width < 480) viewState.deviceType = 'mobile';
+		else if (width < 768) viewState.deviceType = 'tablet';
+		else if (width < 1280) viewState.deviceType = 'desktop';
+		else viewState.deviceType = 'largeDesktop';
 	}
 
-	// --- Debug Toggles ---
+	// --- Debug Functions ---
 	const DEVICE_TYPES: DeviceType[] = ['smallMobile', 'mobile', 'tablet', 'desktop', 'largeDesktop'];
+
 	function toggleDeviceState() {
-		const currentIndex = DEVICE_TYPES.indexOf(deviceType);
+		const currentIndex = DEVICE_TYPES.indexOf(viewState.deviceType);
 		const nextIndex = (currentIndex + 1) % DEVICE_TYPES.length;
-		deviceType = DEVICE_TYPES[nextIndex];
-		isMobileDevice = deviceType === 'smallMobile' || deviceType === 'mobile';
-		tick().then(updateContainerDimensions);
+		viewState.deviceType = DEVICE_TYPES[nextIndex];
+		viewState.isMobile =
+			viewState.deviceType === 'smallMobile' || viewState.deviceType === 'mobile';
 	}
 
 	function toggleOrientationState() {
-		isPortraitMode = !isPortraitMode;
-		tick().then(updateContainerDimensions);
-	}
-
-	// --- Container Dimensions ---
-	function updateContainerDimensions() {
-		if (containerRef) {
-			containerWidth = containerRef.clientWidth;
-			containerHeight = containerRef.clientHeight;
-		}
-	}
-
-	// --- ResizeObserver Setup ---
-	function setupResizeObserver() {
-		if (typeof ResizeObserver === 'undefined' || !containerRef) return false;
-
-		const resizeObserver = new ResizeObserver(
-			debounce(() => {
-				updateContainerDimensions();
-			}, 20)
-		);
-
-		resizeObserver.observe(containerRef);
-		if (headerRef) resizeObserver.observe(headerRef);
-
-		// Clean up on destroy
-		onDestroy(() => {
-			resizeObserver.disconnect();
-		});
-
-		return true;
+		viewState.isPortrait = !viewState.isPortrait;
 	}
 
 	// --- Lifecycle ---
 	onMount(() => {
 		// Set up window resize handler
-		const handleResize = debounce(() => {
+		const handleResize = () => {
 			updateDeviceState();
-			updateContainerDimensions();
-		}, 100);
+		};
 
 		window.addEventListener('resize', handleResize);
-		onDestroy(() => window.removeEventListener('resize', handleResize));
 
 		// Initial setup
 		updateDeviceState();
-		tick().then(() => {
-			updateContainerDimensions();
-			setupResizeObserver();
+
+		// Subscribe to beats store
+		const unsubscribeBeats = beatsStore.subscribe((beats) => {
+			const sequence = beats?.map((beat) => beat.pictographData) ?? [];
+			actions.loadOptions(sequence);
 		});
+
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			unsubscribeBeats();
+		};
 	});
-
-	onDestroy(() => {
-		unsubscribeBeats();
-		unsubscribeStore();
-	});
-
-	// --- Event Handlers ---
-	function handleTabSelect(event: CustomEvent<string>) {
-		selectedTab = event.detail;
-	}
-
-	// --- Auto Tab Selection Logic ---
-	$: {
-		if (!isLoading && !showAllActive && categoryKeys.length > 0) {
-			if (!selectedTab || !categoryKeys.includes(selectedTab)) {
-				selectedTab = categoryKeys[0];
-			}
-		} else if (categoryKeys.length === 0 || showAllActive) {
-			selectedTab = null;
-		}
-	}
 </script>
 
-<div class="option-picker" class:mobile={isMobileDevice} class:portrait={isPortraitMode}>
+<div class="option-picker" class:mobile={viewState.isMobile} class:portrait={viewState.isPortrait}>
 	{#if debugMode}
 		<SimpleDebug
-			{deviceType}
-			{isPortraitMode}
+			deviceType={viewState.deviceType}
+			isPortraitMode={viewState.isPortrait}
 			{layout}
-			{containerWidth}
-			{containerHeight}
-			optionsCount={displayedOptionsCount}
-			{selectedTab}
-			{showAllActive}
-			{isMobileDevice}
+			containerWidth={viewState.container.width}
+			containerHeight={viewState.container.height}
+			optionsCount={displayOptions.length}
+			selectedTab={viewState.selectedTab}
+			showAllActive={$uiState.showAllActive}
+			isMobileDevice={viewState.isMobile}
 			{toggleDeviceState}
 			{toggleOrientationState}
 		/>
 	{/if}
 
 	<OptionPickerHeader
-		bind:rootElement={headerRef}
-		{showAllActive}
-		{isMobileDevice}
+		showAllActive={$uiState.showAllActive}
+		isMobileDevice={viewState.isMobile}
 		{categoryKeys}
-		{selectedTab}
-		on:toggleShowAll={() => toggleShowAll()}
+		selectedTab={viewState.selectedTab}
+		on:toggleShowAll={() => actions.toggleShowAll()}
 		on:tabSelect={handleTabSelect}
 	/>
 
-	<div class="options-container" bind:this={containerRef}>
+	<div class="options-container" use:resize={handleContainerResize}>
 		<OptionDisplayArea
-			{isLoading}
-			{showAllActive}
-			{selectedTab}
+			isLoading={$uiState.isLoading}
+			showAllActive={$uiState.showAllActive}
+			selectedTab={viewState.selectedTab}
 			{currentOptions}
 			filteredOptions={$filteredOptionsStore}
 			{layout}
-			{isMobileDevice}
-			{isPortraitMode}
+			isMobileDevice={viewState.isMobile}
+			isPortraitMode={viewState.isPortrait}
 			{categoryKeys}
 		/>
 	</div>

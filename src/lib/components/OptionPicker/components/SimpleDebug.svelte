@@ -1,64 +1,72 @@
-<!-- src/lib/components/OptionPicker/components/SimpleDebug.svelte -->
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 	import { getContainerAspect, type DeviceType, type ResponsiveLayoutConfig } from '../config';
 
-
-	// Props with clear naming for easy understanding
+	// Props - grouped into logical objects
 	export let deviceType: DeviceType;
 	export let isPortraitMode: boolean;
+	export let isMobileDevice: boolean;
+
 	export let layout: ResponsiveLayoutConfig;
+
 	export let containerWidth: number;
 	export let containerHeight: number;
+
 	export let optionsCount: number;
 	export let selectedTab: string | null;
 	export let showAllActive: boolean;
-	export let isMobileDevice: boolean;
 
-	// Functions for changing device state
+	// Control callbacks
 	export let toggleDeviceState: () => void;
 	export let toggleOrientationState: () => void;
 
-	// State
+	// Panel state
 	let isDebugExpanded = false;
 
-	// Toggle debug expanded state
-	function toggleDebugPanel() {
-		isDebugExpanded = !isDebugExpanded;
-	}
+	// Panel toggle handler
+	const toggleDebugPanel = () => (isDebugExpanded = !isDebugExpanded);
+
+	// Derived values
+	$: containerAspect = getContainerAspect(containerWidth, containerHeight);
+	$: gridTemplateColumns = layout.gridColumns;
 </script>
 
-<div class="debug-container">
+<div class="debug-container" data-testid="debug-panel">
 	<div class="debug-bar">
-		<button class="debug-button" on:click={toggleDeviceState}>
+		<button class="debug-button" on:click={toggleDeviceState} aria-label="Toggle device type">
 			Device: {deviceType}
 			{isMobileDevice ? '📱' : '💻'}
 		</button>
 
-		<button class="debug-button" on:click={toggleOrientationState}>
+		<button class="debug-button" on:click={toggleOrientationState} aria-label="Toggle orientation">
 			{isPortraitMode ? 'Portrait 📸' : 'Landscape 🌄'}
 		</button>
 
 		<div class="spacer"></div>
 
-		<button class="debug-button toggle-button" on:click={toggleDebugPanel}>
+		<button
+			class="debug-button toggle-button"
+			on:click={toggleDebugPanel}
+			aria-expanded={isDebugExpanded}
+			aria-controls="debug-details"
+		>
 			{isDebugExpanded ? 'Hide Details ▲' : 'Show Details ▼'}
 		</button>
 	</div>
 
 	{#if isDebugExpanded}
-		<div class="debug-details" transition:fade={{ duration: 200 }}>
-			<div class="debug-section">
+		<div id="debug-details" class="debug-details" transition:fade={{ duration: 200 }}>
+			<section class="debug-section">
 				<h4>Container</h4>
 				<div class="grid">
 					<div>Size:</div>
-					<div>{containerWidth}x{containerHeight}px</div>
+					<div>{containerWidth}×{containerHeight}px</div>
 					<div>Aspect:</div>
-					<div>{getContainerAspect(containerWidth, containerHeight)}</div>
+					<div>{containerAspect}</div>
 				</div>
-			</div>
+			</section>
 
-			<div class="debug-section">
+			<section class="debug-section">
 				<h4>Content</h4>
 				<div class="grid">
 					<div>Options:</div>
@@ -68,9 +76,9 @@
 					<div>Show All:</div>
 					<div>{showAllActive ? 'Yes' : 'No'}</div>
 				</div>
-			</div>
+			</section>
 
-			<div class="debug-section">
+			<section class="debug-section">
 				<h4>Layout</h4>
 				<div class="grid">
 					<div>Columns:</div>
@@ -82,16 +90,16 @@
 					<div>Scale:</div>
 					<div>{layout.scaleFactor.toFixed(2)}</div>
 				</div>
-			</div>
+			</section>
 
-			<div class="debug-section">
+			<section class="debug-section">
 				<h4>Grid Preview</h4>
-				<div class="grid-preview" style="grid-template-columns: {layout.gridColumns}">
+				<div class="grid-preview" style="grid-template-columns: {gridTemplateColumns}">
 					{#each Array(Math.min(optionsCount, 12)) as _, i}
 						<div class="preview-cell">{i + 1}</div>
 					{/each}
 				</div>
-			</div>
+			</section>
 		</div>
 	{/if}
 </div>
@@ -200,6 +208,10 @@
 		.debug-bar {
 			flex-direction: column;
 			align-items: stretch;
+		}
+
+		.debug-button {
+			margin-bottom: 4px;
 		}
 	}
 </style>

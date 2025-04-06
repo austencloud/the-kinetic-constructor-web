@@ -4,109 +4,138 @@
 	import { Motion } from 'svelte-motion';
 	import { cubicOut } from 'svelte/easing';
   
-	import ShowAllButton from './buttons/ShowAllButton.svelte';
 	import HeaderControls from './HeaderControls.svelte';
-	import SortOptions from './FilterControls/SortOptions.svelte';
+	import SortOptions from './SortOptions.svelte';
+	import ShowAllButton from './ShowAllButton.svelte';
   
-	// --- Props ---
+	// Props
 	export let showAllActive: boolean;
 	export let isMobileDevice: boolean;
 	export let categoryKeys: string[];
 	export let selectedTab: string | null;
   
-	// --- Exported Element Reference ---
+	// Element reference for ResizeObserver
 	export let rootElement: HTMLDivElement | null = null;
   
-	// --- Events ---
+	// Events
 	const dispatch = createEventDispatcher<{
 	  toggleShowAll: void;
 	  tabSelect: string;
 	}>();
   
-	// --- Event Handlers ---
-	function handleToggleShowAll() {
-	  dispatch('toggleShowAll');
-	}
-  
-	// --- Animation States ---
-	const motionTransition = {
-	  duration: 0.4,
-	  ease: cubicOut
+	// Animation configuration - declared once for clarity
+	const animations = {
+	  transition: {
+		duration: 0.4,
+		ease: cubicOut
+	  },
+	  
+	  // Content visibility states
+	  hidden: {
+		opacity: 0,
+		scale: 0.9,
+		flexGrow: 0,
+		flexShrink: 1,
+		flexBasis: 0,
+		margin: 0,
+		pointerEvents: 'none' as const
+	  },
+	  
+	  tabs: {
+		visible: {
+		  opacity: 1,
+		  scale: 1,
+		  flexGrow: 1,
+		  flexShrink: 1,
+		  flexBasis: 'auto',
+		  margin: '0 0.25rem',
+		  pointerEvents: 'auto' as const
+		}
+	  },
+	  
+	  sort: {
+		visible: {
+		  opacity: 1,
+		  scale: 1,
+		  flexGrow: 0,
+		  flexShrink: 0,
+		  flexBasis: 'auto',
+		  margin: '0 0.25rem',
+		  pointerEvents: 'auto' as const
+		}
+	  },
+	  
+	  showAll: {
+		normal: { 
+		  flexGrow: 0, 
+		  flexShrink: 0, 
+		  justifyContent: 'flex-start' 
+		},
+		centered: { 
+		  flexGrow: 1, 
+		  flexShrink: 0, 
+		  justifyContent: 'center' 
+		}
+	  }
 	};
-  
-	// State when tabs/sort are hidden (Show All active)
-	const hiddenState = {
-	  opacity: 0,
-	  scale: 0.9,
-	  flexGrow: 0,
-	  flexShrink: 1,
-	  flexBasis: 0,
-	  margin: 0,
-	  pointerEvents: 'none' as const
-	};
-  
-	// State when tabs are visible
-	const tabsVisibleState = {
-	  opacity: 1,
-	  scale: 1,
-	  flexGrow: 1,
-	  flexShrink: 1,
-	  flexBasis: 'auto',
-	  margin: '0 0.25rem',
-	  pointerEvents: 'auto' as const
-	};
-  
-	// State when sort options are visible
-	const sortVisibleState = {
-	  opacity: 1,
-	  scale: 1,
-	  flexGrow: 0,
-	  flexShrink: 0,
-	  flexBasis: 'auto',
-	  margin: '0 0.25rem',
-	  pointerEvents: 'auto' as const
-	};
-  
-	// State for the Show All button container
-	const showAllContainerState = {
-	  visible: { flexGrow: 0, flexShrink: 0, justifyContent: 'flex-start' },
-	  centered: { flexGrow: 1, flexShrink: 0, justifyContent: 'center' }
-	};
-  
-	// --- Reactive Animation States ---
-	$: tabsAnimate = showAllActive ? hiddenState : tabsVisibleState;
-	$: sortAnimate = showAllActive ? hiddenState : sortVisibleState;
-	$: showAllAnimate = showAllActive
-	  ? showAllContainerState.centered
-	  : showAllContainerState.visible;
+	
+	// Reactive animation states
+	$: tabsAnimate = showAllActive ? animations.hidden : animations.tabs.visible;
+	$: sortAnimate = showAllActive ? animations.hidden : animations.sort.visible;
+	$: showAllAnimate = showAllActive ? animations.showAll.centered : animations.showAll.normal;
+	
+	// Event handlers
+	const handleToggleShowAll = () => dispatch('toggleShowAll');
+	const handleTabSelect = (tab: string) => dispatch('tabSelect', tab);
   </script>
   
-  <div class="option-picker-header" class:mobile={isMobileDevice} bind:this={rootElement}>
+  <div 
+	class="option-picker-header" 
+	class:mobile={isMobileDevice} 
+	bind:this={rootElement}
+	data-testid="option-picker-header"
+  >
 	<div class="header-controls" class:centered-mode={showAllActive}>
 	  <Motion
 		layout
 		animate={showAllAnimate}
-		transition={motionTransition}
+		transition={animations.transition}
 		initial={false}
 		let:motion
 	  >
 		<div class="show-all-container" use:motion>
-		  <ShowAllButton {showAllActive} {isMobileDevice} onToggle={handleToggleShowAll} />
+		  <ShowAllButton 
+			{showAllActive} 
+			{isMobileDevice} 
+			on:toggle={handleToggleShowAll} 
+		  />
 		</div>
 	  </Motion>
   
-	  <Motion layout animate={tabsAnimate} transition={motionTransition} initial={false} let:motion>
+	  <Motion 
+		layout 
+		animate={tabsAnimate} 
+		transition={animations.transition} 
+		initial={false} 
+		let:motion
+	  >
 		<div class="tabs-container" use:motion>
 		  <HeaderControls
 			{categoryKeys}
 			{selectedTab}
 			{isMobileDevice}
-			onTabSelect={(tab) => dispatch('tabSelect', tab)}
+			onTabSelect={handleTabSelect}
 		  />
 		</div>
 	  </Motion>
   
-	  <Motion layout animate={sortAnimate} transition={motionTransition} initial={false} let:motion>
+	  <Motion 
+		layout 
+		animate={sortAnimate} 
+		transition={animations.transition} 
+		initial={false} 
+		let:motion
+	  >
 		<div class="sort-container" use:motion>
 		  <SortOptions {isMobileDevice} />
 		</div>
