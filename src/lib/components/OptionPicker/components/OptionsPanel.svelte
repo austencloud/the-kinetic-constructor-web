@@ -91,7 +91,7 @@
 	  align-content: flex-start;
 	  position: relative;
 	  grid-gap: var(--grid-gap, 8px);
-	  padding: var(--grid-internal-padding, 0.5rem);
+	  /* padding: var(--grid-internal-padding, 0.5rem); */
 	  margin: auto;
 	}
   
@@ -144,17 +144,8 @@
 	  flex-shrink: 0;
 	}
   
-	/* Count-based classes */
-	.few-items-grid, .medium-items-grid {
-	  align-content: center;
-	  justify-content: center;
-	}
-	
-	.many-items-grid {
-	  justify-content: center;
-	  align-content: flex-start;
-	}
-  
+
+
 	/* Mobile styling */
 	.mobile-grid {
 	  padding: 0.2rem;
@@ -175,7 +166,7 @@
 	/* Responsive adjustments */
 	@media (min-width: 1280px) {
 	  .many-items-grid {
-		max-width: 75%;
+		max-width: 100%;
 	  }
 	}
   </style>

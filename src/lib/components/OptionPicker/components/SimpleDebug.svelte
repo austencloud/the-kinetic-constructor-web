@@ -73,8 +73,6 @@
 					<div>{optionsCount}</div>
 					<div>Selected Tab:</div>
 					<div>{selectedTab || 'None'}</div>
-					<div>Show All:</div>
-					<div>{showAllActive ? 'Yes' : 'No'}</div>
 				</div>
 			</section>
 
@@ -91,31 +89,32 @@
 					<div>{layout.scaleFactor.toFixed(2)}</div>
 				</div>
 			</section>
-
-			<section class="debug-section">
-				<h4>Grid Preview</h4>
-				<div class="grid-preview" style="grid-template-columns: {gridTemplateColumns}">
-					{#each Array(Math.min(optionsCount, 12)) as _, i}
-						<div class="preview-cell">{i + 1}</div>
-					{/each}
-				</div>
-			</section>
 		</div>
 	{/if}
 </div>
 
 <style>
 	.debug-container {
-		position: relative;
-		margin-bottom: 10px;
-		background-color: #f8fafc;
+		/* --- Overlay Styling --- */
+		position: absolute; /* Take out of normal flow */
+		top: 10px; /* Position from top edge of parent */
+		left: 10px; /* Position from left edge */
+		right: 10px; /* Position from right edge (determines width) */
+		z-index: 1000; /* Ensure it's above other content */
+		background-color: #f8fafcee; /* Slightly more opaque background */
+		box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15); /* Add shadow for depth */
+		/* --- End Overlay Styling --- */
+
+		/* --- Existing styles (adjusted) --- */
+		/* position: relative; */ /* Removed */
+		/* margin-bottom: 10px; */ /* Removed, no longer affects layout */
 		border-radius: 4px;
 		border: 1px dashed #94a3b8;
 		overflow: hidden;
 		font-size: 12px;
 		font-family: ui-monospace, monospace;
+		max-width: calc(100% - 20px); /* Prevent potential overflow issues */
 	}
-
 	.debug-bar {
 		display: flex;
 		padding: 6px;
@@ -154,6 +153,8 @@
 
 	.debug-details {
 		padding: 10px;
+		max-height: 40vh; /* Limit height to prevent excessive overlap */
+		overflow-y: auto; /* Allow scrolling if content exceeds max-height */
 	}
 
 	.debug-section {
@@ -212,6 +213,13 @@
 
 		.debug-button {
 			margin-bottom: 4px;
+		}
+
+		.debug-container {
+			top: 5px;
+			left: 5px;
+			right: 5px;
+			max-width: calc(100% - 10px);
 		}
 	}
 </style>

@@ -84,16 +84,16 @@ export const LAYOUT_TEMPLATES = {
 		vertical: { cols: 1, class: 'two-item-grid vertical-layout' }
 	},
 	fewItems: {
-		portraitDevice: { cols: 2, class: 'few-items-grid' },
-		landscapeDevice: { cols: 3, class: 'few-items-grid' }
+		portraitDevice: { cols: 4, class: 'few-items-grid' },
+		landscapeDevice: { cols: 4, class: 'few-items-grid' }
 	},
 	mediumItems: {
-		portraitDevice: { cols: 3, class: 'medium-items-grid' },
+		portraitDevice: { cols: 4, class: 'medium-items-grid' },
 		landscapeDevice: { cols: 4, class: 'medium-items-grid' }
 	},
 	manyItems: {
-		portraitDevice: { cols: 3, class: 'many-items-grid' },
-		landscapeDevice: { cols: 5, class: 'many-items-grid' }
+		portraitDevice: { cols: 4, class: 'many-items-grid' },
+		landscapeDevice: { cols: 4, class: 'many-items-grid' }
 	}
 };
 
@@ -138,8 +138,9 @@ export function getDeviceType(width: number, isMobileDevice: boolean): DeviceTyp
 export function getLayoutCategory(count: number): LayoutCategory {
 	if (count === 1) return 'singleItem';
 	if (count === 2) return 'twoItems';
-	if (count <= 6) return 'fewItems';
-	if (count <= 12) return 'mediumItems';
+	if (count <= 8) return 'fewItems';
+	if (count <= 16) return 'mediumItems';
+	if (count > 16) return 'manyItems';
 	return 'manyItems';
 }
 
