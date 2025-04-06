@@ -1,6 +1,6 @@
-<!-- src/lib/components/OptionPicker/OptionPicker.svelte -->
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, setContext } from 'svelte';
+	import { writable, derived, type Readable } from 'svelte/store';
 
 	// Store Imports
 	import { beatsStore } from '$lib/stores/sequence/beatsStore';
@@ -13,143 +13,147 @@
 		actions
 	} from './store';
 	import { getResponsiveLayout } from './utils/layoutUtils';
+	import {
+		getContainerAspect,
+		getDeviceType,
+		BREAKPOINTS,
+		type DeviceType,
+		type ContainerAspect,
+		type ResponsiveLayoutConfig
+	} from './config'; // Import helpers
+	import { LAYOUT_CONTEXT_KEY, type LayoutContextValue } from './layoutContext'; // Import context key and type
 
 	// Component Imports
 	import OptionPickerHeader from './components/OptionPickerHeader.svelte';
 	import OptionDisplayArea from './components/OptionDisplayArea.svelte';
-
-	// Utility Imports
-	import type { DeviceType } from './config';
-	import type { PictographData } from '$lib/types/PictographData';
 	import SimpleDebug from './components/SimpleDebug.svelte';
 	import { resize } from './actions/resize';
 
-	// --- Props ---
 	export let debugMode: boolean = true;
 
-	// --- State ---
-	let viewState = {
-		selectedTab: null as string | null,
-		deviceType: 'desktop' as DeviceType,
-		isMobile: false,
-		isPortrait: false,
-		container: { width: 0, height: 0 }
-	};
+	// --- Raw State Stores ---
+	const windowWidth = writable(
+		typeof window !== 'undefined' ? window.innerWidth : BREAKPOINTS.desktop
+	);
+	const windowHeight = writable(typeof window !== 'undefined' ? window.innerHeight : 768);
+	const containerWidth = writable(0);
+	const containerHeight = writable(0);
 
-	// Reactive display state
-	$: categoryKeys = $groupedOptionsStore ? Object.keys($groupedOptionsStore) : [];
-	$: currentOptions =
-		viewState.selectedTab && $groupedOptionsStore
-			? $groupedOptionsStore[viewState.selectedTab] || []
-			: [];
-	$: displayOptions = $uiState.showAllActive ? $filteredOptionsStore : currentOptions;
+	// --- Reactive Derived State for Context ---
+	const layoutContextValue: Readable<LayoutContextValue> = derived(
+		[windowWidth, windowHeight, containerWidth, containerHeight, filteredOptionsStore, uiState],
+		([
+			$windowWidth,
+			$windowHeight,
+			$containerWidth,
+			$containerHeight,
+			$filteredOptions,
+			$uiState
+		]) => {
+			// Determine device characteristics based on WINDOW size
+			const currentDeviceType = getDeviceType($windowWidth, $windowWidth < BREAKPOINTS.tablet); // Pass width and a simple isMobile flag
+			const isMobile = currentDeviceType === 'smallMobile' || currentDeviceType === 'mobile';
+			const isTablet = currentDeviceType === 'tablet';
+			const isPortrait = $windowHeight > $windowWidth;
 
-	// Layout calculation
-	$: layout = getResponsiveLayout(
-		displayOptions.length,
-		viewState.container.height,
-		viewState.container.width,
-		viewState.isMobile,
-		viewState.isPortrait
+			// Determine container characteristics
+			const currentContainerAspect = getContainerAspect($containerWidth, $containerHeight);
+
+			// Calculate layout based on CONTAINER size and device characteristics
+			// Pass the *actual* container dimensions and the determined flags
+			const currentLayoutConfig = getResponsiveLayout(
+				$uiState.showAllActive
+					? $filteredOptions.length
+					: ($groupedOptionsStore?.[selectedTab || ''] || []).length, // Get appropriate count
+				$containerHeight,
+				$containerWidth,
+				isMobile, // Pass calculated isMobile
+				isPortrait // Pass calculated isPortrait
+			);
+
+			return {
+				deviceType: currentDeviceType,
+				isMobile: isMobile,
+				isTablet: isTablet,
+				isPortrait: isPortrait,
+				containerWidth: $containerWidth,
+				containerHeight: $containerHeight,
+				containerAspect: currentContainerAspect,
+				layoutConfig: currentLayoutConfig
+			};
+		}
 	);
 
-	// Auto tab selection logic
+	// Provide the context
+	setContext<Readable<LayoutContextValue>>(LAYOUT_CONTEXT_KEY, layoutContextValue);
+
+	// --- Component State (Less needed now) ---
+	let selectedTab: string | null = null; // Keep local UI state separate
+
+	// Reactive display state using derived context
+	$: context = $layoutContextValue; // Easy access for debug/local use if needed
+	$: categoryKeys = $groupedOptionsStore ? Object.keys($groupedOptionsStore) : [];
+	$: currentOptions =
+		selectedTab && $groupedOptionsStore ? $groupedOptionsStore[selectedTab] || [] : [];
+	$: displayOptions = $uiState.showAllActive ? $filteredOptionsStore : currentOptions;
+
+	// Auto tab selection logic (remains the same)
 	$: if (!$uiState.isLoading && !$uiState.showAllActive && categoryKeys.length > 0) {
-		if (!viewState.selectedTab || !categoryKeys.includes(viewState.selectedTab)) {
-			viewState.selectedTab = categoryKeys[0];
+		if (!selectedTab || !categoryKeys.includes(selectedTab)) {
+			selectedTab = categoryKeys[0];
 		}
 	} else if (categoryKeys.length === 0 || $uiState.showAllActive) {
-		viewState.selectedTab = null;
+		selectedTab = null;
 	}
 
 	// --- Event Handlers ---
 	function handleContainerResize(width: number, height: number) {
-		viewState.container.width = width;
-		viewState.container.height = height;
+		containerWidth.set(width);
+		containerHeight.set(height);
 	}
 
 	function handleTabSelect(event: CustomEvent<string>) {
-		viewState.selectedTab = event.detail;
+		selectedTab = event.detail;
 	}
 
-	function updateDeviceState() {
-		if (typeof window === 'undefined') return;
-
-		const width = window.innerWidth;
-
-		viewState.isMobile = width <= 480;
-		viewState.isPortrait = window.innerHeight > window.innerWidth;
-
-		// Simple device type detection
-		if (width < 375) viewState.deviceType = 'smallMobile';
-		else if (width < 480) viewState.deviceType = 'mobile';
-		else if (width < 768) viewState.deviceType = 'tablet';
-		else if (width < 1280) viewState.deviceType = 'desktop';
-		else viewState.deviceType = 'largeDesktop';
+	function updateWindowSize() {
+		windowWidth.set(window.innerWidth);
+		windowHeight.set(window.innerHeight);
 	}
 
-	// --- Debug Functions ---
-	const DEVICE_TYPES: DeviceType[] = ['smallMobile', 'mobile', 'tablet', 'desktop', 'largeDesktop'];
-
-	function toggleDeviceState() {
-		const currentIndex = DEVICE_TYPES.indexOf(viewState.deviceType);
-		const nextIndex = (currentIndex + 1) % DEVICE_TYPES.length;
-		viewState.deviceType = DEVICE_TYPES[nextIndex];
-		viewState.isMobile =
-			viewState.deviceType === 'smallMobile' || viewState.deviceType === 'mobile';
-	}
-
-	function toggleOrientationState() {
-		viewState.isPortrait = !viewState.isPortrait;
-	}
+	// --- Debug Functions (Simplified) ---
+	// No need for separate toggles, debug component reads from context now
 
 	// --- Lifecycle ---
 	onMount(() => {
-		// Set up window resize handler
-		const handleResize = () => {
-			updateDeviceState();
-		};
+		window.addEventListener('resize', updateWindowSize);
+		updateWindowSize(); // Initial check
 
-		window.addEventListener('resize', handleResize);
-
-		// Initial setup
-		updateDeviceState();
-
-		// Subscribe to beats store
 		const unsubscribeBeats = beatsStore.subscribe((beats) => {
 			const sequence = beats?.map((beat) => beat.pictographData) ?? [];
 			actions.loadOptions(sequence);
 		});
 
 		return () => {
-			window.removeEventListener('resize', handleResize);
+			window.removeEventListener('resize', updateWindowSize);
 			unsubscribeBeats();
 		};
 	});
 </script>
 
-<div class="option-picker" class:mobile={viewState.isMobile} class:portrait={viewState.isPortrait}>
+<div
+	class="option-picker"
+	class:mobile={$layoutContextValue.isMobile}
+	class:portrait={$layoutContextValue.isPortrait}
+>
 	{#if debugMode}
-		<SimpleDebug
-			deviceType={viewState.deviceType}
-			isPortraitMode={viewState.isPortrait}
-			{layout}
-			containerWidth={viewState.container.width}
-			containerHeight={viewState.container.height}
-			optionsCount={displayOptions.length}
-			selectedTab={viewState.selectedTab}
-			showAllActive={$uiState.showAllActive}
-			isMobileDevice={viewState.isMobile}
-			{toggleDeviceState}
-			{toggleOrientationState}
-		/>
+		<SimpleDebug />
 	{/if}
 
 	<OptionPickerHeader
 		showAllActive={$uiState.showAllActive}
-		isMobileDevice={viewState.isMobile}
 		{categoryKeys}
-		selectedTab={viewState.selectedTab}
+		{selectedTab}
 		on:toggleShowAll={() => actions.toggleShowAll()}
 		on:tabSelect={handleTabSelect}
 	/>
@@ -158,18 +162,16 @@
 		<OptionDisplayArea
 			isLoading={$uiState.isLoading}
 			showAllActive={$uiState.showAllActive}
-			selectedTab={viewState.selectedTab}
+			{selectedTab}
 			{currentOptions}
 			filteredOptions={$filteredOptionsStore}
-			{layout}
-			isMobileDevice={viewState.isMobile}
-			isPortraitMode={viewState.isPortrait}
 			{categoryKeys}
 		/>
 	</div>
 </div>
 
 <style>
+	/* Styles remain the same */
 	.option-picker {
 		display: flex;
 		flex-direction: column;

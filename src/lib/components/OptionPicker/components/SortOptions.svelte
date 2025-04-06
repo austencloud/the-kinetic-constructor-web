@@ -1,19 +1,24 @@
-<!-- src/lib/components/OptionPicker/components/FilterControls/SortOptions.svelte -->
 <script lang="ts">
+	import { getContext } from 'svelte'; // Import getContext
 	import { fade } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import { clickOutside } from '$lib/actions/clickOutside';
 	import type { SortMethod } from '../config';
 	import { actions, uiState } from '../store';
+	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext'; // Import context key and type
 
-	// Props
-	export let isMobileDevice: boolean = false;
+	// Props - None needed related to layout
+	// REMOVED: export let isMobileDevice: boolean = false;
+
+	// Consume context
+	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
+	$: isMobileDevice = $layoutContext.isMobile; // Get from context
 
 	// Component state
 	let isOpen = false;
 	let buttonRef: HTMLElement;
 
-	// Sort options - defined once for performance
+	// Sort options (remains the same)
 	const sortOptions = [
 		{ value: 'type', label: 'Sort by Type', icon: '📁' },
 		{ value: 'endPosition', label: 'Sort by End Position', icon: '🏁' },
@@ -76,11 +81,11 @@
 </div>
 
 <style>
+	/* Styles remain the same */
 	.sort-options {
 		display: inline-block;
 		position: relative;
 	}
-
 	.sort-button {
 		display: flex;
 		align-items: center;
@@ -99,29 +104,24 @@
 			box-shadow 0.2s ease;
 		white-space: nowrap;
 	}
-
 	.sort-button:hover {
 		background-color: #f9fafb;
 		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 	}
-
 	.sort-button:focus-visible {
 		outline: 2px solid #4299e1;
 		outline-offset: 1px;
 	}
-
 	.sort-icon {
 		font-size: 1.2em;
 		line-height: 1;
 	}
-
 	.dropdown-arrow {
 		font-size: 0.7em;
 		opacity: 0.7;
 		margin-left: auto;
 		padding-left: 4px;
 	}
-
 	.dropdown {
 		position: absolute;
 		top: calc(100% + 6px);
@@ -135,7 +135,6 @@
 		z-index: 100;
 		overflow: hidden;
 	}
-
 	.dropdown-item {
 		display: flex;
 		align-items: center;
@@ -150,29 +149,24 @@
 		color: #374151;
 		transition: background-color 0.15s ease;
 	}
-
 	.dropdown-item:hover {
 		background-color: #f1f5f9;
 	}
-
 	.dropdown-item.selected {
 		background-color: #e5e7eb;
 		font-weight: 600;
 		color: #1f2937;
 	}
-
 	.dropdown-item:focus-visible {
 		background-color: #f1f5f9;
 		outline: none;
 	}
-
 	.option-icon {
 		font-size: 1.1rem;
 		width: 1.2em;
 		text-align: center;
 		line-height: 1;
 	}
-
 	.option-text {
 		flex-grow: 1;
 	}

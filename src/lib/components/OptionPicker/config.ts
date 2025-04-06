@@ -122,16 +122,30 @@ export function getContainerAspect(width: number, height: number): ContainerAspe
 /**
  * Determines the device type based on container width and mobile status
  */
-export function getDeviceType(width: number, isMobileDevice: boolean): DeviceType {
-	if (isMobileDevice) {
+// src/lib/components/OptionPicker/config.ts (Updated function)
+export function getDeviceType(width: number, isMobileUserAgent: boolean): DeviceType {
+	// Prioritize User Agent for initial mobile/non-mobile split if needed,
+	// but width is generally more reliable for layout.
+	// You might adjust this logic based on how you want to define 'mobile' vs 'tablet' strictly.
+	// This example uses width primarily.
+
+	if (width < BREAKPOINTS.mobile) {
+		// Use mobile breakpoint
+		// Check smallMobile within mobile range if needed
 		return width < BREAKPOINTS.smallMobile ? 'smallMobile' : 'mobile';
 	}
-	if (width < BREAKPOINTS.tablet) return 'mobile';
-	if (width < BREAKPOINTS.laptop) return 'tablet';
+	if (width < BREAKPOINTS.tablet) return 'mobile'; // Below tablet width is still mobile concept
+	if (width < BREAKPOINTS.laptop) return 'tablet'; // Width between tablet and laptop
 	if (width < BREAKPOINTS.desktop) return 'desktop';
 	return 'largeDesktop';
 }
 
+// You might also want a simpler helper if you ONLY care about Mobile vs Tablet vs Desktop categories:
+export function getSimplifiedDeviceCategory(width: number): 'mobile' | 'tablet' | 'desktop' {
+	if (width < BREAKPOINTS.tablet) return 'mobile'; // Combines smallMobile and mobile
+	if (width < BREAKPOINTS.laptop) return 'tablet';
+	return 'desktop'; // Combines desktop and largeDesktop
+}
 /**
  * Gets the layout category based on item count
  */

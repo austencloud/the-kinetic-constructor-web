@@ -1,27 +1,28 @@
-<!-- src/lib/components/OptionPicker/components/OptionDisplayArea.svelte -->
 <script lang="ts">
+	import { getContext } from 'svelte'; // Import getContext
 	import { fade } from 'svelte/transition';
 	import type { PictographData } from '$lib/types/PictographData';
-	import type { ResponsiveLayoutConfig } from '../config';
+	// REMOVED: import type { ResponsiveLayoutConfig } from '../config';
+	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext'; // Import context key and type
 
 	import LoadingMessage from './messages/LoadingMessage.svelte';
 	import EmptyMessage from './messages/EmptyMessage.svelte';
 	import OptionsPanel from './OptionsPanel.svelte';
 
-	// Props - grouped into logical units
+	// Props - fewer needed
 	export let isLoading: boolean;
 	export let showAllActive: boolean;
 	export let selectedTab: string | null;
-
 	export let currentOptions: PictographData[];
 	export let filteredOptions: PictographData[];
 	export let categoryKeys: string[];
+	// REMOVED: layout, isMobileDevice, isPortraitMode
 
-	export let layout: ResponsiveLayoutConfig;
-	export let isMobileDevice: boolean;
-	export let isPortraitMode: boolean = false;
+	// Consume context
+	// We don't strictly need to assign it here if only used in the template via $layoutContext
+	// const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 
-	// Display state
+	// Display state (uses props)
 	$: displayState = {
 		options: showAllActive ? filteredOptions : currentOptions,
 		hasOptions: (showAllActive ? filteredOptions : currentOptions).length > 0,
@@ -29,7 +30,7 @@
 		panelKey: showAllActive ? 'all' : selectedTab || 'none'
 	};
 
-	// Message logic
+	// Message logic (uses props)
 	$: messageType = determineMessageType(
 		isLoading,
 		displayState.hasOptions,
@@ -39,7 +40,7 @@
 	);
 	$: messageText = generateMessageText(messageType, showAllActive, selectedTab);
 
-	// Helper functions
+	// Helper functions (remain the same)
 	function determineMessageType(
 		loading: boolean,
 		hasOptions: boolean,
@@ -48,13 +49,11 @@
 		hasCategories: boolean
 	): 'loading' | 'empty' | 'initial' | null {
 		if (loading) return 'loading';
-
 		if (!hasOptions) {
 			if (showAll || (tab && !hasOptions)) return 'empty';
 			if (!tab && hasCategories) return 'initial';
 			return 'empty';
 		}
-
 		return null;
 	}
 
@@ -68,11 +67,9 @@
 			if (tab) return `No options available for ${tab}.`;
 			return 'No options generated.';
 		}
-
 		if (type === 'initial') {
 			return 'Select a category above...';
 		}
-
 		return '';
 	}
 </script>
@@ -88,10 +85,7 @@
 				<OptionsPanel
 					{selectedTab}
 					options={displayState.options}
-					{layout}
-					{isMobileDevice}
-					{isPortraitMode}
-				/>
+					/>
 			{/key}
 		</div>
 	{:else if messageType === 'empty' || messageType === 'initial'}
@@ -102,6 +96,7 @@
 </div>
 
 <style>
+	/* Styles remain the same */
 	.option-display-area {
 		width: 100%;
 		height: 100%;

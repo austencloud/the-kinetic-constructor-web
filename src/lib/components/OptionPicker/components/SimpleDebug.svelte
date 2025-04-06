@@ -1,24 +1,26 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { getContainerAspect, type DeviceType, type ResponsiveLayoutConfig } from '../config';
+	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
+	import { uiState } from '../store'; // To get selectedTab, showAllActive etc.
 
-	// Props - grouped into logical objects
-	export let deviceType: DeviceType;
-	export let isPortraitMode: boolean;
-	export let isMobileDevice: boolean;
+	// Consume context
+	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 
-	export let layout: ResponsiveLayoutConfig;
+	// Props are no longer needed, get everything from context or central store
+	// REMOVED: export let deviceType: DeviceType;
+	// REMOVED: export let isPortraitMode: boolean;
+	// REMOVED: export let isMobileDevice: boolean;
+	// REMOVED: export let layout: ResponsiveLayoutConfig;
+	// REMOVED: export let containerWidth: number;
+	// REMOVED: export let containerHeight: number;
+	// REMOVED: export let optionsCount: number; // Calculate if needed, or get from store
+	// REMOVED: export let selectedTab: string | null; // Get from local state in OptionPicker or a store if shared
+	// REMOVED: export let showAllActive: boolean; // Get from uiState store
 
-	export let containerWidth: number;
-	export let containerHeight: number;
-
-	export let optionsCount: number;
-	export let selectedTab: string | null;
-	export let showAllActive: boolean;
-
-	// Control callbacks
-	export let toggleDeviceState: () => void;
-	export let toggleOrientationState: () => void;
+	// REMOVED: Control callbacks
+	// REMOVED: export let toggleDeviceState: () => void;
+	// REMOVED: export let toggleOrientationState: () => void;
 
 	// Panel state
 	let isDebugExpanded = false;
@@ -26,21 +28,25 @@
 	// Panel toggle handler
 	const toggleDebugPanel = () => (isDebugExpanded = !isDebugExpanded);
 
-	// Derived values
-	$: containerAspect = getContainerAspect(containerWidth, containerHeight);
-	$: gridTemplateColumns = layout.gridColumns;
+	// Derived values from context and store
+	$: layout = $layoutContext.layoutConfig; // Get layout config from context
+	// Note: optionsCount and selectedTab might need to be passed or derived differently
+	// depending on where selectedTab state lives now. Assuming OptionPicker still manages it locally.
+	// For this example, we'll just display what's in the context/uiState.
 </script>
 
 <div class="debug-container" data-testid="debug-panel">
 	<div class="debug-bar">
-		<button class="debug-button" on:click={toggleDeviceState} aria-label="Toggle device type">
-			Device: {deviceType}
-			{isMobileDevice ? '📱' : '💻'}
-		</button>
-
-		<button class="debug-button" on:click={toggleOrientationState} aria-label="Toggle orientation">
-			{isPortraitMode ? 'Portrait 📸' : 'Landscape 🌄'}
-		</button>
+		<span class="debug-info">
+			Device: {$layoutContext.deviceType}
+			{$layoutContext.isMobile ? '📱' : $layoutContext.isTablet ? '📟' : '💻'}
+		</span>
+		<span class="debug-info">
+			{$layoutContext.isPortrait ? 'Portrait 📸' : 'Landscape 🌄'}
+		</span>
+		<span class="debug-info">
+			Container: {$layoutContext.containerWidth}×{$layoutContext.containerHeight}px ({$layoutContext.containerAspect})
+		</span>
 
 		<div class="spacer"></div>
 
@@ -57,27 +63,19 @@
 	{#if isDebugExpanded}
 		<div id="debug-details" class="debug-details" transition:fade={{ duration: 200 }}>
 			<section class="debug-section">
-				<h4>Container</h4>
+				<h4>UI State</h4>
 				<div class="grid">
-					<div>Size:</div>
-					<div>{containerWidth}×{containerHeight}px</div>
-					<div>Aspect:</div>
-					<div>{containerAspect}</div>
+					<div>Show All:</div>
+					<div>{$uiState.showAllActive ? 'Yes' : 'No'}</div>
+					<div>Sort By:</div>
+					<div>{$uiState.sortMethod}</div>
+					<div>Reversal Filter:</div>
+					<div>{$uiState.reversalFilter}</div>
 				</div>
 			</section>
 
 			<section class="debug-section">
-				<h4>Content</h4>
-				<div class="grid">
-					<div>Options:</div>
-					<div>{optionsCount}</div>
-					<div>Selected Tab:</div>
-					<div>{selectedTab || 'None'}</div>
-				</div>
-			</section>
-
-			<section class="debug-section">
-				<h4>Layout</h4>
+				<h4>Calculated Layout</h4>
 				<div class="grid">
 					<div>Columns:</div>
 					<div>{layout.gridColumns}</div>
@@ -85,8 +83,12 @@
 					<div>{layout.optionSize}</div>
 					<div>Grid Gap:</div>
 					<div>{layout.gridGap}</div>
-					<div>Scale:</div>
+					<div>Item Scale:</div>
 					<div>{layout.scaleFactor.toFixed(2)}</div>
+					<div>Grid Class:</div>
+					<div>{layout.gridClass || 'N/A'}</div>
+					<div>Aspect Class:</div>
+					<div>{layout.aspectClass || 'N/A'}</div>
 				</div>
 			</section>
 		</div>
@@ -95,35 +97,40 @@
 
 <style>
 	.debug-container {
-		/* --- Overlay Styling --- */
-		position: absolute; /* Take out of normal flow */
-		top: 10px; /* Position from top edge of parent */
-		left: 10px; /* Position from left edge */
-		right: 10px; /* Position from right edge (determines width) */
-		z-index: 1000; /* Ensure it's above other content */
-		background-color: #f8fafcee; /* Slightly more opaque background */
-		box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15); /* Add shadow for depth */
-		/* --- End Overlay Styling --- */
-
-		/* --- Existing styles (adjusted) --- */
-		/* position: relative; */ /* Removed */
-		/* margin-bottom: 10px; */ /* Removed, no longer affects layout */
+		position: absolute;
+		top: 10px;
+		left: 10px;
+		right: 10px;
+		z-index: 1000;
+		background-color: #f8fafcee;
+		box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
 		border-radius: 4px;
 		border: 1px dashed #94a3b8;
 		overflow: hidden;
-		font-size: 12px;
+		font-size: 11px; /* Slightly smaller */
 		font-family: ui-monospace, monospace;
-		max-width: calc(100% - 20px); /* Prevent potential overflow issues */
+		max-width: calc(100% - 20px);
+		color: #334155;
 	}
 	.debug-bar {
 		display: flex;
-		padding: 6px;
+		padding: 5px 8px; /* Adjust padding */
 		background-color: #f1f5f9;
-		gap: 6px;
+		gap: 8px; /* Adjust gap */
 		flex-wrap: wrap;
+		align-items: center;
+	}
+
+	.debug-info {
+		background-color: #e0f2fe;
+		color: #0c4a6e;
+		border-radius: 3px;
+		padding: 3px 6px;
+		white-space: nowrap;
 	}
 
 	.debug-button {
+		/* Keep for toggle */
 		background-color: #2563eb;
 		color: white;
 		border: none;
@@ -149,12 +156,13 @@
 
 	.spacer {
 		flex-grow: 1;
+		min-width: 10px; /* Ensure spacer takes space */
 	}
 
 	.debug-details {
 		padding: 10px;
-		max-height: 40vh; /* Limit height to prevent excessive overlap */
-		overflow-y: auto; /* Allow scrolling if content exceeds max-height */
+		max-height: 40vh;
+		overflow-y: auto;
 	}
 
 	.debug-section {
@@ -167,59 +175,55 @@
 		border-bottom: 1px solid #e2e8f0;
 		font-size: 12px;
 		color: #334155;
+		font-weight: 600;
 	}
 
 	.grid {
 		display: grid;
-		grid-template-columns: 100px 1fr;
-		gap: 4px;
+		grid-template-columns: 110px 1fr; /* Adjust column width */
+		gap: 4px 8px; /* Row and column gap */
 		align-items: center;
 	}
 
 	.grid > div:nth-child(odd) {
-		font-weight: 600;
+		font-weight: 500; /* Slightly less bold */
 		color: #475569;
+		text-align: right; /* Align labels right */
+		padding-right: 5px;
 	}
 
 	.grid > div:nth-child(even) {
 		color: #0369a1;
+		font-weight: 500;
 	}
 
-	.grid-preview {
-		display: grid;
-		gap: 4px;
-		width: 100%;
-		border: 1px dashed #cbd5e1;
-		padding: 4px;
-		height: 80px;
-		margin-top: 5px;
-	}
-
-	.preview-cell {
-		background-color: #bfdbfe;
-		color: #1e40af;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 2px;
-		font-weight: 600;
-	}
-
-	@media (max-width: 600px) {
+	@media (max-width: 700px) {
+		/* Adjust breakpoint */
 		.debug-bar {
 			flex-direction: column;
 			align-items: stretch;
 		}
-
-		.debug-button {
+		.debug-info {
 			margin-bottom: 4px;
+			text-align: center;
 		}
-
+		.spacer {
+			display: none;
+		} /* Hide spacer on small screens */
+		.toggle-button {
+			margin-top: 4px;
+		}
+	}
+	@media (max-width: 480px) {
 		.debug-container {
 			top: 5px;
 			left: 5px;
 			right: 5px;
 			max-width: calc(100% - 10px);
+			font-size: 10px;
+		}
+		.grid {
+			grid-template-columns: 90px 1fr;
 		}
 	}
 </style>
