@@ -74,7 +74,7 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		overflow-y: auto; /* Allows scrolling */
+		overflow-y: auto;
 		overflow-x: hidden;
 		display: flex; /* Keep flex for easy horizontal centering */
 		justify-content: center; /* Center grid horizontally */
@@ -92,32 +92,34 @@
 
 	.options-grid {
 		display: grid;
-		width: 100%; /* Take full width within panel padding */
-		max-width: 1200px;
-		justify-content: center;
-		align-content: flex-start; /* Default alignment within grid */
+		width: 100%; /* Grid takes full width within panel */
+		max-width: 1200px; /* But constrained by max-width */
+		/* --- Grid Item Centering Fix --- */
+		justify-items: center; /* Horizontally center items within their grid cell */
+		/* align-items: center; */ /* Add this if vertical centering *within* the cell is also needed */
+		/* --- End Fix --- */
+		align-content: flex-start; /* Default alignment for rows */
 		position: relative;
 		grid-gap: var(--grid-gap, 8px);
-		/* Removed auto margins */
+		padding: var(--grid-internal-padding, 0.5rem);
+
+		/* Vertical centering using margins (works with flex parent) */
 		margin-top: auto;
 		margin-bottom: auto;
-		margin-left: auto; /* Keep horizontal auto margins if needed */
-		margin-right: auto;
 
-		/* Internal padding within the grid itself */
-		padding: var(--grid-internal-padding, 0.25rem);
+		/* Horizontal centering of the grid block itself */
+		margin-left: auto;
+		margin-right: auto;
 	}
 
 	/* Container aspect-based grid styling */
+	/* Controls alignment of rows when grid has extra vertical space */
 	.wide-aspect-container,
 	.square-aspect-container {
-		/* Center rows within the grid if grid is taller than content */
-		/* This applies *within* the grid, panel padding provides overall space */
 		align-content: center;
 	}
 	.tall-aspect-container {
-		align-content: flex-start; /* Align rows to top within the grid */
-		/* padding-top: clamp(0.5rem, 2vh, 2rem); */ /* Removed, panel padding handles this */
+		align-content: flex-start;
 	}
 
 
@@ -126,13 +128,14 @@
 		width: var(--option-size, 100px);
 		height: var(--option-size, 100px);
 		aspect-ratio: 1 / 1;
-		display: flex;
+		display: flex; /* Keep flex for internal centering of Option component if needed */
 		justify-content: center;
 		align-items: center;
 		position: relative;
 		z-index: 1;
 		transition: z-index 0s 0.2s;
 		overflow: hidden;
+		/* margin: 0 auto; */ /* REMOVED - Handled by justify-items on grid */
 	}
 	.grid-item-wrapper:hover {
 		z-index: 10;
@@ -144,7 +147,9 @@
 		height: auto;
 		padding: 0.5rem;
 		width: fit-content;
-		/* Removed auto margins */
+		margin-top: auto;
+		margin-bottom: auto;
+		justify-items: center; /* Ensure centering even for single */
 	}
 	.single-item-grid .grid-item-wrapper {
 		transform: scale(1.1);
@@ -154,7 +159,9 @@
 		height: auto;
 		padding: 0.5rem;
 		width: fit-content;
-		/* Removed auto margins */
+		margin-top: auto;
+		margin-bottom: auto;
+		justify-items: center; /* Ensure centering even for two */
 	}
 	.two-item-grid .grid-item-wrapper {
 		flex-grow: 0;
@@ -165,11 +172,11 @@
 	.few-items-grid,
 	.medium-items-grid {
 		align-content: center;
-		justify-content: center;
+		justify-content: center; /* Centers grid columns if grid is wider than columns */
 	}
 	.many-items-grid {
-		justify-content: center;
-		align-content: flex-start;
+		justify-content: center; /* Centers grid columns */
+		align-content: flex-start; /* Aligns rows to top */
 	}
 
 	/* Mobile styling */
@@ -190,12 +197,7 @@
 
 	/* Responsive adjustments */
 	@media (max-width: 480px) {
-		.options-panel {
-			padding-top: 0.5rem; /* Adjust padding for smaller screens */
-			padding-bottom: 0.5rem;
-			padding-left: 0.3rem;
-			padding-right: 0.3rem;
-		}
+		/* Panel padding handled by margin:auto on grid */
 	}
 	@media (min-width: 1280px) {
 		.many-items-grid {
