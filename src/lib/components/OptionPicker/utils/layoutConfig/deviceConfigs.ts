@@ -4,7 +4,7 @@
 export const DEVICE_CONFIG = {
     smallMobile: {
         padding: { horizontal: 8, vertical: 8 },
-        gap: 6,
+        gap: 2,
         minItemSize: 60,
         maxItemSize: 90,
         baseSize: (containerWidth: number, count: number) => {
@@ -17,14 +17,10 @@ export const DEVICE_CONFIG = {
     },
     mobile: {
         padding: { horizontal: 12, vertical: 12 },
-        gap: 8,
-        minItemSize: 60,
-        maxItemSize: 110,
+        gap: 20,
+        minItemSize: 100,
+        maxItemSize: 175,
         baseSize: (containerWidth: number, count: number) => {
-            // More nuanced scaling for mobile
-            if (count === 1) return Math.min(containerWidth * 0.7, 250);
-            if (count === 2) return Math.min(containerWidth / 2.5, 200);
-            if (count <= 6) return Math.min(containerWidth / 3, 180);
             if (count <= 16) return Math.min(containerWidth / 4, 150);
             return Math.min(containerWidth / 4, 120);
         },
@@ -32,22 +28,22 @@ export const DEVICE_CONFIG = {
     },
     tablet: {
         padding: { horizontal: 16, vertical: 16 },
-        gap: 12,
+        gap: 2,
         minItemSize: 80,
-        maxItemSize: 150,
+        maxItemSize: 175,
         baseSize: (containerWidth: number, count: number) => {
             // Balanced approach for tablets
             if (count === 1) return Math.min(containerWidth * 0.6, 300);
             if (count === 2) return Math.min(containerWidth / 2.2, 250);
             if (count <= 6) return Math.min(containerWidth / 3, 200);
-            if (count <= 16) return Math.min(containerWidth / 4, 180);
+            if (count <= 16) return Math.min(containerWidth / 4, 220);
             return Math.min(containerWidth / 4, 160);
         },
         scaleFactor: 1
     },
     desktop: {
         padding: { horizontal: 20, vertical: 20 },
-        gap: 16,
+        gap: 2,
         minItemSize: 90,
         maxItemSize: 180,
         baseSize: (containerWidth: number, count: number) => {

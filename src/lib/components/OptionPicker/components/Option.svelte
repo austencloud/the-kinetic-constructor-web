@@ -1,4 +1,3 @@
-<!-- src/lib/components/OptionPicker/components/Option.svelte -->
 <script lang="ts">
 	import Pictograph from '../../Pictograph/Pictograph.svelte';
 	import { writable } from 'svelte/store';
@@ -11,48 +10,63 @@
 
 	// --- Props ---
 	export let pictographData: PictographData;
-	export let size: string = 'auto'; // Controlled by parent layout
-	export let isSingleOption: boolean = false; // Special styling/scaling for single option
-	export let isPartOfTwoItems: boolean = false; // Special handling for two-item layouts
+	// 'size' prop might be redundant now if parent controls size via CSS var
+	// export let size: string = 'auto';
+	export let isSingleOption: boolean = false;
+	export let isPartOfTwoItems: boolean = false;
 
 	// --- State ---
 	let isMobileDevice = false;
-	let containerWidth = 0;
-	let containerElement: HTMLElement;
+	let containerWidth = 0; // Still useful for scale factor calculation
+	let containerElement: HTMLElement; // The root .option element
 
 	// --- Reactive Computations ---
 	$: isSelected = $selectedPictograph === pictographData;
+	// Pass the container width to get the appropriate scale factor
 	$: scaleFactor = calculateScaleFactor(isSingleOption, isPartOfTwoItems, isMobileDevice, containerWidth);
 	$: ariaLabel = `Select option ${pictographData.letter || 'Unnamed'}`;
 
+	// Simplified scale factor calculation - relies more on layoutUtils now
 	function calculateScaleFactor(
-		isSingle: boolean, 
-		isPartOfTwo: boolean, 
+		isSingle: boolean,
+		isPartOfTwo: boolean,
 		isMobile: boolean,
-		width: number
+		width: number // Width of the .option container
 	): number {
-		if (isSingle) return 1;
-		if (isPartOfTwo) return isMobile ? 1 : 1;
+		// Potentially override scale for single/two items if needed,
+		// but layoutUtils might already handle this via optionSize calculation.
+		// if (isSingle) return 1.1; // Example override
+		// if (isPartOfTwo) return 1.05; // Example override
+
+		// Primarily rely on the scale factor determined by layoutUtils based on device/width
 		return getPictographScaleFactor(width, isMobile);
 	}
 
 	onMount(() => {
 		isMobileDevice = isMobile();
-		
-		// Set up resize observer to track container width for responsive scaling
+
+		// Observe the .option element to get its actual rendered width
 		if (typeof ResizeObserver !== 'undefined' && containerElement) {
-			const resizeObserver = new ResizeObserver(entries => {
+			const resizeObserver = new ResizeObserver((entries) => {
 				const entry = entries[0];
 				if (entry) {
+					// Update containerWidth based on the observed size of the .option element
 					containerWidth = entry.contentRect.width;
 				}
 			});
-			
+
 			resizeObserver.observe(containerElement);
-			
+
+			// Initial measurement
+			containerWidth = containerElement.clientWidth;
+
+
 			return () => {
 				resizeObserver.disconnect();
 			};
+		} else {
+			// Fallback for browsers without ResizeObserver
+			containerWidth = containerElement?.clientWidth ?? 0;
 		}
 	});
 
@@ -70,8 +84,6 @@
 	class:selected={isSelected}
 	class:single-option={isSingleOption}
 	class:two-item-option={isPartOfTwoItems}
-	style:width={size}
-	style:height={size}
 	bind:this={containerElement}
 	role="button"
 	tabindex="0"
@@ -79,9 +91,9 @@
 	on:keydown={(e) => e.key === 'Enter' && handleSelect()}
 	aria-label={ariaLabel}
 	aria-pressed={isSelected}
->
-	<div 
-		class="pictograph-container" 
+	>
+	<div
+		class="pictograph-container"
 		style="transform: scale({scaleFactor})"
 	>
 		<Pictograph {pictographDataStore} />
@@ -90,33 +102,39 @@
 
 <style>
 	.option {
-		position: relative;
-		display: flex;
+		/* --- Aspect Ratio Fix --- */
+		/* Let the parent (.grid-item-wrapper) control the size and aspect ratio. */
+		/* Remove width, height, and aspect-ratio here. */
+		/* --- End Fix --- */
+
+		position: relative; /* Keep for potential absolute positioning inside */
+		display: flex; /* Use flex to center the pictograph container */
 		justify-content: center;
 		align-items: center;
-		width: 100%;
-		height: 100%;
+		width: 100%; /* Fill the parent wrapper */
+		height: 100%; /* Fill the parent wrapper */
 		cursor: pointer;
 		transition: transform 0.2s ease-in-out, background-color 0.2s ease;
-		border-radius: 6px;
+		border-radius: 6px; /* Keep rounded corners */
 		outline: none;
-		aspect-ratio: 1/1; /* Force square aspect ratio */
-		overflow: hidden;
+		overflow: hidden; /* Ensure content like hover effects don't spill */
 	}
 
 	.pictograph-container {
-		display: flex;
+		display: flex; /* Still useful for centering if Pictograph isn't 100% */
 		justify-content: center;
 		align-items: center;
-		width: 100%;
-		height: 100%;
+		width: 100%; /* Make container fill the option div */
+		height: 100%; /* Make container fill the option div */
 		transition: transform 0.2s ease-in-out;
+		/* The Pictograph component inside should handle its own scaling (e.g., SVG viewBox) */
 	}
 
 	/* Hover effect: scale up slightly and add subtle background */
+	/* Apply hover to the main .option div */
 	.option:hover {
-		transform: scale(1.05);
-		background-color: rgba(243, 244, 246, 0.5);
+		transform: scale(1.05); /* Scale the whole option */
+		background-color: rgba(243, 244, 246, 0.5); /* Subtle background */
 	}
 
 	/* Add a subtle press effect */
@@ -126,24 +144,21 @@
 
 	/* Visual indication for the selected option */
 	.option.selected {
-		background-color: rgba(56, 161, 105, 0.1);
+		background-color: rgba(56, 161, 105, 0.1); /* Subtle green background */
+		/* Add a border or stronger indicator if needed */
+		/* box-shadow: inset 0 0 0 2px rgba(56, 161, 105, 0.5); */
 	}
 
-	/* Special styling for single option */
-	.option.single-option {
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-	}
-
-	.option.single-option:hover {
-		box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-	}
-
-	/* Special styling for options in two-item layout */
+	/* Special styling for single/two options (optional, could be handled by layout) */
+	.option.single-option,
 	.option.two-item-option {
+		/* Add subtle shadow or border if desired */
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 	}
 
+	.option.single-option:hover,
 	.option.two-item-option:hover {
+		/* Enhance shadow on hover */
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 	}
 
@@ -153,11 +168,13 @@
 	}
 
 	.option.mobile:hover {
-		transform: scale(1.03);
+		transform: scale(1.03); /* Slightly less pronounced hover scale on mobile */
 	}
 
 	/* Accessibility: Clear focus indicator */
 	.option:focus-visible {
-		box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.6);
+		box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.6); /* Standard focus ring */
+		/* Ensure z-index works with focus */
+		z-index: 11;
 	}
 </style>
