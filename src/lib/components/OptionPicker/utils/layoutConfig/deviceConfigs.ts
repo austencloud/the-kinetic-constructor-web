@@ -18,7 +18,7 @@ export const DEVICE_CONFIG = {
     mobile: {
         padding: { horizontal: 12, vertical: 12 },
         gap: 20,
-        minItemSize: 100,
+        minItemSize: 80,
         maxItemSize: 175,
         baseSize: (containerWidth: number, count: number) => {
             if (count <= 16) return Math.min(containerWidth / 4, 150);
