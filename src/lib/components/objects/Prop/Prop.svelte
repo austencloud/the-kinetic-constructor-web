@@ -34,12 +34,7 @@
                 rotAngle = rotAngleManager.getRotationAngle();
                 propData.rotAngle = rotAngle;
 
-                // Add some logging to understand what's happening
-                console.log('Prop Data:', {
-                    loc: propData.loc, 
-                    ori: propData.ori, 
-                    rotAngle: rotAngle
-                });
+
             } catch (error) {
                 console.warn('Error calculating rotation angle:', error);
             }

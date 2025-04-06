@@ -27,9 +27,7 @@
 
 		if (data && data.length > 0) {
 			// Data is available from the store
-			if (!dataInitializationChecked) {
-				console.log('StartPosPicker: Received initial data from pictographDataStore.');
-			}
+
 			dataInitializationChecked = true; // Mark that we've seen data
 
 			const pictographData = data as PictographData[];
@@ -45,7 +43,6 @@
 					defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
 			);
 
-			console.log(`StartPosPicker: Filtered ${filteredPictographs.length} start positions.`);
 
 			startPositionPictographs = filteredPictographs;
 			filteredDataAvailable = filteredPictographs.length > 0;

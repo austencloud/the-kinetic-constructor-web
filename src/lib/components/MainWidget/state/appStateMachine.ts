@@ -33,10 +33,6 @@ export type AppMachineEvents =
 
 // --- Actor Logic Definition ---
 type InitializationActorInput = undefined | { someData?: string };
-type InitializationCallbackEvents =
-	| { type: 'UPDATE_PROGRESS'; progress: number; message: string }
-	| { type: 'INITIALIZATION_SUCCESS' }
-	| { type: 'INITIALIZATION_FAILURE'; error: string };
 
 export const initializeApplicationActorLogic = fromCallback<
 	AppMachineEvents,

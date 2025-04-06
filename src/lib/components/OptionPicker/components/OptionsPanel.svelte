@@ -4,7 +4,7 @@
 	import { cubicOut } from 'svelte/easing';
 	import Option from './Option.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
-	import type { ResponsiveLayoutConfig } from '../utils/layoutUtils';
+	import type { ResponsiveLayoutConfig } from '../utils/layoutConfig/layoutUtils';
 
 	// Props
 	export let selectedTab: string | null = null;
@@ -13,7 +13,8 @@
 	export let isMobileDevice: boolean = false;
 
 	// Destructure layout props for easier access
-	$: ({ gridColumns, optionSize, gridGap, gridClass } = layout);
+	$: ({ gridColumns, optionSize, gridGap, gridClass, aspectClass, scaleFactor } = layout);
+	$: customStyle = `--option-size: ${optionSize}; --grid-gap: ${gridGap};`;
 
 	// Setup transitions
 	const [send, receive] = crossfade({
@@ -32,16 +33,16 @@
 	in:receive={{ key: selectedTab }}
 >
 	<div
-		class="options-grid {gridClass}"
+		class="options-grid {gridClass} {aspectClass}"
 		class:mobile-grid={isMobileDevice}
-		class:single-item-grid={options.length === 1}
 		style:grid-template-columns={gridColumns}
-		style:gap={gridGap}
+		style={customStyle}
 	>
 		{#each options as option, i (`${option.letter}-${option.startPos}-${option.endPos}-${i}`)}
 			<div
 				class="grid-item-wrapper"
 				class:single-item={options.length === 1}
+				class:two-item={options.length === 2}
 				transition:fade={{ duration: 250, delay: 30 * i, easing: cubicOut }}
 			>
 				<Option
@@ -78,8 +79,24 @@
 		justify-content: center;
 		align-content: flex-start;
 		position: relative;
+		grid-gap: var(--grid-gap, 8px);
 	}
 
+	/* Container aspect-based grid styling */
+	.wide-aspect-container {
+		align-content: center;
+	}
+
+	.tall-aspect-container {
+		align-content: flex-start;
+		padding-top: clamp(0.5rem, 2vh, 2rem);
+	}
+
+	.square-aspect-container {
+		align-content: center;
+	}
+
+	/* Grid item wrapper */
 	.grid-item-wrapper {
 		aspect-ratio: 1 / 1;
 		display: flex;
@@ -88,6 +105,9 @@
 		position: relative;
 		z-index: 1;
 		transition: z-index 0s 0.2s;
+		max-width: var(--option-size, auto);
+		max-height: var(--option-size, auto);
+		margin: 0 auto;
 	}
 
 	.grid-item-wrapper:hover {
@@ -95,21 +115,7 @@
 		transition-delay: 0s;
 	}
 
-	.two-item-grid {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		width: 100%;
-		height: 100%;
-		gap: var(--grid-gap, 1rem);
-	}
-
-	.two-item-grid .grid-item-wrapper {
-		flex-grow: 0;
-		flex-shrink: 0;
-		width: auto;
-	}
-
+	/* Special layout classes */
 	.single-item-grid {
 		display: flex;
 		justify-content: center;
@@ -117,48 +123,72 @@
 		height: 100%;
 	}
 
-	.mobile-grid {
-		padding: 0.2rem;
+	.single-item-grid .grid-item-wrapper {
+		transform: scale(1.2);
 	}
 
-	.small-count {
-		align-content: center;
-	}
-
-	.exactly-eight {
-		align-content: center;
-	} /* Add these aspect-specific classes for two-item grid */
-	.wide-aspect-grid.two-item-grid {
-		flex-direction: row;
-	}
-
-	.tall-aspect-grid.two-item-grid {
-		flex-direction: column;
-	}
-
-	.square-aspect-grid.two-item-grid {
-		flex-direction: row;
-	}
-
-	/* Enhance existing two-item-grid styling */
 	.two-item-grid {
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		width: 100%;
 		height: 100%;
-		gap: var(--grid-gap, 1rem);
+		gap: var(--grid-gap, 16px);
 	}
-
-	/* Special mobile handling for two-item grid */
-	.mobile-grid.two-item-grid {
-		padding: 1rem;
+  
+	.two-item-grid.horizontal-layout {
+		flex-direction: row;
+	}
+  
+	.two-item-grid.vertical-layout {
+		flex-direction: column;
 	}
 
 	.two-item-grid .grid-item-wrapper {
 		flex-grow: 0;
 		flex-shrink: 0;
-		width: auto;
-		aspect-ratio: 1/1;
+	}
+
+	/* Count-based classes */
+	.few-items-grid {
+		align-content: center;
+		justify-content: center;
+	}
+  
+	.medium-items-grid {
+		align-content: center;
+		justify-content: center;
+	}
+
+	.many-items-grid {
+		justify-content: center;
+	}
+
+	/* Mobile styling */
+	.mobile-grid {
+		padding: 0.2rem;
+		grid-gap: var(--grid-gap, 6px);
+	}
+
+	.mobile-grid.two-item-grid {
+		padding: 0.5rem;
+	}
+
+	/* Responsive scaling for different grid configurations */
+	@media (max-width: 480px) {
+		.options-panel {
+			padding: 0.3rem;
+		}
+      
+		.grid-item-wrapper {
+			max-width: 100%;
+		}
+	}
+  
+	@media (min-width: 1280px) {
+		.many-items-grid {
+			max-width: 90%;
+			margin: 0 auto;
+		}
 	}
 </style>
