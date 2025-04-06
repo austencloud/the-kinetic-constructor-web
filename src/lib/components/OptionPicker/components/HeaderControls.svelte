@@ -1,48 +1,48 @@
 <script lang="ts">
-	import { getContext } from 'svelte'; // Import getContext
-	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext'; // Import context key and type
+	import { getContext, createEventDispatcher } from 'svelte'; // Import createEventDispatcher
+	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 
-	// Props
+	// --- Props ---
 	export let categoryKeys: string[] = [];
 	export let selectedTab: string | null = null;
-	export let onTabSelect: (tab: string) => void;
-	// REMOVED: isMobileDevice
+	// REMOVED: export let onTabSelect: (tab: string) => void; // No longer needed as prop
 
-	// Consume context
+	// --- Context ---
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-	$: isMobileDevice = $layoutContext.isMobile; // Get from context
 
+	// --- Events ---
+	const dispatch = createEventDispatcher<{ tabSelect: string }>(); // Dispatcher for tab selection
+
+	// --- Event Handler ---
 	function handleTabClick(categoryKey: string) {
-		if (onTabSelect) {
-			onTabSelect(categoryKey); // Pass the selected category key
-		}
+		// Dispatch the event instead of calling a prop function
+		dispatch('tabSelect', categoryKey);
+	}
+
+	// Helper to format the display name for tabs
+	function formatTabName(key: string): string {
+		return key.charAt(0).toUpperCase() + key.slice(1);
 	}
 </script>
 
 <div>
-	<div
-		class="tabs"
-		class:mobile-tabs={isMobileDevice}
-		role="tablist"
-		aria-label="Option Categories"
-	>
+	<div class="tabs" role="tablist" aria-label="Option Categories">
 		{#if categoryKeys.length > 0}
 			{#each categoryKeys as categoryKey (categoryKey)}
 				<button
 					class="tab"
 					class:active={selectedTab === categoryKey}
-					class:mobile={isMobileDevice}
 					on:click={() => handleTabClick(categoryKey)}
 					role="tab"
 					aria-selected={selectedTab === categoryKey}
-					aria-controls="options-panel-{categoryKey}"
+					aria-controls={`options-panel-${categoryKey}`}
 					id="tab-{categoryKey}"
 				>
-					{categoryKey}
+					{formatTabName(categoryKey)}
 				</button>
 			{/each}
 		{:else}
-			<span class="no-categories-message">No categories available</span>
+			<span class="no-categories-message">No sub-categories</span>
 		{/if}
 	</div>
 </div>
@@ -52,37 +52,29 @@
 	.tabs {
 		display: flex;
 		justify-content: center;
-		flex-wrap: nowrap;
-		overflow-x: auto;
-		scrollbar-width: none;
-		-ms-overflow-style: none;
+		flex-wrap: wrap;
+		gap: 4px 8px;
 		padding: 0;
 		margin: 0;
 		max-width: 100%;
 	}
-	.tabs::-webkit-scrollbar {
-		display: none;
-	}
-	.mobile-tabs {
-		flex-wrap: wrap;
-		justify-content: center;
-		overflow-x: hidden;
-	}
 	.tab {
 		background: none;
 		border: none;
-		padding: clamp(0.3rem, 1vw, 0.5rem) clamp(0.6rem, 1.5vw, 1rem);
+		padding: clamp(0.4rem, 1vw, 0.6rem) clamp(0.8rem, 1.5vw, 1.2rem);
 		cursor: pointer;
 		font-weight: 500;
-		font-size: clamp(0.75rem, 2vw, 0.9rem);
+		font-size: clamp(0.8rem, 2vw, 0.95rem);
 		color: #4b5563;
 		border-bottom: 3px solid transparent;
 		transition:
 			border-color 0.2s ease-in-out,
-			color 0.2s ease-in-out;
+			color 0.2s ease-in-out,
+			background-color 0.15s ease;
 		white-space: nowrap;
 		flex-shrink: 0;
 		border-radius: 4px 4px 0 0;
+		margin-bottom: 2px;
 	}
 	.tab.active {
 		border-color: #3b82f6;
@@ -91,17 +83,18 @@
 	}
 	.tab:hover:not(.active) {
 		color: #1f2937;
+		background-color: #f3f4f6;
 		border-color: #d1d5db;
 	}
 	.tab:focus-visible {
 		outline: 2px solid #60a5fa;
-		outline-offset: -2px;
+		outline-offset: 1px;
 		background-color: rgba(59, 130, 246, 0.1);
 	}
 	.no-categories-message {
 		color: #6b7280;
 		font-style: italic;
-		padding: clamp(0.3rem, 1vw, 0.5rem) clamp(0.6rem, 1.5vw, 1rem);
+		padding: clamp(0.4rem, 1vw, 0.6rem) clamp(0.8rem, 1.5vw, 1.2rem);
 		white-space: nowrap;
 	}
 </style>

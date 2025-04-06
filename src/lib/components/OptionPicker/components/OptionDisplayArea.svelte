@@ -1,76 +1,59 @@
 <script lang="ts">
-	import { getContext } from 'svelte'; // Import getContext
 	import { fade } from 'svelte/transition';
 	import type { PictographData } from '$lib/types/PictographData';
-	// REMOVED: import type { ResponsiveLayoutConfig } from '../config';
-	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext'; // Import context key and type
 
 	import LoadingMessage from './messages/LoadingMessage.svelte';
 	import EmptyMessage from './messages/EmptyMessage.svelte';
 	import OptionsPanel from './OptionsPanel.svelte';
 
-	// Props - fewer needed
+	// --- Props ---
 	export let isLoading: boolean;
-	export let showAllActive: boolean;
-	export let selectedTab: string | null;
-	export let currentOptions: PictographData[];
-	export let filteredOptions: PictographData[];
-	export let categoryKeys: string[];
-	// REMOVED: layout, isMobileDevice, isPortraitMode
+	export let selectedTab: string | null; // Can be 'all' or category key
+	export let optionsToDisplay: PictographData[]; // The options relevant to the current view
+	export let panelKey: string; // Key for transitions ('all', category key, or 'none')
+	export let hasCategories: boolean; // Whether any categories actually exist
 
-	// Consume context
-	// We don't strictly need to assign it here if only used in the template via $layoutContext
-	// const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
+	// --- Display State ---
+	// Determine if options exist based on the passed-in list
+	$: hasOptions = optionsToDisplay.length > 0;
 
-	// Display state (uses props)
-	$: displayState = {
-		options: showAllActive ? filteredOptions : currentOptions,
-		hasOptions: (showAllActive ? filteredOptions : currentOptions).length > 0,
-		hasCategories: categoryKeys.length > 0,
-		panelKey: showAllActive ? 'all' : selectedTab || 'none'
-	};
+	// --- Message Logic ---
+	// Determine message type based on loading state and whether options exist for the current view
+	$: messageType = determineMessageType(isLoading, hasOptions, selectedTab, hasCategories);
+	$: messageText = generateMessageText(messageType, selectedTab);
 
-	// Message logic (uses props)
-	$: messageType = determineMessageType(
-		isLoading,
-		displayState.hasOptions,
-		showAllActive,
-		selectedTab,
-		displayState.hasCategories
-	);
-	$: messageText = generateMessageText(messageType, showAllActive, selectedTab);
-
-	// Helper functions (remain the same)
+	// --- Helper Functions ---
 	function determineMessageType(
 		loading: boolean,
-		hasOptions: boolean,
-		showAll: boolean,
+		optionsExist: boolean,
 		tab: string | null,
-		hasCategories: boolean
+		categoriesExist: boolean
 	): 'loading' | 'empty' | 'initial' | null {
 		if (loading) return 'loading';
-		if (!hasOptions) {
-			if (showAll || (tab && !hasOptions)) return 'empty';
-			if (!tab && hasCategories) return 'initial';
-			return 'empty';
+		if (!optionsExist) {
+			// If 'all' is selected and no options, or a category is selected and no options
+			if (tab) return 'empty';
+			// If no tab selected (shouldn't happen with 'all' default) but categories exist
+			if (!tab && categoriesExist) return 'initial'; // Show "Select category"
+			// If no tab selected and no categories exist (or any other edge case)
+			return 'empty'; // Default to empty
 		}
-		return null;
+		return null; // Options exist, no message needed
 	}
 
 	function generateMessageText(
 		type: 'loading' | 'empty' | 'initial' | null,
-		showAll: boolean,
 		tab: string | null
 	): string {
 		if (type === 'empty') {
-			if (showAll) return 'No options match current filters.';
-			if (tab) return `No options available for ${tab}.`;
-			return 'No options generated.';
+			if (tab === 'all') return 'No options match current filters.'; // Message for 'all' view
+			if (tab) return `No options available for ${tab}.`; // Message for specific category
+			return 'No options generated.'; // Generic fallback
 		}
 		if (type === 'initial') {
-			return 'Select a category above...';
+			return 'Select a category above...'; // Should be less common now
 		}
-		return '';
+		return ''; // No message text needed
 	}
 </script>
 
@@ -79,13 +62,11 @@
 		<div class="message-container" transition:fade={{ duration: 200 }}>
 			<LoadingMessage />
 		</div>
-	{:else if displayState.hasOptions}
+	{:else if hasOptions}
 		<div class="panels-stack">
-			{#key displayState.panelKey}
+			{#key panelKey}
 				<OptionsPanel
-					{selectedTab}
-					options={displayState.options}
-					/>
+					selectedTab={panelKey} options={optionsToDisplay} />
 			{/key}
 		</div>
 	{:else if messageType === 'empty' || messageType === 'initial'}
@@ -96,7 +77,6 @@
 </div>
 
 <style>
-	/* Styles remain the same */
 	.option-display-area {
 		width: 100%;
 		height: 100%;
@@ -117,5 +97,6 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		z-index: 5; /* Ensure messages are above panel content if needed */
 	}
 </style>

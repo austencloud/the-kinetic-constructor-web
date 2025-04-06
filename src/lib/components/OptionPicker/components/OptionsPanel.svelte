@@ -4,27 +4,25 @@
 	import { cubicOut } from 'svelte/easing';
 	import Option from './Option.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext'; // Import key and type
+	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 
-	// Props (fewer needed)
-	export let selectedTab: string | null = null;
-	export let options: PictographData[] = [];
-	// REMOVED: layout, isMobileDevice, isPortraitMode
+	// --- Props ---
+	export let selectedTab: string | null = null; // Identifier for the panel
+	export let options: PictographData[] = []; // Options for *this* panel
 
-	// Consume context
+	// --- Context ---
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-
-	// Destructure layout props reactively from context
 	$: ({ gridColumns, optionSize, gridGap, gridClass, aspectClass } = $layoutContext.layoutConfig);
 	$: isMobileDevice = $layoutContext.isMobile;
-	$: isTabletDevice = $layoutContext.isTablet; // Access tablet info if needed
+	$: isTabletDevice = $layoutContext.isTablet;
 	$: isPortraitMode = $layoutContext.isPortrait;
 
-	// Combine custom style properties
+	// --- Style ---
+	// Removed buttonHeightEstimate and --panel-padding-top
 	$: customStyle = `--option-size: ${optionSize}; --grid-gap: ${gridGap};`;
 
+	// --- Animation ---
 	function getAnimationDelay(index: number): number {
-		// ... (animation logic remains the same)
 		const columns = parseInt(gridColumns.match(/repeat\((\d+)/)?.[1] || '3');
 		const row = Math.floor(index / columns);
 		const col = index % columns;
@@ -38,14 +36,13 @@
 	aria-labelledby="tab-{selectedTab}"
 	id="options-panel-{selectedTab}"
 	transition:fade={{ duration: 200 }}
->
+	style={customStyle} >
 	<div
 		class="options-grid {gridClass} {aspectClass}"
 		class:mobile-grid={isMobileDevice}
 		class:tablet-grid={isTabletDevice}
 		class:tablet-portrait-grid={isTabletDevice && isPortraitMode}
 		style:grid-template-columns={gridColumns}
-		style={customStyle}
 	>
 		{#each options as option, i ((option.letter ?? '') + option.startPos + option.endPos + i)}
 			<div
@@ -62,8 +59,6 @@
 </div>
 
 <style>
-	/* Styles remain largely the same */
-	/* You might add .tablet-grid rules if needed */
 	.options-panel {
 		position: absolute;
 		top: 0;
@@ -73,6 +68,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: flex-start;
+		/* Removed dynamic padding-top, revert to standard padding */
 		padding: 0.5rem;
 		box-sizing: border-box;
 		overflow-y: auto;
@@ -90,6 +86,7 @@
 		margin: auto;
 	}
 
+	/* Other styles remain the same */
 	.wide-aspect-container,
 	.square-aspect-container {
 		align-content: center;

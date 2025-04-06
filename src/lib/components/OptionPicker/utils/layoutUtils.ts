@@ -155,13 +155,29 @@ const calculateGridConfiguration = memoizeLRU(
 				// calculate some in between values too
 				if (containerAspect === 'wide') {
 					columns = 8;
+				} else if (containerAspect === 'widish') {
+					columns = 6;
+				} else if (containerAspect === 'square') {
+					columns = 6;
+				} else if (containerAspect === 'tall') {
+					columns = 4;
+				}
+			}
+			if (isMobileDevice && count > 16) {
+				// if the container aspect is wide, then let's do 8 in a row
+				// if tall, let's do two in  a row
+				// calculate some in between values too
+				if (containerAspect === 'wide') {
+					columns = 6;
+				} else if (containerAspect === 'widish') {
+					columns = 5;
 				} else if (containerAspect === 'tall') {
 					columns = 4;
 				} else if (containerAspect === 'square') {
 					if (!isMobileDevice) {
 						columns = 6;
 					} else {
-						columns = 4;
+						columns = 5;
 					}
 				}
 			}

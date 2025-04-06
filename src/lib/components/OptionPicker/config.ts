@@ -3,7 +3,7 @@ import type { PictographData } from '$lib/types/PictographData';
 
 // ----- Types -----
 export type DeviceType = 'smallMobile' | 'mobile' | 'tablet' | 'desktop' | 'largeDesktop';
-export type ContainerAspect = 'tall' | 'square' | 'wide';
+export type ContainerAspect = 'tall' | 'square' | 'wide' | 'widish';
 export type SortMethod = 'type' | 'endPosition' | 'reversals';
 export type ReversalFilter = 'all' | 'continuous' | 'oneReversal' | 'twoReversals';
 export type LayoutCategory = 'singleItem' | 'twoItems' | 'fewItems' | 'mediumItems' | 'manyItems';
@@ -31,6 +31,7 @@ export const BREAKPOINTS = {
 export const ASPECT_RATIO = {
 	tall: 0.8,
 	square: 1.3,
+	widish: 1.7,
 	wide: 2.0
 };
 
@@ -116,6 +117,7 @@ export function getContainerAspect(width: number, height: number): ContainerAspe
 	const ratio = width / height;
 	if (ratio < ASPECT_RATIO.tall) return 'tall';
 	if (ratio > ASPECT_RATIO.square) return 'wide';
+	if (ratio < ASPECT_RATIO.widish) return 'widish';
 	return 'square';
 }
 

@@ -1,25 +1,24 @@
 <script lang="ts">
-	import { createEventDispatcher, getContext } from 'svelte'; // Import getContext
-	import { fly } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
+	import { createEventDispatcher, getContext } from 'svelte';
+	// Removed: fly, quintOut
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 
-	// Props
+	// --- Props ---
 	export let showAllActive: boolean = false;
-	// REMOVED: isMobileDevice
 
-	// Consume context
+	// --- Context ---
+	// Keep context if needed for internal styling (e.g., mobile class for padding/font)
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-	$: isMobileDevice = $layoutContext.isMobile; // Get from context
+	$: isMobileDevice = $layoutContext.isMobile;
 
-	// Computed properties - descriptive and reactive
+	// --- Computed ---
 	$: buttonState = {
 		text: showAllActive ? 'Filters Off' : 'Show All',
 		icon: showAllActive ? '👁️' : '✨',
 		ariaLabel: showAllActive ? 'Enable filters and sorting' : 'Show all options without filtering'
 	};
 
-	// Event handling
+	// --- Events ---
 	const dispatch = createEventDispatcher<{ toggle: void }>();
 	const handleToggle = () => dispatch('toggle');
 </script>
@@ -31,15 +30,13 @@
 	on:click={handleToggle}
 	aria-pressed={showAllActive}
 	aria-label={buttonState.ariaLabel}
-	transition:fly={{ y: -10, duration: 300, easing: quintOut }}
 	data-testid="show-all-button"
->
+	>
 	<span class="icon" aria-hidden="true">{buttonState.icon}</span>
 	<span class="text">{buttonState.text}</span>
 </button>
 
 <style>
-	/* Styles remain the same */
 	.show-all-button {
 		display: flex;
 		align-items: center;
@@ -84,5 +81,10 @@
 	.show-all-button:focus-visible {
 		outline: 2px solid #4299e1;
 		outline-offset: 1px;
+	}
+	/* Style adjustments for mobile if needed */
+	.show-all-button.mobile {
+		padding: clamp(4px, 1vw, 6px) clamp(6px, 1.5vw, 10px);
+		font-size: clamp(0.7rem, 1.8vw, 0.85rem);
 	}
 </style>
