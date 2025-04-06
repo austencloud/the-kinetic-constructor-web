@@ -12,7 +12,10 @@
 
 	// Utility Imports
 	import { detectDeviceState, type DeviceType } from './utils/deviceUtils';
-	import { getResponsiveLayout, type ResponsiveLayoutConfig } from './utils/layoutConfig/layoutUtils';
+	import {
+		getResponsiveLayout,
+		type ResponsiveLayoutConfig
+	} from './utils/layoutConfig/layoutUtils';
 	import { debounce } from '$lib/utils/debounceUtils';
 	import type { PictographData } from '$lib/types/PictographData';
 
@@ -227,6 +230,7 @@
 			filteredOptions={$filteredOptionsStore}
 			{layout}
 			{isMobileDevice}
+			{isPortraitMode}
 			{categoryKeys}
 		/>
 	</div>
@@ -258,9 +262,8 @@
 		border-radius: 8px;
 		background-color: transparent;
 		min-height: 0;
-		overflow: hidden;
+		overflow: hidden; /* Changed from auto to hidden */
 	}
-
 	@media (min-width: 1400px) {
 		.option-picker {
 			max-width: 1400px;

@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { fade, crossfade } from 'svelte/transition';
+	import { fade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import Option from './Option.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { ResponsiveLayoutConfig } from '../utils/layoutConfig/layoutUtils';
+	import { tick } from 'svelte';
 
 	// Props
 	export let selectedTab: string | null = null;
@@ -15,105 +16,143 @@
 	// Destructure layout props reactively
 	$: ({ gridColumns, optionSize, gridGap, gridClass, aspectClass, scaleFactor } = layout);
 
-	// Log layout changes for debugging
-	$: {
-		console.log('[OptionsPanel Layout Update]', {
-			count: options.length,
-			gridColumns,
-			optionSize,
-			gridGap,
-			gridClass,
-			aspectClass,
-			scaleFactor
-		});
-	}
-
 	// Combine custom style properties
 	$: customStyle = `--option-size: ${optionSize}; --grid-gap: ${gridGap};`;
-
-	// Setup transitions
-	const [send, receive] = crossfade({
-		duration: 400,
-		easing: cubicOut,
-		fallback: (node, params) => fade(node, { duration: 250, easing: cubicOut })
-	});
+	
+	// Keep track of current and previous tab state for sequenced animation
+	let currentOptionsKey = selectedTab || 'initial';
+	let previousOptionsKey: string | null = null;
+	let isTransitioning = false;
+	
+	// When selectedTab changes, sequence the animations
+	$: if (selectedTab !== currentOptionsKey && !isTransitioning) {
+		handleTabChange();
+	}
+	
+	async function handleTabChange() {
+		isTransitioning = true;
+		previousOptionsKey = currentOptionsKey;
+		await tick();
+		
+		// After a brief delay (enough for exit animation), update to new options
+		setTimeout(() => {
+			currentOptionsKey = selectedTab || 'empty';
+			previousOptionsKey = null;
+			isTransitioning = false;
+		}, 250); // This should match or be slightly longer than the exit animation duration
+	}
+	
+	// Calculate item animation delay based on position rather than index
+	function getItemDelay(index: number, isExiting = false): number {
+		// For exit animations, we want them to fade out more quickly and with less delay between items
+		if (isExiting) return index * 15; // Shorter delays between items when exiting
+		
+		const columns = layout.gridColumns.match(/repeat\((\d+)/)?.[1];
+		const numCols = columns ? parseInt(columns) : 4; // Default to 4 if parsing fails
+		
+		if (numCols <= 1) return index * 25; // Sequential for single column
+		
+		// Calculate row and column positions
+		const row = Math.floor(index / numCols);
+		const col = index % numCols;
+		
+		// Wave-like animation (diagonal pattern)
+		return (row + col) * 25;
+	}
 </script>
 
-<div
-	class="options-panel"
-	role="tabpanel"
-	aria-labelledby="tab-{selectedTab}"
-	id="options-panel-{selectedTab}"
-	out:send={{ key: selectedTab }}
-	in:receive={{ key: selectedTab }}
->
-	<div
-		class="options-grid {gridClass} {aspectClass}"
-		class:mobile-grid={isMobileDevice}
-		class:tablet-portrait-grid={isMobileDevice && isPortraitMode}
-		style:grid-template-columns={gridColumns}
-		style={customStyle}
-	>
-		{#each options as option, i (`${option.letter}-${option.startPos}-${option.endPos}-${i}`)}
+<div class="options-panel-container">
+	{#if previousOptionsKey !== null}
+		<!-- Previous options fading out -->
+		<div
+			class="options-panel exiting"
+			out:fade={{ duration: 200, easing: cubicOut }}
+		>
 			<div
-				class="grid-item-wrapper"
-				class:single-item={options.length === 1}
-				class:two-item={options.length === 2}
-				transition:fade={{ duration: 250, delay: 30 * i, easing: cubicOut }}
+				class="options-grid {gridClass} {aspectClass}"
+				class:mobile-grid={isMobileDevice}
+				class:tablet-portrait-grid={isMobileDevice && isPortraitMode}
+				style:grid-template-columns={gridColumns}
+				style={customStyle}
 			>
-				<Option pictographData={option} isPartOfTwoItems={options.length === 2} />
+				{#each options as option, i (`${previousOptionsKey}-${option.letter}-${option.startPos}-${option.endPos}-${i}`)}
+					<div
+						class="grid-item-wrapper"
+						class:single-item={options.length === 1}
+						class:two-item={options.length === 2}
+						out:fade={{ duration: 150, delay: getItemDelay(i, true), easing: cubicOut }}
+					>
+						<Option pictographData={option} isPartOfTwoItems={options.length === 2} />
+					</div>
+				{/each}
 			</div>
-		{/each}
-	</div>
+		</div>
+	{:else}
+		<!-- Current options fading in -->
+		<div
+			class="options-panel"
+			in:fade={{ duration: 150, delay: 100, easing: cubicOut }}
+		>
+			<div
+				class="options-grid {gridClass} {aspectClass}"
+				class:mobile-grid={isMobileDevice}
+				class:tablet-portrait-grid={isMobileDevice && isPortraitMode}
+				style:grid-template-columns={gridColumns}
+				style={customStyle}
+			>
+				{#each options as option, i (`${currentOptionsKey}-${option.letter}-${option.startPos}-${option.endPos}-${i}`)}
+					<div
+						class="grid-item-wrapper"
+						class:single-item={options.length === 1}
+						class:two-item={options.length === 2}
+						in:fade={{ duration: 200, delay: getItemDelay(i), easing: cubicOut }}
+					>
+						<Option pictographData={option} isPartOfTwoItems={options.length === 2} />
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
+	.options-panel-container {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+	}
+
 	.options-panel {
 		position: absolute;
 		top: 0;
 		left: 0;
 		width: 100%;
 		height: 100%;
-		overflow-y: auto;
-		overflow-x: hidden;
-		display: flex; /* Keep flex for easy horizontal centering */
-		justify-content: center; /* Center grid horizontally */
-		/* --- Vertical Alignment Fix --- */
-		align-items: flex-start; /* Align grid to the top of the padded area */
-		/* Add padding top/bottom for visual spacing */
-		padding-top: 0.5rem; /* Adjust as needed */
-		padding-bottom: 0.5rem; /* Adjust as needed */
-		/* Keep left/right padding if needed, or remove if justify-content is enough */
-		padding-left: 0.5rem; /* Adjust as needed */
-		padding-right: 0.5rem; /* Adjust as needed */
-		/* --- End Fix --- */
-		box-sizing: border-box; /* Ensure padding is included in height */
+		display: flex;
+		justify-content: center;
+		align-items: flex-start;
+		padding: 0.5rem;
+		box-sizing: border-box;
+	}
+
+	.options-panel.exiting {
+		pointer-events: none; /* Prevent interaction with items that are exiting */
 	}
 
 	.options-grid {
 		display: grid;
-		width: 100%; /* Grid takes full width within panel */
-		max-width: 1200px; /* But constrained by max-width */
-		/* --- Grid Item Centering Fix --- */
-		justify-items: center; /* Horizontally center items within their grid cell */
-		/* align-items: center; */ /* Add this if vertical centering *within* the cell is also needed */
-		/* --- End Fix --- */
-		align-content: flex-start; /* Default alignment for rows */
+		width: 100%;
+		max-width: 1200px;
+		justify-items: center;
+		align-content: flex-start;
 		position: relative;
 		grid-gap: var(--grid-gap, 8px);
 		padding: var(--grid-internal-padding, 0.5rem);
-
-		/* Vertical centering using margins (works with flex parent) */
-		margin-top: auto;
-		margin-bottom: auto;
-
-		/* Horizontal centering of the grid block itself */
-		margin-left: auto;
-		margin-right: auto;
+		margin: auto;
 	}
 
 	/* Container aspect-based grid styling */
-	/* Controls alignment of rows when grid has extra vertical space */
 	.wide-aspect-container,
 	.square-aspect-container {
 		align-content: center;
@@ -122,20 +161,18 @@
 		align-content: flex-start;
 	}
 
-
 	/* Grid item wrapper */
 	.grid-item-wrapper {
 		width: var(--option-size, 100px);
 		height: var(--option-size, 100px);
 		aspect-ratio: 1 / 1;
-		display: flex; /* Keep flex for internal centering of Option component if needed */
+		display: flex;
 		justify-content: center;
 		align-items: center;
 		position: relative;
 		z-index: 1;
 		transition: z-index 0s 0.2s;
 		overflow: hidden;
-		/* margin: 0 auto; */ /* REMOVED - Handled by justify-items on grid */
 	}
 	.grid-item-wrapper:hover {
 		z-index: 10;
@@ -147,9 +184,8 @@
 		height: auto;
 		padding: 0.5rem;
 		width: fit-content;
-		margin-top: auto;
-		margin-bottom: auto;
-		justify-items: center; /* Ensure centering even for single */
+		margin: auto;
+		justify-items: center;
 	}
 	.single-item-grid .grid-item-wrapper {
 		transform: scale(1.1);
@@ -159,9 +195,8 @@
 		height: auto;
 		padding: 0.5rem;
 		width: fit-content;
-		margin-top: auto;
-		margin-bottom: auto;
-		justify-items: center; /* Ensure centering even for two */
+		margin: auto;
+		justify-items: center;
 	}
 	.two-item-grid .grid-item-wrapper {
 		flex-grow: 0;
@@ -172,11 +207,11 @@
 	.few-items-grid,
 	.medium-items-grid {
 		align-content: center;
-		justify-content: center; /* Centers grid columns if grid is wider than columns */
+		justify-content: center;
 	}
 	.many-items-grid {
-		justify-content: center; /* Centers grid columns */
-		align-content: flex-start; /* Aligns rows to top */
+		justify-content: center;
+		align-content: flex-start;
 	}
 
 	/* Mobile styling */

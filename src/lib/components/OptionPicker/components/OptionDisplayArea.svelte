@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { ResponsiveLayoutConfig } from '../utils/layoutConfig/layoutUtils';
+	import { fade } from 'svelte/transition';
 
 	import LoadingMessage from './messages/LoadingMessage.svelte';
 	import EmptyMessage from './messages/EmptyMessage.svelte';
@@ -14,6 +15,7 @@
 	export let layout: ResponsiveLayoutConfig;
 	export let isMobileDevice: boolean;
 	export let categoryKeys: string[];
+	export let isPortraitMode: boolean = false;
 
 	$: displayOptions = showAllActive ? filteredOptions : currentOptions;
 	$: hasOptions = displayOptions.length > 0;
@@ -38,20 +40,34 @@
 		}
 		return '';
 	})();
+	
+	// Generate a unique key for each set of options
+	$: panelKey = showAllActive ? 'all' : (selectedTab || 'none');
 </script>
 
 <div class="option-display-area">
 	{#if isLoading}
-		<LoadingMessage />
+		<div class="message-container" transition:fade={{ duration: 200 }}>
+			<LoadingMessage />
+		</div>
 	{:else if hasOptions}
-		<OptionsPanel
-			selectedTab={showAllActive ? 'all' : selectedTab}
-			options={displayOptions}
-			{layout}
-			{isMobileDevice}
-		/>
+		<!-- Here's our stack of option panels - only one will be visible at a time -->
+		<div class="panels-stack">
+			<!-- Use the key attribute so Svelte recreates this when options change -->
+			{#key panelKey}
+				<OptionsPanel
+					selectedTab={panelKey}
+					options={displayOptions}
+					{layout}
+					{isMobileDevice}
+					{isPortraitMode}
+				/>
+			{/key}
+		</div>
 	{:else if emptyMessageType}
-		+ <EmptyMessage type={emptyMessageType as 'empty' | 'initial'} message={emptyMessageText} />
+		<div class="message-container" transition:fade={{ duration: 200 }}>
+			<EmptyMessage type={emptyMessageType as 'empty' | 'initial'} message={emptyMessageText} />
+		</div>
 	{/if}
 </div>
 
@@ -59,14 +75,22 @@
 	.option-display-area {
 		width: 100%;
 		height: 100%;
-		position: relative; 
-		display: flex; 
-		justify-content: center; 
-		align-items: center; 
+		position: relative;
+		overflow: hidden;
 	}
 
-	:global(.option-display-area > *) {
+	.panels-stack {
 		width: 100%;
 		height: 100%;
+		position: relative;
+	}
+	
+	.message-container {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 </style>
