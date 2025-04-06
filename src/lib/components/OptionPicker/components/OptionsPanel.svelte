@@ -1,4 +1,3 @@
-<!-- src/lib/components/OptionPicker/components/OptionsPanel.svelte -->
 <script lang="ts">
 	import { fade, crossfade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
@@ -9,11 +8,37 @@
 	// Props
 	export let selectedTab: string | null = null;
 	export let options: PictographData[] = [];
-	export let layout: ResponsiveLayoutConfig;
+	export let layout: ResponsiveLayoutConfig; // Input layout config
 	export let isMobileDevice: boolean = false;
+	export let isPortraitMode: boolean = false;
 
-	// Destructure layout props for easier access
-	$: ({ gridColumns, optionSize, gridGap, gridClass, aspectClass, scaleFactor } = layout);
+	// --- FIX: Declare variables to hold destructured layout properties ---
+	let gridColumns: string;
+	let optionSize: string;
+	let gridGap: string;
+	let gridClass: string;
+	let aspectClass: string;
+	let scaleFactor: number;
+	// --- End FIX ---
+
+	// Destructure layout props into the DECLARED variables AND log changes
+	$: {
+		// Now this destructuring has variables to assign to:
+		({ gridColumns, optionSize, gridGap, gridClass, aspectClass, scaleFactor } = layout);
+
+		// Keep the log - it will now show the CORRECT values being used
+		console.log('[OptionsPanel Layout Update]', {
+			count: options.length,
+			gridColumns,
+			optionSize,
+			gridGap,
+			gridClass,
+			aspectClass,
+			scaleFactor
+		});
+	}
+
+	// This will now use the correctly assigned variables
 	$: customStyle = `--option-size: ${optionSize}; --grid-gap: ${gridGap};`;
 
 	// Setup transitions
@@ -35,6 +60,7 @@
 	<div
 		class="options-grid {gridClass} {aspectClass}"
 		class:mobile-grid={isMobileDevice}
+		class:tablet-portrait-grid={isMobileDevice && isPortraitMode}
 		style:grid-template-columns={gridColumns}
 		style={customStyle}
 	>
@@ -108,6 +134,8 @@
 		max-width: var(--option-size, auto);
 		max-height: var(--option-size, auto);
 		margin: 0 auto;
+		width: 100%; /* Ensure full width of grid cell */
+		height: 100%; /* Ensure full height of grid cell */
 	}
 
 	.grid-item-wrapper:hover {
@@ -135,11 +163,11 @@
 		height: 100%;
 		gap: var(--grid-gap, 16px);
 	}
-  
+
 	.two-item-grid.horizontal-layout {
 		flex-direction: row;
 	}
-  
+
 	.two-item-grid.vertical-layout {
 		flex-direction: column;
 	}
@@ -154,7 +182,7 @@
 		align-content: center;
 		justify-content: center;
 	}
-  
+
 	.medium-items-grid {
 		align-content: center;
 		justify-content: center;
@@ -174,17 +202,23 @@
 		padding: 0.5rem;
 	}
 
+	/* Tablet portrait specific styling */
+	.tablet-portrait-grid {
+		grid-gap: 0.5rem; /* Tighter gap for tablet portrait */
+		padding: 0.25rem; /* Minimal padding */
+	}
+
 	/* Responsive scaling for different grid configurations */
 	@media (max-width: 480px) {
 		.options-panel {
 			padding: 0.3rem;
 		}
-      
+
 		.grid-item-wrapper {
 			max-width: 100%;
 		}
 	}
-  
+
 	@media (min-width: 1280px) {
 		.many-items-grid {
 			max-width: 90%;

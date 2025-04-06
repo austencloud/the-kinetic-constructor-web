@@ -14,7 +14,7 @@
 	import ShowAllButton from './components/buttons/ShowAllButton.svelte';
 	import SortOptions from './components/FilterControls/SortOptions.svelte';
 
-	import { detectDeviceState } from './utils/deviceUtils';
+	import { detectDeviceState, type DeviceType } from './utils/deviceUtils';
 	import { getResponsiveLayout } from './utils/layoutConfig/layoutUtils';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { debounce } from '$lib/utils/debounceUtils';
@@ -29,8 +29,11 @@
 	let optionsContainerRef: HTMLElement;
 	let headerHeight: number = 0;
 	let headerRef: HTMLElement;
-	let { isMobileDevice, isPortraitMode } = detectDeviceState();
+	let { isMobileDevice, isPortraitMode, deviceType } = detectDeviceState();
 	let resizeObserver: ResizeObserver | null = null;
+
+	// Device type cycle order
+	const DEVICE_TYPES = ['smallMobile', 'mobile', 'tablet', 'desktop', 'largeDesktop'];
 
 	// Store references for easier access
 	const { loadOptions, toggleShowAll } = optionPickerStore;
@@ -83,11 +86,17 @@
 		const state = detectDeviceState();
 		isMobileDevice = state.isMobileDevice;
 		isPortraitMode = state.isPortraitMode;
+		deviceType = state.deviceType;
 	}
 
 	// Toggle device state (for testing)
 	function toggleDeviceState() {
-		isMobileDevice = !isMobileDevice;
+		const currentIndex = DEVICE_TYPES.indexOf(deviceType);
+		const nextIndex = (currentIndex + 1) % DEVICE_TYPES.length;
+		deviceType = DEVICE_TYPES[nextIndex] as DeviceType;
+
+		// Adjust mobile state based on device type
+		isMobileDevice = deviceType === 'smallMobile' || deviceType === 'mobile';
 	}
 
 	// Toggle orientation state (for testing)
@@ -95,10 +104,12 @@
 		isPortraitMode = !isPortraitMode;
 	}
 
-	// Debounced handler for resize events
 	const handleResize = debounce(() => {
+		const windowWidth = window.innerWidth; // Get window width
 		updateDeviceState();
 		updateContainerDimensions();
+		console.log(`[Resize Fallback] Window Width: ${windowWidth}px`); // Log window width
+		console.log(`[Resize Fallback] Container W: ${containerWidth}px, H: ${containerHeight}px`); // Log container size
 	}, 100);
 
 	// Update container dimensions
@@ -106,6 +117,8 @@
 		if (optionsContainerRef) {
 			containerWidth = optionsContainerRef.clientWidth;
 			containerHeight = optionsContainerRef.clientHeight;
+			// Add log here if this function is called outside the observer/resize handler
+			// console.log(`[Update Dimensions] Container W: ${containerWidth}px, H: ${containerHeight}px`);
 		}
 
 		if (headerRef) {
@@ -123,10 +136,15 @@
 				const entry = entries[0];
 				if (entry) {
 					const { width, height } = entry.contentRect;
+					const windowWidth = window.innerWidth; // Get window width here too
 					containerWidth = width;
 					containerHeight = height;
+					console.log(`[Resize Observer] Window Width: ${windowWidth}px`); // Log window width
+					console.log(
+						`[Resize Observer] Container W: ${containerWidth}px, H: ${containerHeight}px`
+					); // Log container size
 				}
-			}, 100)
+			}, 100) // Adjust debounce rate if needed
 		);
 
 		if (optionsContainerRef) {
@@ -234,20 +252,42 @@
 </script>
 
 <div class="option-picker" class:mobile={isMobileDevice} class:portrait={isPortraitMode}>
-	{#if debugMode}
+	<!-- {#if debugMode}
 		<div class="debug-controls">
 			<button class="debug-button" on:click={toggleDeviceState}>
-				Toggle Device: {isMobileDevice ? 'Mobile 📱' : 'Desktop 💻'}
+				Toggle Device:
+				{#if deviceType === 'smallMobile'}
+					Small Mobile 📱🔬
+				{:else if deviceType === 'mobile'}
+					Mobile 📱
+				{:else if deviceType === 'tablet'}
+					Tablet 📲
+				{:else if deviceType === 'desktop'}
+					Desktop 💻
+				{:else if deviceType === 'largeDesktop'}
+					Large Desktop 🖥️
+				{/if}
 			</button>
 			<button class="debug-button" on:click={toggleOrientationState}>
 				Toggle Orientation: {isPortraitMode ? 'Portrait 📸' : 'Landscape 🌄'}
 			</button>
-			<div style="color: black;"></div>
-			Current Device: {isMobileDevice ? 'Mobile 📱' : 'Desktop 💻'}, Orientation: {isPortraitMode
-				? 'Portrait 📸'
-				: 'Landscape 🌄'}
+			<div>
+				Current Device:
+				{#if deviceType === 'smallMobile'}
+					Small Mobile 📱🔬
+				{:else if deviceType === 'mobile'}
+					Mobile 📱
+				{:else if deviceType === 'tablet'}
+					Tablet 📲
+				{:else if deviceType === 'desktop'}
+					Desktop 💻
+				{:else if deviceType === 'largeDesktop'}
+					Large Desktop 🖥️
+				{/if}
+				, Orientation: {isPortraitMode ? 'Portrait 📸' : 'Landscape 🌄'}
+			</div>
 		</div>
-	{/if}
+	{/if} -->
 
 	<div class="header" class:mobile={isMobileDevice} bind:this={headerRef}>
 		<div class="header-controls" class:centered-mode={showAllActive}>
@@ -328,6 +368,7 @@
 		background-color: #f0f7ff;
 		border-radius: 4px;
 		border: 1px dashed #99ccff;
+		color: black;
 	}
 
 	.debug-button {
@@ -365,7 +406,7 @@
 		display: flex;
 		align-items: center;
 		width: 100%;
-		flex-wrap: nowrap;
+		flex-wrap: wrap; /* TEMPORARY TEST */
 	}
 
 	.header-controls.centered-mode {
@@ -401,12 +442,10 @@
 	.options-outer-container {
 		flex: 1;
 		display: flex;
-		overflow: hidden;
 		position: relative;
 		border: 1px solid #e5e7eb;
 		border-radius: 8px;
 		background-color: transparent;
-		margin-top: 0.5rem;
 	}
 
 	/* Responsive layout adjustments */
@@ -422,11 +461,10 @@
 			width: 100%;
 			justify-content: center;
 			flex-basis: auto !important;
-			flex-grow: 0 !important;
-			flex-shrink: 0 !important;
-			margin: 0.25rem 0 !important; /* Add vertical margin instead of horizontal */
+			flex-grow: 1;
+			flex-shrink: 0;
+			margin: 0.25rem 0;
 		}
-
 		/* Override margin for hidden state in mobile */
 		:global(.header-controls .tabs-container[style*='opacity: 0;']),
 		:global(.header-controls .sort-container[style*='opacity: 0;']) {
@@ -465,32 +503,7 @@
 			padding: clamp(10px, 1.8vw, 18px);
 		}
 	}
-	.debug-controls {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-		margin-bottom: 10px;
-		padding: 8px;
-		background-color: #f0f7ff;
-		border-radius: 4px;
-		border: 1px dashed #99ccff;
-		color: black; /* Added to make the text black */
-	}
 
-	.debug-button {
-		background-color: #2563eb;
-		color: white;
-		border: none;
-		border-radius: 4px;
-		padding: 6px 12px;
-		font-size: 12px;
-		cursor: pointer;
-		transition: background-color 0.2s;
-	}
-
-	.debug-button:hover {
-		background-color: #1d4ed8;
-	}
 	/* Large desktop layout enhancements */
 	@media (min-width: 1400px) {
 		.option-picker {
