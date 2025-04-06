@@ -4,7 +4,7 @@ import { tabs } from './appState';
 import { useSelector as useXStateSelector } from '@xstate/svelte';
 
 export const appService = createActor(appStateMachine, {
-	inspect: import.meta.env.DEV ? (event) => console.log(event) : undefined
+	inspect: import.meta.env.DEV ? undefined : undefined
 }).start();
 
 export const useSelector = useXStateSelector;
@@ -51,9 +51,6 @@ export const selectActiveTabData = () =>
 			const activeTab = tabs[currentTabIndex];
 			return activeTab;
 		} else {
-			console.error(
-				`[Selector] selectActiveTabData: Invalid currentTabIndex = ${currentTabIndex}. Returning null.`
-			);
 			return null;
 		}
 	});

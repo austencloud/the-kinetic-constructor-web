@@ -1,23 +1,21 @@
+<!-- src/lib/components/OptionPicker/OptionPicker.svelte -->
 <script lang="ts">
 	import { onMount, onDestroy, tick } from 'svelte';
 
 	// Store Imports
 	import { beatsStore } from '$lib/stores/sequence/beatsStore';
-	import { optionPickerStore, filteredOptionsStore, groupedOptionsStore } from './stores';
 
 	// Component Imports
-	import DebugControls from './components/debug/DebugControls.svelte';
 	import OptionPickerHeader from './components/OptionPickerHeader.svelte';
 	import OptionDisplayArea from './components/OptionDisplayArea.svelte';
 
 	// Utility Imports
-	import { detectDeviceState, type DeviceType } from './utils/deviceUtils';
-	import {
-		getResponsiveLayout,
-		type ResponsiveLayoutConfig
-	} from './utils/layoutConfig/layoutUtils';
 	import { debounce } from '$lib/utils/debounceUtils';
+	import { getResponsiveLayout } from './utils/layoutUtils';
+	import type { DeviceType } from './config';
 	import type { PictographData } from '$lib/types/PictographData';
+	import { filteredOptionsStore, groupedOptionsStore, optionPickerStore } from './store';
+	import SimpleDebug from './components/SimpleDebug.svelte';
 
 	// --- Props ---
 	export let debugMode: boolean = true;
@@ -26,17 +24,16 @@
 	let selectedTab: string | null = null;
 	let containerHeight: number = 0;
 	let containerWidth: number = 0;
-	let headerHeight: number = 0;
-	let { isMobileDevice, isPortraitMode, deviceType } = detectDeviceState();
+	let isMobileDevice = false;
+	let isPortraitMode = false;
+	let deviceType: DeviceType = 'desktop';
 
 	// --- Refs ---
-	let optionsContainerRef: HTMLElement;
-	// This ref will now be bound to the *exported* rootElement from OptionPickerHeader
+	let containerRef: HTMLElement;
 	let headerRef: HTMLDivElement | null = null;
-	let resizeObserver: ResizeObserver | null = null;
 
 	// --- Store Actions ---
-	const { loadOptions, toggleShowAll: storeToggleShowAll } = optionPickerStore;
+	const { loadOptions, toggleShowAll } = optionPickerStore;
 
 	// --- Reactive State from Stores ---
 	let showAllActive: boolean;
@@ -70,13 +67,20 @@
 
 	// --- Device/Display Management ---
 	function updateDeviceState() {
-		const state = detectDeviceState();
-		isMobileDevice = state.isMobileDevice;
-		isPortraitMode = state.isPortraitMode;
-		deviceType = state.deviceType;
+		if (typeof window === 'undefined') return;
+
+		isMobileDevice = window.innerWidth <= 480;
+		isPortraitMode = window.innerHeight > window.innerWidth;
+
+		// Simple device type detection
+		if (window.innerWidth < 375) deviceType = 'smallMobile';
+		else if (window.innerWidth < 480) deviceType = 'mobile';
+		else if (window.innerWidth < 768) deviceType = 'tablet';
+		else if (window.innerWidth < 1280) deviceType = 'desktop';
+		else deviceType = 'largeDesktop';
 	}
 
-	// --- Debug Toggles (Passed to DebugControls) ---
+	// --- Debug Toggles ---
 	const DEVICE_TYPES: DeviceType[] = ['smallMobile', 'mobile', 'tablet', 'desktop', 'largeDesktop'];
 	function toggleDeviceState() {
 		const currentIndex = DEVICE_TYPES.indexOf(deviceType);
@@ -91,98 +95,65 @@
 		tick().then(updateContainerDimensions);
 	}
 
-	// --- Resize Handling ---
-	const handleResize = debounce(() => {
-		updateDeviceState();
-		updateContainerDimensions();
-	}, 100);
-
+	// --- Container Dimensions ---
 	function updateContainerDimensions() {
-		if (optionsContainerRef) {
-			containerWidth = optionsContainerRef.clientWidth;
-			containerHeight = optionsContainerRef.clientHeight;
+		if (containerRef) {
+			containerWidth = containerRef.clientWidth;
+			containerHeight = containerRef.clientHeight;
 		}
-		// Calculate headerHeight using the bound element reference
-		if (headerRef) {
-			headerHeight = headerRef.clientHeight;
-		}
-		// console.log('Dimensions Updated:', { containerWidth, containerHeight, headerHeight });
 	}
 
+	// --- ResizeObserver Setup ---
 	function setupResizeObserver() {
-		if (typeof ResizeObserver === 'undefined' || !optionsContainerRef) return false;
+		if (typeof ResizeObserver === 'undefined' || !containerRef) return false;
 
-		resizeObserver = new ResizeObserver(
-			debounce((entries: ResizeObserverEntry[]) => {
-				// Update dimensions based on observed changes
-				// We might need to observe both optionsContainerRef and headerRef if header height changes dynamically
+		const resizeObserver = new ResizeObserver(
+			debounce(() => {
 				updateContainerDimensions();
-				/* // More detailed update if needed:
-				for (const entry of entries) {
-					if (entry.target === optionsContainerRef) {
-						containerWidth = entry.contentRect.width;
-						containerHeight = entry.contentRect.height;
-					} else if (entry.target === headerRef) {
-						headerHeight = entry.contentRect.height;
-					}
-				}
-				*/
 			}, 20)
 		);
 
-		resizeObserver.observe(optionsContainerRef);
-		// Also observe the header element if its height can change and affect layout
-		if (headerRef) {
-			resizeObserver.observe(headerRef);
-		}
-		return true;
-	}
+		resizeObserver.observe(containerRef);
+		if (headerRef) resizeObserver.observe(headerRef);
 
-	function setupFallbackResizeHandler() {
-		window.addEventListener('resize', handleResize);
-		tick().then(updateContainerDimensions); // Initial measure
-		return () => window.removeEventListener('resize', handleResize);
+		// Clean up on destroy
+		onDestroy(() => {
+			resizeObserver.disconnect();
+		});
+
+		return true;
 	}
 
 	// --- Lifecycle ---
 	onMount(() => {
+		// Set up window resize handler
+		const handleResize = debounce(() => {
+			updateDeviceState();
+			updateContainerDimensions();
+		}, 100);
+
+		window.addEventListener('resize', handleResize);
+		onDestroy(() => window.removeEventListener('resize', handleResize));
+
+		// Initial setup
 		updateDeviceState();
-		window.addEventListener('resize', updateDeviceState);
-
 		tick().then(() => {
-			updateContainerDimensions(); // Initial dimension calculation
-
-			const hasObserver = setupResizeObserver();
-			let cleanupFallback: (() => void) | null = null;
-			if (!hasObserver) {
-				cleanupFallback = setupFallbackResizeHandler();
-			}
-
-			// Ensure fallback cleanup happens on destroy if used
-			if (cleanupFallback) {
-				onDestroy(cleanupFallback);
-			}
+			updateContainerDimensions();
+			setupResizeObserver();
 		});
 	});
 
 	onDestroy(() => {
-		resizeObserver?.disconnect();
-		window.removeEventListener('resize', updateDeviceState);
 		unsubscribeBeats();
 		unsubscribeStore();
-		// Fallback cleanup is handled via onDestroy(cleanupFallback) inside onMount
 	});
 
-	// --- Event Handlers from Child Components ---
-	function handleToggleShowAll() {
-		storeToggleShowAll();
-	}
-
+	// --- Event Handlers ---
 	function handleTabSelect(event: CustomEvent<string>) {
 		selectedTab = event.detail;
 	}
 
-	// --- Ensure selectedTab logic remains ---
+	// --- Auto Tab Selection Logic ---
 	$: {
 		if (!isLoading && !showAllActive && categoryKeys.length > 0) {
 			if (!selectedTab || !categoryKeys.includes(selectedTab)) {
@@ -196,7 +167,7 @@
 
 <div class="option-picker" class:mobile={isMobileDevice} class:portrait={isPortraitMode}>
 	{#if debugMode}
-		<DebugControls
+		<SimpleDebug
 			{deviceType}
 			{isPortraitMode}
 			{layout}
@@ -217,11 +188,11 @@
 		{isMobileDevice}
 		{categoryKeys}
 		{selectedTab}
-		on:toggleShowAll={handleToggleShowAll}
+		on:toggleShowAll={() => toggleShowAll()}
 		on:tabSelect={handleTabSelect}
 	/>
 
-	<div class="options-outer-container" bind:this={optionsContainerRef}>
+	<div class="options-container" bind:this={containerRef}>
 		<OptionDisplayArea
 			{isLoading}
 			{showAllActive}
@@ -237,7 +208,6 @@
 </div>
 
 <style>
-	/* Styles remain the same */
 	.option-picker {
 		display: flex;
 		flex-direction: column;
@@ -254,7 +224,7 @@
 		padding: clamp(8px, 1.5vw, 15px);
 	}
 
-	.options-outer-container {
+	.options-container {
 		flex: 1;
 		display: flex;
 		position: relative;
@@ -262,8 +232,9 @@
 		border-radius: 8px;
 		background-color: transparent;
 		min-height: 0;
-		overflow: hidden; /* Changed from auto to hidden */
+		overflow: hidden;
 	}
+
 	@media (min-width: 1400px) {
 		.option-picker {
 			max-width: 1400px;

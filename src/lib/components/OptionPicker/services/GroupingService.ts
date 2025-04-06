@@ -1,6 +1,6 @@
 // src/lib/components/OptionPicker/services/GroupingService.ts
 import type { PictographData } from '$lib/types/PictographData';
-import type { SortMethod } from '../stores/optionPickerStore';
+import type { SortMethod } from '../store';
 import type { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
 import { LetterUtils } from '$lib/utils/LetterUtils';

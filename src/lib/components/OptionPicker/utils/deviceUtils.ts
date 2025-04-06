@@ -1,7 +1,6 @@
 // src/lib/components/OptionPicker/utils/deviceUtils.ts
 import { BREAKPOINTS } from './layoutConfig/breakpoints';
-
-export type DeviceType = 'smallMobile' | 'mobile' | 'tablet' | 'desktop' | 'largeDesktop';
+import type { DeviceType } from './layoutConfig/types';
 
 export function getDeviceType(width: number): DeviceType {
 	if (width < BREAKPOINTS.smallMobile) return 'smallMobile';

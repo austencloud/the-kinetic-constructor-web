@@ -59,7 +59,6 @@ export const initializePictographData = (csvData: {
 		const allPictographData = groupPictographsByLetter(combinedData);
 
 		pictographDataStore.set(allPictographData);
-		console.log(`Pictograph store initialized with ${allPictographData.length} items.`);
 		return allPictographData; // Return the data if needed
 	} catch (error) {
 		console.error('Error initializing pictograph store:', error);

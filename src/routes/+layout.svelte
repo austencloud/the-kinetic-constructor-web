@@ -16,15 +16,12 @@
 	onMount(() => {
 		if (initialized || !browser) return; // Ensure runs only once in browser
 
-		console.log('+layout.svelte onMount: Component mounted.');
 
 		// Check if the load function returned data successfully
 		if (data?.csvData && !data.error) {
-			console.log('Layout onMount: Valid CSV data found, initializing pictograph store...');
 			try {
 				initializePictographData(data.csvData);
 				initialized = true; // Mark as initialized
-				console.log('Layout onMount: Pictograph store initialization triggered.');
 			} catch (initError) {
 				console.error('Layout onMount: Error calling initializePictographData:', initError);
 				// Optionally display an error message to the user here

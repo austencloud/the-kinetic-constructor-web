@@ -1,3 +1,4 @@
+<!-- src/lib/components/OptionPicker/components/buttons/ShowAllButton.svelte -->
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
@@ -30,14 +31,11 @@
 	.show-all-button {
 		display: flex;
 		align-items: center;
-		/* Fluid gap */
 		gap: clamp(4px, 1vw, 6px);
 		background-color: #ffffff;
 		border: 1px solid #e2e8f0;
 		border-radius: 6px;
-		/* Fluid padding */
 		padding: clamp(5px, 1.2vw, 8px) clamp(8px, 1.8vw, 12px);
-		/* Fluid font size */
 		font-size: clamp(0.75rem, 2vw, 0.9rem);
 		font-weight: 500;
 		color: #374151;
@@ -53,7 +51,6 @@
 	}
 
 	.show-all-button .icon {
-		/* Adjust icon size relative to font size */
 		font-size: 1.2em;
 		line-height: 1;
 	}
@@ -82,7 +79,4 @@
 		outline: 2px solid #4299e1;
 		outline-offset: 1px;
 	}
-
-	/* Mobile adjustments might be less necessary with clamp, but can fine-tune */
-	/* @media (max-width: 480px) { ... } */
 </style>

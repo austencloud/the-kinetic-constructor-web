@@ -53,9 +53,7 @@ export const initializeApplicationActorLogic = fromCallback<
 			const errorMessage = error instanceof Error ? error.message : 'Unknown initialization error';
 			sendBack({ type: 'INITIALIZATION_FAILURE', error: errorMessage });
 		});
-	return () => {
-		console.log('Initialization actor cleanup.');
-	};
+	return () => {};
 });
 
 // --- State Machine Definition ---
@@ -175,26 +173,13 @@ export const appStateMachine = createMachine(
 	// Implementation options
 	{
 		actions: {
-			// Add logging inside the action that updates the context
 			startTabTransition: assign(({ context, event }) => {
 				if (event.type === 'CHANGE_TAB') {
-					// --- Add Log ---
-					// Log the incoming tab index and the current index before update
-					console.log(
-						`[StateMachine] startTabTransition: Received event.tab = ${event.tab}, current context.currentTab = ${context.currentTab}`
-					);
-					// --- End Log ---
-					const newState = {
+					return {
 						previousTab: context.currentTab,
-						currentTab: event.tab // This is the new index
+						currentTab: event.tab
 					};
-					// --- Add Log ---
-					// Log the specific context changes being returned by assign
-					console.log('[StateMachine] startTabTransition: New context will be:', newState);
-					// --- End Log ---
-					return newState; // Return the changes for XState to merge into context
 				}
-				// Should not happen if guard works, but good practice
 				return {};
 			})
 		},

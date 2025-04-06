@@ -2,7 +2,7 @@
 import type { PictographData } from '$lib/types/PictographData';
 import { NO_ROT } from '$lib/types/Constants';
 import type { PropRotDir } from '$lib/types/Types';
-import type { ReversalFilter } from '../stores/optionPickerStore';
+import type { ReversalFilter } from '../store';
 // src/lib/components/OptionPicker/services/ReversalService.ts
 import { memoizeLRU } from '$lib/utils/memoizationUtils';
 

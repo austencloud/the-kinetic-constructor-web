@@ -1,7 +1,6 @@
-
 // src/lib/components/OptionPicker/services/SortingService.ts
 import type { PictographData } from '$lib/types/PictographData';
-import type { SortMethod } from '../stores/optionPickerStore';
+import type { SortMethod } from '../store';
 import { OptionDataService } from './OptionDataService';
 import { ReversalService } from './ReversalService';
 

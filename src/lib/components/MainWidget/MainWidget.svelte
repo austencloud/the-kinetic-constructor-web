@@ -72,7 +72,6 @@
 		actions.retryInitialization();
 	}
 	function handleBackgroundReady(): void {
-		console.log('Background Canvas Ready - Sending event to state machine.');
 		actions.backgroundReady();
 	}
 	function handlePerformanceReport(event: CustomEvent<PerformanceReportEvent>): void {
