@@ -58,7 +58,7 @@ export class LeadStateDeterminer {
 			return trailing ? this.blueMotionData : this.redMotionData;
 		}
 
-		if (redHandpath === 'cw_handpath') {
+		if (redHandpath === 'cw_shift') {
 			return this.isClockwiseAhead(blueStart, redStart)
 				? trailing
 					? this.redMotionData

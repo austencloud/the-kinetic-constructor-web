@@ -100,9 +100,10 @@
         
         // Complete the generation
         generatorStore.completeGeneration();
-      } catch (error) {
+      } catch (error: unknown) {
         // Handle error
-        generatorStore.setError(error.message || 'Failed to generate sequence');
+        const errorMessage = error instanceof Error ? error.message : 'Failed to generate sequence';
+        generatorStore.setError(errorMessage);
         console.error('Generate sequence error:', error);
       }
     }

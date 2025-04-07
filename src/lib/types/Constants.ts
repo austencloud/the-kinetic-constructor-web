@@ -36,10 +36,11 @@ export const NO_ROT = 'no_rot';
 export const LEADING = 'leading';
 export const TRAILING = 'trailing';
 
-export const CW_HANDPATH = 'cw_handpath';
-export const CCW_HANDPATH = 'ccw_handpath';
+export const CW_SHIFT = 'cw_shift';
+export const CCW_SHIFT = 'ccw_shift';
 
 // Vtg Directions
+
 export const VTG_SAME = 'same';
 export const VTG_OPP = 'opp';
 
@@ -211,13 +212,13 @@ export const INCREMENT_TURNS_ICON = 'add_turns.png';
 export const SWAP_COLORS_ICON = 'swap_colors.png';
 
 export const ICON_PATHS = {
-    swap_icon: ICON_DIR + SWAP_ICON,
-    swap_start_end: ICON_DIR + MIRROR_ICON,
-    subtract_turns: ICON_DIR + DECREMENT_TURNS_ICON,
-    add_turns: ICON_DIR + INCREMENT_TURNS_ICON,
-    swap_colors: ICON_DIR + SWAP_COLORS_ICON,
-    clockwise: CLOCKWISE_ICON,
-    counter_clockwise: COUNTER_CLOCKWISE_ICON
+	swap_icon: ICON_DIR + SWAP_ICON,
+	swap_start_end: ICON_DIR + MIRROR_ICON,
+	subtract_turns: ICON_DIR + DECREMENT_TURNS_ICON,
+	add_turns: ICON_DIR + INCREMENT_TURNS_ICON,
+	swap_colors: ICON_DIR + SWAP_COLORS_ICON,
+	clockwise: CLOCKWISE_ICON,
+	counter_clockwise: COUNTER_CLOCKWISE_ICON
 };
 
 export const DISTANCE = 40;

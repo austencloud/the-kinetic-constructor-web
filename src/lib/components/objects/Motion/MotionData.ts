@@ -45,5 +45,5 @@ export const BlankMotionData: Partial<MotionData> = {
 
 export interface ShiftMotionInterface extends MotionData {
 	motionType: 'float';
-	handRotDir: 'cw_handpath' | 'ccw_handpath';
+	handRotDir: 'cw_shift' | 'ccw_shift';
 }

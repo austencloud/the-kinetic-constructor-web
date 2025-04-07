@@ -1,14 +1,10 @@
 <!-- src/lib/components/GenerateTab/circular/CAPPicker/CAPPicker.svelte -->
-<script lang="ts">
+<script lang="ts" generics="T extends { id: string; label: string; description: string }">
     import { createEventDispatcher } from 'svelte';
     import CAPButton from './CAPButton.svelte';
     
     // Props
-    export let capTypes: Array<{
-      id: string;
-      label: string;
-      description: string;
-    }>;
+    export let capTypes: T[];
     export let selectedCapId: string;
     
     // Group CAP types for better organization
@@ -19,7 +15,9 @@
     };
     
     // Create event dispatcher
-    const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher<{
+      select: string
+    }>();
     
     // Handle CAP selection
     function handleSelect(capId: string) {
@@ -31,7 +29,7 @@
     <div class="cap-group">
       <h4>Mirrored Types</h4>
       <div class="cap-buttons">
-        {#each groupedCapTypes.mirror as capType}
+        {#each groupedCapTypes.mirror as capType (capType.id)}
           <CAPButton
             capType={capType}
             selected={selectedCapId === capType.id}
@@ -44,7 +42,7 @@
     <div class="cap-group">
       <h4>Rotated Types</h4>
       <div class="cap-buttons">
-        {#each groupedCapTypes.rotate as capType}
+        {#each groupedCapTypes.rotate as capType (capType.id)}
           <CAPButton
             capType={capType}
             selected={selectedCapId === capType.id}
@@ -58,7 +56,7 @@
       <div class="cap-group">
         <h4>Other Types</h4>
         <div class="cap-buttons">
-          {#each groupedCapTypes.other as capType}
+          {#each groupedCapTypes.other as capType (capType.id)}
             <CAPButton
               capType={capType}
               selected={selectedCapId === capType.id}

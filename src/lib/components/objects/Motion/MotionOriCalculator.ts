@@ -3,7 +3,6 @@ import type { HandRotDir, Orientation, ShiftHandRotDir } from '$lib/types/Types'
 import type { Motion } from './Motion';
 import type { ShiftMotionInterface } from './MotionData';
 
-
 export class MotionOriCalculator {
 	motion: any;
 
@@ -75,26 +74,26 @@ export class MotionOriCalculator {
 			motionData.startLoc,
 			motionData.endLoc
 		);
-		if (handrotDir && !['cw_handpath', 'ccw_handpath'].includes(handrotDir)) {
+		if (handrotDir && !['cw_shift', 'ccw_shift'].includes(handrotDir)) {
 			throw new Error('Invalid handpath direction while calculating float orientation');
 		}
 
 		const orientationMap: Record<Orientation, Record<ShiftHandRotDir, Orientation>> = {
 			in: {
-				cw_handpath: CLOCK,
-				ccw_handpath: COUNTER
+				CW_SHIFT: CLOCK,
+				ccw_shift: COUNTER
 			},
 			out: {
-				cw_handpath: COUNTER,
-				ccw_handpath: CLOCK
+				CW_SHIFT: COUNTER,
+				ccw_shift: CLOCK
 			},
 			clock: {
-				cw_handpath: OUT,
-				ccw_handpath: IN
+				CW_SHIFT: OUT,
+				ccw_shift: IN
 			},
 			counter: {
-				cw_handpath: IN,
-				ccw_handpath: OUT
+				CW_SHIFT: IN,
+				ccw_shift: OUT
 			}
 		};
 

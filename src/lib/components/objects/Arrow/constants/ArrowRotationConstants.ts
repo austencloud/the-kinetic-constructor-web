@@ -15,8 +15,8 @@ import {
 	OUT,
 	CLOCK,
 	COUNTER,
-	CW_HANDPATH,
-	CCW_HANDPATH,
+	CW_SHIFT,
+	CCW_SHIFT,
 	RED,
 	BLUE
 } from '$lib/types/Constants';
@@ -116,7 +116,7 @@ export const ANTI_ALT_MAP: PropRotDirMap = {
 
 // Float motion rotation angles
 export const FLOAT_DIRECTION_MAP: { [key: string]: RotationDirectionMap } = {
-	[CW_HANDPATH]: {
+	[CW_SHIFT]: {
 		[NORTH]: 315,
 		[EAST]: 45,
 		[SOUTH]: 135,
@@ -126,7 +126,7 @@ export const FLOAT_DIRECTION_MAP: { [key: string]: RotationDirectionMap } = {
 		[SOUTHWEST]: 180,
 		[NORTHWEST]: 270
 	},
-	[CCW_HANDPATH]: {
+	[CCW_SHIFT]: {
 		[NORTH]: 135,
 		[EAST]: 225,
 		[SOUTH]: 315,
@@ -389,7 +389,7 @@ export const LAMBDA_ZERO_TURNS_ANGLE_MAP: { [key: string]: number } = {
 // Diamond Dash angle map
 // Translated from Python's DIAMOND_DASH_LOCATION_MAP
 export const DIAMOND_DASH_ANGLE_MAP: { [key: string]: number } = {
-	[`${NORTH}_${NORTHWEST}`]: 90, 
+	[`${NORTH}_${NORTHWEST}`]: 90,
 	[`${NORTH}_${NORTHEAST}`]: 270,
 	[`${NORTH}_${SOUTHEAST}`]: 270,
 	[`${NORTH}_${SOUTHWEST}`]: 90,

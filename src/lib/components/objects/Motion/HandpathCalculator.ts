@@ -1,4 +1,4 @@
-import type { HandRotDir } from "$lib/types/Types";
+import type { HandRotDir } from '$lib/types/Types';
 
 export class HandpathCalculator {
 	private handRotDirMap: Record<string, string>;
@@ -50,12 +50,10 @@ export class HandpathCalculator {
 		];
 
 		this.handRotDirMap = {
-			...Object.fromEntries(clockwisePairs.map((pair) => [pair.join(','), 'cw_handpath'])),
-			...Object.fromEntries(counterClockwisePairs.map((pair) => [pair.join(','), 'ccw_handpath'])),
-			...Object.fromEntries(diagonalClockwise.map((pair) => [pair.join(','), 'cw_handpath'])),
-			...Object.fromEntries(
-				diagonalCounterClockwise.map((pair) => [pair.join(','), 'ccw_handpath'])
-			),
+			...Object.fromEntries(clockwisePairs.map((pair) => [pair.join(','), 'cw_shift'])),
+			...Object.fromEntries(counterClockwisePairs.map((pair) => [pair.join(','), 'ccw_shift'])),
+			...Object.fromEntries(diagonalClockwise.map((pair) => [pair.join(','), 'cw_shift'])),
+			...Object.fromEntries(diagonalCounterClockwise.map((pair) => [pair.join(','), 'ccw_shift'])),
 			...Object.fromEntries(dashPairs.map((pair) => [pair.join(','), 'dash'])),
 			...Object.fromEntries(staticPairs.map((pair) => [pair.join(','), 'static']))
 		};

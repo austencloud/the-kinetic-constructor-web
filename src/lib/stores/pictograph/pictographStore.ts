@@ -41,7 +41,6 @@ function toCamelCase(str: string): string {
 
 const pictographDataStore = writable<PictographData[]>([]);
 
-
 export const initializePictographData = (csvData: {
 	diamondData: string;
 	boxData: string;
@@ -148,7 +147,7 @@ function groupPictographsByLetter(pictographs: Record<string, any>[]): Pictograp
 
 const defaultMotionData: MotionData = {
 	id: '',
-	handRotDir: 'cw_handpath',
+	handRotDir: 'cw_shift',
 	color: 'red',
 	leadState: 'leading',
 	motionType: 'static',

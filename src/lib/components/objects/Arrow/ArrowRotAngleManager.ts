@@ -11,7 +11,7 @@ import {
 	CLOCKWISE,
 	COUNTER_CLOCKWISE,
 	NO_ROT,
-	CW_HANDPATH,
+	CW_SHIFT,
 	DIAMOND,
 	BOX
 } from '$lib/types/Constants';
@@ -109,7 +109,7 @@ function calculateAntiRotationAngle(
 }
 
 function calculateFloatRotationAngle(loc: Loc, handRotDir?: HandRotDir): number {
-	const activeRotDirection = handRotDir || CW_HANDPATH;
+	const activeRotDirection = handRotDir || CW_SHIFT;
 	return FLOAT_DIRECTION_MAP[activeRotDirection]?.[loc] ?? 0;
 }
 
