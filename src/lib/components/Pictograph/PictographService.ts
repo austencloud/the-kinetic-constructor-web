@@ -12,10 +12,10 @@ import { RED, BLUE } from '$lib/types/Constants';
 import { PictographChecker } from './services/PictographChecker';
 import { pictographStore } from '$lib/stores/pictograph/pictographStore';
 import ArrowLocationManager from '$lib/components/objects/Arrow/ArrowLocationManager';
-import { BetaPropPositioner } from '$lib/components/PlacementManagers/PropPlacementManager/BetaPropPositioner';
 import ArrowRotAngleManager from '$lib/components/objects/Arrow/ArrowRotAngleManager';
-import { ArrowPlacementManager } from '$lib/components/PlacementManagers/ArrowPlacementManager';
 import { LetterConditions } from './constants/LetterConditions';
+import { ArrowPlacementManager } from '../objects/Arrow/ArrowPlacementManager';
+import { BetaPropPositioner } from '../objects/Prop/PropPlacementManager/BetaPropPositioner';
 
 export class PictographService {
 	private data: PictographData;
@@ -151,7 +151,7 @@ export class PictographService {
 				redArrow.loc = arrowLoc;
 				// Pass this service to the rotation manager
 				const rotAngleManager = new ArrowRotAngleManager(this.data, this);
-				redArrow.rotAngle = rotAngleManager.updateRotation(this.data.redMotion, arrowLoc);
+				redArrow.rotAngle = rotAngleManager.calculateRotationAngle(this.data.redMotion, arrowLoc);
 			}
 		}
 
@@ -163,7 +163,7 @@ export class PictographService {
 				blueArrow.loc = arrowLoc;
 				// Pass this service to the rotation manager
 				const rotAngleManager = new ArrowRotAngleManager(this.data, this);
-				blueArrow.rotAngle = rotAngleManager.updateRotation(this.data.blueMotion, arrowLoc);
+				blueArrow.rotAngle = rotAngleManager.calculateRotationAngle(this.data.blueMotion, arrowLoc);
 			}
 		}
 

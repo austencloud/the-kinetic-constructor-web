@@ -1,3 +1,4 @@
+<!-- src/lib/components/objects/Arrow/Arrow.svelte -->
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
@@ -6,12 +7,16 @@
 	import { ArrowSvgLoader } from './services/ArrowSvgLoader';
 	import SvgManager from '../../SvgManager/SvgManager';
 	import type { Motion } from '../Motion/Motion';
-	import { calculateArrowRotationAngle } from './ArrowRotAngleManager';
+	import ArrowRotAngleManager from './ArrowRotAngleManager';
 	import ArrowSvgMirrorManager from './ArrowSvgMirrorManager';
+	import type { PictographService } from '$lib/components/Pictograph/PictographService';
+	import type { PictographData } from '$lib/types/PictographData';
 
 	// Props with defaults
 	export let arrowData: ArrowData;
 	export let motion: Motion | null = null;
+	export let pictographData: PictographData | null = null;
+	export let pictographService: PictographService | null = null;
 	export let loadTimeoutMs = 1000; // Configurable timeout
 
 	// Component state
@@ -20,12 +25,18 @@
 	let isLoaded = false;
 	let hasErrored = false;
 	let loadTimeout: NodeJS.Timeout;
+	let rotAngleManager: ArrowRotAngleManager | null = null;
 
 	// Services
 	const dispatch = createEventDispatcher();
 	const svgManager = new SvgManager();
 	const svgLoader = new ArrowSvgLoader(svgManager);
 	const mirrorManager = new ArrowSvgMirrorManager(arrowData);
+
+	// Initialize the rotation angle manager when pictograph data is available
+	$: if (pictographData) {
+		rotAngleManager = new ArrowRotAngleManager(pictographData, pictographService || undefined);
+	}
 
 	// Update mirror state whenever motion data or arrow data changes
 	$: if (arrowData) {
@@ -37,10 +48,7 @@
 
 	// Transform calculation (memoized)
 	$: if (svgData && arrowData.coords) {
-		// Apply transformations in the correct order:
-		// 1. Translate to position
-		// 2. Rotate according to motion type and location
-		// 3. Apply mirroring if needed
+		// Apply transformations in the correct order
 		const mirrorTransform = arrowData.svgMirrored ? 'scale(-1, 1)' : '';
 		
 		transform = `
@@ -48,8 +56,6 @@
 			rotate(${rotationAngle})
 			${mirrorTransform}
 		`.trim();
-		
-
 	}
 
 	/**
@@ -106,14 +112,18 @@
 	}
 
 	/**
-	 * Calculates the arrow rotation angle
+	 * Calculates the arrow rotation angle using the manager
 	 */
 	function getRotationAngle(): number {
-		if (motion) {
-			// Use advanced rotation angle calculation
-			return calculateArrowRotationAngle(motion, arrowData.loc);
+		if (motion && rotAngleManager) {
+			// Use the rotation angle manager directly
+			return rotAngleManager.calculateRotationAngle(
+				motion, 
+				arrowData.loc, 
+				arrowData.svgMirrored
+			);
 		}
-		// Fall back to the simple rotation angle from data
+		// Fall back to the arrow data's rotation angle
 		return arrowData.rotAngle;
 	}
 

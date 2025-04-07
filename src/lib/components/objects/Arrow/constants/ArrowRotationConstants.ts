@@ -56,9 +56,9 @@ export const PRO_ROTATION_MAP: PropRotDirMap = {
 		[EAST]: 225,
 		[SOUTH]: 135,
 		[WEST]: 45,
-		[NORTHEAST]: 270,
+		[NORTHEAST]: 90,
 		[SOUTHEAST]: 180,
-		[SOUTHWEST]: 90,
+		[SOUTHWEST]: 270,
 		[NORTHWEST]: 0
 	},
 	[NO_ROT]: {}
@@ -71,9 +71,9 @@ export const ANTI_REGULAR_MAP: PropRotDirMap = {
 		[EAST]: 225,
 		[SOUTH]: 135,
 		[WEST]: 45,
-		[NORTHEAST]: 270,
+		[NORTHEAST]: 90,
 		[SOUTHEAST]: 180,
-		[SOUTHWEST]: 90,
+		[SOUTHWEST]: 270,
 		[NORTHWEST]: 0
 	},
 	[COUNTER_CLOCKWISE]: {
