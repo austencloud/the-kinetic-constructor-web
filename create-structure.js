@@ -1,101 +1,103 @@
 import fs from 'fs';
 import path from 'path';
-import {fileURLToPath} from 'url';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Base directory
-const baseDir = 'F:/CODE/the-kinetic-constructor-web/src/lib/components';
+// Base directory - adjust this path as needed
+const baseDir = './src/lib/components';
 
 // Directory structure
 const structure = {
-	// Structure remains the same
-	GenerateTab: {
-		'GenerateTab.svelte': '',
-		'GenerateSequenceButton.svelte': '',
-		'CustomizeYourSequenceLabel.svelte': '',
-		CircularSequencer: {
-			CAPTypePicker: {
-				'CAPPicker.svelte': '',
-				'CAPTypeButton.svelte': ''
-			},
-			'EndPositionSelector.svelte': ''
-		},
-		Freeform: {
-			'FreeformSequencer.svelte': '',
-			LetterTypePicker: {
-				'LetterTypeButton.svelte': '',
-				'LetterTypePicker.svelte': ''
-			}
-		},
-		Widgets: {
-			'GenerateTabLengthAdjuster.svelte': '',
-			'GeneratorTypeToggle.svelte': '',
-			'PropContinuityToggle.svelte': '',
-			'SliceSizeToggle.svelte': '',
-			'TurnIntensityAdjuster.svelte': '',
-			LevelSelector: {
-				'LevelButton.svelte': '',
-				'LevelSelector.svelte': ''
-			}
-		}
-	}
-};
-
-// Other structures remain unchanged
-const storesBaseDir = 'F:/CODE/the-kinetic-constructor-web/src/lib/stores';
-const storesStructure = {
-	/* Structure unchanged */
-};
-
-const servicesBaseDir = 'F:/CODE/the-kinetic-constructor-web/src/lib/services';
-const servicesStructure = {
-	/* Structure unchanged */
-};
-
-const typesBaseDir = 'F:/CODE/the-kinetic-constructor-web/src/lib/types';
-const typesStructure = {
-	/* Structure unchanged */
-};
-
-const utilsBaseDir = 'F:/CODE/the-kinetic-constructor-web/src/lib/utils';
-const utilsStructure = {
-	/* Structure unchanged */
+  GenerateTab: {
+    // Main component
+    'GenerateTab.svelte': '',
+    
+    // UI components
+    ui: {
+      'GenerateButton.svelte': '',
+      'HeaderLabel.svelte': '',
+      'GeneratorToggle.svelte': '',
+      'LengthSelector.svelte': '',
+      'TurnIntensity.svelte': '',
+      'PropContinuity.svelte': '',
+      LevelSelector: {
+        'LevelSelector.svelte': '',
+        'LevelButton.svelte': ''
+      }
+    },
+    
+    // Circular generator feature
+    circular: {
+      'CircularSequencer.svelte': '',
+      'createCircularSequence.ts': '',
+      'capExecutors.ts': '',
+      'validators.ts': '',
+      'store.ts': '',
+      CAPPicker: {
+        'CAPPicker.svelte': '',
+        'CAPButton.svelte': ''
+      }
+    },
+    
+    // Freeform generator feature
+    freeform: {
+      'FreeformSequencer.svelte': '',
+      'createFreeformSequence.ts': '',
+      'letterPatterns.ts': '',
+      'store.ts': '',
+      LetterPicker: {
+        'LetterPicker.svelte': '',
+        'LetterButton.svelte': ''
+      }
+    },
+    
+    // Shared utilities
+    utils: {
+      'orientationCalculator.ts': '',
+      'sequenceHelpers.ts': '',
+      'rotationDeterminer.ts': '',
+      'positionMaps.ts': ''
+    },
+    
+    // Shared state
+    store: {
+      'generator.ts': '',
+      'settings.ts': '',
+      'selection.ts': ''
+    }
+  }
 };
 
 function createDirectoryStructure(baseDir, structure) {
-	if (!fs.existsSync(baseDir)) {
-		fs.mkdirSync(baseDir, { recursive: true });
-		console.log(`Created directory: ${baseDir}`);
-	}
+  if (!fs.existsSync(baseDir)) {
+    fs.mkdirSync(baseDir, { recursive: true });
+    console.log(`Created directory: ${baseDir}`);
+  }
 
-	if (structure) {
-		Object.entries(structure).forEach(([name, content]) => {
-			const fullPath = path.join(baseDir, name);
+  if (structure) {
+    Object.entries(structure).forEach(([name, content]) => {
+      const fullPath = path.join(baseDir, name);
 
-			if (typeof content === 'object') {
-				if (!fs.existsSync(fullPath)) {
-					fs.mkdirSync(fullPath, { recursive: true });
-					console.log(`Created directory: ${fullPath}`);
-				}
-				createDirectoryStructure(fullPath, content);
-			} else {
-				if (!fs.existsSync(fullPath)) {
-					fs.writeFileSync(fullPath, content);
-					console.log(`Created file: ${fullPath}`);
-				} else {
-					console.log(`File already exists: ${fullPath}`);
-				}
-			}
-		});
-	}
+      if (typeof content === 'object') {
+        if (!fs.existsSync(fullPath)) {
+          fs.mkdirSync(fullPath, { recursive: true });
+          console.log(`Created directory: ${fullPath}`);
+        }
+        createDirectoryStructure(fullPath, content);
+      } else {
+        if (!fs.existsSync(fullPath)) {
+          fs.writeFileSync(fullPath, content);
+          console.log(`Created file: ${fullPath}`);
+        } else {
+          console.log(`File already exists: ${fullPath}`);
+        }
+      }
+    });
+  }
 }
 
 createDirectoryStructure(baseDir, structure);
-createDirectoryStructure(storesBaseDir, storesStructure);
-createDirectoryStructure(servicesBaseDir, servicesStructure);
-createDirectoryStructure(typesBaseDir, typesStructure);
-createDirectoryStructure(utilsBaseDir, utilsStructure);
 
 console.log('Done creating directory structure!');
