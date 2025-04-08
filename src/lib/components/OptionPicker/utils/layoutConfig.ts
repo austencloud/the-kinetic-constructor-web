@@ -107,8 +107,8 @@ export const LAYOUT_RULES = [
 		when: { minCount: 17, device: 'desktop', aspect: 'wide' }
 	},
 	{
-		description: 'Many items on desktop, widish/square = 6 columns',
-		columns: 8,
+		description: 'More than 16 items on desktop, widish/square = 6 columns',
+		columns: 6,
 		when: {
 			minCount: 17,
 			device: 'desktop',
