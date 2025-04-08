@@ -87,15 +87,6 @@ export const LAYOUT_RULES = [
 		}
 	},
 
-	// Small mobile screens get max 2 columns regardless of item count
-	{
-		description: 'Small mobile screens get max 2 columns',
-		columns: 2,
-		when: {
-			device: 'mobile',
-			extraCheck: (w: number) => w < 375
-		}
-	},
 
 	//====================== MANY ITEMS LAYOUT PREFERENCES ======================
 

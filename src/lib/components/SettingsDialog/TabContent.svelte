@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
+	// import { fly } from 'svelte/transition'; // REMOVED transition for debug
 	export let activeTab: string;
 	export let background: string;
 	export let onChangeBackground: (newBackground: string) => void;
 
+	// Import child tab components
 	import UserProfileTab from './UserProfileTab.svelte';
 	import PropTypeTab from './PropTypeTab/PropTypeTab.svelte';
 	import BackgroundTab from './BackgroundTab.svelte';
@@ -11,25 +12,14 @@
 	import BeatLayoutTab from './BeatLayoutTab/BeatLayoutTab.svelte';
 
 	let tabs = ['User', 'Prop Type', 'Background', 'Visibility', 'Beat Layouts'];
-	let previousTabIndex = tabs.indexOf(activeTab);
-	let activeTabIndex = tabs.indexOf(activeTab);
 
-	$: activeTabIndex = tabs.indexOf(activeTab); // Update index on tab change
-	$: {
-		previousTabIndex = activeTabIndex; // Store the last active tab index
-	}
-
-	// Calculate fly direction for content
-	const getFlyDirection = (current: number, previous: number) => (current > previous ? 300 : -300);
+	// REMOVED transition variables: previousTabIndex, activeTabIndex, getFlyDirection
 </script>
 
-<div class="tab-content">
-	{#each tabs as tab, index}
+<div class="tab-content-wrapper">
+	{#each tabs as tab (tab)}
 		{#if activeTab === tab}
-			<div
-				transition:fly={{ x: getFlyDirection(activeTabIndex, previousTabIndex), duration: 300 }}
-				style="visibility: visible;"
-			>
+			<div class="tab-pane">
 				{#if tab === 'User'}
 					<UserProfileTab />
 				{:else if tab === 'Prop Type'}
@@ -47,17 +37,27 @@
 </div>
 
 <style>
-	.tab-content {
-		position: relative;
+	.tab-content-wrapper {
+		/* Ensure this container takes up space */
 		display: flex;
 		flex-direction: column;
-		overflow: hidden;
-		height: 100%;
+		flex: 1; /* Takes available space in parent flex container */
+		min-height: 0; /* Important for flex children */
+		width: 100%;
+		/* Add border to see its bounds */
+		padding: 5px;
+		box-sizing: border-box;
+		overflow: hidden; /* Prevent content from spilling out */
 	}
 
-	.tab-content > div {
-		position: absolute;
+	.tab-pane {
+		/* Static positioning, allow normal flow */
+		/* position: absolute; */
 		width: 100%;
-		height: 100%;
+		/* Let content determine height, but allow scrolling */
+		height: 100%; /* Try filling the container */
+		overflow-y: auto; /* Allow scrolling if content overflows */
+		box-sizing: border-box;
+		color: white; /* Ensure text inside is visible */
 	}
 </style>

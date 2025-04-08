@@ -1,99 +1,112 @@
 <script lang="ts">
-	import TabsNavigation from './TabsNavigation.svelte';
+	import MenuBar from '$lib/components/MenuBar/MenuBar.svelte';
 	import TabContent from './TabContent.svelte';
-	import DialogActions from './DialogActions.svelte';
-	import { activeTabStore } from '../../stores/ui/settingsStore';
-	import { get } from 'svelte/store';
 	import { createEventDispatcher } from 'svelte';
+	import SequenceInspector from '$lib/components/Developer/SequenceInspector.svelte';
+	import { selectIsSettingsOpen } from '../MainWidget/state/store';
+	import { actions } from '../MainWidget/state/actions';
+	import SettingsContent from './SettingsContent.svelte';
 
-	export let isOpen: boolean;
-	export let onClose: () => void;
+	// --- XState Imports ---
+
+	// --- Props & Events ---
 	export let background: string;
-	export let onChangeBackground: (newBackground: string) => void;
 
-	
-	// Create event dispatcher for change background events
+	// --- Events Emitted Up ---
 	const dispatch = createEventDispatcher<{
 		changeBackground: string;
+		tabChange: number;
 	}>();
 
-	// Function to dispatch changeBackground event
-	const handleChangeBackground = (newBackground: string) => {
-		dispatch('changeBackground', newBackground);
-	};
+	// --- Get State from XState ---
+	const isSettingsDialogOpen = selectIsSettingsOpen();
 
-	let activeTab = get(activeTabStore);
+	// --- Event Handlers ---
+	function handleToggleSettings() {
+		// Toggle settings dialog 
+		if ($isSettingsDialogOpen) {
+			actions.closeSettings();
+		} else {
+			actions.openSettings();
+		}
+	}
 
-	// Update the store whenever the activeTab changes
-	$: activeTabStore.set(activeTab);
+	// This function will be passed down as a prop.
+	function handleBackgroundChange(newBackground: string) {
+		const validBackgrounds = ['snowfall', 'nightSky']; // Keep updated
+		const backgroundType = newBackground.toLowerCase();
+		if (validBackgrounds.includes(backgroundType)) {
+			dispatch('changeBackground', backgroundType);
+		} else {
+			console.warn(`Invalid background type requested: ${newBackground}. Using default.`);
+			dispatch('changeBackground', 'snowfall');
+		}
+	}
+
+	// Handler for tab changes bubbling up
+	function handleTabChange(event: CustomEvent<number>) {
+		dispatch('tabChange', event.detail);
+	}
 </script>
 
-{#if isOpen}
-	<div
-		class="dialog-backdrop"
-		role="button"
-		aria-label="Close settings dialog by clicking outside"
-		on:click|self={onClose}
-		tabindex="0"
-		on:keydown|self={(e) => {
-			if (e.key === 'Enter' || e.key === ' ') onClose();
-		}}
-	>
-		<div class="dialog" role="dialog">
-			<h2 class="dialog-title">Settings</h2>
-			<TabsNavigation {activeTab} on:changeTab={(e) => (activeTab = e.detail)} />
-			<TabContent {activeTab} {background} onChangeBackground={handleChangeBackground} />
-			<DialogActions {onClose} />
-		</div>
+<div class="content">
+	<div class="menuBar">
+		<MenuBar
+			onSettingsClick={handleToggleSettings} 
+			on:tabChange={handleTabChange}
+		/>
+		{#if import.meta.env.DEV}
+			<SequenceInspector />
+		{/if}
 	</div>
-{/if}
+
+	<div class="mainContent">
+		<TabContent 
+			activeTab="defaultTab" 
+			{background} 
+			onChangeBackground={handleBackgroundChange} 
+		/>
+	</div>
+
+	{#if $isSettingsDialogOpen}
+		<div class="settingsContent">
+			<SettingsContent
+				{background}
+				onChangeBackground={handleBackgroundChange} 
+				onClose={() => actions.closeSettings()}
+			/>
+		</div>
+	{/if}
+</div>
 
 <style>
-	.dialog-backdrop {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.5);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		height: 100%;
-		width: 100%;
-		cursor: pointer;
-		z-index: 1000;
-		pointer-events: auto;
-	}
-
-	.dialog {
-		width: 60vw;
-		height: 80vh;
+	.content {
 		display: flex;
 		flex-direction: column;
-		padding: 20px;
-		font-family: Arial, sans-serif;
-		border-radius: 12px;
+		flex: 1;
+		min-height: 0;
+		z-index: 1;
+		width: 100%;
+	}
+	.mainContent {
+		display: flex;
+		flex: 1;
 		overflow: hidden;
-		cursor: default;
-		transform-origin: center;
-		z-index: 1001;
 		position: relative;
-		pointer-events: auto;
-
-		/* Gradient matching your snowfall background */
-		background: linear-gradient(to bottom, #0b1d2a 0%, #1e3a5f 40%, #0b1d2a 100%);
-		color: white;
-		border: 1px solid rgba(108, 156, 233, 0.2);
-		box-shadow:
-			0 10px 25px rgba(0, 0, 0, 0.4),
-			0 0 0 1px rgba(255, 255, 255, 0.05);
+		z-index: 0;
+		width: 100%;
+		opacity: 1;
 	}
-
-	.dialog-title {
-		margin: 0;
-		font-size: 1.8rem;
-		text-align: center;
-		padding: 10px 0;
-		color: #6c9ce9;
-		border-bottom: 2px solid rgba(108, 156, 233, 0.3);
-		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+	.settingsContent {
+		flex: 0 0 auto;
+		width: 100%;
+		background: rgba(30, 40, 60, 0.8);
+		backdrop-filter: blur(10px);
+		border-top: 1px solid rgba(108, 156, 233, 0.2);
+		max-height: 50vh;
+		overflow: auto;
 	}
+    .menuBar {
+        padding: 5px 10px;
+    }
 </style>

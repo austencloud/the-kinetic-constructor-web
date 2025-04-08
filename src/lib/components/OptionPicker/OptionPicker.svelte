@@ -238,7 +238,7 @@
 		border-radius: 8px;
 		background-color: transparent;
 		min-height: 0;
-		overflow: hidden;
+		overflow: hidden; /* This is correct - keep it to prevent double scrollbars */
 	}
 	@media (min-width: 1400px) {
 		.option-picker {
@@ -247,3 +247,4 @@
 		}
 	}
 </style>
+

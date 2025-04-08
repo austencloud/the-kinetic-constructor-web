@@ -1,5 +1,6 @@
 // src/lib/components/Backgrounds/core/BackgroundFactory.ts
 import { SnowfallBackgroundSystem } from '../snowfall/SnowfallBackgroundSystem';
+import { NightSkyBackgroundSystem } from '../nightSky/NightSkyBackgroundSystem'; // Import new system
 import type {
 	BackgroundSystem,
 	BackgroundType,
@@ -30,42 +31,61 @@ export class BackgroundFactory {
 			...(options.accessibility || {})
 		};
 
+		// Detect accessibility preferences from browser if not overridden
 		if (typeof window !== 'undefined' && window.matchMedia) {
-			const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-			if (reducedMotionQuery.matches) {
-				accessibility.reducedMotion = true;
+			if (options.accessibility?.reducedMotion === undefined) { // Check if not explicitly set
+				const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+				if (reducedMotionQuery.matches) {
+					accessibility.reducedMotion = true;
+				}
 			}
-
-			const highContrastQuery = window.matchMedia('(prefers-contrast: more)');
-			if (highContrastQuery.matches) {
-				accessibility.highContrast = true;
+			if (options.accessibility?.highContrast === undefined) { // Check if not explicitly set
+				const highContrastQuery = window.matchMedia('(prefers-contrast: more)');
+				if (highContrastQuery.matches) {
+					accessibility.highContrast = true;
+				}
 			}
 		}
 
 		let backgroundSystem: BackgroundSystem;
 
+		// --- Updated Switch Statement ---
 		switch (options.type) {
 			case 'snowfall':
 				backgroundSystem = new SnowfallBackgroundSystem();
 				break;
+            case 'nightSky': // Add case for nightSky
+                backgroundSystem = new NightSkyBackgroundSystem();
+                break;
 			default:
-				// Default to snowfall if type is unknown
-				backgroundSystem = new SnowfallBackgroundSystem();
+				console.warn(`Unknown background type "${options.type}". Defaulting to snowfall.`);
+				backgroundSystem = new SnowfallBackgroundSystem(); // Default to snowfall
 		}
+		// --- End Updated Switch Statement ---
 
+		// Apply accessibility settings to the created system
 		if (backgroundSystem.setAccessibility) {
 			backgroundSystem.setAccessibility(accessibility);
 		}
 
+        // Apply initial quality (important to do after instantiation)
+        // The system's constructor might set a default, this overrides it.
+        backgroundSystem.setQuality(quality);
+
+
 		return backgroundSystem;
 	}
+
+	// --- createOptimalBackgroundSystem and isBackgroundSupported remain the same ---
+    // (Though you might update isBackgroundSupported for 'nightSky')
 
 	public static createOptimalBackgroundSystem(): BackgroundSystem {
 		const quality = detectAppropriateQuality();
 
-		// Since we only have snowfall now, we'll just return that
+		// You could add logic here to choose the best default based on time/prefs
+		// For now, defaulting to nightSky as it's newly added
 		return this.createBackgroundSystem({
-			type: 'snowfall',
+			type: 'nightSky', // Changed default maybe? Or keep snowfall?
 			initialQuality: quality
 		});
 	}
@@ -75,7 +95,8 @@ export class BackgroundFactory {
 
 		switch (type) {
 			case 'snowfall':
-				return quality !== 'minimal';
+			case 'nightSky': // Add nightSky check
+				return quality !== 'minimal'; // Example: disable on minimal quality
 			default:
 				return false;
 		}

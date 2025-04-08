@@ -1,32 +1,57 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { fade } from 'svelte/transition';
+	import { fade } from 'svelte/transition'; // Keep fade if needed for panel itself
 	import { cubicOut } from 'svelte/easing';
-	import Option from './Option.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
+	import { uiState } from '../store'; // Import uiState store
+	import { determineGroupKey, getSortedGroupKeys } from '../services/OptionsService'; // Import helpers
+	import type { SortMethod } from '../config'; // Import type
+
+	// Import the new components
+	import SectionHeader from './SectionHeader.svelte';
+	import OptionGroupGrid from './OptionGroupGrid.svelte';
 
 	// --- Props ---
-	export let selectedTab: string | null = null; // Identifier for the panel
-	export let options: PictographData[] = []; // Options for *this* panel
+	export let selectedTab: string | null = null; // Still needed to know which group to display when sortMethod is 'type'
+	export let options: PictographData[] = []; // Still needed as the source data
 
-	// --- Context ---
-	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-	$: ({ gridColumns, optionSize, gridGap, gridClass, aspectClass } = $layoutContext.layoutConfig);
-	$: isMobileDevice = $layoutContext.isMobile;
-	$: isTabletDevice = $layoutContext.isTablet;
-	$: isPortraitMode = $layoutContext.isPortrait;
+	// --- Get Sort Method from Store ---
+	let currentSortMethod: SortMethod;
+	uiState.subscribe((state) => {
+		currentSortMethod = state.sortMethod;
+	});
 
-	// --- Style ---
-	// Removed buttonHeightEstimate and --panel-padding-top
-	$: customStyle = `--option-size: ${optionSize}; --grid-gap: ${gridGap};`;
+	// --- Computed Grouping Logic ---
+	// This determines the structure for rendering:
+	// - If sorting by type, just pass the pre-filtered options for the selected tab.
+	// - Otherwise, create header/options pairs by sub-grouping the passed options by type.
+	$: displayData = (() => {
+		// For other sorts (endPosition, reversals), sub-group the incoming options by their letter type.
+		const subGroups: Record<string, PictographData[]> = {};
+		options.forEach((option) => {
+			const groupKey = determineGroupKey(option, 'type'); // Group by 'type' key (e.g., Type1)
+			if (!subGroups[groupKey]) subGroups[groupKey] = [];
+			subGroups[groupKey].push(option);
+		});
 
-	// --- Animation ---
-	function getAnimationDelay(index: number): number {
-		const columns = parseInt(gridColumns.match(/repeat\((\d+)/)?.[1] || '3');
-		const row = Math.floor(index / columns);
-		const col = index % columns;
-		return (row + col) * 35;
+		// Sort the type group keys (Type1, Type2...)
+		const sortedKeys = getSortedGroupKeys(Object.keys(subGroups), 'type');
+
+		// Create an array interleaving headers and their corresponding option groups
+		const result: Array<{ key: string; options?: PictographData[]; isHeader: boolean }> = [];
+		sortedKeys.forEach((key) => {
+			if (subGroups[key]?.length > 0) {
+				result.push({ key: key, isHeader: true }); // Header item (using key like Type1)
+				result.push({ key: key + '-options', options: subGroups[key], isHeader: false }); // Options item
+			}
+		});
+		return result;
+	})();
+
+	// Helper to generate a unique key for the outer each loop, preventing conflicts
+	function getDisplayKey(groupData: { key: string; isHeader: boolean }): string {
+		return groupData.isHeader ? `header-${groupData.key}` : `options-${groupData.key}`;
 	}
 </script>
 
@@ -35,129 +60,60 @@
 	role="tabpanel"
 	aria-labelledby="tab-{selectedTab}"
 	id="options-panel-{selectedTab}"
-	transition:fade={{ duration: 200 }}
-	style={customStyle}
 >
-	<div
-		class="options-grid {gridClass} {aspectClass}"
-		class:mobile-grid={isMobileDevice}
-		class:tablet-grid={isTabletDevice}
-		class:tablet-portrait-grid={isTabletDevice && isPortraitMode}
-		style:grid-template-columns={gridColumns}
-	>
-		{#each options as option, i ((option.letter ?? '') + option.startPos + option.endPos + i)}
-			<div
-				class="grid-item-wrapper"
-				class:single-item={options.length === 1}
-				class:two-item={options.length === 2}
-				in:fade={{ duration: 300, delay: getAnimationDelay(i), easing: cubicOut }}
-				out:fade={{ duration: 200, delay: getAnimationDelay(i) * 0.6, easing: cubicOut }}
-			>
-				<Option pictographData={option} isPartOfTwoItems={options.length === 2} />
-			</div>
-		{/each}
-	</div>
+	{#each displayData as groupData, index (getDisplayKey(groupData))}
+		{#if groupData.isHeader}
+			<SectionHeader groupKey={groupData.key} isFirstHeader={index === 0} />
+		{:else if groupData.options}
+			<OptionGroupGrid options={groupData.options} groupKey={groupData.key} />
+		{/if}
+	{/each}
 </div>
 
 <style>
+	/* UPDATED: Keeping position:absolute for crossfade but fixing scroll issues */
 	.options-panel {
-		position: relative;
-		width: 100%;
 		display: flex;
-		justify-content: center;
-		align-items: flex-start;
+		flex-direction: column;
+		align-items: center; /* Center groups horizontally */
+		position: absolute; /* Keep this for crossfade */
+		width: 100%;
+		height: 100%;
 		padding: 0.5rem;
 		box-sizing: border-box;
-		overflow-y: visible;
+		overflow-y: auto;
 		overflow-x: hidden;
+		/* Add padding to ensure first items aren't cut off */
+		padding-top: 1rem;
+		/* Add padding to ensure last items aren't cut off at bottom when scrolling */
+		padding-bottom: 2rem;
+		/* Ensure scrolling works properly */
+		top: 0;
+		left: 0;
 	}
 
-	.options-grid {
-		max-width: max-content;
-		display: grid;
-		width: 100%;
-		justify-items: center;
-		justify-content: center;
-		align-content: flex-start;
-		position: relative;
-		grid-gap: var(--grid-gap, 8px);
-		margin: auto;
+	/* --- Scrollbar --- */
+	.options-panel::-webkit-scrollbar {
+		width: 6px;
+	}
+	.options-panel::-webkit-scrollbar-track {
+		background: rgba(30, 41, 59, 0.3);
+		border-radius: 3px;
+	}
+	.options-panel::-webkit-scrollbar-thumb {
+		background-color: rgba(71, 85, 105, 0.6);
+		border-radius: 3px;
+	}
+	.options-panel::-webkit-scrollbar-thumb:hover {
+		background-color: rgba(100, 116, 139, 0.7);
 	}
 
-	.options-grid.tall-aspect-container {
-		width: auto;
-		max-width: max-content;
-	}
-
-	.wide-aspect-container,
-	.square-aspect-container {
-		align-content: center;
-	}
-
-	.tall-aspect-container {
-		align-content: flex-start;
-	}
-
-	.grid-item-wrapper {
-		width: var(--option-size, 100px);
-		height: var(--option-size, 100px);
-		aspect-ratio: 1 / 1;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		position: relative;
-		z-index: 1;
-		transition: z-index 0s 0.2s;
-	}
-
-	.grid-item-wrapper:hover {
-		z-index: 10;
-		transition-delay: 0s;
-	}
-
-	.single-item-grid {
-		height: auto;
-		padding: 0.5rem;
-		width: fit-content;
-		margin: auto;
-		justify-items: center;
-	}
-
-	.single-item-grid .grid-item-wrapper {
-		transform: scale(1.1);
-	}
-
-	.two-item-grid {
-		height: auto;
-		padding: 0.5rem;
-		width: fit-content;
-		margin: auto;
-		justify-items: center;
-	}
-
-	.two-item-grid .grid-item-wrapper {
-		flex-grow: 0;
-		flex-shrink: 0;
-	}
-
-	.mobile-grid {
-		padding: 0.2rem;
-		grid-gap: var(--grid-gap, 6px);
-	}
-
-	.mobile-grid.two-item-grid,
-	.mobile-grid.single-item-grid {
-		padding: 0.5rem;
-	}
-
-	.tablet-portrait-grid {
-		grid-gap: 0.5rem;
-		padding: 0.25rem;
-	}
-
-	@media (min-width: 1280px) {
-		.many-items-grid {
-			max-width: 100%;
-		}
+	/* If content taller than panel, revert to top alignment for natural scrolling */
+	.options-panel:has(> :nth-child(n+10)) {
+		align-items: flex-start; /* Align to top when many items for better scrolling */
+		justify-content: center; /* Keep horizontal centering */
 	}
 </style>
+
+
+

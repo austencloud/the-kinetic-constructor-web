@@ -2,8 +2,7 @@
 	import { onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import type { ComponentType, SvelteComponent } from 'svelte';
-
+	
 	// Components
 	import FullScreen from '$lib/FullScreen.svelte';
 	import MainLayout from './layout/MainLayout.svelte';
@@ -23,7 +22,6 @@
 		selectLoadingMessage
 	} from './state/store';
 	import { actions } from './state/actions';
-	import type { BackgroundType } from './state/appState';
 
 	// Window Store
 	import { windowHeight } from '$lib/stores/ui/windowStore';
@@ -119,7 +117,6 @@
 			<div class="main-layout-wrapper" transition:fade={{ duration: 500, delay: 100 }}>
 				<MainLayout
 					background={$currentBackground}
-					onSettingsClick={actions.openSettings}
 					on:changeBackground={handleBackgroundChange}
 					on:tabChange={handleTabChange} />
 			</div>

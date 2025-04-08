@@ -1,59 +1,60 @@
 <script lang="ts">
 	import MenuBar from '$lib/components/MenuBar/MenuBar.svelte';
-	import SettingsDialog from '$lib/components/SettingsDialog/SettingsDialog.svelte';
 	import TabContent from '../tabs/TabContent.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import SequenceInspector from '$lib/components/Developer/SequenceInspector.svelte';
-
-	// --- XState Imports ---
-	import { selectIsSettingsOpen, selectContentVisible } from '../state/store';
+	import { selectIsSettingsOpen, selectActiveTabData } from '../state/store';
 	import { actions } from '../state/actions';
+	import SettingsContent from '$lib/components/SettingsDialog/SettingsContent.svelte';
 
 	// --- Props & Events ---
 	export let background: string;
-	export let onSettingsClick: () => void;
 
 	// --- Events Emitted Up ---
-	// Adjust the event type here if needed, though dispatching 'tabChange' is fine
 	const dispatch = createEventDispatcher<{
 		changeBackground: string;
-		tabChange: number; // Dispatching the index number directly
+		tabChange: number;
 	}>();
 
-	// --- Get State from XState using specific selectors ---
+	// --- Get State from XState ---
 	const isSettingsDialogOpen = selectIsSettingsOpen();
-	// const contentVisible = selectContentVisible(); // Still using simplified version
+	const activeTabData = selectActiveTabData();
 
 	// --- Event Handlers ---
-	function handleCloseSettings() {
-		actions.closeSettings();
+	function handleToggleSettings() {
+		// Toggle settings dialog 
+		if ($isSettingsDialogOpen) {
+			actions.closeSettings();
+		} else {
+			actions.openSettings();
+		}
 	}
 
-	function handleBackgroundChange(event: CustomEvent<string>) {
-		const validBackgrounds = ['snowfall'];
-		const requestedBackground = event.detail;
-		const backgroundType = requestedBackground.toLowerCase();
+	// This function will be passed down as a prop.
+	function handleBackgroundChange(newBackground: string) {
+		const validBackgrounds = ['snowfall', 'nightSky']; // Keep updated
+		const backgroundType = newBackground.toLowerCase();
 		if (validBackgrounds.includes(backgroundType)) {
 			dispatch('changeBackground', backgroundType);
 		} else {
-			console.warn(`Invalid background type: ${requestedBackground}. Using default.`);
+			console.warn(`Invalid background type requested: ${newBackground}. Using default.`);
 			dispatch('changeBackground', 'snowfall');
 		}
 	}
 
-	// *** FIX: Update handler signature and dispatch call ***
+	// Handler for tab changes bubbling up
 	function handleTabChange(event: CustomEvent<number>) {
-		// Directly dispatch the received number (index)
 		dispatch('tabChange', event.detail);
 	}
+
+	// Get the current section name based on active tab
+	$: currentSection = $activeTabData ? $activeTabData.title : 'Construct';
 </script>
 
 <div class="content">
 	<div class="menuBar">
 		<MenuBar
-			{background}
-			on:settingsClick={onSettingsClick}
-			on:changeBackground={handleBackgroundChange}
+			onSettingsClick={handleToggleSettings} 
 			on:tabChange={handleTabChange}
 		/>
 		{#if import.meta.env.DEV}
@@ -62,21 +63,24 @@
 	</div>
 
 	<div class="mainContent">
-		<TabContent />
+		<TabContent 
+
+		/>
 	</div>
 
 	{#if $isSettingsDialogOpen}
-		<SettingsDialog
-			isOpen={$isSettingsDialogOpen}
-			{background}
-			on:changeBackground={handleBackgroundChange}
-			onClose={handleCloseSettings}
-		/>
+		<div class="settingsContent">
+			<SettingsContent
+				{background}
+				{currentSection}
+				onChangeBackground={handleBackgroundChange} 
+				onClose={() => actions.closeSettings()}
+			/>
+		</div>
 	{/if}
 </div>
 
 <style>
-	/* Styles remain the same */
 	.content {
 		display: flex;
 		flex-direction: column;
@@ -94,4 +98,15 @@
 		width: 100%;
 		opacity: 1;
 	}
+	.settingsContent {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 10;
+	}
+    .menuBar {
+        padding: 5px 10px;
+    }
 </style>
