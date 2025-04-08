@@ -99,7 +99,7 @@ export const LAYOUT_RULES = [
 	},
 	{
 		description: 'More than 16 items on desktop, widish/square = 6 columns',
-		columns: 4,
+		columns: 8,
 		when: {
 			minCount: 17,
 			device: 'desktop',
