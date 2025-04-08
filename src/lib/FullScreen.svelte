@@ -141,55 +141,53 @@
         </button>
     {/if}
 </div>
-
 <style>
-    .fullscreen-container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        overflow: hidden;
-    }
+	.fullscreen-container {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		overflow: hidden;
+	}
 
-    .fs-btn {
-        z-index: 9999;
-        position: absolute;
-        right: 20px;
-        bottom: 20px;
-        border: none;
-        background: #fff;
-        color: #212529; /* Icon color */
-        cursor: pointer;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-        border-radius: 50%;
-        width: 48px;
-        height: 48px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0;
-        transition: transform 0.2s, box-shadow 0.2s, color 0.2s;
-        overflow: hidden;
-    }
+	.fs-btn {
+		z-index: 9999;
+		position: absolute;
+		left: 20px; /* Moved to bottom left */
+		bottom: 20px;
+		border: none;
+		background: #fff;
+		color: #212529; /* Icon color */
+		cursor: pointer;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+		border-radius: 50%;
+		width: 48px;
+		height: 48px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 0;
+		transition: transform 0.2s, box-shadow 0.2s, color 0.2s;
+		overflow: hidden;
+	}
 
-    /* Style icon directly if needed */
-    .fs-btn i.fs-icon {
-         font-size: 1.5rem; /* Control icon size */
-         line-height: 1; /* Ensure proper vertical alignment */
-         /* color: currentColor; */ /* Inherits from button color */
-    }
+	/* Style icon directly if needed */
+	.fs-btn i.fs-icon {
+		 font-size: 1.5rem; /* Control icon size */
+		 line-height: 1; /* Ensure proper vertical alignment */
+		 /* color: currentColor; */ /* Inherits from button color */
+	}
 
+	.fs-btn:hover {
+		transform: scale(1.1);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+		color: #007bff; /* Adjust hover color as needed */
+	}
 
-    .fs-btn:hover {
-        transform: scale(1.1);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        color: #007bff; /* Adjust hover color as needed */
-    }
-
-    .fs-btn:active {
-        transform: scale(0.9);
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-    }
+	.fs-btn:active {
+		transform: scale(0.9);
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+	}
 </style>

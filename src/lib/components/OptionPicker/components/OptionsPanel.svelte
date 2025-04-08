@@ -61,17 +61,14 @@
 
 <style>
 	.options-panel {
-		position: absolute;
-		top: 0;
-		left: 0;
+		position: relative;
 		width: 100%;
-		height: 100%;
 		display: flex;
 		justify-content: center;
 		align-items: flex-start;
 		padding: 0.5rem;
 		box-sizing: border-box;
-		overflow-y: auto;
+		overflow-y: visible;
 		overflow-x: hidden;
 	}
 
@@ -80,22 +77,23 @@
 		display: grid;
 		width: 100%;
 		justify-items: center;
-		justify-content: center; /* Add this line */
+		justify-content: center;
 		align-content: flex-start;
 		position: relative;
 		grid-gap: var(--grid-gap, 8px);
 		margin: auto;
 	}
+
 	.options-grid.tall-aspect-container {
 		width: auto;
 		max-width: max-content;
 	}
 
-	/* Other styles remain the same */
 	.wide-aspect-container,
 	.square-aspect-container {
 		align-content: center;
 	}
+
 	.tall-aspect-container {
 		align-content: flex-start;
 	}
