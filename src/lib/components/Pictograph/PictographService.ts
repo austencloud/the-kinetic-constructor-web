@@ -176,10 +176,7 @@ export class PictographService {
 				});
 
 				const arrows = [redArrow, blueArrow].filter(Boolean) as ArrowData[];
-				// if the data.letter is W, then log that
-				if (this.data.letter === 'W') {
-					console.log('🔥🔥🔥🔥🔥Letter W detected!!!!');
-				}
+
 				placementManager.updateArrowPlacements(arrows);
 			} catch (error) {
 				console.warn('Advanced arrow placement failed:', error);

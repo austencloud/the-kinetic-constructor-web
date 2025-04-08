@@ -41,11 +41,7 @@ export class ArrowPlacementManager {
 
 		// Log values for debugging
 		if (arrow.loc == 'ne' && arrow.propRotDir == 'ccw' && arrow.motionType == 'pro') {
-			console.log(`Arrow ${arrow.id} (${arrow.color}) Placement Debug:`);
-			console.log(`- Initial Position: (${initialPos.x}, ${initialPos.y})`);
-			console.log(`- Adjustment: (${adjustment.x}, ${adjustment.y})`);
-			console.log(`- SVG Center: (${svgCenterX}, ${svgCenterY})`);
-			console.log(`- Is Mirrored: ${arrow.svgMirrored}`);
+
 		}
 		// Calculate final position accounting for mirroring
 		if (arrow.svgMirrored) {
@@ -61,8 +57,6 @@ export class ArrowPlacementManager {
 				y: initialPos.y + adjustment.y - svgCenterY
 			};
 		}
-		if (arrow.loc == 'ne') {
-			console.log(`✅ Final coords: (${arrow.coords.x}, ${arrow.coords.y})`);
-		}
+
 	}
 }

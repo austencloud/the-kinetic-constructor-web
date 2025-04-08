@@ -10,15 +10,11 @@ export type ArrowPlacementConfig = {
 	gridData: GridData;
 	checker: PictographChecker;
 };
-
 export type Coordinates = {
 	x: number;
 	y: number;
 };
-
 export type DirectionTuple = [number, number];
 export type DirectionTupleSet = DirectionTuple[];
-
 export type PlacementFunction = (pointName: string) => Coordinates | null;
-
 export type TupleMapDefinition = Record<PropRotDir, DirectionTupleSet>;
