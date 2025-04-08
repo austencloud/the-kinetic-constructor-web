@@ -118,7 +118,7 @@ export const LAYOUT_RULES = [
     },
     { 
         description: "Many items on mobile, widish/square = 5 columns",
-        columns: 5,
+        columns: 4,
         when: { 
             minCount: 17, 
             device: "mobile", 

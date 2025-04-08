@@ -5,21 +5,10 @@
     import { activeLayoutRule } from '../utils/layoutUtils';
 
     let showInfo = false;
-    let buttonTimeout: ReturnType<typeof setTimeout> | null = null;
     const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 
     function toggleInfo() {
         showInfo = !showInfo;
-        
-        if (showInfo && buttonTimeout === null) {
-            buttonTimeout = setTimeout(() => {
-                showInfo = false;
-                buttonTimeout = null;
-            }, 5000);
-        } else if (!showInfo && buttonTimeout !== null) {
-            clearTimeout(buttonTimeout);
-            buttonTimeout = null;
-        }
     }
 </script>
 
