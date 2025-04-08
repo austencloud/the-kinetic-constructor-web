@@ -120,7 +120,7 @@
 		cursor: pointer;
 		font-weight: 500;
 		font-size: clamp(0.9rem, 2vw, 1.05rem);
-		color: black;
+		color: white;
 		transition:
 			background-color 0.15s ease,
 			color 0.15s ease;

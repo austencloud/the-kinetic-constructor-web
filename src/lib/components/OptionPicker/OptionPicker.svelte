@@ -13,6 +13,7 @@
 	// import HeaderControls from './components/HeaderControls.svelte';
 	import { resize } from './actions/resize';
 	import type { ViewModeDetail } from './components/ViewControl.svelte';
+	import LayoutDebugger from './utils/LayoutDebugger.svelte';
 
 	const windowWidth = writable(
 		typeof window !== 'undefined' ? window.innerWidth : BREAKPOINTS.desktop
@@ -194,11 +195,11 @@
 	class:portrait={$layoutContextValue.isPortrait}
 >
 	<!-- Combined header with tabs and view controls -->
-	<OptionPickerHeader 
-		selectedTab={$selectedTab} 
+	<OptionPickerHeader
+		selectedTab={$selectedTab}
 		categoryKeys={actualCategoryKeys}
-		showTabs={showTabs}
-		on:viewChange={handleViewChange} 
+		{showTabs}
+		on:viewChange={handleViewChange}
 		on:tabSelect={handleSubTabSelect}
 	/>
 
@@ -211,6 +212,7 @@
 			hasCategories={actualCategoryKeys.length > 0}
 		/>
 	</div>
+	<LayoutDebugger />
 </div>
 
 <style>

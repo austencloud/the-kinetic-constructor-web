@@ -1,4 +1,5 @@
 // src/lib/components/OptionPicker/utils/layoutUtils.ts
+import { writable } from 'svelte/store';
 import { memoizeLRU } from '$lib/utils/memoizationUtils';
 import {
 	DEVICE_CONFIG,
@@ -8,12 +9,17 @@ import {
 	getDeviceType,
 	getLayoutCategory
 } from '../config';
+import { DEFAULT_COLUMNS, LAYOUT_RULES, GRID_GAP_OVERRIDES } from './layoutConfig';
+
 import type {
 	DeviceType,
 	LayoutCategory,
 	ContainerAspect,
 	ResponsiveLayoutConfig
 } from '../config';
+
+// Store to track which layout rule is currently active
+export const activeLayoutRule = writable<any>(null);
 
 /**
  * Main function to get responsive layout configuration
@@ -40,13 +46,13 @@ export const getResponsiveLayout = memoizeLRU(
 		}
 
 		// Calculate grid configuration
-		const gridConfig = calculateGridConfiguration(
+		const gridConfig = calculateGridConfiguration({
 			count,
 			containerWidth,
 			containerHeight,
 			isMobileDevice,
 			isPortraitMode
-		);
+		});
 
 		// Calculate item size
 		const optionSize = calculateItemSize({
@@ -61,12 +67,14 @@ export const getResponsiveLayout = memoizeLRU(
 		// Get container aspect
 		const containerAspect = getContainerAspect(containerWidth, containerHeight);
 
-		// Get grid gap
-		let gridGap = getGridGap(count, containerWidth, isMobileDevice);
-		if (count === 16 && containerAspect === 'wide' && isPortraitMode) {
-			// <<< SPECIAL CASE CHECK
-			gridGap = '10px'; // Override gap to 10px in this specific scenario
-		}
+		// Get grid gap using our simplified config
+		let gridGap = getGridGap({
+			count,
+			containerWidth,
+			containerHeight,
+			isMobileDevice,
+			isPortraitMode
+		});
 
 		// Get grid classes
 		const { gridClass, aspectClass } = getGridClasses(
@@ -92,115 +100,152 @@ export const getResponsiveLayout = memoizeLRU(
 		};
 	},
 	100,
-	(count, containerHeight, containerWidth, isMobileDevice, isPortraitMode) =>
-		`${count}:${Math.round(containerHeight || 0)}:${Math.round(containerWidth || 0)}:${isMobileDevice}:${isPortraitMode}`
+	// Round dimensions to reduce cache misses
+	(count, containerHeight = 0, containerWidth = 0, isMobileDevice, isPortraitMode) => {
+		const roundedWidth = Math.round(containerWidth / 10) * 10;
+		const roundedHeight = Math.round(containerHeight / 10) * 10;
+		return `${count}:${roundedHeight}:${roundedWidth}:${isMobileDevice}:${isPortraitMode}`;
+	}
 );
 
 /**
- * Calculates the optimal grid configuration
+ * Checks if a layout rule's conditions match the current state
+ */
+function doesRuleMatch(rule: any, params: any): boolean {
+	// Check for exact count match
+	if (rule.when.count !== undefined && rule.when.count !== params.count) {
+		return false;
+	}
+
+	// Check for minimum count
+	if (rule.when.minCount !== undefined && params.count < rule.when.minCount) {
+		return false;
+	}
+
+	// Check for device type
+	if (rule.when.device === 'desktop' && params.isMobileDevice) {
+		return false;
+	}
+	if (rule.when.device === 'mobile' && !params.isMobileDevice) {
+		return false;
+	}
+
+	// Check for aspect ratio
+	if (rule.when.aspect && rule.when.aspect !== params.containerAspect) {
+		return false;
+	}
+
+	// Check for multiple allowed aspects
+	if (rule.when.aspects && !rule.when.aspects.includes(params.containerAspect)) {
+		return false;
+	}
+
+	// Check for orientation
+	if (rule.when.orientation === 'portrait' && !params.isPortraitMode) {
+		return false;
+	}
+	if (rule.when.orientation === 'landscape' && params.isPortraitMode) {
+		return false;
+	}
+
+	// Check for extra custom conditions
+	if (
+		rule.when.extraCheck &&
+		!rule.when.extraCheck(params.containerWidth, params.containerHeight)
+	) {
+		return false;
+	}
+
+	// All conditions passed!
+	return true;
+}
+
+/**
+ * Calculates the optimal grid configuration using our simplified config
  */
 const calculateGridConfiguration = memoizeLRU(
-	(
-		count: number,
-		containerWidth: number,
-		containerHeight: number,
-		isMobileDevice: boolean,
-		isPortraitMode: boolean
-	) => {
-		const layoutCategory = getLayoutCategory(count);
-		const containerAspect = getContainerAspect(containerWidth, containerHeight);
-		let columns = 0;
+	(params: {
+		count: number;
+		containerWidth: number;
+		containerHeight: number;
+		isMobileDevice: boolean;
+		isPortraitMode: boolean;
+	}) => {
+		const layoutCategory = getLayoutCategory(params.count);
+		const containerAspect = getContainerAspect(params.containerWidth, params.containerHeight);
 
-		// Handle special cases first
-		if (layoutCategory === 'singleItem') {
-			columns = 1;
-		} else if (layoutCategory === 'twoItems') {
-			// Determine layout based on container aspect and orientation
-			const useVerticalLayout =
-				containerAspect === 'tall' || (containerAspect === 'square' && isPortraitMode);
-			columns = useVerticalLayout
-				? LAYOUT_TEMPLATES.twoItems.vertical.cols
-				: LAYOUT_TEMPLATES.twoItems.horizontal.cols;
-		} else {
-			// Grid layouts (3+ items)
-			const deviceOrientation = isPortraitMode ? 'portraitDevice' : 'landscapeDevice';
-			columns = LAYOUT_TEMPLATES[layoutCategory][deviceOrientation].cols;
+		// Get initial base columns from defaults
+		let columns = getBaseColumnCount(layoutCategory, containerAspect, params.isPortraitMode);
 
-			// Apply contextual adjustments
-			if (count === 8 && containerAspect === 'tall') {
-				columns = 2;
-			}
+		// Enhanced params with derived values
+		const fullParams = {
+			...params,
+			containerAspect,
+			layoutCategory
+		};
 
-			if (count === 16 && !isMobileDevice) {
-				// <<< SPECIAL CASE CHECK
-				columns = 4; // Base columns for 16 items on non-mobile
-				// Check for overrides based on aspect ratio
-				if (containerAspect === 'tall' && containerHeight > containerWidth * 1.8) {
-					columns = 2; // Override to 2 columns if VERY tall
+		// Reset active rule to null
+		activeLayoutRule.set(null);
+
+		// Find first matching layout rule
+		for (const rule of LAYOUT_RULES) {
+			if (doesRuleMatch(rule, fullParams)) {
+				// Set the active rule in the store
+				activeLayoutRule.set(rule);
+				
+				if (rule.columns === '+1') {
+					// Special case: add 1 to the base columns (up to max)
+					columns = Math.min(rule.maxColumns || 8, columns + 1);
+				} else {
+					columns = parseInt(rule.columns.toString(), 10);
 				}
-				if (containerAspect === 'wide' && containerHeight < containerWidth * 0.5) {
-					columns = 8; // Override to 8 columns if VERY wide
-				}
+				console.log(`Applied layout rule: ${rule.description}`);
+				break; // Stop after first match
 			}
-
-			// Mobile adjustments
-			if (isMobileDevice && containerWidth < 375) {
-				columns = Math.min(columns, 2);
-			}
-
-			// Handle large item counts
-			if (!isMobileDevice && count > 16) {
-				// if the container aspect is wide, then let's do 8 in a row
-				// if tall, let's do two in  a row
-				// calculate some in between values too
-				if (containerAspect === 'wide') {
-					columns = 8;
-				} else if (containerAspect === 'widish') {
-					columns = 6;
-				} else if (containerAspect === 'square') {
-					columns = 6;
-				} else if (containerAspect === 'tall') {
-					columns = 4;
-				}
-			}
-			if (isMobileDevice && count > 16) {
-				// if the container aspect is wide, then let's do 8 in a row
-				// if tall, let's do two in  a row
-				// calculate some in between values too
-				if (containerAspect === 'wide') {
-					columns = 6;
-				} else if (containerAspect === 'widish') {
-					columns = 5;
-				} else if (containerAspect === 'tall') {
-					columns = 4;
-				} else if (containerAspect === 'square') {
-					if (!isMobileDevice) {
-						columns = 6;
-					} else {
-						columns = 5;
-					}
-				}
-			}
-
-			// Handle very wide containers
-			if (!isMobileDevice && !isPortraitMode && containerWidth > 1600) {
-				columns = Math.min(8, columns + 1);
-			}
-
-			// Ensure minimum of 1 column
-			columns = Math.max(1, columns);
 		}
 
+		// Ensure minimum of 1 column
+		columns = Math.max(1, columns);
+
 		// Calculate rows and template
-		const rows = Math.ceil(count / columns);
+		const rows = Math.ceil(params.count / columns);
 		const template = `repeat(${columns}, minmax(0, 1fr))`;
 
 		return { columns, rows, template };
 	},
 	100,
-	(count, width, height, isMobile, isPortrait) =>
-		`${count}:${Math.round(width)}:${Math.round(height)}:${isMobile}:${isPortrait}`
+	// Round dimensions to reduce cache misses
+	(params) => {
+		const { count, containerWidth, containerHeight, isMobileDevice, isPortraitMode } = params;
+		const roundedWidth = Math.round(containerWidth / 10) * 10;
+		const roundedHeight = Math.round(containerHeight / 10) * 10;
+		return `${count}:${roundedHeight}:${roundedWidth}:${isMobileDevice}:${isPortraitMode}`;
+	}
 );
+
+/**
+ * Gets the base column count for a given layout category
+ */
+function getBaseColumnCount(
+	layoutCategory: LayoutCategory,
+	aspect: ContainerAspect,
+	isPortrait: boolean
+): number {
+	if (layoutCategory === 'singleItem') {
+		return DEFAULT_COLUMNS.singleItem;
+	}
+
+	if (layoutCategory === 'twoItems') {
+		// Determine vertical vs horizontal layout
+		const useVerticalLayout = aspect === 'tall' || (aspect === 'square' && isPortrait);
+		return useVerticalLayout
+			? DEFAULT_COLUMNS.twoItems.vertical
+			: DEFAULT_COLUMNS.twoItems.horizontal;
+	}
+
+	// For grid layouts, just use the default column count
+	return DEFAULT_COLUMNS[layoutCategory] || 4;
+}
 
 /**
  * Calculates the optimal size for pictograph items
@@ -253,16 +298,44 @@ const calculateItemSize = memoizeLRU(
 		return `${Math.floor(calculatedSize)}px`;
 	},
 	100,
-	(config) =>
-		`${config.count}:${Math.round(config.containerWidth)}:${Math.round(config.containerHeight)}:${config.gridConfig.columns}:${config.gridConfig.rows}:${config.isMobileDevice}`
+	// Round dimensions to reduce cache misses
+	(config) => {
+		const { count, containerWidth, containerHeight, gridConfig, isMobileDevice } = config;
+		const roundedWidth = Math.round(containerWidth / 10) * 10;
+		const roundedHeight = Math.round(containerHeight / 10) * 10;
+		return `${count}:${roundedHeight}:${roundedWidth}:${gridConfig.columns}:${gridConfig.rows}:${isMobileDevice}`;
+	}
 );
 
 /**
- * Gets the appropriate grid gap size
+ * Gets the appropriate grid gap size using our config
  */
-function getGridGap(count: number, containerWidth: number, isMobileDevice: boolean): string {
-	const layoutCategory = getLayoutCategory(count);
-	const deviceType = getDeviceType(containerWidth, isMobileDevice);
+function getGridGap(params: {
+	count: number;
+	containerWidth: number;
+	containerHeight: number;
+	isMobileDevice: boolean;
+	isPortraitMode: boolean;
+}): string {
+	const layoutCategory = getLayoutCategory(params.count);
+	const deviceType = getDeviceType(params.containerWidth, params.isMobileDevice);
+	const containerAspect = getContainerAspect(params.containerWidth, params.containerHeight);
+
+	// Check for overrides first
+	for (const override of GRID_GAP_OVERRIDES) {
+		const fullParams = {
+			...params,
+			containerAspect,
+			layoutCategory
+		};
+
+		if (doesRuleMatch(override, fullParams)) {
+			console.log(`Applied gap override: ${override.description}`);
+			return override.gap;
+		}
+	}
+
+	// Use default gap based on device and layout
 	const deviceConfig =
 		DEVICE_CONFIG[deviceType as keyof typeof DEVICE_CONFIG] || DEVICE_CONFIG.desktop;
 
