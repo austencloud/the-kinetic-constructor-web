@@ -99,7 +99,7 @@ export const LAYOUT_RULES = [
 	},
 	{
 		description: 'More than 16 items on desktop, widish/square = 6 columns',
-		columns: 6,
+		columns: 4,
 		when: {
 			minCount: 17,
 			device: 'desktop',
@@ -115,7 +115,7 @@ export const LAYOUT_RULES = [
 	// Mobile rules
 	{
 		description: 'Many items on mobile, wide = 6 columns',
-		columns: 6,
+		columns: 4,
 		when: { minCount: 17, device: 'mobile', aspect: 'wide' }
 	},
 	{
