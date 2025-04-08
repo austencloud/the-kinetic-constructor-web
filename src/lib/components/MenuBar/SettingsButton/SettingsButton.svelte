@@ -44,7 +44,7 @@
 
 	{#if isOpen}
 		<div transition:fade={{ duration: 300 }}>
-			<SettingsDialog {background} {isOpen} onClose={toggleDialog} />
+			<SettingsDialog {background} {onChangeBackground} {isOpen} onClose={toggleDialog} />
 		</div>
 	{/if}
 </div>

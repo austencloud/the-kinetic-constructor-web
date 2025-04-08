@@ -9,7 +9,9 @@
 	export let isOpen: boolean;
 	export let onClose: () => void;
 	export let background: string;
+	export let onChangeBackground: (newBackground: string) => void;
 
+	
 	// Create event dispatcher for change background events
 	const dispatch = createEventDispatcher<{
 		changeBackground: string;
