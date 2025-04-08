@@ -18,146 +18,9 @@ import {
 	EAST,
 	NORTH
 } from '$lib/types/Constants';
-import type { DirectionTupleSet, TupleMapDefinition } from '../types';
+import type { DirectionTupleSet } from '../types';
 import type { GridMode, PropRotDir, MotionType, ShiftHandRotDir } from '$lib/types/Types';
 
-const STATIC_DIAMOND_MAP: TupleMapDefinition = {
-	[CLOCKWISE]: [
-		[1, -1],
-		[1, 1],
-		[-1, 1],
-		[-1, -1]
-	],
-	[COUNTER_CLOCKWISE]: [
-		[-1, -1],
-		[1, -1],
-		[1, 1],
-		[-1, 1]
-	],
-	[NO_ROT]: []
-};
-
-const STATIC_BOX_MAP: TupleMapDefinition = {
-	[CLOCKWISE]: [
-		[1, 1],
-		[-1, 1],
-		[-1, -1],
-		[1, -1]
-	],
-	[COUNTER_CLOCKWISE]: [
-		[-1, -1],
-		[1, -1],
-		[1, 1],
-		[-1, 1]
-	],
-	[NO_ROT]: []
-};
-
-const DASH_DIAMOND_MAP: TupleMapDefinition = {
-	[CLOCKWISE]: [
-		[1, -1],
-		[1, 1],
-		[-1, 1],
-		[-1, -1]
-	],
-	[COUNTER_CLOCKWISE]: [
-		[-1, -1],
-		[1, -1],
-		[1, 1],
-		[-1, 1]
-	],
-	[NO_ROT]: [
-		[1, -1],
-		[1, 1],
-		[-1, 1],
-		[-1, -1]
-	]
-};
-
-const DASH_BOX_MAP: TupleMapDefinition = {
-	[CLOCKWISE]: [
-		[-1, 1],
-		[-1, -1],
-		[1, -1],
-		[1, 1]
-	],
-	[COUNTER_CLOCKWISE]: [
-		[-1, 1],
-		[-1, -1],
-		[1, -1],
-		[1, 1]
-	],
-	[NO_ROT]: [
-		[1, -1],
-		[1, 1],
-		[-1, 1],
-		[-1, -1]
-	]
-};
-
-const PRO_DIAMOND_MAP: TupleMapDefinition = {
-	[CLOCKWISE]: [
-		[1, 1],
-		[-1, 1],
-		[-1, -1],
-		[1, -1]
-	],
-	[COUNTER_CLOCKWISE]: [
-		[-1, -1],
-		[1, -1],
-		[1, 1],
-		[-1, 1]
-	],
-	[NO_ROT]: []
-};
-
-const PRO_BOX_MAP: TupleMapDefinition = {
-	[CLOCKWISE]: [
-		[-1, 1],
-		[-1, -1],
-		[1, -1],
-		[1, 1]
-	],
-	[COUNTER_CLOCKWISE]: [
-		[1, 1],
-		[-1, 1],
-		[-1, -1],
-		[1, -1]
-	],
-	[NO_ROT]: []
-};
-
-const ANTI_DIAMOND_MAP: TupleMapDefinition = {
-	[CLOCKWISE]: [
-		[-1, -1],
-		[1, -1],
-		[1, 1],
-		[-1, 1]
-	],
-	[COUNTER_CLOCKWISE]: [
-		[1, 1],
-		[-1, 1],
-		[-1, -1],
-		[1, -1]
-	],
-	[NO_ROT]: []
-};
-
-const ANTI_BOX_MAP: TupleMapDefinition = {
-	[CLOCKWISE]: [
-		[-1, 1],
-		[-1, -1],
-		[1, -1],
-		[1, 1]
-	],
-	[COUNTER_CLOCKWISE]: [
-		[1, 1],
-		[-1, 1],
-		[-1, -1],
-		[1, -1]
-	],
-	[NO_ROT]: []
-};
 export function getDirectionTuples(
 	x: number,
 	y: number,
@@ -198,69 +61,61 @@ function getDashTuples(
 	propRotDir: PropRotDir,
 	gridMode: GridMode
 ): DirectionTupleSet {
-	const dashMappings: Record<string, Record<PropRotDir, DirectionTupleSet>> = {
-		[DIAMOND]: {
-			[CLOCKWISE]: [
+	if (gridMode === DIAMOND) {
+		if (propRotDir === CLOCKWISE) {
+			return [
 				[x, -y],
 				[y, x],
 				[-x, y],
 				[-y, -x]
-			],
-			[COUNTER_CLOCKWISE]: [
+			];
+		} else if (propRotDir === COUNTER_CLOCKWISE) {
+			return [
 				[-x, -y],
 				[y, -x],
 				[x, y],
 				[-y, x]
-			],
-			[NO_ROT]: [
+			];
+		} else if (propRotDir === NO_ROT) {
+			return [
 				[x, y],
 				[-y, -x],
 				[x, -y],
 				[y, x]
-			]
-		},
-		[BOX]: {
-			[CLOCKWISE]: [
+			];
+		}
+	} else if (gridMode === BOX) {
+		if (propRotDir === CLOCKWISE) {
+			return [
 				[-y, x],
 				[-x, -y],
 				[y, -x],
 				[x, y]
-			],
-			[COUNTER_CLOCKWISE]: [
+			];
+		} else if (propRotDir === COUNTER_CLOCKWISE) {
+			return [
 				[-x, y],
 				[-y, -x],
 				[x, -y],
 				[y, x]
-			],
-			[NO_ROT]: [
+			];
+		} else if (propRotDir === NO_ROT) {
+			return [
 				[x, y],
 				[-y, x],
 				[-x, -y],
 				[y, -x]
-			]
+			];
 		}
-	};
+	}
 
-	return (
-		dashMappings[gridMode]?.[propRotDir] || [
-			[x, y],
-			[-x, -y],
-			[-y, x],
-			[y, -x]
-		]
-	);
-}
-
-function applyDirectionMap(
-	x: number,
-	y: number,
-	propRotDir: PropRotDir,
-	map: TupleMapDefinition
-): DirectionTupleSet {
-	const tuples = map[propRotDir];
-	if (!tuples?.length) return [];
-
-	return tuples.map(([factorX, factorY]) => [x * factorX, y * factorY]);
+	// Default fallback
+	return [
+		[x, y],
+		[-x, -y],
+		[-y, x],
+		[y, -x]
+	];
 }
 
 function getStaticTuples(
@@ -269,8 +124,47 @@ function getStaticTuples(
 	propRotDir: PropRotDir,
 	gridMode: GridMode
 ): DirectionTupleSet {
-	const map = gridMode === DIAMOND ? STATIC_DIAMOND_MAP : STATIC_BOX_MAP;
-	return applyDirectionMap(x, y, propRotDir, map);
+	if (gridMode === DIAMOND) {
+		if (propRotDir === CLOCKWISE) {
+			return [
+				[x, -y],
+				[y, x],
+				[-x, y],
+				[-y, -x]
+			];
+		} else if (propRotDir === COUNTER_CLOCKWISE) {
+			return [
+				[-x, -y],
+				[y, -x],
+				[x, y],
+				[-y, x]
+			];
+		}
+	} else if (gridMode === BOX) {
+		if (propRotDir === CLOCKWISE) {
+			return [
+				[x, y],
+				[-y, x],
+				[-x, -y],
+				[y, -x]
+			];
+		} else if (propRotDir === COUNTER_CLOCKWISE) {
+			return [
+				[-y, -x],
+				[x, -y],
+				[y, x],
+				[-x, y]
+			];
+		}
+	}
+
+	// Default case when no valid match
+	return [
+		[x, y],
+		[-x, -y],
+		[-y, x],
+		[y, -x]
+	];
 }
 
 function getProTuples(
@@ -279,8 +173,42 @@ function getProTuples(
 	propRotDir: PropRotDir,
 	gridMode: GridMode
 ): DirectionTupleSet {
-	const map = gridMode === DIAMOND ? PRO_DIAMOND_MAP : PRO_BOX_MAP;
-	return applyDirectionMap(x, y, propRotDir, map);
+	if (gridMode === DIAMOND) {
+		if (propRotDir === CLOCKWISE) {
+			return [
+				[x, y],
+				[-y, x],
+				[-x, -y],
+				[y, -x]
+			];
+		} else if (propRotDir === COUNTER_CLOCKWISE) {
+			return [
+				[-y, -x],
+				[x, -y],
+				[y, x],
+				[-x, y]
+			];
+		}
+	} else if (gridMode === BOX) {
+		if (propRotDir === CLOCKWISE) {
+			return [
+				[-x, y],
+				[-y, -x],
+				[x, -y],
+				[y, x]
+			];
+		} else if (propRotDir === COUNTER_CLOCKWISE) {
+			return [
+				[x, y],
+				[-y, x],
+				[-x, -y],
+				[y, -x]
+			];
+		}
+	}
+
+	// Default case
+	return [];
 }
 
 function getAntiTuples(
@@ -289,8 +217,42 @@ function getAntiTuples(
 	propRotDir: PropRotDir,
 	gridMode: GridMode
 ): DirectionTupleSet {
-	const map = gridMode === DIAMOND ? ANTI_DIAMOND_MAP : ANTI_BOX_MAP;
-	return applyDirectionMap(x, y, propRotDir, map);
+	if (gridMode === DIAMOND) {
+		if (propRotDir === CLOCKWISE) {
+			return [
+				[-y, -x],
+				[x, -y],
+				[y, x],
+				[-x, y]
+			];
+		} else if (propRotDir === COUNTER_CLOCKWISE) {
+			return [
+				[x, y],
+				[-y, x],
+				[-x, -y],
+				[y, -x]
+			];
+		}
+	} else if (gridMode === BOX) {
+		if (propRotDir === CLOCKWISE) {
+			return [
+				[-x, y],
+				[-y, -x],
+				[x, -y],
+				[y, x]
+			];
+		} else if (propRotDir === COUNTER_CLOCKWISE) {
+			return [
+				[x, y],
+				[-y, x],
+				[-x, -y],
+				[y, -x]
+			];
+		}
+	}
+
+	// Default case
+	return [];
 }
 
 function getFloatTuples(
@@ -299,7 +261,31 @@ function getFloatTuples(
 	handRotDir?: ShiftHandRotDir,
 	gridMode?: GridMode
 ): DirectionTupleSet {
-	return [];
+	// Based on the Python version, you'd implement float tuples with CW_HANDPATH and CCW_HANDPATH
+	// This is a simplified implementation since the Python code references HandpathCalculator
+	if (handRotDir === 'cw_shift') {
+		return [
+			[x, y],
+			[-y, x],
+			[-x, -y],
+			[y, -x]
+		];
+	} else if (handRotDir === 'ccw_shift') {
+		return [
+			[-y, -x],
+			[x, -y],
+			[y, x],
+			[-x, y]
+		];
+	}
+
+	// Default when handRotDir is undefined
+	return [
+		[x, y],
+		[x, y],
+		[x, y],
+		[x, y]
+	];
 }
 
 export function getQuadrantIndex(

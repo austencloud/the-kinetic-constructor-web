@@ -34,33 +34,35 @@ export class ArrowPlacementManager {
 		// Get the initial position and adjustment
 		const initialPos = getInitialPosition(arrow, this.config);
 		const adjustment = calculateAdjustment(arrow, this.config);
-		
+
 		// Get SVG center coordinates
 		const svgCenterX = arrow.svgData?.center?.x || arrow.svgCenter?.x || 0;
 		const svgCenterY = arrow.svgData?.center?.y || arrow.svgCenter?.y || 0;
-		
+
 		// Log values for debugging
-		console.log(`Arrow ${arrow.id} (${arrow.color}) Placement Debug:`);
-		console.log(`- Initial Position: (${initialPos.x}, ${initialPos.y})`);
-		console.log(`- Adjustment: (${adjustment.x}, ${adjustment.y})`);
-		console.log(`- SVG Center: (${svgCenterX}, ${svgCenterY})`);
-		console.log(`- Is Mirrored: ${arrow.svgMirrored}`);
-		
+		if (arrow.loc == 'ne' && arrow.propRotDir == 'ccw' && arrow.motionType == 'pro') {
+			console.log(`Arrow ${arrow.id} (${arrow.color}) Placement Debug:`);
+			console.log(`- Initial Position: (${initialPos.x}, ${initialPos.y})`);
+			console.log(`- Adjustment: (${adjustment.x}, ${adjustment.y})`);
+			console.log(`- SVG Center: (${svgCenterX}, ${svgCenterY})`);
+			console.log(`- Is Mirrored: ${arrow.svgMirrored}`);
+		}
 		// Calculate final position accounting for mirroring
 		if (arrow.svgMirrored) {
-		  // For mirrored arrows, apply the mirroring effect to the adjustment
-		  arrow.coords = {
-			x: initialPos.x + adjustment.x - svgCenterX,
-			y: initialPos.y + adjustment.y - svgCenterY
-		  };
+			// For mirrored arrows, apply the mirroring effect to the adjustment
+			arrow.coords = {
+				x: initialPos.x + adjustment.x - svgCenterX,
+				y: initialPos.y + adjustment.y - svgCenterY
+			};
 		} else {
-		  // Standard positioning for normal arrows
-		  arrow.coords = {
-			x: initialPos.x + adjustment.x - svgCenterX,
-			y: initialPos.y + adjustment.y - svgCenterY
-		  };
+			// Standard positioning for normal arrows
+			arrow.coords = {
+				x: initialPos.x + adjustment.x - svgCenterX,
+				y: initialPos.y + adjustment.y - svgCenterY
+			};
 		}
-		
-		console.log(`✅ Final coords: (${arrow.coords.x}, ${arrow.coords.y})`);
-	  }
+		if (arrow.loc == 'ne') {
+			console.log(`✅ Final coords: (${arrow.coords.x}, ${arrow.coords.y})`);
+		}
+	}
 }
