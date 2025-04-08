@@ -36,7 +36,8 @@
 	aria-labelledby="tab-{selectedTab}"
 	id="options-panel-{selectedTab}"
 	transition:fade={{ duration: 200 }}
-	style={customStyle} >
+	style={customStyle}
+>
 	<div
 		class="options-grid {gridClass} {aspectClass}"
 		class:mobile-grid={isMobileDevice}
@@ -80,10 +81,15 @@
 		width: 100%;
 		max-width: 1200px;
 		justify-items: center;
+		justify-content: center; /* Add this line */
 		align-content: flex-start;
 		position: relative;
 		grid-gap: var(--grid-gap, 8px);
 		margin: auto;
+	}
+	.options-grid.tall-aspect-container {
+		width: auto;
+		max-width: max-content;
 	}
 
 	/* Other styles remain the same */
@@ -105,7 +111,6 @@
 		position: relative;
 		z-index: 1;
 		transition: z-index 0s 0.2s;
-		overflow: hidden;
 	}
 
 	.grid-item-wrapper:hover {

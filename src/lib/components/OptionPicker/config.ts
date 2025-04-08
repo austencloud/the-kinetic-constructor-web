@@ -38,7 +38,7 @@ export const ASPECT_RATIO = {
 // ----- Device Configuration -----
 export const DEVICE_CONFIG = {
 	smallMobile: {
-		padding: { horizontal: 8, vertical: 8 },
+		padding: { horizontal: 12, vertical: 12 },
 		gap: 2,
 		minItemSize: 60,
 		maxItemSize: 90,
@@ -46,28 +46,28 @@ export const DEVICE_CONFIG = {
 	},
 	mobile: {
 		padding: { horizontal: 12, vertical: 12 },
-		gap: 20,
+		gap: 2,
 		minItemSize: 80,
 		maxItemSize: 175,
 		scaleFactor: 1
 	},
 	tablet: {
-		padding: { horizontal: 16, vertical: 16 },
+		padding: { horizontal: 12, vertical: 12 },
 		gap: 2,
 		minItemSize: 80,
 		maxItemSize: 175,
 		scaleFactor: 1
 	},
 	desktop: {
-		padding: { horizontal: 20, vertical: 20 },
+		padding: { horizontal: 12, vertical: 12 },
 		gap: 2,
 		minItemSize: 90,
 		maxItemSize: 180,
 		scaleFactor: 1.0
 	},
 	largeDesktop: {
-		padding: { horizontal: 24, vertical: 24 },
-		gap: 20,
+		padding: { horizontal: 12, vertical: 12 },
+		gap: 2,
 		minItemSize: 100,
 		maxItemSize: 200,
 		scaleFactor: 1.1
@@ -101,8 +101,8 @@ export const LAYOUT_TEMPLATES = {
 // ----- Gap Adjustments -----
 export const GAP_ADJUSTMENTS = {
 	singleItem: 0,
-	twoItems: 16,
-	fewItems: 12,
+	twoItems: 5,
+	fewItems: 5,
 	mediumItems: 10,
 	manyItems: 8
 };

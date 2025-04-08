@@ -5,10 +5,64 @@
     import { activeLayoutRule } from '../utils/layoutUtils';
 
     let showInfo = false;
+    let showCopyNotification = false;
+    let copyError = false;
     const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 
     function toggleInfo() {
         showInfo = !showInfo;
+    }
+
+    async function copyDebugInfo() {
+        let textToCopy = '';
+
+        if ($activeLayoutRule) {
+            textToCopy += `Active Layout Rule:\n`;
+            textToCopy += `Description: ${$activeLayoutRule.description}\n`;
+            textToCopy += `Columns: ${$activeLayoutRule.columns}`;
+            if ($activeLayoutRule.maxColumns) {
+                textToCopy += ` (Max: ${$activeLayoutRule.maxColumns})`;
+            }
+            textToCopy += `\n`;
+
+            if ($activeLayoutRule.when) {
+                textToCopy += `Conditions:\n`;
+                if ($activeLayoutRule.when.count !== undefined) {
+                    textToCopy += `  - Count: ${$activeLayoutRule.when.count}\n`;
+                }
+                if ($activeLayoutRule.when.minCount !== undefined) {
+                    textToCopy += `  - Min Count: ${$activeLayoutRule.when.minCount}\n`;
+                }
+                if ($activeLayoutRule.when.device) {
+                    textToCopy += `  - Device: ${$activeLayoutRule.when.device}\n`;
+                }
+                 if ($activeLayoutRule.when.aspect) {
+                    textToCopy += `  - Aspect: ${$activeLayoutRule.when.aspect}\n`;
+                }
+                if ($activeLayoutRule.when.aspects) {
+                     textToCopy += `  - Aspects: ${$activeLayoutRule.when.aspects.join(", ")}\n`;
+                }
+                if ($activeLayoutRule.when.orientation) {
+                    textToCopy += `  - Orientation: ${$activeLayoutRule.when.orientation}\n`;
+                    textToCopy += `  - Has extra check condition\n`;
+                }
+            }
+        }
+
+        textToCopy += `\nCurrent State:\n`;
+        textToCopy += `  - Count: ${$layoutContext.layoutConfig.gridColumns.match(/repeat\((\d+)\)/)?.[1] || 'unknown'} columns\n`;
+        textToCopy += `  - Device: ${$layoutContext.deviceType} (${$layoutContext.isMobile ? 'mobile' : 'desktop'})\n`;
+        textToCopy += `  - Aspect: ${$layoutContext.containerAspect}\n`;
+        textToCopy += `  - Orientation: ${$layoutContext.isPortrait ? 'portrait' : 'landscape'}\n`;
+        textToCopy += `  - Size: ${$layoutContext.containerWidth}x${$layoutContext.containerHeight}\n`;
+
+        try {
+            await navigator.clipboard.writeText(textToCopy);
+            alert('Debug info copied to clipboard!');
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+            alert('Failed to copy debug info to clipboard.');
+        }
     }
 </script>
 
@@ -61,10 +115,11 @@
                             </ul>
                         </div>
                     </div>
+                {/if}
                     <div class="current-state">
                         <div class="state-header">Current State:</div>
                         <ul>
-                            <li>Count: {$layoutContext.layoutConfig.gridColumns.match(/repeat\((\d+)/)?.[1] || 'unknown'} columns</li>
+                            <li>Count: {$layoutContext.layoutConfig.gridColumns.match(/repeat\((\d+)\)/)?.[1] || 'unknown'} columns</li>
                             <li>Device: {$layoutContext.deviceType} ({$layoutContext.isMobile ? 'mobile' : 'desktop'})</li>
                             <li>Aspect: {$layoutContext.containerAspect}</li>
                             <li>Orientation: {$layoutContext.isPortrait ? 'portrait' : 'landscape'}</li>
@@ -74,9 +129,10 @@
                     <div class="edit-tip">
                         Edit in: <code>src/lib/components/OptionPicker/utils/layoutConfig.ts</code>
                     </div>
-                {:else}
+                {#if !$activeLayoutRule}
                     <div class="no-rule">No layout rule currently matched.</div>
                 {/if}
+                <button class="copy-button" on:click={copyDebugInfo}>Copy</button>
             </div>
         </div>
     {/if}
@@ -221,5 +277,22 @@
         padding: 10px;
         color: #fb7185;
         font-style: italic;
+    }
+
+    .copy-button {
+        background: #38bdf8;
+        color: #0f172a;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 600;
+        transition: background-color 0.2s ease;
+        margin-top: 10px;
+    }
+
+    .copy-button:hover {
+        background-color: #7dd3fc;
     }
 </style>

@@ -71,7 +71,6 @@
 			background-color 0.2s ease;
 		border-radius: 6px;
 		outline: none;
-		overflow: hidden;
 	}
 	.pictograph-container {
 		display: flex;
@@ -81,9 +80,11 @@
 		height: 100%;
 		transition: transform 0.2s ease-in-out;
 	}
+	/* In Option.svelte */
 	.option:hover {
-		transform: scale(1.05);
+		transform: scale(1.1); /* Bump this up from 1.05 */
 		background-color: rgba(243, 244, 246, 0.5);
+		z-index: 20; /* Add this to ensure it rises above siblings */
 	}
 	.option:active {
 		transform: scale(0.98);
