@@ -627,7 +627,7 @@
 		transform: scale(1.05);
 		z-index: 4;
 		border: 4px solid #48bb78;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+		box-shadow: 0 0 0 2px rgba(72, 187, 120, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
 	.pictograph-wrapper:active .pictograph {

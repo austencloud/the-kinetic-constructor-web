@@ -56,7 +56,7 @@
 	<div class="sequence-workbench" use:resizeObserver>
 		<SequenceWidget workbenchHeight={sequenceWorkbenchHeight} />
 
-		<GraphEditorToggleTab
+		<!-- <GraphEditorToggleTab
 			{isExpanded}
 			animationDuration={ANIMATION_DURATION}
 			graphEditorHeight={isExpanded ? computedEditorHeight : 0}
@@ -67,7 +67,7 @@
 			{isExpanded}
 			animationDuration={ANIMATION_DURATION}
 			maxEditorHeight={computedEditorHeight}
-		/>
+		/> -->
 	</div>
 </SequenceProvider>
 

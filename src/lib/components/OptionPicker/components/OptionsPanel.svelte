@@ -69,7 +69,6 @@
 		display: flex;
 		justify-content: center;
 		align-items: flex-start;
-		/* Removed dynamic padding-top, revert to standard padding */
 		padding: 0.5rem;
 		box-sizing: border-box;
 		overflow-y: auto;
@@ -77,9 +76,9 @@
 	}
 
 	.options-grid {
+		max-width: max-content;
 		display: grid;
 		width: 100%;
-		max-width: 1200px;
 		justify-items: center;
 		justify-content: center; /* Add this line */
 		align-content: flex-start;

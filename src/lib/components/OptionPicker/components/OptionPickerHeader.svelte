@@ -150,7 +150,7 @@
 	}
 
 	.helper-message {
-		color: black;
+		color: white;
 		font-style: italic;
 		font-size: 1rem;
 		text-align: center;

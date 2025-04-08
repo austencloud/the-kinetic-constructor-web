@@ -74,6 +74,7 @@ export const LAYOUT_RULES = [
 		when: { count: 16, device: 'desktop' }
 	},
 
+
 	//====================== MOBILE DEVICE LAYOUTS ======================
 
 	// Wide mobile screens get 4 columns
@@ -107,7 +108,7 @@ export const LAYOUT_RULES = [
 	},
 	{
 		description: 'Many items on desktop, widish/square = 6 columns',
-		columns: 6,
+		columns: 8,
 		when: {
 			minCount: 17,
 			device: 'desktop',
