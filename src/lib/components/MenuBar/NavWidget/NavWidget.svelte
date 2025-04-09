@@ -107,7 +107,6 @@
 		display: flex;
 		justify-content: center;
 		gap: 1.5vw; /* Increased gap between buttons */
-		padding: 0.7rem;
 		position: relative;
 		overflow: visible;
 	}
@@ -121,7 +120,7 @@
 	}
 
 	.emoji-only {
-		font-size: 1.4em; /* Make emoji bigger */
+		font-size: 1.0em; /* Make emoji bigger */
 		transition: transform 0.2s ease;
 	}
 
@@ -130,6 +129,7 @@
 		position: absolute;
 		bottom: -8px;
 		left: 50%;
+		right: 50%;
 		transform: translateX(-50%);
 		width: 30px;
 		height: 3px;

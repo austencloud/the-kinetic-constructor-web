@@ -1,18 +1,12 @@
 <script lang="ts">
-    // This button only needs to dispatch a click event.
-    // Parent component (MainLayout via MenuBar->onSettingsClick) handles opening the dialog.
     import { createEventDispatcher, onMount } from 'svelte';
-
-    // REMOVED: export let background: string;
-	// REMOVED: export let onChangeBackground: (newBackground: string) => void;
 
     const dispatch = createEventDispatcher();
 
     function handleClick() {
-        dispatch('click'); // Dispatch simple click event
+        dispatch('click');
     }
 
-    // --- Sizing logic ---
     let buttonSize = 50;
     let iconSize = 38;
 
@@ -26,8 +20,6 @@
         window.addEventListener('resize', updateSizes);
         return () => window.removeEventListener('resize', updateSizes);
     });
-    // --- End Sizing logic ---
-
 </script>
 
 <button
@@ -44,7 +36,6 @@
 </button>
 
 <style>
-    /* Styles remain the same */
     .settings-button {
         width: var(--button-size);
         height: var(--button-size);
@@ -64,6 +55,9 @@
         margin: 5px;
         padding: 0;
         overflow: hidden;
+        position: absolute;
+        top: 0;
+        right: 0; /* Align to the top-right corner */
     }
     .settings-button:hover {
         transform: scale(1.1);

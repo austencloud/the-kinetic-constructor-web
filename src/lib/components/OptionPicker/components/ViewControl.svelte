@@ -13,7 +13,7 @@
 	import { uiState } from '../store';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 
-	export let selectedTabValue: string | null;
+	export let selectedTab: string | null;
 
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 	$: isMobileDevice = $layoutContext.isMobile;
@@ -22,13 +22,13 @@
 	let buttonRef: HTMLElement;
 
 	const viewOptions = [
-		{ value: 'all', label: 'Show All', icon: '✨', isSortMethod: false },
-		{ value: 'type', label: 'Group by Type', icon: '📁', isSortMethod: true },
-		{ value: 'endPosition', label: 'Group by End Position', icon: '🏁', isSortMethod: true },
-		{ value: 'reversals', label: 'Group by Reversals', icon: '🔄', isSortMethod: true }
+		{ value: 'all', label: 'All', icon: '✨', isSortMethod: false },
+		{ value: 'type', label: 'Type', icon: '📁', isSortMethod: true },
+		{ value: 'endPosition', label: 'End Position', icon: '🏁', isSortMethod: true },
+		{ value: 'reversals', label: 'Reversals', icon: '🔄', isSortMethod: true }
 	] as const;
 
-	$: currentViewValue = selectedTabValue === 'all' ? 'all' : $uiState.sortMethod;
+	$: currentViewValue = selectedTab === 'all' ? 'all' : $uiState.sortMethod;
 	$: selectedViewOption =
 		viewOptions.find((opt) => opt.value === currentViewValue) || viewOptions[0];
 
