@@ -21,6 +21,8 @@ export function detectFoldableDevice(): {
 	const isSamsung = /Samsung|SM-F|Galaxy Fold/i.test(ua);
 
 	// Z-Fold specific detection
+	// In deviceDetection.ts, update the detection ranges:
+	// Z-Fold specific detection
 	if (isSamsung) {
 		// Adjust for your actual dimensions - these appear to be smaller than expected
 		if (width > 350 && width < 600 && height > 450 && height < 600 && pixelRatio > 2) {
