@@ -62,7 +62,6 @@ interface GridConfigParams {
 	containerHeight: number;
 	isMobileDevice: boolean;
 	isPortraitMode: boolean;
-	isFoldable?: boolean;
 	foldableInfo?: ReturnType<typeof detectFoldableDevice>;
 }
 
@@ -104,7 +103,6 @@ export const getResponsiveLayout = memoizeLRU(
 			containerHeight,
 			isMobileDevice,
 			isPortraitMode,
-			isFoldable,
 			foldableInfo
 		});
 
@@ -115,7 +113,8 @@ export const getResponsiveLayout = memoizeLRU(
 			containerHeight,
 			gridConfig,
 			isMobileDevice,
-			isPortraitMode
+			isPortraitMode,
+			foldableInfo // Pass foldable info to size calculation
 		});
 
 		// Get container aspect
@@ -127,7 +126,8 @@ export const getResponsiveLayout = memoizeLRU(
 			containerWidth,
 			containerHeight,
 			isMobileDevice,
-			isPortraitMode
+			isPortraitMode,
+			foldableInfo // Pass foldable info to grid gap calculation
 		});
 
 		// Get grid classes
@@ -135,12 +135,19 @@ export const getResponsiveLayout = memoizeLRU(
 			count,
 			containerWidth,
 			containerHeight,
-			isPortraitMode
+			isPortraitMode,
+			foldableInfo // Pass foldable info to class determination
 		);
 
 		// Use enhanced device type for scale factor
 		const deviceConfig = DEVICE_CONFIG[enhancedDeviceType];
-		const scaleFactor = deviceConfig.scaleFactor;
+
+		// For foldable devices, reduce scale factor slightly in unfolded state
+		// to allow more content to fit
+		let scaleFactor = deviceConfig.scaleFactor;
+		if (foldableInfo.isFoldable && foldableInfo.isUnfolded) {
+			scaleFactor = Math.max(0.9, scaleFactor * 0.95);
+		}
 
 		// Return the complete layout configuration
 		return {
@@ -157,7 +164,12 @@ export const getResponsiveLayout = memoizeLRU(
 	(count, containerHeight = 0, containerWidth = 0, isMobileDevice, isPortraitMode) => {
 		const roundedWidth = Math.round(containerWidth / 10) * 10;
 		const roundedHeight = Math.round(containerHeight / 10) * 10;
-		return `${count}:${roundedHeight}:${roundedWidth}:${isMobileDevice}:${isPortraitMode}`;
+		// Include folded state in cache key
+		const foldableState = detectFoldableDevice();
+		const foldableKey = foldableState.isFoldable
+			? `${foldableState.foldableType}-${foldableState.isUnfolded ? 'unfolded' : 'folded'}`
+			: 'none';
+		return `${count}:${roundedHeight}:${roundedWidth}:${isMobileDevice}:${isPortraitMode}:${foldableKey}`;
 	}
 );
 
@@ -172,6 +184,11 @@ function doesRuleMatch(rule: any, params: any): boolean {
 
 	// Check for minimum count
 	if (rule.when.minCount !== undefined && params.count < rule.when.minCount) {
+		return false;
+	}
+
+	// Check for maximum count
+	if (rule.when.maxCount !== undefined && params.count > rule.when.maxCount) {
 		return false;
 	}
 
@@ -246,7 +263,11 @@ const calculateGridConfiguration = memoizeLRU(
 				} else {
 					columns = parseInt(rule.columns.toString(), 10);
 				}
-				console.log(`Applied layout rule: ${rule.description}`);
+
+				if (params.foldableInfo?.isFoldable) {
+					console.log(`Applied foldable layout rule: ${rule.description}`);
+				}
+
 				break; // Stop after first match
 			}
 		}
@@ -254,24 +275,35 @@ const calculateGridConfiguration = memoizeLRU(
 		// Ensure minimum of 1 column
 		columns = Math.max(1, columns);
 
-		// Calculate rows and template
-		const rows = Math.ceil(params.count / columns);
+		// Special handling for foldable devices
+		if (params.foldableInfo?.isFoldable && params.foldableInfo.isUnfolded) {
+			// For Z-Fold devices in landscape, we might want to adjust column count
+			// based on the specific device capabilities
+			if (params.foldableInfo.foldableType === 'zfold' && !params.isPortraitMode && columns > 2) {
+				// Ensure we don't make columns too small on Z-Fold
+				columns = Math.min(columns, 5);
+			}
+		}
+
+		// Calculate template
 		const template = `repeat(${columns}, minmax(0, 1fr))`;
 
-		return { columns, rows, template };
+		return { columns, template };
 	},
 	100,
 	// Round dimensions to reduce cache misses
 	(params) => {
-		const { count, containerWidth, containerHeight, isMobileDevice, isPortraitMode } = params;
+		const { count, containerWidth, containerHeight, isMobileDevice, isPortraitMode, foldableInfo } =
+			params;
 		const roundedWidth = Math.round(containerWidth / 10) * 10;
 		const roundedHeight = Math.round(containerHeight / 10) * 10;
-		return `${count}:${roundedHeight}:${roundedWidth}:${isMobileDevice}:${isPortraitMode}`;
+		const foldableKey = foldableInfo?.isFoldable
+			? `${foldableInfo.foldableType}-${foldableInfo.isUnfolded ? 'unfolded' : 'folded'}`
+			: 'none';
+		return `${count}:${roundedHeight}:${roundedWidth}:${isMobileDevice}:${isPortraitMode}:${foldableKey}`;
 	}
 );
 
-// Rest of the functions remain unchanged
-// ...
 /**
  * Gets the appropriate grid gap size using our config
  */
@@ -281,6 +313,7 @@ function getGridGap(params: {
 	containerHeight: number;
 	isMobileDevice: boolean;
 	isPortraitMode: boolean;
+	foldableInfo?: ReturnType<typeof detectFoldableDevice>;
 }): string {
 	const layoutCategory = getLayoutCategory(params.count);
 	const deviceType = getDeviceType(params.containerWidth, params.isMobileDevice);
@@ -295,7 +328,6 @@ function getGridGap(params: {
 		};
 
 		if (doesRuleMatch(override, fullParams)) {
-			console.log(`Applied gap override: ${override.description}`);
 			return override.gap;
 		}
 	}
@@ -305,19 +337,19 @@ function getGridGap(params: {
 		DEVICE_CONFIG[deviceType as keyof typeof DEVICE_CONFIG] || DEVICE_CONFIG.desktop;
 
 	// Apply custom gap adjustment based on layout category
-	const gapSize =
+	let gapSize =
 		deviceConfig.gap + (GAP_ADJUSTMENTS[layoutCategory as keyof typeof GAP_ADJUSTMENTS] || 0);
+
+	// Adjust gap size for foldable devices
+	if (params.foldableInfo?.isFoldable && params.foldableInfo.isUnfolded) {
+		// For unfolded foldable devices, reduce gap to fit more content
+		gapSize = Math.max(2, gapSize - 2);
+	}
 
 	return `${gapSize}px`;
 }
 
 /**
- * Gets appropriate CSS classes for the grid based on layout
- */
-
-/**
- * Gets the base column count for a given layout category
- *//**
  * Gets the base column count for a given layout category
  */
 function getBaseColumnCount(
@@ -342,70 +374,14 @@ function getBaseColumnCount(
 }
 
 /**
- * Calculates the optimal size for pictograph items
+ * Gets appropriate CSS classes for the grid based on layout
  */
-const calculateOptionSize = memoizeLRU(
-	(config: {
-		count: number;
-		containerWidth: number;
-		containerHeight: number;
-		gridConfig: { columns: number; rows: number; template: string };
-		isMobileDevice: boolean;
-		isPortraitMode: boolean;
-	}): string => {
-		const { count, containerWidth, containerHeight, gridConfig, isMobileDevice } = config;
-		const { columns, rows } = gridConfig;
-
-		// Basic validation
-		if (containerWidth <= 0 || containerHeight <= 0 || columns <= 0 || rows <= 0) {
-			console.warn('Invalid dimensions or grid config for item size calculation.');
-			return isMobileDevice ? '80px' : '100px';
-		}
-
-		// Get enhanced device type for better device-specific settings
-		const { deviceType } = getEnhancedDeviceType(containerWidth, isMobileDevice);
-		const deviceConfig =
-			DEVICE_CONFIG[deviceType as keyof typeof DEVICE_CONFIG] || DEVICE_CONFIG.desktop;
-
-		// Calculate available space
-		const horizontalPadding = deviceConfig.padding.horizontal * 2;
-		const verticalPadding = deviceConfig.padding.vertical * 2;
-		const gapSize = deviceConfig.gap;
-		const totalHorizontalGap = Math.max(0, columns - 1) * gapSize;
-		const totalVerticalGap = Math.max(0, rows - 1) * gapSize;
-		const availableWidth = containerWidth - horizontalPadding - totalHorizontalGap;
-		const availableHeight = containerHeight - verticalPadding - totalVerticalGap;
-
-		// Calculate size per item
-		const widthPerItem = availableWidth / columns;
-		const heightPerItem = availableHeight / rows;
-
-		// Use the smaller dimension to ensure square items fit
-		let calculatedSize = Math.min(widthPerItem, heightPerItem);
-
-		// Apply scaling factor
-		calculatedSize *= deviceConfig.scaleFactor;
-
-		// Clamp between min and max
-		calculatedSize = Math.max(deviceConfig.minItemSize, calculatedSize);
-		calculatedSize = Math.min(deviceConfig.maxItemSize, calculatedSize);
-
-		return `${Math.floor(calculatedSize)}px`;
-	},
-	100,
-	// Round dimensions to reduce cache misses
-	(config) => {
-		const { count, containerWidth, containerHeight, gridConfig, isMobileDevice } = config;
-		const roundedWidth = Math.round(containerWidth / 10) * 10;
-		const roundedHeight = Math.round(containerHeight / 10) * 10;
-		return `${count}:${roundedHeight}:${roundedWidth}:${gridConfig.columns}:${gridConfig.rows}:${isMobileDevice}`;
-	}
-);
 function getGridClasses(
 	count: number,
 	containerWidth: number,
 	containerHeight: number,
-	isPortraitMode: boolean
+	isPortraitMode: boolean,
+	foldableInfo?: ReturnType<typeof detectFoldableDevice>
 ): { gridClass: string; aspectClass: string } {
 	const layoutCategory = getLayoutCategory(count);
 	const containerAspect = getContainerAspect(containerWidth, containerHeight);
@@ -427,8 +403,91 @@ function getGridClasses(
 		gridClass = LAYOUT_TEMPLATES[layoutCategory][deviceOrientation].class;
 	}
 
+	// Add foldable specific class if applicable
+	if (foldableInfo?.isFoldable) {
+		gridClass += ` foldable-${foldableInfo.foldableType}`;
+		gridClass += foldableInfo.isUnfolded ? ' unfolded' : ' folded';
+	}
+
 	// Add aspect-based class
 	const aspectClass = `${containerAspect}-aspect-container`;
 
 	return { gridClass, aspectClass };
 }
+
+/**
+ * Calculates the optimal size for pictograph items
+ */
+const calculateOptionSize = memoizeLRU(
+	(config: {
+		count: number;
+		containerWidth: number;
+		containerHeight: number;
+		gridConfig: { columns: number; template: string };
+		isMobileDevice: boolean;
+		isPortraitMode: boolean;
+		foldableInfo?: ReturnType<typeof detectFoldableDevice>;
+	}): string => {
+		const { count, containerWidth, containerHeight, gridConfig, isMobileDevice, foldableInfo } =
+			config;
+		const { columns } = gridConfig;
+
+		// Basic validation
+		if (containerWidth <= 0 || containerHeight <= 0 || columns <= 0) {
+			console.warn('Invalid dimensions or grid config for item size calculation.');
+			return isMobileDevice ? '80px' : '100px';
+		}
+
+		// Get enhanced device type for better device-specific settings
+		const { deviceType } = getEnhancedDeviceType(containerWidth, isMobileDevice);
+		const deviceConfig =
+			DEVICE_CONFIG[deviceType as keyof typeof DEVICE_CONFIG] || DEVICE_CONFIG.desktop;
+
+		// Calculate available space
+		const horizontalPadding = deviceConfig.padding.horizontal * 2;
+		const verticalPadding = deviceConfig.padding.vertical * 2;
+		const gapSize = deviceConfig.gap;
+		const totalHorizontalGap = Math.max(0, columns - 1) * gapSize;
+		const totalVerticalGap = Math.max(0, Math.ceil(count / columns) - 1) * gapSize;
+		const availableWidth = containerWidth - horizontalPadding - totalHorizontalGap;
+		const availableHeight = containerHeight - verticalPadding - totalVerticalGap;
+
+		// Calculate size per item
+		const widthPerItem = availableWidth / columns;
+		const heightPerItem = availableHeight / Math.ceil(count / columns);
+
+		// Use the smaller dimension to ensure square items fit
+		let calculatedSize = Math.min(widthPerItem, heightPerItem);
+
+		// Apply scaling factor with foldable adjustment
+		let scaleFactor = deviceConfig.scaleFactor;
+
+		// For unfolded foldable devices, adjust scale for better fit
+		if (foldableInfo?.isFoldable && foldableInfo.isUnfolded) {
+			if (foldableInfo.foldableType === 'zfold') {
+				// Slightly smaller items for Z-Fold to fit more content
+				scaleFactor *= 0.95;
+			}
+		}
+
+		calculatedSize *= scaleFactor;
+
+		// Clamp between min and max sizes
+		calculatedSize = Math.max(deviceConfig.minItemSize, calculatedSize);
+		calculatedSize = Math.min(deviceConfig.maxItemSize, calculatedSize);
+
+		return `${Math.floor(calculatedSize)}px`;
+	},
+	100,
+	// Round dimensions to reduce cache misses
+	(config) => {
+		const { count, containerWidth, containerHeight, gridConfig, isMobileDevice, foldableInfo } =
+			config;
+		const roundedWidth = Math.round(containerWidth / 10) * 10;
+		const roundedHeight = Math.round(containerHeight / 10) * 10;
+		const foldableKey = foldableInfo?.isFoldable
+			? `${foldableInfo.foldableType}-${foldableInfo.isUnfolded ? 'unfolded' : 'folded'}`
+			: 'none';
+		return `${count}:${roundedHeight}:${roundedWidth}:${gridConfig.columns}:${isMobileDevice}:${foldableKey}`;
+	}
+);

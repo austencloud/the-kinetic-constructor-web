@@ -13,7 +13,7 @@
 	// import HeaderControls from './components/HeaderControls.svelte';
 	import { resize } from './actions/resize';
 	import type { ViewModeDetail } from './components/ViewControl.svelte';
-	import LayoutDebugger from './utils/LayoutDebugger.svelte';
+	import LayoutDebugger from './utils/debugger/LayoutDebugger.svelte';
 
 	const windowWidth = writable(
 		typeof window !== 'undefined' ? window.innerWidth : BREAKPOINTS.desktop
