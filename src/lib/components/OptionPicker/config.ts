@@ -48,7 +48,7 @@ export const DEVICE_CONFIG = {
 		padding: { horizontal: 12, vertical: 12 },
 		gap: 2,
 		minItemSize: 80,
-		maxItemSize: 175,
+		maxItemSize: 105,
 		scaleFactor: 1
 	},
 	tablet: {

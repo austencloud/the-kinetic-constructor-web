@@ -83,11 +83,23 @@ export const LAYOUT_RULES: LayoutRule[] = [
                 params.isPortraitMode === false,
         },
     },
+	{
+		description: 'Two items on foldable in portrait mode = 1 column',
+		columns: 1,
+		when: {
+			count: 2,
+			extraCheck: (w, h, params) =>
+				params?.foldableInfo?.isFoldable === true &&
+				params?.foldableInfo?.isUnfolded === true &&
+				params.isPortraitMode === true,
+		},
+	},
+	
     {
         description: "Unfolded Foldable - Portrait, Few Items (<=8)",
         columns: 2,
         when: {
-            maxCount: 8,
+            minCount: 3, maxCount: 8,
             extraCheck: (w, h, params) =>
                 params?.foldableInfo?.isFoldable === true &&
                 params?.foldableInfo?.isUnfolded === true &&

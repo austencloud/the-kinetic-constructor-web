@@ -8,13 +8,13 @@
 	import { determineGroupKey, getSortedGroupKeys } from '../services/OptionsService'; // Import helpers
 	import type { SortMethod } from '../config'; // Import type
 
-	// Import the new components
+	// Import the child components
 	import SectionHeader from './SectionHeader.svelte';
 	import OptionGroupGrid from './OptionGroupGrid.svelte';
 
 	// --- Props ---
-	export let selectedTab: string | null = null; // Still needed to know which group to display when sortMethod is 'type'
-	export let options: PictographData[] = []; // Still needed as the source data
+	export let selectedTab: string | null = null;
+	export let options: PictographData[] = [];
 
 	// --- Get Sort Method from Store ---
 	let currentSortMethod: SortMethod;
@@ -23,33 +23,31 @@
 	});
 
 	// --- Computed Grouping Logic ---
-	// This determines the structure for rendering:
-	// - If sorting by type, just pass the pre-filtered options for the selected tab.
-	// - Otherwise, create header/options pairs by sub-grouping the passed options by type.
+	// Determines the structure for rendering headers and grids
 	$: displayData = (() => {
-		// For other sorts (endPosition, reversals), sub-group the incoming options by their letter type.
 		const subGroups: Record<string, PictographData[]> = {};
 		options.forEach((option) => {
-			const groupKey = determineGroupKey(option, 'type'); // Group by 'type' key (e.g., Type1)
+			// Always group by 'type' for consistent sectioning, regardless of sort method
+			const groupKey = determineGroupKey(option, 'type');
 			if (!subGroups[groupKey]) subGroups[groupKey] = [];
 			subGroups[groupKey].push(option);
 		});
 
-		// Sort the type group keys (Type1, Type2...)
+		// Sort the group keys (Type1, Type2...)
 		const sortedKeys = getSortedGroupKeys(Object.keys(subGroups), 'type');
 
 		// Create an array interleaving headers and their corresponding option groups
 		const result: Array<{ key: string; options?: PictographData[]; isHeader: boolean }> = [];
 		sortedKeys.forEach((key) => {
 			if (subGroups[key]?.length > 0) {
-				result.push({ key: key, isHeader: true }); // Header item (using key like Type1)
+				result.push({ key: key, isHeader: true }); // Header item
 				result.push({ key: key + '-options', options: subGroups[key], isHeader: false }); // Options item
 			}
 		});
 		return result;
 	})();
 
-	// Helper to generate a unique key for the outer each loop, preventing conflicts
+	// Helper to generate a unique key for the outer each loop
 	function getDisplayKey(groupData: { key: string; isHeader: boolean }): string {
 		return groupData.isHeader ? `header-${groupData.key}` : `options-${groupData.key}`;
 	}
@@ -71,45 +69,38 @@
 </div>
 
 <style>
-	/* UPDATED: Keeping position:absolute for crossfade but fixing scroll issues */
 	.options-panel {
 		display: flex;
 		flex-direction: column;
 		align-items: center; /* Center groups horizontally */
-		position: absolute; /* Keep this for crossfade */
+		/* FIXED: Align content to the top for proper scrolling */
+		justify-content: flex-start;
+		position: absolute; /* Keep for crossfade transitions */
 		width: 100%;
 		height: 100%;
-		padding: 0.5rem;
+		/* FIXED: Restore padding */
+		padding: 1rem 0.5rem 2rem 0.5rem; /* Added top/bottom padding, kept side padding */
 		box-sizing: border-box;
+		/* FIXED: Enable vertical scrolling */
 		overflow-y: auto;
-		overflow-x: hidden;
-		/* Add padding to ensure first items aren't cut off */
-		padding-top: 1rem;
-		/* Add padding to ensure last items aren't cut off at bottom when scrolling */
-		padding-bottom: 2rem;
-		/* Ensure scrolling works properly */
+		overflow-x: hidden; /* Keep horizontal overflow hidden */
 		top: 0;
 		left: 0;
 	}
 
-	/* --- Scrollbar --- */
+	/* --- Scrollbar Styles --- */
 	.options-panel::-webkit-scrollbar {
 		width: 6px;
 	}
 	.options-panel::-webkit-scrollbar-track {
-		background: rgba(30, 41, 59, 0.3);
+		background: rgba(30, 41, 59, 0.3); /* Slightly transparent dark track */
 		border-radius: 3px;
 	}
 	.options-panel::-webkit-scrollbar-thumb {
-		background-color: rgba(71, 85, 105, 0.6);
+		background-color: rgba(100, 116, 139, 0.7); /* Semi-transparent thumb */
 		border-radius: 3px;
 	}
 	.options-panel::-webkit-scrollbar-thumb:hover {
-		background-color: rgba(100, 116, 139, 0.7);
+		background-color: rgba(148, 163, 184, 0.8); /* Lighter thumb on hover */
 	}
-
-
 </style>
-
-
-

@@ -23,12 +23,12 @@
 		align-items: center;
 		width: 100%;
 		padding: 0;
-		margin-top: 16px;
-		margin-bottom: 10px;
+		/* margin-top: 16px; */
+		/* margin-bottom: 10px; */
 		position: sticky;
-		top: -8px; /* Adjust based on panel padding */
-		z-index: 5;
-		pointer-events: none;
+		/* top: -8px;  */
+		/* z-index: 5; */
+		/* pointer-events: none; */
 	}
 	.section-header-container.first {
 		margin-top: 4px; /* Less top margin for the very first header */
