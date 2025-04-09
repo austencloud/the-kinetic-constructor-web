@@ -65,7 +65,7 @@
 		{#if groupData.isHeader}
 			<SectionHeader groupKey={groupData.key} isFirstHeader={index === 0} />
 		{:else if groupData.options}
-			<OptionGroupGrid options={groupData.options} groupKey={groupData.key} />
+			<OptionGroupGrid options={groupData.options} />
 		{/if}
 	{/each}
 </div>
@@ -108,11 +108,7 @@
 		background-color: rgba(100, 116, 139, 0.7);
 	}
 
-	/* If content taller than panel, revert to top alignment for natural scrolling */
-	.options-panel:has(> :nth-child(n+10)) {
-		align-items: flex-start; /* Align to top when many items for better scrolling */
-		justify-content: center; /* Keep horizontal centering */
-	}
+
 </style>
 
 

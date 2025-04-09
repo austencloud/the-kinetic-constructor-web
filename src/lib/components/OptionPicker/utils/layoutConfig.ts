@@ -61,8 +61,8 @@ export const LAYOUT_RULES = [
 		}
 	},
 	{
-		description: 'Z-Fold unfolded with many items - limit to 5 columns',
-		columns: 6,
+		description: 'Z-Fold unfolded with many items - limit to 6 columns',
+		columns: 4,
 		when: {
 			minCount: 17,
 			extraCheck: (

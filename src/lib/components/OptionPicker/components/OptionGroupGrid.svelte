@@ -9,7 +9,6 @@
 
 	// --- Props ---
 	export let options: PictographData[] = [];
-	export let groupKey: string; // Unique key for this group (e.g., "Type1-options")
 
 	// --- Context ---
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
