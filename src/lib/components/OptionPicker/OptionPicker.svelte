@@ -94,7 +94,7 @@
 			return {
 				deviceType: enhancedDeviceType,
 				isMobile: isMobile,
-			isTablet: isTablet,
+				isTablet: isTablet,
 				isPortrait: isPortrait,
 				containerWidth: $containerWidth,
 				containerHeight: $containerHeight,

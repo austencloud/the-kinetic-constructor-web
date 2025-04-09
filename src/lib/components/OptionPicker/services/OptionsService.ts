@@ -21,7 +21,6 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 
 	// If sequence is empty, return initial options (currently none defined)
 	if (!lastPictograph) {
-		console.log('Sequence empty, returning no initial options.');
 		return [];
 	}
 

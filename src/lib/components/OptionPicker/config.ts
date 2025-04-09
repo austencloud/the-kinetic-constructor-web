@@ -31,7 +31,6 @@ export const BREAKPOINTS = {
 export const ASPECT_RATIO = {
 	tall: 0.8,
 	square: 1.3,
-	widish: 1.7,
 	wide: 2.0
 };
 
@@ -117,7 +116,6 @@ export function getContainerAspect(width: number, height: number): ContainerAspe
 	const ratio = width / height;
 	if (ratio < ASPECT_RATIO.tall) return 'tall';
 	if (ratio > ASPECT_RATIO.square) return 'wide';
-	if (ratio < ASPECT_RATIO.widish) return 'widish';
 	return 'square';
 }
 

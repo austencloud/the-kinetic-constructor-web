@@ -26,7 +26,6 @@ function getStoredState() {
 
 	try {
 		const stored = localStorage.getItem('optionPickerUIState');
-		console.log('📱 RETRIEVED from localStorage:', stored);
 
 		if (!stored) return {};
 

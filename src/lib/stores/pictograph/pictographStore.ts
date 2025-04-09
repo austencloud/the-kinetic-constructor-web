@@ -137,11 +137,6 @@ function groupPictographsByLetter(pictographs: Record<string, any>[]): Pictograp
 		}
 	});
 
-	// Log summary of skipped records
-	if (skippedCount > 0) {
-		console.warn(`Skipped ${skippedCount} out of ${pictographs.length} records`);
-	}
-
 	return processedPictographs;
 }
 

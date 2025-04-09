@@ -5,32 +5,43 @@
 	import Option from './Option.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
-	import { uiState } from '../store'; // Needed to check sortMethod for single/two item class
+	import { uiState } from '../store';
 
 	// --- Props ---
 	export let options: PictographData[] = [];
 
 	// --- Context ---
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-	$: ({ gridColumns, optionSize, gridGap, gridClass, aspectClass } = $layoutContext.layoutConfig);
+	// Get layout config from context, renaming gridColumns to avoid conflict
+	$: ({ gridColumns: contextGridColumns, optionSize, gridGap, gridClass, aspectClass } = $layoutContext.layoutConfig);
 	$: isMobileDevice = $layoutContext.isMobile;
 	$: isTabletDevice = $layoutContext.isTablet;
 	$: isPortraitMode = $layoutContext.isPortrait;
 
 	// --- Get Sort Method from Store ---
-	let currentSortMethod: string | null; // Can be SortMethod or null initially
+	let currentSortMethod: string | null;
 	uiState.subscribe((state) => {
 		currentSortMethod = state.sortMethod;
 	});
 
 	// --- Animation ---
-	const baseDelay = 50; // ms
-	const itemDelayIncrement = 20; // ms per item
+	const baseDelay = 50;
+	const itemDelayIncrement = 20;
 
-	// Determine if special single/two item styling should apply
-	// Only apply these classes if we are sorting by type (meaning this grid represents *all* options for that type)
-	$: applySingleItemClass = options.length === 1 && currentSortMethod === 'type';
-	$: applyTwoItemClass = options.length === 2 && currentSortMethod === 'type';
+	// --- Layout Overrides for Single/Two Items ---
+	// Determine if special single/two item styling should apply based on sorting context
+	$: isTypeSortContext = currentSortMethod === 'type';
+	$: applySingleItemClass = options.length === 1 && isTypeSortContext;
+	$: applyTwoItemClass = options.length === 2 && isTypeSortContext;
+
+	// Override grid columns if only one or two items are present in this specific grid
+	$: actualGridColumns =
+		options.length === 1
+			? '1fr' // Force single column for single item
+			: options.length === 2
+				? 'repeat(2, 1fr)' // Force two columns for two items
+				: contextGridColumns; // Use the layout context's column definition otherwise
+
 </script>
 
 <div
@@ -40,7 +51,7 @@
 	class:mobile-grid={isMobileDevice}
 	class:tablet-grid={isTabletDevice}
 	class:tablet-portrait-grid={isTabletDevice && isPortraitMode}
-	style:grid-template-columns={gridColumns}
+	style:grid-template-columns={actualGridColumns} 
 	style:--grid-gap={gridGap}
 	style:--option-size={optionSize}
 >
@@ -61,57 +72,57 @@
 	/* --- Options Grid (Applied per group) --- */
 	.options-grid {
 		display: grid;
-		max-width: max-content;
 		width: auto;
-		justify-items: center;
-		justify-content: center;
-		align-content: center; /* Changed from flex-start to center */
-		grid-gap: var(--grid-gap, 8px);
+		max-width: max-content; /* Fit the content */
+		justify-items: center; /* Center items horizontally within their grid cell */
+		justify-content: center; /* Center the grid content horizontally if grid is wider */
+		align-content: center; /* Center grid content vertically */
+		grid-gap: var(--grid-gap, 8px); /* Use gap from layout context */
+		/* Add auto margins for horizontal centering within parent */
+		margin-left: auto;
+		margin-right: auto;
+		/* Add some bottom margin for spacing between groups */
+		margin-bottom: 1rem;
 	}
+
+	/* Add top margin only if it's NOT part of a multi-group item */
+	:global(.options-panel > .options-grid) {
+		margin-top: 0.5rem; /* Adjust as needed */
+	}
+	/* Remove extra top margin if it directly follows a header in single layout */
+	:global(.options-panel > .section-header-container + .options-grid) {
+		margin-top: 0;
+	}
+
 
 	/* --- Grid Item Wrapper --- */
 	.grid-item-wrapper {
-		width: var(--option-size, 100px);
+		width: var(--option-size, 100px); /* Use size from layout context */
 		height: var(--option-size, 100px);
-		aspect-ratio: 1 / 1;
+		aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		position: relative;
+		position: relative; /* For z-index */
 		z-index: 1;
-		transition: z-index 0s 0.2s;
+		transition: z-index 0s 0.2s; /* Delay z-index change */
 	}
 	.grid-item-wrapper:hover {
-		z-index: 10;
+		z-index: 10; /* Bring hovered item to front */
 		transition-delay: 0s;
 	}
 
-	/* --- Specific Grid Layout Classes --- */
-	.options-grid.tall-aspect-container {
-		width: auto;
-		max-width: max-content;
-		align-content: center; /* Changed from flex-start to center */
-	}
-	.options-grid.wide-aspect-container,
-	.options-grid.square-aspect-container {
-		align-content: center;
-	}
 
-	/* Apply single/two item grid styles directly */
-
-	/* --- Responsive Grid Adjustments --- */
+	/* --- Responsive Grid Adjustments (Applied based on context) --- */
 	.mobile-grid {
 		padding: 0.2rem;
-		grid-gap: var(--grid-gap, 6px);
+		grid-gap: var(--grid-gap, 6px); /* Potentially smaller gap on mobile */
 	}
 
 	.tablet-portrait-grid {
 		grid-gap: 0.5rem;
 		padding: 0.25rem;
 	}
-	@media (min-width: 1280px) {
-		.many-items-grid {
-			max-width: 100%;
-		}
-	}
+
+
 </style>
