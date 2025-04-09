@@ -29,24 +29,52 @@ export const LAYOUT_RULES = [
 	// { description: "Human readable description", columns: 3, when: { count: 8, aspect: "tall" } }
 
 	//====================== SPECIAL LAYOUTS FOR SPECIFIC ITEM COUNTS ======================
-// 1 item is always 1 column
-    {
-        description: '1 item = 1 column',
-        columns: 1,
-        when: { count: 1 }
-    },
+	// 1 item is always 1 column
 	{
-        description: 'Two items always = max 2 columns',
+		description: '1 item = 1 column',
+		columns: 1,
+		when: { count: 1 }
+	},
+	{
+		description: 'Two items always = max 2 columns',
 		columns: 2,
 		when: { count: 2, aspect: 'wide' }
 	},
-    // 8 items in tall container
+	// 8 items in tall container
 	{
 		description: '8 items in tall container = 2 columns',
 		columns: 2,
 		when: { count: 8, aspect: 'tall' }
 	},
-
+	{
+		description: 'Z-Fold unfolded - limit to 4 columns max',
+		columns: 4,
+		when: {
+			extraCheck: (
+				w: any,
+				h: any,
+				params: { foldableInfo: { isFoldable: any; isUnfolded: any; foldableType: string } }
+			) =>
+				params?.foldableInfo?.isFoldable &&
+				params?.foldableInfo?.isUnfolded &&
+				params?.foldableInfo?.foldableType === 'zfold'
+		}
+	},
+	{
+		description: 'Z-Fold unfolded with many items - limit to 5 columns',
+		columns: 6,
+		when: {
+			minCount: 17,
+			extraCheck: (
+				w: any,
+				h: any,
+				params: { foldableInfo: { isFoldable: any; isUnfolded: any; foldableType: string } }
+			) =>
+				params?.foldableInfo?.isFoldable &&
+				params?.foldableInfo?.isUnfolded &&
+				params?.foldableInfo?.foldableType === 'zfold'
+		}
+	},
 	// 16 items - special desktop layouts based on aspect ratio
 	{
 		description: '16 items on desktop, super tall = 2 columns',
@@ -74,7 +102,6 @@ export const LAYOUT_RULES = [
 		when: { count: 16, device: 'desktop' }
 	},
 
-
 	//====================== MOBILE DEVICE LAYOUTS ======================
 
 	// Wide mobile screens get 4 columns
@@ -86,7 +113,6 @@ export const LAYOUT_RULES = [
 			aspect: 'wide'
 		}
 	},
-
 
 	//====================== MANY ITEMS LAYOUT PREFERENCES ======================
 
