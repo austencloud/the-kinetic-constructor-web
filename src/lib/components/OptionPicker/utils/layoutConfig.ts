@@ -29,7 +29,41 @@ export const LAYOUT_RULES = [
 	// { description: "Human readable description", columns: 3, when: { count: 8, aspect: "tall" } }
 
 	//====================== SPECIAL LAYOUTS FOR SPECIFIC ITEM COUNTS ======================
-	// 1 item is always 1 column
+	// 1 item is always 1 column// In layoutConfig.ts, make sure these are at the TOP of the LAYOUT_RULES array
+	{
+		description: 'Z-Fold dimensions exact match',
+		columns: 3, // Try 3 columns instead of 4
+		when: {
+			extraCheck: (
+				w: number,
+				h: number,
+				params: { foldableInfo: { isFoldable: any; isUnfolded: any; foldableType: string } }
+			) =>
+				// Add a more specific check that matches your actual dimensions
+				w > 350 &&
+				w < 400 &&
+				h > 450 &&
+				h < 500 &&
+				params?.foldableInfo?.isFoldable &&
+				params?.foldableInfo?.isUnfolded &&
+				params?.foldableInfo?.foldableType === 'zfold'
+		}
+	},
+	// Keep the more general rule as a fallback
+	{
+		description: 'Z-Fold unfolded - limit to 4 columns max',
+		columns: 4,
+		when: {
+			extraCheck: (
+				w: any,
+				h: any,
+				params: { foldableInfo: { isFoldable: any; isUnfolded: any; foldableType: string } }
+			) =>
+				params?.foldableInfo?.isFoldable &&
+				params?.foldableInfo?.isUnfolded &&
+				params?.foldableInfo?.foldableType === 'zfold'
+		}
+	},
 	{
 		description: '1 item = 1 column',
 		columns: 1,
@@ -46,35 +80,7 @@ export const LAYOUT_RULES = [
 		columns: 2,
 		when: { count: 8, aspect: 'tall' }
 	},
-	{
-		description: 'Z-Fold unfolded - limit to 4 columns max',
-		columns: 4,
-		when: {
-			extraCheck: (
-				w: any,
-				h: any,
-				params: { foldableInfo: { isFoldable: any; isUnfolded: any; foldableType: string } }
-			) =>
-				params?.foldableInfo?.isFoldable &&
-				params?.foldableInfo?.isUnfolded &&
-				params?.foldableInfo?.foldableType === 'zfold'
-		}
-	},
-	{
-		description: 'Z-Fold unfolded with many items - limit to 6 columns',
-		columns: 4,
-		when: {
-			minCount: 17,
-			extraCheck: (
-				w: any,
-				h: any,
-				params: { foldableInfo: { isFoldable: any; isUnfolded: any; foldableType: string } }
-			) =>
-				params?.foldableInfo?.isFoldable &&
-				params?.foldableInfo?.isUnfolded &&
-				params?.foldableInfo?.foldableType === 'zfold'
-		}
-	},
+
 	// 16 items - special desktop layouts based on aspect ratio
 	{
 		description: '16 items on desktop, super tall = 2 columns',
