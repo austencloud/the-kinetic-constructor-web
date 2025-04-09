@@ -32,7 +32,7 @@ export const LAYOUT_RULES = [
 	// 1 item is always 1 column// In layoutConfig.ts, make sure these are at the TOP of the LAYOUT_RULES array
 	{
 		description: 'Z-Fold dimensions exact match',
-		columns: 3, // Try 3 columns instead of 4
+		columns: 4, // Try 3 columns instead of 4
 		when: {
 			extraCheck: (
 				w: number,
