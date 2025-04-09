@@ -22,14 +22,13 @@ export function detectFoldableDevice(): {
 
 	// Z-Fold specific detection
 	if (isSamsung) {
-		// Z-Fold dimensions when unfolded are typically:
-		// Width: ~1000-1200px, height: ~800-900px, with high pixel ratio
-		if (width > 900 && width < 1300 && height > 700 && height < 1000 && pixelRatio > 2) {
+		// Adjust for your actual dimensions - these appear to be smaller than expected
+		if (width > 350 && width < 600 && height > 450 && height < 600 && pixelRatio > 2) {
 			result.isFoldable = true;
 			result.isUnfolded = true;
 			result.foldableType = 'zfold';
 		}
-		// Folded dimensions (more like a regular phone)
+		// Keep the folded detection logic
 		else if (width > 350 && width < 500 && height > 800 && pixelRatio > 2) {
 			result.isFoldable = true;
 			result.isUnfolded = false;

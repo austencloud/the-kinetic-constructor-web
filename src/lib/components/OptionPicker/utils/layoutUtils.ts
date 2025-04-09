@@ -317,6 +317,8 @@ function getGridGap(params: {
 
 /**
  * Gets the base column count for a given layout category
+ *//**
+ * Gets the base column count for a given layout category
  */
 function getBaseColumnCount(
 	layoutCategory: LayoutCategory,
