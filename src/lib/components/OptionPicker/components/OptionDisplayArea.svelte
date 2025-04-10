@@ -1,13 +1,11 @@
-
-
 <script lang="ts">
-	import { fade, crossfade } from 'svelte/transition'; // Import crossfade
-	import { quintOut } from 'svelte/easing'; // Import easing for crossfade
+	import { fade } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing'; 
 	import type { PictographData } from '$lib/types/PictographData';
 
 	import LoadingMessage from './messages/LoadingMessage.svelte';
 	import EmptyMessage from './messages/EmptyMessage.svelte';
-	import OptionsPanel from './OptionsPanel.svelte'; // The refactored panel
+	import OptionsPanel from './OptionsPanel.svelte';
 
 	// --- Props ---
 	export let isLoading: boolean;
@@ -22,26 +20,6 @@
 	// --- Message Logic ---
 	$: messageType = determineMessageType(isLoading, hasOptions, selectedTab, hasCategories);
 	$: messageText = generateMessageText(messageType, selectedTab);
-
-	// --- Transitions ---
-	// Create the crossfade transition pair
-	const [send, receive] = crossfade({
-		duration: 500, // Using a fixed duration often works well
-		// duration: (d) => Math.sqrt(d * 200), // Original example duration calculation
-		fallback(node, params) {
-			const style = getComputedStyle(node);
-			const transform = style.transform === 'none' ? '' : style.transform;
-			return {
-				duration: 500, // Slightly faster fallback fade
-				easing: quintOut,
-				css: (t) => `
-					transform: ${transform} scale(${t * 0.9 + 0.1}); // Fade + slight scale
-					opacity: ${t}
-				`
-			};
-		}
-	});
-
 
 	// --- Helper Functions ---
 	function determineMessageType(
@@ -81,19 +59,14 @@
 			<LoadingMessage />
 		</div>
 	{:else if hasOptions}
-		<div class="panels-stack">
-			{#key panelKey}
-				<div
-					class="panel-wrapper"
-					in:receive={{ key: panelKey }}
-					out:send={{ key: panelKey }}
-				>
-					<OptionsPanel
-						options={optionsToDisplay}
-						{selectedTab}
-					/>
-				</div>
-			{/key}
+		<div class="panels-container">
+			<!-- Using a simpler transition approach -->
+			<div class="panel-wrapper">
+				<OptionsPanel
+					options={optionsToDisplay}
+					{selectedTab}
+				/>
+			</div>
 		</div>
 	{:else if messageType === 'empty' || messageType === 'initial'}
 		<div class="message-container" transition:fade={{ duration: 150 }}>
@@ -107,32 +80,26 @@
 		width: 100%;
 		height: 100%;
 		position: relative;
-		overflow: hidden; /* Keep hidden to contain transitions */
+		overflow: hidden;
 	}
 
-	.panels-stack {
+	.panels-container {
 		width: 100%;
 		height: 100%;
 		position: relative;
-		overflow: hidden; /* Critical for containing panels while allowing inner scroll */
+		overflow: hidden;
 	}
 
-	/* Wrapper div for applying transitions */
 	.panel-wrapper {
-		position: absolute; /* Important for crossfade */
-		top: 0;
-		left: 0;
+		position: relative;
 		width: 100%;
 		height: 100%;
-		/* Ensure it doesn't prevent interaction with panel content */
 		pointer-events: auto;
-		/* Add background for smoother visual transition if needed */
-		/* background-color: var(--background-color, transparent); */
 	}
 
 	.message-container {
 		position: absolute;
-		top: 0; /* Ensure messages overlay correctly */
+		top: 0;
 		left: 0;
 		width: 100%;
 		height: 100%;
@@ -140,6 +107,6 @@
 		justify-content: center;
 		align-items: center;
 		z-index: 5;
-		pointer-events: none; /* Allow clicks through message area */
+		pointer-events: none;
 	}
 </style>

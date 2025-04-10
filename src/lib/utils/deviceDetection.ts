@@ -138,7 +138,7 @@ export function detectFoldableDevice(): FoldableDetectionResult {
 	}
 
 	// 3. User Agent Platform Check (Exclude Desktops)
-	const isLikelyDesktopUA = /Windows|Macintosh|Linux/i.test(ua) && !/Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+	const isLikelyDesktopUA = /Windows NT|Macintosh|Linux x86_64/i.test(ua) && !/Android|iPhone|iPad|iPod|Mobile/i.test(ua);
 	if (isLikelyDesktopUA) {
 		// If UA clearly indicates a standard desktop OS, it's not a foldable phone.
 		if (DEBUG_MODE) console.log('Foldable Detect: Detected standard desktop platform via UA. Not foldable.');

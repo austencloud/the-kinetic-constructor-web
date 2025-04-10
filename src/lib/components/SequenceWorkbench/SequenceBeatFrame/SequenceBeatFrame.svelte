@@ -9,6 +9,9 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { BeatData } from './BeatData';
 	import { browser } from '$app/environment'; // Import browser check
+	
+	// Import the global beatsStore instead of creating a local one
+	import { beatsStore as globalBeatsStore, selectedBeatIndexStore as globalSelectedBeatStore } from '$lib/stores/sequence/beatsStore';
 
 	// Components
 	import StartPosBeat from './StartPosBeat.svelte';
@@ -24,21 +27,25 @@
 	// Constants
 	const GAP = 10; // Gap between cells in pixels
 
-	// Local state stores (work without context)
-	const beatsStore = writable<BeatData[]>([]);
-	const selectedBeatIndexStore = writable<number>(-1);
-	const startPositionStore = writable<PictographData | null>(null);
-
-	// Local state variables
+	// Use a local ref variable for beats and selectedBeatIndex 
+	// but subscribe to the global store
 	let beats: BeatData[] = [];
 	let selectedBeatIndex: number = -1;
 	let startPosition: PictographData | null = null;
+	
+	// Subscribe to the global stores
+	const unsubscribeGlobalBeats = globalBeatsStore.subscribe((value) => {
+		beats = value;
+	});
+	
+	const unsubscribeGlobalSelectedBeat = globalSelectedBeatStore.subscribe((value) => {
+		selectedBeatIndex = value !== null ? value : -1;
+	});
 
-	// Subscribe to the stores
-	const unsubscribeBeats = beatsStore.subscribe((value) => (beats = value));
-	const unsubscribeSelectedBeat = selectedBeatIndexStore.subscribe(
-		(value) => (selectedBeatIndex = value)
-	);
+	// Local store just for the start position
+	const startPositionStore = writable<PictographData | null>(null);
+	
+	// Subscribe to the local start position store
 	const unsubscribeStartPos = startPositionStore.subscribe((value) => (startPosition = value));
 
 	// Also subscribe to the global selectedStartPos store
@@ -50,8 +57,8 @@
 
 	// Clean up on component destroy
 	onDestroy(() => {
-		unsubscribeBeats();
-		unsubscribeSelectedBeat();
+		unsubscribeGlobalBeats();
+		unsubscribeGlobalSelectedBeat();
 		unsubscribeStartPos();
 		unsubscribeGlobalStartPos();
 	});
@@ -72,7 +79,7 @@
 	// Event handlers
 	function handleStartPosBeatClick() {
 		// Deselect current beat
-		selectedBeatIndexStore.set(-1);
+		globalSelectedBeatStore.set(null);
 
 		// Dispatch a custom event to trigger the start position selector
 		const event = new CustomEvent('select-start-pos', {
@@ -83,7 +90,7 @@
 	}
 
 	function handleBeatClick(beatIndex: number) {
-		selectedBeatIndexStore.set(beatIndex);
+		globalSelectedBeatStore.set(beatIndex);
 	}
 
 	// Handle start position selection
@@ -114,13 +121,13 @@
 
 	// Add a method to add beats (could be called from parent)
 	export function addBeat(beatData: BeatData) {
-		beatsStore.update((beats) => [...beats, beatData]);
+		globalBeatsStore.update((beats) => [...beats, beatData]);
 	}
 
 	// Add a method to clear beats (could be called from parent)
 	export function clearBeats() {
-		beatsStore.set([]);
-		selectedBeatIndexStore.set(-1);
+		globalBeatsStore.set([]);
+		globalSelectedBeatStore.set(null);
 	}
 </script>
 

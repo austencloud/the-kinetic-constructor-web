@@ -24,10 +24,6 @@
 		currentSortMethod = state.sortMethod;
 	});
 
-	// --- Animation ---
-	const baseDelay = 50;
-	const itemDelayIncrement = 20;
-
 	// --- Layout Overrides for Single/Two Items ---
 	// Determine if special single/two item styling should apply based on sorting context
 	$: isTypeSortContext = currentSortMethod === 'type';
@@ -60,8 +56,8 @@
 			class="grid-item-wrapper"
 			class:single-item={applySingleItemClass}
 			class:two-item={applyTwoItemClass}
-			in:fade={{ duration: 250, delay: baseDelay + i * itemDelayIncrement, easing: cubicOut }}
-			out:fade={{ duration: 150, delay: i * itemDelayIncrement * 0.5, easing: cubicOut }}
+			in:fade={{ duration: 150, easing: cubicOut }}
+			out:fade={{ duration: 100, easing: cubicOut }}
 		>
 			<Option pictographData={option} isPartOfTwoItems={applyTwoItemClass} />
 		</div>
@@ -123,6 +119,4 @@
 		grid-gap: 0.5rem;
 		padding: 0.25rem;
 	}
-
-
 </style>

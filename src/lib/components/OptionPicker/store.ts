@@ -12,6 +12,8 @@ import {
 } from './services/OptionsService';
 import { get } from 'svelte/store';
 import { browser } from '$app/environment';
+// Import the addBeat function from beatsStore
+import { addBeat } from '$lib/stores/sequence/beatsStore';
 
 // ===== Core State =====
 export const sequenceStore = writable<PictographData[]>([]);
@@ -68,9 +70,6 @@ if (browser) {
 		}
 	});
 }
-// Rest of the file remains the same...
-// ===== UI State =====
-// Type for storing the last selected tab per sort method
 
 // ===== Actions =====
 export const actions = {
@@ -122,7 +121,13 @@ export const actions = {
 	},
 
 	selectOption: (option: PictographData) => {
+		// First, update the selected pictograph store
 		selectedPictograph.set(option);
+		
+		// Now add the selected option to the beat sequence
+		// This will trigger the beatsStore update, which will then
+		// cause OptionPicker to reload options based on the new end position
+		addBeat(option);
 	},
 
 	// In the actions object in store.ts

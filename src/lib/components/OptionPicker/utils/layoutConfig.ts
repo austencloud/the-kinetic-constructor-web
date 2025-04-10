@@ -211,7 +211,7 @@ export const LAYOUT_RULES: LayoutRule[] = [
 	},
 	{
 		description: 'Few/Medium items (3-16) on desktop, tall = 2 columns',
-		columns: 2,
+		columns: 4,
 		when: { minCount: 3, maxCount: 16, device: 'desktop', aspect: 'tall' }
 	},
 	{

@@ -1,14 +1,15 @@
 // src/lib/components/OptionPicker/services/optionsService.ts
 import { get } from 'svelte/store';
 import type { PictographData } from '$lib/types/PictographData';
-import type { SortMethod, ReversalFilter } from '../config'; // Assuming config types are needed
+import type { SortMethod, ReversalFilter } from '../config';
 import pictographDataStore from '$lib/stores/pictograph/pictographStore';
 import { memoizeLRU } from '$lib/utils/memoizationUtils';
 import { NO_ROT } from '$lib/types/Constants';
-import type { PropRotDir } from '$lib/types/Types';
+import type { PropRotDir, Orientation } from '$lib/types/Types';
 import type { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
 import { LetterUtils } from '$lib/utils/LetterUtils';
+import { MotionOriCalculator } from '$lib/components/objects/Motion/MotionOriCalculator';
 
 // ===== Option Data Fetching =====
 
@@ -24,14 +25,43 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 		return [];
 	}
 
+	// Calculate the actual end orientations using MotionOriCalculator
+	const blueEndOri = calculateActualEndOrientation(lastPictograph.blueMotionData);
+	const redEndOri = calculateActualEndOrientation(lastPictograph.redMotionData);
+
 	// Find options where start position matches end position of last pictograph
-	return findOptionsByStartPosition(lastPictograph.endPos ?? undefined);
+	// AND start orientations match calculated end orientations of the last pictograph
+	return findOptionsWithMatchingPositionAndOrientation(
+		lastPictograph.endPos ?? undefined,
+		blueEndOri,
+		redEndOri
+	);
 }
 
 /**
- * Finds all pictographs from the global store that start at a specific position.
+ * Calculate the actual end orientation of a motion using the MotionOriCalculator
  */
-export function findOptionsByStartPosition(targetStartPos?: string): PictographData[] {
+function calculateActualEndOrientation(motionData: any): Orientation | undefined {
+	if (!motionData) return undefined;
+
+	// Create temporary calculator to get the correct end orientation
+	try {
+		const calculator = new MotionOriCalculator(motionData);
+		return calculator.calculateEndOri();
+	} catch (error) {
+		console.warn('Error calculating end orientation:', error);
+		return motionData.endOri;
+	}
+}
+
+/**
+ * Finds all pictographs from the global store that match a specific position and orientations.
+ */
+export function findOptionsWithMatchingPositionAndOrientation(
+	targetStartPos?: string,
+	blueEndOri?: Orientation,
+	redEndOri?: Orientation
+): PictographData[] {
 	if (!targetStartPos) {
 		console.warn('Cannot find next options: Last pictograph has no end position.');
 		return [];
@@ -44,7 +74,39 @@ export function findOptionsByStartPosition(targetStartPos?: string): PictographD
 		return [];
 	}
 
-	return allPictographs.filter((pictograph) => pictograph?.startPos === targetStartPos);
+	// First filter by position
+	const positionMatches = allPictographs.filter(
+		(pictograph) => pictograph?.startPos === targetStartPos
+	);
+
+	// If no orientation constraints, return all position matches
+	if (!blueEndOri && !redEndOri) {
+		return positionMatches;
+	}
+
+	// Filter by orientations when they are provided
+	return positionMatches.filter((pictograph) => {
+		// Blue orientation check (if we have an orientation to match)
+		const blueMatches =
+			!blueEndOri ||
+			!pictograph.blueMotionData ||
+			pictograph.blueMotionData.startOri === blueEndOri;
+
+		// Red orientation check (if we have an orientation to match)
+		const redMatches =
+			!redEndOri || !pictograph.redMotionData || pictograph.redMotionData.startOri === redEndOri;
+
+		// Both must match if specified
+		return blueMatches && redMatches;
+	});
+}
+
+/**
+ * Legacy function kept for backward compatibility.
+ * Now calls the enhanced function that also checks orientations.
+ */
+export function findOptionsByStartPosition(targetStartPos?: string): PictographData[] {
+	return findOptionsWithMatchingPositionAndOrientation(targetStartPos);
 }
 
 // ===== Reversal Category Functions =====

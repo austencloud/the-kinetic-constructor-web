@@ -114,14 +114,56 @@ export class BetaPropDirectionCalculator {
 	constructor(private pictographData: PictographData) {}
 
 	getDirection(prop: PropData): Direction | null {
-		
-		// Get the associated motion data based on prop color
+		// Special handling for G and H letters
+
+		if (this.pictographData.letter === Letter.G || this.pictographData.letter === Letter.H) {
+			const redMotion = this.pictographData.redMotionData;
+
+			// Only do special handling for the red and blue props
+			if (redMotion && (prop.color === RED || prop.color === BLUE)) {
+				console.log(`Special G/H handling for ${prop.color} prop`);
+
+				// Get direction from red motion, not from prop
+				let motionDirection: Direction | null = null;
+
+				if ([PRO, ANTI, FLOAT].includes(redMotion.motionType)) {
+					const isRadial = this.endsWithRadialOrientation();
+					motionDirection = this.getShiftDirection(isRadial, redMotion.startLoc, redMotion.endLoc);
+				} else {
+					// For static/dash motion
+					const loc = redMotion.startLoc;
+					const propColor = redMotion.color;
+					const isDiamond = ['n', 's', 'e', 'w'].includes(loc);
+					const isRadial = this.endsWithRadialOrientation();
+
+					if (isDiamond) {
+						const map = isRadial ? this.diamondMapRadial : this.diamondMapNonRadial;
+						motionDirection = map[loc as DiamondLoc][propColor as Color];
+					} else {
+						const map = isRadial ? this.boxMapRadial : this.boxMapNonRadial;
+						motionDirection = map[loc as BoxLoc][propColor as Color];
+					}
+				}
+
+				if (!motionDirection) {
+					console.warn('Could not determine motion direction for G/H');
+					return null;
+				}
+
+				// For red prop, return the motion direction
+				// For blue prop, return the opposite direction
+				return prop.color === RED ? motionDirection : this.getOppositeDirection(motionDirection);
+			}
+		}
+
+
+		// Default behavior for other letters
 		const motionData = this.getMotionDataForProp(prop);
 		if (!motionData) {
 			console.error(`No motion data found for prop ${prop.id}`);
 			return null;
 		}
-		
+
 		if ([PRO, ANTI, FLOAT].includes(motionData.motionType)) {
 			return this.handleShiftMotion(prop, motionData);
 		}
@@ -200,5 +242,30 @@ export class BetaPropDirectionCalculator {
 			[DOWNRIGHT]: UPLEFT
 		};
 		return opposites[direction];
+	}
+	getDirectionFromMotion(motion: MotionData): Direction | null {
+		if (!motion) return null;
+
+		// For shift motions (pro, anti, float), we need to determine the direction
+		// based on start and end locations
+		if (['pro', 'anti', 'float'].includes(motion.motionType)) {
+			const isRadial = this.endsWithRadialOrientation();
+			return this.getShiftDirection(isRadial, motion.startLoc, motion.endLoc);
+		}
+
+		// For static/dash, determine based on the motion's location and color
+		const propColor = motion.color;
+		const loc = motion.startLoc; // Use startLoc for static/dash
+
+		const isDiamond = ['n', 's', 'e', 'w'].includes(loc);
+		const isRadial = this.endsWithRadialOrientation();
+
+		if (isDiamond) {
+			const map = isRadial ? this.diamondMapRadial : this.diamondMapNonRadial;
+			return map[loc as DiamondLoc][propColor as Color];
+		} else {
+			const map = isRadial ? this.boxMapRadial : this.boxMapNonRadial;
+			return map[loc as BoxLoc][propColor as Color];
+		}
 	}
 }

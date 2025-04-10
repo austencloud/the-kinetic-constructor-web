@@ -14,17 +14,17 @@ export default class RepositionBetaByLetterHandler {
 		this.directionCalculator = directionCalculator;
 		// Initialize with a simple offset calculator if needed
 		this.offsetCalculator = {
-			calculateNewPositionWithOffset: (coords: {x: number, y: number}, direction: string) => {
+			calculateNewPositionWithOffset: (coords: { x: number; y: number }, direction: string) => {
 				const offset = 25; // Example offset
-				const movementMap: Record<string, {x: number, y: number}> = {
-					'up': { x: 0, y: -offset },
-					'down': { x: 0, y: offset },
-					'left': { x: -offset, y: 0 },
-					'right': { x: offset, y: 0 },
-					'upright': { x: offset, y: -offset },
-					'upleft': { x: -offset, y: -offset },
-					'downright': { x: offset, y: offset },
-					'downleft': { x: -offset, y: offset }
+				const movementMap: Record<string, { x: number; y: number }> = {
+					up: { x: 0, y: -offset },
+					down: { x: 0, y: offset },
+					left: { x: -offset, y: 0 },
+					right: { x: offset, y: 0 },
+					upright: { x: offset, y: -offset },
+					upleft: { x: -offset, y: -offset },
+					downright: { x: offset, y: offset },
+					downleft: { x: -offset, y: offset }
 				};
 				const movement = movementMap[direction] || { x: 0, y: 0 };
 				return {
@@ -37,22 +37,33 @@ export default class RepositionBetaByLetterHandler {
 
 	reposition_G_H(): void {
 		const redMotion = this.pictographData.redMotionData;
-		const blueMotion = this.pictographData.blueMotionData;
 		const redPropData = this.pictographData.redPropData;
 		const bluePropData = this.pictographData.bluePropData;
-		if (!redMotion || !blueMotion || !redPropData) return;
 
-		const furtherDirection = this.directionCalculator.getDirection(redPropData);
-		const otherDirection = furtherDirection
-			? this.directionCalculator.getOppositeDirection(furtherDirection)
-			: undefined;
+		if (!redMotion || !redPropData || !bluePropData) return;
 
-		if (furtherDirection) {
-			this.moveProp(redPropData, furtherDirection);
-		}
-		if (bluePropData && otherDirection) {
-			this.moveProp(bluePropData, otherDirection);
-		}
+		// Get the direction from red motion (not red prop)
+		const furtherDirection = this.directionCalculator.getDirectionFromMotion(redMotion);
+
+		if (!furtherDirection) return;
+
+		// Get the opposite direction
+		const otherDirection = this.directionCalculator.getOppositeDirection(furtherDirection);
+
+		// Move the props in opposite directions (red in the calculated direction, blue in the opposite)
+		this.moveProp(redPropData, furtherDirection);
+		this.moveProp(bluePropData, otherDirection);
+	}
+
+	// Other methods remain the same...
+
+	private moveProp(prop: PropData, direction: Direction): void {
+		// Use offset calculator to determine new position
+		const newPosition = this.offsetCalculator.calculateNewPositionWithOffset(
+			prop.coords,
+			direction
+		);
+		prop.coords = newPosition;
 	}
 
 	reposition_I(): void {
@@ -64,10 +75,18 @@ export default class RepositionBetaByLetterHandler {
 		if (!redMotion || !blueMotion || !redPropData || !bluePropData) return;
 
 		// Find pro and anti motions
-		const proMotion = redMotion.motionType === 'pro' ? redMotion : 
-                         blueMotion.motionType === 'pro' ? blueMotion : null;
-		const antiMotion = redMotion.motionType === 'anti' ? redMotion : 
-                           blueMotion.motionType === 'anti' ? blueMotion : null;
+		const proMotion =
+			redMotion.motionType === 'pro'
+				? redMotion
+				: blueMotion.motionType === 'pro'
+					? blueMotion
+					: null;
+		const antiMotion =
+			redMotion.motionType === 'anti'
+				? redMotion
+				: blueMotion.motionType === 'anti'
+					? blueMotion
+					: null;
 
 		if (!proMotion || !antiMotion) return;
 
@@ -91,7 +110,7 @@ export default class RepositionBetaByLetterHandler {
 	reposition_J_K_L(): void {
 		const redPropData = this.pictographData.redPropData;
 		const bluePropData = this.pictographData.bluePropData;
-		
+
 		if (!redPropData || !bluePropData) return;
 
 		const redDirection = this.directionCalculator.getDirection(redPropData);
@@ -112,10 +131,17 @@ export default class RepositionBetaByLetterHandler {
 		if (!redMotion || !blueMotion || !redPropData || !bluePropData) return;
 
 		// Find shift and static motions
-		const shiftMotion = this.isShiftMotion(redMotion) ? redMotion : 
-                          this.isShiftMotion(blueMotion) ? blueMotion : null;
-		const staticMotion = redMotion.motionType === 'static' ? redMotion : 
-                            blueMotion.motionType === 'static' ? blueMotion : null;
+		const shiftMotion = this.isShiftMotion(redMotion)
+			? redMotion
+			: this.isShiftMotion(blueMotion)
+				? blueMotion
+				: null;
+		const staticMotion =
+			redMotion.motionType === 'static'
+				? redMotion
+				: blueMotion.motionType === 'static'
+					? blueMotion
+					: null;
 
 		if (!shiftMotion || !staticMotion) return;
 
@@ -127,42 +153,23 @@ export default class RepositionBetaByLetterHandler {
 		if (!direction) return;
 
 		this.moveProp(shiftProp, direction);
-		this.moveProp(
-			staticProp,
-			this.directionCalculator.getOppositeDirection(direction)
-		);
+		this.moveProp(staticProp, this.directionCalculator.getOppositeDirection(direction));
 	}
 
 	reposition_β(): void {
 		const redPropData = this.pictographData.redPropData;
 		const bluePropData = this.pictographData.bluePropData;
-		
+
 		if (!redPropData || !bluePropData) return;
 
 		const direction = this.directionCalculator.getDirection(redPropData);
 		if (direction) {
 			this.moveProp(redPropData, direction);
-			this.moveProp(
-				bluePropData,
-				this.directionCalculator.getOppositeDirection(direction)
-			);
+			this.moveProp(bluePropData, this.directionCalculator.getOppositeDirection(direction));
 		}
 	}
 
 	private isShiftMotion(motion: MotionData): boolean {
 		return ['pro', 'anti', 'float'].includes(motion.motionType);
-	}
-
-	private getPropByColor(color: 'red' | 'blue'): PropData | null {
-		return color === 'red' ? this.pictographData.redPropData : this.pictographData.bluePropData;
-	}
-
-	private moveProp(prop: PropData, direction: Direction): void {
-		// Use offset calculator to determine new position
-		const newPosition = this.offsetCalculator.calculateNewPositionWithOffset(
-			prop.coords,
-			direction
-		);
-		prop.coords = newPosition;
 	}
 }
