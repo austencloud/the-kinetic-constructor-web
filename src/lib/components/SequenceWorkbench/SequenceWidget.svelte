@@ -1,4 +1,3 @@
-<!-- src/lib/components/SequenceWorkbench/SequenceWidget.svelte -->
 <script lang="ts">
 	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout';
 	import { getSequenceContext, sequenceActions } from '$lib/context/sequence/sequenceContext';
@@ -7,7 +6,8 @@
 	import IndicatorLabel from './Labels/IndicatorLabel.svelte';
 	import CurrentWordLabel from './Labels/CurrentWordLabel.svelte';
 	import DifficultyLabel from './Labels/DifficultyLabel.svelte';
-	import SequenceWidgetButtonPanel from './WorkbenchButtonPanel.svelte';
+	// Import the new collapsible button panel 
+	import SequenceWidgetButtonPanel from './ButtonPanel/ButtonPanel.svelte';
 	import BeatFrame from './SequenceBeatFrame/SequenceBeatFrame.svelte';
 
 	// Props
@@ -111,7 +111,7 @@
 				<IndicatorLabel text={statusText} width={$dimensions.width} />
 			</div>
 
-			<!-- Button Panel in portrait mode -->
+			<!-- Button Panel in portrait mode - using collapsible version -->
 			{#if $isPortrait}
 				<SequenceWidgetButtonPanel
 					isPortrait={$isPortrait}
@@ -122,7 +122,7 @@
 			{/if}
 		</div>
 
-		<!-- Button Panel in landscape mode -->
+		<!-- Button Panel in landscape mode - using collapsible version -->
 		{#if !$isPortrait}
 			<SequenceWidgetButtonPanel
 				isPortrait={$isPortrait}

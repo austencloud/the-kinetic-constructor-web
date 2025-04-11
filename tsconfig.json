@@ -8,7 +8,8 @@
 	  "resolveJsonModule": true,
 	  "skipLibCheck": true,
 	  "sourceMap": true,
-	  "strict": true
+	  "strict": true,
+	  "allowArbitraryExtensions": true
 	},
 	"exclude": [
 	  "./node_modules/**",
@@ -18,4 +19,4 @@
 	  "./.vercel_build_output/**",
 	  "./.vercel/**"
 	]
-  }
+}

@@ -134,15 +134,6 @@
 	{/each}
 </div>
 
-<div
-	class="options-panel"
-	bind:this={panelElement}
-	use:resize={checkContentHeight}
-	class:vertically-center={contentIsShort}
-	role="tabpanel"
-	aria-labelledby="tab-{selectedTab}"
-	id="options-panel-{selectedTab}"
-></div>
 
 <style>
 	.options-panel {
