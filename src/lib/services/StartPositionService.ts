@@ -1,14 +1,17 @@
 // src/lib/services/StartPositionService.ts
 import { sequenceDataService } from './SequenceDataService';
 import type { PictographData } from '$lib/types/PictographData';
-import type { SequenceBeat } from './SequenceDataService';
+import type { SequenceBeat, SequenceStartPos } from './SequenceDataService';
 import { beatsStore } from '$lib/stores/sequence/beatsStore';
 import { createBeat } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData';
+import { browser } from '$app/environment';
 
 export class StartPositionService {
-	convertPictographToStartPosition(pictograph: PictographData): SequenceBeat {
+	convertPictographToStartPosition(pictograph: PictographData): SequenceStartPos {
 		return {
 			beat: 0,
+			letter: "α", // Adding a letter for the start position
+			sequence_start_position: pictograph.startPos?.replace(/\d+/, "") || "alpha", // Store the base name
 			start_pos: pictograph.startPos ?? undefined,
 			end_pos: pictograph.endPos ?? undefined,
 			blue_attributes: {
@@ -35,20 +38,21 @@ export class StartPositionService {
 	}
 
 	async addStartPosition(pictograph: PictographData) {
+		// 1. Create and save the start position to the sequence data
 		const startPositionBeat = this.convertPictographToStartPosition(pictograph);
 		await sequenceDataService.addStartPosition(startPositionBeat);
 
-		// Convert to BeatData array, skipping metadata (first element)
-		const updatedSequence = sequenceDataService.getCurrentSequence().slice(1);
-		const beatDataList = updatedSequence.map((beat, idx) => {
-			return createBeat(
-				(beat as SequenceBeat).beat ?? idx,
-				pictograph, // TEMPORARY – you may want to fully convert SequenceBeat -> PictographData
-				{ filled: true }
-			);
-		});
-
-		beatsStore.set(beatDataList);
+		// 2. IMPORTANT: Don't touch beatsStore at all!
+		// The UI is already handling the start position display separately
+		
+		// 3. Dispatch a custom event to notify components that sequence data changed
+		if (browser) {
+			const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
+				detail: { type: 'start-position-added', data: pictograph },
+				bubbles: true
+			});
+			document.dispatchEvent(sequenceUpdatedEvent);
+		}
 	}
 }
 

@@ -1,16 +1,54 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
-	// Removed Lucide imports
-
 	import TabsNavigation from './TabsNavigation.svelte';
 	import { activeTabStore } from '../../stores/ui/settingsStore';
 	import { get } from 'svelte/store';
 
+	// Define better types for our settings
+	type BaseSetting = {
+		label: string;
+	};
+
+	type ToggleSetting = BaseSetting & {
+		type: 'toggle';
+		defaultValue: boolean;
+	};
+
+	type NumberSetting = BaseSetting & {
+		type: 'number';
+		defaultValue: number;
+		min: number;
+		max: number;
+	};
+
+	type RangeSetting = BaseSetting & {
+		type: 'range';
+		defaultValue: number;
+		min: number;
+		max: number;
+	};
+
+	type SelectSetting = BaseSetting & {
+		type: 'select';
+		defaultValue: string;
+		options: string[];
+	};
+
+	// Union type of all settings
+	type Setting = ToggleSetting | NumberSetting | RangeSetting | SelectSetting;
+
+	// Section type
+	type Section = {
+		id: string;
+		icon: string;
+		settings: Setting[];
+	};
+
 	// Define sections with Font Awesome class strings
-	const sections = {
+	const sections: Record<string, Section> = {
 		Construct: {
 			id: 'construct',
-			icon: 'fa-solid fa-hammer', // Changed
+			icon: 'fa-solid fa-hammer',
 			settings: [
 				{ label: 'Sequence Mode', type: 'toggle', defaultValue: true },
 				{ label: 'Grid Snap', type: 'toggle', defaultValue: false },
@@ -25,7 +63,7 @@
 		},
 		Generate: {
 			id: 'generate',
-			icon: 'fa-solid fa-robot', // Changed
+			icon: 'fa-solid fa-robot',
 			settings: [
 				{ label: 'AI Assist', type: 'toggle', defaultValue: true },
 				{ label: 'Creativity Level', type: 'range', defaultValue: 50, min: 0, max: 100 },
@@ -40,7 +78,7 @@
 		},
 		Browse: {
 			id: 'browse',
-			icon: 'fa-solid fa-folder', // Changed
+			icon: 'fa-solid fa-folder',
 			settings: [
 				{
 					label: 'Default View',
@@ -60,7 +98,7 @@
 		},
 		Learn: {
 			id: 'learn',
-			icon: 'fa-solid fa-book', // Changed
+			icon: 'fa-solid fa-book',
 			settings: [
 				{ label: 'Tutorial Mode', type: 'toggle', defaultValue: true },
 				{
@@ -75,7 +113,7 @@
 		},
 		Write: {
 			id: 'write',
-			icon: 'fa-solid fa-pencil', // Changed
+			icon: 'fa-solid fa-pencil',
 			settings: [
 				{ label: 'Auto-Save', type: 'toggle', defaultValue: true },
 				{ label: 'Save Interval', type: 'number', defaultValue: 5, min: 1, max: 30 },
@@ -95,20 +133,24 @@
 		}
 	};
 
+	// Define allowed tab labels as a type
+	type TabLabel = 'User Profile' | 'Background' | 'Prop Type' | 'Visibility' | 'Beat Layouts';
+
 	// Define tabs configuration with Font Awesome class strings
-	const tabs = [
-		{ id: 'User', label: 'User Profile', icon: 'fa-solid fa-user' }, // Changed
-		{ id: 'Background', label: 'Background', icon: 'fa-solid fa-fill-drip' }, // Changed (example)
-		{ id: 'Prop Type', label: 'Prop Type', icon: 'fa-solid fa-paintbrush' }, // Changed (example)
-		{ id: 'Visibility', label: 'Visibility', icon: 'fa-solid fa-eye' }, // Changed
-		{ id: 'Beat Layouts', label: 'Beat Layouts', icon: 'fa-solid fa-table-cells-large' } // Changed (example)
+	const tabs: { id: string; label: TabLabel; icon: string }[] = [
+		{ id: 'User', label: 'User Profile', icon: 'fa-solid fa-user' },
+		{ id: 'Background', label: 'Background', icon: 'fa-solid fa-fill-drip' },
+		{ id: 'Prop Type', label: 'Prop Type', icon: 'fa-solid fa-paintbrush' },
+		{ id: 'Visibility', label: 'Visibility', icon: 'fa-solid fa-eye' },
+		{ id: 'Beat Layouts', label: 'Beat Layouts', icon: 'fa-solid fa-table-cells-large' }
 	];
 
 	// Props
 	export let onClose: () => void;
-	export let background: string;
-	export let onChangeBackground: (newBackground: string) => void;
-	export let currentSection: string = 'Construct';
+	// Removed unused exports:
+	// export let background: string;
+	// export let onChangeBackground: (newBackground: string) => void;
+	export let currentSection: keyof typeof sections = 'Construct';
 
 	// State
 	let searchQuery = '';
@@ -123,12 +165,12 @@
 	}>();
 
 	// State for section-specific settings
-	let sectionSettings: any = {};
+	let sectionSettings: Record<string, any> = {};
 
 	// Initialize settings
 	$: {
-		if (sections[currentSection]) {
-			sectionSettings = sections[currentSection].settings.reduce((acc, setting) => {
+		if (currentSection in sections) {
+			sectionSettings = sections[currentSection]?.settings.reduce<Record<string, any>>((acc, setting) => {
 				acc[setting.label] = setting.defaultValue;
 				return acc;
 			}, {});
@@ -148,8 +190,8 @@
 
 	// Reset to defaults
 	function handleReset() {
-		if (sections[currentSection]) {
-			sectionSettings = sections[currentSection].settings.reduce((acc, setting) => {
+		if (currentSection in sections) {
+			sectionSettings = sections[currentSection].settings.reduce<Record<string, any>>((acc, setting) => {
 				acc[setting.label] = setting.defaultValue;
 				return acc;
 			}, {});
@@ -163,62 +205,6 @@
 	// Track changes
 	function markUnsavedChanges() {
 		hasUnsavedChanges = true;
-	}
-
-	// Render setting input based on type
-	// NOTE: This function uses {@html} which requires careful handling
-	// if setting labels or options could ever contain user-generated content.
-	// For predefined settings like this, it's generally acceptable.
-	function renderSettingInput(setting: any) {
-		// Ensure sectionSettings is initialized for the current label
-		if (sectionSettings[setting.label] === undefined) {
-			sectionSettings[setting.label] = setting.defaultValue;
-		}
-
-		switch (setting.type) {
-			case 'toggle':
-				// For toggles, we need to bind directly in the template or use a more complex approach
-				// Returning HTML string with bind:checked won't work as expected with {@html}
-				// We'll handle this directly in the template loop instead.
-				return '';
-			case 'number':
-				return `
-					<input
-						type="number"
-						value="${sectionSettings[setting.label]}"
-						min="${setting.min}"
-						max="${setting.max}"
-						on:input={ (e) => { sectionSettings['${setting.label}'] = e.target.valueAsNumber; markUnsavedChanges(); } }
-						class="number-input"
-					/>
-				`;
-			case 'range':
-				return `
-					<input
-						type="range"
-						value="${sectionSettings[setting.label]}"
-						min="${setting.min}"
-						max="${setting.max}"
-						on:input={ (e) => { sectionSettings['${setting.label}'] = e.target.valueAsNumber; markUnsavedChanges(); } }
-						class="range-input"
-					/>
-					<span class="range-value">${sectionSettings[setting.label]}</span>
-				`;
-			case 'select':
-				return `
-					<select
-						value="${sectionSettings[setting.label]}"
-						on:change={ (e) => { sectionSettings['${setting.label}'] = e.target.value; markUnsavedChanges(); } }
-						class="select-input"
-					>
-						${setting.options
-							.map((opt) => `<option value="${opt}" ${sectionSettings[setting.label] === opt ? 'selected' : ''}>${opt}</option>`)
-							.join('')}
-					</select>
-				`;
-			default:
-				return 'Unsupported setting type';
-		}
 	}
 </script>
 
@@ -263,6 +249,7 @@
 						{#if !searchQuery || lowerCaseLabel.includes(searchQuery.toLowerCase())}
 							<div class="setting-item">
 								<label class="setting-label" for="setting-{lowerCaseLabel}">{setting.label}</label>
+								
 								{#if setting.type === 'toggle'}
 									<label class="toggle-switch">
 										<input
@@ -273,6 +260,7 @@
 										/>
 										<span class="slider"></span>
 									</label>
+								
 								{:else if setting.type === 'number'}
 									<input
 										id="setting-{lowerCaseLabel}"
@@ -283,6 +271,7 @@
 										on:input={markUnsavedChanges}
 										class="number-input"
 									/>
+								
 								{:else if setting.type === 'range'}
 									<div class="range-container">
 										<input
@@ -296,6 +285,7 @@
 										/>
 										<span class="range-value">{sectionSettings[setting.label]}</span>
 									</div>
+								
 								{:else if setting.type === 'select'}
 									<select
 										id="setting-{lowerCaseLabel}"
@@ -307,6 +297,7 @@
 											<option value={opt}>{opt}</option>
 										{/each}
 									</select>
+								
 								{:else}
 									<span>Unsupported setting type</span>
 								{/if}
@@ -617,6 +608,4 @@
 		cursor: not-allowed;
 		background: #555; /* Darker disabled background */
 	}
-
 </style>
-

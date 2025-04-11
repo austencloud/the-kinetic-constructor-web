@@ -35,6 +35,7 @@
 	$: groupedOptions = (() => {
 		const subGroups: Record<string, PictographData[]> = {};
 		options.forEach((option) => {
+			// Ensure 'type' is used for grouping within OptionsPanel, regardless of the main sort method
 			const groupKey = determineGroupKey(option, 'type');
 			if (!subGroups[groupKey]) subGroups[groupKey] = [];
 			subGroups[groupKey].push(option);
@@ -42,6 +43,7 @@
 		return subGroups;
 	})();
 
+	// Ensure keys are sorted according to 'type' logic
 	$: sortedGroupKeys = getSortedGroupKeys(Object.keys(groupedOptions), 'type');
 
 	$: layoutRows = (() => {
@@ -51,7 +53,8 @@
 			const currentKey = sortedGroupKeys[i];
 			const currentOptions = groupedOptions[currentKey];
 			if (!currentOptions || currentOptions.length === 0) {
-				i++; continue;
+				i++;
+				continue;
 			}
 			const isCurrentSmall = currentOptions.length <= MAX_ITEMS_FOR_SMALL_GROUP;
 
@@ -61,7 +64,11 @@
 				while (j < sortedGroupKeys.length) {
 					const nextKey = sortedGroupKeys[j];
 					const nextOptions = groupedOptions[nextKey];
-					if (nextOptions && nextOptions.length > 0 && nextOptions.length <= MAX_ITEMS_FOR_SMALL_GROUP) {
+					if (
+						nextOptions &&
+						nextOptions.length > 0 &&
+						nextOptions.length <= MAX_ITEMS_FOR_SMALL_GROUP
+					) {
 						smallGroupSequence.push({ key: nextKey, options: nextOptions });
 						j++;
 					} else {
@@ -83,7 +90,6 @@
 		return rows;
 	})();
 
-
 	async function checkContentHeight() {
 		await tick();
 		if (!panelElement) return;
@@ -95,7 +101,6 @@
 
 	$: options, checkContentHeight();
 	onMount(checkContentHeight);
-
 </script>
 
 <div
@@ -117,7 +122,10 @@
 			<div class="multi-group-row">
 				{#each row.groups as group, groupIndex}
 					<div class="multi-group-item">
-						<SectionHeader groupKey={group.key} isFirstHeader={rowIndex === 0 && groupIndex === 0} />
+						<SectionHeader
+							groupKey={group.key}
+							isFirstHeader={rowIndex === 0 && groupIndex === 0}
+						/>
 						<OptionGroupGrid options={group.options} />
 					</div>
 				{/each}
@@ -126,22 +134,33 @@
 	{/each}
 </div>
 
+<div
+	class="options-panel"
+	bind:this={panelElement}
+	use:resize={checkContentHeight}
+	class:vertically-center={contentIsShort}
+	role="tabpanel"
+	aria-labelledby="tab-{selectedTab}"
+	id="options-panel-{selectedTab}"
+></div>
+
 <style>
 	.options-panel {
 		display: flex;
 		flex-direction: column;
 		/* align-items: center; */ /* Removed */
 		justify-content: flex-start;
-		position: absolute;
+		position: absolute; /* Let the wrapper handle positioning */
 		width: 100%;
 		height: 100%;
 		padding: 1rem 0.5rem 2rem 0.5rem;
 		box-sizing: border-box;
-		overflow-y: auto;
+		overflow-y: auto; /* Keep scrolling */
 		overflow-x: hidden;
+
 		top: 0;
 		left: 0;
-        transition: justify-content 0.2s ease-out;
+		transition: justify-content 0.2s ease-out;
 	}
 
 	.options-panel.vertically-center {
@@ -159,7 +178,7 @@
 		/* gap: 1rem 2rem; */
 		width: 100%;
 		margin-top: 16px;
- 		margin-bottom: 10px;
+		margin-bottom: 10px;
 	}
 
 	.multi-group-item {
@@ -168,8 +187,6 @@
 		align-items: center;
 		/* flex: 1 1 0%; */ /* Keep commented out unless needed */
 		min-width: 120px;
-        /* Add some horizontal padding within the item if needed */
-        /* padding: 0 0.5rem; */
 	}
 
 	/* --- Scrollbar Styles --- */

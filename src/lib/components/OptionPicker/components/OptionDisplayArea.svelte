@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import { cubicOut } from 'svelte/easing'; 
+	import { cubicOut } from 'svelte/easing';
 	import type { PictographData } from '$lib/types/PictographData';
 
 	import LoadingMessage from './messages/LoadingMessage.svelte';
@@ -11,7 +11,6 @@
 	export let isLoading: boolean;
 	export let selectedTab: string | null; // Can be 'all' or category key
 	export let optionsToDisplay: PictographData[]; // The options relevant to the current view
-	export let panelKey: string; // Key for transitions ('all', category key, or 'none')
 	export let hasCategories: boolean; // Whether any categories actually exist
 
 	// --- Display State ---
@@ -55,21 +54,21 @@
 
 <div class="option-display-area">
 	{#if messageType === 'loading'}
-		<div class="message-container" transition:fade={{ duration: 150 }}>
+		<div class="message-container">
 			<LoadingMessage />
 		</div>
 	{:else if hasOptions}
 		<div class="panels-container">
-			<!-- Using a simpler transition approach -->
-			<div class="panel-wrapper">
-				<OptionsPanel
-					options={optionsToDisplay}
-					{selectedTab}
-				/>
-			</div>
+			{#key selectedTab}
+				<div class="panel-wrapper"
+					in:fade={{ duration: 200, easing: cubicOut }}
+					out:fade={{ duration: 120, easing: cubicOut }}>
+					<OptionsPanel options={optionsToDisplay} selectedTab={selectedTab} />
+				</div>
+			{/key}
 		</div>
 	{:else if messageType === 'empty' || messageType === 'initial'}
-		<div class="message-container" transition:fade={{ duration: 150 }}>
+		<div class="message-container">
 			<EmptyMessage type={messageType} message={messageText} />
 		</div>
 	{/if}
@@ -80,21 +79,24 @@
 		width: 100%;
 		height: 100%;
 		position: relative;
-		overflow: hidden;
+		overflow: hidden; /* Keep overflow hidden */
 	}
 
 	.panels-container {
 		width: 100%;
 		height: 100%;
-		position: relative;
-		overflow: hidden;
+		position: relative; /* Positioning context for absolute children */
+		overflow: hidden; /* Keep overflow hidden */
 	}
 
 	.panel-wrapper {
-		position: relative;
+		position: absolute; /* Absolute positioning is KEY */
+		top: 0;
+		left: 0;
 		width: 100%;
 		height: 100%;
-		pointer-events: auto;
+		pointer-events: auto; /* Ensure interaction */
+		/* background-color: #fff; /* Optional: Add background to prevent seeing through during fade */
 	}
 
 	.message-container {
@@ -106,7 +108,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		z-index: 5;
-		pointer-events: none;
+		z-index: 5; /* Ensure messages are above panels if needed */
+		pointer-events: none; /* Messages shouldn't block interaction */
 	}
 </style>

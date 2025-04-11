@@ -39,15 +39,15 @@ export const DEVICE_CONFIG = {
 	smallMobile: {
 		padding: { horizontal: 12, vertical: 12 },
 		gap: 2,
-		minItemSize: 60,
-		maxItemSize: 90,
+		minItemSize: 80,
+		maxItemSize: 100,
 		scaleFactor: 0.95
 	},
 	mobile: {
 		padding: { horizontal: 12, vertical: 12 },
 		gap: 2,
 		minItemSize: 80,
-		maxItemSize: 105,
+		maxItemSize: 110,
 		scaleFactor: 1
 	},
 	tablet: {
@@ -100,10 +100,10 @@ export const LAYOUT_TEMPLATES = {
 // ----- Gap Adjustments -----
 export const GAP_ADJUSTMENTS = {
 	singleItem: 0,
-	twoItems: 5,
-	fewItems: 5,
-	mediumItems: 10,
-	manyItems: 8
+	twoItems: 3,
+	fewItems: 3,
+	mediumItems: 3,
+	manyItems: 3
 };
 
 // ----- Helper Functions -----

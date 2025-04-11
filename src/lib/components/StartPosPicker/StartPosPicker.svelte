@@ -10,6 +10,7 @@
 	import startPositionService from '$lib/services/StartPositionService';
 	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
 	import { browser } from '$app/environment'; // Import browser check
+	import sequenceDataService from '$lib/services/SequenceDataService';
 
 	let gridMode = 'diamond'; // TODO: Make this dynamic if necessary
 	let startPositionPictographs: PictographData[] = []; // Store the processed data directly
@@ -85,9 +86,19 @@
 
 	const handleSelect = async (startPosPictograph: PictographData) => {
 		try {
-			// Add start position to the sequence
+			console.log("CLICKED START POSITION:", startPosPictograph);
+			
+			// Log sequence before
+			const beforeSequence = sequenceDataService.getCurrentSequence();
+			console.log("SEQUENCE BEFORE:", JSON.stringify(beforeSequence));
+			
+			// Try adding start position
 			await startPositionService.addStartPosition(startPosPictograph);
-
+			
+			// Log sequence after
+			const afterSequence = sequenceDataService.getCurrentSequence();
+			console.log("SEQUENCE AFTER:", JSON.stringify(afterSequence));
+			
 			// Update the selected start position in the store
 			selectedStartPos.set({ ...startPosPictograph });
 

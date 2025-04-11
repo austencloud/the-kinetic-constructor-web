@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { fade } from 'svelte/transition';
-	import { cubicOut } from 'svelte/easing';
+	import { fade, fly, scale } from 'svelte/transition';
+	import { quintOut, cubicOut } from 'svelte/easing';
 	import Option from './Option.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 	import { uiState } from '../store';
+	import { flip } from 'svelte/animate';
 
 	// --- Props ---
 	export let options: PictographData[] = [];
@@ -50,14 +51,23 @@
 	style:grid-template-columns={actualGridColumns} 
 	style:--grid-gap={gridGap}
 	style:--option-size={optionSize}
+	in:fade={{ duration: 200, easing: cubicOut }}
+	out:fade={{ duration: 150, easing: cubicOut }}
 >
 	{#each options as option, i ((option.letter ?? '') + (option.startPos ?? '') + (option.endPos ?? '') + i)}
 		<div
 			class="grid-item-wrapper"
 			class:single-item={applySingleItemClass}
 			class:two-item={applyTwoItemClass}
-			in:fade={{ duration: 150, easing: cubicOut }}
-			out:fade={{ duration: 100, easing: cubicOut }}
+			in:scale={{ 
+				start: 0.92, 
+				opacity: 0, 
+				duration: 250, 
+				delay: Math.min(i * 20, 100), // Stagger effect with a reasonable maximum
+				easing: quintOut 
+			}}
+			out:fade={{ duration: 100 }}
+			animate:flip={{ duration: 300 }}
 		>
 			<Option pictographData={option} isPartOfTwoItems={applyTwoItemClass} />
 		</div>

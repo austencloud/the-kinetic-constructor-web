@@ -1,7 +1,18 @@
 // src/routes/+layout.server.js
 import type { LayoutServerLoad } from './$types';
 
+// Add a cache flag to prevent duplicate fetches
+let dataCache: { diamondData: string; boxData: string } | null = null;
+
 export const load: LayoutServerLoad = async ({ fetch: eventFetch }) => {
+    // Return cached data if available
+    if (dataCache) {
+        return {
+            csvData: dataCache,
+            error: null,
+        };
+    }
+
     console.log('Fetching pictograph data in +layout.server.js...');
     try {
         // Use the event.fetch provided by SvelteKit
@@ -27,11 +38,12 @@ export const load: LayoutServerLoad = async ({ fetch: eventFetch }) => {
         const boxData = await boxResponse.text();
 
         console.log('Successfully fetched CSV data.');
+        
+        // Store in cache
+        dataCache = { diamondData, boxData };
+        
         return {
-            csvData: {
-                diamondData,
-                boxData,
-            },
+            csvData: dataCache,
             error: null, // Indicate success
         };
     } catch (error) {

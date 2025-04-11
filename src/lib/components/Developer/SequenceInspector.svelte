@@ -54,25 +54,10 @@
 		);
 		return formatted;
 	}
-
+	// Modify your formatSequence function to read from sequenceDataService
 	function formatSequence() {
-		const beats = getBeats();
-		const metadata = {
-			word: '',
-			author: 'Austen Cloud',
-			level: 0,
-			prop_type: 'staff',
-			grid_mode: 'diamond',
-			is_circular: false,
-			can_be_CAP: false,
-			is_strict_rotated_CAP: false,
-			is_strict_mirrored_CAP: false,
-			is_strict_swapped_CAP: false,
-			is_mirrored_swapped_CAP: false,
-			is_rotated_swapped_CAP: false
-		};
-		const validBeats = beats.filter((beat) => beat && beat.pictographData);
-		return [metadata, ...validBeats.map(formatBeatForExport)];
+		// This would show the actual JSON data instead of beatsStore
+		return sequenceDataService.getCurrentSequence();
 	}
 
 	// --- UI Interaction ---
@@ -140,6 +125,7 @@
 
 	// Cleanup timeout on component destroy
 	import { onDestroy } from 'svelte';
+	import sequenceDataService from '$lib/services/SequenceDataService';
 	onDestroy(() => {
 		if (copyTimeoutId) clearTimeout(copyTimeoutId);
 	});

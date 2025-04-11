@@ -243,9 +243,10 @@
 	/* --- Mobile Responsiveness --- */
 	@media (max-width: 640px) {
 		.header-content {
-			flex-direction: column;
+			flex-direction: row;
 			align-items: stretch;
-			gap: 8px;
+			/* gap: 8px; */
+			width: 100%;
 		}
 
 		.tabs-placeholder .no-categories-message {
@@ -254,10 +255,10 @@
 
 		.tabs,
 		.tabs-placeholder {
-			justify-content: center;
+			/* justify-content: center; */
 			flex-wrap: wrap; /* Ensure wrapping */
 			margin-bottom: 8px;
-			flex-grow: 0;
+			/* flex-grow: 0; */
 			order: 1;
 		}
 
@@ -265,7 +266,6 @@
 
 		.view-controls {
 			margin-left: 0;
-			justify-content: center;
 			order: 2;
 		}
 	}

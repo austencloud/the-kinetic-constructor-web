@@ -13,6 +13,20 @@
 	import { resize } from './actions/resize';
 	import type { ViewModeDetail } from './components/ViewControl.svelte';
 	import LayoutDebugger from './utils/debugger/LayoutDebugger.svelte';
+	import sequenceDataService, { type SequenceBeat } from '$lib/services/SequenceDataService';
+	import type { PictographData } from '$lib/types/PictographData';
+	import type { TKAPosition } from '$lib/types/TKAPosition';
+	import type { MotionData } from '$lib/components/objects/Motion/MotionData';
+	import type {
+		Color,
+		MotionType,
+		Orientation,
+		PropRotDir,
+		Loc,
+		TKATurns,
+		VTGTiming,
+		VTGDir
+	} from '$lib/types/Types';
 
 	// --- State Stores ---
 	const windowWidth = writable(
@@ -22,6 +36,116 @@
 	const containerWidth = writable(0);
 	const containerHeight = writable(0);
 	const selectedTab = writable<string | null>(null); // Tracks the currently selected category tab ('all' or specific key)
+
+	// --- Type Safety Helpers ---
+	/**
+	 * Safely cast a string to a TKAPosition
+	 * Returns null if the value isn't a valid TKAPosition
+	 */
+	function safeAsTKAPosition(value: string | undefined): TKAPosition | null {
+		// This regex validates alpha1-8, beta1-8, gamma1-16
+		const validPattern = /^(alpha[1-8]|beta[1-8]|gamma([1-9]|1[0-6]))$/;
+
+		if (!value || !validPattern.test(value)) {
+			return null;
+		}
+
+		return value as TKAPosition;
+	}
+
+	/**
+	 * Check if a string is a valid MotionType
+	 */
+	function isValidMotionType(value: string): value is MotionType {
+		return ['anti', 'pro', 'static', 'dash', 'float'].includes(value);
+	}
+
+	/**
+	 * Check if a string is a valid Orientation
+	 */
+	function isValidOrientation(value: string): value is Orientation {
+		return ['in', 'out', 'clock', 'counter'].includes(value);
+	}
+
+	/**
+	 * Check if a string is a valid PropRotDir
+	 */
+	function isValidPropRotDir(value: string): value is PropRotDir {
+		return ['cw', 'ccw', 'no_rot'].includes(value);
+	}
+
+	/**
+	 * Check if a string is a valid Loc
+	 */
+	function isValidLoc(value: string): value is Loc {
+		return ['n', 's', 'e', 'w', 'ne', 'se', 'sw', 'nw'].includes(value);
+	}
+
+	/**
+	 * Safely convert a value to TKATurns
+	 */
+	function safeAsTKATurns(value: number | string | undefined): TKATurns {
+		if (value === 'fl') return 'fl';
+		const num = typeof value === 'number' ? value : parseFloat(value || '0');
+
+		if ([0, 0.5, 1, 1.5, 2, 2.5, 3].includes(num)) {
+			return num as TKATurns;
+		}
+		return 0;
+	}
+
+	/**
+	 * Safely convert a SequenceBeat to a PictographData
+	 */
+	function sequenceBeatToPictographData(beat: SequenceBeat): PictographData {
+		// Create a motion data object with proper type casting
+		const createMotionData = (attrs: any): MotionData | null => {
+			if (!attrs) return null;
+
+			return {
+				id: `motion-${Math.random().toString(36).substring(2, 11)}`,
+				motionType: isValidMotionType(attrs.motion_type) ? attrs.motion_type : 'static',
+				startOri: isValidOrientation(attrs.start_ori) ? attrs.start_ori : 'in',
+				endOri: isValidOrientation(attrs.end_ori || attrs.start_ori)
+					? attrs.end_ori || attrs.start_ori
+					: 'in',
+				propRotDir: isValidPropRotDir(attrs.prop_rot_dir) ? attrs.prop_rot_dir : 'no_rot',
+				startLoc: isValidLoc(attrs.start_loc) ? attrs.start_loc : 's',
+				endLoc: isValidLoc(attrs.end_loc) ? attrs.end_loc : 's',
+				turns: safeAsTKATurns(attrs.turns),
+				color: 'blue' as Color, // Will be overridden below
+				leadState: null,
+				prefloatMotionType: null,
+				prefloatPropRotDir: null
+			};
+		};
+
+		// Create blue and red motion data
+		const blueMotionData = createMotionData(beat.blue_attributes);
+		const redMotionData = createMotionData(beat.red_attributes);
+
+		// Set colors
+		if (blueMotionData) blueMotionData.color = 'blue';
+		if (redMotionData) redMotionData.color = 'red';
+
+		// Create and return the PictographData
+		return {
+			letter: null, // Not using this for options
+			startPos: safeAsTKAPosition(beat.start_pos),
+			endPos: safeAsTKAPosition(beat.end_pos),
+			timing: (beat.timing as VTGTiming) || null,
+			direction: (beat.direction as VTGDir) || null,
+			gridMode: 'diamond',
+			gridData: null,
+			blueMotionData,
+			redMotionData,
+			redPropData: null,
+			bluePropData: null,
+			redArrowData: null,
+			blueArrowData: null,
+			grid: 'diamond'
+		};
+	}
 
 	// --- Reactive UI State & Data ---
 	$: isLoading = $uiState.isLoading;
@@ -64,7 +188,10 @@
 				deviceType: enhancedDeviceType,
 				isFoldable,
 				foldableInfo
-			} = getEnhancedDeviceType($containerWidth > 0 ? $containerWidth : $windowWidth, $windowWidth < BREAKPOINTS.tablet);
+			} = getEnhancedDeviceType(
+				$containerWidth > 0 ? $containerWidth : $windowWidth,
+				$windowWidth < BREAKPOINTS.tablet
+			);
 
 			// 2. Determine isMobile/isTablet BASED ON the final enhancedDeviceType
 			const isMobile = enhancedDeviceType === 'smallMobile' || enhancedDeviceType === 'mobile';
@@ -142,23 +269,27 @@
 			// Determine which category tab to select within the new grouping
 			const lastSelectedForNewMethod = get(uiState).lastSelectedTab[newSortMethod];
 			const currentGroupsForNewMethod = get(groupedOptionsStore); // Re-get groups based on new sort method
-			const availableKeysForNewMethod = currentGroupsForNewMethod ? Object.keys(currentGroupsForNewMethod) : [];
+			const availableKeysForNewMethod = currentGroupsForNewMethod
+				? Object.keys(currentGroupsForNewMethod)
+				: [];
 
 			let nextTabToSelect: string | null = null; // Default to null, meaning no specific tab initially
 
-			if (lastSelectedForNewMethod && availableKeysForNewMethod.includes(lastSelectedForNewMethod)) {
+			if (
+				lastSelectedForNewMethod &&
+				availableKeysForNewMethod.includes(lastSelectedForNewMethod)
+			) {
 				// If there was a previously selected tab for this sort method, use it
 				nextTabToSelect = lastSelectedForNewMethod;
 			} else if (availableKeysForNewMethod.length > 0) {
 				// Otherwise, select the first available category tab
 				nextTabToSelect = availableKeysForNewMethod[0];
 			} else {
-                // If no categories exist for this grouping, maybe default back to 'all'? Or handle empty state.
-                // For now, setting to null might be okay if the display area handles it.
-                // Let's try setting back to 'all' if no sub-tabs exist
-                 nextTabToSelect = 'all';
-            }
-
+				// If no categories exist for this grouping, maybe default back to 'all'? Or handle empty state.
+				// For now, setting to null might be okay if the display area handles it.
+				// Let's try setting back to 'all' if no sub-tabs exist
+				nextTabToSelect = 'all';
+			}
 
 			selectedTab.set(nextTabToSelect);
 
@@ -183,85 +314,97 @@
 		windowHeight.set(window.innerHeight);
 	}
 
-	// --- Lifecycle ---
+	// --- onMount: Load options based on sequence ---
 	onMount(() => {
 		// --- Initialization Logic ---
-
-		// Restore last view state on mount (which sort method and tab were active)
 		const savedState = get(uiState);
 		const savedSortMethod = savedState.sortMethod;
 		const lastSelectedTabsMap = savedState.lastSelectedTab;
 		const preferredTabForSavedMethod = lastSelectedTabsMap[savedSortMethod];
 
-        // Trigger initial load/option calculation based on the current sequence
-        // This assumes beatsStore might already have data or will update soon
-        const currentBeats = get(beatsStore);
-        const initialSequence = currentBeats?.map((beat) => beat.pictographData) ?? [];
-        actions.loadOptions(initialSequence); // Load options based on initial sequence
+		// Function to load options from sequence data
+		const loadOptionsFromSequence = async () => {
+			// Get current sequence data
+			const fullSequence = sequenceDataService.getCurrentSequence();
 
+			// Find the start position beat (beat 0)
+			const startPosBeat = fullSequence.find(
+				(beat) =>
+					beat && typeof beat === 'object' && 'beat' in beat && (beat as SequenceBeat).beat === 0
+			) as SequenceBeat | undefined;
 
-		// Determine the initial tab to display after options are loaded/grouped
-        // We need to wait for groupedOptionsStore to potentially update after loadOptions
-        // Using a timeout or derived store reaction might be more robust, but let's try this first.
-        setTimeout(() => {
-            const currentGroups = get(groupedOptionsStore); // Get groups AFTER potential loading
-            const availableKeys = currentGroups ? Object.keys(currentGroups) : [];
+			if (startPosBeat) {
+				// Convert to PictographData with proper typing
+				const pictographData = sequenceBeatToPictographData(startPosBeat);
 
-            let initialTabToSet: string | null = 'all'; // Default to 'all'
+				// Load options based on the pictograph data
+				actions.loadOptions([pictographData]);
+				console.log('Loaded options from sequence data:', pictographData);
+			} else {
+				// No start position found, load empty options
+				actions.loadOptions([]);
+				console.log('No start position found in sequence data');
+			}
+		};
 
-            if (preferredTabForSavedMethod) {
-                // If a preference exists for the current sort method
-                if (preferredTabForSavedMethod === 'all') {
-                    initialTabToSet = 'all';
-                } else if (availableKeys.includes(preferredTabForSavedMethod)) {
-                    // If the preferred tab still exists in the current options, use it
-                    initialTabToSet = preferredTabForSavedMethod;
-                } else if (availableKeys.length > 0) {
-                    // If preferred tab is gone, use the first available tab
-                    initialTabToSet = availableKeys[0];
-                }
-                // If no keys available, it stays 'all'
-            } else if (availableKeys.length > 0) {
-                 // If no preference, use the first available tab
-                initialTabToSet = availableKeys[0];
-            }
+		// Initial load
+		loadOptionsFromSequence();
 
-            selectedTab.set(initialTabToSet);
+		// Set up the tab selection
+		setTimeout(() => {
+			const currentGroups = get(groupedOptionsStore);
+			const availableKeys = currentGroups ? Object.keys(currentGroups) : [];
 
-            // Ensure the stored preference is accurate if we had to change the initial tab
-            if (preferredTabForSavedMethod !== initialTabToSet) {
-                actions.setLastSelectedTabForSort(savedSortMethod, initialTabToSet);
-            }
-        }, 0); // Timeout 0 allows stores to update after initial load
+			let initialTabToSet: string | null = 'all';
+			if (preferredTabForSavedMethod) {
+				if (preferredTabForSavedMethod === 'all') {
+					initialTabToSet = 'all';
+				} else if (availableKeys.includes(preferredTabForSavedMethod)) {
+					initialTabToSet = preferredTabForSavedMethod;
+				} else if (availableKeys.length > 0) {
+					initialTabToSet = availableKeys[0];
+				}
+			} else if (availableKeys.length > 0) {
+				initialTabToSet = availableKeys[0];
+			}
 
+			selectedTab.set(initialTabToSet);
+
+			if (preferredTabForSavedMethod !== initialTabToSet) {
+				actions.setLastSelectedTabForSort(savedSortMethod, initialTabToSet);
+			}
+		}, 0);
 
 		// --- Event Listeners & Subscriptions ---
 		window.addEventListener('resize', updateWindowSize);
-		updateWindowSize(); // Initial call
+		updateWindowSize();
 
-		// Subscribe to sequence changes (beatsStore) to reload options
+		// Listen for sequence-updated events
+		const handleSequenceUpdate = () => {
+			loadOptionsFromSequence();
+		};
+
+		document.addEventListener('sequence-updated', handleSequenceUpdate);
+
+		// Also keep current beatsStore subscription for backward compatibility
+		// This way it works with both our new event and the original beat updates
 		const unsubscribeBeats = beatsStore.subscribe((beats) => {
-			// Avoid running loadOptions on the very first mount if already done above
-            // This check might need refinement depending on exact store timing
-            if (beats !== currentBeats) { // Basic check if beats actually changed
-                 const sequence = beats?.map((beat) => beat.pictographData) ?? [];
-			    actions.loadOptions(sequence);
-            }
+			if (beats && beats.length > 0) {
+				const sequence = beats.map((beat) => beat.pictographData);
+				actions.loadOptions(sequence);
+			}
 		});
 
 		// --- Cleanup ---
 		return () => {
 			window.removeEventListener('resize', updateWindowSize);
+			document.removeEventListener('sequence-updated', handleSequenceUpdate);
 			unsubscribeBeats();
 		};
 	});
 </script>
 
-<div
-	class="option-picker"
-	class:mobile={context.isMobile}
-	class:portrait={context.isPortrait}
->
+<div class="option-picker" class:mobile={context.isMobile} class:portrait={context.isPortrait}>
 	<OptionPickerHeader
 		selectedTab={$selectedTab}
 		categoryKeys={actualCategoryKeys}
@@ -275,7 +418,6 @@
 			{isLoading}
 			selectedTab={$selectedTab}
 			{optionsToDisplay}
-			{panelKey}
 			hasCategories={actualCategoryKeys.length > 0}
 		/>
 	</div>

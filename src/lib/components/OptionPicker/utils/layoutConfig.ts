@@ -206,7 +206,7 @@ export const LAYOUT_RULES: LayoutRule[] = [
 	},
 	{
 		description: 'Many items (17+) on mobile, wide = 6 columns',
-		columns: 6,
+		columns: 4,
 		when: { minCount: 17, device: 'mobile', aspect: 'wide' }
 	},
 	{
