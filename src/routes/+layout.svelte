@@ -6,6 +6,8 @@
 	import { initializePictographData } from '$lib/stores/pictograph/pictographStore';
 	// Import browser check if needed for other logic, but onMount is client-side only
 	import { browser } from '$app/environment';
+	// Import PWA registration
+	import '$lib/pwa';
 
 	// This prop receives the data returned from your +layout.server.ts load function
 	export let data: LayoutData;
@@ -15,7 +17,6 @@
 	// onMount runs only in the browser after the component has mounted
 	onMount(() => {
 		if (initialized || !browser) return; // Ensure runs only once in browser
-
 
 		// Check if the load function returned data successfully
 		if (data?.csvData && !data.error) {

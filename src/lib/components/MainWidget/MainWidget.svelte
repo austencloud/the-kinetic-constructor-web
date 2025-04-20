@@ -21,6 +21,7 @@
 		selectLoadingProgress,
 		selectLoadingMessage
 	} from './state/store';
+	
 	import { actions } from './state/actions';
 
 	// Window Store

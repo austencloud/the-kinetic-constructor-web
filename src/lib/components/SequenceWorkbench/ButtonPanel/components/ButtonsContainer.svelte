@@ -1,65 +1,80 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import ActionButton from './ActionButton.svelte';
-	import type { ButtonDefinition } from '../types';
+	import type { ButtonDefinition, ActionEventDetail } from '../types';
 	import { panelStore } from '../stores/panelStore';
-	
+	import { ANIMATION_DURATIONS } from '../utils/animations';
+
 	// Props
 	export let buttons: ButtonDefinition[];
 	export let buttonSize: number;
-	
-	// Get state from store
-	let { isVisible, isAnimatingOut, layout } = $panelStore;
-	
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		action: { id: string };
-	}>();
-	
-	// Handle button click
-	function handleButtonClick(event: CustomEvent<{ id: string }>) {
-		dispatch('action', { id: event.detail.id });
+
+	// Get relevant state from the store
+	const { isVisible, isAnimatingOut, layout } = $panelStore; // Use $ syntax directly
+
+	// Event dispatcher to forward action button clicks
+	const dispatch = createEventDispatcher<{ action: ActionEventDetail }>();
+
+	// Forward the click event from ActionButton
+	function handleButtonClick(event: CustomEvent<ActionEventDetail>) {
+		dispatch('action', event.detail);
 	}
+
+	// Calculate total animation time for the wrapper fade-out/in
+	const wrapperTransitionDuration = `${ANIMATION_DURATIONS.TOGGLE_OUT / 1000 * 0.8}s`;
+
 </script>
 
-<div 
-	class="buttons-wrapper" 
-	class:vertical={layout === 'vertical'}
-	class:visible={isVisible}
-	class:animating-out={isAnimatingOut}
+<div
+	class="buttons-wrapper"
+	class:vertical={layout === 'vertical'} 
+	class:visible={isVisible || isAnimatingOut}
+	class:animating-out={isAnimatingOut} 
+	style="--wrapper-transition-duration: {wrapperTransitionDuration};"
+	role="list"
+	aria-hidden={!(isVisible || isAnimatingOut)}
 >
-	{#if isVisible}
+	{#if (isVisible || isAnimatingOut) && buttons}
 		{#each buttons as button, i (button.id)}
-			<ActionButton 
-				{button} 
-				{buttonSize} 
-				index={i} 
-				on:click={handleButtonClick} 
+			<ActionButton
+				{button}
+				{buttonSize}
+				index={i}
+				{isAnimatingOut} 
+				{layout}    
+				on:click={handleButtonClick}
 			/>
 		{/each}
 	{/if}
 </div>
 
 <style>
-	/* Button groups container */
 	.buttons-wrapper {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		padding: 8px;
-		transition: all 0.3s ease;
+		gap: 8px; /* Spacing between buttons */
+		padding: 8px; /* Padding inside the wrapper */
+		transition: opacity var(--wrapper-transition-duration) ease-in-out;
+		opacity: 0; /* Start hidden */
+		pointer-events: none; /* Prevent interaction when hidden/fading */
 	}
-	
+
+	.buttons-wrapper.visible {
+		opacity: 1;
+		pointer-events: auto; /* Allow interaction when visible */
+	}
+
+	/* When animating out, keep container visible while buttons fly out */
+	.buttons-wrapper.animating-out {
+	  opacity: 1;
+	  pointer-events: none; /* Disable interaction immediately */
+	}
+
+	/* Layout direction */
 	.buttons-wrapper.vertical {
 		flex-direction: column;
 	}
-	
-	.buttons-wrapper:not(.visible) {
-		opacity: 0;
-		pointer-events: none;
-		width: 0;
-		height: 0;
-		padding: 0;
-		margin: 0;
+	.buttons-wrapper:not(.vertical) {
+		flex-direction: row;
 	}
 </style>

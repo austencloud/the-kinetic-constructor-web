@@ -1,12 +1,17 @@
 <script lang="ts">
+	// Import necessary modules and types
+	import { onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
-	import type { ButtonDefinition, ActionEventDetail } from '../types';
+	import type { ButtonDefinition, ActionEventDetail, LayoutOrientation } from '../types'; // Import LayoutOrientation
 	import { getButtonAnimationDelayValue } from '../utils/animations';
 
 	// Props
 	export let button: ButtonDefinition;
 	export let buttonSize: number;
 	export let index: number; // Index for stagger animation delay
+	// Accept animation state props from parent (ButtonsContainer)
+	export let isAnimatingOut = false;
+	export let layout: LayoutOrientation = 'horizontal';
 
 	// Event dispatcher for click events
 	const dispatch = createEventDispatcher<{ click: ActionEventDetail }>();
@@ -22,13 +27,12 @@
 
 	// Reactive calculation for icon size based on button size
 	$: iconSize = buttonSize * 0.5; // Icon takes up half the button size
-
-	// Note: MDB Ripple initialization is expected to be handled by the parent
-	// ButtonPanel component after MDB is loaded and elements are mounted.
 </script>
 
 <div
 	class="button-container"
+	class:animating-out={isAnimatingOut}
+	class:vertical={layout === 'vertical'}
 	style="--button-index: {index}; width: {buttonSize}px; height: {buttonSize}px; --animation-delay: {animationDelay};"
 	role="listitem"
 >
@@ -54,21 +58,34 @@
 		position: relative; /* Needed for z-index hover effect */
 		z-index: 0;
 		transition: transform 0.2s ease-in-out;
-		/* Default animation (flyInHorizontal) - will be overridden by :global below */
-		animation: flyInHorizontal 0.5s var(--animation-delay) backwards; /* Use backwards to apply start state immediately */
+		/* Apply default (horizontal fly-in) animation using the shorthand property */
+		/* Ensure ease timing function is included if desired */
+		animation: flyInHorizontal 0.5s var(--animation-delay) backwards ease;
 	}
 
-	/* Apply fly-out animation when the parent container has .animating-out */
-	:global(.animating-out) .button-container {
-		animation: flyOutHorizontal 0.4s var(--animation-delay) forwards; /* Use forwards to keep end state */
+	/* --- Reverted to overriding specific properties --- */
+
+	/* Apply horizontal fly-out animation */
+	.button-container.animating-out {
+		animation-name: flyOutHorizontal;
+		animation-duration: 0.4s;
+		animation-fill-mode: forwards;
+		/* Inherits delay and timing function from base */
 	}
 
-	/* Vertical layout animation overrides */
-	:global(.vertical) .button-container {
-		animation: flyInVertical 0.5s var(--animation-delay) backwards;
+	/* Apply vertical fly-in animation */
+	.button-container.vertical {
+		animation-name: flyInVertical;
+		/* Inherits duration, delay, fill-mode, timing function from base */
+		/* Ensure base animation has desired properties (like backwards fill mode) */
 	}
-	:global(.vertical.animating-out) .button-container {
-		animation: flyOutVertical 0.4s var(--animation-delay) forwards;
+
+	/* Apply vertical fly-out animation */
+	.button-container.vertical.animating-out {
+		animation-name: flyOutVertical;
+		animation-duration: 0.4s;
+		animation-fill-mode: forwards;
+		/* Inherits delay and timing function from base */
 	}
 
 	/* Hover effect: scale up and bring to front */
@@ -77,7 +94,7 @@
 		transform: scale(1.1);
 	}
 
-	/* Button styles */
+	/* Button styles (remain the same) */
 	.modern-button {
 		width: 100%;
 		height: 100%;
@@ -86,7 +103,6 @@
 		justify-content: center;
 		align-items: center;
 		background-color: white;
-		/* Use CSS variable for color */
 		border: 2px solid var(--button-color);
 		color: var(--button-color);
 		cursor: pointer;
@@ -108,36 +124,33 @@
 		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 	}
 
-	/* Disabled state */
+	/* Disabled state (remains the same) */
 	.modern-button[disabled] {
 		opacity: 0.5;
 		cursor: not-allowed;
-		background-color: #eee; /* Grey out background */
+		background-color: #eee;
 		border-color: #ccc;
 		color: #999;
 		box-shadow: none;
 		transform: none;
 	}
 	.modern-button[disabled]:hover {
-		transform: none; /* Disable hover effects */
+		transform: none;
 		box-shadow: none;
 	}
 
-	/* --- Keyframe Animations --- */
+	/* --- Keyframe Animations (remain the same) --- */
 
-	/* Horizontal Fly In */
 	@keyframes flyInHorizontal {
 		from {
 			opacity: 0;
-			transform: translateX(100px); /* Start off-screen right */
+			transform: translateX(100px);
 		}
 		to {
 			opacity: 1;
 			transform: translateX(0);
 		}
 	}
-
-	/* Horizontal Fly Out */
 	@keyframes flyOutHorizontal {
 		from {
 			opacity: 1;
@@ -145,23 +158,19 @@
 		}
 		to {
 			opacity: 0;
-			transform: translateX(100px); /* Fly off-screen right */
+			transform: translateX(100px);
 		}
 	}
-
-	/* Vertical Fly In */
 	@keyframes flyInVertical {
 		from {
 			opacity: 0;
-			transform: translateY(100px); /* Start off-screen bottom */
+			transform: translateY(100px);
 		}
 		to {
 			opacity: 1;
 			transform: translateY(0);
 		}
 	}
-
-	/* Vertical Fly Out */
 	@keyframes flyOutVertical {
 		from {
 			opacity: 1;
@@ -169,7 +178,7 @@
 		}
 		to {
 			opacity: 0;
-			transform: translateY(100px); /* Fly off-screen bottom */
+			transform: translateY(100px);
 		}
 	}
 </style>

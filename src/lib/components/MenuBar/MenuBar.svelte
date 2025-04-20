@@ -1,6 +1,7 @@
 <script lang="ts">
 	import NavWidget from './NavWidget/NavWidget.svelte';
 	import SettingsButton from './SettingsButton/SettingsButton.svelte';
+	import InstallPWA from '../common/InstallPWA.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import { elasticOut } from 'svelte/easing';
@@ -29,6 +30,10 @@
 
 			<div class="nav-widget-wrapper">
 				<NavWidget on:tabChange={handleTabChange} />
+			</div>
+
+			<div class="pwa-install-container">
+				<InstallPWA showInstallPrompt={true} buttonText="Install App" />
 			</div>
 		</div>
 	{/if}
@@ -89,5 +94,10 @@
 		height: 24px;
 		bottom: -24px;
 		color: #6c9ce9;
+	}
+
+	.pwa-install-container {
+		margin-left: auto;
+		margin-right: 10px;
 	}
 </style>
