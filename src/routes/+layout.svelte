@@ -8,6 +8,8 @@
 	import { browser } from '$app/environment';
 	// Import PWA registration
 	import '$lib/pwa';
+	// Import ServiceProvider for DI
+	import ServiceProvider from '$lib/providers/ServiceProvider.svelte';
 
 	// This prop receives the data returned from your +layout.server.ts load function
 	export let data: LayoutData;
@@ -50,7 +52,9 @@
 		{/if}
 	</div>
 {:else}
-	<slot />
+	<ServiceProvider>
+		<slot />
+	</ServiceProvider>
 {/if}
 
 <style>
