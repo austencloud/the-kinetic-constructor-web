@@ -14,7 +14,13 @@
 	// --- Context ---
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 	// Get layout config from context, renaming gridColumns to avoid conflict
-	$: ({ gridColumns: contextGridColumns, optionSize, gridGap, gridClass, aspectClass } = $layoutContext.layoutConfig);
+	$: ({
+		gridColumns: contextGridColumns,
+		optionSize,
+		gridGap,
+		gridClass,
+		aspectClass
+	} = $layoutContext.layoutConfig);
 	$: isMobileDevice = $layoutContext.isMobile;
 	$: isTabletDevice = $layoutContext.isTablet;
 	$: isPortraitMode = $layoutContext.isPortrait;
@@ -38,7 +44,6 @@
 			: options.length === 2
 				? 'repeat(2, 1fr)' // Force two columns for two items
 				: contextGridColumns; // Use the layout context's column definition otherwise
-
 </script>
 
 <div
@@ -48,7 +53,7 @@
 	class:mobile-grid={isMobileDevice}
 	class:tablet-grid={isTabletDevice}
 	class:tablet-portrait-grid={isTabletDevice && isPortraitMode}
-	style:grid-template-columns={actualGridColumns} 
+	style:grid-template-columns={actualGridColumns}
 	style:--grid-gap={gridGap}
 	style:--option-size={optionSize}
 	in:fade={{ duration: 200, easing: cubicOut }}
@@ -59,12 +64,12 @@
 			class="grid-item-wrapper"
 			class:single-item={applySingleItemClass}
 			class:two-item={applyTwoItemClass}
-			in:scale={{ 
-				start: 0.92, 
-				opacity: 0, 
-				duration: 250, 
+			in:scale={{
+				start: 0.92,
+				opacity: 0,
+				duration: 250,
 				delay: Math.min(i * 20, 100), // Stagger effect with a reasonable maximum
-				easing: quintOut 
+				easing: quintOut
 			}}
 			out:fade={{ duration: 100 }}
 			animate:flip={{ duration: 300 }}
@@ -83,12 +88,13 @@
 		justify-items: center; /* Center items horizontally within their grid cell */
 		justify-content: center; /* Center the grid content horizontally if grid is wider */
 		align-content: center; /* Center grid content vertically */
-		grid-gap: var(--grid-gap, 8px); /* Use gap from layout context */
+		grid-gap: var(--grid-gap, 16px); /* Increase default gap to 16px as fallback */
 		/* Add auto margins for horizontal centering within parent */
 		margin-left: auto;
 		margin-right: auto;
 		/* Add some bottom margin for spacing between groups */
 		margin-bottom: 1rem;
+		padding: 0.5rem; /* Add padding around the grid */
 	}
 
 	/* Add top margin only if it's NOT part of a multi-group item */
@@ -99,7 +105,6 @@
 	:global(.options-panel > .section-header-container + .options-grid) {
 		margin-top: 0;
 	}
-
 
 	/* --- Grid Item Wrapper --- */
 	.grid-item-wrapper {
@@ -112,12 +117,12 @@
 		position: relative; /* For z-index */
 		z-index: 1;
 		transition: z-index 0s 0.2s; /* Delay z-index change */
+		margin: 4px; /* Add extra margin between items */
 	}
 	.grid-item-wrapper:hover {
 		z-index: 10; /* Bring hovered item to front */
 		transition-delay: 0s;
 	}
-
 
 	/* --- Responsive Grid Adjustments (Applied based on context) --- */
 	.mobile-grid {
@@ -128,5 +133,16 @@
 	.tablet-portrait-grid {
 		grid-gap: 0.5rem;
 		padding: 0.25rem;
+	}
+
+	/* Force minimum spacing between items with desktop square aspect */
+	@media (min-width: 768px) {
+		.options-grid {
+			grid-gap: var(--grid-gap, 16px); /* Enforce minimum gap */
+		}
+
+		.grid-item-wrapper {
+			margin: 4px; /* Ensure minimum margin */
+		}
 	}
 </style>

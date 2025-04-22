@@ -134,17 +134,15 @@
 	{/each}
 </div>
 
-
 <style>
 	.options-panel {
 		display: flex;
 		flex-direction: column;
-		/* align-items: center; */ /* Removed */
 		justify-content: flex-start;
 		position: absolute; /* Let the wrapper handle positioning */
 		width: 100%;
 		height: 100%;
-		padding: 1rem 0.5rem 2rem 0.5rem;
+		padding: 1rem 1rem 2rem 1rem; /* Increased horizontal padding for more breathing room */
 		box-sizing: border-box;
 		overflow-y: auto; /* Keep scrolling */
 		overflow-x: hidden;
@@ -162,35 +160,33 @@
 		display: flex;
 		flex-direction: row;
 		flex-wrap: wrap;
-		/* FIXED: Use space-evenly for equal spacing */
 		justify-content: space-evenly;
 		align-items: flex-start;
-		/* REMOVED: gap is handled by space-evenly */
-		/* gap: 1rem 2rem; */
 		width: 100%;
-		margin-top: 16px;
-		margin-bottom: 10px;
+		margin-top: 24px; /* Increased margin for better spacing */
+		margin-bottom: 20px; /* Increased margin for better spacing */
+		gap: 16px; /* Add explicit gap for consistent spacing */
 	}
 
 	.multi-group-item {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		/* flex: 1 1 0%; */ /* Keep commented out unless needed */
 		min-width: 120px;
+		margin: 0 8px; /* Add horizontal margin between multi-group items */
 	}
 
 	/* --- Scrollbar Styles --- */
 	.options-panel::-webkit-scrollbar {
-		width: 6px;
+		width: 8px; /* Slightly wider scrollbar for easier use */
 	}
 	.options-panel::-webkit-scrollbar-track {
 		background: rgba(30, 41, 59, 0.3);
-		border-radius: 3px;
+		border-radius: 4px;
 	}
 	.options-panel::-webkit-scrollbar-thumb {
 		background-color: rgba(100, 116, 139, 0.7);
-		border-radius: 3px;
+		border-radius: 4px;
 	}
 	.options-panel::-webkit-scrollbar-thumb:hover {
 		background-color: rgba(148, 163, 184, 0.8);

@@ -276,5 +276,17 @@ export const GRID_GAP_OVERRIDES: GridGapOverride[] = [
 		description: 'Example: 16 items in wide landscape = 10px gap',
 		gap: '10px',
 		when: { count: 16, aspect: 'wide', orientation: 'landscape' }
+	},
+	{
+		description: 'Few/Medium items (3-16) on desktop, square aspect = 16px gap',
+		gap: '16px',
+		when: {
+			minCount: 3,
+			maxCount: 16,
+			aspect: 'square',
+			extraCheck: (w, h, params) =>
+				params?.foldableInfo?.isFoldable !== true && // Not a foldable device
+				params?.device === 'desktop' // Desktop only
+		}
 	}
 ];

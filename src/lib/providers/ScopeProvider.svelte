@@ -4,7 +4,6 @@
 
 	const SCOPE_KEY = Symbol('SERVICE_SCOPE');
 
-	export let name = 'default-scope';
 
 	let scope: symbol;
 
