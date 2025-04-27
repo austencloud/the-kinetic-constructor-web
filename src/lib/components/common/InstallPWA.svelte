@@ -33,7 +33,7 @@
 		const promptEvent = window.deferredPrompt;
 		promptEvent.prompt();
 
-		promptEvent.userChoice.then((choice) => {
+		promptEvent.userChoice.then((choice: { outcome: 'accepted' | 'dismissed' }) => {
 			if (choice.outcome === 'accepted') {
 				console.log('User accepted the install prompt');
 			} else {

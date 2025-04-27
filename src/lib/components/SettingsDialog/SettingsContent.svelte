@@ -147,10 +147,10 @@
 
 	// Props
 	export let onClose: () => void;
-	// Removed unused exports:
-	// export let background: string;
-	// export let onChangeBackground: (newBackground: string) => void;
 	export let currentSection: keyof typeof sections = 'Construct';
+
+	// Note: We removed the unused background and onChangeBackground props
+	// If you need to implement background settings, you can add them back later
 
 	// State
 	let searchQuery = '';
@@ -158,11 +158,7 @@
 	let activeTab = get(activeTabStore);
 
 	// Event Dispatcher
-	const dispatch = createEventDispatcher<{
-		changeBackground: string;
-		save: void;
-		reset: void;
-	}>();
+	const dispatch = createEventDispatcher();
 
 	// State for section-specific settings
 	let sectionSettings: Record<string, any> = {};
@@ -170,10 +166,13 @@
 	// Initialize settings
 	$: {
 		if (currentSection in sections) {
-			sectionSettings = sections[currentSection]?.settings.reduce<Record<string, any>>((acc, setting) => {
-				acc[setting.label] = setting.defaultValue;
-				return acc;
-			}, {});
+			sectionSettings = sections[currentSection]?.settings.reduce<Record<string, any>>(
+				(acc, setting) => {
+					acc[setting.label] = setting.defaultValue;
+					return acc;
+				},
+				{}
+			);
 		} else {
 			// Handle case where currentSection might not exist in sections initially
 			sectionSettings = {};
@@ -191,10 +190,13 @@
 	// Reset to defaults
 	function handleReset() {
 		if (currentSection in sections) {
-			sectionSettings = sections[currentSection].settings.reduce<Record<string, any>>((acc, setting) => {
-				acc[setting.label] = setting.defaultValue;
-				return acc;
-			}, {});
+			sectionSettings = sections[currentSection].settings.reduce<Record<string, any>>(
+				(acc, setting) => {
+					acc[setting.label] = setting.defaultValue;
+					return acc;
+				},
+				{}
+			);
 		}
 		// Placeholder: Implement actual reset logic if needed beyond local state
 		console.log('Resetting settings for:', currentSection);
@@ -249,7 +251,7 @@
 						{#if !searchQuery || lowerCaseLabel.includes(searchQuery.toLowerCase())}
 							<div class="setting-item">
 								<label class="setting-label" for="setting-{lowerCaseLabel}">{setting.label}</label>
-								
+
 								{#if setting.type === 'toggle'}
 									<label class="toggle-switch">
 										<input
@@ -260,7 +262,6 @@
 										/>
 										<span class="slider"></span>
 									</label>
-								
 								{:else if setting.type === 'number'}
 									<input
 										id="setting-{lowerCaseLabel}"
@@ -271,7 +272,6 @@
 										on:input={markUnsavedChanges}
 										class="number-input"
 									/>
-								
 								{:else if setting.type === 'range'}
 									<div class="range-container">
 										<input
@@ -285,7 +285,6 @@
 										/>
 										<span class="range-value">{sectionSettings[setting.label]}</span>
 									</div>
-								
 								{:else if setting.type === 'select'}
 									<select
 										id="setting-{lowerCaseLabel}"
@@ -297,7 +296,6 @@
 											<option value={opt}>{opt}</option>
 										{/each}
 									</select>
-								
 								{:else}
 									<span>Unsupported setting type</span>
 								{/if}
@@ -306,7 +304,7 @@
 					{/each}
 				</div>
 			{:else}
-				<p class="text-slate-400 p-4">Select a section to view settings.</p>
+				<p class="p-4 text-slate-400">Select a section to view settings.</p>
 			{/if}
 		</div>
 	</div>
@@ -457,7 +455,6 @@
 		text-align: center;
 	}
 
-
 	/* --- Tabs Navigation --- */
 	.tabs-navigation {
 		width: 220px; /* Slightly wider */
@@ -468,7 +465,6 @@
 		overflow-y: auto; /* Allow scrolling if many tabs */
 	}
 	/* NOTE: Assumes TabsNavigation.svelte is updated to use <i> tags */
-
 
 	/* --- Section Settings Area --- */
 	.section-settings {
@@ -508,27 +504,42 @@
 		width: 50px; /* Smaller toggle */
 		height: 28px;
 	}
-	.toggle-switch input { opacity: 0; width: 0; height: 0; }
+	.toggle-switch input {
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
 	.slider {
 		position: absolute;
 		cursor: pointer;
-		top: 0; left: 0; right: 0; bottom: 0;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
 		background-color: #555; /* Darker off state */
-		transition: .4s;
+		transition: 0.4s;
 		border-radius: 28px;
 	}
 	.slider:before {
 		position: absolute;
-		content: "";
-		height: 20px; width: 20px;
-		left: 4px; bottom: 4px;
+		content: '';
+		height: 20px;
+		width: 20px;
+		left: 4px;
+		bottom: 4px;
 		background-color: white;
-		transition: .4s;
+		transition: 0.4s;
 		border-radius: 50%;
 	}
-	.toggle-switch input:checked + .slider { background-color: #3a7bd5; } /* Blue accent */
-	.toggle-switch input:focus + .slider { box-shadow: 0 0 1px #3a7bd5; }
-	.toggle-switch input:checked + .slider:before { transform: translateX(22px); } /* Adjusted translation */
+	.toggle-switch input:checked + .slider {
+		background-color: #3a7bd5;
+	} /* Blue accent */
+	.toggle-switch input:focus + .slider {
+		box-shadow: 0 0 1px #3a7bd5;
+	}
+	.toggle-switch input:checked + .slider:before {
+		transform: translateX(22px);
+	} /* Adjusted translation */
 
 	.number-input,
 	.select-input {
@@ -539,8 +550,13 @@
 		border-radius: 6px; /* Match search input */
 		font-size: 0.9rem;
 	}
-	.number-input { width: 80px; text-align: right; } /* Fixed width for numbers */
-	.select-input { min-width: 150px; } /* Minimum width for selects */
+	.number-input {
+		width: 80px;
+		text-align: right;
+	} /* Fixed width for numbers */
+	.select-input {
+		min-width: 150px;
+	} /* Minimum width for selects */
 	.number-input:focus,
 	.select-input:focus {
 		outline: none;

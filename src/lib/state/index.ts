@@ -1,53 +1,79 @@
 /**
- * State Management
+ * State Management System
  *
  * This is the main entry point for the state management system.
- * It exports all state management functionality.
+ * It exports all the necessary components for managing application state.
  */
 
-// Export core functionality
-export * from './core';
+// Export core utilities
+export * from './core/store';
+export * from './core/registry';
 
-// Export machines
-export * from './machines/app';
+// Import at the top to avoid circular dependencies
+import { stateRegistry } from './core/registry';
+import { appActor, appActions, appSelectors } from './machines/appMachine';
+import { sequenceActor, sequenceActions, sequenceSelectors } from './machines/sequenceMachine';
+
+// Export state machines
+export * from './machines';
 
 // Export stores
-export * from './stores/pictograph';
-export * from './stores/grid';
-export * from './stores/background';
-export * from './stores/settings';
+export * from './stores/sequenceStore';
+export * from './stores/uiStore';
+
+// Re-export specific machines for convenience
+export { appActions, appSelectors, appActor };
+export { sequenceActions, sequenceSelectors, sequenceActor };
 
 /**
  * Initialize the state management system
- *
- * This function should be called at application startup to initialize
- * the state management system.
+ * This should be called early in the application lifecycle
  */
 export function initializeStateManagement(): void {
-	// Import all stores to ensure they are registered with the registry
-	import('./stores/pictograph');
-	import('./stores/grid');
-	import('./stores/background');
-	import('./stores/settings');
+	// Ensure the app actor is started
+	if (appActor && appActor.getSnapshot().status !== 'active') {
+		console.log('Starting app actor');
+		appActor.start();
+	}
 
-	// Import all machines to ensure they are registered with the registry
-	import('./machines/app');
+	// Ensure the sequence actor is started
+	if (sequenceActor && sequenceActor.getSnapshot().status !== 'active') {
+		console.log('Starting sequence actor');
+		sequenceActor.start();
+	}
 
-	// Set up any cross-store synchronization
+	// Signal that the background is ready to start the app initialization
+	appActions.backgroundReady();
 
-	// For example, sync settings with background store
-	import { settingsStore } from './stores/settings';
-	import { backgroundStore } from './stores/background';
-	import { get } from 'svelte/store';
+	// Add global access for debugging in development
+	if (import.meta.env.DEV && typeof window !== 'undefined') {
+		(window as any).__STATE__ = {
+			registry: stateRegistry,
+			appActor,
+			sequenceActor,
+			appActions,
+			sequenceActions,
+			getState: (id: string) => {
+				const container = stateRegistry.get(id);
+				if (!container) return undefined;
 
-	// Initial sync
-	const settings = get(settingsStore);
-	backgroundStore.setBackground(settings.background);
-	backgroundStore.setQuality(settings.backgroundQuality);
+				if ('getSnapshot' in container) {
+					return container.getSnapshot();
+				} else if ('subscribe' in container) {
+					// It's a store
+					const { subscribe } = container as { subscribe: any };
+					let value: any;
+					const unsubscribe = subscribe((v: any) => {
+						value = v;
+					});
+					unsubscribe();
+					return value;
+				}
 
-	// Set up listeners for future changes
-	settingsStore.subscribe((settings) => {
-		backgroundStore.setBackground(settings.background);
-		backgroundStore.setQuality(settings.backgroundQuality);
-	});
+				return undefined;
+			}
+		};
+	}
+
+	console.log('State management system initialized');
 }

@@ -11,7 +11,17 @@
 
 import { browser } from '$app/environment';
 import { writable, get, type Writable, type Readable } from 'svelte/store';
-import { createActor, type AnyActorRef, type AnyStateMachine } from 'xstate';
+import {
+	createActor,
+	type AnyActorRef,
+	type AnyStateMachine,
+	type ActorOptions, // Import ActorOptions type
+	type AnyEventObject, // Example type for event object
+	type Actor, // Import Actor type for more specific typing if needed
+	type SnapshotFrom, // Utility type to get snapshot type from machine
+	type InspectionEvent // Type for inspection events
+	// Removed isActorRef import
+} from 'xstate';
 
 // Types for the registry
 export type StateContainerType = 'machine' | 'store';
@@ -29,6 +39,7 @@ class StateRegistry {
 	private containers: Map<string, StateContainer> = new Map();
 	private persistenceEnabled = browser && typeof localStorage !== 'undefined';
 	private persistenceKey = 'app_state';
+	// Store raw persisted data loaded from storage
 	private persistedState: Record<string, any> = {};
 
 	constructor() {
@@ -79,28 +90,54 @@ class StateRegistry {
 		options: {
 			persist?: boolean;
 			description?: string;
-			snapshot?: any;
+			// Use SnapshotFrom<T> for the snapshot type
+			snapshot?: SnapshotFrom<T>;
 		} = {}
-	): AnyActorRef {
-		// Check for persisted state
+	): Actor<T> { // Return a more specific Actor type
+		// Check for persisted state loaded from storage
 		const persistedData = this.persistedState[id];
-		const snapshot = persistedData?.type === 'machine' ? persistedData.snapshot : options.snapshot;
+		// Attempt to use persisted snapshot first, then option snapshot
+		const snapshotToRestore: SnapshotFrom<T> | undefined =
+			persistedData?.type === 'machine' ? persistedData.snapshot : options.snapshot;
 
-		// Create actor from machine
-		const actor = createActor(machine, {
-			snapshot,
-			// Add inspector in dev mode
-			inspect: import.meta.env.DEV
-				? {
-						onEvent: (event) => {
-							console.log(`[${id}] Event:`, event);
-						},
-						onTransition: (state) => {
-							console.log(`[${id}] State:`, state);
-						}
-					}
-				: undefined
-		});
+		// Construct actor options carefully
+		// Initialize with correct base type, explicitly defining snapshot type
+		const actorOptions: ActorOptions<T> = {};
+
+		// Add snapshot if it exists and is valid
+		if (snapshotToRestore) {
+			// Basic validation (you might add more specific checks)
+			if (typeof snapshotToRestore === 'object' && snapshotToRestore !== null && 'status' in snapshotToRestore) {
+				actorOptions.snapshot = snapshotToRestore;
+			} else {
+				console.warn(`Invalid persisted snapshot format for machine "${id}". Ignoring.`);
+			}
+		}
+
+		// Define actor variable here so it's accessible within inspect callback closure
+		let actor: Actor<T>;
+
+		// Add inspector in dev mode
+		if (import.meta.env.DEV) {
+			// Use 'inspect' with a single callback function
+			actorOptions.inspect = (inspectionEvent: InspectionEvent) => {
+				// Ensure actor is defined before checking actorRef
+				if (!actor) return;
+				// Filter based on the type of inspection event
+				if (inspectionEvent.type === '@xstate.event' && inspectionEvent.actorRef === actor) {
+					// Event received by or sent from this specific actor
+					console.log(`[${id}] Event:`, inspectionEvent.event);
+				} else if (inspectionEvent.type === '@xstate.snapshot' && inspectionEvent.actorRef === actor) {
+					// Snapshot emitted by this specific actor
+					console.log(`[${id}] State:`, inspectionEvent.snapshot);
+				}
+				// Add other checks like '@xstate.actor' if needed
+			};
+		}
+
+		// Create actor from machine with constructed options
+		// Cast the result to Actor<T> for better type safety downstream
+		actor = createActor(machine, actorOptions) as Actor<T>;
 
 		// Start the actor
 		actor.start();
@@ -109,7 +146,7 @@ class StateRegistry {
 		this.containers.set(id, {
 			id,
 			type: 'machine',
-			instance: actor,
+			instance: actor, // Store the specifically typed actor
 			persist: options.persist,
 			description: options.description
 		});
@@ -134,7 +171,14 @@ class StateRegistry {
 		// If this is a writable store and we have persisted data, restore it
 		if (persistedData?.type === 'store' && 'set' in store) {
 			const writableStore = store as Writable<T>;
-			writableStore.set(persistedData.value);
+			try {
+				// Ensure the value exists before setting
+				if (persistedData.value !== undefined) {
+					writableStore.set(persistedData.value);
+				}
+			} catch (error) {
+				console.error(`Failed to restore persisted state for store "${id}":`, error);
+			}
 		}
 
 		this.containers.set(id, {
@@ -160,6 +204,18 @@ class StateRegistry {
 	 * Remove a state container from the registry
 	 */
 	unregister(id: string): boolean {
+		const container = this.containers.get(id);
+		if (container?.type === 'machine') {
+			const actor = container.instance as AnyActorRef;
+			// Check status before stopping
+			if (actor && actor.getSnapshot().status !== 'stopped') {
+				try {
+					actor.stop();
+				} catch (error) {
+					console.error(`Error stopping actor ${id}:`, error);
+				}
+			}
+		}
 		return this.containers.delete(id);
 	}
 
@@ -181,15 +237,30 @@ class StateRegistry {
 	 * Clear the registry (useful for testing)
 	 */
 	clear(): void {
-		// Stop all actors
+		// Stop all actors before clearing
 		this.getAllByType('machine').forEach((container) => {
 			const actor = container.instance as AnyActorRef;
-			if (actor.getSnapshot().status === 'active') {
-				actor.stop();
+			// Check if actor exists and is running before stopping
+			if (actor && actor.getSnapshot().status !== 'stopped') {
+				try {
+					actor.stop();
+				} catch (error) {
+					console.error(`Error stopping actor ${container.id}:`, error);
+				}
 			}
 		});
 
 		this.containers.clear();
+		// Also clear persisted state cache in memory
+		this.persistedState = {};
+		// Optionally clear localStorage as well during a full clear
+		// if (this.persistenceEnabled) {
+		// 	try {
+		// 		localStorage.removeItem(this.persistenceKey);
+		// 	} catch (error) {
+		// 		console.error('Failed to clear persisted state from localStorage:', error);
+		// 	}
+		// }
 	}
 
 	/**
@@ -198,32 +269,48 @@ class StateRegistry {
 	persistState(): void {
 		if (!this.persistenceEnabled) return;
 
-		const persistedState: Record<string, any> = {};
+		const stateToPersist: Record<string, any> = {};
 
 		this.getAll().forEach((container) => {
 			if (!container.persist) return;
 
 			try {
-				if (container.type === 'machine') {
-					const actor = container.instance as AnyActorRef;
-					persistedState[container.id] = {
-						type: 'machine',
-						snapshot: actor.getSnapshot()
-					};
-				} else {
-					const store = container.instance as Readable<any>;
-					persistedState[container.id] = {
+				const instance = container.instance; // Get the instance
+
+				// Use a type guard check for actor properties (like .send)
+				if (container.type === 'machine' && instance && typeof (instance as AnyActorRef).send === 'function') {
+					const actorInstance = instance as AnyActorRef; // Cast after check
+					if (actorInstance.getSnapshot().status !== 'stopped') {
+						// Now TypeScript should be more confident it's an actor
+						const persistedSnapshot = actorInstance.getPersistedSnapshot();
+						if (persistedSnapshot !== undefined) { // Check if defined
+							stateToPersist[container.id] = {
+								type: 'machine',
+								snapshot: persistedSnapshot
+							};
+						}
+					}
+				} else if (container.type === 'store') {
+					// Assuming it's a Readable store if not a machine
+					const store = instance as Readable<any>;
+					stateToPersist[container.id] = {
 						type: 'store',
-						value: get(store)
+						value: get(store) // get() from svelte/store
 					};
 				}
 			} catch (error) {
-				console.error(`Failed to persist state for ${container.id}:`, error);
+				console.error(`Failed to get state for persistence for ${container.id}:`, error);
 			}
 		});
 
 		try {
-			localStorage.setItem(this.persistenceKey, JSON.stringify(persistedState));
+			// Only save if there's something to persist
+			if (Object.keys(stateToPersist).length > 0) {
+				localStorage.setItem(this.persistenceKey, JSON.stringify(stateToPersist));
+			} else {
+				// Optionally remove the key if nothing is persisted anymore
+				// localStorage.removeItem(this.persistenceKey);
+			}
 		} catch (error) {
 			console.error('Failed to persist state to localStorage:', error);
 		}
@@ -237,11 +324,21 @@ class StateRegistry {
 
 		try {
 			const persistedStateJson = localStorage.getItem(this.persistenceKey);
-			if (!persistedStateJson) return;
+			if (!persistedStateJson) {
+				this.persistedState = {}; // Ensure it's an empty object if nothing is found
+				return;
+			}
 
 			this.persistedState = JSON.parse(persistedStateJson);
+			// Basic validation
+			if (typeof this.persistedState !== 'object' || this.persistedState === null) {
+				console.warn('Invalid persisted state format found in localStorage. Resetting.');
+				this.persistedState = {};
+			}
+
 		} catch (error) {
-			console.error('Failed to load persisted state from localStorage:', error);
+			console.error('Failed to load or parse persisted state from localStorage:', error);
+			this.persistedState = {}; // Reset on error
 		}
 	}
 
@@ -256,12 +353,18 @@ class StateRegistry {
 				console.log(`Description: ${container.description}`);
 			}
 
-			if (container.type === 'machine') {
-				const actor = container.instance as AnyActorRef;
-				console.log('State:', actor.getSnapshot());
-			} else {
-				const store = container.instance as Readable<any>;
-				console.log('Value:', get(store));
+			try {
+				const instance = container.instance;
+				// Use the same type guard here for consistency
+				if (container.type === 'machine' && instance && typeof (instance as AnyActorRef).send === 'function') {
+					const actor = instance as AnyActorRef;
+					console.log('State:', actor.getSnapshot());
+				} else if (container.type === 'store') {
+					const store = instance as Readable<any>;
+					console.log('Value:', get(store));
+				}
+			} catch (error) {
+				console.error(`Error getting state for ${container.id}:`, error);
 			}
 
 			console.groupEnd();
@@ -270,7 +373,7 @@ class StateRegistry {
 	}
 
 	/**
-	 * Get persisted state for a specific ID
+	 * Get persisted state for a specific ID (loaded at startup)
 	 */
 	getPersistedState(id: string): any {
 		return this.persistedState[id];
@@ -279,3 +382,4 @@ class StateRegistry {
 
 // Export a singleton instance
 export const stateRegistry = new StateRegistry();
+

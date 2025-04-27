@@ -6,15 +6,19 @@
 	import { slide } from 'svelte/transition';
 	import { elasticOut } from 'svelte/easing';
 	import { writable } from 'svelte/store';
+	import { appActions } from '$lib/state/machines/appMachine';
 
 	export let onSettingsClick: () => void;
 
-	// Toggle state for nav bar
+	// Use a simple writable store for nav visibility
 	const isNavVisible = writable(true);
 
 	const dispatch = createEventDispatcher();
 
 	function handleTabChange(event: CustomEvent<number>) {
+		// Update the app state machine
+		appActions.changeTab(event.detail);
+		// Also dispatch the event for backward compatibility
 		dispatch('tabChange', event.detail);
 	}
 

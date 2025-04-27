@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
-	
+
 	// Components
 	import FullScreen from '$lib/FullScreen.svelte';
 	import MainLayout from './layout/MainLayout.svelte';
@@ -10,22 +10,12 @@
 	import BackgroundCanvas from '../Backgrounds/BackgroundCanvas.svelte';
 	import BackgroundProvider from '../Backgrounds/BackgroundProvider.svelte';
 
-	// State (XState)
-	import {
-		selectIsLoading,
-		selectIsInitializingApp,
-		selectHasInitializationFailed,
-		selectIsReady,
-		selectBackground,
-		selectInitializationError,
-		selectLoadingProgress,
-		selectLoadingMessage
-	} from './state/store';
-	
-	import { actions } from './state/actions';
+	// State Management
+	import { appSelectors, appActions } from '$lib/state/machines/appMachine';
+	import { uiStore } from '$lib/state/stores/uiStore';
 
-	// Window Store
-	import { windowHeight } from '$lib/stores/ui/windowStore';
+	// Get window dimensions from UI store
+	$: windowHeight = $uiStore ? $uiStore.windowHeight + 'px' : '100vh';
 
 	// Types
 	interface PerformanceReportEvent {
@@ -41,37 +31,36 @@
 
 	const dispatch = createEventDispatcher<Events>();
 
-	// --- Get State from XState using specific selectors ---
-	const isLoading = selectIsLoading();
-	const isInitializingApp = selectIsInitializingApp();
-	const hasFailed = selectHasInitializationFailed();
-	const isReady = selectIsReady();
-	const currentBackground = selectBackground();
-	const initializationErrorMsg = selectInitializationError();
-	const loadingProgress = selectLoadingProgress();
-	const loadingMessage = selectLoadingMessage();
+	// --- Get State from the app state machine ---
+	$: isLoading = appSelectors.isLoading();
+	$: isInitializingApp = appSelectors.isInitializingApp();
+	$: hasFailed = appSelectors.hasInitializationFailed();
+	$: isReady = appSelectors.isReady();
+	$: currentBackground = appSelectors.background();
+	$: initializationErrorMsg = appSelectors.initializationError();
+	$: loadingProgress = appSelectors.loadingProgress();
+	$: loadingMessage = appSelectors.loadingMessage();
 
 	// --- Event Handlers ---
 	function handleFullScreenToggle(event: CustomEvent<boolean>) {
-		actions.setFullScreen(event.detail);
+		appActions.setFullScreen(event.detail);
 		dispatch('toggleFullscreen', event.detail);
 	}
 	function handleBackgroundChange(event: CustomEvent<string>) {
-		actions.updateBackground(event.detail);
+		appActions.updateBackground(event.detail);
 		dispatch('changeBackground', event.detail);
 	}
 
-	// *** FIX: Update handler signature and call to actions.changeTab ***
 	function handleTabChange(event: CustomEvent<number>) {
-		// event.detail is now the number (index)
-		actions.changeTab(event.detail);
+		// Update the app state machine
+		appActions.changeTab(event.detail);
 	}
 
 	function handleRetry(): void {
-		actions.retryInitialization();
+		appActions.retryInitialization();
 	}
 	function handleBackgroundReady(): void {
-		actions.backgroundReady();
+		appActions.backgroundReady();
 	}
 	function handlePerformanceReport(event: CustomEvent<PerformanceReportEvent>): void {
 		const fps = event.detail?.fps ?? 0;
@@ -82,44 +71,65 @@
 
 	// --- Lifecycle ---
 	onMount(() => {
-		// Service started in store.ts
+		// Log the current state for debugging
+		console.log('MainWidget mounted');
+		console.log('App state:', appSelectors.isReady() ? 'ready' : 'not ready');
+		console.log('Loading state:', appSelectors.isLoading() ? 'loading' : 'not loading');
+		console.log('Background:', appSelectors.background());
+
+		// Force the state machine to transition
+		setTimeout(() => {
+			console.log('Triggering background ready');
+			appActions.backgroundReady();
+
+			// Force a UI update
+			isLoading = appSelectors.isLoading();
+			isInitializingApp = appSelectors.isInitializingApp();
+			hasFailed = appSelectors.hasInitializationFailed();
+			isReady = appSelectors.isReady();
+			currentBackground = appSelectors.background();
+			initializationErrorMsg = appSelectors.initializationError();
+			loadingProgress = appSelectors.loadingProgress();
+			loadingMessage = appSelectors.loadingMessage();
+		}, 500);
 	});
 </script>
 
-<div id="main-widget" style="height: {$windowHeight}" class="main-widget">
+<div id="main-widget" style="height: {windowHeight}" class="main-widget">
 	<FullScreen on:toggleFullscreen={handleFullScreenToggle}>
-		<div class="background" class:blur-background={$isInitializingApp || $hasFailed}>
+		<div class="background" class:blur-background={isInitializingApp || hasFailed}>
 			<BackgroundProvider
-				backgroundType={$currentBackground || 'snowfall'}
-				isLoading={$isInitializingApp || $hasFailed}
-				initialQuality={$isInitializingApp || $hasFailed ? 'medium' : 'high'}
+				backgroundType={currentBackground || 'snowfall'}
+				isLoading={isInitializingApp || hasFailed}
+				initialQuality={isInitializingApp || hasFailed ? 'medium' : 'high'}
 			>
 				<BackgroundCanvas
-					appIsLoading={$isInitializingApp || $hasFailed}
+					appIsLoading={isInitializingApp || hasFailed}
 					on:ready={handleBackgroundReady}
 					on:performanceReport={handlePerformanceReport}
 				/>
 			</BackgroundProvider>
 		</div>
 
-		{#if $isInitializingApp || $hasFailed}
+		{#if isInitializingApp || hasFailed}
 			<div class="loading-overlay-wrapper" transition:fade={{ duration: 300 }}>
 				<LoadingOverlay
-					message={$loadingMessage}
-					progress={$loadingProgress}
+					message={loadingMessage}
+					progress={loadingProgress}
 					onRetry={handleRetry}
-					showInitializationError={$hasFailed}
-					errorMessage={$initializationErrorMsg}
+					showInitializationError={hasFailed}
+					errorMessage={initializationErrorMsg}
 				/>
 			</div>
 		{/if}
 
-		{#if $isReady}
+		{#if isReady}
 			<div class="main-layout-wrapper" transition:fade={{ duration: 500, delay: 100 }}>
 				<MainLayout
-					background={$currentBackground}
+					background={currentBackground}
 					on:changeBackground={handleBackgroundChange}
-					on:tabChange={handleTabChange} />
+					on:tabChange={handleTabChange}
+				/>
 			</div>
 		{/if}
 	</FullScreen>
@@ -137,6 +147,7 @@
 		overflow: hidden;
 		background-color: rgb(11, 29, 42);
 	}
+
 	.background {
 		position: absolute;
 		inset: 0;

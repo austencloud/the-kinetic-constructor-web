@@ -37,8 +37,8 @@
 	"peerDependencies": {
 		"svelte": "^5.0.0"
 	},
+	"@sveltejs/adapter-netlify": "^4.4.2",
 	"devDependencies": {
-		"@sveltejs/adapter-netlify": "^4.4.2",
 		"@sveltejs/adapter-node": "^5.2.12",
 		"@sveltejs/kit": "^2.16.1",
 		"@sveltejs/package": "^2.0.0",

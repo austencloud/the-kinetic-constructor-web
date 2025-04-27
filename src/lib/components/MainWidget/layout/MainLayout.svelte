@@ -3,9 +3,8 @@
 	import TabContent from '../tabs/TabContent.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import SequenceInspector from '$lib/components/Developer/SequenceInspector.svelte';
-	import { selectIsSettingsOpen, selectActiveTabData } from '../state/store';
-	import { actions } from '../state/actions';
 	import SettingsContent from '$lib/components/SettingsDialog/SettingsContent.svelte';
+	import { appSelectors, appActions } from '$lib/state/machines/appMachine';
 
 	// --- Props & Events ---
 	export let background: string;
@@ -16,17 +15,17 @@
 		tabChange: number;
 	}>();
 
-	// --- Get State from XState ---
-	const isSettingsDialogOpen = selectIsSettingsOpen();
-	const activeTabData = selectActiveTabData();
+	// --- Get State from App State Machine ---
+	$: isSettingsDialogOpen = appSelectors.isSettingsOpen();
+	$: activeTabData = appSelectors.activeTabData();
 
 	// --- Event Handlers ---
 	function handleToggleSettings() {
-		// Toggle settings dialog 
-		if ($isSettingsDialogOpen) {
-			actions.closeSettings();
+		// Toggle settings dialog
+		if (isSettingsDialogOpen) {
+			appActions.closeSettings();
 		} else {
-			actions.openSettings();
+			appActions.openSettings();
 		}
 	}
 
@@ -35,46 +34,44 @@
 		const validBackgrounds = ['snowfall', 'nightSky']; // Keep updated
 		const backgroundType = newBackground.toLowerCase();
 		if (validBackgrounds.includes(backgroundType)) {
+			appActions.updateBackground(backgroundType);
 			dispatch('changeBackground', backgroundType);
 		} else {
 			console.warn(`Invalid background type requested: ${newBackground}. Using default.`);
+			appActions.updateBackground('snowfall');
 			dispatch('changeBackground', 'snowfall');
 		}
 	}
 
 	// Handler for tab changes bubbling up
 	function handleTabChange(event: CustomEvent<number>) {
+		appActions.changeTab(event.detail);
 		dispatch('tabChange', event.detail);
 	}
 
 	// Get the current section name based on active tab
-	$: currentSection = $activeTabData ? $activeTabData.title : 'Construct';
+	$: currentSection = activeTabData ? activeTabData.title : 'Construct';
 </script>
 
 <div class="content">
 	<div class="menuBar">
-		<MenuBar
-			onSettingsClick={handleToggleSettings} 
-			on:tabChange={handleTabChange}
-		/>
+		<MenuBar onSettingsClick={handleToggleSettings} on:tabChange={handleTabChange} />
 		{#if import.meta.env.DEV}
 			<SequenceInspector />
 		{/if}
 	</div>
 
 	<div class="mainContent">
-		<TabContent 
-
-		/>
+		<TabContent />
 	</div>
 
-	{#if $isSettingsDialogOpen}
+	{#if isSettingsDialogOpen}
 		<div class="settingsContent">
 			<SettingsContent
 				{background}
 				{currentSection}
-				onChangeBackground={handleBackgroundChange} 
-				onClose={() => actions.closeSettings()}
+				onChangeBackground={handleBackgroundChange}
+				onClose={() => appActions.closeSettings()}
 			/>
 		</div>
 	{/if}
@@ -106,7 +103,7 @@
 		bottom: 0;
 		z-index: 10;
 	}
-    .menuBar {
-        padding: 5px 10px;
-    }
+	.menuBar {
+		padding: 5px 10px;
+	}
 </style>

@@ -1,17 +1,19 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import NavButton from './NavButton.svelte';
-	import { isMobile, isPortrait } from '../../../utils/deviceUtils'; // Assuming this path is correct
 	import { scale } from 'svelte/transition';
 	import { elasticOut } from 'svelte/easing';
+	import { appSelectors, appActions } from '$lib/state/machines/appMachine';
+	import { uiStore } from '$lib/state/stores/uiStore';
 
-	const dispatch = createEventDispatcher();
+	// Get state from the app state machine
+	$: activeTab = appSelectors.currentTab();
+	$: previousTab = appSelectors.previousTab();
 
-	let isMobileDevice = false;
-	let isPortraitMode = false;
+	// Get device information from the UI store
+	$: isMobileDevice = $uiStore.isMobile;
+	$: isPortraitMode = !$uiStore.isDesktop && $uiStore.windowHeight > $uiStore.windowWidth;
 
-	let activeTab = 0;
-	let previousTab = 0; // Variable to store the previously active tab index
 	let lastClickTime = 0;
 
 	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
@@ -27,34 +29,24 @@
 		if (now - lastClickTime < 50) return; // Debounce rapid clicks
 		lastClickTime = now;
 
-		// Set previousTab *before* updating activeTab
-		previousTab = activeTab;
-		activeTab = index;
+		// Update the app state machine
+		appActions.changeTab(index);
 
-		dispatch('tabChange', index);
+		// Dispatch the event for any parent components that might be listening
+		const event = new CustomEvent('tabChange', { detail: index });
+		dispatchEvent(event);
 	}
 
-	// Update device/orientation state
+	// Update device/orientation state if UI store is not available
 	const updateModes = () => {
 		if (typeof window !== 'undefined') {
-			isMobileDevice = isMobile();
-			isPortraitMode = isPortrait();
+			uiStore.updateWindowDimensions(window.innerWidth, window.innerHeight);
 		}
 	};
 
 	onMount(() => {
 		updateModes();
-		if (typeof window !== 'undefined') {
-			window.addEventListener('resize', updateModes);
-		}
 	});
-
-	onDestroy(() => {
-		if (typeof window !== 'undefined') {
-			window.removeEventListener('resize', updateModes);
-		}
-	});
-
 </script>
 
 <div class="nav-widget">
@@ -156,5 +148,4 @@
 		max-width: 20px;
 		bottom: -4px;
 	}
-
 </style>
