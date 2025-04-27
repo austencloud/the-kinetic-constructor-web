@@ -1,19 +1,19 @@
 import { browser } from '$app/environment';
+import { registerSW } from 'virtual:pwa-register';
 
 // This conditional is important for SSR
 if (browser) {
-	if ('serviceWorker' in navigator) {
-		window.addEventListener('load', () => {
-			navigator.serviceWorker
-				.register('/sw.js')
-				.then((registration) => {
-					console.log('Service worker registered successfully:', registration.scope);
-				})
-				.catch((error) => {
-					console.error('Service worker registration failed:', error);
-				});
-		});
-	}
+	// Register service worker using vite-plugin-pwa
+	const updateSW = registerSW({
+		onNeedRefresh() {
+			// Show a prompt to the user asking if they want to refresh
+			console.log('New content available, click on reload button to update.');
+		},
+		onOfflineReady() {
+			// Notify the user that the app is ready for offline use
+			console.log('App ready to work offline');
+		}
+	});
 
 	// Add event listeners for installation/updates
 	window.addEventListener('beforeinstallprompt', (event) => {
