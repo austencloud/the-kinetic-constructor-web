@@ -8,48 +8,43 @@
 	import { crossfade, fade } from 'svelte/transition'; // Keep fade
 
 	// --- XState Imports ---
-	import {
-		selectCurrentTab,
-		selectPreviousTab, // Kept for potential future logic
-		selectActiveTabData
-	} from '../state/store';
+	import { tabs } from '$lib/components/MainWidget/state/appState';
+	import { useSelector } from '@xstate/svelte';
+	import { appService } from '$lib/state/machines/app/app.machine';
 
 	// --- Svelte Stores ---
 	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
 
-	// --- Get State from XState using specific selectors ---
-	const currentTabIndex = selectCurrentTab();
-	const previousTabIndex = selectPreviousTab();
-	const currentActiveTab = selectActiveTabData(); // Get the data object for the active tab
+	// --- Get current tab index directly from the app service ---
+	const currentTabStore = useSelector(appService, (state) => state.context.currentTab);
 
 	// --- Reactive derivations ---
 	$: isEmpty = $isSequenceEmpty;
+	$: currentTabIndex = $currentTabStore as number;
+	$: activeTab =
+		currentTabIndex >= 0 && currentTabIndex < tabs.length ? tabs[currentTabIndex] : null;
 
-	// Define fade transition properties for the main tab content swap
-	// Use a slightly shorter duration for a typical cross-fade effect
-	const fadeDuration = 300; // Adjust as needed (e.g., 300ms)
-	const fadeTransitionProps = { duration: fadeDuration };
-	// Define separate props for the inner picker fade if desired
-	const pickerFadeProps = { duration: 200 }; // Create a crossfade transition
+	// Define props for the inner picker fade
+	const pickerFadeProps = { duration: 200 };
+
+	// Create a crossfade transition
 	const [send, receive] = crossfade({
 		duration: 400,
-		fallback(node, params) {
+		fallback(node) {
 			return fade(node, { duration: 300 });
 		}
 	});
 </script>
 
 <div class="tab-content-container">
-	{#if $currentActiveTab}
-		{#key $currentActiveTab.id}
+	{#if activeTab}
+		{#key activeTab.id}
 			<div
-				in:receive={{ key: $currentActiveTab.id }}
-				out:send={{ key: $currentActiveTab.id }}
-				class={$currentActiveTab.id === 'construct'
-					? 'split-view-container'
-					: 'placeholderContainer'}
+				in:receive={{ key: activeTab.id }}
+				out:send={{ key: activeTab.id }}
+				class={activeTab.id === 'construct' ? 'split-view-container' : 'placeholderContainer'}
 			>
-				{#if $currentActiveTab.id === 'construct'}
+				{#if activeTab.id === 'construct'}
 					<div class="sequenceWorkbenchContainer">
 						<SequenceWorkbench />
 					</div>
@@ -65,7 +60,7 @@
 						{/key}
 					</div>
 				{:else}
-					<PlaceholderTab icon={$currentActiveTab.icon} title={$currentActiveTab.title} />
+					<PlaceholderTab icon={activeTab.icon} title={activeTab.title} />
 				{/if}
 			</div>
 		{/key}

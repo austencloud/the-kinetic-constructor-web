@@ -2,24 +2,28 @@
 	import NavWidget from './NavWidget/NavWidget.svelte';
 	import SettingsButton from './SettingsButton/SettingsButton.svelte';
 	import InstallPWA from '../common/InstallPWA.svelte';
-	import { createEventDispatcher } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import { elasticOut } from 'svelte/easing';
 	import { writable } from 'svelte/store';
-	import { appActions } from '$lib/state/machines/appMachine';
-
-	export let onSettingsClick: () => void;
+	import { appActions } from '$lib/state/machines/app/app.actions';
+	import { createEventDispatcher } from 'svelte';
 
 	// Use a simple writable store for nav visibility
 	const isNavVisible = writable(true);
 
-	const dispatch = createEventDispatcher();
+	// Create event dispatcher for component events
+	const dispatch = createEventDispatcher<{
+		changeBackground: string;
+		openSettings: void;
+	}>();
 
-	function handleTabChange(event: CustomEvent<number>) {
-		// Update the app state machine
-		appActions.changeTab(event.detail);
-		// Also dispatch the event for backward compatibility
-		dispatch('tabChange', event.detail);
+	function handleSettingsClick() {
+		appActions.openSettings();
+		dispatch('openSettings');
+	}
+
+	function handleBackgroundChange(event: CustomEvent<string>) {
+		dispatch('changeBackground', event.detail);
 	}
 
 	function toggleNav() {
@@ -30,10 +34,10 @@
 <header class="menu-bar-container">
 	{#if $isNavVisible}
 		<div class="menu-bar" transition:slide={{ duration: 300, easing: elasticOut }}>
-			<SettingsButton on:click={onSettingsClick} />
+			<SettingsButton on:click={handleSettingsClick} />
 
 			<div class="nav-widget-wrapper">
-				<NavWidget on:tabChange={handleTabChange} />
+				<NavWidget on:changeBackground={handleBackgroundChange} />
 			</div>
 
 			<div class="pwa-install-container">

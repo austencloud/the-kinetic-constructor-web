@@ -1,16 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { appActions } from '$lib/state/machines/appMachine';
+	import { createEventDispatcher } from 'svelte';
 	import { uiStore } from '$lib/state/stores/uiStore';
+
+	// Create event dispatcher
+	const dispatch = createEventDispatcher<{ click: void }>();
 
 	// Function to handle settings button click
 	function handleClick() {
-		// Update the app state
-		appActions.openSettings();
-
-		// Also dispatch the event for backward compatibility
-		const event = new CustomEvent('click');
-		dispatchEvent(event);
+		// Dispatch the click event
+		dispatch('click');
 	}
 
 	let buttonSize = 50;

@@ -4,20 +4,27 @@
 	import { createEventDispatcher } from 'svelte';
 	import SequenceInspector from '$lib/components/Developer/SequenceInspector.svelte';
 	import SettingsContent from '$lib/components/SettingsDialog/SettingsContent.svelte';
-	import { appSelectors, appActions } from '$lib/state/machines/appMachine';
+	import { appActions } from '$lib/state/machines/app/app.actions';
+	import { useSelector } from '@xstate/svelte';
+	import { appService } from '$lib/state/machines/app/app.machine';
 
 	// --- Props & Events ---
-	export let background: string;
 
 	// --- Events Emitted Up ---
 	const dispatch = createEventDispatcher<{
 		changeBackground: string;
-		tabChange: number;
 	}>();
 
 	// --- Get State from App State Machine ---
-	$: isSettingsDialogOpen = appSelectors.isSettingsOpen();
-	$: activeTabData = appSelectors.activeTabData();
+	const isSettingsOpenStore = useSelector(appService, (state) => state.context.isSettingsOpen);
+	$: isSettingsDialogOpen = $isSettingsOpenStore;
+
+	// Get active tab data from the tabs array
+	import { tabs } from '$lib/components/MainWidget/state/appState';
+	const currentTabIndexStore = useSelector(appService, (state) => state.context.currentTab);
+	$: currentTabIndex = $currentTabIndexStore as number;
+	$: activeTabData =
+		currentTabIndex >= 0 && currentTabIndex < tabs.length ? tabs[currentTabIndex] : null;
 
 	// --- Event Handlers ---
 	function handleToggleSettings() {
@@ -30,23 +37,16 @@
 	}
 
 	// This function will be passed down as a prop.
-	function handleBackgroundChange(newBackground: string) {
-		const validBackgrounds = ['snowfall', 'nightSky']; // Keep updated
-		const backgroundType = newBackground.toLowerCase();
-		if (validBackgrounds.includes(backgroundType)) {
-			appActions.updateBackground(backgroundType);
-			dispatch('changeBackground', backgroundType);
+	function handleBackgroundChange(event: CustomEvent<string>) {
+		const newBackground = event.detail;
+		if (newBackground === 'snowfall') {
+			appActions.updateBackground('snowfall');
+			dispatch('changeBackground', 'snowfall');
 		} else {
 			console.warn(`Invalid background type requested: ${newBackground}. Using default.`);
 			appActions.updateBackground('snowfall');
 			dispatch('changeBackground', 'snowfall');
 		}
-	}
-
-	// Handler for tab changes bubbling up
-	function handleTabChange(event: CustomEvent<number>) {
-		appActions.changeTab(event.detail);
-		dispatch('tabChange', event.detail);
 	}
 
 	// Get the current section name based on active tab
@@ -55,7 +55,7 @@
 
 <div class="content">
 	<div class="menuBar">
-		<MenuBar onSettingsClick={handleToggleSettings} on:tabChange={handleTabChange} />
+		<MenuBar on:openSettings={handleToggleSettings} on:changeBackground={handleBackgroundChange} />
 		{#if import.meta.env.DEV}
 			<SequenceInspector />
 		{/if}
@@ -67,12 +67,7 @@
 
 	{#if isSettingsDialogOpen}
 		<div class="settingsContent">
-			<SettingsContent
-				{background}
-				{currentSection}
-				onChangeBackground={handleBackgroundChange}
-				onClose={() => appActions.closeSettings()}
-			/>
+			<SettingsContent {currentSection} onClose={() => appActions.closeSettings()} />
 		</div>
 	{/if}
 </div>

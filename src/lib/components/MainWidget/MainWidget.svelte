@@ -11,8 +11,11 @@
 	import BackgroundProvider from '../Backgrounds/BackgroundProvider.svelte';
 
 	// State Management
-	import { appSelectors, appActions } from '$lib/state/machines/appMachine';
+	import { appActions } from '$lib/state/machines/app/app.actions';
+	import { useSelector } from '@xstate/svelte';
+	import { appService } from '$lib/state/machines/app/app.machine';
 	import { uiStore } from '$lib/state/stores/uiStore';
+	import type { BackgroundType } from '$lib/components/Backgrounds/types/types';
 
 	// Get window dimensions from UI store
 	$: windowHeight = $uiStore ? $uiStore.windowHeight + 'px' : '100vh';
@@ -22,24 +25,41 @@
 		fps: number;
 		memory?: { used: number; total: number };
 	}
-	// Adjust event map if needed, though dispatching 'tabChange' is internal here
+
+	// Event types
 	type Events = {
-		// tabChange: { index: number; id: string }; // This component dispatches other events upwards
 		changeBackground: string;
 		toggleFullscreen: boolean;
 	};
 
 	const dispatch = createEventDispatcher<Events>();
 
-	// --- Get State from the app state machine ---
-	$: isLoading = appSelectors.isLoading();
-	$: isInitializingApp = appSelectors.isInitializingApp();
-	$: hasFailed = appSelectors.hasInitializationFailed();
-	$: isReady = appSelectors.isReady();
-	$: currentBackground = appSelectors.background();
-	$: initializationErrorMsg = appSelectors.initializationError();
-	$: loadingProgress = appSelectors.loadingProgress();
-	$: loadingMessage = appSelectors.loadingMessage();
+	// --- Get State directly from the app service ---
+	const isInitializingAppStore = useSelector(appService, (state) =>
+		state.matches('initializingApp')
+	);
+	$: isInitializingApp = $isInitializingAppStore;
+
+	const hasFailedStore = useSelector(appService, (state) => state.matches('initializationFailed'));
+	$: hasFailed = $hasFailedStore;
+
+	const isReadyStore = useSelector(appService, (state) => state.matches('ready'));
+	$: isReady = $isReadyStore;
+
+	const currentBackgroundStore = useSelector(appService, (state) => state.context.background);
+	$: currentBackground = $currentBackgroundStore as BackgroundType;
+
+	const initializationErrorMsgStore = useSelector(
+		appService,
+		(state) => state.context.initializationError
+	);
+	$: initializationErrorMsg = $initializationErrorMsgStore as string;
+
+	const loadingProgressStore = useSelector(appService, (state) => state.context.loadingProgress);
+	$: loadingProgress = $loadingProgressStore as number;
+
+	const loadingMessageStore = useSelector(appService, (state) => state.context.loadingMessage);
+	$: loadingMessage = $loadingMessageStore as string;
 
 	// --- Event Handlers ---
 	function handleFullScreenToggle(event: CustomEvent<boolean>) {
@@ -47,8 +67,10 @@
 		dispatch('toggleFullscreen', event.detail);
 	}
 	function handleBackgroundChange(event: CustomEvent<string>) {
-		appActions.updateBackground(event.detail);
-		dispatch('changeBackground', event.detail);
+		if (event.detail === 'snowfall') {
+			appActions.updateBackground('snowfall');
+			dispatch('changeBackground', event.detail);
+		}
 	}
 
 	function handleTabChange(event: CustomEvent<number>) {
@@ -73,24 +95,14 @@
 	onMount(() => {
 		// Log the current state for debugging
 		console.log('MainWidget mounted');
-		console.log('App state:', appSelectors.isReady() ? 'ready' : 'not ready');
-		console.log('Loading state:', appSelectors.isLoading() ? 'loading' : 'not loading');
-		console.log('Background:', appSelectors.background());
+		console.log('App state:', isReady ? 'ready' : 'not ready');
+		console.log('Loading state:', isInitializingApp ? 'loading' : 'not loading');
+		console.log('Background:', currentBackground);
 
 		// Force the state machine to transition
 		setTimeout(() => {
 			console.log('Triggering background ready');
 			appActions.backgroundReady();
-
-			// Force a UI update
-			isLoading = appSelectors.isLoading();
-			isInitializingApp = appSelectors.isInitializingApp();
-			hasFailed = appSelectors.hasInitializationFailed();
-			isReady = appSelectors.isReady();
-			currentBackground = appSelectors.background();
-			initializationErrorMsg = appSelectors.initializationError();
-			loadingProgress = appSelectors.loadingProgress();
-			loadingMessage = appSelectors.loadingMessage();
 		}, 500);
 	});
 </script>
@@ -125,11 +137,7 @@
 
 		{#if isReady}
 			<div class="main-layout-wrapper" transition:fade={{ duration: 500, delay: 100 }}>
-				<MainLayout
-					background={currentBackground}
-					on:changeBackground={handleBackgroundChange}
-					on:tabChange={handleTabChange}
-				/>
+				<MainLayout on:changeBackground={handleBackgroundChange} on:tabChange={handleTabChange} />
 			</div>
 		{/if}
 	</FullScreen>

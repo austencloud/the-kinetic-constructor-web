@@ -3,12 +3,21 @@
 	import NavButton from './NavButton.svelte';
 	import { scale } from 'svelte/transition';
 	import { elasticOut } from 'svelte/easing';
-	import { appSelectors, appActions } from '$lib/state/machines/appMachine';
+	import { createEventDispatcher } from 'svelte';
+	import { useSelector } from '@xstate/svelte';
+	import { appService } from '$lib/state/machines/app/app.machine';
+	import { appActions } from '$lib/state/machines/app/app.actions';
 	import { uiStore } from '$lib/state/stores/uiStore';
 
+	// Create event dispatcher
+	const dispatch = createEventDispatcher<{ changeBackground: string }>();
+
 	// Get state from the app state machine
-	$: activeTab = appSelectors.currentTab();
-	$: previousTab = appSelectors.previousTab();
+	const currentTabStore = useSelector(appService, (state) => state.context.currentTab);
+	const previousTabStore = useSelector(appService, (state) => state.context.previousTab);
+
+	$: activeTab = $currentTabStore as number;
+	$: previousTab = $previousTabStore as number;
 
 	// Get device information from the UI store
 	$: isMobileDevice = $uiStore.isMobile;
@@ -31,10 +40,11 @@
 
 		// Update the app state machine
 		appActions.changeTab(index);
+	}
 
-		// Dispatch the event for any parent components that might be listening
-		const event = new CustomEvent('tabChange', { detail: index });
-		dispatchEvent(event);
+	// Function to handle background changes
+	function handleBackgroundChange(type: string) {
+		dispatch('changeBackground', type);
 	}
 
 	// Update device/orientation state if UI store is not available
