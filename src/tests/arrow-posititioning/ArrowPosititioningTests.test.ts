@@ -1,23 +1,26 @@
 // tests/arrow-positioning/ArrowPositioningTests.ts
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ArrowPlacementManager } from '$lib/components/PlacementManagers/ArrowPlacementManager/ArrowPlacementManager';
+import { ArrowPlacementManager } from '$lib/components/objects/Arrow/ArrowPlacementManager';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 import type { PictographData } from '$lib/types/PictographData';
-import type { GridData } from '$lib/components/objects/Grid/GridData';
+// GridData type is used implicitly
+// import type { GridData } from '$lib/components/objects/Grid/GridData';
 import { Letter } from '$lib/types/Letter';
 import { PictographChecker } from '$lib/components/Pictograph/services/PictographChecker';
 
 // Mock data
-const mockGridData: GridData = {
+const mockGridData = {
 	allHandPointsNormal: {
 		n_diamond_hand_point: { coordinates: { x: 475, y: 330 } },
-		e_diamond_hand_point: { coordinates: { x: 620, y: 475 } }
-		// Add other points as needed
+		e_diamond_hand_point: { coordinates: { x: 620, y: 475 } },
+		ne_diamond_hand_point: { coordinates: { x: 618, y: 331 } },
+		se_diamond_hand_point: { coordinates: { x: 618, y: 619 } },
+		sw_diamond_hand_point: { coordinates: { x: 332, y: 619 } },
+		nw_diamond_hand_point: { coordinates: { x: 332, y: 331 } }
 	},
 	allHandPointsStrict: {},
 	allLayer2PointsNormal: {
 		ne_diamond_layer2_point: { coordinates: { x: 618, y: 331 } }
-		// Add other points as needed
 	},
 	allLayer2PointsStrict: {},
 	allOuterPoints: {},
@@ -65,7 +68,11 @@ describe('ArrowPlacementManager', () => {
 
 	beforeEach(() => {
 		mockChecker = new PictographChecker(mockPictographData);
-		manager = new ArrowPlacementManager(mockPictographData, mockGridData, mockChecker);
+		manager = new ArrowPlacementManager({
+			pictographData: mockPictographData,
+			gridData: mockGridData,
+			checker: mockChecker
+		});
 	});
 
 	it('should properly calculate initial arrow position', () => {

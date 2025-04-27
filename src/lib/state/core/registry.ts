@@ -93,7 +93,8 @@ class StateRegistry {
 			// Use SnapshotFrom<T> for the snapshot type
 			snapshot?: SnapshotFrom<T>;
 		} = {}
-	): Actor<T> { // Return a more specific Actor type
+	): Actor<T> {
+		// Return a more specific Actor type
 		// Check for persisted state loaded from storage
 		const persistedData = this.persistedState[id];
 		// Attempt to use persisted snapshot first, then option snapshot
@@ -107,7 +108,11 @@ class StateRegistry {
 		// Add snapshot if it exists and is valid
 		if (snapshotToRestore) {
 			// Basic validation (you might add more specific checks)
-			if (typeof snapshotToRestore === 'object' && snapshotToRestore !== null && 'status' in snapshotToRestore) {
+			if (
+				typeof snapshotToRestore === 'object' &&
+				snapshotToRestore !== null &&
+				'status' in snapshotToRestore
+			) {
 				actorOptions.snapshot = snapshotToRestore;
 			} else {
 				console.warn(`Invalid persisted snapshot format for machine "${id}". Ignoring.`);
@@ -119,20 +124,34 @@ class StateRegistry {
 
 		// Add inspector in dev mode
 		if (import.meta.env.DEV) {
-			// Use 'inspect' with a single callback function
-			actorOptions.inspect = (inspectionEvent: InspectionEvent) => {
-				// Ensure actor is defined before checking actorRef
-				if (!actor) return;
-				// Filter based on the type of inspection event
-				if (inspectionEvent.type === '@xstate.event' && inspectionEvent.actorRef === actor) {
-					// Event received by or sent from this specific actor
-					console.log(`[${id}] Event:`, inspectionEvent.event);
-				} else if (inspectionEvent.type === '@xstate.snapshot' && inspectionEvent.actorRef === actor) {
-					// Snapshot emitted by this specific actor
-					console.log(`[${id}] State:`, inspectionEvent.snapshot);
-				}
-				// Add other checks like '@xstate.actor' if needed
-			};
+			// Import the logger
+			import('./logger')
+				.then(({ LogLevel, shouldLog, log }) => {
+					// Use 'inspect' with a single callback function
+					actorOptions.inspect = (inspectionEvent: InspectionEvent) => {
+						// Ensure actor is defined before checking actorRef
+						if (!actor) return;
+						// Filter based on the type of inspection event
+						if (inspectionEvent.type === '@xstate.event' && inspectionEvent.actorRef === actor) {
+							// Event received by or sent from this specific actor
+							if (shouldLog(id, LogLevel.DEBUG)) {
+								log(id, LogLevel.DEBUG, 'Event:', inspectionEvent.event);
+							}
+						} else if (
+							inspectionEvent.type === '@xstate.snapshot' &&
+							inspectionEvent.actorRef === actor
+						) {
+							// Snapshot emitted by this specific actor
+							if (shouldLog(id, LogLevel.DEBUG)) {
+								log(id, LogLevel.DEBUG, 'State:', inspectionEvent.snapshot);
+							}
+						}
+						// Add other checks like '@xstate.actor' if needed
+					};
+				})
+				.catch((err) => {
+					console.error('Failed to load logger:', err);
+				});
 		}
 
 		// Create actor from machine with constructed options
@@ -278,12 +297,17 @@ class StateRegistry {
 				const instance = container.instance; // Get the instance
 
 				// Use a type guard check for actor properties (like .send)
-				if (container.type === 'machine' && instance && typeof (instance as AnyActorRef).send === 'function') {
+				if (
+					container.type === 'machine' &&
+					instance &&
+					typeof (instance as AnyActorRef).send === 'function'
+				) {
 					const actorInstance = instance as AnyActorRef; // Cast after check
 					if (actorInstance.getSnapshot().status !== 'stopped') {
 						// Now TypeScript should be more confident it's an actor
 						const persistedSnapshot = actorInstance.getPersistedSnapshot();
-						if (persistedSnapshot !== undefined) { // Check if defined
+						if (persistedSnapshot !== undefined) {
+							// Check if defined
 							stateToPersist[container.id] = {
 								type: 'machine',
 								snapshot: persistedSnapshot
@@ -335,7 +359,6 @@ class StateRegistry {
 				console.warn('Invalid persisted state format found in localStorage. Resetting.');
 				this.persistedState = {};
 			}
-
 		} catch (error) {
 			console.error('Failed to load or parse persisted state from localStorage:', error);
 			this.persistedState = {}; // Reset on error
@@ -356,7 +379,11 @@ class StateRegistry {
 			try {
 				const instance = container.instance;
 				// Use the same type guard here for consistency
-				if (container.type === 'machine' && instance && typeof (instance as AnyActorRef).send === 'function') {
+				if (
+					container.type === 'machine' &&
+					instance &&
+					typeof (instance as AnyActorRef).send === 'function'
+				) {
 					const actor = instance as AnyActorRef;
 					console.log('State:', actor.getSnapshot());
 				} else if (container.type === 'store') {
@@ -382,4 +409,3 @@ class StateRegistry {
 
 // Export a singleton instance
 export const stateRegistry = new StateRegistry();
-

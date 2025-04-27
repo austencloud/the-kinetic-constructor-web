@@ -1,4 +1,5 @@
 import { createStore, createSelector } from '../core/store';
+import { derived } from 'svelte/store';
 
 /**
  * Interface for a single beat in a sequence
@@ -223,43 +224,27 @@ export const sequenceStore = createStore<
 
 // Create selectors for derived state
 export const selectedBeats = createSelector(
-	sequenceStore,
-	(state: SequenceState) => state.beats.filter((beat) => state.selectedBeatIds.includes(beat.id)),
+	derived(sequenceStore, (state: SequenceState) =>
+		state.beats.filter((beat) => state.selectedBeatIds.includes(beat.id))
+	),
 	{ id: 'sequence.selectedBeats', description: 'Currently selected beats' }
 );
 
 export const currentBeat = createSelector(
-	sequenceStore,
-	(state: SequenceState) => state.beats[state.currentBeatIndex] || null,
+	derived(sequenceStore, (state: SequenceState) => state.beats[state.currentBeatIndex] || null),
 	{ id: 'sequence.currentBeat', description: 'Currently active beat' }
 );
 
 export const beatCount = createSelector(
-	sequenceStore,
-	(state: SequenceState) => state.beats.length,
+	derived(sequenceStore, (state: SequenceState) => state.beats.length),
 	{ id: 'sequence.beatCount', description: 'Total number of beats' }
 );
 
 export const sequenceDifficulty = createSelector(
-	sequenceStore,
-	(state: SequenceState) => state.metadata.difficulty,
+	derived(sequenceStore, (state: SequenceState) => state.metadata.difficulty),
 	{ id: 'sequence.difficulty', description: 'Sequence difficulty level' }
 );
 
-// Note: The sequence machine integration is commented out since we need to implement
-// the sequence machine first. This will be added later.
-/*
-import { sequenceActor } from '../machines/sequenceMachine';
-
-// Connect the sequence machine to the store
-sequenceActor.subscribe((snapshot: any) => {
-  // Check for event data in snapshot to detect generation completion
-  if (snapshot.event.type === 'INITIALIZATION_SUCCESS' && 'output' in snapshot.event) {
-    // When the machine successfully generates a sequence, update the store
-    const generatedBeats = snapshot.event.output;
-    if (Array.isArray(generatedBeats)) {
-      sequenceStore.setSequence(generatedBeats);
-    }
-  }
-});
-*/
+// Note: The sequence machine is already connected to the store
+// through the updateSequence action in the sequenceMachine.ts file.
+// No additional subscription is needed here.

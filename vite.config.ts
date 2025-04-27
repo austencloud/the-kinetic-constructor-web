@@ -90,8 +90,22 @@ export default defineConfig({
 		})
 	],
 	optimizeDeps: {
-		force: true
+		include: [
+			'clsx',
+			'xstate',
+			'@xstate/svelte',
+			'lucide-svelte',
+			'svelte/transition',
+			'svelte/store',
+			'svelte/motion'
+		],
+		exclude: [],
+		esbuildOptions: {
+			logLevel: 'error' // Reduce esbuild logging
+		}
 	},
+	// Reduce console output
+	logLevel: 'error',
 	test: {
 		globals: true,
 		environment: 'jsdom',

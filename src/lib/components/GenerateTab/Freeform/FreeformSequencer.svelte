@@ -1,12 +1,28 @@
-<!-- src/lib/components/GenerateTab/freeform/FreeformSequencer.svelte -->
+<!-- src/lib/components/GenerateTab/Freeform/FreeformSequencer.svelte -->
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
+	
+	// Import both old and new state management to allow for gradual migration
+	// Old state management (will be removed after migration)
 	import { settingsStore, numBeats, turnIntensity, propContinuity } from '../store/settings';
 	import { generatorStore } from '../store/generator';
+	import { beatsStore } from '../../../stores/sequence/beatsStore';
+	
+	// New state management (XState and centralized stores)
+	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
+	import { settingsStore as newSettingsStore } from '$lib/state/stores/settingsStore';
+	
 	import LetterTypePicker from './LetterTypePicker/LetterTypePicker.svelte';
 	import { createFreeformSequence } from './createFreeformSequence';
-	import { beatsStore } from '../../../stores/sequence/beatsStore';
 
+	// Flag to determine which state management to use
+	$: useNewStateManagement = true; // Set to true to use the new state management
+	
+	// Get state from sequence machine
+	$: isGenerating = sequenceSelectors.isGenerating();
+	$: generationProgress = sequenceSelectors.progress();
+	$: generationMessage = sequenceSelectors.message();
+	
 	// Letter type selection information
 	const letterTypeOptions = [
 		{
@@ -41,26 +57,41 @@
 
 	// Handle generate sequence
 	async function handleGenerateSequence() {
-		generatorStore.startGeneration();
-
-		try {
-			const result = await createFreeformSequence({
+		if (useNewStateManagement) {
+			// New implementation using sequence machine
+			// Get current settings
+			const settings = {
 				numBeats: $numBeats,
 				turnIntensity: $turnIntensity,
 				propContinuity: $propContinuity,
 				letterTypes: selectedLetterTypes
-			});
+			};
 
-			// Update the beats store with the new sequence
-			beatsStore.set(result);
+			// Use the sequence machine to generate the sequence
+			sequenceActions.generate(settings, 'freeform');
+		} else {
+			// Current implementation using old stores
+			generatorStore.startGeneration();
 
-			generatorStore.completeGeneration();
-		} catch (error: unknown) {
-			const errorMessage =
-				error instanceof Error ? error.message : 'Failed to generate freeform sequence';
+			try {
+				const result = await createFreeformSequence({
+					numBeats: $numBeats,
+					turnIntensity: $turnIntensity,
+					propContinuity: $propContinuity,
+					letterTypes: selectedLetterTypes
+				});
 
-			generatorStore.setError(errorMessage);
-			console.error('Generate freeform sequence error:', error);
+				// Update the beats store with the new sequence
+				beatsStore.set(result);
+
+				generatorStore.completeGeneration();
+			} catch (error: unknown) {
+				const errorMessage =
+					error instanceof Error ? error.message : 'Failed to generate freeform sequence';
+
+				generatorStore.setError(errorMessage);
+				console.error('Generate freeform sequence error:', error);
+			}
 		}
 	}
 
@@ -91,7 +122,8 @@
 		<div class="letter-type-picker-container">
 			<LetterTypePicker
 				options={letterTypeOptions}
-				on:select={(e: CustomEvent<string[]>) => handleLetterTypeSelect(e.detail)}
+				on:select={(e: CustomEvent<{ detail: string[] }>) =>
+					handleLetterTypeSelect(e.detail.detail)}
 			/>
 		</div>
 

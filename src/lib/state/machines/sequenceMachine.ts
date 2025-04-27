@@ -8,10 +8,17 @@ import {
 	createMachine,
 	assign,
 	fromCallback,
-	type EventObject, // Base type for events
+	type EventObject // Base type for events
 } from 'xstate';
-// Removed import for InvokeCallback
 import { stateRegistry } from '../core/registry';
+import { sequenceStore } from '../stores/sequenceStore';
+import type { BeatData as StoreBeatData } from '../stores/sequenceStore';
+import {
+	type GenerateSequenceInput,
+	type SequenceGenerationOptions,
+	type FreeformSequenceOptions,
+	convertToStoreBeatData
+} from './sequenceMachine.types';
 
 // Context for the sequence state machine
 export interface SequenceMachineContext {
@@ -20,26 +27,24 @@ export interface SequenceMachineContext {
 	generationProgress: number;
 	generationMessage: string;
 	generationType: 'circular' | 'freeform';
-	generationOptions: Record<string, any>;
+	generationOptions: SequenceGenerationOptions | FreeformSequenceOptions;
 	// Add field for result if needed, or handle in updateSequence action
 	// generatedSequence: any | null;
 }
 
 // Events for the sequence state machine
 export type SequenceMachineEvent =
-	| { type: 'GENERATE'; options: Record<string, any>; generationType: 'circular' | 'freeform' }
+	| {
+			type: 'GENERATE';
+			options: SequenceGenerationOptions | FreeformSequenceOptions;
+			generationType: 'circular' | 'freeform';
+	  }
 	| { type: 'UPDATE_PROGRESS'; progress: number; message: string } // Sent by actor
-	| { type: 'GENERATION_COMPLETE'; output: any } // Sent by actor on success
+	| { type: 'GENERATION_COMPLETE'; output: any[] } // Sent by actor on success
 	| { type: 'GENERATION_ERROR'; error: string } // Sent by actor on failure (optional)
 	| { type: 'CANCEL' }
 	| { type: 'RETRY' }
 	| { type: 'RESET' };
-
-// Define the type for the input passed to the actor
-interface GenerateSequenceInput {
-	generationType: 'circular' | 'freeform';
-	generationOptions: Record<string, any>;
-}
 
 // Define the sequence machine
 export const sequenceMachine = createMachine(
@@ -57,7 +62,12 @@ export const sequenceMachine = createMachine(
 			generationProgress: 0,
 			generationMessage: '',
 			generationType: 'circular',
-			generationOptions: {}
+			generationOptions: {
+				capType: 'mirrored',
+				numBeats: 8,
+				turnIntensity: 3,
+				propContinuity: 'continuous'
+			}
 			// generatedSequence: null,
 		},
 		initial: 'idle',
@@ -86,7 +96,7 @@ export const sequenceMachine = createMachine(
 					input: ({ context }): GenerateSequenceInput => ({
 						generationType: context.generationType,
 						generationOptions: context.generationOptions
-					}),
+					})
 					// Removed onDone and onError - handled by events now
 				},
 				on: {
@@ -117,7 +127,8 @@ export const sequenceMachine = createMachine(
 							isGenerating: false
 						})
 					},
-					CANCEL: { // Allow cancellation while generating
+					CANCEL: {
+						// Allow cancellation while generating
 						target: 'idle',
 						actions: assign({
 							isGenerating: false,
@@ -125,7 +136,7 @@ export const sequenceMachine = createMachine(
 							generationMessage: ''
 						})
 					}
-				},
+				}
 				// Removed exit assignment, handled by event transitions now
 			},
 			error: {
@@ -145,56 +156,106 @@ export const sequenceMachine = createMachine(
 	},
 	{
 		actions: {
-			// Keep your original action logic
+			// Update the sequence store with the generated sequence
 			updateSequence: ({ event }) => {
 				// Type assertion for the custom event
-				const doneEvent = event as { type: 'GENERATION_COMPLETE'; output?: any };
-				// This will be implemented to update the sequence store/state elsewhere
-				console.log('Sequence updated with new data:', doneEvent.output);
+				const doneEvent = event as { type: 'GENERATION_COMPLETE'; output?: any[] };
+
+				// Update the sequence store with the generated beats
+				if (doneEvent.output && Array.isArray(doneEvent.output)) {
+					// Convert the output to the store's BeatData format
+					const storeBeats = convertToStoreBeatData(doneEvent.output);
+					sequenceStore.setSequence(storeBeats);
+					console.log('Sequence updated with new data:', storeBeats);
+				}
 			}
 		},
 		actors: {
-			// Using standard fromCallback structure with properly typed parameters
+			// Sequence generation actor
 			generateSequenceActor: fromCallback<SequenceMachineEvent, GenerateSequenceInput>(
-				({ sendBack, receive, input }) => {
-					// 'input' is correctly typed here
-					console.log(`Generating ${input.generationType} sequence with options:`, input.generationOptions);
+				({ sendBack, input }) => {
+					console.log(
+						`Generating ${input.generationType} sequence with options:`,
+						input.generationOptions
+					);
 
-					// Simulate generation process
-					let progress = 0;
-					const interval = setInterval(() => {
-						progress += 10;
+					// Import the appropriate generator based on the type
+					(async () => {
+						try {
+							// Start with initial progress update
+							sendBack({
+								type: 'UPDATE_PROGRESS',
+								progress: 10,
+								message: `Initializing ${input.generationType} sequence generation...`
+							});
 
-						// Send progress updates back to parent machine
-						// Type checking relies on inference from machine types
-						sendBack({
-							type: 'UPDATE_PROGRESS',
-							progress,
-							message: `Generating ${input.generationType} sequence (${progress}%)...`
-						});
+							// Small delay to ensure the progress update is processed
+							await new Promise((resolve) => setTimeout(resolve, 10));
 
-						if (progress >= 100) {
-							clearInterval(interval);
+							// Dynamically import the appropriate generator
+							let generatedSequence: any[] = [];
 
-							// Simulate success and send completion event
-							const mockOutput = [
-								{ id: '1', number: 1 },
-								{ id: '2', number: 2 },
-								{ id: '3', number: 3 },
-								{ id: '4', number: 4 }
-							];
-							// Type checking relies on inference from machine types
+							if (input.generationType === 'circular') {
+								// Import circular sequence generator
+								const { createCircularSequence } = await import(
+									'../../components/GenerateTab/circular/createCircularSequence'
+								);
+
+								sendBack({
+									type: 'UPDATE_PROGRESS',
+									progress: 30,
+									message: 'Creating circular sequence pattern...'
+								});
+
+								// Generate the sequence - use type assertion to handle type mismatch
+								const circularOptions = input.generationOptions as any;
+								generatedSequence = await createCircularSequence(circularOptions);
+							} else {
+								// Import freeform sequence generator
+								const { createFreeformSequence } = await import(
+									'../../components/GenerateTab/Freeform/createFreeformSequence'
+								);
+
+								sendBack({
+									type: 'UPDATE_PROGRESS',
+									progress: 30,
+									message: 'Creating freeform sequence pattern...'
+								});
+
+								// Generate the sequence - use type assertion to handle type mismatch
+								const freeformOptions = input.generationOptions as any;
+								generatedSequence = await createFreeformSequence(freeformOptions);
+							}
+
+							// Final progress update
+							sendBack({
+								type: 'UPDATE_PROGRESS',
+								progress: 90,
+								message: 'Finalizing sequence...'
+							});
+
+							// Send completion event with the generated sequence
 							sendBack({
 								type: 'GENERATION_COMPLETE',
-								output: mockOutput
+								output: generatedSequence
+							});
+						} catch (error) {
+							// Handle any errors during generation
+							const errorMessage =
+								error instanceof Error ? error.message : 'Unknown error during sequence generation';
+							console.error('Sequence generation error:', error);
+
+							// Send error event
+							sendBack({
+								type: 'GENERATION_ERROR',
+								error: errorMessage
 							});
 						}
-					}, 300); // Simulate async work
+					})();
 
 					// Return cleanup function
 					return () => {
-						console.log('Cleaning up generateSequenceActor interval');
-						clearInterval(interval);
+						// Any cleanup if needed
 					};
 				} // End of callback function
 			) // End of fromCallback
@@ -208,10 +269,29 @@ export const sequenceActor = stateRegistry.registerMachine('sequence', sequenceM
 	description: 'Manages sequence generation and related operations'
 });
 
-// Helper functions to interact with the sequence machine (no changes needed here)
+// Helper functions to interact with the sequence machine
 export const sequenceActions = {
-	generate: (options: Record<string, any>, type: 'circular' | 'freeform' = 'circular') => {
-		sequenceActor.send({ type: 'GENERATE', options, generationType: type });
+	generate: (options: any, type: 'circular' | 'freeform' = 'circular') => {
+		// Validate and convert options to the correct type
+		let validOptions: SequenceGenerationOptions | FreeformSequenceOptions;
+
+		if (type === 'circular') {
+			validOptions = {
+				capType: options.capType || 'mirrored',
+				numBeats: options.numBeats || 8,
+				turnIntensity: options.turnIntensity || 3,
+				propContinuity: options.propContinuity || 'continuous'
+			};
+		} else {
+			validOptions = {
+				numBeats: options.numBeats || 8,
+				turnIntensity: options.turnIntensity || 3,
+				propContinuity: options.propContinuity || 'continuous',
+				letterTypes: options.letterTypes || []
+			};
+		}
+
+		sequenceActor.send({ type: 'GENERATE', options: validOptions, generationType: type });
 	},
 	cancel: () => {
 		sequenceActor.send({ type: 'CANCEL' });
@@ -224,7 +304,7 @@ export const sequenceActions = {
 	}
 };
 
-// Helper functions to get current state (no changes needed here)
+// Helper functions to get current state
 export const sequenceSelectors = {
 	isGenerating: () => {
 		return sequenceActor.getSnapshot().matches('generating');
@@ -240,5 +320,15 @@ export const sequenceSelectors = {
 	},
 	message: () => {
 		return sequenceActor.getSnapshot().context.generationMessage;
+	},
+	// Added selectors
+	generationMessage: () => {
+		return sequenceActor.getSnapshot().context.generationMessage;
+	},
+	generationType: () => {
+		return sequenceActor.getSnapshot().context.generationType;
+	},
+	generationOptions: () => {
+		return sequenceActor.getSnapshot().context.generationOptions;
 	}
 };

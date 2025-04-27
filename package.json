@@ -1,12 +1,13 @@
 {
-	"name": "my-new-app",
+	"name": "the-kinetic-constructor",
 	"version": "0.0.1",
 	"scripts": {
 		"clean": "node -e \"if (require('fs').existsSync('node_modules/.vite')) require('fs').rmSync('node_modules/.vite', { recursive: true, force: true })\"",
-		"dev": "npm run clean && vite dev",
+		"dev": "node scripts/dev.js",
+		"dev:clean": "npm run clean && node scripts/dev.js",
 		"build": "vite build",
 		"preview": "vite preview",
-		"start": "npm run clean && npm run dev -- --open",
+		"start": "npm run dev -- --open",
 		"prepare": "svelte-kit sync || echo ''",
 		"prepack": "svelte-kit sync && svelte-package && publint",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
