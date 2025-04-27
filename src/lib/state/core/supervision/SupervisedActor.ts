@@ -9,51 +9,73 @@
 import {
 	createActor,
 	type AnyStateMachine,
-	// we no longer import the concrete `Actor` class
-	type EventObject,
+	type EventFromLogic,
 	type Observer,
-	type ActorLogic,
+	type Subscription,
+	type SnapshotFrom,
 	type ActorRefFrom,
-	type SnapshotFrom
+	type ActorOptions,
+	type InspectionEvent,
+	type InputFrom,
+	type EmittedFrom
 } from 'xstate';
-import { LogLevel, log } from '../logger';
+import { debug } from '../logger/logging';
 import type {
 	SupervisedActor as ISupervisedActor,
 	SupervisedActorOptions,
 	ActorHealthMetrics,
-	Supervisor
+	Supervisor,
+	SupervisionStrategy
 } from './types';
 import { ActorHealthStatus } from './types';
 import { RestartStrategy } from './strategies';
 
+// Private storage using WeakMap
+const actorStorage = new WeakMap<SupervisedActor<any>, ReturnType<typeof createActor>>();
+const healthStorage = new WeakMap<SupervisedActor<any>, ActorHealthMetrics>();
+const optionsStorage = new WeakMap<SupervisedActor<any>, SupervisedActorOptions<any>>();
+
 export class SupervisedActor<TMachine extends AnyStateMachine>
 	implements ISupervisedActor<TMachine>
 {
-	// **only** the interface, not the concrete class
-	/** public so the class is structurally compatible with the ISupervisedActor interface */
-	public options: SupervisedActorOptions<TMachine>;
-
 	public readonly id: string;
-
-	private actor!: ReturnType<typeof createActor<TMachine>>; // late‑init
 	private machine: TMachine;
-
-	public strategy: RestartStrategy;
-	public supervisor?: Supervisor;
-
-	private healthMetrics: ActorHealthMetrics;
 	private isRestarting = false;
 
-	// ------------------------------------------------------------------
-	//  Actor‑like surface delegated to the internal actor instance
-	// ------------------------------------------------------------------
-	public readonly logic!: TMachine;
-	public readonly clock: any; // internal – xstate implementation detail
-	public readonly ref!: ActorRefFrom<TMachine>;
+	// Required methods from ISupervisedActor interface with correct typing
+	public send = (event: EventFromLogic<TMachine>): void => this.actor.send(event);
 
-	public subscribe!: ReturnType<typeof createActor<TMachine>>['subscribe'];
-	public send!: ReturnType<typeof createActor<TMachine>>['send'];
-	public on!: ReturnType<typeof createActor<TMachine>>['on'];
+	public subscribe: {
+		(observer: Observer<SnapshotFrom<TMachine>>): Subscription;
+		(
+			nextListener?: ((snapshot: SnapshotFrom<TMachine>) => void) | undefined,
+			errorListener?: ((error: unknown) => void) | undefined,
+			completeListener?: (() => void) | undefined
+		): Subscription;
+	} = (
+		observerOrNext?:
+			| Observer<SnapshotFrom<TMachine>>
+			| ((snapshot: SnapshotFrom<TMachine>) => void),
+		errorListener?: (error: unknown) => void,
+		completeListener?: () => void
+	): Subscription => {
+		if (typeof observerOrNext === 'function' || observerOrNext === undefined) {
+			return this.actor.subscribe(observerOrNext, errorListener, completeListener);
+		} else {
+			return this.actor.subscribe(observerOrNext);
+		}
+	};
+
+	public on = <TType extends '*' | EmittedFrom<TMachine>['type']>(
+		type: TType,
+		handler: (
+			emitted: EmittedFrom<TMachine> & (TType extends '*' ? unknown : { type: TType })
+		) => void
+	): Subscription => {
+		return this.actor.on(type, handler as any);
+	};
+
+	public getSnapshot = (): SnapshotFrom<TMachine> => this.actor.getSnapshot();
 
 	constructor(
 		id: string,
@@ -63,45 +85,26 @@ export class SupervisedActor<TMachine extends AnyStateMachine>
 	) {
 		this.id = id;
 		this.machine = machine;
-		this.options = options;
-		this.supervisor = supervisor;
 
-		this.strategy =
-			((options.strategy || supervisor?.defaultStrategy) as RestartStrategy) ??
-			new RestartStrategy();
+		const actorOptions: ActorOptions<TMachine> = {
+			...options,
+			input: (options as any).input as InputFrom<TMachine>
+		};
 
-		this.healthMetrics = {
+		const actor = createActor(machine, actorOptions) as ReturnType<typeof createActor<TMachine>>;
+		actor.start();
+
+		actorStorage.set(this, actor);
+		optionsStorage.set(this, { ...options, supervisor });
+		healthStorage.set(this, {
 			status: options.initialHealth ?? ActorHealthStatus.HEALTHY,
 			errorCount: 0,
 			restartCount: 0,
 			uptime: 0,
 			createdAt: Date.now()
-		};
+		});
 
-		// spin‑up underlying actor ---------------------------------------
-		this.actor = createActor(machine, options);
-		this.actor.start();
-
-		// delegate API surface -------------------------------------------
-		this.logic = this.actor.logic as unknown as TMachine;
-		this.clock = (this.actor as any).clock;
-		this.ref = this.actor as unknown as ActorRefFrom<TMachine>;
-
-		this.subscribe = this.actor.subscribe.bind(this.actor);
-		this.send = this.actor.send.bind(this.actor);
-		this.on =
-			(this.actor as any).on?.bind(this.actor) ??
-			((() => ({ unsubscribe() {} })) as unknown as typeof this.on);
-
-		log(this.id, LogLevel.DEBUG, `[SupervisedActor] created – strategy:`, this.strategy.type);
-	}
-
-	// ------------------------------------------------------------------
-	// Health helpers
-	// ------------------------------------------------------------------
-	getHealthMetrics(): ActorHealthMetrics {
-		this.healthMetrics.uptime = Date.now() - this.healthMetrics.createdAt;
-		return { ...this.healthMetrics };
+		debug('actor', `Created actor ${id}`, { strategy: this.strategy.type });
 	}
 
 	async restart(preserveState = true): Promise<void> {
@@ -109,50 +112,101 @@ export class SupervisedActor<TMachine extends AnyStateMachine>
 		this.isRestarting = true;
 
 		try {
-			const snapshot = preserveState ? this.actor.getSnapshot() : undefined;
+			debug('actor', `Restarting actor ${this.id}`, { preserveState });
+
+			const snapshot = preserveState ? this.getSnapshot() : undefined;
 			this.actor.stop();
 
-			const opts: SupervisedActorOptions<TMachine> = { ...this.options, snapshot };
-			this.actor = createActor(this.machine, opts);
-			this.actor.start();
+			const opts = optionsStorage.get(this);
+			if (!opts) throw new Error('Actor options not initialized');
 
-			// re‑delegate after swap
-			this.subscribe = this.actor.subscribe.bind(this.actor);
-			this.send = this.actor.send.bind(this.actor);
-			this.on =
-				(this.actor as any).on?.bind(this.actor) ??
-				((() => ({ unsubscribe() {} })) as unknown as typeof this.on);
+			const actorOptions: ActorOptions<TMachine> = {
+				...opts,
+				snapshot,
+				input: (opts as any).input as InputFrom<TMachine>
+			};
 
-			this.healthMetrics.restartCount++;
-			this.healthMetrics.lastRestartTime = Date.now();
+			const actor = createActor(this.machine, actorOptions);
+			actor.start();
+			actorStorage.set(this, actor);
 
-			this.options.onRestart?.(this as any);
+			const metrics = healthStorage.get(this);
+			if (metrics) {
+				metrics.restartCount++;
+				metrics.lastRestartTime = Date.now();
+			}
+
+			(opts as any).onRestart?.(this as any);
+
+			debug('actor', `Actor ${this.id} restarted successfully`);
 		} finally {
 			this.isRestarting = false;
 		}
 	}
 
-	// ------------------------------------------------------------------
-	// API helpers
-	// ------------------------------------------------------------------
-	getMachine(): TMachine {
-		return this.machine;
-	}
-	getOptions(): SupervisedActorOptions<TMachine> {
-		return { ...this.options };
+	// Properties and methods with proper typing
+	get strategy(): SupervisionStrategy {
+		const opts = optionsStorage.get(this);
+		return opts?.strategy ?? opts?.supervisor?.defaultStrategy ?? new RestartStrategy();
 	}
 
+	get supervisor(): Supervisor | undefined {
+		return optionsStorage.get(this)?.supervisor;
+	}
+
+	get ref(): ActorRefFrom<TMachine> {
+		return actorStorage.get(this) as unknown as ActorRefFrom<TMachine>;
+	}
+
+	private get actor(): ReturnType<typeof createActor<TMachine>> {
+		const actor = actorStorage.get(this);
+		if (!actor) throw new Error('Actor not initialized');
+		return actor as ReturnType<typeof createActor<TMachine>>;
+	}
+
+	// Health metrics
+	getHealthMetrics(): ActorHealthMetrics {
+		const metrics = healthStorage.get(this);
+		if (!metrics) throw new Error('Health metrics not initialized');
+		metrics.uptime = Date.now() - metrics.createdAt;
+		return { ...metrics };
+	}
+
+	// Lifecycle methods
+	start(): this {
+		this.actor.start();
+		return this;
+	}
+
+	stop(): this {
+		const metrics = healthStorage.get(this);
+		if (metrics) {
+			metrics.status = ActorHealthStatus.STOPPED;
+		}
+
+		const opts = optionsStorage.get(this);
+		(opts as any).onStop?.(this as any);
+
+		this.actor.stop();
+		return this;
+	}
+
+	// Error handling with proper typing
 	reportError(error: Error, context?: Record<string, any>): void {
-		this.healthMetrics.errorCount++;
-		this.healthMetrics.lastErrorTime = Date.now();
-		this.healthMetrics.lastError = error;
-		this.healthMetrics.status = ActorHealthStatus.DEGRADED;
+		const metrics = healthStorage.get(this);
+		if (metrics) {
+			metrics.errorCount++;
+			metrics.lastErrorTime = Date.now();
+			metrics.lastError = error;
+			metrics.status = ActorHealthStatus.DEGRADED;
+		}
 
-		this.options.onError?.({
+		const opts = optionsStorage.get(this);
+		opts?.onError?.({
 			error,
 			actorId: this.id,
 			timestamp: Date.now(),
-			actorState: this.actor.getSnapshot(),
+			actorState: this.getSnapshot(),
 			context
 		});
 
@@ -178,40 +232,36 @@ export class SupervisedActor<TMachine extends AnyStateMachine>
 		}
 	}
 
-	/* -------------------------------------------------------------- */
-	/*  Persistence helpers                                           */
-	/* -------------------------------------------------------------- */
+	// Getters with proper types
+	getMachine(): TMachine {
+		return this.machine;
+	}
+
+	getOptions(): SupervisedActorOptions<TMachine> {
+		const opts = optionsStorage.get(this);
+		return opts ? ({ ...opts } as SupervisedActorOptions<TMachine>) : {};
+	}
+
 	getPersistedSnapshot(): SnapshotFrom<TMachine> | undefined {
-		return (this.actor as any).getPersistedSnapshot?.() as SnapshotFrom<TMachine> | undefined;
+		return this.actor.getPersistedSnapshot?.() as SnapshotFrom<TMachine> | undefined;
 	}
 
-	/* -------------------------------------------------------------- */
-	/*  minimal facade (subset of Actor API)                          */
-	/* -------------------------------------------------------------- */
-	start() {
-		this.actor.start();
-		return this;
-	}
-
-	stop() {
-		this.healthMetrics.status = ActorHealthStatus.STOPPED;
-		this.options.onStop?.(this as any);
-		this.actor.stop();
-		return this;
-	}
-
-	getSnapshot = () => this.actor.getSnapshot();
+	// Observable interface
 	get [Symbol.observable]() {
-		return (this.actor as any)[Symbol.observable];
+		return this.actor[Symbol.observable];
 	}
+
+	// System internals
 	get sessionId() {
-		return (this.actor as any).sessionId;
+		return this.actor.sessionId;
 	}
+
 	get src() {
-		return (this.actor as any).src;
+		return this.actor.src;
 	}
+
 	get system() {
-		return (this.actor as any).system;
+		return this.actor.system;
 	}
 
 	toJSON() {

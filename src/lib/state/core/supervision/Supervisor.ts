@@ -4,7 +4,7 @@
  * This file contains the implementation of the supervisor that manages supervised actors.
  */
 
-import { LogLevel, log } from '../logger';
+import { debug, warn, error } from '../logger/logging';
 import type {
 	Supervisor as ISupervisor,
 	SupervisedActor,
@@ -30,7 +30,7 @@ export class Supervisor implements ISupervisor {
 	/**
 	 * The supervised actors managed by this supervisor
 	 */
-	public actors: Map<string, SupervisedActor<any>> = new Map();
+	public actors = new Map<string, SupervisedActor<any>>();
 
 	/**
 	 * The default strategy to use for actors that don't specify one
@@ -63,11 +63,10 @@ export class Supervisor implements ISupervisor {
 		this.debug = options.debug || false;
 
 		if (this.debug) {
-			log(
-				this.id,
-				LogLevel.DEBUG,
-				`[Supervisor] Created with parent: ${this.parent?.id || 'none'}`
-			);
+			debug('supervisor', `Created supervisor ${id}`, {
+				parent: this.parent?.id || 'none',
+				strategy: this.defaultStrategy.type
+			});
 		}
 	}
 
@@ -76,17 +75,16 @@ export class Supervisor implements ISupervisor {
 	 */
 	registerActor(actor: SupervisedActor<any>): void {
 		if (this.actors.has(actor.id)) {
-			log(
-				this.id,
-				LogLevel.WARN,
-				`[Supervisor] Actor with ID ${actor.id} is already registered. Overwriting.`
+			warn(
+				'supervisor',
+				`Actor ${actor.id} is already registered with supervisor ${this.id}. Overwriting.`
 			);
 		}
 
 		this.actors.set(actor.id, actor);
 
 		if (this.debug) {
-			log(this.id, LogLevel.DEBUG, `[Supervisor] Registered actor: ${actor.id}`);
+			debug('supervisor', `Registered actor ${actor.id} with supervisor ${this.id}`);
 		}
 	}
 
@@ -98,10 +96,13 @@ export class Supervisor implements ISupervisor {
 			this.actors.delete(actorId);
 
 			if (this.debug) {
-				log(this.id, LogLevel.DEBUG, `[Supervisor] Unregistered actor: ${actorId}`);
+				debug('supervisor', `Unregistered actor ${actorId} from supervisor ${this.id}`);
 			}
 		} else {
-			log(this.id, LogLevel.WARN, `[Supervisor] Attempted to unregister unknown actor: ${actorId}`);
+			warn(
+				'supervisor',
+				`Attempted to unregister unknown actor ${actorId} from supervisor ${this.id}`
+			);
 		}
 	}
 
@@ -110,58 +111,50 @@ export class Supervisor implements ISupervisor {
 	 */
 	async handleActorError(
 		actor: SupervisedActor<any>,
-		error: Error,
+		err: Error,
 		context?: Record<string, any>
 	): Promise<void> {
 		if (this.debug) {
-			log(
-				this.id,
-				LogLevel.DEBUG,
-				`[Supervisor] Handling error for actor ${actor.id}:`,
-				error.message
-			);
+			debug('supervisor', `Handling error for actor ${actor.id}`, {
+				error: err.message,
+				supervisor: this.id,
+				context
+			});
 		}
 
 		// Call error handler if provided
 		if (this.onError) {
 			try {
 				this.onError({
-					error,
+					error: err,
 					actorId: actor.id,
 					timestamp: Date.now(),
 					actorState: actor.getSnapshot(),
 					context
 				});
 			} catch (handlerError) {
-				log(this.id, LogLevel.ERROR, `[Supervisor] Error in error handler:`, handlerError);
+				error('supervisor', `Error in supervisor ${this.id} error handler`, handlerError);
 			}
 		}
 
 		// Apply the actor's strategy
 		try {
-			await actor.strategy.handleError(this, actor, error);
+			await actor.strategy.handleError(this, actor, err);
 		} catch (strategyError) {
-			log(
-				this.id,
-				LogLevel.ERROR,
-				`[Supervisor] Error applying strategy for actor ${actor.id}:`,
-				strategyError
-			);
+			error('supervisor', `Error applying strategy for actor ${actor.id}`, strategyError);
 
 			// If the strategy fails, escalate to parent if available
 			if (this.parent) {
 				await this.escalateError(actor, strategyError as Error, {
-					originalError: error,
+					originalError: err,
 					...context
 				});
 			} else {
 				// No parent to escalate to, log the error
-				log(
-					this.id,
-					LogLevel.ERROR,
-					`[Supervisor] No parent supervisor to escalate error to. Error will be unhandled.`
+				error(
+					'supervisor',
+					`No parent supervisor to escalate error to for actor ${actor.id}. Error will be unhandled.`
 				);
-
 				// Re-throw the error
 				throw strategyError;
 			}
@@ -173,27 +166,30 @@ export class Supervisor implements ISupervisor {
 	 */
 	async escalateError(
 		actor: SupervisedActor<any>,
-		error: Error,
+		err: Error,
 		context?: Record<string, any>
 	): Promise<void> {
 		if (this.parent) {
 			if (this.debug) {
-				log(
-					this.id,
-					LogLevel.DEBUG,
-					`[Supervisor] Escalating error for actor ${actor.id} to parent supervisor: ${this.parent.id}`
+				debug(
+					'supervisor',
+					`Escalating error for actor ${actor.id} to parent supervisor ${this.parent.id}`,
+					{
+						error: err.message,
+						context
+					}
 				);
 			}
 
-			await this.parent.handleActorError(actor, error, {
+			await this.parent.handleActorError(actor, err, {
 				escalatedFrom: this.id,
 				...context
 			});
 		} else {
-			log(this.id, LogLevel.ERROR, `[Supervisor] Cannot escalate error: no parent supervisor`);
+			error('supervisor', `Cannot escalate error: no parent supervisor for ${this.id}`);
 
 			// Re-throw the error
-			throw error;
+			throw err;
 		}
 	}
 
@@ -208,8 +204,8 @@ export class Supervisor implements ISupervisor {
 				(async () => {
 					try {
 						await actor.stop();
-					} catch (error) {
-						log(this.id, LogLevel.ERROR, `[Supervisor] Error stopping actor ${actor.id}:`, error);
+					} catch (err) {
+						error('supervisor', `Error stopping actor ${actor.id}`, err);
 					}
 				})()
 			);
@@ -219,7 +215,7 @@ export class Supervisor implements ISupervisor {
 		this.actors.clear();
 
 		if (this.debug) {
-			log(this.id, LogLevel.DEBUG, `[Supervisor] Stopped all actors`);
+			debug('supervisor', `Stopped all actors in supervisor ${this.id}`);
 		}
 	}
 

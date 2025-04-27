@@ -101,15 +101,20 @@ export default defineConfig({
 		],
 		exclude: [],
 		esbuildOptions: {
-			logLevel: 'error' // Reduce esbuild logging
+			logLevel: 'error'
 		}
 	},
-	// Reduce console output
 	logLevel: 'error',
 	test: {
 		globals: true,
 		environment: 'jsdom',
 		setupFiles: './src/setupTests.ts',
-		include: ['src/**/*.test.ts']
+		include: ['src/**/*.test.ts'],
+		exclude: ['src/**/*.bench.ts'],
+		benchmark: {
+			include: ['src/**/*.bench.ts'],
+			reporters: ['verbose'],
+			outputFile: './bench/results.json'
+		}
 	}
 });

@@ -4,7 +4,14 @@
  * This file contains TypeScript interfaces and types for the supervision system.
  */
 
-import type { AnyStateMachine, Actor, ActorOptions, SnapshotFrom, Snapshot, ActorRefFrom } from 'xstate';
+import type {
+	AnyStateMachine,
+	Actor,
+	ActorOptions,
+	SnapshotFrom,
+	Snapshot,
+	ActorRefFrom
+} from 'xstate';
 
 /**
  * Supervision strategy types that determine how to handle actor failures
@@ -282,34 +289,33 @@ export interface SupervisedActorOptions<TMachine extends AnyStateMachine>
 /**
  * Interface for a supervised actor
  * Extends Actor but adds supervision capabilities
- */export interface SupervisedActor<TMachine extends AnyStateMachine> {
-  /*  — structural contract — */
-  readonly id: string;
-  strategy: SupervisionStrategy;
-  supervisor?: Supervisor;
+ */ export interface SupervisedActor<TMachine extends AnyStateMachine> {
+	/*  — structural contract — */
+	readonly id: string;
+	strategy: SupervisionStrategy;
+	supervisor?: Supervisor;
 
-  /** actor-like helpers */
-  send:       Actor<TMachine>['send'];
-  subscribe:  Actor<TMachine>['subscribe'];
-  on:         Actor<TMachine>['on'];
-  getSnapshot: Actor<TMachine>['getSnapshot'];
-  readonly ref: ActorRefFrom<TMachine>;
+	/** actor-like helpers */
+	send: Actor<TMachine>['send'];
+	subscribe: Actor<TMachine>['subscribe'];
+	on: Actor<TMachine>['on'];
+	getSnapshot: Actor<TMachine>['getSnapshot'];
+	readonly ref: ActorRefFrom<TMachine>;
 
-  /** lifecycle */
-  start(): this;
-  stop():  this;
-  restart(preserveState?: boolean): Promise<void>;
+	/** lifecycle */
+	start(): this;
+	stop(): this;
+	restart(preserveState?: boolean): Promise<void>;
 
-  /** health & persistence */
-  getHealthMetrics(): ActorHealthMetrics;
-  getPersistedSnapshot(): SnapshotFrom<TMachine> | undefined;
+	/** health & persistence */
+	getHealthMetrics(): ActorHealthMetrics;
+	getPersistedSnapshot(): SnapshotFrom<TMachine> | undefined;
 
-  /** convenience */
-  getMachine():  TMachine;
-  getOptions():  SupervisedActorOptions<TMachine>;
-  reportError(error: Error, context?: Record<string, any>): void;
+	/** convenience */
+	getMachine(): TMachine;
+	getOptions(): SupervisedActorOptions<TMachine>;
+	reportError(error: Error, context?: Record<string, any>): void;
 }
-
 
 /**
  * Interface for a supervisor
@@ -466,4 +472,23 @@ export interface RootSupervisorOptions {
 	 * Whether to enable debug logging
 	 */
 	debug?: boolean;
+}
+
+/**
+ * Plugin interface for custom supervision strategies
+ */
+export interface SupervisionStrategyPlugin<TConfig = unknown> {
+	readonly type: string;
+	readonly defaultConfig: TConfig;
+	createStrategy(config?: Partial<TConfig>): SupervisionStrategy;
+}
+
+/**
+ * Registry for supervision strategy plugins
+ */
+export interface StrategyRegistry {
+	register<TConfig>(plugin: SupervisionStrategyPlugin<TConfig>): void;
+	unregister(type: string): void;
+	get(type: string): SupervisionStrategyPlugin | undefined;
+	create(type: string, config?: unknown): SupervisionStrategy;
 }
