@@ -2,7 +2,7 @@
 	import MenuBar from '$lib/components/MenuBar/MenuBar.svelte';
 	import TabContent from '../tabs/TabContent.svelte';
 	import { createEventDispatcher } from 'svelte';
-	import SequenceInspector from '$lib/components/Developer/SequenceInspector.svelte';
+	import DeveloperTools from '$lib/components/Developer/DeveloperTools.svelte';
 	import SettingsContent from '$lib/components/SettingsDialog/SettingsContent.svelte';
 	import { appActions } from '$lib/state/machines/app/app.actions';
 	import { useSelector } from '@xstate/svelte';
@@ -56,9 +56,6 @@
 <div class="content">
 	<div class="menuBar">
 		<MenuBar on:openSettings={handleToggleSettings} on:changeBackground={handleBackgroundChange} />
-		{#if import.meta.env.DEV}
-			<SequenceInspector />
-		{/if}
 	</div>
 
 	<div class="mainContent">
@@ -69,6 +66,10 @@
 		<div class="settingsContent">
 			<SettingsContent {currentSection} onClose={() => appActions.closeSettings()} />
 		</div>
+	{/if}
+
+	{#if import.meta.env.DEV}
+		<DeveloperTools />
 	{/if}
 </div>
 

@@ -23,7 +23,7 @@ export const tabs: ReadonlyArray<Tab> = [
 		component: null,
 		icon: '🤖',
 		title: 'Generate',
-		splitView: false
+		splitView: true
 	},
 	{
 		id: 'browse',
