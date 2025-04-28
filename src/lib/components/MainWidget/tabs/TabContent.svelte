@@ -3,6 +3,7 @@
 	import PlaceholderTab from './PlaceholderTab.svelte';
 	import ConstructTab from '$lib/components/ConstructTab/ConstructTab.svelte';
 	import GenerateTab from '$lib/components/GenerateTab/GenerateTab.svelte';
+	import BrowseTab from '$lib/components/BrowseTab/BrowseTab.svelte';
 	// Import transitions
 	import { crossfade, fade } from 'svelte/transition';
 
@@ -34,7 +35,9 @@
 			<div
 				in:receive={{ key: activeTab.id }}
 				out:send={{ key: activeTab.id }}
-				class={activeTab.id === 'construct' || activeTab.id === 'generate'
+				class={activeTab.id === 'construct' ||
+				activeTab.id === 'generate' ||
+				activeTab.id === 'browse'
 					? 'split-view-container'
 					: 'placeholderContainer'}
 			>
@@ -42,6 +45,8 @@
 					<ConstructTab />
 				{:else if activeTab.id === 'generate'}
 					<GenerateTab />
+				{:else if activeTab.id === 'browse'}
+					<BrowseTab />
 				{:else}
 					<PlaceholderTab icon={activeTab.icon} title={activeTab.title} />
 				{/if}
