@@ -72,7 +72,7 @@
 	function handlePerformanceReport(event: CustomEvent<PerformanceReportEvent>) {
 		// Log performance metrics
 		const { fps, memory } = event.detail;
-		console.log('Performance metrics:', { fps, memory });
+		// console.log('Performance metrics:', { fps, memory });
 		// Note: updatePerformanceMetrics action doesn't exist in appActions
 		// We would need to add it if we want to store these metrics
 	}

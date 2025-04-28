@@ -6,7 +6,8 @@ export const SERVICE_TOKENS = {
 	SVG_MANAGER: 'svgManager',
 	SEQUENCE_DATA: 'sequenceData',
 	PICTOGRAPH_DATA: 'pictographData',
-	THEME_SERVICE: 'themeService'
+	THEME_SERVICE: 'themeService',
+	LOGGER: 'logger'
 } as const;
 
 export type ServiceToken = keyof typeof SERVICE_TOKENS;

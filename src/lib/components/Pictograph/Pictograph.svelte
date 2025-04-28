@@ -18,6 +18,7 @@
 	import LoadingProgress from './components/LoadingProgress.svelte';
 	import type { Writable } from 'svelte/store';
 	import { errorService, ErrorSeverity } from '../../services/ErrorHandlingService';
+	import { logger } from '$lib/core/logging';
 
 	export let pictographDataStore: Writable<PictographData>;
 	export let onClick: (() => void) | undefined = undefined;
@@ -217,6 +218,16 @@
 		const startTime = performance.now();
 
 		try {
+			// Log component initialization
+			logger.info('Pictograph component initializing', {
+				data: {
+					debug,
+					hasMotionData: hasRequiredMotionData(pictographData),
+					letter: pictographData?.letter,
+					gridMode: pictographData?.gridMode
+				}
+			});
+
 			service = new PictographService(pictographData);
 
 			// Initialize data snapshot
@@ -224,20 +235,33 @@
 
 			if (hasRequiredMotionData(pictographData)) {
 				state = 'loading';
-				if (debug) console.debug('Pictograph: Motion data available, entering loading state');
+				logger.debug('Pictograph: Motion data available, entering loading state', {
+					data: {
+						redMotionData: pictographData.redMotionData ? true : false,
+						blueMotionData: pictographData.blueMotionData ? true : false
+					}
+				});
 			} else {
 				state = 'grid_only';
-				if (debug) console.debug('Pictograph: No motion data, entering grid-only state');
+				logger.debug('Pictograph: No motion data, entering grid-only state');
 			}
 
 			const initTime = performance.now() - startTime;
-			if (debug) console.debug(`Pictograph initialized in ${initTime.toFixed(2)}ms`);
+			logger.info(`Pictograph initialized in ${initTime.toFixed(2)}ms`, {
+				duration: initTime,
+				data: {
+					state,
+					letter: pictographData?.letter,
+					gridMode: pictographData?.gridMode
+				}
+			});
 		} catch (error) {
 			handleError('initialization', error);
 		}
 
 		return () => {
 			loadedComponents.clear();
+			logger.debug('Pictograph component unmounting');
 		};
 	});
 
@@ -387,23 +411,48 @@
 			state = 'complete';
 			renderCount++;
 
-			if (debug) {
-				console.debug(`Pictograph fully loaded in ${performance.now() - startCheck}ms`);
-				console.debug(`Total components loaded: ${componentsLoaded}/${totalComponentsToLoad}`);
-			}
+			const loadTime = performance.now() - startCheck;
+			logger.info(`Pictograph fully loaded`, {
+				duration: loadTime,
+				data: {
+					componentsLoaded,
+					totalComponentsToLoad,
+					renderCount,
+					letter: pictographData?.letter,
+					gridMode: pictographData?.gridMode,
+					loadedComponents: Array.from(loadedComponents)
+				}
+			});
 
 			dispatch('loaded', { complete: true });
 		}
 	}
 
 	function handleComponentError(component: string, error: any) {
-		if (debug) console.warn(`Component error (${component}):`, error);
+		logger.warn(`Component error (${component})`, {
+			error: error instanceof Error ? error : new Error(String(error)),
+			data: {
+				component,
+				letter: pictographData?.letter,
+				gridMode: pictographData?.gridMode,
+				applyingFallback: true
+			}
+		});
 
 		applyFallbackPositioning(component);
 
 		loadedComponents.add(component);
 		componentsLoaded++;
 		updateLoadProgress();
+
+		logger.debug(`Applied fallback positioning for ${component}`, {
+			data: {
+				component,
+				loadedComponents: Array.from(loadedComponents),
+				componentsLoaded,
+				totalComponentsToLoad
+			}
+		});
 
 		checkLoadingComplete();
 	}
@@ -453,40 +502,55 @@
 						? error
 						: 'Unknown error';
 
-			// Create an error object using the error service with safe data
+			// Log using the new structured logging system
+			logger.pictograph(`Error in ${source}`, {
+				letter: letter ? letter : undefined,
+				gridMode: gridMode,
+				componentState: state,
+				renderMetrics: {
+					componentsLoaded: componentsLoaded,
+					totalComponents: totalComponentsToLoad,
+					renderTime: performance.now()
+				},
+				error: error instanceof Error ? error : new Error(errorMessage),
+				data: {
+					source,
+					errorSource: source,
+					isCritical: source === 'initialization'
+				}
+			});
+
+			// For backward compatibility, also log with the error service
 			const errorObj = errorService.createError(
 				`Pictograph:${source}`,
-				{ message: errorMessage }, // Avoid passing the original error that might have circular refs
-				// Determine severity based on the source
+				{ message: errorMessage },
 				source === 'initialization' ? ErrorSeverity.CRITICAL : ErrorSeverity.ERROR
 			);
 
-			// Add additional context specific to Pictograph
 			errorObj.context = {
 				loadedCount: componentsLoaded,
 				totalCount: totalComponentsToLoad
 			};
 
-			// Log the error using the service
 			errorService.log(errorObj);
 
 			// Set local error message
-			this.errorMessage = errorObj.message;
+			this.errorMessage = errorMessage;
 			state = 'error';
-
-			// Debug logging
-			if (debug) {
-				console.error(`Pictograph error [${source}]:`, errorObj);
-			} else {
-				console.error(`Pictograph error: ${errorMessage}`);
-			}
 
 			// Dispatch events
 			dispatch('error', { source, error: { message: errorMessage }, message: errorMessage });
 			dispatch('loaded', { complete: false, error: true, message: errorMessage });
 		} catch (errorHandlingError) {
 			// If error handling itself fails, use a simpler approach
-			console.error('Error in error handler:', errorHandlingError);
+			logger.error('Error in Pictograph error handler', {
+				error:
+					errorHandlingError instanceof Error
+						? errorHandlingError
+						: new Error(String(errorHandlingError)),
+				data: { originalSource: source }
+			});
+
 			errorMessage = 'Error in Pictograph component';
 			state = 'error';
 			dispatch('error', { source, error: null, message: 'Error in Pictograph component' });
@@ -627,7 +691,9 @@
 		transform: scale(1.05);
 		z-index: 4;
 		border: 4px solid #48bb78;
-		box-shadow: 0 0 0 2px rgba(72, 187, 120, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
+		box-shadow:
+			0 0 0 2px rgba(72, 187, 120, 0.4),
+			0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
 	.pictograph-wrapper:active .pictograph {
@@ -648,6 +714,4 @@
 		border-color: #fc8181;
 		box-shadow: 0 0 0 1px #fc8181;
 	}
-
-
 </style>

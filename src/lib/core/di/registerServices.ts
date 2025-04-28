@@ -7,6 +7,7 @@ import type { BackgroundSystemFactory } from '$lib/core/services/BackgroundSyste
 import '$lib/services/InjectableErrorHandlingService';
 import '$lib/services/BackgroundServiceImpl';
 import '$lib/services/IdGeneratorImpl';
+import '$lib/services/InjectableLoggerService';
 
 export function registerServices(container: ServiceContainer): void {
 	// Register background factory as a static class implementing BackgroundSystemFactory

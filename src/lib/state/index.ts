@@ -43,12 +43,15 @@ export function initializeStateManagement(): void {
 	// Start actors in dependency order
 	for (const id of initOrder) {
 		const container = stateRegistry.get(id);
-		if (container && 'getSnapshot' in container) {
+		// Check if it's an actor (has getSnapshot and start methods)
+		if (container && 'getSnapshot' in container && typeof (container as any).start === 'function') {
 			const actor = container as typeof appActor;
 			if (actor.getSnapshot().status !== 'active') {
 				console.log(`Starting actor: ${id}`);
 				actor.start();
 			}
+		} else if (container && 'getSnapshot' in container) {
+			console.log(`Container ${id} has getSnapshot but no start method, skipping`);
 		}
 	}
 
