@@ -105,6 +105,42 @@ export function removeBeat(index: number): void {
 
 		return updatedBeats;
 	});
+
+	// Deselect the beat after removal
+	selectedBeatIndexStore.set(null);
+
+	// Dispatch a custom event to notify components that sequence data changed
+	if (typeof document !== 'undefined') {
+		const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
+			detail: { type: 'beat-removed', index },
+			bubbles: true
+		});
+		document.dispatchEvent(sequenceUpdatedEvent);
+	}
+}
+
+/**
+ * Remove a beat at the specified index and all beats after it
+ */
+export function removeBeatAndFollowing(index: number): void {
+	beatsStore.update((beats) => {
+		if (index < 0 || index >= beats.length) return beats;
+
+		// Keep only the beats before the specified index
+		return beats.slice(0, index);
+	});
+
+	// Deselect the beat after removal
+	selectedBeatIndexStore.set(null);
+
+	// Dispatch a custom event to notify components that sequence data changed
+	if (typeof document !== 'undefined') {
+		const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
+			detail: { type: 'beats-removed', fromIndex: index },
+			bubbles: true
+		});
+		document.dispatchEvent(sequenceUpdatedEvent);
+	}
 }
 
 /**

@@ -61,14 +61,14 @@
 <style>
 	.beat-number-label {
 		font-weight: bold;
-		text-align: center;
+		text-align: left;
 		background-color: transparent;
 		color: #000;
 		padding: 0;
 		border-radius: 4px;
 		position: absolute;
-		top: 5%;
-		left: 5%;
+		top: 5px;
+		left: 5px;
 		/* Add a subtle text shadow to make it readable on any background */
 		text-shadow:
 			0px 0px 2px #fff,
@@ -79,5 +79,10 @@
 		/* Ensure it's above the pictograph but doesn't interfere with interactions */
 		pointer-events: none;
 		z-index: 5;
+		/* Force alignment to top-left */
+		margin: 0;
+		width: auto;
+		height: auto;
+		display: block;
 	}
 </style>

@@ -1,11 +1,13 @@
 // src/lib/stores/sequence/sequenceActions.ts
-import { beatsStore, selectedBeatIndexStore } from './beatsStore';
+import { beatsStore, selectedBeatIndexStore, removeBeatAndFollowing } from './beatsStore';
 import type { PictographData } from '../../types/PictographData';
 import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData';
 import { writable, get, type Writable } from 'svelte/store';
 
 // Create a store for the start position
-export const startPositionStore: Writable<PictographData | null> = writable<PictographData | null>(null);
+export const startPositionStore: Writable<PictographData | null> = writable<PictographData | null>(
+	null
+);
 
 // Action types as constants
 export const ActionTypes = {
@@ -62,7 +64,8 @@ export const sequenceActions = {
 	},
 
 	removeBeat(index: number): SequenceAction {
-		beatsStore.update((beats) => beats.filter((_, i) => i !== index));
+		// Remove the beat and all following beats
+		removeBeatAndFollowing(index);
 		return { type: 'REMOVE_BEAT', payload: index };
 	},
 

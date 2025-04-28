@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout';
 	import { getSequenceContext, sequenceActions } from '$lib/context/sequence/sequenceContext';
+	import { removeBeatAndFollowing } from '$lib/stores/sequence/beatsStore';
 
 	// Import Type for Button Definitions
 	import type { ButtonDefinition } from './ButtonPanel/types'; // Adjust path if necessary
@@ -97,7 +98,8 @@
 				break;
 			case 'deleteBeat':
 				if ($state.selectedBeatIndex >= 0) {
-					dispatch(sequenceActions.removeBeat($state.selectedBeatIndex));
+					// Remove the selected beat and all following beats
+					removeBeatAndFollowing($state.selectedBeatIndex);
 				}
 				break;
 			case 'clearSequence':

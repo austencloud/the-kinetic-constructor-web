@@ -9,17 +9,14 @@
 
 	// Create a local pictograph data store
 	const pictographDataStore = writable(beat.pictographData);
-	
 
-	
 	// This is important: update the store whenever the beat's pictograph data changes
 	$: {
 		if (beat.pictographData) {
-
 			pictographDataStore.set(beat.pictographData);
 		}
 	}
-	
+
 	// Handle the click event once at this level
 	function handleClick(event: MouseEvent) {
 		// Prevent the event from propagating to avoid double-handling
@@ -34,9 +31,7 @@
 	on:click={handleClick}
 	aria-label={`Beat ${beat.beatNumber}`}
 >
-	<Pictograph 
-		pictographDataStore={pictographDataStore} 
-	/>
+	<Pictograph {pictographDataStore} />
 </button>
 
 <style>
@@ -53,6 +48,9 @@
 		justify-content: center;
 		align-items: center;
 		border-radius: 4px;
+		/* Ensure the beat doesn't shrink too much */
+		min-width: 90%;
+		min-height: 90%;
 	}
 
 	.beat:hover {
@@ -62,8 +60,8 @@
 	.beat:active {
 		transform: scale(0.95);
 	}
-	
+
 	.filled {
-		box-shadow: 0 0 8px transparent
+		box-shadow: 0 0 8px transparent;
 	}
 </style>

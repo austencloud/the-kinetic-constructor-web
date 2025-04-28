@@ -200,8 +200,10 @@
 	.beat-number {
 		position: absolute;
 		z-index: 2;
-		width: auto;
-		height: auto;
+		width: 100%;
+		height: 100%;
+		top: 0;
+		left: 0;
 		pointer-events: none; /* Allow clicks to pass through */
 	}
 
