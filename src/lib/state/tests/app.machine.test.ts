@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { appMachine } from './app.machine';
+import { appMachine } from '../machines/app/app.machine';
 import { createActor } from 'xstate';
 import { waitForState } from '$lib/state/core';
 

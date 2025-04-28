@@ -4,8 +4,8 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
-import { pictographStore } from './pictograph.store';
-import { selectIsLoading, selectIsComplete, selectHasError } from './pictograph.selectors';
+import { pictographStore } from '../stores/pictograph/pictograph.store';
+import { selectIsLoading, selectIsComplete, selectHasError } from '../stores/pictograph/pictograph.selectors';
 import type { PictographData } from '$lib/types/PictographData';
 
 describe('Pictograph Store', () => {

@@ -6,11 +6,11 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMachine } from 'xstate';
-import { SupervisedActor } from './SupervisedActor';
-import { Supervisor } from './Supervisor';
-import { RootSupervisor } from './RootSupervisor';
-import { RestartStrategy, StopStrategy, EscalateStrategy, ResumeStrategy } from './strategies';
-import { ActorHealthStatus, SupervisionStrategyType } from './types';
+import { SupervisedActor } from '../core/supervision/SupervisedActor';
+import { Supervisor } from '../core/supervision/Supervisor';
+import { RootSupervisor } from '../core/supervision/RootSupervisor';
+import { RestartStrategy, StopStrategy, EscalateStrategy, ResumeStrategy } from '../core/supervision/strategies';
+import { ActorHealthStatus, SupervisionStrategyType } from '../core/supervision/types';
 
 describe('Actor Supervision System', () => {
 	// Reset the root supervisor before each test

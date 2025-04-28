@@ -1,4 +1,3 @@
-// src/lib/components/OptionPicker/config.ts
 import type { PictographData } from '$lib/types/PictographData';
 
 // ----- Types -----
