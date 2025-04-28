@@ -114,15 +114,17 @@ class StateRegistry {
 	/**
 	 * Add a dependency relationship between state containers
 	 */
-	addDependency(dependentId: string, dependencyId: string): void {
+	addDependency(dependentId: string, dependencyId: string): boolean {
 		// Check if both IDs exist in the registry
 		if (!this.containers.has(dependentId)) {
-			console.warn(`Cannot add dependency: dependent ID "${dependentId}" is not registered`);
-			return;
+			// Use debug level instead of warn to reduce console noise during initialization
+			// This is expected during initialization when actors are being registered
+			console.debug(`Cannot add dependency: dependent ID "${dependentId}" is not registered`);
+			return false;
 		}
 		if (!this.containers.has(dependencyId)) {
-			console.warn(`Cannot add dependency: dependency ID "${dependencyId}" is not registered`);
-			return;
+			console.debug(`Cannot add dependency: dependency ID "${dependencyId}" is not registered`);
+			return false;
 		}
 
 		// Get or create the set of dependencies for this dependent
@@ -132,6 +134,7 @@ class StateRegistry {
 
 		// Add the dependency
 		this.dependencies.get(dependentId)!.add(dependencyId);
+		return true;
 	}
 
 	/**

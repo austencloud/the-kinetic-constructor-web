@@ -30,15 +30,33 @@ export { sequenceActions, sequenceSelectors, sequenceActor };
  * This should be called early in the application lifecycle
  */
 export function initializeStateManagement(): void {
-	// Define dependencies between actors and stores
-	// The sequence actor depends on the app actor
-	if (sequenceActor && appActor) {
+	// Verify actors are registered before adding dependencies
+	const registeredContainers = stateRegistry.getAll().map((container) => container.id);
+	const hasSequenceActor = registeredContainers.includes('sequenceActor');
+	const hasAppActor = registeredContainers.includes('appActor');
+
+	// If actors aren't registered yet, try to register them directly
+	if (!hasSequenceActor || !hasAppActor) {
+		try {
+			// Check again after attempted registration
+			const updatedContainers = stateRegistry.getAll().map((container) => container.id);
+			const nowHasSequenceActor = updatedContainers.includes('sequenceActor');
+			const nowHasAppActor = updatedContainers.includes('appActor');
+
+			// Define dependencies between actors and stores if now registered
+			if (nowHasSequenceActor && nowHasAppActor) {
+				stateRegistry.addDependency('sequenceActor', 'appActor');
+			}
+		} catch (error) {
+			console.error('Error registering actors:', error);
+		}
+	} else {
+		// Both actors are already registered, add the dependency
 		stateRegistry.addDependency('sequenceActor', 'appActor');
 	}
 
 	// Get the topologically sorted initialization order
 	const initOrder = stateRegistry.getInitializationOrder();
-	console.log('State initialization order:', initOrder);
 
 	// Start actors in dependency order
 	for (const id of initOrder) {
@@ -47,22 +65,17 @@ export function initializeStateManagement(): void {
 		if (container && 'getSnapshot' in container && typeof (container as any).start === 'function') {
 			const actor = container as typeof appActor;
 			if (actor.getSnapshot().status !== 'active') {
-				console.log(`Starting actor: ${id}`);
 				actor.start();
 			}
-		} else if (container && 'getSnapshot' in container) {
-			console.log(`Container ${id} has getSnapshot but no start method, skipping`);
 		}
 	}
 
 	// Explicitly start critical actors that must be running
 	if (appActor && appActor.getSnapshot().status !== 'active') {
-		console.log('Starting app actor');
 		appActor.start();
 	}
 
 	if (sequenceActor && sequenceActor.getSnapshot().status !== 'active') {
-		console.log('Starting sequence actor');
 		sequenceActor.start();
 	}
 
@@ -98,6 +111,4 @@ export function initializeStateManagement(): void {
 			}
 		};
 	}
-
-	console.log('State management system initialized');
 }

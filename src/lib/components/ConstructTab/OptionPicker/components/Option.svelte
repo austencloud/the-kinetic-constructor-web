@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { getContext } from 'svelte'; // Import getContext
 	import { writable } from 'svelte/store';
+	// Removed crossfade and fade transitions
+	// Removed cubicOut easing
 	import type { PictographData } from '$lib/types/PictographData';
 	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
 	import { optionPickerStore } from '../store';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext'; // Import context key and type
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
-	// REMOVED: import { onMount }
+	// Removed prefersReducedMotion
 
 	// --- Props ---
 	export let pictographData: PictographData;
@@ -18,21 +20,18 @@
 	// Use the scale factor determined by the overall layout configuration
 	$: scaleFactor = $layoutContext.layoutConfig.scaleFactor;
 
-	// --- State (Removed internal state) ---
-	// REMOVED: let isMobileDevice = false;
-	// REMOVED: let containerWidth = 0;
-	// REMOVED: let containerElement: HTMLElement;
-
 	// --- Reactive Computations ---
 	$: isSelected = $selectedPictograph === pictographData;
 	$: ariaLabel = `Select option ${pictographData.letter || 'Unnamed'}`;
 
-	// REMOVED: Internal getScaleFactor function
-	// REMOVED: onMount logic for mobile detection and ResizeObserver
-
 	function handleSelect() {
 		optionPickerStore.selectOption(pictographData);
 	}
+
+	// Removed crossfade transition setup
+
+	// Generate a unique key for the pictograph based on its data
+	$: pictographKey = `${pictographData.letter || ''}-${pictographData.startPos || ''}-${pictographData.endPos || ''}`;
 
 	// Keep pictograph data up-to-date in its own store for the Pictograph component
 	const pictographDataStore = writable(pictographData);
@@ -51,7 +50,10 @@
 	aria-label={ariaLabel}
 	aria-pressed={isSelected}
 >
-	<div class="pictograph-container" style="transform: scale({scaleFactor})">
+	<div
+		class="pictograph-container"
+		style="transform: scale({scaleFactor})"
+	>
 		<Pictograph {pictographDataStore} />
 	</div>
 </div>

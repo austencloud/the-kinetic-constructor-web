@@ -1,5 +1,4 @@
 <script lang="ts">
-	// REMOVED: onMount, tick, resize action imports are no longer needed
 	import { getContext, createEventDispatcher } from 'svelte';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 	import ViewControl from './ViewControl.svelte';
@@ -12,12 +11,9 @@
 
 	// --- Context ---
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-	// Directly use the isMobile flag from the context
 	$: isMobileDevice = $layoutContext.isMobile;
 
 	// --- Local State ---
-	// REMOVED: tabsContainerElement is no longer needed
-	// CHANGED: useShortLabels is now directly derived from isMobileDevice
 	$: useShortLabels = isMobileDevice;
 
 	// --- Events ---
@@ -35,7 +31,7 @@
 		dispatch('tabSelect', categoryKey);
 	}
 
-	// --- Mappings for Labels (Keep these) ---
+	// --- Mappings for Labels ---
 	const longLabels: Record<string, string> = {
 		Type1: 'Type 1',
 		Type2: 'Type 2',
@@ -62,12 +58,12 @@
 		alpha: 'α',
 		beta: 'β',
 		gamma: 'γ',
-		Continuous: 'Cont.',
-		'One Reversal': '1 Rev',
-		'Two Reversals': '2 Rev'
+		Continuous: 'Continuous',
+		'One Reversal': '1 Reversel',
+		'Two Reversals': '2 Reversals'
 	};
 
-	// --- Formatting Functions (Keep these) ---
+	// --- Formatting Functions ---
 	function formatTabName(key: string): string {
 		if (!key) return '';
 		return (
@@ -82,50 +78,46 @@
 		if (!key) return '';
 		return shortLabels[key] || formatTabName(key);
 	}
-
-	// REMOVED: handleTabsResize function is no longer needed
-	// REMOVED: Reactive dependency on categoryKeys for resize is no longer needed
-	// REMOVED: onMount is no longer needed
 </script>
 
 <div class="option-picker-header" class:mobile={isMobileDevice} data-testid="option-picker-header">
 	<div class="header-content">
-		<!-- View controls moved to the left -->
 		<div class="view-controls">
 			<ViewControl {selectedTab} on:viewChange={handleViewChange} />
 		</div>
 
-		{#if showTabs && categoryKeys.length > 0}
-			<div class="tabs" role="tablist" aria-label="Option Categories">
-				{#each categoryKeys as categoryKey (categoryKey)}
-					<button
-						class="tab"
-						class:active={selectedTab === categoryKey}
-						on:click={() => handleTabClick(categoryKey)}
-						role="tab"
-						aria-selected={selectedTab === categoryKey}
-						aria-controls={`options-panel-${categoryKey}`}
-						id="tab-{categoryKey}"
-						title={formatTabName(categoryKey)}
-					>
-						{useShortLabels ? formatShortTabName(categoryKey) : formatTabName(categoryKey)}
-					</button>
-				{/each}
-			</div>
-		{:else if showTabs}
-			<div class="tabs-placeholder">
-				<span class="no-categories-message">No sub-categories</span>
-			</div>
+		{#if showTabs}
+			{#if categoryKeys.length > 0}
+				<div class="tabs" role="tablist" aria-label="Option Categories">
+					{#each categoryKeys as categoryKey (categoryKey)}
+						<button
+							class="tab"
+							class:active={selectedTab === categoryKey}
+							on:click={() => handleTabClick(categoryKey)}
+							role="tab"
+							aria-selected={selectedTab === categoryKey}
+							aria-controls={`options-panel-${categoryKey}`}
+							id="tab-{categoryKey}"
+							title={formatTabName(categoryKey)}
+						>
+							{useShortLabels ? formatShortTabName(categoryKey) : formatTabName(categoryKey)}
+						</button>
+					{/each}
+				</div>
+			{:else}
+				<!-- Placeholder when tabs are shown but empty -->
+				<div class="tabs-placeholder">
+					<span class="no-categories-message">No sub-categories</span>
+				</div>
+			{/if}
 		{:else}
-			<div class="tabs-placeholder">
-				<div class="helper-message">Showing all - filter to see sections ➡️</div>
-			</div>
+			<!-- Message shown when tabs are hidden (e.g., showing all) -->
+			<div class="helper-message">⬅️ Showing all - filter to see sections</div>
 		{/if}
 	</div>
 </div>
 
 <style>
-	/* Styles remain largely the same, but comments related to resize logic can be removed */
 	.option-picker-header {
 		width: 100%;
 		position: relative;
@@ -143,43 +135,43 @@
 
 	.header-content {
 		display: flex;
-		justify-content: flex-start;
+		justify-content: flex-start; /* Align items to the start */
 		align-items: center;
 		flex-wrap: nowrap;
-		gap: 12px;
-		/* No overflow hidden needed here */
+		/* This gap provides spacing between .view-controls and the next element */
+		gap: 25px;
 	}
 
 	.view-controls {
 		display: flex;
 		align-items: center;
 		flex-shrink: 0;
-		margin-right: 12px; /* Add margin to the right instead of left */
+		/* No specific margin needed here, gap on parent handles spacing */
 	}
 
 	.tabs {
 		display: flex;
 		justify-content: flex-start;
-		/* Allow wrapping by default, mobile styles might override */
 		flex-wrap: wrap;
 		gap: 4px 8px;
 		padding: 0;
 		margin: 0;
-		flex-grow: 1;
+		flex-grow: 1; /* Allow tabs container to grow */
 		flex-shrink: 1;
 		flex-basis: 0;
 		min-width: 50px;
 	}
 
+	/* Placeholder used only for "No sub-categories" message */
 	.tabs-placeholder {
 		display: flex;
-		justify-content: center;
+		justify-content: flex-start; /* Align message left */
 		align-items: center;
 		flex-grow: 1;
 		flex-shrink: 1;
 		flex-basis: 0;
 		min-width: 50px;
-		min-height: 30px;
+		min-height: 30px; /* Ensure it has some height */
 	}
 
 	.tab {
@@ -194,7 +186,7 @@
 			background-color 0.15s ease,
 			color 0.15s ease;
 		white-space: nowrap;
-		flex-shrink: 0; /* Tabs don't shrink */
+		flex-shrink: 0;
 		border-radius: 8px;
 		margin: 0 2px 2px 2px;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -222,15 +214,18 @@
 		background-color: rgba(59, 130, 246, 0.1);
 	}
 
+	/* Helper message shown when showTabs is false */
 	.helper-message {
 		color: white;
 		font-style: italic;
 		font-size: 1rem;
-		text-align: center;
 		padding: clamp(0.4rem, 1vw, 0.6rem);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		/* No text-align needed, flex alignment handles it */
+		/* No flex-grow needed, it should hug the view controls */
+		flex-shrink: 1; /* Allow shrinking if needed */
 	}
 
 	.no-categories-message {
@@ -238,31 +233,39 @@
 		font-style: italic;
 		padding: clamp(0.4rem, 1vw, 0.6rem) clamp(0.8rem, 1.5vw, 1.2rem);
 		white-space: nowrap;
-		text-align: center;
+		/* text-align: center; Removed, placeholder is justify-content: flex-start */
 	}
 
 	/* --- Mobile Responsiveness --- */
 	@media (max-width: 640px) {
 		.header-content {
-			flex-direction: column;
-			align-items: flex-start;
+			flex-direction: column; /* Stack items vertically */
+			align-items: flex-start; /* Align items to the start (left) */
 			width: 100%;
-			gap: 8px;
-		}
-
-		.tabs-placeholder .no-categories-message {
-			flex-grow: 0;
+			gap: 8px; /* Vertical gap for mobile */
 		}
 
 		.tabs,
-		.tabs-placeholder {
-			flex-wrap: wrap; /* Ensure wrapping */
-			width: 100%;
+		.tabs-placeholder,
+		.helper-message {
+			width: 100%; /* Make these elements take full width in column layout */
+		}
+
+		.tabs {
+			justify-content: flex-start; /* Ensure tabs start from left */
 		}
 
 		.view-controls {
-			margin-right: 0;
-			align-self: flex-start;
+			margin-right: 0; /* Remove margin */
+			align-self: flex-start; /* Ensure view controls align left */
+		}
+
+		.helper-message {
+			padding-left: 0; /* Adjust padding if needed */
+		}
+
+		.tabs-placeholder {
+			justify-content: flex-start; /* Ensure "No sub-categories" aligns left */
 		}
 	}
 </style>

@@ -4,36 +4,52 @@
 	import { setServiceContainer } from '$lib/core/di/serviceContext';
 	import { registerServices } from '$lib/core/di/registerServices';
 	import { initializeStateManagement } from '$lib/state';
-	// We don't need appSelectors here
 	import { browser } from '$app/environment';
 
-	// State to track if the state management is initialized
+	// State tracking
 	let isStateInitialized = false;
+	let isInitializing = false;
 
-	// Initialize state management immediately in the script
-	if (browser) {
-		// Initialize dependency injection
-		const container = getContainer();
-		registerServices(container);
-		setServiceContainer(container);
+	/**
+	 * Initialize the state management system
+	 * This function ensures we only initialize once
+	 */
+	async function initializeState() {
+		// Guard against multiple initializations
+		if (isStateInitialized || isInitializing || !browser) return;
 
-		// Initialize state management
-		initializeStateManagement();
-		console.log('State management initialized');
-		isStateInitialized = true;
-	}
+		isInitializing = true;
 
-	onMount(() => {
-		if (!isStateInitialized && browser) {
+		try {
 			// Initialize dependency injection
 			const container = getContainer();
 			registerServices(container);
 			setServiceContainer(container);
 
-			// Initialize state management
+			// Explicitly import the state machines to ensure proper registration order
+			// We need to await these imports to ensure they're fully loaded
+			await import('$lib/state/machines/appMachine');
+			await import('$lib/state/machines/sequenceMachine');
+
+			// Now initialize state management
 			initializeStateManagement();
-			console.log('State management initialized in onMount');
 			isStateInitialized = true;
+		} catch (error) {
+			console.error('Error initializing state management:', error);
+		} finally {
+			isInitializing = false;
+		}
+	}
+
+	// Start initialization in the script section for SSR compatibility
+	if (browser) {
+		initializeState();
+	}
+
+	// Also try in onMount as a fallback
+	onMount(() => {
+		if (!isStateInitialized && browser) {
+			initializeState();
 		}
 	});
 </script>

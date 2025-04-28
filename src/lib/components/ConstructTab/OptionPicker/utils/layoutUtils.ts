@@ -67,8 +67,18 @@ export const getResponsiveLayout = memoizeLRU(
 		isPortraitMode: boolean = false,
 		foldableInfoParam?: FoldableDetectionResult
 	): ResponsiveLayoutConfig => {
+		// Provide sensible defaults when dimensions aren't available yet
+		// This is common during initial rendering before layout is calculated
 		if (containerHeight <= 0 || containerWidth <= 0) {
-			console.warn('getResponsiveLayout called with invalid dimensions.');
+			// Only log in development to avoid console spam
+			if (import.meta.env.DEV) {
+				// Use debug level instead of warn to reduce noise
+				console.debug(
+					'getResponsiveLayout: Using default layout until container dimensions are available.'
+				);
+			}
+
+			// Return sensible defaults based on device type
 			return {
 				gridColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
 				optionSize: isMobileDevice ? '80px' : '100px',

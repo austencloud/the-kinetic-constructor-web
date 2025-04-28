@@ -88,14 +88,11 @@
 	// --- Lifecycle ---
 	onMount(() => {
 		// Log the current state for debugging
-		console.log('Main page mounted');
-		console.log('App state:', isReady ? 'ready' : 'not ready');
-		console.log('Loading state:', isInitializingApp ? 'loading' : 'not loading');
-		console.log('Background:', currentBackground);
+
 
 		// Force the state machine to transition
 		setTimeout(() => {
-			console.log('Triggering background ready');
+
 			appActions.backgroundReady();
 		}, 500);
 	});

@@ -6,8 +6,8 @@
 	import { initializePictographData } from '$lib/stores/pictograph/pictographStore';
 	// Import browser check if needed for other logic, but onMount is client-side only
 	import { browser } from '$app/environment';
-	// Import PWA registration
-	import '$lib/pwa';
+	// PWA registration temporarily disabled
+	// import '$lib/pwa';
 	// Import ServiceProvider for DI
 	import ServiceProvider from '$lib/providers/ServiceProvider.svelte';
 

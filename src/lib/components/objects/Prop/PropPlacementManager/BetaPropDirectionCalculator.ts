@@ -121,7 +121,6 @@ export class BetaPropDirectionCalculator {
 
 			// Only do special handling for the red and blue props
 			if (redMotion && (prop.color === RED || prop.color === BLUE)) {
-				console.log(`Special G/H handling for ${prop.color} prop`);
 
 				// Get direction from red motion, not from prop
 				let motionDirection: Direction | null = null;

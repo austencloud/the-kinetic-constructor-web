@@ -1,43 +1,26 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { fade, scale, crossfade } from 'svelte/transition';
-	import { quintOut, cubicOut } from 'svelte/easing';
+	import { type Readable } from 'svelte/store';
 	import Option from './Option.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
+	import { LAYOUT_CONTEXT_KEY, type LayoutContext, type LayoutContextValue } from '../layoutContext';
 	import { uiState } from '../store';
-	import { flip } from 'svelte/animate';
 
 	// --- Props ---
 	export let options: PictographData[] = [];
-	export let key: string = '';
+	export let key: string = ''; // Key for parent transitions if needed
 
 	// --- Context ---
+	// Get the context as a Readable<LayoutContextValue>
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-	// Get layout config from context, renaming gridColumns to avoid conflict
+	
+	// Properly extract the layout config values from the context store
 	$: ({
-		gridColumns: contextGridColumns,
-		optionSize,
-		gridGap,
-		gridClass,
-		aspectClass
-	} = $layoutContext.layoutConfig);
-	$: isMobileDevice = $layoutContext.isMobile;
-	$: isTabletDevice = $layoutContext.isTablet;
-	$: isPortraitMode = $layoutContext.isPortrait;
-
-	// Import new utilities
-	import { prefersReducedMotion } from '../utils/a11y';
-	import { staggeredItemTransition } from '../utils/transitions';
-
-	// Setup crossfade for transitions between different grid states
-	const [send, receive] = crossfade({
-		duration: $prefersReducedMotion ? 0 : 300,
-		easing: cubicOut,
-		fallback(node) {
-			return fade(node, { duration: $prefersReducedMotion ? 0 : 200, easing: cubicOut });
-		}
-	});
+		layoutConfig: { gridColumns: contextGridColumns, optionSize, gridGap, gridClass, aspectClass },
+		isMobile: isMobileDevice,
+		isTablet: isTabletDevice,
+		isPortrait: isPortraitMode
+	} = $layoutContext);
 
 	// --- Get Sort Method from Store ---
 	let currentSortMethod: string | null;
@@ -61,7 +44,7 @@
 </script>
 
 <div
-	class="options-grid {gridClass} {aspectClass} transition-optimized"
+	class="options-grid {gridClass} {aspectClass}"
 	class:single-item-grid={applySingleItemClass}
 	class:two-item-grid={applyTwoItemClass}
 	class:mobile-grid={isMobileDevice}
@@ -70,21 +53,12 @@
 	style:grid-template-columns={actualGridColumns}
 	style:--grid-gap={gridGap}
 	style:--option-size={optionSize}
-	in:receive={{ key: `grid-${key}` }}
-	out:send={{ key: `grid-${key}` }}
 >
-	{#each options as option, i ((option.letter ?? '') + (option.startPos ?? '') + (option.endPos ?? '') + i)}
+	{#each options as option, i ((option.letter ?? '') + (option.startPos ?? '') + (option.endPos ?? '') + i + key)}
 		<div
-			class="grid-item-wrapper transition-optimized"
+			class="grid-item-wrapper"
 			class:single-item={applySingleItemClass}
 			class:two-item={applyTwoItemClass}
-			in:staggeredItemTransition={{
-				index: i,
-				total: options.length,
-				duration: $prefersReducedMotion ? 0 : 350,
-				easing: quintOut
-			}}
-			animate:flip={{ duration: $prefersReducedMotion ? 0 : 300 }}
 		>
 			<Option pictographData={option} isPartOfTwoItems={applyTwoItemClass} />
 		</div>
@@ -109,13 +83,6 @@
 		padding: 0.5rem; /* Add padding around the grid */
 	}
 
-	/* Performance optimizations */
-	.transition-optimized {
-		will-change: transform, opacity;
-		backface-visibility: hidden;
-		transform: translateZ(0); /* Hardware acceleration hint */
-	}
-
 	/* Add top margin only if it's NOT part of a multi-group item */
 	:global(.options-panel > .options-grid) {
 		margin-top: 0.5rem; /* Adjust as needed */
@@ -135,15 +102,10 @@
 		align-items: center;
 		position: relative; /* For z-index */
 		z-index: 1;
-		transition:
-			z-index 0s 0.2s,
-			transform 0.2s ease-out; /* Delay z-index change */
 		margin: 4px; /* Add extra margin between items */
-		will-change: opacity, transform; /* Optimize for animations */
 	}
 	.grid-item-wrapper:hover {
 		z-index: 10; /* Bring hovered item to front */
-		transition-delay: 0s;
 	}
 
 	/* --- Responsive Grid Adjustments (Applied based on context) --- */

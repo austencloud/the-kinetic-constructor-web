@@ -1,19 +1,17 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { crossfade } from 'svelte/transition';
-	import { cubicOut } from 'svelte/easing';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { uiState } from '../store';
 	import { determineGroupKey, getSortedGroupKeys } from '../services/OptionsService';
 	import type { SortMethod } from '../config';
 	import { resize } from '../actions/resize';
+	// Removed optionGridTransition import
 
 	import SectionHeader from './SectionHeader.svelte';
 	import OptionGroupGrid from './OptionGroupGrid.svelte';
 
-	// Import new utilities
+	// Import scroll utilities
 	import { scrollActions } from '../store/scrollStore';
-	import { prefersReducedMotion } from '../utils/a11y';
 
 	type LayoutRow = {
 		type: 'single' | 'multi';
@@ -22,31 +20,18 @@
 
 	export let selectedTab: string | null = null;
 	export let options: PictographData[] = [];
+	export let transitionKey: string | number = 'default'; // Add transition key prop
 
 	let panelElement: HTMLElement;
 	let contentIsShort = false;
 	let layoutRows: LayoutRow[] = [];
-	let panelKey = selectedTab || 'default';
 	let previousTab: string | null = null;
-
-	// Set up crossfade for switching between layouts
-	const [send, receive] = crossfade({
-		duration: $prefersReducedMotion ? 0 : 300,
-		easing: cubicOut
-	});
 
 	// Get sort method from store
 	let sortMethod: SortMethod;
 	uiState.subscribe((state) => {
 		sortMethod = state.sortMethod;
 	});
-
-	// Update panel key for transitions
-	$: {
-		if (selectedTab) {
-			panelKey = selectedTab;
-		}
-	}
 
 	// Save scroll position when scrolling
 	function handleScroll() {
@@ -152,33 +137,35 @@
 </script>
 
 <div
-	class="options-panel transition-optimized"
+	class="options-panel"
 	bind:this={panelElement}
 	use:resize={checkContentHeight}
 	class:vertically-center={contentIsShort}
 	role="tabpanel"
 	aria-labelledby="tab-{selectedTab}"
 	id="options-panel-{selectedTab}"
-	in:receive={{ key: `panel-${panelKey}` }}
-	out:send={{ key: `panel-${panelKey}` }}
 	on:scroll={handleScroll}
 >
 	<div class="panel-content">
-		{#each layoutRows as row, rowIndex}
+		<!-- Removed transition -->
+		{#each layoutRows as row, rowIndex (transitionKey + '-row-' + rowIndex)}
 			{#if row.type === 'single'}
-				{#each row.groups as group}
+				{#each row.groups as group (transitionKey + '-group-' + group.key)}
 					<SectionHeader groupKey={group.key} isFirstHeader={rowIndex === 0} />
-					<OptionGroupGrid options={group.options} key={`${selectedTab}-${group.key}`} />
+					<OptionGroupGrid options={group.options} key={transitionKey + '-optgroup-' + group.key} />
 				{/each}
 			{:else if row.type === 'multi'}
 				<div class="multi-group-row">
-					{#each row.groups as group, groupIndex}
+					{#each row.groups as group, groupIndex (transitionKey + '-multi-' + group.key)}
 						<div class="multi-group-item">
 							<SectionHeader
 								groupKey={group.key}
 								isFirstHeader={rowIndex === 0 && groupIndex === 0}
 							/>
-							<OptionGroupGrid options={group.options} key={`${selectedTab}-${group.key}`} />
+							<OptionGroupGrid
+								options={group.options}
+								key={transitionKey + '-multiopt-' + group.key}
+							/>
 						</div>
 					{/each}
 				</div>
@@ -189,33 +176,28 @@
 
 <style>
 	.options-panel {
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-start;
+		position: absolute;
+		top: 0;
+		left: 0;
 		width: 100%;
 		height: 100%;
-		padding: 1rem 1rem 2rem 1rem; /* Increased horizontal padding for more breathing room */
-		box-sizing: border-box;
-		overflow-y: auto; /* Keep scrolling */
+		overflow-y: auto;
 		overflow-x: hidden;
-		transition: justify-content 0.2s ease-out;
-	}
-
-	/* Performance optimizations */
-	.transition-optimized {
-		will-change: transform, opacity;
-		backface-visibility: hidden;
-		transform: translateZ(0); /* Hardware acceleration hint */
+		box-sizing: border-box;
+		padding: 1rem;
 	}
 
 	.panel-content {
 		width: 100%;
-		height: 100%;
-		position: relative;
+		padding: 0.5rem 0;
 	}
 
-	.options-panel.vertically-center {
-		justify-content: center;
+	/* When content is short enough to fit, center it vertically */
+	.options-panel.vertically-center .panel-content {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
 	}
 
 	.multi-group-row {
@@ -225,22 +207,27 @@
 		justify-content: space-evenly;
 		align-items: flex-start;
 		width: 100%;
-		margin-top: 24px; /* Increased margin for better spacing */
-		margin-bottom: 20px; /* Increased margin for better spacing */
-		gap: 16px; /* Add explicit gap for consistent spacing */
+		margin-top: 2rem;
+		margin-bottom: 2rem;
+		gap: 24px;
+		padding: 1rem;
+		background-color: rgba(0, 0, 0, 0.01);
+		border-radius: 16px;
 	}
 
 	.multi-group-item {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		min-width: 120px;
-		margin: 0 8px; /* Add horizontal margin between multi-group items */
+		min-width: 140px;
+		margin: 0.5rem;
+		padding: 0.5rem;
+		border-radius: 12px;
 	}
 
 	/* --- Scrollbar Styles --- */
 	.options-panel::-webkit-scrollbar {
-		width: 8px; /* Slightly wider scrollbar for easier use */
+		width: 8px;
 	}
 	.options-panel::-webkit-scrollbar-track {
 		background: rgba(30, 41, 59, 0.3);
