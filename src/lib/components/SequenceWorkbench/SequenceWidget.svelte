@@ -127,7 +127,6 @@
 
 			{#if workbenchIsPortrait}
 				<ButtonPanel
-					isPortrait={workbenchIsPortrait}
 					containerWidth={$dimensions.width}
 					containerHeight={$dimensions.height}
 					buttons={buttonPanelButtons}
@@ -138,7 +137,6 @@
 
 		{#if !workbenchIsPortrait}
 			<ButtonPanel
-				isPortrait={workbenchIsPortrait}
 				containerWidth={$dimensions.width}
 				containerHeight={workbenchHeight}
 				buttons={buttonPanelButtons}
