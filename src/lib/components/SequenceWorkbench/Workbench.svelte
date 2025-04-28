@@ -2,9 +2,9 @@
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import SequenceWidget from './SequenceWidget.svelte';
-	import GraphEditor from './GraphEditor/GraphEditor.svelte';
-	import GraphEditorToggleTab from './GraphEditor/GraphEditorToggleTab.svelte';
-	import SequenceProvider from '$lib/context/sequence/SequenceProvider.svelte';
+	// These components are currently commented out in the template
+	// import GraphEditor from './GraphEditor/GraphEditor.svelte';
+	// import GraphEditorToggleTab from './GraphEditor/GraphEditorToggleTab.svelte';
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
 	// No need for 'browser' import if only using onMount
 
@@ -52,24 +52,22 @@
 	});
 </script>
 
-<SequenceProvider>
-	<div class="sequence-workbench" use:resizeObserver>
-		<SequenceWidget workbenchHeight={sequenceWorkbenchHeight} />
+<div class="sequence-workbench" use:resizeObserver>
+	<SequenceWidget workbenchHeight={sequenceWorkbenchHeight} />
 
-		<!-- <GraphEditorToggleTab
-			{isExpanded}
-			animationDuration={ANIMATION_DURATION}
-			graphEditorHeight={isExpanded ? computedEditorHeight : 0}
-			on:click={toggleGraphEditor}
-		/>
+	<!-- <GraphEditorToggleTab
+		{isExpanded}
+		animationDuration={ANIMATION_DURATION}
+		graphEditorHeight={isExpanded ? computedEditorHeight : 0}
+		on:click={toggleGraphEditor}
+	/>
 
-		<GraphEditor
-			{isExpanded}
-			animationDuration={ANIMATION_DURATION}
-			maxEditorHeight={computedEditorHeight}
-		/> -->
-	</div>
-</SequenceProvider>
+	<GraphEditor
+		{isExpanded}
+		animationDuration={ANIMATION_DURATION}
+		maxEditorHeight={computedEditorHeight}
+	/> -->
+</div>
 
 <style>
 	.sequence-workbench {

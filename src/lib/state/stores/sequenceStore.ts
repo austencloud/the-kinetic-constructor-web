@@ -15,6 +15,8 @@ export interface BeatData {
 	bluePropData?: any;
 	redArrowData?: any;
 	blueArrowData?: any;
+	redMotionData?: any;
+	blueMotionData?: any;
 	metadata?: Record<string, unknown>;
 }
 

@@ -29,19 +29,6 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 	const blueEndOri = calculateActualEndOrientation(lastPictograph.blueMotionData);
 	const redEndOri = calculateActualEndOrientation(lastPictograph.redMotionData);
 
-	// Log the calculated end orientations for debugging - only include safe properties
-	console.log('Last pictograph end orientations:', {
-		letter: lastPictograph.letter,
-		startPos: lastPictograph.startPos,
-		endPos: lastPictograph.endPos,
-		blueStartOri: lastPictograph.blueMotionData?.startOri,
-		blueEndOri: lastPictograph.blueMotionData?.endOri,
-		blueCalculatedEndOri: blueEndOri,
-		redStartOri: lastPictograph.redMotionData?.startOri,
-		redEndOri: lastPictograph.redMotionData?.endOri,
-		redCalculatedEndOri: redEndOri
-	});
-
 	// Find options where start position matches end position of last pictograph
 	// AND start orientations match calculated end orientations of the last pictograph
 	const options = findOptionsWithMatchingPositionAndOrientation(
@@ -50,7 +37,6 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 		redEndOri
 	);
 
-	console.log(`Found ${options.length} options for next pictograph`);
 	return options;
 }
 
@@ -64,19 +50,6 @@ function calculateActualEndOrientation(motionData: any): Orientation | undefined
 	try {
 		const calculator = new MotionOriCalculator(motionData);
 		const calculatedEndOri = calculator.calculateEndOri();
-
-		// Log the calculation for debugging - only include safe properties to avoid circular references
-		console.log('Orientation calculation:', {
-			startOri: motionData.startOri,
-			endOri: motionData.endOri,
-			calculatedEndOri,
-			motionType: motionData.motionType,
-			propRotDir: motionData.propRotDir,
-			turns: motionData.turns,
-			color: motionData.color,
-			startLoc: motionData.startLoc,
-			endLoc: motionData.endLoc
-		});
 
 		return calculatedEndOri;
 	} catch (error) {
@@ -156,16 +129,6 @@ export function findOptionsWithMatchingPositionAndOrientation(
 				grid: pictograph.grid
 			};
 
-			// Log orientation adjustment for debugging
-			console.log('Adjusting pictograph orientations:', {
-				letter: pictograph.letter,
-				startPos: pictograph.startPos,
-				endPos: pictograph.endPos,
-				blueRequired: blueEndOri,
-				blueOriginal: pictograph.blueMotionData?.startOri,
-				redRequired: redEndOri,
-				redOriginal: pictograph.redMotionData?.startOri
-			});
 
 			// Adjust blue motion data if needed
 			if (!blueMatches && adjustedPictograph.blueMotionData && blueEndOri) {
@@ -179,12 +142,7 @@ export function findOptionsWithMatchingPositionAndOrientation(
 					const newEndOri = calculator.calculateEndOri();
 					adjustedPictograph.blueMotionData.endOri = newEndOri;
 
-					console.log('Adjusted blue orientation:', {
-						from: originalOri,
-						to: blueEndOri,
-						newEndOri,
-						letter: adjustedPictograph.letter
-					});
+
 				} catch (error) {
 					console.warn('Error recalculating blue end orientation:', error);
 				}
@@ -202,12 +160,7 @@ export function findOptionsWithMatchingPositionAndOrientation(
 					const newEndOri = calculator.calculateEndOri();
 					adjustedPictograph.redMotionData.endOri = newEndOri;
 
-					console.log('Adjusted red orientation:', {
-						from: originalOri,
-						to: redEndOri,
-						newEndOri,
-						letter: adjustedPictograph.letter
-					});
+
 				} catch (error) {
 					console.warn('Error recalculating red end orientation:', error);
 				}

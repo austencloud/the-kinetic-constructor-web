@@ -1,4 +1,10 @@
 // src/lib/stores/beatsStore.ts
+/**
+ * @deprecated This module is deprecated and will be removed in a future version.
+ * Please use the state machine approach with sequenceMachine and sequenceStore instead.
+ * See src/lib/state/machines/sequenceMachine.ts and src/lib/state/stores/sequenceStore.ts
+ */
+
 import { writable, derived, get } from 'svelte/store';
 import type { BeatData } from '../../components/SequenceWorkbench/SequenceBeatFrame/BeatData';
 import { createBeat } from '../../components/SequenceWorkbench/SequenceBeatFrame/BeatData';

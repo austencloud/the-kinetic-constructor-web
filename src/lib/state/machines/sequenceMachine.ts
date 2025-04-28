@@ -12,7 +12,7 @@ import {
 } from 'xstate';
 import { stateRegistry } from '../core/registry';
 import { sequenceStore } from '../stores/sequenceStore';
-import type { BeatData as StoreBeatData } from '../stores/sequenceStore';
+import type { BeatData as StoreBeatData, SequenceState } from '../stores/sequenceStore';
 import {
 	type GenerateSequenceInput,
 	type SequenceGenerationOptions,
@@ -34,6 +34,7 @@ export interface SequenceMachineContext {
 
 // Events for the sequence state machine
 export type SequenceMachineEvent =
+	// Generation events
 	| {
 			type: 'GENERATE';
 			options: SequenceGenerationOptions | FreeformSequenceOptions;
@@ -44,7 +45,16 @@ export type SequenceMachineEvent =
 	| { type: 'GENERATION_ERROR'; error: string } // Sent by actor on failure (optional)
 	| { type: 'CANCEL' }
 	| { type: 'RETRY' }
-	| { type: 'RESET' };
+	| { type: 'RESET' }
+
+	// Beat manipulation events
+	| { type: 'SELECT_BEAT'; beatId: string }
+	| { type: 'DESELECT_BEAT'; beatId?: string } // Optional beatId, if not provided, deselects all
+	| { type: 'ADD_BEAT'; beat: Partial<StoreBeatData> }
+	| { type: 'REMOVE_BEAT'; beatId: string }
+	| { type: 'REMOVE_BEAT_AND_FOLLOWING'; beatId: string }
+	| { type: 'UPDATE_BEAT'; beatId: string; updates: Partial<StoreBeatData> }
+	| { type: 'CLEAR_SEQUENCE' };
 
 // Define the sequence machine
 export const sequenceMachine = createMachine(
@@ -74,12 +84,36 @@ export const sequenceMachine = createMachine(
 		states: {
 			idle: {
 				on: {
+					// Generation events
 					GENERATE: {
 						target: 'generating',
 						actions: assign({
 							generationType: ({ event }) => event.generationType,
 							generationOptions: ({ event }) => event.options
 						})
+					},
+
+					// Beat manipulation events
+					SELECT_BEAT: {
+						actions: 'selectBeat'
+					},
+					DESELECT_BEAT: {
+						actions: 'deselectBeat'
+					},
+					ADD_BEAT: {
+						actions: 'addBeat'
+					},
+					REMOVE_BEAT: {
+						actions: 'removeBeat'
+					},
+					REMOVE_BEAT_AND_FOLLOWING: {
+						actions: 'removeBeatAndFollowing'
+					},
+					UPDATE_BEAT: {
+						actions: 'updateBeat'
+					},
+					CLEAR_SEQUENCE: {
+						actions: 'clearSequence'
 					}
 				}
 			},
@@ -167,6 +201,150 @@ export const sequenceMachine = createMachine(
 					const storeBeats = convertToStoreBeatData(doneEvent.output);
 					sequenceStore.setSequence(storeBeats);
 					console.log('Sequence updated with new data:', storeBeats);
+				}
+			},
+
+			// Beat manipulation actions
+			selectBeat: ({ event }) => {
+				const selectEvent = event as { type: 'SELECT_BEAT'; beatId: string };
+				sequenceStore.selectBeat(selectEvent.beatId);
+
+				// Dispatch a custom event for components that need to know about selection changes
+				if (typeof document !== 'undefined') {
+					const selectionEvent = new CustomEvent('beat-selected', {
+						detail: { beatId: selectEvent.beatId },
+						bubbles: true
+					});
+					document.dispatchEvent(selectionEvent);
+				}
+			},
+
+			deselectBeat: ({ event }) => {
+				const deselectEvent = event as { type: 'DESELECT_BEAT'; beatId?: string };
+
+				if (deselectEvent.beatId) {
+					// Deselect a specific beat
+					sequenceStore.deselectBeat(deselectEvent.beatId);
+				} else {
+					// Deselect all beats
+					sequenceStore.clearSelection();
+				}
+
+				// Dispatch a custom event
+				if (typeof document !== 'undefined') {
+					const selectionEvent = new CustomEvent('beat-deselected', {
+						detail: { beatId: deselectEvent.beatId },
+						bubbles: true
+					});
+					document.dispatchEvent(selectionEvent);
+				}
+			},
+
+			addBeat: ({ event }) => {
+				const addEvent = event as { type: 'ADD_BEAT'; beat: Partial<StoreBeatData> };
+
+				// Generate a unique ID if not provided
+				const beatId = addEvent.beat.id || crypto.randomUUID();
+
+				// Create a complete beat object
+				const newBeat: StoreBeatData = {
+					id: beatId,
+					number: addEvent.beat.number || 0,
+					...addEvent.beat
+				};
+
+				// Add the beat to the sequence store
+				sequenceStore.addBeat(newBeat);
+
+				// Dispatch a custom event
+				if (typeof document !== 'undefined') {
+					const beatEvent = new CustomEvent('beat-added', {
+						detail: { beat: newBeat },
+						bubbles: true
+					});
+					document.dispatchEvent(beatEvent);
+				}
+			},
+
+			removeBeat: ({ event }) => {
+				const removeEvent = event as { type: 'REMOVE_BEAT'; beatId: string };
+				sequenceStore.removeBeat(removeEvent.beatId);
+
+				// Dispatch a custom event
+				if (typeof document !== 'undefined') {
+					const beatEvent = new CustomEvent('beat-removed', {
+						detail: { beatId: removeEvent.beatId },
+						bubbles: true
+					});
+					document.dispatchEvent(beatEvent);
+				}
+			},
+
+			removeBeatAndFollowing: ({ event }) => {
+				const removeEvent = event as { type: 'REMOVE_BEAT_AND_FOLLOWING'; beatId: string };
+
+				// Get the current beats
+				let currentState: SequenceState | undefined;
+				sequenceStore.subscribe((state) => {
+					currentState = state;
+				})();
+
+				if (!currentState) return;
+
+				const beats = currentState.beats;
+
+				// Find the index of the beat to remove
+				const beatIndex = beats.findIndex((beat: StoreBeatData) => beat.id === removeEvent.beatId);
+
+				if (beatIndex >= 0) {
+					// Get all beats that should be removed (the selected beat and all following beats)
+					const beatsToRemove = beats.slice(beatIndex).map((beat: StoreBeatData) => beat.id);
+
+					// Remove each beat
+					beatsToRemove.forEach((id: string) => {
+						sequenceStore.removeBeat(id);
+					});
+
+					// Dispatch a custom event
+					if (typeof document !== 'undefined') {
+						const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
+							detail: { type: 'beats-removed', fromIndex: beatIndex },
+							bubbles: true
+						});
+						document.dispatchEvent(sequenceUpdatedEvent);
+					}
+				}
+			},
+
+			updateBeat: ({ event }) => {
+				const updateEvent = event as {
+					type: 'UPDATE_BEAT';
+					beatId: string;
+					updates: Partial<StoreBeatData>;
+				};
+				sequenceStore.updateBeat(updateEvent.beatId, updateEvent.updates);
+
+				// Dispatch a custom event
+				if (typeof document !== 'undefined') {
+					const beatEvent = new CustomEvent('beat-updated', {
+						detail: { beatId: updateEvent.beatId, updates: updateEvent.updates },
+						bubbles: true
+					});
+					document.dispatchEvent(beatEvent);
+				}
+			},
+
+			clearSequence: () => {
+				// Set an empty sequence
+				sequenceStore.setSequence([]);
+
+				// Dispatch a custom event
+				if (typeof document !== 'undefined') {
+					const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
+						detail: { type: 'sequence-cleared' },
+						bubbles: true
+					});
+					document.dispatchEvent(sequenceUpdatedEvent);
 				}
 			}
 		},
@@ -271,6 +449,7 @@ export const sequenceActor = stateRegistry.registerMachine('sequence', sequenceM
 
 // Helper functions to interact with the sequence machine
 export const sequenceActions = {
+	// Generation actions
 	generate: (options: any, type: 'circular' | 'freeform' = 'circular') => {
 		// Validate and convert options to the correct type
 		let validOptions: SequenceGenerationOptions | FreeformSequenceOptions;
@@ -301,11 +480,35 @@ export const sequenceActions = {
 	},
 	reset: () => {
 		sequenceActor.send({ type: 'RESET' });
+	},
+
+	// Beat manipulation actions
+	selectBeat: (beatId: string) => {
+		sequenceActor.send({ type: 'SELECT_BEAT', beatId });
+	},
+	deselectBeat: (beatId?: string) => {
+		sequenceActor.send({ type: 'DESELECT_BEAT', beatId });
+	},
+	addBeat: (beat: Partial<StoreBeatData>) => {
+		sequenceActor.send({ type: 'ADD_BEAT', beat });
+	},
+	removeBeat: (beatId: string) => {
+		sequenceActor.send({ type: 'REMOVE_BEAT', beatId });
+	},
+	removeBeatAndFollowing: (beatId: string) => {
+		sequenceActor.send({ type: 'REMOVE_BEAT_AND_FOLLOWING', beatId });
+	},
+	updateBeat: (beatId: string, updates: Partial<StoreBeatData>) => {
+		sequenceActor.send({ type: 'UPDATE_BEAT', beatId, updates });
+	},
+	clearSequence: () => {
+		sequenceActor.send({ type: 'CLEAR_SEQUENCE' });
 	}
 };
 
 // Helper functions to get current state
 export const sequenceSelectors = {
+	// Generation selectors
 	isGenerating: () => {
 		return sequenceActor.getSnapshot().matches('generating');
 	},
@@ -321,7 +524,6 @@ export const sequenceSelectors = {
 	message: () => {
 		return sequenceActor.getSnapshot().context.generationMessage;
 	},
-	// Added selectors
 	generationMessage: () => {
 		return sequenceActor.getSnapshot().context.generationMessage;
 	},
@@ -330,5 +532,46 @@ export const sequenceSelectors = {
 	},
 	generationOptions: () => {
 		return sequenceActor.getSnapshot().context.generationOptions;
+	},
+
+	// Beat selectors (using sequenceStore)
+	selectedBeatIds: () => {
+		let selectedIds: string[] = [];
+		sequenceStore.subscribe((state) => {
+			selectedIds = state.selectedBeatIds;
+		})();
+		return selectedIds;
+	},
+
+	selectedBeats: () => {
+		let selected: StoreBeatData[] = [];
+		sequenceStore.subscribe((state) => {
+			selected = state.beats.filter((beat) => state.selectedBeatIds.includes(beat.id));
+		})();
+		return selected;
+	},
+
+	currentBeatIndex: () => {
+		let index = 0;
+		sequenceStore.subscribe((state) => {
+			index = state.currentBeatIndex;
+		})();
+		return index;
+	},
+
+	beats: () => {
+		let beats: StoreBeatData[] = [];
+		sequenceStore.subscribe((state) => {
+			beats = state.beats;
+		})();
+		return beats;
+	},
+
+	beatCount: () => {
+		let count = 0;
+		sequenceStore.subscribe((state) => {
+			count = state.beats.length;
+		})();
+		return count;
 	}
 };

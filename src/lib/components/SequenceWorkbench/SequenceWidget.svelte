@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout';
-	import { getSequenceContext, sequenceActions } from '$lib/context/sequence/sequenceContext';
-	import { removeBeatAndFollowing } from '$lib/stores/sequence/beatsStore';
+	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
+	import { sequenceStore } from '$lib/state/stores/sequenceStore';
+	import { derived } from 'svelte/store';
 
 	// Import Type for Button Definitions
 	import type { ButtonDefinition } from './ButtonPanel/types'; // Adjust path if necessary
@@ -17,14 +18,18 @@
 	// Props
 	export let workbenchHeight: number;
 
-	// Get context
-	const { state, dispatch } = getSequenceContext();
-
 	// Use responsive layout hook for dimensions
 	const { dimensions } = useResponsiveLayout();
 
 	// Calculate workbench orientation based on workbench dimensions instead of window
 	$: workbenchIsPortrait = $dimensions.width < workbenchHeight;
+
+	// Subscribe to the sequence store for metadata and status
+	const sequenceName = derived(sequenceStore, ($store) => $store.metadata.name);
+	const difficultyLevel = derived(sequenceStore, ($store) => $store.metadata.difficulty);
+	const sequenceStatus = derived(sequenceStore, ($store) =>
+		$store.isModified ? 'editing' : 'ready'
+	);
 
 	// --- Define Button Panel Data ---
 	// This array defines the specific buttons for this instance of the ButtonPanel
@@ -49,9 +54,16 @@
 		{ icon: 'fa-eraser', title: 'Clear Sequence', id: 'clearSequence', color: '#ff7b00' }
 	];
 
-	// Derived values from context state
-	$: ({ sequenceName, difficultyLevel, status } = $state);
+	// Track status for UI
+	let status = 'ready';
 	$: statusText = getStatusText(status);
+
+	// Update status when sequence changes
+	$: {
+		if ($sequenceStatus === 'editing') {
+			status = 'editing';
+		}
+	}
 
 	// Function to get user-friendly status text
 	function getStatusText(status: string): string {
@@ -69,41 +81,51 @@
 		}
 	}
 
-	// Handler for button panel actions (remains the same)
+	// Handler for button panel actions
 	function handleButtonAction(event: CustomEvent<{ id: string }>) {
 		const { id } = event.detail;
 
-		// Map button actions to context actions
+		// Map button actions to state machine actions
 		switch (id) {
 			case 'addToDictionary':
-				dispatch({ type: 'SET_STATUS', payload: 'saving' });
-				setTimeout(() => dispatch({ type: 'SET_STATUS', payload: 'ready' }), 500);
+				status = 'saving';
+				setTimeout(() => (status = 'ready'), 500);
 				break;
 			case 'saveImage':
-				dispatch({ type: 'SET_STATUS', payload: 'saving' });
-				setTimeout(() => dispatch({ type: 'SET_STATUS', payload: 'ready' }), 500);
+				status = 'saving';
+				setTimeout(() => (status = 'ready'), 500);
 				break;
 			case 'viewFullScreen':
 				console.log('Entering full screen mode');
 				break;
 			case 'mirrorSequence':
-				dispatch(sequenceActions.mirrorSequence());
+				// TODO: Implement mirror sequence in the state machine
+				status = 'editing';
+				setTimeout(() => (status = 'ready'), 200);
 				break;
 			case 'swapColors':
-				dispatch(sequenceActions.swapColors());
+				// TODO: Implement swap colors in the state machine
+				status = 'editing';
+				setTimeout(() => (status = 'ready'), 200);
 				break;
 			case 'rotateSequence':
-				dispatch({ type: 'SET_STATUS', payload: 'editing' });
-				setTimeout(() => dispatch({ type: 'SET_STATUS', payload: 'ready' }), 200);
+				status = 'editing';
+				setTimeout(() => (status = 'ready'), 200);
 				break;
 			case 'deleteBeat':
-				if ($state.selectedBeatIndex >= 0) {
+				// Get the selected beat IDs from the sequenceStore
+				const selectedBeatIds = sequenceSelectors.selectedBeatIds();
+				if (selectedBeatIds.length > 0) {
 					// Remove the selected beat and all following beats
-					removeBeatAndFollowing($state.selectedBeatIndex);
+					sequenceActions.removeBeatAndFollowing(selectedBeatIds[0]);
+					status = 'editing';
 				}
 				break;
 			case 'clearSequence':
-				dispatch(sequenceActions.clearSequence());
+				// Call the clearSequence action directly
+				sequenceActions.clearSequence();
+				status = 'editing';
+				setTimeout(() => (status = 'ready'), 200);
 				break;
 		}
 	}
@@ -114,8 +136,8 @@
 		<div class="left-vbox">
 			<div class="centered-group">
 				<div class="sequence-widget-labels">
-					<CurrentWordLabel currentWord={sequenceName} width={$dimensions.width} />
-					<DifficultyLabel {difficultyLevel} width={$dimensions.width} />
+					<CurrentWordLabel currentWord={$sequenceName} width={$dimensions.width} />
+					<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
 				</div>
 
 				<div class="beat-frame-container">

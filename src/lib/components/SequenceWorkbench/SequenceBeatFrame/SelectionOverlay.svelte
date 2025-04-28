@@ -1,13 +1,12 @@
 <!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/SelectionOverlay.svelte -->
 <script lang="ts">
 	export let isSelected: boolean = false;
+
+	// Force reactivity by using a derived value
+	$: selectionClass = isSelected ? 'selected' : '';
 </script>
 
-{#if isSelected}
-	<div class="overlay selected"></div>
-{:else}
-	<div class="overlay"></div>
-{/if}
+<div class="overlay {selectionClass}"></div>
 
 <style>
 	.overlay {

@@ -7,13 +7,23 @@
 	export let beat: BeatData;
 	export let onClick: () => void;
 
-	// Create a local pictograph data store
+	// Create a local pictograph data store with the initial data
 	const pictographDataStore = writable(beat.pictographData);
 
 	// This is important: update the store whenever the beat's pictograph data changes
 	$: {
-		if (beat.pictographData) {
-			pictographDataStore.set(beat.pictographData);
+		if (beat && beat.pictographData) {
+			pictographDataStore.set({ ...beat.pictographData });
+		}
+	}
+
+	// Force an update when the beat object reference changes
+	$: {
+		if (beat) {
+			// This will trigger a component update
+			pictographDataStore.update((data) => {
+				return data ? { ...data } : data;
+			});
 		}
 	}
 

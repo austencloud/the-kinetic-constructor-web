@@ -10,11 +10,8 @@
 	import type { BeatData } from './BeatData';
 	import { browser } from '$app/environment'; // Import browser check
 
-	// Import the global beatsStore instead of creating a local one
-	import {
-		beatsStore as globalBeatsStore,
-		selectedBeatIndexStore as globalSelectedBeatStore
-	} from '$lib/stores/sequence/beatsStore';
+	// Import the sequence machine actions and selectors
+	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
 
 	// Components
 	import StartPosBeat from './StartPosBeat.svelte';
@@ -30,20 +27,83 @@
 	// Constants
 	const GAP = 10; // Gap between cells in pixels
 
-	// Use a local ref variable for beats and selectedBeatIndex
-	// but subscribe to the global store
-	let beats: BeatData[] = [];
-	let selectedBeatIndex: number = -1;
+	// Use reactive stores for beats and selection state
+	// Create a store that updates whenever the sequence store changes
+	const beatsStore = writable<BeatData[]>([]);
+	const selectedBeatIdsStore = writable<string[]>([]);
+	const selectedBeatIndexStore = writable<number>(-1);
 	let startPosition: PictographData | null = null;
 
-	// Subscribe to the global stores
-	const unsubscribeGlobalBeats = globalBeatsStore.subscribe((value) => {
-		beats = value;
+	// Function to update local state from the sequence store
+	function updateLocalState() {
+		// Get beats from the sequence store and convert them to our BeatData format
+		const storeBeats = sequenceSelectors.beats();
+		const convertedBeats = storeBeats.map((storeBeat) => {
+			// Convert from store BeatData to our BeatData format
+			// Create a proper pictographData object from the store beat data
+			const pictographData = {
+				letter: storeBeat.metadata?.letter || null,
+				startPos: storeBeat.metadata?.startPos || null,
+				endPos: storeBeat.metadata?.endPos || null,
+				redPropData: storeBeat.redPropData || null,
+				bluePropData: storeBeat.bluePropData || null,
+				redMotionData: storeBeat.redMotionData || null,
+				blueMotionData: storeBeat.blueMotionData || null,
+				redArrowData: storeBeat.redArrowData || null,
+				blueArrowData: storeBeat.blueArrowData || null
+			};
+
+			return {
+				id: storeBeat.id,
+				beatNumber: storeBeat.number,
+				filled: true, // Assume filled if it exists in the store
+				pictographData: pictographData,
+				duration: 1, // Default duration
+				metadata: storeBeat.metadata
+			} as BeatData;
+		});
+
+
+
+		// Update the beats store
+		beatsStore.set(convertedBeats);
+
+		// Get selected beat IDs from the sequence store
+		const selectedIds = sequenceSelectors.selectedBeatIds();
+		selectedBeatIdsStore.set(selectedIds);
+
+		// Calculate the selected beat index based on the selected beat ID
+		if (selectedIds.length > 0) {
+			const selectedId = selectedIds[0];
+			const index = convertedBeats.findIndex((beat) => beat.id === selectedId);
+			selectedBeatIndexStore.set(index);
+		} else {
+			selectedBeatIndexStore.set(-1);
+		}
+	}
+
+	// Subscribe to the stores to get the current values
+	let beats: BeatData[] = [];
+	let selectedBeatIndex: number = -1;
+
+	const unsubscribeBeats = beatsStore.subscribe((value) => (beats = value));
+	// We don't need to track selectedBeatIds directly in the component
+	const unsubscribeSelectedIds = selectedBeatIdsStore.subscribe(() => {
+		// Just keep the subscription active for reactivity
+	});
+	const unsubscribeSelectedIndex = selectedBeatIndexStore.subscribe(
+		(value) => (selectedBeatIndex = value)
+	);
+
+	// Clean up subscriptions on component destroy
+	onDestroy(() => {
+		unsubscribeBeats();
+		unsubscribeSelectedIds();
+		unsubscribeSelectedIndex();
 	});
 
-	const unsubscribeGlobalSelectedBeat = globalSelectedBeatStore.subscribe((value) => {
-		selectedBeatIndex = value !== null ? value : -1;
-	});
+	// Initial update
+	updateLocalState();
 
 	// Local store just for the start position
 	const startPositionStore = writable<PictographData | null>(null);
@@ -58,10 +118,43 @@
 		}
 	});
 
+	// Set up event listeners for sequence updates
+	onMount(() => {
+		// Update local state when sequence is updated
+		const handleSequenceUpdate = () => {
+			// Update the local state and trigger reactivity
+			updateLocalState();
+			// Force a component update by triggering a state change
+			beatsStore.update((beats) => [...beats]);
+		};
+
+		// Listen for sequence-updated events
+		document.addEventListener('sequence-updated', handleSequenceUpdate);
+		document.addEventListener('beat-selected', handleSequenceUpdate);
+		document.addEventListener('beat-deselected', handleSequenceUpdate);
+		document.addEventListener('beat-added', handleSequenceUpdate);
+		document.addEventListener('beat-removed', handleSequenceUpdate);
+		document.addEventListener('beat-updated', handleSequenceUpdate);
+
+		// Set up an interval to periodically check for updates (as a fallback)
+		const intervalId = setInterval(() => {
+			updateLocalState();
+		}, 500);
+
+		return () => {
+			// Clean up event listeners
+			document.removeEventListener('sequence-updated', handleSequenceUpdate);
+			document.removeEventListener('beat-selected', handleSequenceUpdate);
+			document.removeEventListener('beat-deselected', handleSequenceUpdate);
+			document.removeEventListener('beat-added', handleSequenceUpdate);
+			document.removeEventListener('beat-removed', handleSequenceUpdate);
+			document.removeEventListener('beat-updated', handleSequenceUpdate);
+			clearInterval(intervalId);
+		};
+	});
+
 	// Clean up on component destroy
 	onDestroy(() => {
-		unsubscribeGlobalBeats();
-		unsubscribeGlobalSelectedBeat();
 		unsubscribeStartPos();
 		unsubscribeGlobalStartPos();
 	});
@@ -82,7 +175,7 @@
 	// Event handlers
 	function handleStartPosBeatClick() {
 		// Deselect current beat
-		globalSelectedBeatStore.set(null);
+		sequenceActions.deselectBeat();
 
 		// Dispatch a custom event to trigger the start position selector
 		const event = new CustomEvent('select-start-pos', {
@@ -93,7 +186,13 @@
 	}
 
 	function handleBeatClick(beatIndex: number) {
-		globalSelectedBeatStore.set(beatIndex);
+		// Get the beat ID from the index
+		if (beatIndex >= 0 && beatIndex < beats.length) {
+			const beatId = beats[beatIndex].id;
+			if (beatId) {
+				sequenceActions.selectBeat(beatId);
+			}
+		}
 	}
 
 	// Handle start position selection
@@ -124,13 +223,17 @@
 
 	// Add a method to add beats (could be called from parent)
 	export function addBeat(beatData: BeatData) {
-		globalBeatsStore.update((beats) => [...beats, beatData]);
+		// Ensure the beat has an ID
+		const beatWithId = beatData.id ? beatData : { ...beatData, id: crypto.randomUUID() };
+
+		// Use the sequence machine to add the beat
+		sequenceActions.addBeat(beatWithId);
 	}
 
 	// Add a method to clear beats (could be called from parent)
 	export function clearBeats() {
-		globalBeatsStore.set([]);
-		globalSelectedBeatStore.set(null);
+		// Use the sequence machine to clear the sequence
+		sequenceActions.clearSequence();
 	}
 </script>
 

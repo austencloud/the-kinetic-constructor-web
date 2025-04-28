@@ -85,18 +85,15 @@
 
 	const handleSelect = async (startPosPictograph: PictographData) => {
 		try {
-			console.log('CLICKED START POSITION:', startPosPictograph);
 
 			// Log sequence before
 			const beforeSequence = sequenceDataService.getCurrentSequence();
-			console.log('SEQUENCE BEFORE:', JSON.stringify(beforeSequence));
 
 			// Try adding start position
 			await startPositionService.addStartPosition(startPosPictograph);
 
 			// Log sequence after
 			const afterSequence = sequenceDataService.getCurrentSequence();
-			console.log('SEQUENCE AFTER:', JSON.stringify(afterSequence));
 
 			// Update the selected start position in the store
 			selectedStartPos.set({ ...startPosPictograph });

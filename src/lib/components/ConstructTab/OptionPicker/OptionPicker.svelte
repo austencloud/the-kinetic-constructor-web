@@ -1,22 +1,21 @@
 <script lang="ts">
-	import { onMount, setContext, getContext } from 'svelte';
+	import { onMount, setContext } from 'svelte';
 	import { writable, derived, type Readable } from 'svelte/store';
 	import { get } from 'svelte/store';
-	import { beatsStore } from '$lib/stores/sequence/beatsStore';
 	import { uiState, filteredOptionsStore, groupedOptionsStore, actions } from './store';
 	// Ensure layoutUtils imports are correct
 	import { getResponsiveLayout, getEnhancedDeviceType } from './utils/layoutUtils';
-	import { getContainerAspect, getDeviceType, BREAKPOINTS } from './config'; // getDeviceType might be unused if getEnhancedDeviceType handles all cases
+	import { getContainerAspect, BREAKPOINTS } from './config';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContextValue } from './layoutContext';
 	import OptionPickerHeader from './components/OptionPickerHeader.svelte';
 	import OptionDisplayArea from './components/OptionDisplayArea.svelte';
 	import { resize } from './actions/resize';
 	import type { ViewModeDetail } from './components/ViewControl.svelte';
-	import LayoutDebugger from './utils/debugger/LayoutDebugger.svelte';
 	import sequenceDataService, { type SequenceBeat } from '$lib/services/SequenceDataService';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { TKAPosition } from '$lib/types/TKAPosition';
 	import type { MotionData } from '$lib/components/objects/Motion/MotionData';
+	import { sequenceStore } from '$lib/state/stores/sequenceStore';
 	import type {
 		Color,
 		MotionType,
@@ -339,7 +338,6 @@
 
 				// Load options based on the pictograph data
 				actions.loadOptions([pictographData]);
-				console.log('Loaded options from sequence data:', pictographData);
 			} else {
 				// No start position found, load empty options
 				actions.loadOptions([]);
@@ -386,11 +384,22 @@
 
 		document.addEventListener('sequence-updated', handleSequenceUpdate);
 
-		// Also keep current beatsStore subscription for backward compatibility
-		// This way it works with both our new event and the original beat updates
-		const unsubscribeBeats = beatsStore.subscribe((beats) => {
-			if (beats && beats.length > 0) {
-				const sequence = beats.map((beat) => beat.pictographData);
+		// Subscribe to the sequenceStore for updates
+		const unsubscribeSequence = sequenceStore.subscribe((state) => {
+			if (state && state.beats && state.beats.length > 0) {
+				// Convert StoreBeatData to PictographData format
+				const sequence = state.beats.map((beat) => {
+					return {
+						letter: beat.metadata?.letter || null,
+						startPos: beat.metadata?.startPos || null,
+						endPos: beat.metadata?.endPos || null,
+						redPropData: beat.redPropData,
+						bluePropData: beat.bluePropData,
+						// Convert motion data from the store format
+						redMotionData: beat.redMotionData || null,
+						blueMotionData: beat.blueMotionData || null
+					} as PictographData;
+				});
 				actions.loadOptions(sequence);
 			}
 		});
@@ -399,7 +408,7 @@
 		return () => {
 			window.removeEventListener('resize', updateWindowSize);
 			document.removeEventListener('sequence-updated', handleSequenceUpdate);
-			unsubscribeBeats();
+			unsubscribeSequence();
 		};
 	});
 </script>

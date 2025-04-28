@@ -1,4 +1,10 @@
 // src/lib/stores/sequence/sequenceActions.ts
+/**
+ * @deprecated This module is deprecated and will be removed in a future version.
+ * Please use the state machine approach with sequenceMachine and sequenceStore instead.
+ * See src/lib/state/machines/sequenceMachine.ts and src/lib/state/stores/sequenceStore.ts
+ */
+
 import { beatsStore, selectedBeatIndexStore, removeBeatAndFollowing } from './beatsStore';
 import type { PictographData } from '../../types/PictographData';
 import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData';
@@ -64,8 +70,10 @@ export const sequenceActions = {
 	},
 
 	removeBeat(index: number): SequenceAction {
-		// Remove the beat and all following beats
+		// Remove the beat and all following beats from the beatsStore
 		removeBeatAndFollowing(index);
+
+		// Return the action to update the sequenceContext
 		return { type: 'REMOVE_BEAT', payload: index };
 	},
 

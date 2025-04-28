@@ -12,8 +12,8 @@ import {
 } from './services/OptionsService';
 import { get } from 'svelte/store';
 import { browser } from '$app/environment';
-// Import the addBeat function from beatsStore
-import { addBeat } from '$lib/stores/sequence/beatsStore';
+// Import the sequenceActions and sequenceSelectors from the state machine
+import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
 
 // ===== Core State =====
 export const sequenceStore = writable<PictographData[]>([]);
@@ -43,7 +43,8 @@ function getStoredState() {
 	}
 }
 // THEN get the stored state
-const storedState: { sortMethod?: SortMethod; lastSelectedTab?: LastSelectedTabState } = getStoredState();
+const storedState: { sortMethod?: SortMethod; lastSelectedTab?: LastSelectedTabState } =
+	getStoredState();
 
 // THEN initialize uiState with the stored values
 export const uiState = writable({
@@ -123,11 +124,34 @@ export const actions = {
 	selectOption: (option: PictographData) => {
 		// First, update the selected pictograph store
 		selectedPictograph.set(option);
-		
-		// Now add the selected option to the beat sequence
-		// This will trigger the beatsStore update, which will then
-		// cause OptionPicker to reload options based on the new end position
-		addBeat(option);
+
+		// Now add the selected option to the beat sequence using the state machine
+		// Convert PictographData to StoreBeatData format
+		const beatData = {
+			id: crypto.randomUUID(),
+			number: sequenceSelectors.beatCount() + 1, // Get the current beat count and add 1
+			redPropData: option.redPropData,
+			bluePropData: option.bluePropData,
+			redMotionData: option.redMotionData,
+			blueMotionData: option.blueMotionData,
+			metadata: {
+				letter: option.letter,
+				startPos: option.startPos,
+				endPos: option.endPos
+			}
+		};
+
+		// Add the beat using the state machine
+		sequenceActions.addBeat(beatData);
+
+		// Dispatch a custom event to notify components that a beat was added
+		if (typeof document !== 'undefined') {
+			const beatAddedEvent = new CustomEvent('beat-added', {
+				detail: { beat: beatData },
+				bubbles: true
+			});
+			document.dispatchEvent(beatAddedEvent);
+		}
 	},
 
 	// In the actions object in store.ts

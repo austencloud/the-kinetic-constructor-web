@@ -65,7 +65,6 @@ export class BetaPropPositioner {
 	}
 
 	private repositionGH(props: PropData[]): void {
-		console.log('Repositioning for G/H letter');
 		
 		const redProp = props.find(p => p.color === 'red');
 		const blueProp = props.find(p => p.color === 'blue');
@@ -89,7 +88,6 @@ export class BetaPropPositioner {
 	}
 
 	private repositionType3(props: PropData[]): void {
-		console.log('Repositioning for Type3 letter (Cross-Shift)');
 		
 		const redMotion = this.pictographData.redMotionData;
 		const blueMotion = this.pictographData.blueMotionData;

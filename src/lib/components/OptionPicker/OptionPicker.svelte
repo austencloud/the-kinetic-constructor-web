@@ -339,7 +339,6 @@
 
 				// Load options based on the pictograph data
 				actions.loadOptions([pictographData]);
-				console.log('Loaded options from sequence data:', pictographData);
 			} else {
 				// No start position found, load empty options
 				actions.loadOptions([]);
