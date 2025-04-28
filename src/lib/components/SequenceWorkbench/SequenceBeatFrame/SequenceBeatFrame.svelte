@@ -1,6 +1,6 @@
 <!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/SequenceBeatFrame.svelte -->
 <script lang="ts">
-	import { onMount, tick, onDestroy } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import { autoAdjustLayout, calculateCellSize } from './beatFrameHelpers';
@@ -9,9 +9,12 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { BeatData } from './BeatData';
 	import { browser } from '$app/environment'; // Import browser check
-	
+
 	// Import the global beatsStore instead of creating a local one
-	import { beatsStore as globalBeatsStore, selectedBeatIndexStore as globalSelectedBeatStore } from '$lib/stores/sequence/beatsStore';
+	import {
+		beatsStore as globalBeatsStore,
+		selectedBeatIndexStore as globalSelectedBeatStore
+	} from '$lib/stores/sequence/beatsStore';
 
 	// Components
 	import StartPosBeat from './StartPosBeat.svelte';
@@ -27,24 +30,24 @@
 	// Constants
 	const GAP = 10; // Gap between cells in pixels
 
-	// Use a local ref variable for beats and selectedBeatIndex 
+	// Use a local ref variable for beats and selectedBeatIndex
 	// but subscribe to the global store
 	let beats: BeatData[] = [];
 	let selectedBeatIndex: number = -1;
 	let startPosition: PictographData | null = null;
-	
+
 	// Subscribe to the global stores
 	const unsubscribeGlobalBeats = globalBeatsStore.subscribe((value) => {
 		beats = value;
 	});
-	
+
 	const unsubscribeGlobalSelectedBeat = globalSelectedBeatStore.subscribe((value) => {
 		selectedBeatIndex = value !== null ? value : -1;
 	});
 
 	// Local store just for the start position
 	const startPositionStore = writable<PictographData | null>(null);
-	
+
 	// Subscribe to the local start position store
 	const unsubscribeStartPos = startPositionStore.subscribe((value) => (startPosition = value));
 
@@ -196,9 +199,10 @@
 
 	.beat-number {
 		position: absolute;
-		top: 5px;
-		left: 5px;
 		z-index: 2;
+		width: auto;
+		height: auto;
+		pointer-events: none; /* Allow clicks to pass through */
 	}
 
 	.reversal-indicator {

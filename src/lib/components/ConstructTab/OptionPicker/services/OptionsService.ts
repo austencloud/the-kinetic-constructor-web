@@ -29,13 +29,29 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 	const blueEndOri = calculateActualEndOrientation(lastPictograph.blueMotionData);
 	const redEndOri = calculateActualEndOrientation(lastPictograph.redMotionData);
 
+	// Log the calculated end orientations for debugging - only include safe properties
+	console.log('Last pictograph end orientations:', {
+		letter: lastPictograph.letter,
+		startPos: lastPictograph.startPos,
+		endPos: lastPictograph.endPos,
+		blueStartOri: lastPictograph.blueMotionData?.startOri,
+		blueEndOri: lastPictograph.blueMotionData?.endOri,
+		blueCalculatedEndOri: blueEndOri,
+		redStartOri: lastPictograph.redMotionData?.startOri,
+		redEndOri: lastPictograph.redMotionData?.endOri,
+		redCalculatedEndOri: redEndOri
+	});
+
 	// Find options where start position matches end position of last pictograph
 	// AND start orientations match calculated end orientations of the last pictograph
-	return findOptionsWithMatchingPositionAndOrientation(
+	const options = findOptionsWithMatchingPositionAndOrientation(
 		lastPictograph.endPos ?? undefined,
 		blueEndOri,
 		redEndOri
 	);
+
+	console.log(`Found ${options.length} options for next pictograph`);
+	return options;
 }
 
 /**
@@ -47,15 +63,32 @@ function calculateActualEndOrientation(motionData: any): Orientation | undefined
 	// Create temporary calculator to get the correct end orientation
 	try {
 		const calculator = new MotionOriCalculator(motionData);
-		return calculator.calculateEndOri();
+		const calculatedEndOri = calculator.calculateEndOri();
+
+		// Log the calculation for debugging - only include safe properties to avoid circular references
+		console.log('Orientation calculation:', {
+			startOri: motionData.startOri,
+			endOri: motionData.endOri,
+			calculatedEndOri,
+			motionType: motionData.motionType,
+			propRotDir: motionData.propRotDir,
+			turns: motionData.turns,
+			color: motionData.color,
+			startLoc: motionData.startLoc,
+			endLoc: motionData.endLoc
+		});
+
+		return calculatedEndOri;
 	} catch (error) {
 		console.warn('Error calculating end orientation:', error);
+		// Fall back to the stored end orientation
 		return motionData.endOri;
 	}
 }
 
 /**
  * Finds all pictographs from the global store that match a specific position and orientations.
+ * If orientations don't match, it adjusts the pictographs to have the correct orientations.
  */
 export function findOptionsWithMatchingPositionAndOrientation(
 	targetStartPos?: string,
@@ -84,21 +117,108 @@ export function findOptionsWithMatchingPositionAndOrientation(
 		return positionMatches;
 	}
 
-	// Filter by orientations when they are provided
-	return positionMatches.filter((pictograph) => {
-		// Blue orientation check (if we have an orientation to match)
+	// Create a result array to hold both matching and adjusted pictographs
+	const result: PictographData[] = [];
+
+	// Process each position match
+	positionMatches.forEach((pictograph) => {
+		// Check if orientations match
 		const blueMatches =
 			!blueEndOri ||
 			!pictograph.blueMotionData ||
 			pictograph.blueMotionData.startOri === blueEndOri;
 
-		// Red orientation check (if we have an orientation to match)
 		const redMatches =
 			!redEndOri || !pictograph.redMotionData || pictograph.redMotionData.startOri === redEndOri;
 
-		// Both must match if specified
-		return blueMatches && redMatches;
+		if (blueMatches && redMatches) {
+			// If both orientations match, add the original pictograph
+			result.push(pictograph);
+		} else {
+			// Create a safe copy of the pictograph to modify (avoiding circular references)
+			// Instead of using JSON.stringify/parse which can't handle circular references,
+			// we'll create a new object with only the properties we need
+			const adjustedPictograph: PictographData = {
+				letter: pictograph.letter,
+				startPos: pictograph.startPos,
+				endPos: pictograph.endPos,
+				timing: pictograph.timing,
+				direction: pictograph.direction,
+				gridMode: pictograph.gridMode,
+				gridData: pictograph.gridData,
+				// Create new motion data objects instead of deep copying
+				blueMotionData: pictograph.blueMotionData ? { ...pictograph.blueMotionData } : null,
+				redMotionData: pictograph.redMotionData ? { ...pictograph.redMotionData } : null,
+				redPropData: pictograph.redPropData,
+				bluePropData: pictograph.bluePropData,
+				redArrowData: pictograph.redArrowData,
+				blueArrowData: pictograph.blueArrowData,
+				grid: pictograph.grid
+			};
+
+			// Log orientation adjustment for debugging
+			console.log('Adjusting pictograph orientations:', {
+				letter: pictograph.letter,
+				startPos: pictograph.startPos,
+				endPos: pictograph.endPos,
+				blueRequired: blueEndOri,
+				blueOriginal: pictograph.blueMotionData?.startOri,
+				redRequired: redEndOri,
+				redOriginal: pictograph.redMotionData?.startOri
+			});
+
+			// Adjust blue motion data if needed
+			if (!blueMatches && adjustedPictograph.blueMotionData && blueEndOri) {
+				// Set the start orientation to match the required orientation
+				const originalOri = adjustedPictograph.blueMotionData.startOri;
+				adjustedPictograph.blueMotionData.startOri = blueEndOri;
+
+				// Recalculate the end orientation
+				try {
+					const calculator = new MotionOriCalculator(adjustedPictograph.blueMotionData);
+					const newEndOri = calculator.calculateEndOri();
+					adjustedPictograph.blueMotionData.endOri = newEndOri;
+
+					console.log('Adjusted blue orientation:', {
+						from: originalOri,
+						to: blueEndOri,
+						newEndOri,
+						letter: adjustedPictograph.letter
+					});
+				} catch (error) {
+					console.warn('Error recalculating blue end orientation:', error);
+				}
+			}
+
+			// Adjust red motion data if needed
+			if (!redMatches && adjustedPictograph.redMotionData && redEndOri) {
+				// Set the start orientation to match the required orientation
+				const originalOri = adjustedPictograph.redMotionData.startOri;
+				adjustedPictograph.redMotionData.startOri = redEndOri;
+
+				// Recalculate the end orientation
+				try {
+					const calculator = new MotionOriCalculator(adjustedPictograph.redMotionData);
+					const newEndOri = calculator.calculateEndOri();
+					adjustedPictograph.redMotionData.endOri = newEndOri;
+
+					console.log('Adjusted red orientation:', {
+						from: originalOri,
+						to: redEndOri,
+						newEndOri,
+						letter: adjustedPictograph.letter
+					});
+				} catch (error) {
+					console.warn('Error recalculating red end orientation:', error);
+				}
+			}
+
+			// Add the adjusted pictograph to the result
+			result.push(adjustedPictograph);
+		}
 	});
+
+	return result;
 }
 
 /**
