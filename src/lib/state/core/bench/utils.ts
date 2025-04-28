@@ -52,14 +52,12 @@ type BenchContext = { task: (fn: () => void) => Promise<void> };
 type BenchFn = (this: Bench, ctx: BenchContext) => Promise<void> | void;
 
 export function wrapBenchWithBudget(benchFn: BenchFn, budget?: PerformanceBudget): Bench {
-	return function(this: Bench, ctx: BenchContext) {
-		const result = benchFn.call(this, ctx);
-		if (result instanceof Promise) {
-			return result.then(() => {
-				assertPerformance(this as BenchWithResult, budget);
-			});
-		}
-		assertPerformance(this as BenchWithResult, budget);
-		return result;
-	} as Bench;
+	// Two-step cast to fix the type error
+	return function (this: Bench, ...args: any[]) {
+		const ctx = args[0] as BenchContext | undefined;
+		const result = benchFn.call(this, ctx as any);
+
+		const done = () => assertPerformance(this as BenchWithResult, budget);
+		return result instanceof Promise ? result.then(done) : done();
+	} as unknown as Bench;
 }

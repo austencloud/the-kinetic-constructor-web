@@ -31,12 +31,20 @@ describe('Pictograph Store', () => {
 
 	it('should set data and update status', () => {
 		const mockData: PictographData = {
-			id: 'test',
 			gridMode: 'diamond',
 			redPropData: null,
 			bluePropData: null,
 			redArrowData: null,
-			blueArrowData: null
+			blueArrowData: null,
+			letter: null,
+			startPos: null,
+			endPos: null,
+			timing: null,
+			direction: null,
+			gridData: null,
+			blueMotionData: null,
+			redMotionData: null,
+			grid: ''
 		};
 
 		pictographStore.setData(mockData);
@@ -90,12 +98,20 @@ describe('Pictograph Store', () => {
 
 	it('should update prop data', () => {
 		const mockData: PictographData = {
-			id: 'test',
 			gridMode: 'diamond',
 			redPropData: null,
 			bluePropData: null,
 			redArrowData: null,
-			blueArrowData: null
+			blueArrowData: null,
+			letter: null,
+			startPos: null,
+			endPos: null,
+			timing: null,
+			direction: null,
+			gridData: null,
+			blueMotionData: null,
+			redMotionData: null,
+			grid: ''
 		};
 
 		pictographStore.setData(mockData);
@@ -110,8 +126,16 @@ describe('Pictograph Store', () => {
 
 	it('should update arrow data', () => {
 		const mockData: PictographData = {
-			id: 'test',
 			gridMode: 'diamond',
+			letter: null,
+			startPos: null,
+			endPos: null,
+			timing: null,
+			direction: null,
+			grid: 'diamond',
+			gridData: null,
+			blueMotionData: null,
+			redMotionData: null,
 			redPropData: null,
 			bluePropData: null,
 			redArrowData: null,
@@ -120,7 +144,23 @@ describe('Pictograph Store', () => {
 
 		pictographStore.setData(mockData);
 
-		const blueArrowData = { start: { x: 0, y: 0 }, end: { x: 1, y: 1 } };
+		const blueArrowData = {
+			id: 'test-arrow',
+			motionId: 'test-motion',
+			color: 'blue' as const, // Using as const to ensure the literal type is preserved
+			coords: { x: 0, y: 0 },
+			loc: 'n' as const, // Also type the location correctly as a valid Loc value
+			rotAngle: 0,
+			svgMirrored: false,
+			svgCenter: { x: 0, y: 0 },
+			svgLoaded: false,
+			svgData: null,
+			motionType: 'pro' as const, // Ensure this is a valid MotionType
+			startOri: 'in' as const, // Ensure this is a valid Orientation
+			endOri: 'out' as const, // Ensure this is a valid Orientation
+			turns: 0 as const, // Ensure this is a valid TKATurns
+			propRotDir: 'cw' as const // Ensure this is a valid PropRotDir
+		};
 		pictographStore.updateArrowData('blue', blueArrowData);
 
 		const state = get(pictographStore);

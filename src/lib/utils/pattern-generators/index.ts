@@ -124,58 +124,60 @@ function generatePatternsForLetter(letter: string): PatternRow[] {
 }
 
 export {
-    formatPatternCSV,
-    formatPatternDisplay,
+	formatPatternCSV,
+	formatPatternDisplay,
 
-    // Generator functions
-    generateAllPatterns,
-    generatePatternsForLetter,
-    letterGenerators,
+	// Generator functions
+	generateAllPatterns,
+	generatePatternsForLetter,
+	letterGenerators,
 
-    // Individual letter generators
-    generateLetterA,
-    generateLetterB,
-    generateLetterC,
-    generateLetterD,
-    generateLetterE,
-    generateLetterF,
-    generateLetterG,
-    generateLetterH,
-    generateLetterI,
-    generateLetterJ,
-    generateLetterK,
-    generateLetterL,
-    generateLetterM,
-    generateLetterN,
-    generateLetterO,
-    generateLetterP,
-    generateLetterQ,
-    generateLetterR,
-    generateLetterS,
-    generateLetterT,
-    generateLetterU,
-    generateLetterV,
-    generateLetterW,
-    generateLetterX,
-    generateLetterY,
-    generateLetterZ,
+	// Individual letter generators
+	generateLetterA,
+	generateLetterB,
+	generateLetterC,
+	generateLetterD,
+	generateLetterE,
+	generateLetterF,
+	generateLetterG,
+	generateLetterH,
+	generateLetterI,
+	generateLetterJ,
+	generateLetterK,
+	generateLetterL,
+	generateLetterM,
+	generateLetterN,
+	generateLetterO,
+	generateLetterP,
+	generateLetterQ,
+	generateLetterR,
+	generateLetterS,
+	generateLetterT,
+	generateLetterU,
+	generateLetterV,
+	generateLetterW,
+	generateLetterX,
+	generateLetterY,
+	generateLetterZ,
 
-    // Greek letter generators
-    generateGreekAlpha,
-    generateGreekBeta,
-    generateGreekGamma,
-    generateGreekDelta,
-    generateGreekEpsilon,
-    generateGreekZeta,
-    generateGreekOmega,
-    generateGreekPhi,
-    generateGreekPi,
-    generateGreekSigma,
-    generateGreekTheta,
-    generateGreekPsi,
-    generateGreekLambda
-};    export type {
-        // Pattern types and utilities
-        PatternRow
-    };
+	// Greek letter generators
+	generateGreekAlpha,
+	generateGreekBeta,
+	generateGreekGamma,
+	generateGreekDelta,
+	generateGreekEpsilon,
+	generateGreekZeta,
+	generateGreekOmega,
+	generateGreekPhi,
+	generateGreekPi,
+	generateGreekSigma,
+	generateGreekTheta,
+	generateGreekPsi,
+	generateGreekLambda
+};
 
+// Export types correctly
+export type {
+	// Pattern types and utilities
+	PatternRow as Pattern // Alias PatternRow to Pattern for backward compatibility
+};

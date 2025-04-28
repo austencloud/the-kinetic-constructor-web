@@ -69,4 +69,10 @@ export class PictographChecker {
 			this.orientationChecks.isRotational(blueEndOri)
 		);
 	}
+
+	endsWithBeta(): boolean {
+		// Check if the current pictograph ends in the beta position system
+		const endPos = this.pictographData?.endPos;
+		return endPos ? endPos.startsWith('beta') : false;
+	}
 }

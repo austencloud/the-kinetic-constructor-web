@@ -1,118 +1,140 @@
-<!-- src/lib/components/GenerateTab/Freeform/FreeformSequencer.svelte -->
 <script lang="ts">
+	/* ───────────────────────────────
+	   Imports
+	──────────────────────────────── */
 	import { onMount } from 'svelte';
-	
-	// Import both old and new state management to allow for gradual migration
-	// Old state management (will be removed after migration)
+
+	// legacy stores
 	import { settingsStore, numBeats, turnIntensity, propContinuity } from '../store/settings';
 	import { generatorStore } from '../store/generator';
 	import { beatsStore } from '../../../stores/sequence/beatsStore';
-	
-	// New state management (XState and centralized stores)
+
+	// shared types / enums
+	import { Letter } from '$lib/types/Letter';
+	import type { VTGTiming, VTGDir, GridMode } from '$lib/types/Types';
+	import { PropType } from '$lib/types/Types';
+	import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData';
+
+	// XState & new stores
 	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
 	import { settingsStore as newSettingsStore } from '$lib/state/stores/settingsStore';
-	
+
+	// UI helpers
 	import LetterTypePicker from './LetterTypePicker/LetterTypePicker.svelte';
 	import { createFreeformSequence } from './createFreeformSequence';
 
-	// Flag to determine which state management to use
-	$: useNewStateManagement = true; // Set to true to use the new state management
-	
-	// Get state from sequence machine
+	/* ───────────────────────────────
+	   Reactive local state
+	──────────────────────────────── */
+	$: useNewStateManagement = true; // flip when migration finishes
 	$: isGenerating = sequenceSelectors.isGenerating();
 	$: generationProgress = sequenceSelectors.progress();
 	$: generationMessage = sequenceSelectors.message();
-	
-	// Letter type selection information
+
 	const letterTypeOptions = [
-		{
-			id: 'type1',
-			label: 'Type 1',
-			description: 'Basic motions with minimal complexity'
-		},
-		{
-			id: 'type2',
-			label: 'Type 2',
-			description: 'Intermediate flow with moderate transitions'
-		},
-		{
-			id: 'type3',
-			label: 'Type 3',
-			description: 'Advanced patterns with complex movements'
-		},
-		{
-			id: 'type4',
-			label: 'Type 4',
-			description: 'Expert-level intricate sequences'
-		}
+		{ id: 'type1', label: 'Type 1', description: 'Basic motions with minimal complexity' },
+		{ id: 'type2', label: 'Type 2', description: 'Intermediate flow with moderate transitions' },
+		{ id: 'type3', label: 'Type 3', description: 'Advanced patterns with complex movements' },
+		{ id: 'type4', label: 'Type 4', description: 'Expert-level intricate sequences' }
 	];
 
-	// Local state for selected letter types
 	let selectedLetterTypes: string[] = [];
-
-	// Handle letter type selection
 	function handleLetterTypeSelect(types: string[]) {
 		selectedLetterTypes = types;
 	}
 
-	// Handle generate sequence
+	/* ───────────────────────────────
+	   Generate-sequence handler
+	──────────────────────────────── */
 	async function handleGenerateSequence() {
 		if (useNewStateManagement) {
-			// New implementation using sequence machine
-			// Get current settings
-			const settings = {
-				numBeats: $numBeats,
-				turnIntensity: $turnIntensity,
-				propContinuity: $propContinuity,
-				letterTypes: selectedLetterTypes
-			};
-
-			// Use the sequence machine to generate the sequence
-			sequenceActions.generate(settings, 'freeform');
-		} else {
-			// Current implementation using old stores
-			generatorStore.startGeneration();
-
-			try {
-				const result = await createFreeformSequence({
+			sequenceActions.generate(
+				{
 					numBeats: $numBeats,
 					turnIntensity: $turnIntensity,
 					propContinuity: $propContinuity,
 					letterTypes: selectedLetterTypes
-				});
+				},
+				'freeform'
+			);
+			return;
+		}
 
-				// Update the beats store with the new sequence
-				beatsStore.set(result);
+		/* ── legacy branch ───────────────── */
+		generatorStore.startGeneration();
+		try {
+			const result = await createFreeformSequence({
+				numBeats: $numBeats,
+				turnIntensity: $turnIntensity,
+				propContinuity: $propContinuity,
+				letterTypes: selectedLetterTypes,
+				capType: $settingsStore.capType
+			});
 
-				generatorStore.completeGeneration();
-			} catch (error: unknown) {
-				const errorMessage =
-					error instanceof Error ? error.message : 'Failed to generate freeform sequence';
+			const workbenchBeats: BeatData[] = result.map((beat, index) => {
+				const letterValue: Letter | null =
+					beat.letterType === 'type1'
+						? Letter.A
+						: beat.letterType === 'type2'
+							? Letter.B
+							: beat.letterType === 'type3'
+								? Letter.C
+								: beat.letterType === 'type4'
+									? Letter.D
+									: null;
 
-				generatorStore.setError(errorMessage);
-				console.error('Generate freeform sequence error:', error);
-			}
+				return {
+					beatNumber: index + 1,
+					filled: true,
+					pictographData: {
+						/* grid / structure */
+						gridMode: 'diamond' as GridMode,
+						grid: 'diamond',
+						gridData: null,
+
+						/* TKA */
+						letter: letterValue,
+						startPos: null,
+						endPos: null,
+
+						/* VTG */
+						timing: 'together' as VTGTiming,
+						direction: 'same' as VTGDir,
+
+						/* hand motions (placeholder) */
+						blueMotionData: null,
+						redMotionData: null,
+
+						/* props */
+						redPropData: null,
+						bluePropData: null,
+
+						/* arrows */
+						redArrowData: null,
+						blueArrowData: null,
+					}
+				} satisfies BeatData;
+			});
+
+			beatsStore.set(workbenchBeats);
+			generatorStore.completeGeneration();
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Failed to generate freeform sequence';
+			generatorStore.setError(msg);
+			console.error('Generate freeform sequence error:', err);
 		}
 	}
 
-	// Listen for generate-sequence event
+	/* ───────────────────────────────
+	   DOM event wiring
+	──────────────────────────────── */
 	function setupEventListener() {
-		const handleEvent = () => {
-			handleGenerateSequence();
-		};
-
+		const handleEvent = () => handleGenerateSequence();
 		document.addEventListener('generate-sequence', handleEvent as EventListener);
-
-		return () => {
-			document.removeEventListener('generate-sequence', handleEvent as EventListener);
-		};
+		return () => document.removeEventListener('generate-sequence', handleEvent as EventListener);
 	}
 
-	// Lifecycle
-	onMount(() => {
-		const cleanup = setupEventListener();
-		return cleanup;
-	});
+	onMount(() => setupEventListener());
 </script>
 
 <div class="freeform-sequencer">
@@ -130,7 +152,7 @@
 		<div class="description-container">
 			<div class="description-card">
 				<h4>Freeform Sequence Generation</h4>
-				<p>Create a unique sequence with custom letter type complexity and flow.</p>
+				<p>Create a unique sequence with custom letter-type complexity and flow.</p>
 
 				<div class="info-box">
 					<div class="info-item">
@@ -141,7 +163,7 @@
 					<div class="info-item">
 						<span class="info-label">Selected Letter Types:</span>
 						<span class="info-value">
-							{selectedLetterTypes.length > 0 ? selectedLetterTypes.join(', ') : 'All Types'}
+							{selectedLetterTypes.length ? selectedLetterTypes.join(', ') : 'All Types'}
 						</span>
 					</div>
 
@@ -162,7 +184,6 @@
 		gap: 1rem;
 		width: 100%;
 	}
-
 	h3 {
 		font-size: 1.25rem;
 		color: var(--color-text-primary, white);
@@ -175,13 +196,11 @@
 		gap: 1.5rem;
 		width: 100%;
 	}
-
 	.letter-type-picker-container {
 		flex: 2;
 		overflow-y: auto;
 		max-height: 30rem;
 	}
-
 	.description-container {
 		flex: 1;
 		min-width: 240px;
@@ -196,15 +215,14 @@
 
 	.description-card h4 {
 		font-size: 1.1rem;
-		margin: 0 0 0.75rem 0;
+		margin: 0 0 0.75rem;
 		color: var(--color-text-primary, white);
 		font-weight: 500;
 	}
-
 	.description-card p {
 		color: var(--color-text-secondary, rgba(255, 255, 255, 0.7));
 		font-size: 0.9rem;
-		margin: 0 0 1rem 0;
+		margin: 0 0 1rem;
 		line-height: 1.4;
 	}
 
@@ -214,24 +232,20 @@
 		background: var(--color-surface-hover, rgba(255, 255, 255, 0.05));
 		border-radius: 0.375rem;
 	}
-
 	.info-item {
 		display: flex;
 		justify-content: space-between;
 		margin-bottom: 0.5rem;
 	}
-
 	.info-label {
 		font-size: 0.875rem;
 		color: var(--color-text-secondary, rgba(255, 255, 255, 0.7));
 	}
-
 	.info-value {
 		font-size: 0.875rem;
 		color: var(--color-accent, #3a7bd5);
 		font-weight: 500;
 	}
-
 	.info-note {
 		font-size: 0.8rem;
 		color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
@@ -239,17 +253,14 @@
 		font-style: italic;
 	}
 
-	/* Responsive adjustments */
 	@media (max-width: 768px) {
 		.content {
 			flex-direction: column;
 		}
-
 		.letter-type-picker-container,
 		.description-container {
 			width: 100%;
 		}
-
 		.letter-type-picker-container {
 			max-height: 20rem;
 		}

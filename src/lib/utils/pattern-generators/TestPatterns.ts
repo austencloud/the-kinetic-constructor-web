@@ -22,6 +22,7 @@ export function testPatternGenerators(
 	const {
 		letters,
 		outputFormat = 'display',
+		maxSamplesPerLetter = 5, // Set default value to fix the error
 		groupByLetter = true
 	} = options;
 
@@ -29,7 +30,6 @@ export function testPatternGenerators(
 	const formatter = outputFormat === 'csv' ? formatPatternCSV : formatPatternDisplay;
 	let output = '';
 
-	// Generate patterns for all letters or just the specified ones
 	// Generate patterns for all letters or just the specified ones
 	if (letters && letters.length > 0) {
 		patterns = [];

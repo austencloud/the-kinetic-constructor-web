@@ -4,23 +4,17 @@
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 	import { uiState } from '../store'; // To get selectedTab, showAllActive etc.
 
+	// Extend the uiState type to include the missing properties
+	type ExtendedUIState = typeof $uiState & {
+		showAllActive?: boolean;
+		reversalFilter?: string;
+	};
+
+	// Cast uiState to extended type for the template
+	$: extendedUiState = $uiState as ExtendedUIState;
+
 	// Consume context
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-
-	// Props are no longer needed, get everything from context or central store
-	// REMOVED: export let deviceType: DeviceType;
-	// REMOVED: export let isPortraitMode: boolean;
-	// REMOVED: export let isMobileDevice: boolean;
-	// REMOVED: export let layout: ResponsiveLayoutConfig;
-	// REMOVED: export let containerWidth: number;
-	// REMOVED: export let containerHeight: number;
-	// REMOVED: export let optionsCount: number; // Calculate if needed, or get from store
-	// REMOVED: export let selectedTab: string | null; // Get from local state in OptionPicker or a store if shared
-	// REMOVED: export let showAllActive: boolean; // Get from uiState store
-
-	// REMOVED: Control callbacks
-	// REMOVED: export let toggleDeviceState: () => void;
-	// REMOVED: export let toggleOrientationState: () => void;
 
 	// Panel state
 	let isDebugExpanded = false;
@@ -30,9 +24,6 @@
 
 	// Derived values from context and store
 	$: layout = $layoutContext.layoutConfig; // Get layout config from context
-	// Note: optionsCount and selectedTab might need to be passed or derived differently
-	// depending on where selectedTab state lives now. Assuming OptionPicker still manages it locally.
-	// For this example, we'll just display what's in the context/uiState.
 </script>
 
 <div class="debug-container" data-testid="debug-panel">
@@ -66,11 +57,11 @@
 				<h4>UI State</h4>
 				<div class="grid">
 					<div>Show All:</div>
-					<div>{$uiState.showAllActive ? 'Yes' : 'No'}</div>
+					<div>{extendedUiState.showAllActive ? 'Yes' : 'No (Default)'}</div>
 					<div>Sort By:</div>
 					<div>{$uiState.sortMethod}</div>
 					<div>Reversal Filter:</div>
-					<div>{$uiState.reversalFilter}</div>
+					<div>{extendedUiState.reversalFilter || 'None'}</div>
 				</div>
 			</section>
 

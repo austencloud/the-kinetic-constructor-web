@@ -22,7 +22,12 @@ const positionMappings = {
 		gamma13: { blue: 'w', red: 's' },
 		gamma15: { blue: 'n', red: 'w' }
 	}
-};
+} as const;
+
+// Define type for position mapping
+type PositionSystem = keyof typeof positionMappings;
+type PositionKey<T extends PositionSystem> = keyof (typeof positionMappings)[T];
+type LocationPoint = { blue: string; red: string };
 
 // Define cardinal direction cycle (clockwise order)
 const locationCycle = ['n', 'e', 's', 'w'];
@@ -121,18 +126,19 @@ export function generatePatternRow(params: PatternParams): PatternRow {
 	} = params;
 
 	// Get start locations from position mappings
-	const startSystem = startPos.match(/^([a-z]+)/)![1] as keyof typeof positionMappings;
+	const startSystem = startPos.match(/^([a-z]+)/)![1] as PositionSystem;
 	const systemMap = positionMappings[startSystem];
 
-	// Check if startPos is a valid key for this systemMap before accessing
+	// Type guard to ensure startPos exists in the system map
 	if (!(startPos in systemMap)) {
 		throw new Error(`Invalid start position '${startPos}' for system '${startSystem}'`);
 	}
-	// Access the mapping using startPos (known to be a valid key after the check)
-	const mapping = systemMap[startPos as keyof typeof systemMap];
+
+	// Need to use bracket notation with type assertion
+	// We know this is safe because we checked startPos is in systemMap
+	const mapping = systemMap[startPos as keyof typeof systemMap] as LocationPoint;
 	const blueStartLoc = mapping.blue;
 	const redStartLoc = mapping.red;
-
 
 	// Calculate end locations
 	const blueEndLoc = calculateEndLocation(blueStartLoc, blueMotion, blueRotDir);

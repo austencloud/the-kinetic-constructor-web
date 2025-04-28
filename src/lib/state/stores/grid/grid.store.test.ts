@@ -108,9 +108,10 @@ describe('Grid Store', () => {
 
 		// Mock implementation to return a specific point
 		findClosestPointSpy.mockReturnValue({
-			key: 'top',
+			coordinates: { x: 0, y: -100 },
 			id: 'top',
-			coordinates: { x: 0, y: -100 }
+			type: 'hand',
+			variant: 'normal'
 		});
 
 		// Call the method
@@ -134,9 +135,19 @@ describe('Grid Store', () => {
 		// Mock implementation for center point
 		getPointByKeySpy.mockImplementation((key) => {
 			if (key === 'center') {
-				return { key: 'center', coordinates: { x: 0, y: 0 } };
+				return {
+					id: 'center',
+					coordinates: { x: 0, y: 0 },
+					type: 'center',
+					variant: 'normal'
+				};
 			} else if (key === 'top') {
-				return { key: 'top', coordinates: { x: 0, y: -100 } };
+				return {
+					id: 'top',
+					coordinates: { x: 0, y: -100 },
+					type: 'outer',
+					variant: 'normal'
+				};
 			}
 			return null;
 		});

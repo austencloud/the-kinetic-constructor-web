@@ -23,7 +23,7 @@
 
 	// --- Event Handlers ---
 	function handleToggleSettings() {
-		// Toggle settings dialog 
+		// Toggle settings dialog
 		if ($isSettingsDialogOpen) {
 			actions.closeSettings();
 		} else {
@@ -47,34 +47,27 @@
 	function handleTabChange(event: CustomEvent<number>) {
 		dispatch('tabChange', event.detail);
 	}
+
+	// For compatibility with the updated SettingsContent component
+	const currentSection = 'Construct';
 </script>
 
 <div class="content">
+	<!-- Use the MenuBar component directly with proper event handling -->
 	<div class="menuBar">
-		<MenuBar
-			onSettingsClick={handleToggleSettings} 
-			on:tabChange={handleTabChange}
-		/>
+		<MenuBar on:settingsClick={handleToggleSettings} on:tabChange={handleTabChange} />
 		{#if import.meta.env.DEV}
 			<SequenceInspector />
 		{/if}
 	</div>
 
 	<div class="mainContent">
-		<TabContent 
-			activeTab="defaultTab" 
-			{background} 
-			onChangeBackground={handleBackgroundChange} 
-		/>
+		<TabContent activeTab="defaultTab" {background} onChangeBackground={handleBackgroundChange} />
 	</div>
 
 	{#if $isSettingsDialogOpen}
 		<div class="settingsContent">
-			<SettingsContent
-				{background}
-				onChangeBackground={handleBackgroundChange} 
-				onClose={() => actions.closeSettings()}
-			/>
+			<SettingsContent onClose={() => actions.closeSettings()} {currentSection} />
 		</div>
 	{/if}
 </div>
@@ -106,7 +99,7 @@
 		max-height: 50vh;
 		overflow: auto;
 	}
-    .menuBar {
-        padding: 5px 10px;
-    }
+	.menuBar {
+		padding: 5px 10px;
+	}
 </style>

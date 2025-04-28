@@ -1,4 +1,14 @@
-import { CLOCK, COUNTER, FLOAT, IN, OUT, PRO, STATIC } from '$lib/types/Constants';
+import {
+	CLOCK,
+	COUNTER,
+	FLOAT,
+	IN,
+	OUT,
+	PRO,
+	STATIC,
+	CW_SHIFT,
+	CCW_SHIFT
+} from '$lib/types/Constants';
 import type { HandRotDir, Orientation, ShiftHandRotDir } from '$lib/types/Types';
 import type { Motion } from './Motion';
 import type { ShiftMotionInterface } from './MotionData';
@@ -45,7 +55,7 @@ export class MotionOriCalculator {
 	private calculateHalfTurnOrientation(): Orientation {
 		const { motionType, turns, startOri, propRotDir } = this.motion;
 
-		const orientationMap: Record<string, string> = {
+		const orientationMap: Record<string, Orientation> = {
 			'anti,cw,in': turns % 2 === 0.5 ? CLOCK : COUNTER,
 			'anti,ccw,in': turns % 2 === 0.5 ? COUNTER : CLOCK,
 			'anti,cw,out': turns % 2 === 0.5 ? COUNTER : CLOCK,
@@ -80,20 +90,20 @@ export class MotionOriCalculator {
 
 		const orientationMap: Record<Orientation, Record<ShiftHandRotDir, Orientation>> = {
 			in: {
-				CW_SHIFT: CLOCK,
-				ccw_shift: COUNTER
+				[CW_SHIFT]: CLOCK,
+				[CCW_SHIFT]: COUNTER
 			},
 			out: {
-				CW_SHIFT: COUNTER,
-				ccw_shift: CLOCK
+				[CW_SHIFT]: COUNTER,
+				[CCW_SHIFT]: CLOCK
 			},
 			clock: {
-				CW_SHIFT: OUT,
-				ccw_shift: IN
+				[CW_SHIFT]: OUT,
+				[CCW_SHIFT]: IN
 			},
 			counter: {
-				CW_SHIFT: IN,
-				ccw_shift: OUT
+				[CW_SHIFT]: IN,
+				[CCW_SHIFT]: OUT
 			}
 		};
 
@@ -103,8 +113,8 @@ export class MotionOriCalculator {
 		return orientationMap[startOri][handrotDir as ShiftHandRotDir];
 	}
 
-	private switchOrientation(ori: Orientation): string {
-		const orientationMap: { [key in Orientation]: string } = {
+	private switchOrientation(ori: Orientation): Orientation {
+		const orientationMap: Record<Orientation, Orientation> = {
 			in: OUT,
 			out: IN,
 			clock: COUNTER,

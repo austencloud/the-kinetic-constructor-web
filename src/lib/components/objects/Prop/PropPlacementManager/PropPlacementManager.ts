@@ -4,7 +4,7 @@ import { BetaPropPositioner } from './BetaPropPositioner';
 import type { PictographData } from '$lib/types/PictographData';
 import type { GridData } from '$lib/components/objects/Grid/GridData';
 import type { PropData } from '$lib/components/objects/Prop/PropData';
-import type { PictographChecker } from '$lib/components/Pictograph/PictographChecker';
+import type { PictographChecker } from '$lib/components/Pictograph/services/PictographChecker';
 
 export class PropPlacementManager {
 	public defaultPositioner: DefaultPropPositioner;
@@ -81,16 +81,11 @@ export class PropPlacementManager {
 
 			// Add this block right here
 
-
 			// Store coordinates after beta positioning
 			const afterBetaCoords = props.map((prop) => ({
 				id: prop.id,
 				coords: { ...prop.coords }
 			}));
-
-
-
-
 		}
 
 		// Validate final positions
