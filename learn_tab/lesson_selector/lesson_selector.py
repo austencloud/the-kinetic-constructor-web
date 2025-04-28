@@ -54,19 +54,29 @@ class LessonSelector(QWidget):
 
         # Add buttons and description labels for each lesson
         self.add_lesson_button(
-            "Lesson 1",
-            "Match the correct letter to the given pictograph",
-            partial(self.start_lesson, 1),
+            "Pictograph to Letter",
+            "Learn to identify the letter represented by a pictograph",
+            partial(self.start_lesson, "pictograph_to_letter"),
         )
         self.add_lesson_button(
-            "Lesson 2",
-            "Identify the correct pictograph for the displayed letter",
-            partial(self.start_lesson, 2),
+            "Letter to Pictograph",
+            "Learn to identify the pictograph that represents a given letter",
+            partial(self.start_lesson, "letter_to_pictograph"),
         )
         self.add_lesson_button(
-            "Lesson 3",
-            "Choose the pictograph that logically follows",
-            partial(self.start_lesson, 3),
+            "Valid Next Pictograph",
+            "Learn to identify which pictograph can logically follow another",
+            partial(self.start_lesson, "valid_next_pictograph"),
+        )
+        self.add_lesson_button(
+            "Turn Recognition",
+            "Learn to identify clockwise and counterclockwise turns in pictographs",
+            partial(self.start_lesson, "turns"),
+        )
+        self.add_lesson_button(
+            "Position Recognition",
+            "Learn to recognize the positions represented in pictographs",
+            partial(self.start_lesson, "positions"),
         )
 
         self.layout.addStretch(2)

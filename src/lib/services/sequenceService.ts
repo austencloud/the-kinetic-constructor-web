@@ -300,7 +300,7 @@ export async function deleteSequenceApi(sequenceId: string): Promise<void> {
 }
 
 // Dictionary mapping letters to their pictograph representations
-const LETTER_PICTOGRAPHS = {
+const LETTER_PICTOGRAPHS: Record<string, any> = {
 	A: { id: 'a_pictograph', letter: 'A', data: { position: 'high', turn: 'clockwise' } },
 	B: { id: 'b_pictograph', letter: 'B', data: { position: 'middle', turn: 'counter' } },
 	C: { id: 'c_pictograph', letter: 'C', data: { position: 'high', turn: 'counter' } },

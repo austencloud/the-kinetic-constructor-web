@@ -52,7 +52,7 @@ const createLearnStore = () => {
 	const { subscribe, set, update } = writable<LearnState>(initialState);
 
 	// Timer interval reference
-	let timerInterval: number | null = null;
+	let timerInterval: ReturnType<typeof setInterval> | null = null;
 
 	return {
 		subscribe,

@@ -103,43 +103,67 @@
 </script>
 
 <div class="generate-tab">
-	<HeaderLabel />
+	<div class="generate-tab-header">
+		<HeaderLabel />
 
-	<!-- Generator type toggle -->
-	<div class="generator-type">
-		<GeneratorToggle
-			options={generatorTypes}
-			value={useNewStateManagement ? newGeneratorType : $activeGeneratorType}
-			on:change={(e) => handleGeneratorTypeChange(e.detail)}
-		/>
+		<!-- Generator type toggle -->
+		<div class="generator-type">
+			<GeneratorToggle
+				options={generatorTypes}
+				value={useNewStateManagement ? newGeneratorType : $activeGeneratorType}
+				on:change={(e) => handleGeneratorTypeChange(e.detail)}
+			/>
+		</div>
 	</div>
 
-	<!-- Generator content - shows either circular or freeform -->
-	<div class="generator-content">
-		{#if (useNewStateManagement ? newGeneratorType : $activeGeneratorType) === 'circular'}
-			<CircularSequencer />
-		{:else}
-			<FreeformSequencer />
-		{/if}
-	</div>
-
-	<!-- Generator controls -->
-	<div class="controls-container">
-		<div class="controls-grid">
-			<LengthSelector />
-			<TurnIntensity />
-			<PropContinuity />
-			<LevelSelector />
+	<div class="generate-tab-content">
+		<!-- Left panel: Generator content -->
+		<div class="generator-panel">
+			<div class="panel-content">
+				{#if (useNewStateManagement ? newGeneratorType : $activeGeneratorType) === 'circular'}
+					<CircularSequencer />
+				{:else}
+					<FreeformSequencer />
+				{/if}
+			</div>
 		</div>
 
-		<!-- Generate button -->
-		<div class="generate-button">
-			<GenerateButton
-				isLoading={useNewStateManagement ? newIsGenerating : $isGenerating}
-				hasError={useNewStateManagement ? newHasError : $hasError}
-				statusMessage={useNewStateManagement ? newStatusMessage : $statusMessage}
-				on:click={handleGenerate}
-			/>
+		<!-- Right panel: Controls -->
+		<div class="controls-panel">
+			<div class="panel-header">
+				<h3>Sequence Parameters</h3>
+				<div class="panel-description">
+					Adjust these parameters to customize your generated sequence.
+				</div>
+			</div>
+
+			<div class="controls-container">
+				<div class="control-card">
+					<LengthSelector />
+				</div>
+
+				<div class="control-card">
+					<TurnIntensity />
+				</div>
+
+				<div class="control-card">
+					<PropContinuity />
+				</div>
+
+				<div class="control-card">
+					<LevelSelector />
+				</div>
+			</div>
+
+			<!-- Generate button -->
+			<div class="generate-button-container">
+				<GenerateButton
+					isLoading={useNewStateManagement ? newIsGenerating : $isGenerating}
+					hasError={useNewStateManagement ? newHasError : $hasError}
+					statusMessage={useNewStateManagement ? newStatusMessage : $statusMessage}
+					on:click={handleGenerate}
+				/>
+			</div>
 		</div>
 	</div>
 </div>
@@ -150,45 +174,182 @@
 		flex-direction: column;
 		height: 100%;
 		width: 100%;
-		padding: 1rem;
+		padding: 1.5rem;
 		gap: 1.5rem;
+		background: var(--color-background, #121824);
+		color: var(--color-text-primary, white);
+	}
+
+	.generate-tab-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding-bottom: 1.5rem;
+		border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
 	}
 
 	.generator-type {
 		display: flex;
 		justify-content: center;
-		margin-bottom: 0.5rem;
 	}
 
-	.generator-content {
-		flex: 1;
-		min-height: 0;
+	.generate-tab-content {
 		display: flex;
+		flex: 1;
+		gap: 1.5rem;
+		min-height: 0;
+		overflow: hidden;
+	}
+
+	.generator-panel,
+	.controls-panel {
+		display: flex;
+		flex-direction: column;
+		background: var(--color-surface-800, rgba(20, 30, 50, 0.5));
+		border-radius: 0.75rem;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+		overflow: hidden;
+		transition: all 0.3s ease;
+	}
+
+	.generator-panel {
+		flex: 3;
+		min-width: 0;
+	}
+
+	.controls-panel {
+		flex: 2;
+		max-width: 400px;
+	}
+
+	.panel-content {
+		flex: 1;
 		overflow: auto;
+		padding: 1.5rem;
+		scrollbar-width: thin;
+		scrollbar-color: var(--color-accent, #3a7bd5) transparent;
+	}
+
+	.panel-content::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.panel-content::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.panel-content::-webkit-scrollbar-thumb {
+		background-color: var(--color-accent, #3a7bd5);
+		border-radius: 3px;
+	}
+
+	.panel-header {
+		padding: 1.5rem 1.5rem 0.75rem 1.5rem;
+	}
+
+	.panel-header h3 {
+		margin: 0;
+		font-size: 1.25rem;
+		font-weight: 600;
+		color: var(--color-text-primary, white);
+	}
+
+	.panel-description {
+		margin-top: 0.5rem;
+		font-size: 0.875rem;
+		color: var(--color-text-secondary, rgba(255, 255, 255, 0.7));
+		line-height: 1.4;
 	}
 
 	.controls-container {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
-	}
-
-	.controls-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 		gap: 1rem;
+		padding: 0.75rem 1.5rem;
+		overflow-y: auto;
 	}
 
-	.generate-button {
+	.control-card {
+		background: var(--color-surface-700, rgba(30, 40, 60, 0.7));
+		border-radius: 0.5rem;
+		padding: 1rem;
+		transition: all 0.2s ease;
+	}
+
+	.control-card:hover {
+		background: var(--color-surface-600, rgba(40, 50, 70, 0.7));
+		transform: translateY(-2px);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+	}
+
+	.generate-button-container {
+		padding: 1.5rem;
+		background: var(--color-surface-900, rgba(15, 25, 40, 0.8));
+		border-top: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
 		display: flex;
 		justify-content: center;
-		margin-top: 0.5rem;
 	}
 
 	/* Responsive adjustments */
-	@media (max-width: 768px) {
-		.controls-grid {
-			grid-template-columns: 1fr;
+	@media (max-width: 1024px) {
+		.generate-tab-content {
+			flex-direction: column;
 		}
+
+		.controls-panel {
+			max-width: none;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.generate-tab {
+			padding: 1rem;
+		}
+
+		.generate-tab-header {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 1rem;
+		}
+
+		.generator-type {
+			width: 100%;
+			justify-content: flex-start;
+		}
+
+		.panel-content,
+		.controls-container,
+		.generate-button-container {
+			padding: 1rem;
+		}
+
+		.panel-header {
+			padding: 1rem 1rem 0.5rem 1rem;
+		}
+	}
+
+	/* Animation for panel transitions */
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.generator-panel,
+	.controls-panel {
+		animation: fadeIn 0.3s ease-out forwards;
+	}
+
+	.generator-panel {
+		animation-delay: 0.1s;
+	}
+
+	.controls-panel {
+		animation-delay: 0.2s;
 	}
 </style>

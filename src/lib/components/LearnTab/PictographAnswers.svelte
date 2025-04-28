@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import Pictograph from '../shared/Pictograph.svelte';
+	import { writable } from 'svelte/store';
+	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
+	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 
 	export let pictographs: any[] = [];
 	export let disabled: boolean = false;
@@ -8,6 +10,20 @@
 	const dispatch = createEventDispatcher<{
 		select: any;
 	}>();
+
+	// Create a store for each pictograph
+	const pictographStores = pictographs.map((p) => writable(p || defaultPictographData));
+
+	// Update stores when pictographs change
+	$: if (pictographs.length > 0) {
+		pictographs.forEach((p, i) => {
+			if (i < pictographStores.length) {
+				pictographStores[i].set(p);
+			} else {
+				pictographStores.push(writable(p));
+			}
+		});
+	}
 
 	function handleSelect(pictograph: any) {
 		if (!disabled) {
@@ -17,14 +33,16 @@
 </script>
 
 <div class="pictograph-answers">
-	{#each pictographs as pictograph}
+	{#each pictographs as pictograph, i}
 		<button
 			class="pictograph-button"
 			on:click={() => handleSelect(pictograph)}
 			{disabled}
 			aria-label="Pictograph answer option"
 		>
-			<Pictograph data={pictograph} size="medium" />
+			<div class="pictograph-container">
+				<Pictograph pictographDataStore={pictographStores[i]} showLoadingIndicator={false} />
+			</div>
 		</button>
 	{/each}
 </div>
@@ -36,6 +54,11 @@
 		justify-content: center;
 		gap: 1.5rem;
 		margin-top: 1rem;
+	}
+
+	.pictograph-container {
+		width: 120px;
+		height: 120px;
 	}
 
 	.pictograph-button {

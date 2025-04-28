@@ -9,7 +9,7 @@
 
 	// Handle feedback display timing
 	let showFeedback = false;
-	let feedbackTimeout: number;
+	let feedbackTimeout: ReturnType<typeof setTimeout>;
 
 	// Function to handle answer selection
 	function handleAnswerSelect(answer: any) {

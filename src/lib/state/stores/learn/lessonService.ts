@@ -1,5 +1,5 @@
 import { LessonConfig } from './lesson_configs';
-import { sequenceService } from '$lib/services/sequenceService';
+import { fetchPictographsForLetter } from '$lib/services/sequenceService';
 
 // Dictionary mapping letters to their pictograph representations (mocked data)
 const letterToPictographMap: Record<string, any> = {
@@ -167,10 +167,8 @@ export function checkAnswerLogic(
 // Function to retrieve pictographs for a given letter
 export async function getPictographsForLetter(letter: string): Promise<any[]> {
 	try {
-		// This would normally call an API or service
-		// For now, we'll just return our mocked data
-		const pictograph = letterToPictographMap[letter];
-		return pictograph ? [pictograph] : [];
+		// Use the imported function from sequenceService
+		return await fetchPictographsForLetter(letter);
 	} catch (error) {
 		console.error('Error fetching pictographs:', error);
 		return [];
