@@ -1,10 +1,8 @@
 <script lang="ts">
-	// Script remains the same as options-panel-dynamic-rows-v2
-	import { getContext, onMount, tick } from 'svelte';
-	import { fade } from 'svelte/transition';
+	import { onMount, tick } from 'svelte';
+	import { crossfade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 	import { uiState } from '../store';
 	import { determineGroupKey, getSortedGroupKeys } from '../services/OptionsService';
 	import type { SortMethod } from '../config';
@@ -12,6 +10,10 @@
 
 	import SectionHeader from './SectionHeader.svelte';
 	import OptionGroupGrid from './OptionGroupGrid.svelte';
+
+	// Import new utilities
+	import { scrollActions } from '../store/scrollStore';
+	import { prefersReducedMotion } from '../utils/a11y';
 
 	type LayoutRow = {
 		type: 'single' | 'multi';
@@ -21,15 +23,59 @@
 	export let selectedTab: string | null = null;
 	export let options: PictographData[] = [];
 
-	let currentSortMethod: SortMethod;
 	let panelElement: HTMLElement;
 	let contentIsShort = false;
 	let layoutRows: LayoutRow[] = [];
+	let panelKey = selectedTab || 'default';
+	let previousTab: string | null = null;
 
-	const MAX_ITEMS_FOR_SMALL_GROUP = 2;
+	// Set up crossfade for switching between layouts
+	const [send, receive] = crossfade({
+		duration: $prefersReducedMotion ? 0 : 300,
+		easing: cubicOut
+	});
 
+	// Get sort method from store
+	let sortMethod: SortMethod;
 	uiState.subscribe((state) => {
-		currentSortMethod = state.sortMethod;
+		sortMethod = state.sortMethod;
+	});
+
+	// Update panel key for transitions
+	$: {
+		if (selectedTab) {
+			panelKey = selectedTab;
+		}
+	}
+
+	// Save scroll position when scrolling
+	function handleScroll() {
+		if (panelElement && selectedTab) {
+			scrollActions.savePosition(`tab-${selectedTab}`, panelElement.scrollTop);
+		}
+	}
+
+	// Restore scroll position after transition
+	function restoreScrollPosition() {
+		if (panelElement && selectedTab) {
+			scrollActions.restorePosition(panelElement, `tab-${selectedTab}`, 50);
+		}
+	}
+
+	// Track tab changes for scroll position management
+	$: {
+		if (selectedTab !== previousTab && previousTab !== null) {
+			// Save the scroll position of the previous tab before switching
+			if (panelElement && previousTab) {
+				scrollActions.savePosition(`tab-${previousTab}`, panelElement.scrollTop);
+			}
+		}
+		previousTab = selectedTab;
+	}
+
+	// Restore scroll position when component mounts
+	onMount(() => {
+		restoreScrollPosition();
 	});
 
 	$: groupedOptions = (() => {
@@ -90,6 +136,8 @@
 		return rows;
 	})();
 
+	const MAX_ITEMS_FOR_SMALL_GROUP = 2;
+
 	async function checkContentHeight() {
 		await tick();
 		if (!panelElement) return;
@@ -104,34 +152,39 @@
 </script>
 
 <div
-	class="options-panel"
+	class="options-panel transition-optimized"
 	bind:this={panelElement}
 	use:resize={checkContentHeight}
 	class:vertically-center={contentIsShort}
 	role="tabpanel"
 	aria-labelledby="tab-{selectedTab}"
 	id="options-panel-{selectedTab}"
+	in:receive={{ key: `panel-${panelKey}` }}
+	out:send={{ key: `panel-${panelKey}` }}
+	on:scroll={handleScroll}
 >
-	{#each layoutRows as row, rowIndex}
-		{#if row.type === 'single'}
-			{#each row.groups as group}
-				<SectionHeader groupKey={group.key} isFirstHeader={rowIndex === 0} />
-				<OptionGroupGrid options={group.options} />
-			{/each}
-		{:else if row.type === 'multi'}
-			<div class="multi-group-row">
-				{#each row.groups as group, groupIndex}
-					<div class="multi-group-item">
-						<SectionHeader
-							groupKey={group.key}
-							isFirstHeader={rowIndex === 0 && groupIndex === 0}
-						/>
-						<OptionGroupGrid options={group.options} />
-					</div>
+	<div class="panel-content">
+		{#each layoutRows as row, rowIndex}
+			{#if row.type === 'single'}
+				{#each row.groups as group}
+					<SectionHeader groupKey={group.key} isFirstHeader={rowIndex === 0} />
+					<OptionGroupGrid options={group.options} key={`${selectedTab}-${group.key}`} />
 				{/each}
-			</div>
-		{/if}
-	{/each}
+			{:else if row.type === 'multi'}
+				<div class="multi-group-row">
+					{#each row.groups as group, groupIndex}
+						<div class="multi-group-item">
+							<SectionHeader
+								groupKey={group.key}
+								isFirstHeader={rowIndex === 0 && groupIndex === 0}
+							/>
+							<OptionGroupGrid options={group.options} key={`${selectedTab}-${group.key}`} />
+						</div>
+					{/each}
+				</div>
+			{/if}
+		{/each}
+	</div>
 </div>
 
 <style>
@@ -139,17 +192,26 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: flex-start;
-		position: absolute; /* Let the wrapper handle positioning */
 		width: 100%;
 		height: 100%;
 		padding: 1rem 1rem 2rem 1rem; /* Increased horizontal padding for more breathing room */
 		box-sizing: border-box;
 		overflow-y: auto; /* Keep scrolling */
 		overflow-x: hidden;
-
-		top: 0;
-		left: 0;
 		transition: justify-content 0.2s ease-out;
+	}
+
+	/* Performance optimizations */
+	.transition-optimized {
+		will-change: transform, opacity;
+		backface-visibility: hidden;
+		transform: translateZ(0); /* Hardware acceleration hint */
+	}
+
+	.panel-content {
+		width: 100%;
+		height: 100%;
+		position: relative;
 	}
 
 	.options-panel.vertically-center {

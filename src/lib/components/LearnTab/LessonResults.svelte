@@ -11,8 +11,10 @@
 	$: percentage = Math.round(($quizResults.score / $quizResults.total) * 100);
 	$: isPassing = percentage >= 70;
 
+	type AchievementLevel = 'excellent' | 'great' | 'good' | 'fair' | 'needs-practice';
+
 	// Determine achievement level
-	$: achievementLevel =
+	$: achievementLevel = (
 		percentage >= 90
 			? 'excellent'
 			: percentage >= 80
@@ -21,7 +23,8 @@
 					? 'good'
 					: percentage >= 60
 						? 'fair'
-						: 'needs-practice';
+						: 'needs-practice'
+	) as AchievementLevel;
 
 	// Achievement messages
 	const achievementMessages = {

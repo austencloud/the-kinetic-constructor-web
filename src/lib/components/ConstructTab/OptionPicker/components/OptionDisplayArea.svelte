@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { fade } from 'svelte/transition';
+	import { fade, crossfade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import type { PictographData } from '$lib/types/PictographData';
 
@@ -15,6 +15,37 @@
 
 	// --- Display State ---
 	$: hasOptions = optionsToDisplay.length > 0;
+
+	// --- Stack State ---
+	let currentStackIndex = 0;
+	let stackKey = selectedTab || 'default';
+
+	// Setup crossfade effect
+	const [send, receive] = crossfade({
+		duration: 300,
+		easing: cubicOut,
+		fallback(node) {
+			return fade(node, { duration: 250, easing: cubicOut });
+		}
+	});
+
+	// Update stack indices when content changes
+	$: {
+		if (isLoading) {
+			currentStackIndex = 0;
+		} else if (hasOptions && selectedTab) {
+			currentStackIndex = 1;
+		} else {
+			currentStackIndex = 2;
+		}
+	}
+
+	// Update stack key when tab changes to force re-render
+	$: {
+		if (selectedTab) {
+			stackKey = selectedTab;
+		}
+	}
 
 	// --- Message Logic ---
 	$: messageType = determineMessageType(isLoading, hasOptions, selectedTab, hasCategories);
@@ -53,25 +84,35 @@
 </script>
 
 <div class="option-display-area">
-	{#if messageType === 'loading'}
-		<div class="message-container">
-			<LoadingMessage />
-		</div>
-	{:else if hasOptions}
-		<div class="panels-container">
-			{#key selectedTab}
-				<div class="panel-wrapper"
-					in:fade={{ duration: 200, easing: cubicOut }}
-					out:fade={{ duration: 120, easing: cubicOut }}>
-					<OptionsPanel options={optionsToDisplay} selectedTab={selectedTab} />
+	<div class="stack-container">
+		{#if isLoading}
+			<div class="stack-layer active" in:receive={{ key: 'loading' }} out:send={{ key: 'loading' }}>
+				<div class="stack-content">
+					<LoadingMessage />
 				</div>
-			{/key}
-		</div>
-	{:else if messageType === 'empty' || messageType === 'initial'}
-		<div class="message-container">
-			<EmptyMessage type={messageType} message={messageText} />
-		</div>
-	{/if}
+			</div>
+		{:else if hasOptions && selectedTab}
+			<div
+				class="stack-layer active"
+				in:receive={{ key: `options-${stackKey}` }}
+				out:send={{ key: `options-${stackKey}` }}
+			>
+				<div class="stack-content">
+					<OptionsPanel options={optionsToDisplay} {selectedTab} />
+				</div>
+			</div>
+		{:else if messageType === 'empty' || messageType === 'initial'}
+			<div
+				class="stack-layer active"
+				in:receive={{ key: `message-${messageType}` }}
+				out:send={{ key: `message-${messageType}` }}
+			>
+				<div class="stack-content">
+					<EmptyMessage type={messageType} message={messageText} />
+				</div>
+			</div>
+		{/if}
+	</div>
 </div>
 
 <style>
@@ -79,36 +120,39 @@
 		width: 100%;
 		height: 100%;
 		position: relative;
-		overflow: hidden; /* Keep overflow hidden */
+		overflow: hidden;
 	}
 
-	.panels-container {
+	.stack-container {
 		width: 100%;
 		height: 100%;
-		position: relative; /* Positioning context for absolute children */
-		overflow: hidden; /* Keep overflow hidden */
+		position: relative;
+		overflow: hidden;
 	}
 
-	.panel-wrapper {
-		position: absolute; /* Absolute positioning is KEY */
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		pointer-events: auto; /* Ensure interaction */
-		/* background-color: #fff; /* Optional: Add background to prevent seeing through during fade */
-	}
-
-	.message-container {
+	.stack-layer {
 		position: absolute;
 		top: 0;
 		left: 0;
 		width: 100%;
 		height: 100%;
+		opacity: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.stack-layer.active {
+		opacity: 1;
+		pointer-events: auto;
+		z-index: 1;
+	}
+
+	.stack-content {
+		width: 100%;
+		height: 100%;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		z-index: 5; /* Ensure messages are above panels if needed */
-		pointer-events: none; /* Messages shouldn't block interaction */
+		will-change: opacity, transform;
 	}
 </style>
