@@ -1,13 +1,22 @@
 import { bench, describe, beforeEach } from 'vitest';
 import type { BenchFunction } from 'vitest';
 import { createMachine } from 'xstate';
-import { assertPerformance } from './utils';
+import { wrapBenchWithBudget, type PerformanceBudget } from './utils';
 import { createSupervisedMachine } from '../machine';
 import { RestartStrategy, EscalateStrategy } from '../supervision/strategies';
 import { RootSupervisor } from '../supervision/RootSupervisor';
 import { stateRegistry } from '../registry';
 
-type TaskFn = (fn: () => void) => void;
+interface BenchContext {
+	task: (fn: () => void) => Promise<void>;
+}
+
+// Stricter budgets for critical state operations
+const actorBudget: PerformanceBudget = {
+	mean: 0.5, // 0.5ms mean time budget for actor operations
+	p95: 0.02,
+	margin: process.env.CI ? 5 : 10
+};
 
 describe('State Management Performance', () => {
 	beforeEach(() => {
@@ -22,13 +31,13 @@ describe('State Management Performance', () => {
 			states: { idle: {} }
 		});
 
-		bench('create supervised actor', (async ({ task }: { task: TaskFn }) => {
-			await task(() => {
+		bench('create supervised actor', wrapBenchWithBudget(function(this: BenchFunction, ctx: BenchContext) {
+			return ctx.task(() => {
 				createSupervisedMachine('bench-actor', testMachine, {
 					strategy: new RestartStrategy()
 				});
 			});
-		}) as BenchFunction);
+		}));
 	});
 
 	describe('Actor Operations', () => {
@@ -44,23 +53,23 @@ describe('State Management Performance', () => {
 			})
 		);
 
-		bench('send event', (async ({ task }: { task: TaskFn }) => {
-			await task(() => {
+		bench('send event', wrapBenchWithBudget(function(this: BenchFunction, ctx: BenchContext) {
+			return ctx.task(() => {
 				actor.send({ type: 'NEXT' });
 				actor.send({ type: 'PREV' });
 			});
-		}) as BenchFunction);
+		}, actorBudget));
 
-		bench('get snapshot', (async ({ task }: { task: TaskFn }) => {
-			await task(() => {
+		bench('get snapshot', wrapBenchWithBudget(function(this: BenchFunction, ctx: BenchContext) {
+			return ctx.task(() => {
 				actor.getSnapshot();
 			});
-		}) as BenchFunction);
+		}, actorBudget));
 	});
 
 	describe('Registry Operations', () => {
-		bench('register and unregister', (async ({ task }: { task: TaskFn }) => {
-			await task(() => {
+		bench('register and unregister', wrapBenchWithBudget(function(this: BenchFunction, ctx: BenchContext) {
+			return ctx.task(() => {
 				const actor = createSupervisedMachine(
 					'bench-reg',
 					createMachine({
@@ -71,7 +80,7 @@ describe('State Management Performance', () => {
 				);
 				stateRegistry.unregister('bench-reg');
 			});
-		}) as BenchFunction);
+		}));
 	});
 
 	describe('Error Handling', () => {
@@ -87,10 +96,10 @@ describe('State Management Performance', () => {
 			}
 		);
 
-		bench('error reporting', (async ({ task }: { task: TaskFn }) => {
-			await task(() => {
+		bench('error reporting', wrapBenchWithBudget(function(this: BenchFunction, ctx: BenchContext) {
+			return ctx.task(() => {
 				actor.reportError(new Error('Benchmark error'));
 			});
-		}) as BenchFunction);
+		}));
 	});
 });
