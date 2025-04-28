@@ -19,16 +19,29 @@
 	// Get context
 	const { state, dispatch } = getSequenceContext();
 
-	// Use responsive layout hook
-	const { dimensions, isPortrait } = useResponsiveLayout();
+	// Use responsive layout hook for dimensions
+	const { dimensions } = useResponsiveLayout();
+
+	// Calculate workbench orientation based on workbench dimensions instead of window
+	$: workbenchIsPortrait = $dimensions.width < workbenchHeight;
 
 	// --- Define Button Panel Data ---
 	// This array defines the specific buttons for this instance of the ButtonPanel
 	const buttonPanelButtons: ButtonDefinition[] = [
-		{ icon: 'fa-book-medical', title: 'Add to Dictionary', id: 'addToDictionary', color: '#4361ee' },
+		{
+			icon: 'fa-book-medical',
+			title: 'Add to Dictionary',
+			id: 'addToDictionary',
+			color: '#4361ee'
+		},
 		{ icon: 'fa-save', title: 'Save Image', id: 'saveImage', color: '#3a86ff' },
 		{ icon: 'fa-expand', title: 'View Full Screen', id: 'viewFullScreen', color: '#4cc9f0' },
-		{ icon: 'fa-arrows-left-right', title: 'Mirror Sequence', id: 'mirrorSequence', color: '#4895ef' },
+		{
+			icon: 'fa-arrows-left-right',
+			title: 'Mirror Sequence',
+			id: 'mirrorSequence',
+			color: '#4895ef'
+		},
 		{ icon: 'fa-paintbrush', title: 'Swap Colors', id: 'swapColors', color: '#ff6b6b' },
 		{ icon: 'fa-rotate', title: 'Rotate Sequence', id: 'rotateSequence', color: '#f72585' },
 		{ icon: 'fa-trash', title: 'Delete Beat', id: 'deleteBeat', color: '#ff9e00' },
@@ -42,11 +55,16 @@
 	// Function to get user-friendly status text
 	function getStatusText(status: string): string {
 		switch (status) {
-			case 'ready': return 'Ready';
-			case 'editing': return 'Editing';
-			case 'saving': return 'Saving...';
-			case 'error': return 'Error';
-			default: return 'Ready';
+			case 'ready':
+				return 'Ready';
+			case 'editing':
+				return 'Editing';
+			case 'saving':
+				return 'Saving...';
+			case 'error':
+				return 'Error';
+			default:
+				return 'Ready';
 		}
 	}
 
@@ -90,7 +108,7 @@
 </script>
 
 <div class="sequence-widget">
-	<div class="main-layout" class:portrait={$isPortrait}>
+	<div class="main-layout" class:portrait={workbenchIsPortrait}>
 		<div class="left-vbox">
 			<div class="centered-group">
 				<div class="sequence-widget-labels">
@@ -107,23 +125,23 @@
 				<IndicatorLabel text={statusText} width={$dimensions.width} />
 			</div>
 
-			{#if $isPortrait}
+			{#if workbenchIsPortrait}
 				<ButtonPanel
-					isPortrait={$isPortrait}
+					isPortrait={workbenchIsPortrait}
 					containerWidth={$dimensions.width}
 					containerHeight={$dimensions.height}
-					buttons={buttonPanelButtons} 
+					buttons={buttonPanelButtons}
 					on:action={handleButtonAction}
 				/>
 			{/if}
 		</div>
 
-		{#if !$isPortrait}
+		{#if !workbenchIsPortrait}
 			<ButtonPanel
-				isPortrait={$isPortrait}
+				isPortrait={workbenchIsPortrait}
 				containerWidth={$dimensions.width}
 				containerHeight={workbenchHeight}
-				buttons={buttonPanelButtons} 
+				buttons={buttonPanelButtons}
 				on:action={handleButtonAction}
 			/>
 		{/if}
@@ -165,7 +183,7 @@
 		height: 100%; /* Take remaining height */
 		width: 100%;
 		flex-grow: 1; /* Allow group to grow */
-        min-height: 0; /* Prevent overflow */
+		min-height: 0; /* Prevent overflow */
 	}
 
 	.beat-frame-container {
@@ -175,8 +193,8 @@
 		flex: 1; /* Allow beat frame to take available space */
 		min-height: 0; /* Important for flex children */
 		width: 100%; /* Take full width */
-        padding: 10px; /* Add some padding */
-        box-sizing: border-box;
+		padding: 10px; /* Add some padding */
+		box-sizing: border-box;
 	}
 
 	.sequence-widget-labels {
@@ -186,7 +204,7 @@
 		justify-content: center;
 		gap: 5px; /* Reduced gap */
 		color: white;
-        padding-top: 10px; /* Add padding */
+		padding-top: 10px; /* Add padding */
 	}
 
 	.indicator-label-container {
@@ -197,12 +215,17 @@
 		padding: 5px 10px; /* Adjust padding */
 		color: white;
 		flex-shrink: 0; /* Prevent shrinking */
-        /* Removed flex: 1 to avoid taking too much space */
+		/* Removed flex: 1 to avoid taking too much space */
 	}
 
-    /* Ensure ButtonPanel has appropriate flex properties if needed */
-    :global(.sequence-widget .button-panel-container) { /* Example selector if ButtonPanel is wrapped */
-        flex-shrink: 0;
-    }
-
+	/* Ensure ButtonPanel has appropriate flex properties */
+	:global(.sequence-widget .toolbar-container.vertical) {
+		/* Target the vertical toolbar container */
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		justify-content: center; /* Center vertically */
+		align-items: center;
+		margin: auto 0; /* Ensure equal space above and below */
+	}
 </style>

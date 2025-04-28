@@ -7,6 +7,8 @@
 	import { appActions } from '$lib/state/machines/app/app.actions';
 	import { useSelector } from '@xstate/svelte';
 	import { appService } from '$lib/state/machines/app/app.machine';
+	import { fade, fly } from 'svelte/transition';
+	import { cubicOut, quintOut } from 'svelte/easing';
 
 	// --- Props & Events ---
 
@@ -18,13 +20,6 @@
 	// --- Get State from App State Machine ---
 	const isSettingsOpenStore = useSelector(appService, (state) => state.context.isSettingsOpen);
 	$: isSettingsDialogOpen = $isSettingsOpenStore;
-
-	// Get active tab data from the tabs array
-	import { tabs } from '$lib/components/MainWidget/state/appState';
-	const currentTabIndexStore = useSelector(appService, (state) => state.context.currentTab);
-	$: currentTabIndex = $currentTabIndexStore as number;
-	$: activeTabData =
-		currentTabIndex >= 0 && currentTabIndex < tabs.length ? tabs[currentTabIndex] : null;
 
 	// --- Event Handlers ---
 	function handleToggleSettings() {
@@ -49,8 +44,12 @@
 		}
 	}
 
-	// Get the current section name based on active tab
-	$: currentSection = activeTabData ? activeTabData.title : 'Construct';
+	// Handle backdrop keyboard events for accessibility
+	function handleBackdropKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+			appActions.closeSettings();
+		}
+	}
 </script>
 
 <div class="content">
@@ -63,8 +62,21 @@
 	</div>
 
 	{#if isSettingsDialogOpen}
-		<div class="settingsContent">
-			<SettingsContent {currentSection} onClose={() => appActions.closeSettings()} />
+		<div
+			class="settingsBackdrop"
+			transition:fade={{ duration: 300, easing: cubicOut }}
+			on:click={() => appActions.closeSettings()}
+			on:keydown={handleBackdropKeydown}
+			role="button"
+			tabindex="0"
+			aria-label="Close settings"
+		></div>
+		<div
+			class="settingsContent"
+			in:fly={{ y: 20, duration: 400, delay: 100, easing: quintOut }}
+			out:fade={{ duration: 200, easing: cubicOut }}
+		>
+			<SettingsContent onClose={() => appActions.closeSettings()} />
 		</div>
 	{/if}
 
@@ -91,15 +103,33 @@
 		width: 100%;
 		opacity: 1;
 	}
-	.settingsContent {
-		position: absolute;
+	.settingsBackdrop {
+		position: fixed;
 		top: 0;
 		left: 0;
 		right: 0;
 		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.5);
+		backdrop-filter: blur(4px);
+		z-index: 9;
+		cursor: pointer;
+	}
+
+	.settingsContent {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 90%;
+		max-width: 800px;
+		max-height: 90vh;
+		border-radius: 12px;
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 		z-index: 10;
+		overflow: hidden;
 	}
 	.menuBar {
-		padding: 5px 10px;
+		padding: 5px 0; /* Remove horizontal padding */
+		width: 100%; /* Ensure full width */
 	}
 </style>

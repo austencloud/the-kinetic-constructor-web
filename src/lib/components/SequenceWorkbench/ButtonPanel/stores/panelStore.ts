@@ -5,9 +5,6 @@ import { browser } from '$app/environment'; // Import browser check
 
 // Initial panel state
 const initialState: PanelState = {
-	isVisible: true,
-	isAnimatingOut: false,
-	isPulsing: true,
 	layout: 'horizontal' // Default layout
 };
 
@@ -18,48 +15,9 @@ const createPanelStore = () => {
 	return {
 		subscribe,
 
-		// Toggle panel visibility with animation coordination
-		toggle: () => {
-			update((state) => {
-				if (state.isVisible) {
-					// Start animation out if currently visible
-					return { ...state, isAnimatingOut: true, isPulsing: false };
-				} else {
-					// Show immediately when opening (fly-in animation handles visual entry)
-					// Ensure isAnimatingOut is false when opening
-					return { ...state, isVisible: true, isAnimatingOut: false, isPulsing: false };
-				}
-			});
-			// NOTE: The completion of the hide animation (setting isVisible = false)
-			// is now handled by a timeout in ButtonPanel.svelte watching isAnimatingOut
-		},
-
-		// Called after hide animation timeout completes
-		completeHideAnimation: () => {
-			update((state) => {
-				// Only update state if we are actually in the process of animating out
-				if (state.isAnimatingOut) {
-					return { ...state, isVisible: false, isAnimatingOut: false };
-				}
-				// Otherwise, return the state unchanged
-				return state;
-			});
-		},
-
 		// Update layout orientation
 		setLayout: (layout: LayoutOrientation) => {
 			update((state) => ({ ...state, layout }));
-		},
-
-		// Stop pulsing animation (e.g., after timeout or first click)
-		stopPulsing: () => {
-			update((state) => {
-				// Only update if it's currently pulsing
-				if (state.isPulsing) {
-					return { ...state, isPulsing: false };
-				}
-				return state;
-			});
 		},
 
 		// Reset store to initial state
@@ -82,17 +40,16 @@ function calculateButtonSize(width: number, height: number, isPortrait: boolean)
 	const effectiveHeight = height;
 
 	if (isMobile) {
-		// Mobile calculation based on width
-		return Math.max(30, Math.min(60, effectiveWidth / 10));
+		// Mobile calculation based on width - slightly smaller
+		return Math.max(28, Math.min(55, effectiveWidth / 11));
 	} else if (isPortrait) {
-		// Desktop portrait calculation based on width
-		return Math.max(30, Math.min(60, effectiveWidth / 10));
+		// Desktop portrait calculation based on width - slightly smaller
+		return Math.max(28, Math.min(55, effectiveWidth / 11));
 	} else {
-		// Desktop landscape calculation based on height
-		return Math.max(30, Math.min(60, effectiveHeight / 14));
+		// Desktop landscape calculation based on height - slightly smaller
+		return Math.max(28, Math.min(55, effectiveHeight / 15));
 	}
 }
-
 
 // Derived store that provides the calculation *function*
 // It depends on the panelStore only to potentially trigger recalculation if needed,

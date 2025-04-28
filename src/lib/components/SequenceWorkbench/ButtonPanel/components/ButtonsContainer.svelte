@@ -1,35 +1,36 @@
+
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import ActionButton from './ActionButton.svelte';
-	import type { ButtonDefinition, ActionEventDetail } from '../types';
-	import { panelStore } from '../stores/panelStore';
+	import type { ButtonDefinition, ActionEventDetail, LayoutOrientation } from '../types';
 	import { ANIMATION_DURATIONS } from '../utils/animations';
 
 	// Props
 	export let buttons: ButtonDefinition[];
 	export let buttonSize: number;
+	export let layout: LayoutOrientation; // Receive layout from parent (ActionToolbar)
 
-	// Get relevant state from the store
-	const { isVisible, isAnimatingOut, layout } = $panelStore; // Use $ syntax directly
+	// Always visible now
+	const isVisible = true;
+	const isAnimatingOut = false;
 
-	// Event dispatcher to forward action button clicks
+	// Event dispatcher
 	const dispatch = createEventDispatcher<{ action: ActionEventDetail }>();
 
-	// Forward the click event from ActionButton
+	// Forward the click event
 	function handleButtonClick(event: CustomEvent<ActionEventDetail>) {
 		dispatch('action', event.detail);
 	}
 
 	// Calculate total animation time for the wrapper fade-out/in
-	const wrapperTransitionDuration = `${ANIMATION_DURATIONS.TOGGLE_OUT / 1000 * 0.8}s`;
-
+	const wrapperTransitionDuration = `${(ANIMATION_DURATIONS.TOGGLE_OUT / 1000) * 0.8}s`;
 </script>
 
 <div
 	class="buttons-wrapper"
 	class:vertical={layout === 'vertical'} 
 	class:visible={isVisible || isAnimatingOut}
-	class:animating-out={isAnimatingOut} 
+	class:animating-out={isAnimatingOut}
 	style="--wrapper-transition-duration: {wrapperTransitionDuration};"
 	role="list"
 	aria-hidden={!(isVisible || isAnimatingOut)}
@@ -40,8 +41,8 @@
 				{button}
 				{buttonSize}
 				index={i}
-				{isAnimatingOut} 
-				{layout}    
+				{isAnimatingOut}
+				{layout} 
 				on:click={handleButtonClick}
 			/>
 		{/each}
@@ -51,30 +52,34 @@
 <style>
 	.buttons-wrapper {
 		display: flex;
-		align-items: center;
-		gap: 8px; /* Spacing between buttons */
-		padding: 8px; /* Padding inside the wrapper */
-		transition: opacity var(--wrapper-transition-duration) ease-in-out;
-		opacity: 0; /* Start hidden */
-		pointer-events: none; /* Prevent interaction when hidden/fading */
+		align-items: center; /* Center items along cross-axis */
+		justify-content: center; /* Center items along main-axis */
+		gap: 12px;
+		padding: 8px;
+		opacity: 1;
+		pointer-events: auto;
+		width: max-content; /* Fit width to buttons */
+		height: max-content; /* Fit height to buttons */
 	}
 
 	.buttons-wrapper.visible {
 		opacity: 1;
-		pointer-events: auto; /* Allow interaction when visible */
+		pointer-events: auto;
 	}
 
-	/* When animating out, keep container visible while buttons fly out */
 	.buttons-wrapper.animating-out {
-	  opacity: 1;
-	  pointer-events: none; /* Disable interaction immediately */
+		opacity: 1;
+		pointer-events: none;
 	}
 
 	/* Layout direction */
 	.buttons-wrapper.vertical {
 		flex-direction: column;
+		width: max-content; /* Fit width */
 	}
+
 	.buttons-wrapper:not(.vertical) {
 		flex-direction: row;
+		height: max-content; /* Fit height */
 	}
 </style>

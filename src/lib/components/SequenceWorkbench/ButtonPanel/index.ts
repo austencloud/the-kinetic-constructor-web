@@ -1,5 +1,5 @@
 // src/lib/components/SequenceWorkbench/ButtonPanel/index.ts
-import ButtonPanel from './ButtonPanel.svelte';
+import ButtonPanel from './ActionToolbar.svelte';
 
 export { ButtonPanel };
 export default ButtonPanel;

@@ -1,9 +1,4 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
-	import TabsNavigation from './TabsNavigation.svelte';
-	import { activeTabStore } from '../../stores/ui/settingsStore';
-	import { get } from 'svelte/store';
-
 	// Define better types for our settings
 	type BaseSetting = {
 		label: string;
@@ -34,173 +29,79 @@
 		options: string[];
 	};
 
+	type TextSetting = BaseSetting & {
+		type: 'text';
+		defaultValue: string;
+	};
+
+	type ColorSetting = BaseSetting & {
+		type: 'color';
+		defaultValue: string;
+	};
+
+	type CustomSetting = BaseSetting & {
+		type: 'custom';
+		component: string;
+		defaultValue?: any; // Optional default value for custom components
+	};
+
 	// Union type of all settings
-	type Setting = ToggleSetting | NumberSetting | RangeSetting | SelectSetting;
+	type Setting =
+		| ToggleSetting
+		| NumberSetting
+		| RangeSetting
+		| SelectSetting
+		| TextSetting
+		| ColorSetting
+		| CustomSetting;
 
-	// Section type
-	type Section = {
-		id: string;
-		icon: string;
-		settings: Setting[];
-	};
-
-	// Define sections with Font Awesome class strings
-	const sections: Record<string, Section> = {
-		Construct: {
-			id: 'construct',
-			icon: 'fa-solid fa-hammer',
-			settings: [
-				{ label: 'Sequence Mode', type: 'toggle', defaultValue: true },
-				{ label: 'Grid Snap', type: 'toggle', defaultValue: false },
-				{ label: 'Max Sequence Length', type: 'number', defaultValue: 64, min: 1, max: 128 },
-				{
-					label: 'Default Prop Type',
-					type: 'select',
-					options: ['Hand', 'Staff', 'Fan'],
-					defaultValue: 'Hand'
-				}
-			]
-		},
-		Generate: {
-			id: 'generate',
-			icon: 'fa-solid fa-robot',
-			settings: [
-				{ label: 'AI Assist', type: 'toggle', defaultValue: true },
-				{ label: 'Creativity Level', type: 'range', defaultValue: 50, min: 0, max: 100 },
-				{
-					label: 'Preferred Style',
-					type: 'select',
-					options: ['Flow', 'Technical', 'Freestyle'],
-					defaultValue: 'Flow'
-				},
-				{ label: 'Generation Timeout', type: 'number', defaultValue: 30, min: 10, max: 120 }
-			]
-		},
-		Browse: {
-			id: 'browse',
-			icon: 'fa-solid fa-folder',
-			settings: [
-				{
-					label: 'Default View',
-					type: 'select',
-					options: ['Grid', 'List', 'Compact'],
-					defaultValue: 'Grid'
-				},
-				{ label: 'Show Thumbnails', type: 'toggle', defaultValue: true },
-				{
-					label: 'Sort By',
-					type: 'select',
-					options: ['Date', 'Name', 'Complexity'],
-					defaultValue: 'Date'
-				},
-				{ label: 'Items per Page', type: 'number', defaultValue: 20, min: 10, max: 100 }
-			]
-		},
-		Learn: {
-			id: 'learn',
-			icon: 'fa-solid fa-book',
-			settings: [
-				{ label: 'Tutorial Mode', type: 'toggle', defaultValue: true },
-				{
-					label: 'Difficulty',
-					type: 'select',
-					options: ['Beginner', 'Intermediate', 'Advanced'],
-					defaultValue: 'Beginner'
-				},
-				{ label: 'Show Tips', type: 'toggle', defaultValue: true },
-				{ label: 'Lesson Progress Tracking', type: 'toggle', defaultValue: true }
-			]
-		},
-		Write: {
-			id: 'write',
-			icon: 'fa-solid fa-pencil',
-			settings: [
-				{ label: 'Auto-Save', type: 'toggle', defaultValue: true },
-				{ label: 'Save Interval', type: 'number', defaultValue: 5, min: 1, max: 30 },
-				{
-					label: 'Export Format',
-					type: 'select',
-					options: ['JSON', 'CSV', 'Text'],
-					defaultValue: 'JSON'
-				},
-				{
-					label: 'Notation Style',
-					type: 'select',
-					options: ['Symbolic', 'Descriptive', 'Minimal'],
-					defaultValue: 'Symbolic'
-				}
-			]
-		}
-	};
-
-	// Define allowed tab labels as a type
-	type TabLabel = 'User Profile' | 'Background' | 'Prop Type' | 'Visibility' | 'Beat Layouts';
-
-	// Define tabs configuration with Font Awesome class strings
-	const tabs: { id: string; label: TabLabel; icon: string }[] = [
-		{ id: 'User', label: 'User Profile', icon: 'fa-solid fa-user' },
-		{ id: 'Background', label: 'Background', icon: 'fa-solid fa-fill-drip' },
-		{ id: 'Prop Type', label: 'Prop Type', icon: 'fa-solid fa-paintbrush' },
-		{ id: 'Visibility', label: 'Visibility', icon: 'fa-solid fa-eye' },
-		{ id: 'Beat Layouts', label: 'Beat Layouts', icon: 'fa-solid fa-table-cells-large' }
+	// Define a single settings list with minimal placeholder settings
+	const settings: Setting[] = [
+		{ label: 'Background Type', type: 'select', options: ['Snowfall', 'Night Sky'], defaultValue: 'Snowfall' },
+		{ label: 'Show Grid', type: 'toggle', defaultValue: true },
+		{ label: 'Dark Mode', type: 'toggle', defaultValue: true }
 	];
 
 	// Props
 	export let onClose: () => void;
-	export let currentSection: keyof typeof sections = 'Construct';
-
-	// Note: We removed the unused background and onChangeBackground props
-	// If you need to implement background settings, you can add them back later
 
 	// State
 	let searchQuery = '';
 	let hasUnsavedChanges = false;
-	let activeTab = get(activeTabStore);
-
-	// Event Dispatcher
-	const dispatch = createEventDispatcher();
-
-	// State for section-specific settings
-	let sectionSettings: Record<string, any> = {};
+	let settingsValues: Record<string, any> = {};
 
 	// Initialize settings
 	$: {
-		if (currentSection in sections) {
-			sectionSettings = sections[currentSection]?.settings.reduce<Record<string, any>>(
-				(acc, setting) => {
-					acc[setting.label] = setting.defaultValue;
-					return acc;
-				},
-				{}
-			);
-		} else {
-			// Handle case where currentSection might not exist in sections initially
-			sectionSettings = {};
-		}
+		// Initialize settings values from defaults
+		settingsValues = settings.reduce<Record<string, any>>((acc, setting) => {
+			acc[setting.label] = setting.defaultValue;
+			return acc;
+		}, {});
 	}
 
 	// Save changes
 	function handleSave() {
 		// Placeholder: Implement actual saving logic here
-		console.log('Saving settings:', sectionSettings);
-		dispatch('save');
+		console.log('Saving settings:', settingsValues);
+		// We'll use a custom event instead of dispatch
+		const saveEvent = new CustomEvent('save', { detail: settingsValues });
+		document.dispatchEvent(saveEvent);
 		hasUnsavedChanges = false;
 	}
 
 	// Reset to defaults
 	function handleReset() {
-		if (currentSection in sections) {
-			sectionSettings = sections[currentSection].settings.reduce<Record<string, any>>(
-				(acc, setting) => {
-					acc[setting.label] = setting.defaultValue;
-					return acc;
-				},
-				{}
-			);
-		}
+		// Reset all settings to their default values
+		settingsValues = settings.reduce<Record<string, any>>((acc, setting) => {
+			acc[setting.label] = setting.defaultValue;
+			return acc;
+		}, {});
+		
 		// Placeholder: Implement actual reset logic if needed beyond local state
-		console.log('Resetting settings for:', currentSection);
-		dispatch('reset');
+		console.log('Resetting settings');
+		// We'll use a custom event instead of dispatch
+		const resetEvent = new CustomEvent('reset', { detail: { settings: settingsValues } });
+		document.dispatchEvent(resetEvent);
 		hasUnsavedChanges = false;
 	}
 
@@ -213,11 +114,9 @@
 <div class="settings-container" role="dialog" aria-modal="true" aria-labelledby="settings-title-h2">
 	<div class="settings-header">
 		<div class="settings-title">
-			{#if sections[currentSection]?.icon}
-				<i class="{sections[currentSection].icon} icon-style text-sky-400"></i>
-			{/if}
+			<i class="fa-solid fa-gear icon-style text-sky-400"></i>
 			<h2 id="settings-title-h2" class="text-xl font-semibold text-slate-100">
-				{currentSection} Settings
+				Settings
 			</h2>
 		</div>
 
@@ -239,73 +138,84 @@
 	</div>
 
 	<div class="settings-content">
-		<div class="tabs-navigation">
-			<TabsNavigation bind:activeTab {tabs} />
-		</div>
-
 		<div class="section-settings">
-			{#if sections[currentSection]}
-				<div class="section-settings-grid">
-					{#each sections[currentSection].settings as setting (setting.label)}
-						{@const lowerCaseLabel = setting.label.toLowerCase()}
-						{#if !searchQuery || lowerCaseLabel.includes(searchQuery.toLowerCase())}
-							<div class="setting-item">
-								<label class="setting-label" for="setting-{lowerCaseLabel}">{setting.label}</label>
+			<div class="section-settings-grid">
+				{#each settings as setting (setting.label)}
+					{@const lowerCaseLabel = setting.label.toLowerCase()}
+					{#if !searchQuery || lowerCaseLabel.includes(searchQuery.toLowerCase())}
+						<div class="setting-item">
+							<label class="setting-label" for="setting-{lowerCaseLabel}">{setting.label}</label>
 
-								{#if setting.type === 'toggle'}
-									<label class="toggle-switch">
-										<input
-											id="setting-{lowerCaseLabel}"
-											type="checkbox"
-											bind:checked={sectionSettings[setting.label]}
-											on:change={markUnsavedChanges}
-										/>
-										<span class="slider"></span>
-									</label>
-								{:else if setting.type === 'number'}
+							{#if setting.type === 'toggle'}
+								<label class="toggle-switch">
 									<input
 										id="setting-{lowerCaseLabel}"
-										type="number"
-										bind:value={sectionSettings[setting.label]}
+										type="checkbox"
+										bind:checked={settingsValues[setting.label]}
+										on:change={markUnsavedChanges}
+									/>
+									<span class="slider"></span>
+								</label>
+							{:else if setting.type === 'number'}
+								<input
+									id="setting-{lowerCaseLabel}"
+									type="number"
+									bind:value={settingsValues[setting.label]}
+									min={setting.min}
+									max={setting.max}
+									on:input={markUnsavedChanges}
+									class="number-input"
+								/>
+							{:else if setting.type === 'range'}
+								<div class="range-container">
+									<input
+										id="setting-{lowerCaseLabel}"
+										type="range"
+										bind:value={settingsValues[setting.label]}
 										min={setting.min}
 										max={setting.max}
 										on:input={markUnsavedChanges}
-										class="number-input"
+										class="range-input"
 									/>
-								{:else if setting.type === 'range'}
-									<div class="range-container">
-										<input
-											id="setting-{lowerCaseLabel}"
-											type="range"
-											bind:value={sectionSettings[setting.label]}
-											min={setting.min}
-											max={setting.max}
-											on:input={markUnsavedChanges}
-											class="range-input"
-										/>
-										<span class="range-value">{sectionSettings[setting.label]}</span>
-									</div>
-								{:else if setting.type === 'select'}
-									<select
+									<span class="range-value">{settingsValues[setting.label]}</span>
+								</div>
+							{:else if setting.type === 'select'}
+								<select
+									id="setting-{lowerCaseLabel}"
+									bind:value={settingsValues[setting.label]}
+									on:change={markUnsavedChanges}
+									class="select-input"
+								>
+									{#each setting.options as opt}
+										<option value={opt}>{opt}</option>
+									{/each}
+								</select>
+							{:else if setting.type === 'text'}
+								<input
+									id="setting-{lowerCaseLabel}"
+									type="text"
+									bind:value={settingsValues[setting.label]}
+									on:input={markUnsavedChanges}
+									class="text-input"
+								/>
+							{:else if setting.type === 'color'}
+								<div class="color-container">
+									<input
 										id="setting-{lowerCaseLabel}"
-										bind:value={sectionSettings[setting.label]}
-										on:change={markUnsavedChanges}
-										class="select-input"
-									>
-										{#each setting.options as opt}
-											<option value={opt}>{opt}</option>
-										{/each}
-									</select>
-								{:else}
-									<span>Unsupported setting type</span>
-								{/if}
-							</div>
-						{/if}
-					{/each}
-				</div>
-			{:else}
-				<p class="p-4 text-slate-400">Select a section to view settings.</p>
-			{/if}
+										type="color"
+										bind:value={settingsValues[setting.label]}
+										on:input={markUnsavedChanges}
+										class="color-input"
+									/>
+									<span class="color-value">{settingsValues[setting.label]}</span>
+								</div>
+							{:else}
+								<span>Unsupported setting type</span>
+							{/if}
+						</div>
+					{/if}
+				{/each}
+			</div>
 		</div>
 	</div>
 
@@ -355,6 +265,8 @@
 		display: flex;
 		flex: 1; /* Grow to fill available space */
 		min-height: 0; /* Important for flex children */
+		padding: 1.5rem;
+		overflow-y: auto;
 	}
 
 	.settings-footer {
@@ -455,22 +367,10 @@
 		text-align: center;
 	}
 
-	/* --- Tabs Navigation --- */
-	.tabs-navigation {
-		width: 220px; /* Slightly wider */
-		border-right: 1px solid rgba(108, 156, 233, 0.2);
-		background: rgba(20, 30, 50, 0.5);
-		padding: 1rem 0; /* Add vertical padding */
-		flex-shrink: 0;
-		overflow-y: auto; /* Allow scrolling if many tabs */
-	}
-	/* NOTE: Assumes TabsNavigation.svelte is updated to use <i> tags */
-
 	/* --- Section Settings Area --- */
 	.section-settings {
 		flex: 1; /* Grow to fill space */
-		padding: 1.5rem; /* More padding */
-		overflow-y: auto; /* Enable scrolling for content */
+		width: 100%;
 	}
 
 	.section-settings-grid {
@@ -542,7 +442,8 @@
 	} /* Adjusted translation */
 
 	.number-input,
-	.select-input {
+	.select-input,
+	.text-input {
 		background: rgba(30, 40, 60, 0.7);
 		border: 1px solid rgba(108, 156, 233, 0.2);
 		color: white;
@@ -557,12 +458,41 @@
 	.select-input {
 		min-width: 150px;
 	} /* Minimum width for selects */
+	.text-input {
+		min-width: 200px;
+	} /* Minimum width for text inputs */
 	.number-input:focus,
-	.select-input:focus {
+	.select-input:focus,
+	.text-input:focus {
 		outline: none;
 		border-color: #6c9ce9;
 	}
 
+	/* Color input styling */
+	.color-container {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.color-input {
+		width: 40px;
+		height: 40px;
+		border: none;
+		border-radius: 6px;
+		cursor: pointer;
+		background: transparent;
+	}
+	.color-input::-webkit-color-swatch {
+		border-radius: 4px;
+		border: 1px solid rgba(108, 156, 233, 0.4);
+	}
+	.color-value {
+		font-family: monospace;
+		font-size: 0.9rem;
+		color: #cbd5e0;
+	}
+
+	/* Range slider styling */
 	.range-container {
 		display: flex;
 		align-items: center;

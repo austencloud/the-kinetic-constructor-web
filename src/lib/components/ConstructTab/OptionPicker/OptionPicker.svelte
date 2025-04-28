@@ -421,8 +421,6 @@
 			hasCategories={actualCategoryKeys.length > 0}
 		/>
 	</div>
-
-	<LayoutDebugger />
 </div>
 
 <style>
@@ -444,7 +442,6 @@
 		flex: 1; /* Takes remaining vertical space */
 		display: flex; /* Needed for children */
 		position: relative; /* For absolute positioning of children like messages */
-		border: 1px solid #e5e7eb; /* Example border */
 		border-radius: 8px;
 		background-color: transparent; /* Or your desired background */
 		min-height: 0; /* Crucial for flex child sizing */

@@ -3,14 +3,10 @@
 	import NavButton from './NavButton.svelte';
 	import { scale } from 'svelte/transition';
 	import { elasticOut } from 'svelte/easing';
-	import { createEventDispatcher } from 'svelte';
 	import { useSelector } from '@xstate/svelte';
 	import { appService } from '$lib/state/machines/app/app.machine';
 	import { appActions } from '$lib/state/machines/app/app.actions';
 	import { uiStore } from '$lib/state/stores/uiStore';
-
-	// Create event dispatcher
-	const dispatch = createEventDispatcher<{ changeBackground: string }>();
 
 	// Get state from the app state machine
 	const currentTabStore = useSelector(appService, (state) => state.context.currentTab);
@@ -26,7 +22,14 @@
 	let lastClickTime = 0;
 
 	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
-	const tabEmojis = ['⚒️', '🤖', '🔍', '🧠', '✍️'];
+	// Replace emojis with Font Awesome icons for a more professional look
+	const tabIcons = [
+		'fa-solid fa-hammer',
+		'fa-solid fa-robot',
+		'fa-solid fa-magnifying-glass',
+		'fa-solid fa-brain',
+		'fa-solid fa-pen-nib'
+	];
 
 	// Determine if text should be shown based on device/orientation
 	$: showButtonText = !isMobileDevice && !isPortraitMode;
@@ -40,11 +43,6 @@
 
 		// Update the app state machine
 		appActions.changeTab(index);
-	}
-
-	// Function to handle background changes
-	function handleBackgroundChange(type: string) {
-		dispatch('changeBackground', type);
 	}
 
 	// Update device/orientation state if UI store is not available
@@ -75,15 +73,15 @@
 							class="button-content landscape"
 							in:scale={{ duration: 400, delay: 50, easing: elasticOut }}
 						>
-							{name}
-							<span class="emoji">{tabEmojis[index]}</span>
+							<span class="text">{name}</span>
+							<i class="{tabIcons[index]} icon"></i>
 						</div>
 					{:else}
 						<div
 							class="button-content portrait"
 							in:scale={{ duration: 400, delay: 50, easing: elasticOut }}
 						>
-							<span class="emoji-only">{tabEmojis[index]}</span>
+							<i class="{tabIcons[index]} icon-only"></i>
 						</div>
 					{/if}
 				</NavButton>
@@ -105,10 +103,13 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		gap: 0.75rem; /* Fixed gap */
+		gap: 1rem; /* Increased gap for better spacing */
 		position: relative;
 		overflow: visible;
-		padding: 4px 0;
+		padding: 6px 0;
+		width: 100%; /* Take up available space */
+		margin: 0 auto; /* Center horizontally */
+		max-width: 600px; /* Limit width to ensure proper centering */
 	}
 
 	.button-wrapper {
@@ -117,6 +118,7 @@
 		flex-direction: column;
 		align-items: center;
 		background: transparent;
+		padding-bottom: 8px; /* Space for indicator */
 	}
 
 	/* Content alignment within the button slot */
@@ -127,35 +129,60 @@
 		width: 100%;
 		height: 100%;
 	}
+
 	.button-content.landscape {
-		gap: 0.4rem;
+		gap: 0.5rem;
 	}
 
-	.emoji {
-		display: inline-block;
-		font-size: 1.1em;
+	.text {
+		font-weight: 500;
+		letter-spacing: 0.02em;
 	}
-	.emoji-only {
+
+	.icon {
+		font-size: 0.9em;
+		color: rgba(255, 255, 255, 0.9);
+	}
+
+	.icon-only {
+		font-size: 1.2em;
 		line-height: 1;
 	}
 
 	/* Tab indicator */
 	.active-tab-indicator {
 		position: absolute;
-		bottom: -6px;
+		bottom: -2px;
 		left: 50%;
 		transform: translateX(-50%);
-		width: 60%;
-		max-width: 35px;
+		width: 70%;
+		max-width: 40px;
 		height: 3px;
 		background: linear-gradient(to right, #6c9ce9, #1e3c72);
 		border-radius: 10px;
-		box-shadow: 0 0 6px rgba(108, 156, 233, 0.7);
-		transition: width 0.3s ease;
+		box-shadow: 0 0 8px rgba(108, 156, 233, 0.7);
+		transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 	}
+
 	.active-tab-indicator.round {
 		width: 40%;
 		max-width: 20px;
-		bottom: -4px;
+		height: 4px;
+		bottom: 0px;
+	}
+
+	/* Responsive adjustments */
+	@media (max-width: 768px) {
+		.nav-widget {
+			gap: 0.5rem;
+		}
+
+		.menu-button {
+			margin-left: 5px;
+		}
+
+		.settings-button-container {
+			margin-right: 5px;
+		}
 	}
 </style>

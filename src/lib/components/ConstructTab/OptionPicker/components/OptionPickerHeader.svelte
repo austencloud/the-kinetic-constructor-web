@@ -90,6 +90,11 @@
 
 <div class="option-picker-header" class:mobile={isMobileDevice} data-testid="option-picker-header">
 	<div class="header-content">
+		<!-- View controls moved to the left -->
+		<div class="view-controls">
+			<ViewControl {selectedTab} on:viewChange={handleViewChange} />
+		</div>
+
 		{#if showTabs && categoryKeys.length > 0}
 			<div class="tabs" role="tablist" aria-label="Option Categories">
 				{#each categoryKeys as categoryKey (categoryKey)}
@@ -116,10 +121,6 @@
 				<div class="helper-message">Showing all - filter to see sections ➡️</div>
 			</div>
 		{/if}
-
-		<div class="view-controls">
-			<ViewControl {selectedTab} on:viewChange={handleViewChange} />
-		</div>
 	</div>
 </div>
 
@@ -153,7 +154,7 @@
 		display: flex;
 		align-items: center;
 		flex-shrink: 0;
-		margin-left: auto;
+		margin-right: 12px; /* Add margin to the right instead of left */
 	}
 
 	.tabs {
@@ -243,10 +244,10 @@
 	/* --- Mobile Responsiveness --- */
 	@media (max-width: 640px) {
 		.header-content {
-			flex-direction: row;
-			align-items: stretch;
-			/* gap: 8px; */
+			flex-direction: column;
+			align-items: flex-start;
 			width: 100%;
+			gap: 8px;
 		}
 
 		.tabs-placeholder .no-categories-message {
@@ -255,18 +256,13 @@
 
 		.tabs,
 		.tabs-placeholder {
-			/* justify-content: center; */
 			flex-wrap: wrap; /* Ensure wrapping */
-			margin-bottom: 8px;
-			/* flex-grow: 0; */
-			order: 1;
+			width: 100%;
 		}
 
-		/* Tab shrinking is already 0, so no change needed here for mobile */
-
 		.view-controls {
-			margin-left: 0;
-			order: 2;
+			margin-right: 0;
+			align-self: flex-start;
 		}
 	}
 </style>

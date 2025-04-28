@@ -1,73 +1,57 @@
 <script lang="ts">
-	import MenuBar from '$lib/components/MenuBar/MenuBar.svelte';
-	import TabContent from './TabContent.svelte';
-	import { createEventDispatcher } from 'svelte';
-	import SequenceInspector from '$lib/components/Developer/SequenceInspector.svelte';
 	import { selectIsSettingsOpen } from '../MainWidget/state/store';
 	import { actions } from '../MainWidget/state/actions';
 	import SettingsContent from './SettingsContent.svelte';
-
-	// --- XState Imports ---
-
-	// --- Props & Events ---
-	export let background: string;
-
-	// --- Events Emitted Up ---
-	const dispatch = createEventDispatcher<{
-		changeBackground: string;
-		tabChange: number;
-	}>();
 
 	// --- Get State from XState ---
 	const isSettingsDialogOpen = selectIsSettingsOpen();
 
 	// --- Event Handlers ---
-	function handleToggleSettings() {
-		// Toggle settings dialog
-		if ($isSettingsDialogOpen) {
-			actions.closeSettings();
-		} else {
-			actions.openSettings();
-		}
+
+	// Listen for settings save and reset events
+	function setupEventListeners() {
+		// Listen for save events
+		const handleSaveEvent = (event: CustomEvent) => {
+			console.log('Settings saved:', event.detail);
+			// Here you would handle the saved settings
+		};
+
+		// Listen for reset events
+		const handleResetEvent = (event: CustomEvent) => {
+			console.log('Settings reset for section:', event.detail.section);
+			// Here you would handle the reset
+		};
+
+		// Add event listeners
+		document.addEventListener('save', handleSaveEvent as EventListener);
+		document.addEventListener('reset', handleResetEvent as EventListener);
+
+		// Return cleanup function
+		return () => {
+			document.removeEventListener('save', handleSaveEvent as EventListener);
+			document.removeEventListener('reset', handleResetEvent as EventListener);
+		};
 	}
 
-	// This function will be passed down as a prop.
-	function handleBackgroundChange(newBackground: string) {
-		const validBackgrounds = ['snowfall', 'nightSky']; // Keep updated
-		const backgroundType = newBackground.toLowerCase();
-		if (validBackgrounds.includes(backgroundType)) {
-			dispatch('changeBackground', backgroundType);
-		} else {
-			console.warn(`Invalid background type requested: ${newBackground}. Using default.`);
-			dispatch('changeBackground', 'snowfall');
-		}
-	}
+	// Set up event listeners when component is mounted
+	import { onMount, onDestroy } from 'svelte';
+	let cleanup: (() => void) | undefined;
 
-	// Handler for tab changes bubbling up
-	function handleTabChange(event: CustomEvent<number>) {
-		dispatch('tabChange', event.detail);
-	}
+	onMount(() => {
+		cleanup = setupEventListeners();
+	});
 
-	// For compatibility with the updated SettingsContent component
-	const currentSection = 'Construct';
+	onDestroy(() => {
+		if (cleanup) cleanup();
+	});
+
+	// No sections needed anymore
 </script>
 
 <div class="content">
-	<!-- Use the MenuBar component directly with proper event handling -->
-	<div class="menuBar">
-		<MenuBar on:settingsClick={handleToggleSettings} on:tabChange={handleTabChange} />
-		{#if import.meta.env.DEV}
-			<SequenceInspector />
-		{/if}
-	</div>
-
-	<div class="mainContent">
-		<TabContent activeTab="defaultTab" {background} onChangeBackground={handleBackgroundChange} />
-	</div>
-
 	{#if $isSettingsDialogOpen}
 		<div class="settingsContent">
-			<SettingsContent onClose={() => actions.closeSettings()} {currentSection} />
+			<SettingsContent onClose={() => actions.closeSettings()} />
 		</div>
 	{/if}
 </div>
@@ -81,15 +65,7 @@
 		z-index: 1;
 		width: 100%;
 	}
-	.mainContent {
-		display: flex;
-		flex: 1;
-		overflow: hidden;
-		position: relative;
-		z-index: 0;
-		width: 100%;
-		opacity: 1;
-	}
+	/* Removed unused mainContent style */
 	.settingsContent {
 		flex: 0 0 auto;
 		width: 100%;
@@ -99,7 +75,5 @@
 		max-height: 50vh;
 		overflow: auto;
 	}
-	.menuBar {
-		padding: 5px 10px;
-	}
+	/* Removed unused menuBar style */
 </style>

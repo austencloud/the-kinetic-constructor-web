@@ -16,17 +16,14 @@ export interface ButtonDefinition {
 
 // Panel state interface managed by the store
 export interface PanelState {
-	isVisible: boolean;       // Is the panel content currently visible?
-	isAnimatingOut: boolean;  // Is the panel currently running the 'hide' animation?
-	isPulsing: boolean;       // Is the toggle handle pulsing?
 	layout: LayoutOrientation; // Current layout mode
 }
 
 // Props expected by the main ButtonPanel component
 export interface ButtonPanelProps {
-	containerWidth: number;   // Width of the parent container
-	containerHeight: number;  // Height of the parent container
-	isPortrait: boolean;      // Orientation flag
+	containerWidth: number; // Width of the parent container
+	containerHeight: number; // Height of the parent container
+	isPortrait: boolean; // Orientation flag
 	buttons: ButtonDefinition[]; // Array of button definitions
 }
 

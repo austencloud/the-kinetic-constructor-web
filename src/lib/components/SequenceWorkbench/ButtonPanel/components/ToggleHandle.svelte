@@ -43,12 +43,14 @@
 	<button
 		class="toggle-handle ripple"
 		on:click={handleToggleClick}
-		title={isVisible ? "Hide Tools" : "Show Tools"}
-		aria-label={isVisible ? "Hide Tools" : "Show Tools"}
+		title={isVisible ? 'Hide Tools' : 'Show Tools'}
+		aria-label={isVisible ? 'Hide Tools' : 'Show Tools'}
 		aria-expanded={isVisible}
 		data-mdb-ripple="true"
-		data-mdb-ripple-color="dark" >
-		<i class="fa-solid {handleIcon}" style="font-size: {buttonSize * 0.4}px;" aria-hidden="true"></i>
+		data-mdb-ripple-color="dark"
+	>
+		<i class="fa-solid {handleIcon}" style="font-size: {buttonSize * 0.4}px;" aria-hidden="true"
+		></i>
 
 		<span class="toggle-indicator" class:collapsed={!isVisible}>
 			<i class="fa-solid {indicatorIcon}" aria-hidden="true"></i>
@@ -64,7 +66,9 @@
 		justify-content: center;
 		align-items: center;
 		z-index: 10;
-		transition: transform 0.3s ease-in-out, filter 0.3s ease;
+		transition:
+			transform 0.3s ease-in-out,
+			filter 0.3s ease;
 	}
 
 	.toggle-handle-container:not(.vertical) {
@@ -91,19 +95,33 @@
 	}
 
 	@keyframes pulseHorizontal {
-		0%, 100% { transform: translate(50%, -50%) scale(1); filter: brightness(1); }
-		50% { transform: translate(50%, -50%) scale(1.15); filter: brightness(1.2) drop-shadow(0 0 8px rgba(123, 44, 191, 0.7)); }
+		0%,
+		100% {
+			transform: translate(50%, -50%) scale(1);
+			filter: brightness(1);
+		}
+		50% {
+			transform: translate(50%, -50%) scale(1.15);
+			filter: brightness(1.2) drop-shadow(0 0 8px rgba(58, 123, 213, 0.7));
+		}
 	}
 
 	@keyframes pulseVertical {
-		0%, 100% { transform: translate(-50%, 50%) scale(1); filter: brightness(1); }
-		50% { transform: translate(-50%, 50%) scale(1.15); filter: brightness(1.2) drop-shadow(0 0 8px rgba(123, 44, 191, 0.7)); }
+		0%,
+		100% {
+			transform: translate(-50%, 50%) scale(1);
+			filter: brightness(1);
+		}
+		50% {
+			transform: translate(-50%, 50%) scale(1.15);
+			filter: brightness(1.2) drop-shadow(0 0 8px rgba(58, 123, 213, 0.7));
+		}
 	}
 
 	.toggle-handle {
 		width: 100%;
 		height: 100%;
-		background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+		background: linear-gradient(135deg, #3a7bd5 0%, #1e3c72 100%);
 		color: white;
 		border: none;
 		display: flex;
@@ -137,19 +155,37 @@
 		animation: var(--bounce-animation-name, bounceArrowHorizontal) 1.5s infinite ease-in-out;
 	}
 
-	.toggle-handle-container:not(.vertical) { --bounce-animation-name: bounceArrowHorizontal; }
-	.toggle-handle-container.vertical { --bounce-animation-name: bounceArrowVertical; }
+	.toggle-handle-container:not(.vertical) {
+		--bounce-animation-name: bounceArrowHorizontal;
+	}
+	.toggle-handle-container.vertical {
+		--bounce-animation-name: bounceArrowVertical;
+	}
 
-	.toggle-handle-container:not(.vertical) .toggle-indicator { right: 7px; }
-	.toggle-handle-container.vertical .toggle-indicator { bottom: 7px; }
+	.toggle-handle-container:not(.vertical) .toggle-indicator {
+		right: 7px;
+	}
+	.toggle-handle-container.vertical .toggle-indicator {
+		bottom: 7px;
+	}
 
 	@keyframes bounceArrowHorizontal {
-		0%, 100% { transform: translateX(0); }
-		50% { transform: translateX(-3px); }
+		0%,
+		100% {
+			transform: translateX(0);
+		}
+		50% {
+			transform: translateX(-3px);
+		}
 	}
 	@keyframes bounceArrowVertical {
-		0%, 100% { transform: translateY(0); }
-		50% { transform: translateY(-3px); }
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-3px);
+		}
 	}
 
 	.toggle-indicator.collapsed {
