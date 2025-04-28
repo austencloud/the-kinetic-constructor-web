@@ -30,13 +30,34 @@ export { sequenceActions, sequenceSelectors, sequenceActor };
  * This should be called early in the application lifecycle
  */
 export function initializeStateManagement(): void {
-	// Ensure the app actor is started
+	// Define dependencies between actors and stores
+	// The sequence actor depends on the app actor
+	if (sequenceActor && appActor) {
+		stateRegistry.addDependency('sequenceActor', 'appActor');
+	}
+
+	// Get the topologically sorted initialization order
+	const initOrder = stateRegistry.getInitializationOrder();
+	console.log('State initialization order:', initOrder);
+
+	// Start actors in dependency order
+	for (const id of initOrder) {
+		const container = stateRegistry.get(id);
+		if (container && 'getSnapshot' in container) {
+			const actor = container as typeof appActor;
+			if (actor.getSnapshot().status !== 'active') {
+				console.log(`Starting actor: ${id}`);
+				actor.start();
+			}
+		}
+	}
+
+	// Explicitly start critical actors that must be running
 	if (appActor && appActor.getSnapshot().status !== 'active') {
 		console.log('Starting app actor');
 		appActor.start();
 	}
 
-	// Ensure the sequence actor is started
 	if (sequenceActor && sequenceActor.getSnapshot().status !== 'active') {
 		console.log('Starting sequence actor');
 		sequenceActor.start();
