@@ -2,7 +2,7 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { derived, writable } from 'svelte/store';
+	import { derived, writable, get } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { PropData } from '../objects/Prop/PropData';
 	import type { ArrowData } from '../objects/Arrow/ArrowData';
@@ -19,12 +19,21 @@
 	import type { Writable } from 'svelte/store';
 	import { errorService, ErrorSeverity } from '../../services/ErrorHandlingService';
 	import { logger } from '$lib/core/logging';
+	import { pictographStore } from '$lib/state/stores/pictograph/pictograph.store';
+	import { defaultPictographData } from './utils/defaultPictographData';
 
-	export let pictographDataStore: Writable<PictographData>;
+	// For backward compatibility, allow passing a local store
+	export let pictographDataStore: Writable<PictographData> | undefined = undefined;
 	export let onClick: (() => void) | undefined = undefined;
 	export let debug = false;
 	export let animationDuration: 300 = 300;
 	export let showLoadingIndicator = true;
+
+	// Create a local store that will be used if no external store is provided
+	const localPictographDataStore = writable<PictographData>(defaultPictographData);
+
+	// This derived store is not needed and was causing issues
+	// We'll use a simpler approach with activeStore below
 
 	const componentsLoadedStore = writable(0);
 	const totalComponentsStore = writable(1);
@@ -33,13 +42,9 @@
 		[componentsLoadedStore, totalComponentsStore],
 		([$loaded, $total]) => Math.floor(($loaded / Math.max($total, 1)) * 100)
 	);
+
 	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		loaded: { complete: boolean; error?: boolean; message?: string };
-		error: { source: string; error?: any; message?: string };
-		componentLoaded: { componentName: string };
-		dataUpdated: { type: 'props' | 'arrows' | 'letter' | 'all' };
-	}>();
+	const dispatch = createEventDispatcher();
 
 	// Component state variables
 	let state = 'initializing';
@@ -83,9 +88,28 @@
 
 	let lastDataSnapshot: TrackedDataSnapshot | null = null;
 
-	// Reactive values derived from pictographDataStore
+	// Get the effective store to use - prioritize the passed store
+	$: activeStore = pictographDataStore || localPictographDataStore;
+
+	// For debugging
+	$: if (debug) {
+		console.log('Pictograph activeStore:', activeStore);
+		console.log('Pictograph pictographDataStore:', pictographDataStore);
+	}
+
+	// Subscribe to the active store and make sure we get updates
+	$: activeStoreData = pictographDataStore
+		? get(pictographDataStore)
+		: get(localPictographDataStore);
+
+	// Update the pictographStore if we're using it and have data
+	$: if (!pictographDataStore && activeStoreData) {
+		pictographStore.setData(activeStoreData);
+	}
+
+	// Reactive values derived from the active store
 	$: loadProgress = $loadProgressStore;
-	$: pictographData = $pictographDataStore;
+	$: pictographData = activeStoreData;
 	$: letter = pictographData?.letter || null;
 	$: gridMode = pictographData?.gridMode || 'diamond';
 	$: pictographAriaLabel = getPictographAriaLabel();
@@ -93,23 +117,30 @@
 		? { role: 'button', tabIndex: 0, 'aria-label': `Pictograph for letter ${letter || 'unknown'}` }
 		: {};
 
+	// For debugging - log when pictographData changes
+	$: if (debug && pictographData) {
+		console.log('Pictograph data changed:', pictographData);
+	}
+
 	// Watch for changes to pictographData and update components when it changes
 	$: {
-		// Use a safe comparison method that avoids circular references
-		const hasChanged = checkForDataChanges(pictographData);
+		if (pictographData) {
+			// Use a safe comparison method that avoids circular references
+			const hasChanged = checkForDataChanges(pictographData);
 
-		// Only process if there's a real change and service is initialized
-		if (hasChanged && service) {
-			if (debug) console.debug('Pictograph data changed, updating components');
+			// Only process if there's a real change and service is initialized
+			if (hasChanged && service) {
+				if (debug) console.debug('Pictograph data changed, updating components');
 
-			// Update the service with new data
-			service.updateData(pictographData);
+				// Update the service with new data
+				service.updateData(pictographData);
 
-			// Update local state
-			updateComponentsFromData();
+				// Update local state
+				updateComponentsFromData();
 
-			// Notify parent about the update
-			dispatch('dataUpdated', { type: 'all' });
+				// Notify parent about the update
+				dispatch('dataUpdated', { type: 'all' });
+			}
 		}
 	}
 
@@ -217,7 +248,37 @@
 	onMount(() => {
 		const startTime = performance.now();
 
+		// Set up a subscription to the pictographDataStore if provided
+		let unsubscribe: (() => void) | undefined;
+		let unsubscribeGlobal: (() => void) | undefined;
+
+		if (pictographDataStore) {
+			unsubscribe = pictographDataStore.subscribe((data) => {
+				if (data) {
+					// Update our local data
+					pictographData = data;
+					if (debug) console.log('Pictograph subscription update from local store:', data);
+				}
+			});
+		}
+
+		// Also subscribe to the global pictographStore
+		unsubscribeGlobal = pictographStore.subscribe((state) => {
+			if (state.data && !pictographDataStore) {
+				// Only update if we're not using a local store
+				pictographData = state.data;
+				if (debug) console.log('Pictograph subscription update from global store:', state.data);
+			}
+		});
+
 		try {
+			// Make sure we have data to work with
+			if (!pictographData) {
+				// If no data is available, use default data
+				activeStore.set(defaultPictographData);
+				return;
+			}
+
 			// Log component initialization
 			logger.info('Pictograph component initializing', {
 				data: {
@@ -237,8 +298,8 @@
 				state = 'loading';
 				logger.debug('Pictograph: Motion data available, entering loading state', {
 					data: {
-						redMotionData: pictographData.redMotionData ? true : false,
-						blueMotionData: pictographData.blueMotionData ? true : false
+						redMotionData: pictographData?.redMotionData ? true : false,
+						blueMotionData: pictographData?.blueMotionData ? true : false
 					}
 				});
 			} else {
@@ -260,6 +321,15 @@
 		}
 
 		return () => {
+			// Clean up subscriptions if they exist
+			if (unsubscribe) {
+				unsubscribe();
+			}
+
+			if (unsubscribeGlobal) {
+				unsubscribeGlobal();
+			}
+
 			loadedComponents.clear();
 			logger.debug('Pictograph component unmounting');
 		};
@@ -272,6 +342,12 @@
 			if (state === 'error') {
 				state = 'loading';
 				errorMessage = null;
+			}
+
+			// Make sure we have data to work with
+			if (!pictographData) {
+				state = 'grid_only';
+				return;
 			}
 
 			// Update state based on available motion data
@@ -310,8 +386,13 @@
 			// Update progress
 			updateLoadProgress();
 
-			// Update pictograph data store with a shallow copy to avoid circular refs
-			pictographDataStore.update((store) => ({ ...store, gridData: data }));
+			// Update the active store with a shallow copy to avoid circular refs
+			activeStore.update((store) => ({ ...store, gridData: data }));
+
+			// If we're using the pictographStore, update it too
+			if (!pictographDataStore) {
+				pictographStore.updateComponentLoaded('grid');
+			}
 
 			// Exit if grid-only mode
 			if (state === 'grid_only') {
@@ -333,6 +414,9 @@
 
 			// Don't reset total components to load since we may already have loaded some
 			if (state !== 'complete') totalComponentsToLoad = 1;
+
+			// Make sure we have data to work with
+			if (!pictographData) return;
 
 			// Create red components if needed
 			if (pictographData.redMotionData) {
@@ -375,14 +459,22 @@
 				);
 			}
 
-			// Update pictograph data store
-			pictographDataStore.update((store) => ({
+			// Update the active store
+			activeStore.update((store) => ({
 				...store,
 				redPropData,
 				bluePropData,
 				redArrowData,
 				blueArrowData
 			}));
+
+			// If we're using the pictographStore, update it too
+			if (!pictographDataStore) {
+				if (redPropData) pictographStore.updatePropData('red', redPropData);
+				if (bluePropData) pictographStore.updatePropData('blue', bluePropData);
+				if (redArrowData) pictographStore.updateArrowData('red', redArrowData);
+				if (blueArrowData) pictographStore.updateArrowData('blue', blueArrowData);
+			}
 
 			updateLoadProgress();
 		} catch (error) {
@@ -639,14 +731,7 @@
 				{/each}
 			{/if}
 
-			{#if debug}
-				<PictographDebug
-					{state}
-					{componentsLoaded}
-					totalComponents={totalComponentsToLoad}
-					{renderCount}
-				/>
-			{/if}
+
 		{/if}
 	</svg>
 

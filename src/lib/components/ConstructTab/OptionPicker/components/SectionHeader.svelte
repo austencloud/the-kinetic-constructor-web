@@ -22,8 +22,6 @@
 		align-items: center;
 		width: 100%;
 		padding: 0;
-		margin-top: 1.5rem; /* Keep the improved top margin */
-		margin-bottom: 0.75rem; /* Keep the improved bottom margin */
 		position: relative;
 		z-index: 5;
 	}

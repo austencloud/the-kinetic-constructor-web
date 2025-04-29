@@ -11,13 +11,30 @@
 	import ArrowSvgMirrorManager from './ArrowSvgMirrorManager';
 	import type { PictographService } from '$lib/components/Pictograph/PictographService';
 	import type { PictographData } from '$lib/types/PictographData';
+	import { sequenceStore } from '$lib/state/stores/sequenceStore';
+	import { derived } from 'svelte/store';
 
-	// Props with defaults
-	export let arrowData: ArrowData;
+	// Props - we support both direct arrowData and store-based approach
+	export let arrowData: ArrowData | undefined = undefined;
+	export let beatId: string | undefined = undefined;
+	export let color: 'red' | 'blue' | undefined = undefined;
 	export let motion: Motion | null = null;
 	export let pictographData: PictographData | null = null;
 	export let pictographService: PictographService | null = null;
 	export let loadTimeoutMs = 1000; // Configurable timeout
+
+	// Get arrow data from the sequence store if beatId and color are provided
+	const arrowDataFromStore = derived(sequenceStore, ($sequenceStore) => {
+		if (!beatId || !color) return null;
+
+		const beat = $sequenceStore.beats.find((b) => b.id === beatId);
+		if (!beat) return null;
+
+		return color === 'red' ? beat.redArrowData : beat.blueArrowData;
+	});
+
+	// Use either the arrow data from store or the directly provided arrow data
+	$: effectiveArrowData = $arrowDataFromStore || arrowData;
 
 	// Component state
 	let svgData: ArrowSvgData | null = null;
@@ -31,7 +48,9 @@
 	const dispatch = createEventDispatcher();
 	const svgManager = new SvgManager();
 	const svgLoader = new ArrowSvgLoader(svgManager);
-	const mirrorManager = new ArrowSvgMirrorManager(arrowData);
+
+	// Create mirror manager only when we have arrow data
+	$: mirrorManager = effectiveArrowData ? new ArrowSvgMirrorManager(effectiveArrowData) : null;
 
 	// Initialize the rotation angle manager when pictograph data is available
 	$: if (pictographData) {
@@ -39,7 +58,7 @@
 	}
 
 	// Update mirror state whenever motion data or arrow data changes
-	$: if (arrowData) {
+	$: if (effectiveArrowData && mirrorManager) {
 		mirrorManager.updateMirror();
 	}
 
@@ -47,12 +66,12 @@
 	$: rotationAngle = getRotationAngle();
 
 	// Transform calculation (memoized)
-	$: if (svgData && arrowData.coords) {
+	$: if (svgData && effectiveArrowData?.coords) {
 		// Apply transformations in the correct order
-		const mirrorTransform = arrowData.svgMirrored ? 'scale(-1, 1)' : '';
-		
+		const mirrorTransform = effectiveArrowData.svgMirrored ? 'scale(-1, 1)' : '';
+
 		transform = `
-			translate(${arrowData.coords.x}, ${arrowData.coords.y})
+			translate(${effectiveArrowData.coords.x}, ${effectiveArrowData.coords.y})
 			rotate(${rotationAngle})
 			${mirrorTransform}
 		`.trim();
@@ -63,6 +82,11 @@
 	 */
 	async function loadArrowSvg() {
 		try {
+			// Safety check
+			if (!effectiveArrowData) {
+				throw new Error('No arrow data available');
+			}
+
 			// Set safety timeout
 			loadTimeout = setTimeout(() => {
 				if (!isLoaded) {
@@ -73,15 +97,17 @@
 			}, loadTimeoutMs);
 
 			// Update mirror state before loading SVG
-			mirrorManager.updateMirror();
+			if (mirrorManager) {
+				mirrorManager.updateMirror();
+			}
 
 			// Load the SVG with current configuration
 			const result = await svgLoader.loadSvg(
-				arrowData.motionType,
-				arrowData.startOri,
-				arrowData.turns,
-				arrowData.color,
-				arrowData.svgMirrored
+				effectiveArrowData.motionType,
+				effectiveArrowData.startOri,
+				effectiveArrowData.turns,
+				effectiveArrowData.color,
+				effectiveArrowData.svgMirrored
 			);
 
 			// Update state and notify
@@ -104,10 +130,10 @@
 		clearTimeout(loadTimeout);
 		isLoaded = true;
 		dispatch('loaded', { error: true });
-		dispatch('error', { 
+		dispatch('error', {
 			message: (error as Error)?.message || 'Unknown error',
 			component: 'Arrow',
-			color: arrowData.color
+			color: effectiveArrowData?.color || 'unknown'
 		});
 	}
 
@@ -115,21 +141,21 @@
 	 * Calculates the arrow rotation angle using the manager
 	 */
 	function getRotationAngle(): number {
-		if (motion && rotAngleManager) {
+		if (motion && rotAngleManager && effectiveArrowData) {
 			// Use the rotation angle manager directly
 			return rotAngleManager.calculateRotationAngle(
-				motion, 
-				arrowData.loc, 
-				arrowData.svgMirrored
+				motion,
+				effectiveArrowData.loc,
+				effectiveArrowData.svgMirrored
 			);
 		}
 		// Fall back to the arrow data's rotation angle
-		return arrowData.rotAngle;
+		return effectiveArrowData?.rotAngle || 0;
 	}
 
 	// Lifecycle hooks
 	onMount(() => {
-		if (arrowData.motionType) {
+		if (effectiveArrowData?.motionType) {
 			loadArrowSvg();
 		} else {
 			isLoaded = true;
@@ -142,19 +168,19 @@
 
 	// Reactive loading
 	$: {
-		if (arrowData.motionType && !isLoaded && !hasErrored) {
+		if (effectiveArrowData?.motionType && !isLoaded && !hasErrored) {
 			loadArrowSvg();
 		}
 	}
 </script>
 
-{#if svgData && isLoaded}
-	<g 
-		{transform} 
-		data-testid="arrow-{arrowData.color}" 
-		data-motion-type={arrowData.motionType}
-		data-mirrored={arrowData.svgMirrored ? 'true' : 'false'}
-		data-loc={arrowData.loc}
+{#if svgData && isLoaded && effectiveArrowData}
+	<g
+		{transform}
+		data-testid="arrow-{effectiveArrowData.color}"
+		data-motion-type={effectiveArrowData.motionType}
+		data-mirrored={effectiveArrowData.svgMirrored ? 'true' : 'false'}
+		data-loc={effectiveArrowData.loc}
 		data-rot-angle={rotationAngle}
 		in:fade={{ duration: 300 }}
 	>
@@ -164,7 +190,7 @@
 			height={svgData.viewBox.height}
 			x={-svgData.center.x}
 			y={-svgData.center.y}
-			aria-label="Arrow showing {arrowData.motionType} motion in {arrowData.color} direction"
+			aria-label="Arrow showing {effectiveArrowData.motionType} motion in {effectiveArrowData.color} direction"
 			role="img"
 			on:load={() => dispatch('imageLoaded')}
 			on:error={() => dispatch('error', { message: 'Image failed to load' })}

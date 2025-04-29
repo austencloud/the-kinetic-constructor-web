@@ -2,10 +2,13 @@
 	import { onMount, tick, createEventDispatcher } from 'svelte';
 	import { circleCoordinates } from './circleCoordinates';
 	import type { GridData } from './GridData';
+	import { settingsStore } from '$lib/state/stores/settings/settings.store';
+	import type { GridMode } from './types';
 
-	export let gridMode: 'diamond' | 'box' = 'diamond';
+	// Allow override via prop, but default to the settings store value
+	export let gridMode: GridMode | undefined = undefined;
 	export let onPointsReady: (gridData: GridData) => void;
-	export let debug: boolean = false;
+	export let debug: boolean | undefined = undefined;
 
 	let gridSrc = '';
 	let gridLoaded = false;
@@ -14,8 +17,12 @@
 
 	const dispatch = createEventDispatcher();
 
+	// Get values from settings store with fallbacks
+	$: effectiveGridMode = gridMode ?? $settingsStore.defaultGridMode;
+	$: effectiveDebug = debug ?? $settingsStore.showGridDebug;
+
 	$: {
-		gridSrc = gridMode === 'diamond' ? '/diamond_grid.svg' : '/box_grid.svg';
+		gridSrc = effectiveGridMode === 'diamond' ? '/diamond_grid.svg' : '/box_grid.svg';
 	}
 
 	/**
@@ -88,11 +95,11 @@
 		try {
 			await tick(); // Wait for DOM to render
 
-			if (!circleCoordinates || !circleCoordinates[gridMode]) {
-				throw new Error(`Invalid circle coordinates for grid mode: ${gridMode}`);
+			if (!circleCoordinates || !circleCoordinates[effectiveGridMode]) {
+				throw new Error(`Invalid circle coordinates for grid mode: ${effectiveGridMode}`);
 			}
 
-			const modeData = circleCoordinates[gridMode];
+			const modeData = circleCoordinates[effectiveGridMode];
 
 			const parsePoints = (points: Record<string, string>) =>
 				Object.fromEntries(
@@ -100,7 +107,7 @@
 						key,
 						{ coordinates: parseCoordinates(value) }
 					])
-				); 
+				);
 			// Convert raw data into structured `GridData`
 			const gridData: GridData = {
 				allHandPointsStrict: parsePoints(modeData.hand_points.strict),
@@ -117,13 +124,15 @@
 			}
 
 			// Log a subset of points for debugging
-			if (debug) {
-				const samplePoints = Object.entries(gridData.allHandPointsNormal).slice(0, 3);
+			if (effectiveDebug) {
+				console.debug(
+					'Grid points sample:',
+					Object.entries(gridData.allHandPointsNormal).slice(0, 3)
+				);
 			}
 
 			gridLoaded = true;
 			onPointsReady(gridData);
-			
 		} catch (error) {
 			console.error('Error initializing grid:', error);
 			gridError = true;
@@ -158,7 +167,7 @@
 />
 
 <!-- Error indicator (only visible when debugging) -->
-{#if debug && gridError}
+{#if effectiveDebug && gridError}
 	<text x="475" y="475" text-anchor="middle" fill="red" font-size="20">
 		Grid Error: {gridErrorMessage}
 	</text>

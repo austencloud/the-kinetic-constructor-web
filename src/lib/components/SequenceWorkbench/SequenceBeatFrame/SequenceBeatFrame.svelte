@@ -63,8 +63,6 @@
 			} as BeatData;
 		});
 
-
-
 		// Update the beats store
 		beatsStore.set(convertedBeats);
 
@@ -114,7 +112,10 @@
 	// Also subscribe to the global selectedStartPos store
 	const unsubscribeGlobalStartPos = selectedStartPos.subscribe((startPos) => {
 		if (startPos) {
-			startPositionStore.set(startPos);
+			// Create a deep copy to avoid reference issues
+			const startPosCopy = JSON.parse(JSON.stringify(startPos));
+			startPositionStore.set(startPosCopy);
+			console.log('SequenceBeatFrame: Updated startPositionStore with startPos:', startPosCopy);
 		}
 	});
 
@@ -198,7 +199,13 @@
 	// Handle start position selection
 	function updateStartPosition(newStartPos: PictographData) {
 		if (newStartPos) {
-			startPositionStore.set(newStartPos);
+			// Create a deep copy to avoid reference issues
+			const startPosCopy = JSON.parse(JSON.stringify(newStartPos));
+			startPositionStore.set(startPosCopy);
+			console.log(
+				'SequenceBeatFrame.updateStartPosition: Updated startPositionStore with:',
+				startPosCopy
+			);
 		}
 	}
 
@@ -207,6 +214,10 @@
 		// Listen for the custom event when a start position is selected
 		const handleStartPosSelected = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
+				console.log(
+					'SequenceBeatFrame: Received start-position-selected event with data:',
+					event.detail.startPosition
+				);
 				updateStartPosition(event.detail.startPosition);
 			}
 		};

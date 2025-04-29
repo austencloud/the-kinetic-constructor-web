@@ -79,7 +79,7 @@
 		margin-left: auto;
 		margin-right: auto;
 		/* Add some bottom margin for spacing between groups */
-		margin-bottom: 1rem;
+		/* margin-bottom: 1rem; */
 		padding: 0.5rem; /* Add padding around the grid */
 	}
 
@@ -125,8 +125,6 @@
 			grid-gap: var(--grid-gap, 16px); /* Enforce minimum gap */
 		}
 
-		.grid-item-wrapper {
-			margin: 4px; /* Ensure minimum margin */
-		}
+
 	}
 </style>
