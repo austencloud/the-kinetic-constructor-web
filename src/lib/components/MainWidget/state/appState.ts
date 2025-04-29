@@ -44,6 +44,6 @@ export const tabs: ReadonlyArray<Tab> = [
 		component: null,
 		icon: '✍️',
 		title: 'Write',
-		splitView: false
+		splitView: true
 	}
 ] as const;

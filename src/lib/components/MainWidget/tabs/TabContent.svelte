@@ -5,7 +5,7 @@
 	import GenerateTab from '$lib/components/GenerateTab/GenerateTab.svelte';
 	import BrowseTab from '$lib/components/BrowseTab/BrowseTab.svelte';
 	import LearnTab from '$lib/components/LearnTab/LearnTab.svelte';
-	import WriteTab from '$lib/write/index.svelte';
+	import WriteTab from '$lib/components/WriteTab/WriteTab.svelte';
 	// Import transitions
 	import { crossfade, fade } from 'svelte/transition';
 

@@ -94,8 +94,8 @@
 	}
 
 	.pictograph-placeholder {
-		width: 80%;
-		height: 80%;
+		width: 90%;
+		height: 90%;
 		background-color: #3498db;
 		border-radius: 4px;
 		display: flex;
@@ -103,6 +103,7 @@
 		justify-content: center;
 		color: white;
 		font-weight: bold;
+		position: relative; /* For absolute positioning of beat number */
 	}
 
 	.empty-cell {
@@ -115,7 +116,11 @@
 	}
 
 	.beat-number {
-		font-size: 0.75rem;
+		font-size: clamp(0.6rem, 1vw, 1rem); /* Responsive font size */
 		opacity: 0.7;
+		position: absolute;
+		top: 4px;
+		left: 4px;
+		background-color: transparent; /* Transparent background */
 	}
 </style>

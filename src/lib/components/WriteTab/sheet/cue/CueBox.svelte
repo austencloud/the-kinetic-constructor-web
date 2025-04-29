@@ -138,11 +138,14 @@
 <style>
 	.cue-box {
 		height: var(--cell-size, 80px);
+		min-height: var(--cell-size, 80px); /* Ensure minimum height */
+		max-height: var(--cell-size, 80px); /* Ensure maximum height */
 		border-bottom: 1px solid #333;
 		padding: 0.5rem;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
+		box-sizing: border-box; /* Include padding in height calculation */
 	}
 
 	.cue-content {

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import { actStore } from '../../stores/actStore';
 	import { uiStore } from '../../stores/uiStore';
 	import { selectionStore } from '../../stores/selectionStore';
@@ -14,6 +14,36 @@
 	const ROWS = 24;
 
 	let gridElement: HTMLDivElement;
+	let gridWidth = 0;
+	let gridHeight = 0;
+	let resizeObserver: ResizeObserver;
+
+	// Calculate responsive cell size based on container dimensions
+	$: responsiveCellSize =
+		gridWidth > 0
+			? Math.floor((gridWidth - (COLUMNS + 1)) / COLUMNS) // Always use full width
+			: 80; // Default fallback
+
+	// Set up resize observer to track container size changes
+	onMount(() => {
+		if (gridElement && typeof ResizeObserver !== 'undefined') {
+			resizeObserver = new ResizeObserver((entries) => {
+				const entry = entries[0];
+				if (entry) {
+					gridWidth = entry.contentRect.width;
+					gridHeight = entry.contentRect.height;
+				}
+			});
+
+			resizeObserver.observe(gridElement);
+
+			return () => {
+				if (resizeObserver) {
+					resizeObserver.disconnect();
+				}
+			};
+		}
+	});
 
 	// Handle scroll events
 	function handleScroll() {
@@ -62,10 +92,7 @@
 		onDrop: handleDrop
 	}}
 >
-	<div
-		class="grid-container"
-		style="--columns: {COLUMNS}; --cell-size: {$uiStore.gridSettings.cellSize}px;"
-	>
+	<div class="grid-container" style="--columns: {COLUMNS}; --cell-size: {responsiveCellSize}px;">
 		{#each Array(ROWS) as _, rowIndex}
 			{#each Array(COLUMNS) as _, colIndex}
 				<div class="beat-cell-wrapper" style="--row: {rowIndex}; --col: {colIndex};">
@@ -99,11 +126,11 @@
 
 	.grid-container {
 		display: grid;
-		grid-template-columns: repeat(var(--columns), var(--cell-size));
+		grid-template-columns: repeat(var(--columns), 1fr); /* Use 1fr instead of fixed size */
 		grid-auto-rows: var(--cell-size);
 		gap: 1px;
 		padding: 1px;
-		min-width: 100%;
+		width: 100%; /* Always take full width */
 		background-color: #333;
 	}
 
