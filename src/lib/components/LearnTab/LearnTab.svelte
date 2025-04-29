@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fade, fly, slide } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import { learnStore } from '$lib/state/stores/learn/learnStore';
 	import LessonSelector from './LessonSelector.svelte';

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { fade, fly, scale, slide } from 'svelte/transition';
-	import { elasticOut, backOut, cubicOut } from 'svelte/easing';
+	import { fade, fly, scale } from 'svelte/transition';
+	import { elasticOut, cubicOut } from 'svelte/easing';
 	import {
 		learnStore,
 		currentQuestion,
@@ -22,16 +22,12 @@
 	// Track animation states
 	let questionAnimating = true;
 	let answerAnimating = true;
-	let currentQuestionIndex = $learnStore.currentQuestionIndex;
 	let isTransitioning = false;
 
 	// Streak tracking
 	let currentStreak = 0;
 	let showStreakAnimation = false;
 	let streakTimeout: ReturnType<typeof setTimeout>;
-
-	// Track if component is mounted
-	let isMounted = false;
 
 	// Function to handle answer selection
 	async function handleAnswerSelect(answer: any) {
@@ -78,7 +74,6 @@
 					questionAnimating = true;
 					answerAnimating = true;
 					learnStore.generateNextQuestion();
-					currentQuestionIndex = $learnStore.currentQuestionIndex;
 
 					// Reset transition state after a short delay
 					setTimeout(() => {
@@ -108,10 +103,6 @@
 
 	// Clean up on unmount
 	onMount(() => {
-		setTimeout(() => {
-			isMounted = true;
-		}, 100);
-
 		return () => {
 			if (feedbackTimeout) {
 				clearTimeout(feedbackTimeout);

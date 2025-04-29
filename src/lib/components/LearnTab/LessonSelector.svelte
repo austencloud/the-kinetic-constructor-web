@@ -9,9 +9,6 @@
 	// Track hover state for cards
 	let hoveredCard: string | null = null;
 
-	// Track if component is mounted for animations
-	let isMounted = false;
-
 	// Progress data (would come from user data in a real app)
 	const progressData = {
 		letter_to_pictograph: { completed: 12, total: 30, lastScore: 85 },
@@ -47,11 +44,9 @@
 		learnStore.setMode(mode);
 	}
 
-	// Set mounted state after component mounts
+	// Component initialization
 	onMount(() => {
-		setTimeout(() => {
-			isMounted = true;
-		}, 100);
+		// Any initialization can go here
 	});
 </script>
 

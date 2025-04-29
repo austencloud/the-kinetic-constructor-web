@@ -46,7 +46,6 @@
 		}
 	}
 
-	let dialogContainer: HTMLElement;
 	let cancelButton: HTMLButtonElement;
 
 	onMount(() => {
@@ -69,7 +68,6 @@
 		role="dialog"
 		aria-labelledby="dialog-title"
 		aria-describedby="dialog-description"
-		bind:this={dialogContainer}
 		transition:fade={{ duration: 200, delay: 50 }}
 	>
 		<div class="dialog-header">

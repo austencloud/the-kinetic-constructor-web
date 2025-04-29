@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fly, scale, draw } from 'svelte/transition';
-	import { elasticOut, cubicOut, backOut } from 'svelte/easing';
+	import { fly, draw } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import { learnStore, quizResults } from '$lib/state/stores/learn/learnStore';
 	import BackButton from './shared/BackButton.svelte';
 	import StartOverButton from './shared/StartOverButton.svelte';
@@ -202,7 +202,7 @@
 
 	<div class="confetti-container">
 		{#if isPassing}
-			{#each Array(20) as _, i}
+			{#each Array(20) as _}
 				<div
 					class="confetti"
 					style="
