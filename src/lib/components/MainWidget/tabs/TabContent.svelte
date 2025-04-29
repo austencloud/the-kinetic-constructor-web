@@ -5,6 +5,7 @@
 	import GenerateTab from '$lib/components/GenerateTab/GenerateTab.svelte';
 	import BrowseTab from '$lib/components/BrowseTab/BrowseTab.svelte';
 	import LearnTab from '$lib/components/LearnTab/LearnTab.svelte';
+	import WriteTab from '$lib/write/index.svelte';
 	// Import transitions
 	import { crossfade, fade } from 'svelte/transition';
 
@@ -39,7 +40,8 @@
 				class={activeTab.id === 'construct' ||
 				activeTab.id === 'generate' ||
 				activeTab.id === 'browse' ||
-				activeTab.id === 'learn'
+				activeTab.id === 'learn' ||
+				activeTab.id === 'write'
 					? 'split-view-container'
 					: 'placeholderContainer'}
 			>
@@ -51,6 +53,8 @@
 					<BrowseTab />
 				{:else if activeTab.id === 'learn'}
 					<LearnTab />
+				{:else if activeTab.id === 'write'}
+					<WriteTab />
 				{:else}
 					<PlaceholderTab icon={activeTab.icon} title={activeTab.title} />
 				{/if}
