@@ -5,7 +5,6 @@
 	import { elasticOut } from 'svelte/easing';
 	import { useSelector } from '@xstate/svelte';
 	import { appService } from '$lib/state/machines/app/app.machine';
-	import { appActions } from '$lib/state/machines/app/app.actions';
 	import { uiStore } from '$lib/state/stores/uiStore';
 
 	// Get state from the app state machine
@@ -42,7 +41,7 @@
 		lastClickTime = now;
 
 		// Update the app state machine
-		appActions.changeTab(index);
+		appService.send({ type: 'CHANGE_TAB', tab: index });
 	}
 
 	// Update device/orientation state if UI store is not available

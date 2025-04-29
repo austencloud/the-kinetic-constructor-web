@@ -11,7 +11,6 @@
 	const pictographDataStore = writable(beat.pictographData);
 
 	// For debugging
-	$: console.log('Beat pictographDataStore:', $pictographDataStore);
 
 	// This is important: update the store whenever the beat's pictograph data changes
 	$: {
@@ -19,7 +18,6 @@
 			// Make a deep copy to ensure reactivity
 			const copy = JSON.parse(JSON.stringify(beat.pictographData));
 			pictographDataStore.set(copy);
-			console.log('Beat updated pictographDataStore with:', copy, 'for beat:', beat.beatNumber);
 		}
 	}
 

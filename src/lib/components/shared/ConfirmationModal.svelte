@@ -1,0 +1,130 @@
+<script lang="ts">
+	import Modal from './Modal.svelte';
+	import { createEventDispatcher } from 'svelte';
+	import { uiStore } from '../../components/WriteTab/stores/uiStore';
+
+	export let isOpen: boolean = false;
+	export let title: string = 'Confirm Action';
+	export let message: string = 'Are you sure you want to proceed?';
+	export let confirmText: string = 'Confirm';
+	export let cancelText: string = 'Cancel';
+	export let confirmButtonClass: string = 'danger'; // 'danger', 'primary', 'secondary'
+	export let showDontAskOption: boolean = true;
+
+	let dontAskAgain = false;
+
+	const dispatch = createEventDispatcher();
+
+	function handleConfirm() {
+		if (dontAskAgain && showDontAskOption) {
+			uiStore.toggleConfirmDeletions(false);
+		}
+		dispatch('confirm');
+		close();
+	}
+
+	function close() {
+		// Reset the checkbox when closing
+		dontAskAgain = false;
+		dispatch('close');
+	}
+</script>
+
+<Modal {isOpen} {title} on:close>
+	<div class="confirmation-content">
+		<p>{message}</p>
+
+		{#if showDontAskOption}
+			<label class="dont-ask-option">
+				<input type="checkbox" bind:checked={dontAskAgain} />
+				<span>Don't ask me again</span>
+			</label>
+		{/if}
+	</div>
+
+	<svelte:fragment slot="footer">
+		<button class="cancel-button" on:click={close}>
+			{cancelText}
+		</button>
+		<button class="confirm-button {confirmButtonClass}" on:click={handleConfirm}>
+			{confirmText}
+		</button>
+	</svelte:fragment>
+</Modal>
+
+<style>
+	.confirmation-content {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	p {
+		margin: 0;
+		line-height: 1.5;
+	}
+
+	.dont-ask-option {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.875rem;
+		color: #999;
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.dont-ask-option input[type='checkbox'] {
+		width: 16px;
+		height: 16px;
+		cursor: pointer;
+	}
+
+	.cancel-button,
+	.confirm-button {
+		padding: 0.5rem 1rem;
+		border-radius: 4px;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background-color 0.2s;
+		border: none;
+	}
+
+	.cancel-button {
+		background-color: #3a3a3a;
+		color: #e0e0e0;
+	}
+
+	.cancel-button:hover {
+		background-color: #4a4a4a;
+	}
+
+	.confirm-button {
+		color: white;
+	}
+
+	.confirm-button.danger {
+		background-color: #e74c3c;
+	}
+
+	.confirm-button.danger:hover {
+		background-color: #c0392b;
+	}
+
+	.confirm-button.primary {
+		background-color: #3498db;
+	}
+
+	.confirm-button.primary:hover {
+		background-color: #2980b9;
+	}
+
+	.confirm-button.secondary {
+		background-color: #2ecc71;
+	}
+
+	.confirm-button.secondary:hover {
+		background-color: #27ae60;
+	}
+</style>

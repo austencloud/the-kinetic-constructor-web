@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import { actStore } from '../../stores/actStore';
 	import { uiStore } from '../../stores/uiStore';
 	import CueBox from './CueBox.svelte';
@@ -31,7 +31,7 @@
 </script>
 
 <div class="cue-scroll" bind:this={scrollElement} on:scroll={handleScroll}>
-	<div class="cue-container" style="--cell-size: {$uiStore.gridSettings.cellSize}px;">
+	<div class="cue-container">
 		{#each Array(ROWS) as _, rowIndex}
 			<CueBox
 				row={rowIndex}
@@ -46,7 +46,9 @@
 <style>
 	.cue-scroll {
 		width: 200px;
-		overflow-y: auto;
+		min-width: 150px; /* Minimum width */
+		max-width: 250px; /* Maximum width */
+		overflow-y: hidden; /* Hide vertical scrollbar */
 		overflow-x: hidden;
 		background-color: #252525;
 		border-right: 1px solid #333;
@@ -54,7 +56,11 @@
 
 	.cue-container {
 		display: grid;
-		grid-auto-rows: var(--cell-size, 80px); /* Match the grid row height */
+		grid-auto-rows: minmax(
+			var(--cell-size, 80px),
+			auto
+		); /* Match the grid row height and allow growth */
+		width: 100%;
 	}
 
 	/* Responsive adjustments */

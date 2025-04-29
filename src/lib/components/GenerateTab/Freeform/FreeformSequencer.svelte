@@ -111,7 +111,7 @@
 
 						/* arrows */
 						redArrowData: null,
-						blueArrowData: null,
+						blueArrowData: null
 					}
 				} satisfies BeatData;
 			});
@@ -151,26 +151,13 @@
 
 		<div class="description-container">
 			<div class="description-card">
-				<h4>Freeform Sequence Generation</h4>
-				<p>Create a unique sequence with custom letter-type complexity and flow.</p>
+				<h4>Freeform Sequence</h4>
 
 				<div class="info-box">
 					<div class="info-item">
-						<span class="info-label">Sequence Length:</span>
+						<span class="info-label">Length:</span>
 						<span class="info-value">{$numBeats} beats</span>
 					</div>
-
-					<div class="info-item">
-						<span class="info-label">Selected Letter Types:</span>
-						<span class="info-value">
-							{selectedLetterTypes.length ? selectedLetterTypes.join(', ') : 'All Types'}
-						</span>
-					</div>
-
-					<p class="info-note">
-						The generator will create a {$numBeats}-beat sequence using the selected letter types
-						and motion complexity.
-					</p>
 				</div>
 			</div>
 		</div>
@@ -219,38 +206,25 @@
 		color: var(--color-text-primary, white);
 		font-weight: 500;
 	}
-	.description-card p {
-		color: var(--color-text-secondary, rgba(255, 255, 255, 0.7));
-		font-size: 0.9rem;
-		margin: 0 0 1rem;
-		line-height: 1.4;
-	}
 
 	.info-box {
-		margin-top: 1rem;
-		padding: 0.75rem;
+		margin-top: 0.5rem;
+		padding: 0.5rem;
 		background: var(--color-surface-hover, rgba(255, 255, 255, 0.05));
 		border-radius: 0.375rem;
 	}
 	.info-item {
 		display: flex;
 		justify-content: space-between;
-		margin-bottom: 0.5rem;
 	}
 	.info-label {
-		font-size: 0.875rem;
+		font-size: 0.8rem;
 		color: var(--color-text-secondary, rgba(255, 255, 255, 0.7));
 	}
 	.info-value {
-		font-size: 0.875rem;
+		font-size: 0.8rem;
 		color: var(--color-accent, #3a7bd5);
 		font-weight: 500;
-	}
-	.info-note {
-		font-size: 0.8rem;
-		color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
-		margin-top: 0.75rem;
-		font-style: italic;
 	}
 
 	@media (max-width: 768px) {

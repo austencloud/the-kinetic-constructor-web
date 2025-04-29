@@ -183,30 +183,6 @@
 			/>
 		</div>
 
-		<div class="description-container">
-			<div class="description-card">
-				<h4>{selectedCapInfo.label}</h4>
-				<p>{selectedCapInfo.description}</p>
-
-				<div class="info-box">
-					<div class="info-item">
-						<span class="info-label">Sequence Length:</span>
-						<span class="info-value">{$numBeats * 2} beats</span>
-					</div>
-
-					<div class="info-item">
-						<span class="info-label">First Half:</span>
-						<span class="info-value">{$numBeats} beats</span>
-					</div>
-
-					<p class="info-note">
-						The generator will create a {$numBeats}-beat sequence and then apply the {selectedCapInfo.label}
-						transformation to create a
-						{$numBeats * 2}-beat circular sequence.
-					</p>
-				</div>
-			</div>
-		</div>
 	</div>
 </div>
 
@@ -237,71 +213,13 @@
 		max-height: 30rem;
 	}
 
-	.description-container {
-		flex: 1;
-		min-width: 240px;
-	}
-
-	.description-card {
-		background: var(--color-surface, rgba(30, 40, 60, 0.85));
-		border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
-		border-radius: 0.5rem;
-		padding: 1rem;
-	}
-
-	.description-card h4 {
-		font-size: 1.1rem;
-		margin: 0 0 0.75rem 0;
-		color: var(--color-text-primary, white);
-		font-weight: 500;
-	}
-
-	.description-card p {
-		color: var(--color-text-secondary, rgba(255, 255, 255, 0.7));
-		font-size: 0.9rem;
-		margin: 0 0 1rem 0;
-		line-height: 1.4;
-	}
-
-	.info-box {
-		margin-top: 1rem;
-		padding: 0.75rem;
-		background: var(--color-surface-hover, rgba(255, 255, 255, 0.05));
-		border-radius: 0.375rem;
-	}
-
-	.info-item {
-		display: flex;
-		justify-content: space-between;
-		margin-bottom: 0.5rem;
-	}
-
-	.info-label {
-		font-size: 0.875rem;
-		color: var(--color-text-secondary, rgba(255, 255, 255, 0.7));
-	}
-
-	.info-value {
-		font-size: 0.875rem;
-		color: var(--color-accent, #3a7bd5);
-		font-weight: 500;
-	}
-
-	.info-note {
-		font-size: 0.8rem;
-		color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
-		margin-top: 0.75rem;
-		font-style: italic;
-	}
-
 	/* Responsive adjustments */
 	@media (max-width: 768px) {
 		.content {
 			flex-direction: column;
 		}
 
-		.cap-picker-container,
-		.description-container {
+		.cap-picker-container {
 			width: 100%;
 		}
 

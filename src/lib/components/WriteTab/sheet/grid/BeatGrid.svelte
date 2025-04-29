@@ -24,6 +24,13 @@
 			? Math.floor((gridWidth - (COLUMNS + 1)) / COLUMNS) // Always use full width
 			: 80; // Default fallback
 
+	// Dispatch resize event when cell size changes
+	$: if (responsiveCellSize && dispatch) {
+		dispatch('resize', {
+			cellSize: responsiveCellSize
+		});
+	}
+
 	// Set up resize observer to track container size changes
 	onMount(() => {
 		if (gridElement && typeof ResizeObserver !== 'undefined') {
@@ -32,6 +39,13 @@
 				if (entry) {
 					gridWidth = entry.contentRect.width;
 					gridHeight = entry.contentRect.height;
+
+					// Dispatch a resize event to synchronize with CueScroll
+					dispatch('resize', {
+						width: gridWidth,
+						height: gridHeight,
+						cellSize: responsiveCellSize
+					});
 				}
 			});
 
@@ -92,7 +106,7 @@
 		onDrop: handleDrop
 	}}
 >
-	<div class="grid-container" style="--columns: {COLUMNS}; --cell-size: {responsiveCellSize}px;">
+	<div class="grid-container" style="--columns: {COLUMNS};">
 		{#each Array(ROWS) as _, rowIndex}
 			{#each Array(COLUMNS) as _, colIndex}
 				<div class="beat-cell-wrapper" style="--row: {rowIndex}; --col: {colIndex};">
@@ -127,7 +141,7 @@
 	.grid-container {
 		display: grid;
 		grid-template-columns: repeat(var(--columns), 1fr); /* Use 1fr instead of fixed size */
-		grid-auto-rows: var(--cell-size);
+		grid-auto-rows: minmax(var(--cell-size), auto); /* Allow rows to grow if needed */
 		gap: 1px;
 		padding: 1px;
 		width: 100%; /* Always take full width */

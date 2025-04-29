@@ -15,8 +15,6 @@
 	// Create a local store for the pictograph data for the Pictograph component
 	const pictographDataStore = writable(beatData.pictographData);
 
-	// For debugging
-	$: console.log('StartPosBeat pictographDataStore:', $pictographDataStore);
 
 	// Helper function to safely copy pictograph data without circular references
 	function safeCopyPictographData(data: PictographData): PictographData {

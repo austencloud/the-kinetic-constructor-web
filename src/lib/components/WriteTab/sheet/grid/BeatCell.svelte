@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { selectionStore, selectedBeat } from '../../stores/selectionStore';
+	import { actStore } from '../../stores/actStore';
+	import { uiStore } from '../../stores/uiStore';
+	import ConfirmationModal from '../../../shared/ConfirmationModal.svelte';
 	import type { Beat } from '../../models/Act';
 
 	export let row: number;
@@ -8,6 +11,9 @@
 	export let beat: Beat | undefined = undefined;
 
 	const dispatch = createEventDispatcher();
+
+	// Modal state
+	let isEraseBeatModalOpen = false;
 
 	// Determine if this cell is selected
 	$: isSelected = $selectedBeat?.row === row && $selectedBeat?.col === col;
@@ -18,6 +24,22 @@
 	// Handle click events
 	function handleClick() {
 		dispatch('click', { row, col });
+	}
+
+	// Handle erase click
+	function handleEraseClick(event: MouseEvent) {
+		event.stopPropagation(); // Prevent selection
+		if ($uiStore.preferences.confirmDeletions) {
+			isEraseBeatModalOpen = true;
+		} else {
+			actStore.eraseBeat(row, col);
+		}
+	}
+
+	// Handle confirmation from modal
+	function confirmEraseBeat() {
+		actStore.eraseBeat(row, col);
+		isEraseBeatModalOpen = false;
 	}
 
 	// Generate beat number for display
@@ -41,6 +63,25 @@
 			<!-- Placeholder for pictograph visualization -->
 			<div class="pictograph-placeholder">
 				<span class="beat-number">{beatNumber}</span>
+				<button class="erase-button" on:click={handleEraseClick} aria-label="Erase beat">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="12"
+						height="12"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M3 6h18"></path>
+						<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+						<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+						<line x1="10" y1="11" x2="10" y2="17"></line>
+						<line x1="14" y1="11" x2="14" y2="17"></line>
+					</svg>
+				</button>
 			</div>
 		</div>
 	{:else}
@@ -49,6 +90,17 @@
 		</div>
 	{/if}
 </div>
+
+<ConfirmationModal
+	isOpen={isEraseBeatModalOpen}
+	title="Erase Beat"
+	message={`Are you sure you want to erase beat ${beatNumber}?`}
+	confirmText="Erase"
+	cancelText="Cancel"
+	confirmButtonClass="danger"
+	on:confirm={confirmEraseBeat}
+	on:close={() => (isEraseBeatModalOpen = false)}
+/>
 
 <style>
 	.beat-cell {
@@ -122,5 +174,33 @@
 		top: 4px;
 		left: 4px;
 		background-color: transparent; /* Transparent background */
+	}
+
+	.erase-button {
+		position: absolute;
+		top: 4px;
+		right: 4px;
+		width: 20px;
+		height: 20px;
+		border-radius: 50%;
+		background-color: rgba(0, 0, 0, 0.3);
+		border: none;
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		opacity: 0;
+		transition:
+			opacity 0.2s,
+			background-color 0.2s;
+	}
+
+	.pictograph-placeholder:hover .erase-button {
+		opacity: 1;
+	}
+
+	.erase-button:hover {
+		background-color: rgba(231, 76, 60, 0.8);
 	}
 </style>

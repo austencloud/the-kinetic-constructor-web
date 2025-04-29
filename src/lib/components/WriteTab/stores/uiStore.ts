@@ -12,6 +12,9 @@ interface UIState {
 	gridSettings: {
 		cellSize: number;
 	};
+	preferences: {
+		confirmDeletions: boolean;
+	};
 }
 
 // Create the initial state
@@ -24,6 +27,9 @@ const initialState: UIState = {
 	},
 	gridSettings: {
 		cellSize: 80 // Default cell size in pixels
+	},
+	preferences: {
+		confirmDeletions: true // Default to showing confirmation dialogs
 	}
 };
 
@@ -172,6 +178,19 @@ function createUIStore() {
 			update((state) => ({
 				...state,
 				browserPanelWidth: constrainedWidth
+			}));
+		},
+
+		/**
+		 * Toggle whether to show confirmation dialogs for deletions
+		 */
+		toggleConfirmDeletions: (value?: boolean) => {
+			update((state) => ({
+				...state,
+				preferences: {
+					...state.preferences,
+					confirmDeletions: value !== undefined ? value : !state.preferences.confirmDeletions
+				}
 			}));
 		},
 

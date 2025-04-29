@@ -12,33 +12,37 @@ import { createMachine, assign, fromPromise } from 'xstate';
 import { createAppMachine } from '$lib/state/core';
 import { initializeApplication } from '$lib/utils/appInitializer';
 import type { BackgroundType } from '$lib/components/MainWidget/state/appState';
+import { browser } from '$app/environment';
+import { type AppMachineContext, type AppMachineEvents } from './types';
 
-// --- Context Definition ---
-export interface AppMachineContext {
-	currentTab: number;
-	previousTab: number;
-	background: BackgroundType;
-	isFullScreen: boolean;
-	isSettingsOpen: boolean;
-	initializationError: string | null;
-	loadingProgress: number;
-	loadingMessage: string;
-	contentVisible: boolean;
-	backgroundIsReady: boolean;
+// Storage key for the last active tab
+const LAST_ACTIVE_TAB_KEY = 'last_active_tab';
+
+// Function to load the last active tab from localStorage
+function loadLastActiveTab(): number {
+	if (!browser) return 0;
+
+	try {
+		const savedTab = localStorage.getItem(LAST_ACTIVE_TAB_KEY);
+		console.log('Loading last active tab from localStorage:', savedTab);
+
+		if (savedTab !== null) {
+			const tabIndex = parseInt(savedTab, 10);
+			console.log('Parsed tab index:', tabIndex);
+
+			// Ensure the tab index is valid (between 0 and 4)
+			if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex <= 4) {
+				console.log('Using saved tab index:', tabIndex);
+				return tabIndex;
+			}
+		}
+	} catch (error) {
+		console.error('Error loading last active tab:', error);
+	}
+
+	console.log('Using default tab index: 0');
+	return 0; // Default to the first tab if no saved tab or error
 }
-
-// --- Event Definitions ---
-export type AppMachineEvents =
-	| { type: 'BACKGROUND_READY' }
-	| { type: 'INITIALIZATION_SUCCESS' }
-	| { type: 'INITIALIZATION_FAILURE'; error: string }
-	| { type: 'UPDATE_PROGRESS'; progress: number; message: string }
-	| { type: 'RETRY_INITIALIZATION' }
-	| { type: 'CHANGE_TAB'; tab: number }
-	| { type: 'TOGGLE_FULLSCREEN' }
-	| { type: 'OPEN_SETTINGS' }
-	| { type: 'CLOSE_SETTINGS' }
-	| { type: 'UPDATE_BACKGROUND'; background: string };
 
 // --- State Machine Definition ---
 export const appMachine = createMachine(
@@ -49,7 +53,7 @@ export const appMachine = createMachine(
 			events: AppMachineEvents;
 		},
 		context: {
-			currentTab: 0,
+			currentTab: loadLastActiveTab(),
 			previousTab: 0,
 			background: 'snowfall',
 			isFullScreen: false,
@@ -125,18 +129,55 @@ export const appMachine = createMachine(
 				}
 			},
 			ready: {
-				entry: assign({
-					contentVisible: true,
-					loadingProgress: 0,
-					loadingMessage: ''
-				}),
+				entry: [
+					assign({
+						contentVisible: true,
+						loadingProgress: 0,
+						loadingMessage: ''
+					}),
+					// Add this new action to enforce the tab selection from localStorage
+					({ self }) => {
+						if (browser) {
+							try {
+								const savedTab = localStorage.getItem(LAST_ACTIVE_TAB_KEY);
+								if (savedTab !== null) {
+									const tabIndex = parseInt(savedTab, 10);
+									// Ensure the tab index is valid (between 0 and 4)
+									if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex <= 4) {
+										console.log('Enforcing tab from localStorage in ready state:', tabIndex);
+										// Use a small timeout to ensure this happens after other initialization
+										setTimeout(() => {
+											self.send({ type: 'CHANGE_TAB', tab: tabIndex });
+										}, 50);
+									}
+								}
+							} catch (error) {
+								console.error('Error enforcing tab on ready state:', error);
+							}
+						}
+					}
+				],
 				on: {
 					CHANGE_TAB: {
 						target: 'ready',
-						actions: assign({
-							previousTab: ({ context }) => context.currentTab,
-							currentTab: ({ event }) => event.tab
-						}),
+						actions: [
+							assign({
+								previousTab: ({ context }) => context.currentTab,
+								currentTab: ({ event }) => event.tab
+							}),
+							({ event }) => {
+								// Save the current tab to localStorage
+								if (browser) {
+									try {
+										console.log('Saving tab to localStorage:', event.tab);
+										localStorage.setItem(LAST_ACTIVE_TAB_KEY, event.tab.toString());
+										console.log('Tab saved successfully');
+									} catch (error) {
+										console.error('Error saving last active tab:', error);
+									}
+								}
+							}
+						],
 						guard: ({ context, event }) => context.currentTab !== event.tab
 					},
 					TOGGLE_FULLSCREEN: {

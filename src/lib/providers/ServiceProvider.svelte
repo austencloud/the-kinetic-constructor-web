@@ -28,7 +28,7 @@
 
 			// Explicitly import the state machines to ensure proper registration order
 			// We need to await these imports to ensure they're fully loaded
-			await import('$lib/state/machines/appMachine');
+			await import('$lib/state/machines/app/app.machine');
 			await import('$lib/state/machines/sequenceMachine');
 
 			// Now initialize state management

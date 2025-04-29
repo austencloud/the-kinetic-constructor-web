@@ -5,6 +5,7 @@
 	import SheetPanel from './sheet/SheetPanel.svelte';
 	import MusicPlayer from './player/MusicPlayer.svelte';
 	import ResizeHandle from './browser/ResizeHandle.svelte';
+	import * as ToastManager from '../shared/ToastManager.svelte';
 	import { actStore } from './stores/actStore';
 	import { uiStore } from './stores/uiStore';
 
@@ -13,9 +14,54 @@
 		uiStore.updateBrowserPanelWidth(width);
 	}
 
+	// Handle keyboard shortcuts
+	function handleKeyDown(event: KeyboardEvent) {
+		// Check if Ctrl/Cmd key is pressed
+		const isCtrlOrCmd = event.ctrlKey || event.metaKey;
+
+		// Undo: Ctrl/Cmd + Z
+		if (isCtrlOrCmd && event.key === 'z' && !event.shiftKey) {
+			event.preventDefault();
+			const actionDescription = actStore.undo();
+			if (actionDescription) {
+				ToastManager.showInfo(`Undid: ${actionDescription}`, {
+					action: {
+						label: 'Redo',
+						onClick: () => actStore.redo()
+					}
+				});
+			}
+		}
+
+		// Redo: Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y
+		if (
+			(isCtrlOrCmd && event.key === 'z' && event.shiftKey) ||
+			(isCtrlOrCmd && event.key === 'y')
+		) {
+			event.preventDefault();
+			const actionDescription = actStore.redo();
+			if (actionDescription) {
+				ToastManager.showInfo(`Redid: ${actionDescription}`, {
+					action: {
+						label: 'Undo',
+						onClick: () => actStore.undo()
+					}
+				});
+			}
+		}
+	}
+
 	// Initialize the act store on mount
 	onMount(() => {
 		actStore.initialize();
+
+		// Add global keyboard event listener
+		window.addEventListener('keydown', handleKeyDown);
+
+		// Clean up on unmount
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown);
+		};
 	});
 </script>
 
@@ -58,6 +104,9 @@
 	</div>
 
 	<MusicPlayer />
+
+	<!-- Toast notifications -->
+	<ToastManager.default />
 </div>
 
 <style>

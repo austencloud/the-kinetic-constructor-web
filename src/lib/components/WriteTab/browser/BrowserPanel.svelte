@@ -46,7 +46,7 @@
 	style="width: {$uiStore.browserPanelWidth}px;"
 >
 	<div class="browser-header">
-		<h2 class="text-xl font-semibold">Favorite Sequences</h2>
+		<h2 class="text-xl font-semibold">Sequence Browser</h2>
 		<button
 			class="close-button"
 			on:click={() => uiStore.setBrowserPanelOpen(false)}

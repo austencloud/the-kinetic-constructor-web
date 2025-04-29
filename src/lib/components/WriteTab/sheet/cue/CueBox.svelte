@@ -1,11 +1,32 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { actStore } from '../../stores/actStore';
+	import { uiStore } from '../../stores/uiStore';
+	import ConfirmationModal from '../../../shared/ConfirmationModal.svelte';
 
 	export let row: number;
 	export let cue: string = '';
 	export let timestamp: string = '';
 
 	const dispatch = createEventDispatcher();
+
+	// Modal state
+	let isEraseSequenceModalOpen = false;
+
+	// Handle erase sequence button click
+	function handleEraseSequence() {
+		if ($uiStore.preferences.confirmDeletions) {
+			isEraseSequenceModalOpen = true;
+		} else {
+			actStore.eraseSequence(row);
+		}
+	}
+
+	// Handle confirmation from modal
+	function confirmEraseSequence() {
+		actStore.eraseSequence(row);
+		isEraseSequenceModalOpen = false;
+	}
 
 	let isEditingCue = false;
 	let isEditingTimestamp = false;
@@ -132,14 +153,47 @@
 				</button>
 			{/if}
 		</div>
+
+		<button
+			class="erase-sequence-button"
+			on:click={handleEraseSequence}
+			aria-label="Erase sequence"
+			title="Erase this sequence"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="12"
+				height="12"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d="M3 6h18"></path>
+				<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+				<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+			</svg>
+			<span>Erase</span>
+		</button>
 	</div>
 </div>
 
+<ConfirmationModal
+	isOpen={isEraseSequenceModalOpen}
+	title="Erase Sequence"
+	message={`Are you sure you want to erase sequence ${row + 1}? This will clear all beats but keep the cue and timestamp.`}
+	confirmText="Erase"
+	cancelText="Cancel"
+	confirmButtonClass="danger"
+	on:confirm={confirmEraseSequence}
+	on:close={() => (isEraseSequenceModalOpen = false)}
+/>
+
 <style>
 	.cue-box {
-		height: var(--cell-size, 80px);
-		min-height: var(--cell-size, 80px); /* Ensure minimum height */
-		max-height: var(--cell-size, 80px); /* Ensure maximum height */
+		height: 100%; /* Take full height of grid cell */
 		border-bottom: 1px solid #333;
 		padding: 0.5rem;
 		display: flex;
@@ -206,6 +260,33 @@
 	.cue-input:focus,
 	.timestamp-input:focus {
 		border-color: #3498db;
+	}
+
+	.erase-sequence-button {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.25rem 0.5rem;
+		background-color: rgba(231, 76, 60, 0.2);
+		color: #e0e0e0;
+		border: none;
+		border-radius: 4px;
+		font-size: 0.75rem;
+		cursor: pointer;
+		margin-top: 0.5rem;
+		opacity: 0;
+		transition:
+			opacity 0.2s,
+			background-color 0.2s;
+		align-self: flex-start;
+	}
+
+	.cue-box:hover .erase-sequence-button {
+		opacity: 1;
+	}
+
+	.erase-sequence-button:hover {
+		background-color: rgba(231, 76, 60, 0.5);
 	}
 
 	/* Empty state styling */

@@ -4,12 +4,7 @@
  * Manages the sequence generation process and related operations.
  */
 
-import {
-	createMachine,
-	assign,
-	fromCallback,
-	type EventObject // Base type for events
-} from 'xstate';
+import { createMachine, assign, fromCallback } from 'xstate';
 import { stateRegistry } from '../core/registry';
 import { sequenceStore } from '../stores/sequenceStore';
 import type { BeatData as StoreBeatData, SequenceState } from '../stores/sequenceStore';
@@ -19,6 +14,9 @@ import {
 	type FreeformSequenceOptions,
 	convertToStoreBeatData
 } from './sequenceMachine.types';
+import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
+import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+import { pictographStore } from '$lib/state/stores/pictograph/pictograph.store';
 
 // Context for the sequence state machine
 export interface SequenceMachineContext {
@@ -443,9 +441,85 @@ export const sequenceMachine = createMachine(
 
 // Create and register the sequence actor
 export const sequenceActor = stateRegistry.registerMachine('sequence', sequenceMachine, {
-	persist: false,
+	persist: true,
 	description: 'Manages sequence generation and related operations'
 });
+
+// Log that the sequence actor has been registered
+console.log('Sequence actor registered with persist:', true);
+
+// Add a subscription to log state changes
+if (typeof window !== 'undefined') {
+	// Try to load the sequence backup
+	try {
+		const backupData = localStorage.getItem('sequence_backup');
+		if (backupData) {
+			const backup = JSON.parse(backupData);
+			console.log('Found sequence backup with beats:', backup.beats?.length);
+
+			// Restore the beats to the sequence store
+			if (backup.beats && Array.isArray(backup.beats) && backup.beats.length > 0) {
+				console.log('Restoring beats from backup');
+				sequenceStore.setSequence(backup.beats);
+
+				// Set isSequenceEmpty to false to show the Option Picker
+				isSequenceEmpty.set(false);
+
+				// Extract the start position from the first beat (if it exists)
+				if (backup.beats[0] && backup.beats[0].pictographData) {
+					console.log('Restoring start position from backup');
+
+					// Create a deep copy to avoid reference issues
+					const startPosCopy = JSON.parse(JSON.stringify(backup.beats[0].pictographData));
+
+					// Update the selectedStartPos store
+					selectedStartPos.set(startPosCopy);
+
+					// Also update the pictographStore
+					pictographStore.setData(startPosCopy);
+
+					console.log('Start position restored from backup:', startPosCopy);
+
+					// Dispatch a custom event to notify components
+					if (typeof document !== 'undefined') {
+						const event = new CustomEvent('start-position-selected', {
+							detail: { startPosition: startPosCopy },
+							bubbles: true
+						});
+						document.dispatchEvent(event);
+						console.log('Dispatched start-position-selected event');
+					}
+				}
+			}
+		}
+	} catch (error) {
+		console.error('Error loading sequence backup:', error);
+	}
+
+	// Subscribe to state changes to save backup
+	sequenceActor.subscribe((state) => {
+		console.log('Sequence actor state changed:', state.context);
+		// Save the state to localStorage manually as a backup
+		try {
+			// Get the current beats from the sequence store
+			let beats: any[] = [];
+			sequenceStore.subscribe((state) => {
+				beats = state.beats;
+			})();
+
+			localStorage.setItem(
+				'sequence_backup',
+				JSON.stringify({
+					beats: beats,
+					options: state.context.generationOptions
+				})
+			);
+			console.log('Saved sequence backup with beats:', beats.length);
+		} catch (error) {
+			console.error('Error saving sequence backup:', error);
+		}
+	});
+}
 
 // Helper functions to interact with the sequence machine
 export const sequenceActions = {

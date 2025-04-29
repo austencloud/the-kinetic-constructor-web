@@ -11,7 +11,9 @@ export * from './core/registry';
 
 // Import at the top to avoid circular dependencies
 import { stateRegistry } from './core/registry';
-import { appActor, appActions, appSelectors } from './machines/appMachine';
+import { appService as appActor } from './machines/app/app.machine';
+import { appActions } from './machines/app/app.actions';
+import * as appSelectors from './machines/app/app.selectors';
 import { sequenceActor, sequenceActions, sequenceSelectors } from './machines/sequenceMachine';
 
 // Export state machines
