@@ -50,7 +50,7 @@ describe('Sequence Machine', () => {
 			numBeats: 8,
 			turnIntensity: 3,
 			propContinuity: 'continuous' as 'continuous',
-			capType: 'mirrored'
+			capType: 'mirrored' as const
 		};
 
 		// Act
@@ -74,7 +74,7 @@ describe('Sequence Machine', () => {
 			numBeats: 8,
 			turnIntensity: 3,
 			propContinuity: 'continuous' as 'continuous',
-			capType: 'mirrored'
+			capType: 'mirrored' as const
 		};
 
 		// Act - start generation
@@ -103,7 +103,7 @@ describe('Sequence Machine', () => {
 			numBeats: 8,
 			turnIntensity: 3,
 			propContinuity: 'continuous' as 'continuous',
-			capType: 'mirrored'
+			capType: 'mirrored' as const
 		};
 
 		// Act - start generation
@@ -141,7 +141,7 @@ describe('Sequence Machine', () => {
 			numBeats: 8,
 			turnIntensity: 3,
 			propContinuity: 'continuous' as 'continuous',
-			capType: 'mirrored'
+			capType: 'mirrored' as const
 		};
 
 		// Act - start generation
@@ -172,7 +172,7 @@ describe('Sequence Machine', () => {
 				numBeats: 8,
 				turnIntensity: 3,
 				propContinuity: 'continuous' as 'continuous',
-				capType: 'mirrored'
+				capType: 'mirrored' as const
 			},
 			generationType: 'circular'
 		});
@@ -200,7 +200,7 @@ describe('Sequence Machine', () => {
 				numBeats: 8,
 				turnIntensity: 3,
 				propContinuity: 'continuous' as 'continuous',
-				capType: 'mirrored'
+				capType: 'mirrored' as const
 			},
 			generationType: 'circular'
 		});

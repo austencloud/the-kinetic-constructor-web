@@ -1,5 +1,5 @@
 import { createActor } from 'xstate';
-import { appStateMachine } from './appStateMachine';
+import { appMachine as appStateMachine } from '$lib/state/machines/app/app.machine';
 import { tabs } from './appState';
 import { useSelector as useXStateSelector } from '@xstate/svelte';
 

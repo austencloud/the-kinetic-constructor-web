@@ -16,7 +16,12 @@
 		"lint": "prettier --check .",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"test:coverage": "vitest run --coverage"
+		"test:coverage": "vitest run --coverage",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui",
+		"test:e2e:debug": "playwright test --debug",
+		"test:e2e:visual": "playwright test --project=visual-tests",
+		"test:e2e:report": "playwright show-report"
 	},
 	"files": [
 		"dist",

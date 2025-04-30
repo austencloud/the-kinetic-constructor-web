@@ -73,7 +73,7 @@ global.cancelAnimationFrame = (id: number) => {
 
 // Mock Svelte lifecycle functions for component tests
 vi.mock('svelte', async (importOriginal) => {
-	const actual = await importOriginal();
+	const actual = (await importOriginal()) as Record<string, any>;
 	return {
 		...actual,
 		onMount: (fn: () => any) => {
