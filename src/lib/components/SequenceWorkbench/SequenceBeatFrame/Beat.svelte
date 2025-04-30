@@ -3,6 +3,7 @@
 	import { writable } from 'svelte/store';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import type { BeatData } from './BeatData';
+	import { updateDevTools } from '$lib/utils/devToolsUpdater';
 
 	export let beat: BeatData;
 	export let onClick: () => void;
@@ -36,6 +37,9 @@
 		// Prevent the event from propagating to avoid double-handling
 		event.stopPropagation();
 		onClick();
+
+		// Update dev tools after click
+		updateDevTools();
 	}
 </script>
 
@@ -62,9 +66,10 @@
 		justify-content: center;
 		align-items: center;
 		border-radius: 4px;
-		/* Ensure the beat doesn't shrink too much */
-		min-width: 90%;
-		min-height: 90%;
+		/* Use 100% for both dimensions to fill the container completely */
+		min-width: 100%;
+		min-height: 100%;
+		box-sizing: border-box;
 	}
 
 	.beat:hover {

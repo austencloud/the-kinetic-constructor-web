@@ -10,6 +10,9 @@
 	// import '$lib/pwa';
 	// Import ServiceProvider for DI
 	import ServiceProvider from '$lib/providers/ServiceProvider.svelte';
+	// Import dev tools initializers
+	import { initDevTools as initCoreDevTools } from '$lib/utils/initDevTools';
+	import { initDevTools as initSequenceDevTools } from '$lib/utils/devTools';
 
 	// This prop receives the data returned from your +layout.server.ts load function
 	export let data: LayoutData;
@@ -19,6 +22,14 @@
 	// onMount runs only in the browser after the component has mounted
 	onMount(() => {
 		if (initialized || !browser) return; // Ensure runs only once in browser
+
+		// Initialize dev tools in development mode
+		if (import.meta.env.DEV) {
+			// Initialize core dev tools
+			initCoreDevTools();
+			// Initialize sequence dev tools
+			initSequenceDevTools();
+		}
 
 		// Check if the load function returned data successfully
 		if (data?.csvData && !data.error) {

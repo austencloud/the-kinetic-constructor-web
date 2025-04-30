@@ -71,7 +71,9 @@ export function autoAdjustLayout(beatCount: number): [number, number] {
 	if (beatCount <= 4) return [2, 2]; // 2x2 grid
 	if (beatCount <= 9) return [3, 3]; // 3x3 grid
 	if (beatCount <= 16) return [4, 4]; // 4x4 grid
-	if (beatCount <= 32) return [4, 8]; // 4x8 grid
-	if (beatCount <= 48) return [6, 8]; // 6x8 grid
-	return [8, 8]; // Max 8x8 grid
+
+	// For more than 16 beats, always use 4 columns and calculate rows based on beat count
+	const cols = 4;
+	const rows = Math.ceil(beatCount / cols);
+	return [rows, cols];
 }

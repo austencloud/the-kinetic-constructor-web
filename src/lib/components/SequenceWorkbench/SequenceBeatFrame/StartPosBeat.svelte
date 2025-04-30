@@ -2,19 +2,20 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import Beat from './Beat.svelte';
+	import StartPosLabel from './StartPosLabel.svelte';
 	import type { BeatData } from './BeatData';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import { pictographStore } from '$lib/state/stores/pictograph/pictograph.store';
 	import { writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
+	import { updateDevTools } from '$lib/utils/devToolsUpdater';
 
 	export let beatData: BeatData;
 	export let onClick: () => void;
 
 	// Create a local store for the pictograph data for the Pictograph component
 	const pictographDataStore = writable(beatData.pictographData);
-
 
 	// Helper function to safely copy pictograph data without circular references
 	function safeCopyPictographData(data: PictographData): PictographData {
@@ -173,12 +174,18 @@
 		// Only handle clicks directly on the container, not on children
 		if (event.target === event.currentTarget) {
 			onClick();
+
+			// Update dev tools after click
+			updateDevTools();
 		}
 	}
 </script>
 
 <button class="start-pos-beat" on:click={handleContainerClick} type="button">
 	<Beat beat={beatData} {onClick} />
+	<div class="start-label-container">
+		<StartPosLabel />
+	</div>
 </button>
 
 <style>
@@ -192,5 +199,18 @@
 		border-radius: 8px;
 		background-color: transparent;
 		border: none;
+		padding: 0; /* Remove default button padding */
+		margin: 0; /* Remove any margin */
+		box-sizing: border-box; /* Ensure padding is included in width/height */
+	}
+
+	.start-label-container {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none; /* Allow clicks to pass through to the beat */
+		z-index: 2;
 	}
 </style>

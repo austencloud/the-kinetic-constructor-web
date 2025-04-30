@@ -4,6 +4,7 @@
 import { sequenceStore } from '../../stores/sequenceStore';
 import type { BeatData as StoreBeatData, SequenceState } from '../../stores/sequenceStore';
 import { convertToStoreBeatData } from './types';
+import { updateDevTools } from '$lib/utils/devToolsUpdater';
 
 /**
  * Update the sequence store with the generated sequence
@@ -18,6 +19,9 @@ export function updateSequence({ event }: { event: any }) {
     const storeBeats = convertToStoreBeatData(doneEvent.output);
     sequenceStore.setSequence(storeBeats);
     console.log('Sequence updated with new data:', storeBeats);
+    
+    // Update dev tools with the new sequence state
+    updateDevTools();
   }
 }
 
@@ -35,6 +39,9 @@ export function selectBeat({ event }: { event: any }) {
       bubbles: true
     });
     document.dispatchEvent(selectionEvent);
+    
+    // Update dev tools
+    updateDevTools();
   }
 }
 
@@ -59,6 +66,9 @@ export function deselectBeat({ event }: { event: any }) {
       bubbles: true
     });
     document.dispatchEvent(selectionEvent);
+    
+    // Update dev tools
+    updateDevTools();
   }
 }
 
@@ -88,6 +98,9 @@ export function addBeat({ event }: { event: any }) {
       bubbles: true
     });
     document.dispatchEvent(beatEvent);
+    
+    // Update dev tools
+    updateDevTools();
   }
 }
 
@@ -105,6 +118,9 @@ export function removeBeat({ event }: { event: any }) {
       bubbles: true
     });
     document.dispatchEvent(beatEvent);
+    
+    // Update dev tools
+    updateDevTools();
   }
 }
 
@@ -143,6 +159,9 @@ export function removeBeatAndFollowing({ event }: { event: any }) {
         bubbles: true
       });
       document.dispatchEvent(sequenceUpdatedEvent);
+      
+      // Update dev tools
+      updateDevTools();
     }
   }
 }
@@ -165,6 +184,9 @@ export function updateBeat({ event }: { event: any }) {
       bubbles: true
     });
     document.dispatchEvent(beatEvent);
+    
+    // Update dev tools
+    updateDevTools();
   }
 }
 
@@ -182,5 +204,8 @@ export function clearSequence() {
       bubbles: true
     });
     document.dispatchEvent(sequenceUpdatedEvent);
+    
+    // Update dev tools
+    updateDevTools();
   }
 }

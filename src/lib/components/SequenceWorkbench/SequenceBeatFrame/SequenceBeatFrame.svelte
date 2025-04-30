@@ -9,6 +9,7 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { BeatData } from './BeatData';
 	import { browser } from '$app/environment'; // Import browser check
+	import { initDevToolsUpdater, updateDevTools } from '$lib/utils/devToolsUpdater';
 
 	// Import the sequence machine actions and selectors
 	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
@@ -24,8 +25,7 @@
 		browser ? undefined : ssrDefaults // Pass undefined in browser to let hook calculate, use defaults for SSR
 		// OR ensure useResizeObserver internally handles SSR returning 0s or defaults
 	);
-	// Constants
-	const GAP = 10; // Gap between cells in pixels
+	// No gap between cells
 
 	// Use reactive stores for beats and selection state
 	// Create a store that updates whenever the sequence store changes
@@ -121,12 +121,19 @@
 
 	// Set up event listeners for sequence updates
 	onMount(() => {
+		// Initialize dev tools updater
+		if (browser) {
+			initDevToolsUpdater();
+		}
+
 		// Update local state when sequence is updated
 		const handleSequenceUpdate = () => {
 			// Update the local state and trigger reactivity
 			updateLocalState();
 			// Force a component update by triggering a state change
 			beatsStore.update((beats) => [...beats]);
+			// Update dev tools
+			updateDevTools();
 		};
 
 		// Listen for sequence-updated events
@@ -137,9 +144,16 @@
 		document.addEventListener('beat-removed', handleSequenceUpdate);
 		document.addEventListener('beat-updated', handleSequenceUpdate);
 
+		// Listen for dev tools update events
+		document.addEventListener('dev-tools-update', () => {
+			console.log('[Dev Tools] Update event received');
+		});
+
 		// Set up an interval to periodically check for updates (as a fallback)
 		const intervalId = setInterval(() => {
 			updateLocalState();
+			// Update dev tools periodically
+			updateDevTools();
 		}, 500);
 
 		return () => {
@@ -150,6 +164,7 @@
 			document.removeEventListener('beat-added', handleSequenceUpdate);
 			document.removeEventListener('beat-removed', handleSequenceUpdate);
 			document.removeEventListener('beat-updated', handleSequenceUpdate);
+			document.removeEventListener('dev-tools-update', () => {});
 			clearInterval(intervalId);
 		};
 	});
@@ -171,7 +186,16 @@
 	$: [beatRows, beatCols] = autoAdjustLayout(beats.length);
 
 	// Calculate cell size based on container dimensions
-	$: cellSize = calculateCellSize($size.width, $size.height, beatRows, beatCols, GAP);
+	// For scrollable layouts (more than 16 beats), we only need to consider 4 rows for height calculation
+	// This ensures the cell size remains consistent even as more rows are added
+	$: cellSize = calculateCellSize(
+		$size.width,
+		$size.height,
+		// For small grids, use actual rows; for large grids, limit to 4 rows for consistent sizing
+		beats.length > 16 ? Math.min(4, beatRows) : beatRows,
+		beatCols + 1,
+		0
+	);
 
 	// Event handlers
 	function handleStartPosBeatClick() {
@@ -248,52 +272,87 @@
 	}
 </script>
 
-<div
-	use:resizeObserver
-	class="beat-frame"
-	style="--total-rows: {beatRows}; --total-cols: {beatCols}; --gap: {GAP}px; --cell-size: {cellSize}px;"
->
-	<!-- Start Position Beat -->
-	<div class="beat-container start-position">
-		<StartPosBeat beatData={startPosBeatData} onClick={handleStartPosBeatClick} />
-	</div>
-
-	<!-- Regular Beats -->
-	{#each beats as beat, index (beat.beatNumber)}
-		<div class="beat-container" class:selected={selectedBeatIndex === index}>
-			<Beat {beat} onClick={() => handleBeatClick(index)} />
-
-			<!-- Show beat number -->
-			<div class="beat-number">
-				<BeatNumberLabel beatNumber={beat.beatNumber} duration={beat.duration || 1} />
-			</div>
-
-			<!-- Show reversals if any -->
-			{#if beat.metadata?.blueReversal || beat.metadata?.redReversal}
-				<div class="reversal-indicator">
-					<ReversalGlyph
-						blueReversal={beat.metadata?.blueReversal || false}
-						redReversal={beat.metadata?.redReversal || false}
-					/>
+<div use:resizeObserver class="beat-frame-container" class:scrollable={beats.length > 16}>
+	<div
+		class="beat-frame"
+		style="--total-rows: {beatRows}; --total-cols: {beatCols + 1}; --cell-size: {cellSize}px;"
+	>
+		<!-- Regular Beats with Start Position on the left of each row -->
+		{#each Array(beatRows) as _, rowIndex}
+			<!-- Start Position Beat (only for the first row) -->
+			{#if rowIndex === 0}
+				<div class="beat-container start-position" style="grid-row: 1; grid-column: 1;">
+					<StartPosBeat beatData={startPosBeatData} onClick={handleStartPosBeatClick} />
 				</div>
 			{/if}
 
-			<!-- Selection overlay -->
-			<SelectionOverlay isSelected={selectedBeatIndex === index} />
-		</div>
-	{/each}
+			<!-- Beats for this row -->
+			{#each Array(beatCols) as _, colIndex}
+				{#if rowIndex * beatCols + colIndex < beats.length}
+					{@const beatIndex = rowIndex * beatCols + colIndex}
+					{@const beat = beats[beatIndex]}
+					<div
+						class="beat-container"
+						class:selected={selectedBeatIndex === beatIndex}
+						style="grid-row: {rowIndex + 1}; grid-column: {colIndex + 2};"
+					>
+						<Beat {beat} onClick={() => handleBeatClick(beatIndex)} />
+
+						<!-- Show beat number -->
+						<div class="beat-number">
+							<BeatNumberLabel beatNumber={beat.beatNumber} duration={beat.duration || 1} />
+						</div>
+
+						<!-- Show reversals if any -->
+						{#if beat.metadata?.blueReversal || beat.metadata?.redReversal}
+							<div class="reversal-indicator">
+								<ReversalGlyph
+									blueReversal={beat.metadata?.blueReversal || false}
+									redReversal={beat.metadata?.redReversal || false}
+								/>
+							</div>
+						{/if}
+
+						<!-- Selection overlay -->
+						<SelectionOverlay isSelected={selectedBeatIndex === beatIndex} />
+					</div>
+				{/if}
+			{/each}
+		{/each}
+	</div>
 </div>
 
 <style>
-	.beat-frame {
-		display: grid;
-		grid-template-columns: repeat(var(--total-cols), var(--cell-size));
-		grid-template-rows: repeat(var(--total-rows), var(--cell-size));
-		gap: var(--gap);
-		justify-content: center;
-		align-content: center;
+	.beat-frame-container {
 		width: 100%;
 		height: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center; /* Center vertically by default */
+		overflow: hidden; /* Hide overflow by default */
+	}
+
+	.scrollable {
+		overflow-y: auto; /* Enable vertical scrolling when needed */
+		overflow-x: hidden; /* Prevent horizontal scrolling */
+		align-items: flex-start; /* Align to top when scrollable */
+	}
+
+	.beat-frame {
+		display: grid;
+		grid-template-columns: var(--cell-size) repeat(var(--total-cols) - 1, var(--cell-size));
+		grid-template-rows: repeat(var(--total-rows), var(--cell-size));
+		gap: 0; /* No gap at all */
+		justify-content: center;
+		align-content: center; /* Center vertically by default */
+		width: 100%;
+		min-height: min-content; /* Allow grid to grow based on content */
+		max-height: 100%; /* Limit height to container */
+	}
+
+	/* When inside a scrollable container, align to top */
+	.scrollable .beat-frame {
+		align-content: start;
 	}
 
 	.beat-container {
@@ -306,10 +365,7 @@
 		background-color: transparent;
 	}
 
-	.start-position {
-		grid-column: 1;
-		grid-row: 1;
-	}
+	/* Start position styling is now handled inline */
 
 	.beat-number {
 		position: absolute;
