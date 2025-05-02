@@ -3,7 +3,11 @@
 	import { type Readable } from 'svelte/store';
 	import Option from './Option.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { LAYOUT_CONTEXT_KEY, type LayoutContext, type LayoutContextValue } from '../layoutContext';
+	import {
+		LAYOUT_CONTEXT_KEY,
+		type LayoutContext,
+		type LayoutContextValue
+	} from '../layoutContext';
 	import { uiState } from '../store';
 
 	// --- Props ---
@@ -13,7 +17,7 @@
 	// --- Context ---
 	// Get the context as a Readable<LayoutContextValue>
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-	
+
 	// Properly extract the layout config values from the context store
 	$: ({
 		layoutConfig: { gridColumns: contextGridColumns, optionSize, gridGap, gridClass, aspectClass },
@@ -74,13 +78,11 @@
 		justify-items: center; /* Center items horizontally within their grid cell */
 		justify-content: center; /* Center the grid content horizontally if grid is wider */
 		align-content: center; /* Center grid content vertically */
-		grid-gap: var(--grid-gap, 16px); /* Increase default gap to 16px as fallback */
 		/* Add auto margins for horizontal centering within parent */
 		margin-left: auto;
 		margin-right: auto;
 		/* Add some bottom margin for spacing between groups */
 		/* margin-bottom: 1rem; */
-		padding: 0.5rem; /* Add padding around the grid */
 	}
 
 	/* Add top margin only if it's NOT part of a multi-group item */
@@ -102,7 +104,7 @@
 		align-items: center;
 		position: relative; /* For z-index */
 		z-index: 1;
-		margin: 4px; /* Add extra margin between items */
+		margin: 0px; /* Add extra margin between items */
 	}
 	.grid-item-wrapper:hover {
 		z-index: 10; /* Bring hovered item to front */
@@ -124,7 +126,30 @@
 		.options-grid {
 			grid-gap: var(--grid-gap, 16px); /* Enforce minimum gap */
 		}
+	}
 
+	/* Smaller grid items on small screens */
+	@media (max-width: 640px) {
+		.grid-item-wrapper {
+			width: calc(var(--option-size, 100px) * 0.9);
+			height: calc(var(--option-size, 100px) * 0.9);
+		}
 
+		.mobile-grid {
+			grid-gap: 4px;
+		}
+	}
+
+	/* Even smaller for very small screens */
+	@media (max-width: 380px) {
+		.grid-item-wrapper {
+			width: calc(var(--option-size, 100px) * 0.8);
+			height: calc(var(--option-size, 100px) * 0.8);
+		}
+
+		.mobile-grid {
+			grid-gap: 2px;
+			padding: 0.1rem;
+		}
 	}
 </style>

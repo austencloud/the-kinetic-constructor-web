@@ -7,6 +7,7 @@
 
 	export let beat: BeatData;
 	export let onClick: () => void;
+	export let isStartPosition: boolean = false;
 
 	// Create a local pictograph data store with the initial data
 	const pictographDataStore = writable(beat.pictographData);
@@ -49,7 +50,7 @@
 	on:click={handleClick}
 	aria-label={`Beat ${beat.beatNumber}`}
 >
-	<Pictograph {pictographDataStore} />
+	<Pictograph {pictographDataStore} beatNumber={beat.beatNumber} {isStartPosition} />
 </button>
 
 <style>

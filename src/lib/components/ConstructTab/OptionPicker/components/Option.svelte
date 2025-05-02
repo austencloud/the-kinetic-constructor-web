@@ -65,15 +65,12 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		width: 90%; /* Reduce width to create spacing */
-		height: 90%; /* Reduce height to create spacing */
 		cursor: pointer;
 		transition:
 			transform 0.2s ease-in-out,
 			background-color 0.2s ease;
 		border-radius: 6px;
 		outline: none;
-		margin: 5% !important; /* Add margin all around */
 	}
 	.pictograph-container {
 		display: flex;

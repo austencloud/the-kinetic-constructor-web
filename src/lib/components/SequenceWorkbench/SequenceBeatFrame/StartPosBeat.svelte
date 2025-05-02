@@ -2,7 +2,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import Beat from './Beat.svelte';
-	import StartPosLabel from './StartPosLabel.svelte';
 	import type { BeatData } from './BeatData';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
@@ -182,10 +181,7 @@
 </script>
 
 <button class="start-pos-beat" on:click={handleContainerClick} type="button">
-	<Beat beat={beatData} {onClick} />
-	<div class="start-label-container">
-		<StartPosLabel />
-	</div>
+	<Beat beat={beatData} {onClick} isStartPosition={true} />
 </button>
 
 <style>
@@ -202,15 +198,5 @@
 		padding: 0; /* Remove default button padding */
 		margin: 0; /* Remove any margin */
 		box-sizing: border-box; /* Ensure padding is included in width/height */
-	}
-
-	.start-label-container {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		pointer-events: none; /* Allow clicks to pass through to the beat */
-		z-index: 2;
 	}
 </style>

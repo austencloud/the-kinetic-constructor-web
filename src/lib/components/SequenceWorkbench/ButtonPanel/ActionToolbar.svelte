@@ -130,7 +130,6 @@
 		transition: background-color 0.3s ease;
 		position: relative;
 		overflow: visible;
-		padding: 8px;
 		box-sizing: border-box; /* Include padding in dimensions */
 	}
 

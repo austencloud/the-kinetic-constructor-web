@@ -79,10 +79,10 @@
 			<SettingsContent onClose={() => appActions.closeSettings()} />
 		</div>
 	{/if}
-
+<!-- 
 	{#if import.meta.env.DEV}
 		<DeveloperTools />
-	{/if}
+	{/if} -->
 </div>
 
 <style>

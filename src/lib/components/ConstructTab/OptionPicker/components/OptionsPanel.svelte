@@ -121,6 +121,8 @@
 		return rows;
 	})();
 
+	// Define the maximum number of items that can be in a group for it to be considered "small"
+	// and potentially combined with other small groups in a multi-group row
 	const MAX_ITEMS_FOR_SMALL_GROUP = 2;
 
 	async function checkContentHeight() {
@@ -184,7 +186,7 @@
 		overflow-y: auto;
 		overflow-x: hidden;
 		box-sizing: border-box;
-		padding: 1rem;
+		/* padding: 1rem; */
 	}
 
 	.panel-content {
@@ -207,12 +209,8 @@
 		justify-content: space-evenly;
 		align-items: flex-start;
 		width: 100%;
-		margin-top: 2rem;
-		margin-bottom: 2rem;
-		gap: 24px;
-		padding: 1rem;
 		background-color: rgba(0, 0, 0, 0.01);
-		border-radius: 16px;
+		gap: 0.25rem;
 	}
 
 	.multi-group-item {
@@ -220,9 +218,30 @@
 		flex-direction: column;
 		align-items: center;
 		min-width: 140px;
-		margin: 0.5rem;
-		padding: 0.5rem;
+		flex: 1;
+		margin: 0.25rem;
+		padding: 0.25rem;
 		border-radius: 12px;
+	}
+
+	/* Responsive adjustments for mobile */
+	@media (max-width: 640px) {
+		.multi-group-row {
+			gap: 0.1rem;
+		}
+
+		.multi-group-item {
+			min-width: 100px;
+			margin: 0.1rem;
+			padding: 0.1rem;
+		}
+	}
+
+	/* Even smaller screens */
+	@media (max-width: 380px) {
+		.multi-group-item {
+			min-width: 80px;
+		}
 	}
 
 	/* --- Scrollbar Styles --- */

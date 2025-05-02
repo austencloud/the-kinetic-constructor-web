@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { getContext, createEventDispatcher } from 'svelte';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
-	import ViewControl from './ViewControl.svelte';
-	import type { ViewModeDetail } from './ViewControl.svelte';
+	import ViewControl from './ViewControl';
+	import type { ViewModeDetail } from './ViewControl/types';
 
 	// --- Props ---
 	export let selectedTab: string | null;
@@ -57,10 +57,10 @@
 		'Unknown Type': '?',
 		alpha: 'α',
 		beta: 'β',
-		gamma: 'γ',
-		Continuous: 'Continuous',
-		'One Reversal': '1 Reversel',
-		'Two Reversals': '2 Reversals'
+		gamma: 'Γ',
+		Continuous: 'Cont.',
+		'One Reversal': '1 Rev',
+		'Two Reversals': '2 Rev'
 	};
 
 	// --- Formatting Functions ---
@@ -83,7 +83,7 @@
 <div class="option-picker-header" class:mobile={isMobileDevice} data-testid="option-picker-header">
 	<div class="header-content">
 		<div class="view-controls">
-			<ViewControl {selectedTab} on:viewChange={handleViewChange} />
+			<ViewControl on:viewChange={handleViewChange} />
 		</div>
 
 		{#if showTabs}
@@ -239,25 +239,32 @@
 	/* --- Mobile Responsiveness --- */
 	@media (max-width: 640px) {
 		.header-content {
-			flex-direction: column; /* Stack items vertically */
-			align-items: flex-start; /* Align items to the start (left) */
+			flex-direction: row; /* Keep items on the same line */
+			align-items: center; /* Center align items vertically */
 			width: 100%;
-			gap: 8px; /* Vertical gap for mobile */
+			gap: 4px; /* Reduced horizontal gap for mobile */
+			flex-wrap: nowrap; /* Prevent wrapping to next line */
+			justify-content: space-between; /* Distribute space better */
 		}
 
 		.tabs,
 		.tabs-placeholder,
 		.helper-message {
-			width: 100%; /* Make these elements take full width in column layout */
+			flex-grow: 1; /* Allow tabs to take remaining space */
+			width: auto; /* Don't force full width */
+			max-width: calc(100% - 90px); /* Leave space for view control */
 		}
 
 		.tabs {
 			justify-content: flex-start; /* Ensure tabs start from left */
+			flex-wrap: nowrap; /* Prevent tabs from wrapping */
+			overflow-x: visible; /* Don't create scrollable area */
+			width: auto; /* Allow container to size to content */
+			display: flex;
 		}
 
 		.view-controls {
-			margin-right: 0; /* Remove margin */
-			align-self: flex-start; /* Ensure view controls align left */
+			flex-shrink: 0; /* Prevent view controls from shrinking */
 		}
 
 		.helper-message {
@@ -266,6 +273,23 @@
 
 		.tabs-placeholder {
 			justify-content: flex-start; /* Ensure "No sub-categories" aligns left */
+		}
+
+		/* Make tabs more compact on mobile but still easily clickable */
+		.tab {
+			padding: 6px 8px;
+			font-size: 0.85rem;
+			margin: 0 2px 2px 0;
+			min-width: 36px;
+			height: 36px; /* Fixed height for better touch targets */
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			flex: 1; /* Allow buttons to grow and shrink */
+			max-width: 60px; /* Limit maximum width */
+			display: flex;
+			align-items: center;
+			justify-content: center;
 		}
 	}
 </style>

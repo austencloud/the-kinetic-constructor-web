@@ -19,7 +19,6 @@
 	import Beat from './Beat.svelte';
 	import SelectionOverlay from './SelectionOverlay.svelte';
 	import ReversalGlyph from './ReversalGlyph.svelte';
-	import BeatNumberLabel from './BeatNumberLabel.svelte';
 	const ssrDefaults = { width: 800, height: 600 }; // Example reasonable defaults
 	const { size, resizeObserver } = useResizeObserver(
 		browser ? undefined : ssrDefaults // Pass undefined in browser to let hook calculate, use defaults for SSR
@@ -298,11 +297,6 @@
 					>
 						<Beat {beat} onClick={() => handleBeatClick(beatIndex)} />
 
-						<!-- Show beat number -->
-						<div class="beat-number">
-							<BeatNumberLabel beatNumber={beat.beatNumber} duration={beat.duration || 1} />
-						</div>
-
 						<!-- Show reversals if any -->
 						{#if beat.metadata?.blueReversal || beat.metadata?.redReversal}
 							<div class="reversal-indicator">
@@ -366,16 +360,6 @@
 	}
 
 	/* Start position styling is now handled inline */
-
-	.beat-number {
-		position: absolute;
-		z-index: 2;
-		width: 100%;
-		height: 100%;
-		top: 0;
-		left: 0;
-		pointer-events: none; /* Allow clicks to pass through */
-	}
 
 	.reversal-indicator {
 		position: absolute;

@@ -16,6 +16,7 @@
 	import PictographDebug from './components/PictographDebug.svelte';
 	import InitializingSpinner from './components/InitializingSpinner.svelte';
 	import LoadingProgress from './components/LoadingProgress.svelte';
+	import BeatLabel from './components/BeatLabel.svelte';
 	import type { Writable } from 'svelte/store';
 	import { errorService, ErrorSeverity } from '../../services/ErrorHandlingService';
 	import { logger } from '$lib/core/logging';
@@ -28,6 +29,8 @@
 	export let debug = false;
 	export let animationDuration: 300 = 300;
 	export let showLoadingIndicator = true;
+	export let beatNumber: number | null = null;
+	export let isStartPosition: boolean = false;
 
 	// Create a local store that will be used if no external store is provided
 	const localPictographDataStore = writable<PictographData>(defaultPictographData);
@@ -695,6 +698,14 @@
 				{debug}
 			/>
 
+			{#if beatNumber !== null}
+				<BeatLabel
+					text={isStartPosition ? 'Start' : beatNumber.toString()}
+					position="top-left"
+					{animationDuration}
+				/>
+			{/if}
+
 			{#if state !== 'grid_only'}
 				{#if letter}
 					<g transition:fade={{ duration: animationDuration, delay: 100 }}>
@@ -730,8 +741,6 @@
 					{/if}
 				{/each}
 			{/if}
-
-
 		{/if}
 	</svg>
 

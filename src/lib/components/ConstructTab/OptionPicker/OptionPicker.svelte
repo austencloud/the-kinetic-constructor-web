@@ -10,7 +10,7 @@
 	import OptionPickerHeader from './components/OptionPickerHeader.svelte';
 	import OptionDisplayArea from './components/OptionDisplayArea.svelte';
 	import { resize } from './actions/resize';
-	import type { ViewModeDetail } from './components/ViewControl.svelte';
+	import type { ViewModeDetail } from './components/ViewControl/types';
 	import sequenceDataService, { type SequenceBeat } from '$lib/services/SequenceDataService';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { TKAPosition } from '$lib/types/TKAPosition';
@@ -294,7 +294,9 @@
 			actions.setSortMethod(newSortMethod); // Update the sorting method in the store
 
 			// Determine which category tab to select within the new grouping
-			const lastSelectedForNewMethod = get(uiState).lastSelectedTab[newSortMethod];
+			const uiStateValue = get(uiState);
+			const lastSelectedForNewMethod =
+				uiStateValue.lastSelectedTab[newSortMethod as keyof typeof uiStateValue.lastSelectedTab];
 			const currentGroupsForNewMethod = get(groupedOptionsStore); // Re-get groups based on new sort method
 			const availableKeysForNewMethod = currentGroupsForNewMethod
 				? Object.keys(currentGroupsForNewMethod)

@@ -40,14 +40,14 @@ export const DEVICE_CONFIG = {
 		padding: { horizontal: 12, vertical: 12 },
 		gap: 2,
 		minItemSize: 80,
-		maxItemSize: 100,
-		scaleFactor: 0.95
+		maxItemSize: 150,
+		scaleFactor: 1
 	},
 	mobile: {
 		padding: { horizontal: 12, vertical: 12 },
 		gap: 2,
 		minItemSize: 80,
-		maxItemSize: 110,
+		maxItemSize: 175,
 		scaleFactor: 1
 	},
 	tablet: {
@@ -62,14 +62,14 @@ export const DEVICE_CONFIG = {
 		gap: 2,
 		minItemSize: 90,
 		maxItemSize: 180,
-		scaleFactor: 1.0
+		scaleFactor: 1
 	},
 	largeDesktop: {
 		padding: { horizontal: 12, vertical: 12 },
 		gap: 2,
 		minItemSize: 100,
 		maxItemSize: 200,
-		scaleFactor: 1.1
+		scaleFactor: 1
 	}
 };
 

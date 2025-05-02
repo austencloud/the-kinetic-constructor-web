@@ -224,7 +224,6 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 5px; /* Reduced gap */
 		color: white;
 		padding-top: 10px; /* Add padding */
 	}
@@ -234,7 +233,6 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: 5px 10px; /* Adjust padding */
 		color: white;
 		flex-shrink: 0; /* Prevent shrinking */
 		/* Removed flex: 1 to avoid taking too much space */

@@ -69,17 +69,17 @@
 		position: absolute;
 		top: 5px;
 		left: 5px;
-		/* Add a subtle text shadow to make it readable on any background */
+		
 		text-shadow:
 			0px 0px 2px #fff,
 			0px 0px 3px #fff,
 			0px 0px 4px #fff;
-		/* Prevent text selection */
+		
 		user-select: none;
-		/* Ensure it's above the pictograph but doesn't interfere with interactions */
+		
 		pointer-events: none;
 		z-index: 5;
-		/* Force alignment to top-left */
+		
 		margin: 0;
 		width: auto;
 		height: auto;

@@ -6,10 +6,7 @@
 	export let isFirstHeader: boolean = false; // To adjust top margin
 </script>
 
-<div
-	class="section-header-container"
-	class:first={isFirstHeader}
->
+<div class="section-header-container" class:first={isFirstHeader}>
 	<span class="section-header">
 		{@html formatStyledHeader(groupKey)}
 	</span>
@@ -24,10 +21,11 @@
 		padding: 0;
 		position: relative;
 		z-index: 5;
+		margin-top: 1rem; /* Less top margin for the very first header */
 	}
 
 	.section-header-container.first {
-		margin-top: 0.5rem; /* Less top margin for the very first header */
+		margin-top: 0.0rem; /* Less top margin for the very first header */
 	}
 
 	.section-header {
@@ -43,5 +41,23 @@
 		pointer-events: auto;
 		border: 1px solid rgba(0, 0, 0, 0.1); /* Restored original border */
 		white-space: nowrap;
+	}
+
+	/* Responsive styles for mobile */
+	@media (max-width: 640px) {
+		.section-header {
+			padding: 4px 12px;
+			font-size: 0.8rem;
+			min-width: 0;
+			max-width: 100%;
+		}
+	}
+
+	/* Even smaller for very small screens */
+	@media (max-width: 380px) {
+		.section-header {
+			padding: 3px 8px;
+			font-size: 0.75rem;
+		}
 	}
 </style>
