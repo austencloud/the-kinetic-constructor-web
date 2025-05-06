@@ -155,7 +155,7 @@
 	.fs-btn {
 		z-index: 9999;
 		position: absolute;
-		left: 20px; /* Moved to bottom left */
+		right: 20px; /* Moved to bottom right */
 		bottom: 20px;
 		border: none;
 		background: #fff;

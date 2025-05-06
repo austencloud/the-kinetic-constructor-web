@@ -54,11 +54,6 @@
 		<button class="hamburger-button" on:click={toggleNav} aria-label="Menu">
 			<i class="fa-solid fa-bars"></i>
 		</button>
-
-		<!-- Settings button on the right -->
-		<div class="fixed-settings-button">
-			<SettingsButton on:click={handleSettingsClick} />
-		</div>
 	</div>
 
 	<header class="menu-bar-container">
@@ -86,13 +81,18 @@
 					</div>
 				</div>
 
-				<!-- Right section with install button -->
+				<!-- Right section with install button and settings button -->
 				<div class="menu-section right-section">
-					<div class="pwa-install-container" in:fade={{ duration: 400, delay: 300 }}>
-						<InstallPWA
-							showInstallPrompt={true}
-							buttonText={isMobileDevice || isPortraitMode ? '' : 'Install App'}
-						/>
+					<div class="menu-buttons-container">
+						<div class="settings-button-container">
+							<SettingsButton on:click={handleSettingsClick} />
+						</div>
+						<div class="pwa-install-container" in:fade={{ duration: 400, delay: 300 }}>
+							<InstallPWA
+								showInstallPrompt={true}
+								buttonText={isMobileDevice || isPortraitMode ? '' : 'Install App'}
+							/>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -155,8 +155,7 @@
 	}
 
 	/* But make the buttons themselves clickable */
-	.hamburger-button,
-	.fixed-settings-button {
+	.hamburger-button {
 		pointer-events: auto;
 	}
 
@@ -179,12 +178,6 @@
 		border-color: rgba(108, 156, 233, 0.3);
 		color: #6c9ce9;
 		transform: translateY(-2px);
-	}
-
-	.fixed-settings-button {
-		display: flex;
-		align-items: center;
-		justify-content: center;
 	}
 
 	.menu-section {
@@ -242,10 +235,6 @@
 		.hamburger-button {
 			width: 36px;
 			height: 36px;
-		}
-
-		.fixed-settings-button {
-			width: 36px;
 			height: 36px;
 		}
 	}

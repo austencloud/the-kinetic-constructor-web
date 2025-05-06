@@ -145,7 +145,6 @@
 					<CurrentWordLabel currentWord={$sequenceName} width={$dimensions.width} />
 					<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
 				</div>
-
 				<div class="beat-frame-container">
 					<BeatFrame />
 				</div>
@@ -230,24 +229,27 @@
 		min-height: 0; /* Prevent overflow */
 	}
 
-	.beat-frame-container {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex: 1; /* Allow beat frame to take available space */
-		min-height: 0; /* Important for flex children */
-		width: 100%; /* Take full width */
-		padding: 10px; /* Add some padding */
-		box-sizing: border-box;
-	}
-
 	.sequence-widget-labels {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		color: white;
-		padding-top: 10px; /* Add padding */
+		padding-top: 0;
+		margin-bottom: 0;
+		padding-bottom: 5px;
+	}
+
+	.beat-frame-container {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex: 1;
+		min-height: 0;
+		width: 100%;
+		padding: 10px;
+		padding-top: 0;
+		box-sizing: border-box;
 	}
 
 	.indicator-label-container {

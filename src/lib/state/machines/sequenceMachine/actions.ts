@@ -7,205 +7,263 @@ import { convertToStoreBeatData } from './types';
 import { updateDevTools } from '$lib/utils/devToolsUpdater';
 
 /**
+ * Update the word name in the sequence metadata based on the current beats
+ */
+function updateSequenceWord() {
+	// Get the current sequence
+	let currentState: SequenceState | undefined;
+	sequenceStore.subscribe((state) => {
+		currentState = state;
+	})();
+
+	if (!currentState) return;
+
+	const beats = currentState.beats;
+
+	// Update difficulty based on whether beats exist
+	const difficulty = beats.length > 0 ? 1 : 0;
+
+	// Extract letters from beats and combine into a word
+	const letters = beats
+		.map((beat) => {
+			// Look for letter data according to the BeatData interface
+			return (
+				beat.letter ||
+				(beat.metadata && typeof beat.metadata.letter === 'string' ? beat.metadata.letter : null)
+			);
+		})
+		.filter((letter) => letter !== null);
+
+	// Build the word from letters
+	const word = letters.join('');
+
+	// Update metadata with word and difficulty
+	sequenceStore.updateMetadata({
+		name: word,
+		difficulty: difficulty
+	});
+
+	updateDevTools();
+}
+
+/**
  * Update the sequence store with the generated sequence
  */
 export function updateSequence({ event }: { event: any }) {
-  // Type assertion for the custom event
-  const doneEvent = event as { type: 'GENERATION_COMPLETE'; output?: any[] };
+	// Type assertion for the custom event
+	const doneEvent = event as { type: 'GENERATION_COMPLETE'; output?: any[] };
 
-  // Update the sequence store with the generated beats
-  if (doneEvent.output && Array.isArray(doneEvent.output)) {
-    // Convert the output to the store's BeatData format
-    const storeBeats = convertToStoreBeatData(doneEvent.output);
-    sequenceStore.setSequence(storeBeats);
-    console.log('Sequence updated with new data:', storeBeats);
-    
-    // Update dev tools with the new sequence state
-    updateDevTools();
-  }
+	// Update the sequence store with the generated beats
+	if (doneEvent.output && Array.isArray(doneEvent.output)) {
+		// Convert the output to the store's BeatData format
+		const storeBeats = convertToStoreBeatData(doneEvent.output);
+		sequenceStore.setSequence(storeBeats);
+		console.log('Sequence updated with new data:', storeBeats);
+
+		// Update the sequence word
+		updateSequenceWord();
+
+		// Update dev tools with the new sequence state
+		updateDevTools();
+	}
 }
 
 /**
  * Select a beat in the sequence
  */
 export function selectBeat({ event }: { event: any }) {
-  const selectEvent = event as { type: 'SELECT_BEAT'; beatId: string };
-  sequenceStore.selectBeat(selectEvent.beatId);
+	const selectEvent = event as { type: 'SELECT_BEAT'; beatId: string };
+	sequenceStore.selectBeat(selectEvent.beatId);
 
-  // Dispatch a custom event for components that need to know about selection changes
-  if (typeof document !== 'undefined') {
-    const selectionEvent = new CustomEvent('beat-selected', {
-      detail: { beatId: selectEvent.beatId },
-      bubbles: true
-    });
-    document.dispatchEvent(selectionEvent);
-    
-    // Update dev tools
-    updateDevTools();
-  }
+	// Dispatch a custom event for components that need to know about selection changes
+	if (typeof document !== 'undefined') {
+		const selectionEvent = new CustomEvent('beat-selected', {
+			detail: { beatId: selectEvent.beatId },
+			bubbles: true
+		});
+		document.dispatchEvent(selectionEvent);
+
+		// Update dev tools
+		updateDevTools();
+	}
 }
 
 /**
  * Deselect a beat or all beats in the sequence
  */
 export function deselectBeat({ event }: { event: any }) {
-  const deselectEvent = event as { type: 'DESELECT_BEAT'; beatId?: string };
+	const deselectEvent = event as { type: 'DESELECT_BEAT'; beatId?: string };
 
-  if (deselectEvent.beatId) {
-    // Deselect a specific beat
-    sequenceStore.deselectBeat(deselectEvent.beatId);
-  } else {
-    // Deselect all beats
-    sequenceStore.clearSelection();
-  }
+	if (deselectEvent.beatId) {
+		// Deselect a specific beat
+		sequenceStore.deselectBeat(deselectEvent.beatId);
+	} else {
+		// Deselect all beats
+		sequenceStore.clearSelection();
+	}
 
-  // Dispatch a custom event
-  if (typeof document !== 'undefined') {
-    const selectionEvent = new CustomEvent('beat-deselected', {
-      detail: { beatId: deselectEvent.beatId },
-      bubbles: true
-    });
-    document.dispatchEvent(selectionEvent);
-    
-    // Update dev tools
-    updateDevTools();
-  }
+	// Dispatch a custom event
+	if (typeof document !== 'undefined') {
+		const selectionEvent = new CustomEvent('beat-deselected', {
+			detail: { beatId: deselectEvent.beatId },
+			bubbles: true
+		});
+		document.dispatchEvent(selectionEvent);
+
+		// Update dev tools
+		updateDevTools();
+	}
 }
 
 /**
  * Add a beat to the sequence
  */
 export function addBeat({ event }: { event: any }) {
-  const addEvent = event as { type: 'ADD_BEAT'; beat: Partial<StoreBeatData> };
+	const addEvent = event as { type: 'ADD_BEAT'; beat: Partial<StoreBeatData> };
 
-  // Generate a unique ID if not provided
-  const beatId = addEvent.beat.id || crypto.randomUUID();
+	// Generate a unique ID if not provided
+	const beatId = addEvent.beat.id || crypto.randomUUID();
 
-  // Create a complete beat object
-  const newBeat: StoreBeatData = {
-    id: beatId,
-    number: addEvent.beat.number || 0,
-    ...addEvent.beat
-  };
+	// Create a complete beat object
+	const newBeat: StoreBeatData = {
+		id: beatId,
+		number: addEvent.beat.number || 0,
+		...addEvent.beat
+	};
 
-  // Add the beat to the sequence store
-  sequenceStore.addBeat(newBeat);
+	// Add the beat to the sequence store
+	sequenceStore.addBeat(newBeat);
 
-  // Dispatch a custom event
-  if (typeof document !== 'undefined') {
-    const beatEvent = new CustomEvent('beat-added', {
-      detail: { beat: newBeat },
-      bubbles: true
-    });
-    document.dispatchEvent(beatEvent);
-    
-    // Update dev tools
-    updateDevTools();
-  }
+	// Update the sequence word
+	updateSequenceWord();
+
+	// Dispatch a custom event
+	if (typeof document !== 'undefined') {
+		const beatEvent = new CustomEvent('beat-added', {
+			detail: { beat: newBeat },
+			bubbles: true
+		});
+		document.dispatchEvent(beatEvent);
+
+		// Update dev tools
+		updateDevTools();
+	}
 }
 
 /**
  * Remove a beat from the sequence
  */
 export function removeBeat({ event }: { event: any }) {
-  const removeEvent = event as { type: 'REMOVE_BEAT'; beatId: string };
-  sequenceStore.removeBeat(removeEvent.beatId);
+	const removeEvent = event as { type: 'REMOVE_BEAT'; beatId: string };
+	sequenceStore.removeBeat(removeEvent.beatId);
 
-  // Dispatch a custom event
-  if (typeof document !== 'undefined') {
-    const beatEvent = new CustomEvent('beat-removed', {
-      detail: { beatId: removeEvent.beatId },
-      bubbles: true
-    });
-    document.dispatchEvent(beatEvent);
-    
-    // Update dev tools
-    updateDevTools();
-  }
+	// Update the sequence word
+	updateSequenceWord();
+
+	// Dispatch a custom event
+	if (typeof document !== 'undefined') {
+		const beatEvent = new CustomEvent('beat-removed', {
+			detail: { beatId: removeEvent.beatId },
+			bubbles: true
+		});
+		document.dispatchEvent(beatEvent);
+
+		// Update dev tools
+		updateDevTools();
+	}
 }
 
 /**
  * Remove a beat and all following beats from the sequence
  */
 export function removeBeatAndFollowing({ event }: { event: any }) {
-  const removeEvent = event as { type: 'REMOVE_BEAT_AND_FOLLOWING'; beatId: string };
+	const removeEvent = event as { type: 'REMOVE_BEAT_AND_FOLLOWING'; beatId: string };
 
-  // Get the current beats
-  let currentState: SequenceState | undefined;
-  sequenceStore.subscribe((state) => {
-    currentState = state;
-  })();
+	// Get the current beats
+	let currentState: SequenceState | undefined;
+	sequenceStore.subscribe((state) => {
+		currentState = state;
+	})();
 
-  if (!currentState) return;
+	if (!currentState) return;
 
-  const beats = currentState.beats;
+	const beats = currentState.beats;
 
-  // Find the index of the beat to remove
-  const beatIndex = beats.findIndex((beat: StoreBeatData) => beat.id === removeEvent.beatId);
+	// Find the index of the beat to remove
+	const beatIndex = beats.findIndex((beat: StoreBeatData) => beat.id === removeEvent.beatId);
 
-  if (beatIndex >= 0) {
-    // Get all beats that should be removed (the selected beat and all following beats)
-    const beatsToRemove = beats.slice(beatIndex).map((beat: StoreBeatData) => beat.id);
+	if (beatIndex >= 0) {
+		// Get all beats that should be removed (the selected beat and all following beats)
+		const beatsToRemove = beats.slice(beatIndex).map((beat: StoreBeatData) => beat.id);
 
-    // Remove each beat
-    beatsToRemove.forEach((id: string) => {
-      sequenceStore.removeBeat(id);
-    });
+		// Remove each beat
+		beatsToRemove.forEach((id: string) => {
+			sequenceStore.removeBeat(id);
+		});
 
-    // Dispatch a custom event
-    if (typeof document !== 'undefined') {
-      const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
-        detail: { type: 'beats-removed', fromIndex: beatIndex },
-        bubbles: true
-      });
-      document.dispatchEvent(sequenceUpdatedEvent);
-      
-      // Update dev tools
-      updateDevTools();
-    }
-  }
+		// Update the sequence word
+		updateSequenceWord();
+
+		// Dispatch a custom event
+		if (typeof document !== 'undefined') {
+			const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
+				detail: { type: 'beats-removed', fromIndex: beatIndex },
+				bubbles: true
+			});
+			document.dispatchEvent(sequenceUpdatedEvent);
+
+			// Update dev tools
+			updateDevTools();
+		}
+	}
 }
 
 /**
  * Update a beat in the sequence
  */
 export function updateBeat({ event }: { event: any }) {
-  const updateEvent = event as {
-    type: 'UPDATE_BEAT';
-    beatId: string;
-    updates: Partial<StoreBeatData>;
-  };
-  sequenceStore.updateBeat(updateEvent.beatId, updateEvent.updates);
+	const updateEvent = event as {
+		type: 'UPDATE_BEAT';
+		beatId: string;
+		updates: Partial<StoreBeatData>;
+	};
+	sequenceStore.updateBeat(updateEvent.beatId, updateEvent.updates);
 
-  // Dispatch a custom event
-  if (typeof document !== 'undefined') {
-    const beatEvent = new CustomEvent('beat-updated', {
-      detail: { beatId: updateEvent.beatId, updates: updateEvent.updates },
-      bubbles: true
-    });
-    document.dispatchEvent(beatEvent);
-    
-    // Update dev tools
-    updateDevTools();
-  }
+	// Update the sequence word
+	updateSequenceWord();
+
+	// Dispatch a custom event
+	if (typeof document !== 'undefined') {
+		const beatEvent = new CustomEvent('beat-updated', {
+			detail: { beatId: updateEvent.beatId, updates: updateEvent.updates },
+			bubbles: true
+		});
+		document.dispatchEvent(beatEvent);
+
+		// Update dev tools
+		updateDevTools();
+	}
 }
 
 /**
  * Clear the entire sequence
  */
 export function clearSequence() {
-  // Set an empty sequence
-  sequenceStore.setSequence([]);
+	// Set an empty sequence
+	sequenceStore.setSequence([]);
 
-  // Dispatch a custom event
-  if (typeof document !== 'undefined') {
-    const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
-      detail: { type: 'sequence-cleared' },
-      bubbles: true
-    });
-    document.dispatchEvent(sequenceUpdatedEvent);
-    
-    // Update dev tools
-    updateDevTools();
-  }
+	// Update the sequence word
+	updateSequenceWord();
+
+	// Dispatch a custom event
+	if (typeof document !== 'undefined') {
+		const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
+			detail: { type: 'sequence-cleared' },
+			bubbles: true
+		});
+		document.dispatchEvent(sequenceUpdatedEvent);
+
+		// Update dev tools
+		updateDevTools();
+	}
 }

@@ -46,8 +46,8 @@ const initialState: SequenceState = {
 	currentBeatIndex: 0,
 	isModified: false,
 	metadata: {
-		name: 'Untitled Sequence',
-		difficulty: 1,
+		name: '', // Empty string instead of 'Untitled Sequence'
+		difficulty: 0, // Start with 0 (no difficulty shown)
 		tags: [],
 		createdAt: new Date(),
 		lastModified: new Date()
