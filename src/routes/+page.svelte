@@ -60,8 +60,11 @@
 	}
 
 	function handleBackgroundChange(event: CustomEvent<string>) {
-		if (event.detail === 'snowfall') {
-			appActions.updateBackground('snowfall');
+		const validBackgrounds = ['snowfall', 'nightSky', 'summerDay'] as const;
+		type ValidBackground = (typeof validBackgrounds)[number];
+
+		if (validBackgrounds.includes(event.detail as any)) {
+			appActions.updateBackground(event.detail as ValidBackground);
 		}
 	}
 
@@ -89,10 +92,8 @@
 	onMount(() => {
 		// Log the current state for debugging
 
-
 		// Force the state machine to transition
 		setTimeout(() => {
-
 			appActions.backgroundReady();
 		}, 500);
 	});

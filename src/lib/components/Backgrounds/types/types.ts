@@ -1,9 +1,10 @@
 // src/lib/components/Backgrounds/types/types.ts
 
-// Add 'nightSky' to the union type
-export type BackgroundType = 'snowfall' | 'nightSky'; // Added 'nightSky'
+// Background types
+export type BackgroundType = 'snowfall' | 'nightSky' | 'summerDay'; // Added 'summerDay'
 
 // --- Other type definitions remain the same ---
+export interface ParallaxLayer { stars: Star[]; driftX:number; driftY:number }
 
 export type Dimensions = {
 	width: number;
@@ -102,48 +103,91 @@ export interface SantaState {
 
 // --- Night Sky specific types (NEW) ---
 export interface Star {
-    x: number;
-    y: number;
-    radius: number;
-    baseOpacity: number;
-    currentOpacity: number;
-    twinkleSpeed: number;
-    twinklePhase: number; // To offset sin wave
-    isTwinkling: boolean;
-    color: string;
+	x: number;
+	y: number;
+	radius: number;
+	baseOpacity: number;
+	currentOpacity: number;
+	twinkleSpeed: number;
+	twinklePhase: number; // To offset sin wave
+	isTwinkling: boolean;
+	color: string;
 }
 
 export interface CelestialBody {
-    x: number;
-    y: number;
-    radius: number;
-    color: string; // Simple color for now
-    // image?: HTMLImageElement; // Optional image
-    // imageLoaded?: boolean;
-    driftX?: number; // Optional slow drift
-    driftY?: number;
+	x: number;
+	y: number;
+	radius: number;
+	color: string; // Simple color for now
+	// image?: HTMLImageElement; // Optional image
+	// imageLoaded?: boolean;
+	driftX?: number; // Optional slow drift
+	driftY?: number;
 }
 
 export interface Spaceship {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    speed: number;
-    active: boolean;
-    direction: number; // 1 for right, -1 for left
-    opacity: number;
-    image?: HTMLImageElement; // Optional image
-    imageLoaded?: boolean;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	speed: number;
+	active: boolean;
+	direction: number; // 1 for right, -1 for left
+	opacity: number;
+	image?: HTMLImageElement; // Optional image
+	imageLoaded?: boolean;
 }
 
 export interface EasterEggState<T> {
-    element: T | null;
-    timer: number;
-    interval: number;
+	element: T | null;
+	timer: number;
+	interval: number;
 }
 // --- End Night Sky specific types ---
 
+// --- Summer Day specific types ---
+export interface Cloud {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	speed: number;
+	opacity: number;
+	color: string;
+}
+
+export interface Sun {
+	x: number;
+	y: number;
+	radius: number;
+	color: string;
+	glowColor: string;
+	glowSize: number;
+	driftX?: number;
+	driftY?: number;
+}
+
+export interface Bird {
+	x: number;
+	y: number;
+	size: number;
+	speed: number;
+	wingPhase: number;
+	wingSpeed: number;
+	color: string;
+}
+
+export interface Butterfly {
+	x: number;
+	y: number;
+	size: number;
+	speed: number;
+	wingPhase: number;
+	wingSpeed: number;
+	color: string;
+	path: number; // Path variation (0-1)
+}
+// --- End Summer Day specific types ---
 
 export interface AnimationSystem<T> {
 	initialize: (dimensions: Dimensions, quality: QualityLevel) => T;
@@ -189,4 +233,3 @@ export interface ResourceTracker {
 	untrackResource: (resource: any) => void;
 	disposeAll: () => void;
 }
-

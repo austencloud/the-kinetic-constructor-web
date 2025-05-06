@@ -1,34 +1,117 @@
 <!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/Beat.svelte -->
 <script lang="ts">
-	import { writable } from 'svelte/store';
+	import { writable, get } from 'svelte/store';
+	import { onMount, onDestroy } from 'svelte';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import type { BeatData } from './BeatData';
 	import { updateDevTools } from '$lib/utils/devToolsUpdater';
+	import { layoutStore } from '$lib/stores/layout/layoutStore';
 
 	export let beat: BeatData;
 	export let onClick: () => void;
 	export let isStartPosition: boolean = false;
 
+	// Import the default pictograph data
+	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
+
+	// Function to force a complete reset of the pictograph
+	function forceCompleteReset() {
+		if (beat.pictographData) {
+			console.log(`Beat ${beat.beatNumber} - Forcing complete reset`);
+
+			// Create a fresh deep copy of the pictograph data
+			const freshCopy = JSON.parse(JSON.stringify(beat.pictographData));
+
+			// Set the store with the fresh copy
+			pictographDataStore.set(freshCopy);
+		}
+	}
+
 	// Create a local pictograph data store with the initial data
-	const pictographDataStore = writable(beat.pictographData);
+	// Ensure we always have valid pictograph data, even if beat.pictographData is null
+	const pictographDataStore = writable(beat.pictographData || defaultPictographData);
 
 	// For debugging
 
 	// This is important: update the store whenever the beat's pictograph data changes
 	$: {
-		if (beat && beat.pictographData) {
-			// Make a deep copy to ensure reactivity
-			const copy = JSON.parse(JSON.stringify(beat.pictographData));
-			pictographDataStore.set(copy);
+		if (beat) {
+			if (beat.pictographData) {
+				// Make a deep copy to ensure reactivity
+				const copy = JSON.parse(JSON.stringify(beat.pictographData));
+
+				// Preserve motion types from the previous data if they exist
+				const currentData = get(pictographDataStore);
+				if (currentData) {
+					// Log the motion types before preservation
+					console.log(
+						`Beat ${beat.beatNumber} - Before preservation: ` +
+							`Red Motion Type: ${copy.redMotionData?.motionType || 'none'} -> ${currentData.redMotionData?.motionType || 'none'}, ` +
+							`Blue Motion Type: ${copy.blueMotionData?.motionType || 'none'} -> ${currentData.blueMotionData?.motionType || 'none'}\n` +
+							`Stack trace: ${new Error().stack}`
+					);
+
+					// Special case for Beat 5 - don't preserve motion types when the layout shifts
+					// This is when we go from 2x2 to 3x3 layout
+					const isLayoutShiftBeat = beat.beatNumber === 5;
+
+					// Check if we're actually changing the grid layout
+					// Since GridData doesn't have rows/cols properties, we'll just use the beat number
+					const isGridLayoutChanging = copy.gridMode !== currentData.gridMode || isLayoutShiftBeat; // For beat 5, we know it's a layout shift
+
+					// Only skip preservation if we're actually changing the grid layout
+					if (!isLayoutShiftBeat || !isGridLayoutChanging) {
+						// Preserve red motion type if it exists
+						if (currentData.redMotionData?.motionType && copy.redMotionData) {
+							copy.redMotionData.motionType = currentData.redMotionData.motionType;
+						}
+
+						// Preserve blue motion type if it exists
+						if (currentData.blueMotionData?.motionType && copy.blueMotionData) {
+							copy.blueMotionData.motionType = currentData.blueMotionData.motionType;
+						}
+					} else {
+						console.log(
+							`Beat ${beat.beatNumber} - Layout shift detected, NOT preserving motion types`
+						);
+					}
+
+					// Log the motion types after preservation
+					console.log(
+						`Beat ${beat.beatNumber} - After preservation: ` +
+							`Red Motion Type: ${copy.redMotionData?.motionType || 'none'}, ` +
+							`Blue Motion Type: ${copy.blueMotionData?.motionType || 'none'}`
+					);
+				}
+
+				pictographDataStore.set(copy);
+			} else {
+				// If no pictograph data, use default data
+				pictographDataStore.set(defaultPictographData);
+			}
 		}
 	}
 
 	// Force an update when the beat object reference changes
 	$: {
 		if (beat) {
-			// This will trigger a component update
+			// This will trigger a component update but preserve motion types
 			pictographDataStore.update((data) => {
-				return data ? { ...data } : data;
+				if (!data) return data;
+
+				// Create a shallow copy to trigger reactivity
+				const updatedData = { ...data };
+
+				// Ensure motion data is preserved
+				if (updatedData.redMotionData) {
+					updatedData.redMotionData = { ...updatedData.redMotionData };
+				}
+
+				if (updatedData.blueMotionData) {
+					updatedData.blueMotionData = { ...updatedData.blueMotionData };
+				}
+
+				return updatedData;
 			});
 		}
 	}
@@ -42,6 +125,31 @@
 		// Update dev tools after click
 		updateDevTools();
 	}
+
+	// Set up event listener for layout changes
+	onMount(() => {
+		// Listen for layout changes
+		const handleLayoutChange = (_event: CustomEvent) => {
+			// Only reset if this is beat 4 or 5 (the ones affected by layout shifts)
+			if (
+				beat.beatNumber === 4 ||
+				beat.beatNumber === 5 ||
+				beat.beatNumber === 9 ||
+				beat.beatNumber === 10
+			) {
+				console.log(`Beat ${beat.beatNumber} - Layout change detected, forcing reset`);
+				forceCompleteReset();
+			}
+		};
+
+		// Add event listener
+		document.addEventListener('layout-changed', handleLayoutChange as EventListener);
+
+		// Clean up on component destroy
+		return () => {
+			document.removeEventListener('layout-changed', handleLayoutChange as EventListener);
+		};
+	});
 </script>
 
 <button

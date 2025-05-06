@@ -13,13 +13,18 @@
 
 	// Services
 	let backgroundFactory: BackgroundSystemFactory;
+	let backgroundService: any; // Using any for simplicity
 
 	// Background options
-	let availableBackgrounds: BackgroundType[] = ['snowfall', 'nightSky'];
+	let availableBackgrounds: BackgroundType[] = [];
 	let supportedBackgrounds: BackgroundType[] = [];
 
 	onMount(() => {
 		backgroundFactory = getService<BackgroundSystemFactory>(SERVICE_TOKENS.BACKGROUND_FACTORY);
+		backgroundService = getService(SERVICE_TOKENS.BACKGROUND_SERVICE);
+
+		// Get available backgrounds from the service
+		availableBackgrounds = backgroundService.getAvailableBackgrounds();
 
 		// Filter to only supported backgrounds
 		supportedBackgrounds = availableBackgrounds.filter((type) =>
@@ -38,6 +43,20 @@
 			dispatch('change', type);
 		}
 	}
+
+	// Function to get a user-friendly display name for each background
+	function getDisplayName(type: BackgroundType): string {
+		switch (type) {
+			case 'snowfall':
+				return 'Snowfall';
+			case 'nightSky':
+				return 'Night Sky';
+			case 'summerDay':
+				return 'Summer Day';
+			default:
+				return type;
+		}
+	}
 </script>
 
 <div class="background-selector">
@@ -48,7 +67,7 @@
 				class:active={activeBackground === background}
 				on:click={() => setBackground(background)}
 			>
-				{background}
+				{getDisplayName(background)}
 			</button>
 		{/each}
 	</div>

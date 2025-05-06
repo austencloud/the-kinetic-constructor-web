@@ -16,7 +16,7 @@ export class BackgroundServiceImpl implements BackgroundService {
 	private currentBackground: BackgroundType = 'snowfall';
 	private backgroundSystem: BackgroundSystem | null = null;
 	private quality: QualityLevel = 'medium';
-	private availableBackgrounds: BackgroundType[] = ['snowfall', 'nightSky'];
+	private availableBackgrounds: BackgroundType[] = ['snowfall', 'nightSky', 'summerDay'];
 	private dimensions: Dimensions = { width: 1280, height: 720 };
 
 	private errorHandler: ErrorHandler;

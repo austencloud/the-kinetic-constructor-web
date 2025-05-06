@@ -34,9 +34,13 @@
 	// This function will be passed down as a prop.
 	function handleBackgroundChange(event: CustomEvent<string>) {
 		const newBackground = event.detail;
-		if (newBackground === 'snowfall') {
-			appActions.updateBackground('snowfall');
-			dispatch('changeBackground', 'snowfall');
+		// Accept any valid background type
+		const validBackgrounds = ['snowfall', 'nightSky', 'summerDay'] as const;
+		type ValidBackground = (typeof validBackgrounds)[number];
+
+		if (validBackgrounds.includes(newBackground as any)) {
+			appActions.updateBackground(newBackground as ValidBackground);
+			dispatch('changeBackground', newBackground);
 		} else {
 			console.warn(`Invalid background type requested: ${newBackground}. Using default.`);
 			appActions.updateBackground('snowfall');
@@ -79,7 +83,7 @@
 			<SettingsContent onClose={() => appActions.closeSettings()} />
 		</div>
 	{/if}
-<!-- 
+	<!--
 	{#if import.meta.env.DEV}
 		<DeveloperTools />
 	{/if} -->

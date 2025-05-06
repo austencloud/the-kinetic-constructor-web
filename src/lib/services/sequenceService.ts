@@ -299,16 +299,485 @@ export async function deleteSequenceApi(sequenceId: string): Promise<void> {
 	});
 }
 
-// Dictionary mapping letters to their pictograph representations
-const LETTER_PICTOGRAPHS: Record<string, any> = {
-	A: { id: 'a_pictograph', letter: 'A', data: { position: 'high', turn: 'clockwise' } },
-	B: { id: 'b_pictograph', letter: 'B', data: { position: 'middle', turn: 'counter' } },
-	C: { id: 'c_pictograph', letter: 'C', data: { position: 'high', turn: 'counter' } },
-	D: { id: 'd_pictograph', letter: 'D', data: { position: 'low', turn: 'clockwise' } },
-	L: { id: 'l_pictograph', letter: 'L', data: { position: 'middle', turn: 'clockwise' } },
-	M: { id: 'm_pictograph', letter: 'M', data: { position: 'middle', turn: 'both' } },
-	R: { id: 'r_pictograph', letter: 'R', data: { position: 'low', turn: 'counter' } },
-	T: { id: 't_pictograph', letter: 'T', data: { position: 'high', turn: 'both' } }
+// Import the PictographData type and constants
+import type { PictographData } from '$lib/types/PictographData';
+import type { Letter } from '$lib/types/Letter';
+import { DIAMOND } from '$lib/types/Constants';
+
+// Dictionary mapping letters to their pictograph representations with proper data structure
+const LETTER_PICTOGRAPHS: Record<string, PictographData> = {
+	A: {
+		id: 'a_pictograph',
+		letter: 'A' as Letter,
+		startPos: 'alpha1',
+		endPos: 'alpha1',
+		timing: null,
+		direction: null,
+		gridMode: DIAMOND,
+		grid: DIAMOND,
+		blueMotionData: {
+			color: 'blue',
+			motionType: 'clockwise',
+			startOri: 'high',
+			endOri: 'high',
+			turns: 1
+		},
+		redMotionData: {
+			color: 'red',
+			motionType: 'clockwise',
+			startOri: 'high',
+			endOri: 'high',
+			turns: 1
+		},
+		redPropData: {
+			propType: 'poi',
+			color: 'red',
+			coords: { x: 425, y: 475 },
+			rotAngle: 0
+		},
+		bluePropData: {
+			propType: 'poi',
+			color: 'blue',
+			coords: { x: 525, y: 475 },
+			rotAngle: 0
+		},
+		redArrowData: {
+			color: 'red',
+			motionType: 'clockwise',
+			startOri: 'high',
+			endOri: 'high',
+			turns: 1,
+			coords: { x: 425, y: 375 },
+			rotAngle: -90
+		},
+		blueArrowData: {
+			color: 'blue',
+			motionType: 'clockwise',
+			startOri: 'high',
+			endOri: 'high',
+			turns: 1,
+			coords: { x: 525, y: 375 },
+			rotAngle: -90
+		},
+		gridData: null,
+		motions: [],
+		redMotion: null,
+		blueMotion: null,
+		props: []
+	},
+	B: {
+		id: 'b_pictograph',
+		letter: 'B' as Letter,
+		startPos: 'beta5',
+		endPos: 'beta5',
+		timing: null,
+		direction: null,
+		gridMode: DIAMOND,
+		grid: DIAMOND,
+		blueMotionData: {
+			color: 'blue',
+			motionType: 'counter',
+			startOri: 'middle',
+			endOri: 'middle',
+			turns: 1
+		},
+		redMotionData: {
+			color: 'red',
+			motionType: 'counter',
+			startOri: 'middle',
+			endOri: 'middle',
+			turns: 1
+		},
+		redPropData: {
+			propType: 'poi',
+			color: 'red',
+			coords: { x: 425, y: 475 },
+			rotAngle: 0
+		},
+		bluePropData: {
+			propType: 'poi',
+			color: 'blue',
+			coords: { x: 525, y: 475 },
+			rotAngle: 0
+		},
+		redArrowData: {
+			color: 'red',
+			motionType: 'counter',
+			startOri: 'middle',
+			endOri: 'middle',
+			turns: 1,
+			coords: { x: 425, y: 475 },
+			rotAngle: 90
+		},
+		blueArrowData: {
+			color: 'blue',
+			motionType: 'counter',
+			startOri: 'middle',
+			endOri: 'middle',
+			turns: 1,
+			coords: { x: 525, y: 475 },
+			rotAngle: 90
+		},
+		gridData: null,
+		motions: [],
+		redMotion: null,
+		blueMotion: null,
+		props: []
+	},
+	C: {
+		id: 'c_pictograph',
+		letter: 'C' as Letter,
+		startPos: 'alpha1',
+		endPos: 'alpha1',
+		timing: null,
+		direction: null,
+		gridMode: DIAMOND,
+		grid: DIAMOND,
+		blueMotionData: {
+			color: 'blue',
+			motionType: 'counter',
+			startOri: 'high',
+			endOri: 'high',
+			turns: 1
+		},
+		redMotionData: {
+			color: 'red',
+			motionType: 'counter',
+			startOri: 'high',
+			endOri: 'high',
+			turns: 1
+		},
+		redPropData: {
+			propType: 'poi',
+			color: 'red',
+			coords: { x: 425, y: 475 },
+			rotAngle: 0
+		},
+		bluePropData: {
+			propType: 'poi',
+			color: 'blue',
+			coords: { x: 525, y: 475 },
+			rotAngle: 0
+		},
+		redArrowData: {
+			color: 'red',
+			motionType: 'counter',
+			startOri: 'high',
+			endOri: 'high',
+			turns: 1,
+			coords: { x: 425, y: 375 },
+			rotAngle: 90
+		},
+		blueArrowData: {
+			color: 'blue',
+			motionType: 'counter',
+			startOri: 'high',
+			endOri: 'high',
+			turns: 1,
+			coords: { x: 525, y: 375 },
+			rotAngle: 90
+		},
+		gridData: null,
+		motions: [],
+		redMotion: null,
+		blueMotion: null,
+		props: []
+	},
+	D: {
+		id: 'd_pictograph',
+		letter: 'D' as Letter,
+		startPos: 'gamma11',
+		endPos: 'gamma11',
+		timing: null,
+		direction: null,
+		gridMode: DIAMOND,
+		grid: DIAMOND,
+		blueMotionData: {
+			color: 'blue',
+			motionType: 'clockwise',
+			startOri: 'low',
+			endOri: 'low',
+			turns: 1
+		},
+		redMotionData: {
+			color: 'red',
+			motionType: 'clockwise',
+			startOri: 'low',
+			endOri: 'low',
+			turns: 1
+		},
+		redPropData: {
+			propType: 'poi',
+			color: 'red',
+			coords: { x: 425, y: 575 },
+			rotAngle: 0
+		},
+		bluePropData: {
+			propType: 'poi',
+			color: 'blue',
+			coords: { x: 525, y: 575 },
+			rotAngle: 0
+		},
+		redArrowData: {
+			color: 'red',
+			motionType: 'clockwise',
+			startOri: 'low',
+			endOri: 'low',
+			turns: 1,
+			coords: { x: 425, y: 575 },
+			rotAngle: -90
+		},
+		blueArrowData: {
+			color: 'blue',
+			motionType: 'clockwise',
+			startOri: 'low',
+			endOri: 'low',
+			turns: 1,
+			coords: { x: 525, y: 575 },
+			rotAngle: -90
+		},
+		gridData: null,
+		motions: [],
+		redMotion: null,
+		blueMotion: null,
+		props: []
+	},
+	L: {
+		id: 'l_pictograph',
+		letter: 'L' as Letter,
+		startPos: 'beta5',
+		endPos: 'beta5',
+		timing: null,
+		direction: null,
+		gridMode: DIAMOND,
+		grid: DIAMOND,
+		blueMotionData: {
+			color: 'blue',
+			motionType: 'clockwise',
+			startOri: 'middle',
+			endOri: 'middle',
+			turns: 1
+		},
+		redMotionData: {
+			color: 'red',
+			motionType: 'clockwise',
+			startOri: 'middle',
+			endOri: 'middle',
+			turns: 1
+		},
+		redPropData: {
+			propType: 'poi',
+			color: 'red',
+			coords: { x: 425, y: 475 },
+			rotAngle: 0
+		},
+		bluePropData: {
+			propType: 'poi',
+			color: 'blue',
+			coords: { x: 525, y: 475 },
+			rotAngle: 0
+		},
+		redArrowData: {
+			color: 'red',
+			motionType: 'clockwise',
+			startOri: 'middle',
+			endOri: 'middle',
+			turns: 1,
+			coords: { x: 425, y: 475 },
+			rotAngle: -90
+		},
+		blueArrowData: {
+			color: 'blue',
+			motionType: 'clockwise',
+			startOri: 'middle',
+			endOri: 'middle',
+			turns: 1,
+			coords: { x: 525, y: 475 },
+			rotAngle: -90
+		},
+		gridData: null,
+		motions: [],
+		redMotion: null,
+		blueMotion: null,
+		props: []
+	},
+	M: {
+		id: 'm_pictograph',
+		letter: 'M' as Letter,
+		startPos: 'beta5',
+		endPos: 'beta5',
+		timing: null,
+		direction: null,
+		gridMode: DIAMOND,
+		grid: DIAMOND,
+		blueMotionData: {
+			color: 'blue',
+			motionType: 'both',
+			startOri: 'middle',
+			endOri: 'middle',
+			turns: 1
+		},
+		redMotionData: {
+			color: 'red',
+			motionType: 'both',
+			startOri: 'middle',
+			endOri: 'middle',
+			turns: 1
+		},
+		redPropData: {
+			propType: 'poi',
+			color: 'red',
+			coords: { x: 425, y: 475 },
+			rotAngle: 0
+		},
+		bluePropData: {
+			propType: 'poi',
+			color: 'blue',
+			coords: { x: 525, y: 475 },
+			rotAngle: 0
+		},
+		redArrowData: {
+			color: 'red',
+			motionType: 'both',
+			startOri: 'middle',
+			endOri: 'middle',
+			turns: 1,
+			coords: { x: 425, y: 475 },
+			rotAngle: 0
+		},
+		blueArrowData: {
+			color: 'blue',
+			motionType: 'both',
+			startOri: 'middle',
+			endOri: 'middle',
+			turns: 1,
+			coords: { x: 525, y: 475 },
+			rotAngle: 0
+		},
+		gridData: null,
+		motions: [],
+		redMotion: null,
+		blueMotion: null,
+		props: []
+	},
+	R: {
+		id: 'r_pictograph',
+		letter: 'R' as Letter,
+		startPos: 'gamma11',
+		endPos: 'gamma11',
+		timing: null,
+		direction: null,
+		gridMode: DIAMOND,
+		grid: DIAMOND,
+		blueMotionData: {
+			color: 'blue',
+			motionType: 'counter',
+			startOri: 'low',
+			endOri: 'low',
+			turns: 1
+		},
+		redMotionData: {
+			color: 'red',
+			motionType: 'counter',
+			startOri: 'low',
+			endOri: 'low',
+			turns: 1
+		},
+		redPropData: {
+			propType: 'poi',
+			color: 'red',
+			coords: { x: 425, y: 575 },
+			rotAngle: 0
+		},
+		bluePropData: {
+			propType: 'poi',
+			color: 'blue',
+			coords: { x: 525, y: 575 },
+			rotAngle: 0
+		},
+		redArrowData: {
+			color: 'red',
+			motionType: 'counter',
+			startOri: 'low',
+			endOri: 'low',
+			turns: 1,
+			coords: { x: 425, y: 575 },
+			rotAngle: 90
+		},
+		blueArrowData: {
+			color: 'blue',
+			motionType: 'counter',
+			startOri: 'low',
+			endOri: 'low',
+			turns: 1,
+			coords: { x: 525, y: 575 },
+			rotAngle: 90
+		},
+		gridData: null,
+		motions: [],
+		redMotion: null,
+		blueMotion: null,
+		props: []
+	},
+	T: {
+		id: 't_pictograph',
+		letter: 'T' as Letter,
+		startPos: 'alpha1',
+		endPos: 'alpha1',
+		timing: null,
+		direction: null,
+		gridMode: DIAMOND,
+		grid: DIAMOND,
+		blueMotionData: {
+			color: 'blue',
+			motionType: 'both',
+			startOri: 'high',
+			endOri: 'high',
+			turns: 1
+		},
+		redMotionData: {
+			color: 'red',
+			motionType: 'both',
+			startOri: 'high',
+			endOri: 'high',
+			turns: 1
+		},
+		redPropData: {
+			propType: 'poi',
+			color: 'red',
+			coords: { x: 425, y: 375 },
+			rotAngle: 0
+		},
+		bluePropData: {
+			propType: 'poi',
+			color: 'blue',
+			coords: { x: 525, y: 375 },
+			rotAngle: 0
+		},
+		redArrowData: {
+			color: 'red',
+			motionType: 'both',
+			startOri: 'high',
+			endOri: 'high',
+			turns: 1,
+			coords: { x: 425, y: 375 },
+			rotAngle: 0
+		},
+		blueArrowData: {
+			color: 'blue',
+			motionType: 'both',
+			startOri: 'high',
+			endOri: 'high',
+			turns: 1,
+			coords: { x: 525, y: 375 },
+			rotAngle: 0
+		},
+		gridData: null,
+		motions: [],
+		redMotion: null,
+		blueMotion: null,
+		props: []
+	}
 };
 
 // Lists of valid options for different lesson types

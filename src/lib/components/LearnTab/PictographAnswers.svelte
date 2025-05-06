@@ -3,16 +3,17 @@
 	import { writable } from 'svelte/store';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
+	import type { PictographData } from '$lib/types/PictographData';
 
-	export let pictographs: any[] = [];
+	export let pictographs: PictographData[] = [];
 	export let disabled: boolean = false;
 
-	const dispatch = createEventDispatcher<{
-		select: any;
-	}>();
+	const dispatch = createEventDispatcher();
 
 	// Create a store for each pictograph
-	const pictographStores = pictographs.map((p) => writable(p || defaultPictographData));
+	const pictographStores = pictographs.map((p) =>
+		writable<PictographData>(p || defaultPictographData)
+	);
 
 	// Update stores when pictographs change
 	$: if (pictographs.length > 0) {
@@ -20,12 +21,12 @@
 			if (i < pictographStores.length) {
 				pictographStores[i].set(p);
 			} else {
-				pictographStores.push(writable(p));
+				pictographStores.push(writable<PictographData>(p));
 			}
 		});
 	}
 
-	function handleSelect(pictograph: any) {
+	function handleSelect(pictograph: PictographData) {
 		if (!disabled) {
 			dispatch('select', pictograph);
 		}

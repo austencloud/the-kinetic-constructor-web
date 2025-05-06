@@ -14,35 +14,12 @@ import { initializeApplication } from '$lib/utils/appInitializer';
 import type { BackgroundType } from '$lib/components/MainWidget/state/appState';
 import { browser } from '$app/environment';
 import { type AppMachineContext, type AppMachineEvents } from './types';
-
-// Storage key for the last active tab
-const LAST_ACTIVE_TAB_KEY = 'last_active_tab';
-
-// Function to load the last active tab from localStorage
-function loadLastActiveTab(): number {
-	if (!browser) return 0;
-
-	try {
-		const savedTab = localStorage.getItem(LAST_ACTIVE_TAB_KEY);
-		console.log('Loading last active tab from localStorage:', savedTab);
-
-		if (savedTab !== null) {
-			const tabIndex = parseInt(savedTab, 10);
-			console.log('Parsed tab index:', tabIndex);
-
-			// Ensure the tab index is valid (between 0 and 4)
-			if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex <= 4) {
-				console.log('Using saved tab index:', tabIndex);
-				return tabIndex;
-			}
-		}
-	} catch (error) {
-		console.error('Error loading last active tab:', error);
-	}
-
-	console.log('Using default tab index: 0');
-	return 0; // Default to the first tab if no saved tab or error
-}
+import {
+	loadBackgroundPreference,
+	loadActiveTabPreference,
+	saveBackgroundPreference,
+	saveActiveTabPreference
+} from '$lib/utils/preferences';
 
 // --- State Machine Definition ---
 export const appMachine = createMachine(
@@ -53,9 +30,9 @@ export const appMachine = createMachine(
 			events: AppMachineEvents;
 		},
 		context: {
-			currentTab: loadLastActiveTab(),
+			currentTab: loadActiveTabPreference(),
 			previousTab: 0,
-			background: 'snowfall',
+			background: loadBackgroundPreference(),
 			isFullScreen: false,
 			isSettingsOpen: false,
 			initializationError: null,
@@ -135,21 +112,39 @@ export const appMachine = createMachine(
 						loadingProgress: 0,
 						loadingMessage: ''
 					}),
-					// Add this new action to enforce the tab selection from localStorage
-					({ self }) => {
+					// Enforce the background selection from localStorage
+					({ self, context }) => {
 						if (browser) {
 							try {
-								const savedTab = localStorage.getItem(LAST_ACTIVE_TAB_KEY);
-								if (savedTab !== null) {
-									const tabIndex = parseInt(savedTab, 10);
-									// Ensure the tab index is valid (between 0 and 4)
-									if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex <= 4) {
-										console.log('Enforcing tab from localStorage in ready state:', tabIndex);
-										// Use a small timeout to ensure this happens after other initialization
-										setTimeout(() => {
-											self.send({ type: 'CHANGE_TAB', tab: tabIndex });
-										}, 50);
-									}
+								const savedBackground = loadBackgroundPreference();
+								console.log('Checking saved background in ready state:', savedBackground);
+
+								if (savedBackground && savedBackground !== context.background) {
+									console.log(
+										'Enforcing background from localStorage in ready state:',
+										savedBackground
+									);
+									// Use a small timeout to ensure this happens after other initialization
+									setTimeout(() => {
+										self.send({ type: 'UPDATE_BACKGROUND', background: savedBackground });
+									}, 100);
+								}
+							} catch (error) {
+								console.error('Error enforcing background on ready state:', error);
+							}
+						}
+					},
+					// Add this new action to enforce the tab selection from localStorage
+					({ self, context }) => {
+						if (browser) {
+							try {
+								const savedTab = loadActiveTabPreference();
+								if (savedTab !== context.currentTab) {
+									console.log('Enforcing tab from localStorage in ready state:', savedTab);
+									// Use a small timeout to ensure this happens after other initialization
+									setTimeout(() => {
+										self.send({ type: 'CHANGE_TAB', tab: savedTab });
+									}, 150);
 								}
 							} catch (error) {
 								console.error('Error enforcing tab on ready state:', error);
@@ -166,11 +161,11 @@ export const appMachine = createMachine(
 								currentTab: ({ event }) => event.tab
 							}),
 							({ event }) => {
-								// Save the current tab to localStorage
+								// Save the current tab to localStorage immediately
 								if (browser) {
 									try {
-										console.log('Saving tab to localStorage:', event.tab);
-										localStorage.setItem(LAST_ACTIVE_TAB_KEY, event.tab.toString());
+										console.log('Saving tab to localStorage immediately:', event.tab);
+										saveActiveTabPreference(event.tab);
 										console.log('Tab saved successfully');
 									} catch (error) {
 										console.error('Error saving last active tab:', error);
@@ -192,14 +187,40 @@ export const appMachine = createMachine(
 						actions: assign({ isSettingsOpen: false })
 					},
 					UPDATE_BACKGROUND: {
-						actions: assign({
-							background: ({ event, context }) => {
-								const validBackgrounds: BackgroundType[] = ['snowfall'];
-								return validBackgrounds.includes(event.background as BackgroundType)
-									? (event.background as BackgroundType)
-									: context.background;
+						actions: [
+							assign({
+								background: ({ event, context }) => {
+									const validBackgrounds: BackgroundType[] = ['snowfall', 'nightSky', 'summerDay'];
+									return validBackgrounds.includes(event.background as BackgroundType)
+										? (event.background as BackgroundType)
+										: context.background;
+								}
+							}),
+							({ event }) => {
+								// Save the background preference to localStorage immediately
+								if (browser) {
+									try {
+										const validBackgrounds: BackgroundType[] = [
+											'snowfall',
+											'nightSky',
+											'summerDay'
+										];
+										const background = event.background as BackgroundType;
+
+										if (validBackgrounds.includes(background)) {
+											console.log(
+												'Saving background preference to localStorage immediately:',
+												background
+											);
+											saveBackgroundPreference(background);
+											console.log('Background preference saved successfully');
+										}
+									} catch (error) {
+										console.error('Error saving background preference:', error);
+									}
+								}
 							}
-						})
+						]
 					}
 				}
 			}
@@ -231,3 +252,30 @@ export const appService = createAppMachine('app', appMachine, {
 	persist: true,
 	description: 'Core application state machine'
 });
+
+// Subscribe to state changes to ensure persistence
+if (browser) {
+	console.log('App service created with initial state:', appService.getSnapshot());
+
+	// Subscribe to state changes to ensure direct persistence
+	appService.subscribe((state) => {
+		// Only save when in the ready state to avoid saving during initialization
+		if (state.matches('ready')) {
+			try {
+				// Save background preference directly
+				const background = state.context.background;
+				if (background) {
+					saveBackgroundPreference(background);
+					console.log('Background preference saved directly:', background);
+				}
+
+				// Save tab preference directly
+				const currentTab = state.context.currentTab;
+				saveActiveTabPreference(currentTab);
+				console.log('Tab preference saved directly:', currentTab);
+			} catch (error) {
+				console.error('Error saving preferences to localStorage:', error);
+			}
+		}
+	});
+}

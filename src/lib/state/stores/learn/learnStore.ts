@@ -1,6 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import { lessonConfigs } from './lesson_configs';
 import { checkAnswerLogic, generateQuestion } from './lessonService';
+import { progressStore } from './progressStore';
 
 export type LessonMode = 'fixed_question' | 'countdown';
 export type ViewType = 'selector' | 'lesson' | 'results';
@@ -171,6 +172,18 @@ const createLearnStore = () => {
 						timerInterval = null;
 					}
 
+					// Update progress store with the lesson results
+					if (state.selectedLessonType) {
+						const score = Math.round((state.score / state.totalQuestions) * 100);
+
+						progressStore.updateLessonProgress(
+							state.selectedLessonType,
+							score,
+							state.lessonHistory.length,
+							state.totalQuestions
+						);
+					}
+
 					return {
 						...state,
 						currentView: 'results',
@@ -198,6 +211,19 @@ const createLearnStore = () => {
 						timerInterval = null;
 					}
 
+					// Update progress store with the lesson results
+					if (state.selectedLessonType) {
+						const totalQuestions = state.lessonHistory.length;
+						const score = totalQuestions > 0 ? Math.round((state.score / totalQuestions) * 100) : 0;
+
+						progressStore.updateLessonProgress(
+							state.selectedLessonType,
+							score,
+							totalQuestions,
+							totalQuestions
+						);
+					}
+
 					return {
 						...state,
 						remainingTime: 0,
@@ -217,6 +243,23 @@ const createLearnStore = () => {
 				if (timerInterval) {
 					clearInterval(timerInterval);
 					timerInterval = null;
+				}
+
+				// Update progress store with the lesson results
+				if (state.selectedLessonType) {
+					const totalQuestions =
+						state.selectedMode === 'fixed_question'
+							? state.totalQuestions
+							: state.lessonHistory.length;
+
+					const score = Math.round((state.score / totalQuestions) * 100);
+
+					progressStore.updateLessonProgress(
+						state.selectedLessonType,
+						score,
+						state.lessonHistory.length,
+						totalQuestions
+					);
 				}
 
 				return {
