@@ -276,40 +276,37 @@
 		class="beat-frame"
 		style="--total-rows: {beatRows}; --total-cols: {beatCols + 1}; --cell-size: {cellSize}px;"
 	>
-		<!-- Regular Beats with Start Position on the left of each row -->
 		{#each Array(beatRows) as _, rowIndex}
-			<!-- Start Position Beat (only for the first row) -->
 			{#if rowIndex === 0}
 				<div class="beat-container start-position" style="grid-row: 1; grid-column: 1;">
 					<StartPosBeat beatData={startPosBeatData} onClick={handleStartPosBeatClick} />
 				</div>
 			{/if}
 
-			<!-- Beats for this row -->
 			{#each Array(beatCols) as _, colIndex}
 				{#if rowIndex * beatCols + colIndex < beats.length}
 					{@const beatIndex = rowIndex * beatCols + colIndex}
 					{@const beat = beats[beatIndex]}
-					<div
-						class="beat-container"
-						class:selected={selectedBeatIndex === beatIndex}
-						style="grid-row: {rowIndex + 1}; grid-column: {colIndex + 2};"
-					>
-						<Beat {beat} onClick={() => handleBeatClick(beatIndex)} />
 
-						<!-- Show reversals if any -->
-						{#if beat.metadata?.blueReversal || beat.metadata?.redReversal}
-							<div class="reversal-indicator">
-								<ReversalGlyph
-									blueReversal={beat.metadata?.blueReversal || false}
-									redReversal={beat.metadata?.redReversal || false}
-								/>
-							</div>
-						{/if}
+					{#key beat.id}
+						<div
+							class="beat-container"
+							class:selected={selectedBeatIndex === beatIndex}
+							style="grid-row: {rowIndex + 1}; grid-column: {colIndex + 2};"
+						>
+							<Beat {beat} onClick={() => handleBeatClick(beatIndex)} />
 
-						<!-- Selection overlay -->
-						<SelectionOverlay isSelected={selectedBeatIndex === beatIndex} />
-					</div>
+							{#if beat.metadata?.blueReversal || beat.metadata?.redReversal}
+								<div class="reversal-indicator">
+									<ReversalGlyph
+										blueReversal={beat.metadata?.blueReversal || false}
+										redReversal={beat.metadata?.redReversal || false}
+									/>
+								</div>
+							{/if}
+							<SelectionOverlay isSelected={selectedBeatIndex === beatIndex} />
+						</div>
+					{/key}
 				{/if}
 			{/each}
 		{/each}
