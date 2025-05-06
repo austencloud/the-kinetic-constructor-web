@@ -184,14 +184,11 @@
 		<div class="left-vbox">
 			<div class="centered-group">
 				<div class="sequence-widget-labels">
-					<ToolsButton
-						isToolsPanelOpen={$isToolsPanelOpen}
-						on:toggleToolsPanel={toggleToolsPanel}
-					/>
+
 					<CurrentWordLabel currentWord={$sequenceName} width={$dimensions.width} />
 					<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
 				</div>
-				<div class="beat-frame-container">
+				<div class="beat-frame-container">Hell yeah
 					<BeatFrame />
 				</div>
 			</div>

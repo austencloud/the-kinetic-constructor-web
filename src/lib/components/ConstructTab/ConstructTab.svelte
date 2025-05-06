@@ -7,7 +7,7 @@
 	import OptionPicker from './OptionPicker/OptionPicker.svelte';
 	import StartPosPicker from './StartPosPicker/StartPosPicker.svelte';
 	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
-	import ToolsButtonOverlay from '$lib/components/SequenceWorkbench/ToolsButtonOverlay.svelte';
+	import ToolsButton from '../SequenceWorkbench/ToolsButton.svelte';
 
 	// Import for button definition types
 	import type {
@@ -104,10 +104,7 @@
 <div class="construct-tab">
 	<div class="sequenceWorkbenchContainer">
 		<SequenceWorkbench />
-		<ToolsButtonOverlay
-			isToolsPanelOpen={$isToolsPanelOpen}
-			on:toggleToolsPanel={toggleToolsPanel}
-		/>
+		<ToolsButton isToolsPanelOpen={$isToolsPanelOpen} on:toggleToolsPanel={toggleToolsPanel} />
 	</div>
 	<div class="optionPickerContainer">
 		{#if $isToolsPanelOpen}
