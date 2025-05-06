@@ -1,4 +1,3 @@
-<!-- src/lib/components/SequenceWorkbench/SequenceWidget.svelte -->
 <script lang="ts">
 	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout';
 	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
@@ -52,7 +51,6 @@
 	);
 
 	// --- Define Button Panel Data ---
-	// This array defines the specific buttons for this instance of the ButtonPanel
 	const buttonPanelButtons: ButtonDefinition[] = [
 		{
 			icon: 'fa-book-medical',
@@ -84,7 +82,6 @@
 		}
 	}
 
-	// Function to get user-friendly status text
 	function getStatusText(status: string): string {
 		switch (status) {
 			case 'ready':
@@ -100,11 +97,8 @@
 		}
 	}
 
-	// Handler for button panel actions
 	function handleButtonAction(event: CustomEvent<ActionEventDetail>) {
 		const { id } = event.detail;
-
-		// Map button actions to state machine actions
 		switch (id) {
 			case 'addToDictionary':
 				status = 'saving';
@@ -118,12 +112,10 @@
 				openSequenceFullScreen();
 				break;
 			case 'mirrorSequence':
-				// TODO: Implement mirror sequence in the state machine
 				status = 'editing';
 				setTimeout(() => (status = 'ready'), 200);
 				break;
 			case 'swapColors':
-				// TODO: Implement swap colors in the state machine
 				status = 'editing';
 				setTimeout(() => (status = 'ready'), 200);
 				break;
@@ -132,16 +124,13 @@
 				setTimeout(() => (status = 'ready'), 200);
 				break;
 			case 'deleteBeat':
-				// Get the selected beat IDs from the sequenceStore
 				const selectedBeatIds = sequenceSelectors.selectedBeatIds();
 				if (selectedBeatIds.length > 0) {
-					// Remove the selected beat and all following beats
 					sequenceActions.removeBeatAndFollowing(selectedBeatIds[0]);
 					status = 'editing';
 				}
 				break;
 			case 'clearSequence':
-				// Call the clearSequence action directly
 				sequenceActions.clearSequence();
 				selectedStartPos.set(null);
 				isSequenceEmpty.set(true);
@@ -149,14 +138,11 @@
 				setTimeout(() => (status = 'ready'), 200);
 				break;
 		}
-
-		// After action is processed, close tools panel if it's open
 		if ($isToolsPanelOpen) {
 			isToolsPanelOpen.set(false);
 		}
 	}
 
-	// Create a wrapper function for clearSequence that creates a proper CustomEvent
 	function handleClearSequence() {
 		const event = new CustomEvent<ActionEventDetail>('action', {
 			detail: { id: 'clearSequence' }
@@ -164,16 +150,12 @@
 		handleButtonAction(event);
 	}
 
-	// Toggle tools panel visibility
 	function toggleToolsPanel() {
 		isToolsPanelOpen.update((value) => !value);
 	}
 
-	// Track event listener for cleanup
 	let buttonActionListener: (event: CustomEvent) => void;
-
 	onMount(() => {
-		// Set up event listener for button actions
 		buttonActionListener = (event: CustomEvent) => {
 			if (event.detail && event.detail.id) {
 				handleButtonAction(event);
@@ -181,9 +163,7 @@
 		};
 		document.addEventListener('action', buttonActionListener as EventListener);
 	});
-
 	onDestroy(() => {
-		// Clean up event listener
 		if (buttonActionListener) {
 			document.removeEventListener('action', buttonActionListener as EventListener);
 		}
@@ -193,18 +173,19 @@
 <div class="sequence-widget">
 	<div class="main-layout" class:portrait={workbenchIsPortrait}>
 		<div class="left-vbox">
-			<div class="centered-group">
+			<div class="sequence-container">
 				<div class="sequence-widget-labels">
 					<CurrentWordLabel currentWord={$sequenceName} width={$dimensions.width} />
 					<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
 				</div>
-				<div class="beat-frame-container">
+				
+				<div class="beat-frame-wrapper"> 
 					<BeatFrame />
 				</div>
-			</div>
-
-			<div class="indicator-label-container">
-				<IndicatorLabel text={statusText} width={$dimensions.width} />
+				
+				<div class="indicator-label-container">
+					<IndicatorLabel text={statusText} width={$dimensions.width} />
+				</div>
 			</div>
 		</div>
 
@@ -218,11 +199,10 @@
 			</div>
 		{/if}
 
-		<ToolsButton isToolsPanelOpen={toolsPanelOpen} on:toggleToolsPanel={toggleToolsPanel} />
+		<ToolsButton isToolsPanelOpen={$isToolsPanelOpen} on:toggleToolsPanel={toggleToolsPanel} />
 		<ClearSequenceButton on:clearSequence={handleClearSequence} />
 	</div>
 
-	<!-- Full Screen Overlay -->
 	<FullScreenOverlay
 		isOpen={$isSequenceFullScreen}
 		title={$sequenceName}
@@ -249,6 +229,7 @@
 		width: 100%;
 		overflow: hidden;
 		justify-content: space-between;
+		position: relative;
 	}
 
 	.main-layout.portrait {
@@ -261,29 +242,20 @@
 		flex-direction: column;
 		height: 100%;
 		width: 100%;
-		min-height: 0;
+		min-height: 0; /* Important for flex children in a flex container */
 		flex: 1;
-		overflow: hidden;
+		overflow: hidden; /* Let children handle their own scrolling if necessary */
 	}
 
-	.tools-panel-container {
-		flex: 1;
+	.sequence-container {
 		display: flex;
 		flex-direction: column;
-		padding: 10px;
-		background-color: #f8f9fa;
-	}
-
-	.centered-group {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
 		height: 100%;
 		width: 100%;
-		flex-grow: 1;
-		min-height: 0;
-		position: relative;
+		align-items: center; /* Center children horizontally */
+		justify-content: center; /* Center children vertically by default */
+		padding: 10px 0; /* Add some vertical padding */
+		box-sizing: border-box;
 	}
 
 	.sequence-widget-labels {
@@ -292,24 +264,33 @@
 		align-items: center;
 		justify-content: center;
 		color: white;
-		padding-top: 0;
-		margin-bottom: 0;
-		padding-bottom: 5px;
-		position: relative;
 		width: 100%;
+		flex-shrink: 0; /* Prevent labels from shrinking */
+		padding-bottom: 10px; /* Space between labels and beat frame */
 	}
 
-	.beat-frame-container {
-		display: flex;
-		align-items: center;
+	/* This wrapper ensures BeatFrame can grow and scroll if needed */
+	.beat-frame-wrapper {
+		display: flex; /* Allow BeatFrame to be centered if it's smaller than wrapper */
 		justify-content: center;
-		flex: 1;
-		min-height: 0;
+		align-items: center;
 		width: 100%;
-		padding: 10px;
-		padding-top: 0;
+		min-height: 0; /* Crucial for allowing BeatFrame to not push layout */
+		overflow: hidden; /* BeatFrame will handle its own scroll if its content overflows */
+		padding: 0 10px; /* Horizontal padding for the beat frame area */
 		box-sizing: border-box;
 	}
+	
+	/* This is the actual container passed to BeatFrame via use:resizeObserver */
+	/* Its styles are in SequenceBeatFrame.svelte but its flex behavior is controlled here */
+	:global(.beat-frame-container) {
+		/* The BeatFrame's direct parent (from SequenceBeatFrame.svelte) 
+		   should fill the .beat-frame-wrapper */
+		width: 100%;
+		height: 100%; 
+		/* overflow: auto; If you want this div to scroll instead of BeatFrame internal grid */
+	}
+
 
 	.indicator-label-container {
 		display: flex;
@@ -317,8 +298,28 @@
 		align-items: center;
 		justify-content: center;
 		color: white;
-		flex-shrink: 0;
+		width: 100%;
+		flex-shrink: 0; /* Prevent label from shrinking */
+		padding-top: 10px; /* Space between beat frame and indicator */
 	}
+
+	.tools-panel-container {
+		/* This style is for the container that holds ToolsPanel when it slides in */
+		/* Ensure it is positioned correctly relative to main-layout if it's a direct child */
+		position: absolute; /* Or fixed, depending on desired behavior */
+		/* right: 0; top:0; bottom:0; width: 300px; etc. for a sidebar style */
+		/* For now, assuming it replaces another view or is part of the flex flow */
+		flex: 1; /* If it's part of the flex flow */
+		display: flex;
+		flex-direction: column;
+		padding: 10px;
+		background-color: #f8f9fa; /* Or your desired panel background */
+		z-index: 50; /* Ensure it's above other content if overlapping */
+	}
+	
+	/* Conditional alignment for when content might need to scroll */
+	/* (Removed unused .scrolling-active selectors) */
+
 
 	/* Full screen beat container styles */
 	.fullscreen-beat-container {
@@ -336,9 +337,29 @@
 		.main-layout.portrait .tools-panel-container {
 			padding: 6px;
 		}
+		.sequence-widget-labels {
+			padding-bottom: 5px;
+		}
+		.indicator-label-container {
+			padding-top: 5px;
+		}
 	}
+	
+	/* Styles from previous .beat-frame-container (now .beat-frame-wrapper) */
+    /*
+	@media (min-height: 800px) {
+		.sequence-container {
+			justify-content: flex-start; 
+		}
 
-	/* Make the beat frame take up as much space as possible in full screen mode */
+		.beat-frame-wrapper {  // Changed from .beat-frame-container
+			flex: 1 1 auto; 
+			margin: 10px 0; 
+            overflow-y: auto; // Added scroll for wrapper if it exceeds this height
+		}
+	}
+    */
+
 	:global(.fullscreen-beat-container .beat-frame) {
 		width: auto;
 		height: auto;
@@ -346,8 +367,6 @@
 		max-height: 95vh;
 		transform: scale(1);
 	}
-
-	/* Ensure the beat frame container fills the available space */
 	:global(.fullscreen-beat-container .beat-frame-container) {
 		width: 100%;
 		height: 100%;
@@ -355,20 +374,14 @@
 		justify-content: center;
 		align-items: center;
 	}
-
-	/* Adjust cell size for optimal visibility based on grid size */
 	:global(.fullscreen-beat-container .beat-frame) {
 		--cell-size-multiplier: 2.5;
 		--adjusted-cell-size: calc(var(--cell-size) * var(--cell-size-multiplier));
 	}
-
-	/* Smaller multiplier for larger grids */
 	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 3']),
 	:global(.fullscreen-beat-container .beat-frame[style*='--total-cols: 4']) {
 		--cell-size-multiplier: 2;
 	}
-
-	/* Even smaller multiplier for very large grids */
 	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 4']),
 	:global(.fullscreen-beat-container .beat-frame[style*='--total-cols: 5']) {
 		--cell-size-multiplier: 1.5;

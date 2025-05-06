@@ -37,6 +37,7 @@ export function applyLayout(
  * @returns Optimal cell size in pixels
  */
 export function calculateCellSize(
+	beatCount: number,
 	containerWidth: number,
 	containerHeight: number,
 	totalRows: number,
@@ -45,34 +46,78 @@ export function calculateCellSize(
 ): number {
 	// Ensure we have valid dimensions
 	if (containerWidth <= 0 || containerHeight <= 0 || totalRows <= 0 || totalCols <= 0) {
-		return 50; // Default fallback size
+		return 80; // Default fallback size
 	}
 
-	// Calculate available space after accounting for gaps
+	// Calculate total space needed for gaps
 	const totalGapWidth = gap * (totalCols - 1);
-	const totalGapHeight = gap * (totalRows - 1);
 
-	const availableWidth = Math.max(0, containerWidth - totalGapWidth);
-	const availableHeight = Math.max(0, containerHeight - totalGapHeight);
+	// Calculate available space after accounting for gaps and padding
+	const padding = beatCount === 0 ? containerWidth * 0.3 : 16; // Larger padding when only start position
+	const availableWidth = Math.max(0, containerWidth - totalGapWidth - padding * 2);
 
 	// Calculate cell size based on available space
-	const cellWidthByContainer = availableWidth / totalCols;
-	const cellHeightByContainer = availableHeight / totalRows;
+	const cellWidthByContainer = Math.floor(availableWidth / totalCols);
 
-	// Take the smaller dimension to ensure cells fit within container
-	const cellSize = Math.min(cellWidthByContainer, cellHeightByContainer);
+	// Use the smaller dimension to maintain square cells and prevent overflow
+	const baseSize = cellWidthByContainer;
+
+	// For start position only, make it proportionally smaller
+	const cellSize = beatCount === 0 ? baseSize * 1 : baseSize;
 
 	// Apply minimum and maximum constraints
-	return Math.max(30, Math.min(cellSize, 200));
+	return Math.min(Math.max(cellSize, 60), 200); // Min 60px, Max 200px
 }
 
-export function autoAdjustLayout(beatCount: number): [number, number] {
-	if (beatCount <= 0) return [1, 1]; // Empty grid
-	if (beatCount <= 4) return [2, 2]; // 2x2 grid
-	if (beatCount <= 9) return [3, 3]; // 3x3 grid
-	if (beatCount <= 16) return [4, 4]; // 4x4 grid
+const beatCountGridMap: Record<number, [number, number]> = {
+	1: [1, 1], // One beat + start position
+	2: [1, 2],
+	3: [1, 3],
+	4: [1, 4],
+	5: [2, 4],
+	6: [2, 4],
+	7: [2, 4],
+	8: [2, 4],
+	9: [3, 4],
+	10: [3, 4],
+	11: [3, 4],
+	12: [3, 4],
+	13: [4, 4],
+	14: [4, 4],
+	15: [4, 4],
+	16: [4, 4],
+	17: [5, 4],
+	18: [5, 4],
+	19: [5, 4],
+	20: [5, 4],
+	21: [6, 4],
+	22: [6, 4],
+	23: [6, 4],
+	24: [6, 4],
+	25: [7, 4],
+	26: [7, 4],
+	27: [7, 4],
+	28: [7, 4],
+	29: [8, 4],
+	30: [8, 4],
+	31: [8, 4],
+	32: [8, 4]
+	
 
-	// For more than 16 beats, always use 4 columns and calculate rows based on beat count
+
+};
+
+export function autoAdjustLayout(beatCount: number): [number, number] {
+	// For empty sequence or only start position, use single column layout
+	if (beatCount <= 0) return [1, 1];
+	if (beatCount === 1) return [1, 1]; // Single beat + start position
+
+	// Use predefined layouts for common beat counts
+	if (beatCount <= 32 && beatCountGridMap[beatCount]) {
+		return beatCountGridMap[beatCount];
+	}
+
+	// Default layout for larger sequences
 	const cols = 4;
 	const rows = Math.ceil(beatCount / cols);
 	return [rows, cols];

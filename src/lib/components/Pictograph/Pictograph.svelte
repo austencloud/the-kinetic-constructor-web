@@ -757,6 +757,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		box-sizing: border-box;
+		aspect-ratio: 1;
 	}
 
 	.pictograph-wrapper:hover {
@@ -775,10 +777,14 @@
 		z-index: 1;
 		position: relative;
 		border: 1px solid #ccc;
-		aspect-ratio: 1 / 1;
+		aspect-ratio: 1;
 		margin: auto;
 		overflow: visible;
 		transform-origin: center center;
+		box-sizing: border-box;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.pictograph-wrapper:hover .pictograph {

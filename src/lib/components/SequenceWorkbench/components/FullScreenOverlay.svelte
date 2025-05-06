@@ -94,17 +94,22 @@
 		align-items: center;
 		z-index: 9999; /* Ensure it's above everything else */
 		backdrop-filter: blur(3px);
+		padding: 1rem;
+		box-sizing: border-box;
 	}
 
 	.fullscreen-content {
 		position: relative;
-		width: 95%;
-		height: 95%;
-		max-width: 95vw;
-		max-height: 95vh;
+		width: 100%;
+		height: 100%;
+		max-width: 90vw;
+		max-height: 90vh;
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
+		background-color: rgba(0, 0, 0, 0.5);
+		border-radius: 8px;
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 	}
 
 	.fullscreen-header {

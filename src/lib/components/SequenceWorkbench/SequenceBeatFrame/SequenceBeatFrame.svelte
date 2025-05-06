@@ -21,10 +21,11 @@
 	import SelectionOverlay from './SelectionOverlay.svelte';
 	import ReversalGlyph from './ReversalGlyph.svelte';
 	const ssrDefaults = { width: 800, height: 600 }; // Example reasonable defaults
-	const { size, resizeObserver } = useResizeObserver(
-		browser ? undefined : ssrDefaults // Pass undefined in browser to let hook calculate, use defaults for SSR
-		// OR ensure useResizeObserver internally handles SSR returning 0s or defaults
-	);
+	const { size, resizeObserver } = useResizeObserver({
+		width: browser ? window.innerWidth : 800,
+		height: browser ? window.innerHeight : 600
+	});
+
 	// No gap between cells
 
 	// Use reactive stores for beats and selection state
@@ -216,19 +217,32 @@
 			document.dispatchEvent(event);
 		}
 	}
+	$: beatCount = beats.length;
 
 	// Calculate cell size based on container dimensions
-	// For scrollable layouts (more than 16 beats), we only need to consider 4 rows for height calculation
-	// This ensures the cell size remains consistent even as more rows are added
 	$: cellSize = calculateCellSize(
-		$size.width,
-		$size.height,
-		// For small grids, use actual rows; for large grids, limit to 4 rows for consistent sizing
-		// Always ensure at least 1 row for the start position beat
-		beats.length > 16 ? Math.min(4, beatRows) : Math.max(1, beatRows),
-		beatCols + 1,
-		0
+		beatCount,
+		$size.width || 0,
+		$size.height || 0,
+		beatRows,
+		beatCols, // Add 1 for start position column
+		0 // No gap
 	);
+
+	// Force recalculation when layout changes
+	$: if (beatRows || beatCols) {
+		cellSize = calculateCellSize(
+			beatCount,
+			$size.width || 0,
+			$size.height || 0,
+			beatRows,
+			beatCols + 1,
+			0
+		);
+	}
+
+	// Update class based on actual content overflow rather than beat count
+	$: isScrollable = beats.length > 28; // Only scroll when we exceed 5 rows (5x4=20 beats)
 
 	// Event handlers
 	function handleStartPosBeatClick() {
@@ -317,10 +331,12 @@
 	}
 </script>
 
-<div use:resizeObserver class="beat-frame-container" class:scrollable={beats.length > 16}>
+<div use:resizeObserver class="beat-frame-container" class:scrollable={isScrollable}>
 	<div
 		class="beat-frame"
-		style="--total-rows: {beatRows}; --total-cols: {beatCols + 1}; --cell-size: {cellSize}px;"
+		style="--total-rows: {beatRows}; --total-cols: {beatCount === 0
+			? 1
+			: beatCols + 1}; --cell-size: {cellSize}px;"
 	>
 		{#each Array(beatRows) as _, rowIndex}
 			{#if rowIndex === 0}
@@ -338,7 +354,7 @@
 						<div
 							class="beat-container"
 							class:selected={selectedBeatIndex === beatIndex}
-							style="grid-row: {rowIndex + 1}; grid-column: {colIndex + 2};"
+							style="grid-row: {rowIndex + 1}; grid-column: {colIndex + (beatCount === 0 ? 1 : 2)};"
 						>
 							<Beat {beat} onClick={() => handleBeatClick(beatIndex)} />
 
@@ -365,34 +381,31 @@
 		height: 100%;
 		display: flex;
 		justify-content: center;
-		align-items: center; /* Center vertically by default */
-		overflow: hidden; /* Hide overflow by default */
+		align-items: center;
+		overflow: hidden;
+		position: relative;
 	}
 
 	.scrollable {
-		overflow-y: auto; /* Enable vertical scrolling when needed */
-		overflow-x: hidden; /* Prevent horizontal scrolling */
-		align-items: flex-start; /* Align to top when scrollable */
+		overflow-y: auto;
+		overflow-x: hidden;
+		align-items: flex-start;
 	}
 
 	.beat-frame {
 		display: grid;
-		/* Use adjusted cell size if available, otherwise use the regular cell size */
-		grid-template-columns: var(--adjusted-cell-size, var(--cell-size)) repeat(
-				var(--total-cols) - 1,
-				var(--adjusted-cell-size, var(--cell-size))
-			);
-		grid-template-rows: repeat(var(--total-rows), var(--adjusted-cell-size, var(--cell-size)));
-		gap: 0; /* No gap at all */
+		grid-template-columns: repeat(var(--total-cols), var(--cell-size));
+		grid-template-rows: repeat(var(--total-rows), var(--cell-size));
+		gap: 0;
 		justify-content: center;
-		align-content: center; /* Center vertically by default */
-		width: 100%;
-		min-height: min-content; /* Allow grid to grow based on content */
-		max-height: 100%; /* Limit height to container */
+		align-content: center;
+		width: fit-content;
+		height: fit-content;
+		margin: auto;
 	}
 
-	/* When inside a scrollable container, align to top */
-	.scrollable .beat-frame {
+	/* Only align to top when scrolling and there are beats */
+	.scrollable .beat-frame:not(:only-child) {
 		align-content: start;
 	}
 
@@ -406,7 +419,11 @@
 		background-color: transparent;
 	}
 
-	/* Start position styling is now handled inline */
+	/* Specific styling for start position when it's the only beat */
+	.beat-container.start-position:only-child {
+		justify-self: center;
+		align-self: center;
+	}
 
 	.reversal-indicator {
 		position: absolute;
