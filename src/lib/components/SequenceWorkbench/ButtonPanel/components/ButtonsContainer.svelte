@@ -7,7 +7,7 @@
 	// Props
 	export let buttons: ButtonDefinition[];
 	export let buttonSize: number;
-	export let layout: LayoutOrientation; 
+	export let layout: LayoutOrientation; // Receive layout from parent (ActionToolbar)
 
 	// Always visible now
 	const isVisible = true;

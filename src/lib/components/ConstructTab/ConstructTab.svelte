@@ -1,11 +1,46 @@
+<!-- src/lib/components/ConstructTab/ConstructTab.svelte -->
 <script lang="ts">
-	import { derived } from 'svelte/store';
+	import { derived, writable } from 'svelte/store';
 	import { fade, crossfade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import SequenceWorkbench from '$lib/components/SequenceWorkbench/Workbench.svelte';
 	import OptionPicker from './OptionPicker/OptionPicker.svelte';
 	import StartPosPicker from './StartPosPicker/StartPosPicker.svelte';
 	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
+	import ToolsButtonOverlay from '$lib/components/SequenceWorkbench/ToolsButtonOverlay.svelte';
+
+	// Import for button definition types
+	import type {
+		ButtonDefinition,
+		ActionEventDetail
+	} from '$lib/components/SequenceWorkbench/ButtonPanel/types';
+
+	// Import sequence actions for button functionality
+	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
+	import { sequenceStore } from '$lib/state/stores/sequenceStore';
+	import {
+		isSequenceFullScreen,
+		openSequenceFullScreen
+	} from '$lib/stores/sequence/fullScreenStore';
+	import ToolsPanel from '../SequenceWorkbench/ToolsPanel/ToolsPanel.svelte';
+
+	// Track tools panel state
+	const isToolsPanelOpen = writable(false);
+
+	// Track status for UI
+	let status = 'ready';
+
+	// Subscribe to the sequence store for status
+	const sequenceStatus = derived(sequenceStore, ($store) =>
+		$store.isModified ? 'editing' : 'ready'
+	);
+
+	// Update status when sequence changes
+	$: {
+		if ($sequenceStatus === 'editing') {
+			status = 'editing';
+		}
+	}
 
 	// Derived store to determine which picker to show
 	const isEmpty = derived(isSequenceEmpty, ($isEmpty) => $isEmpty);
@@ -21,14 +56,69 @@
 			});
 		}
 	});
+
+	// Define Button Panel Data
+	const buttonPanelButtons: ButtonDefinition[] = [
+		{
+			icon: 'fa-book-medical',
+			title: 'Add to Dictionary',
+			id: 'addToDictionary',
+			color: '#4361ee'
+		},
+		{ icon: 'fa-save', title: 'Save Image', id: 'saveImage', color: '#3a86ff' },
+		{ icon: 'fa-expand', title: 'View Full Screen', id: 'viewFullScreen', color: '#4cc9f0' },
+		{
+			icon: 'fa-arrows-left-right',
+			title: 'Mirror Sequence',
+			id: 'mirrorSequence',
+			color: '#4895ef'
+		},
+		{ icon: 'fa-paintbrush', title: 'Swap Colors', id: 'swapColors', color: '#ff6b6b' },
+		{ icon: 'fa-rotate', title: 'Rotate Sequence', id: 'rotateSequence', color: '#f72585' },
+		{ icon: 'fa-trash', title: 'Delete Beat', id: 'deleteBeat', color: '#ff9e00' },
+		{ icon: 'fa-eraser', title: 'Clear Sequence', id: 'clearSequence', color: '#ff7b00' }
+	];
+
+	// Handler for button panel actions
+	function handleButtonAction(event: CustomEvent<ActionEventDetail>) {
+		const buttonEvent = new CustomEvent('action', {
+			detail: event.detail,
+			bubbles: true,
+			cancelable: true,
+			composed: true // Ensures the event can cross shadow DOM boundaries if needed
+		});
+		document.dispatchEvent(buttonEvent);
+
+		// After action is processed, close tools panel
+		if ($isToolsPanelOpen) {
+			isToolsPanelOpen.set(false);
+		}
+	}
+
+	// Toggle tools panel visibility
+	function toggleToolsPanel() {
+		isToolsPanelOpen.update((value) => !value);
+	}
 </script>
 
 <div class="construct-tab">
 	<div class="sequenceWorkbenchContainer">
 		<SequenceWorkbench />
+		<ToolsButtonOverlay
+			isToolsPanelOpen={$isToolsPanelOpen}
+			on:toggleToolsPanel={toggleToolsPanel}
+		/>
 	</div>
 	<div class="optionPickerContainer">
-		{#if $isEmpty}
+		{#if $isToolsPanelOpen}
+			<div class="picker-container" in:receive={{ key: 'tools' }} out:send={{ key: 'tools' }}>
+				<ToolsPanel
+					buttons={buttonPanelButtons}
+					on:action={handleButtonAction}
+					on:close={() => isToolsPanelOpen.set(false)}
+				/>
+			</div>
+		{:else if $isEmpty}
 			<div class="picker-container" in:receive={{ key: 'startpos' }} out:send={{ key: 'startpos' }}>
 				<StartPosPicker />
 			</div>
@@ -53,6 +143,7 @@
 		min-width: 0;
 		height: 100%;
 		overflow: hidden;
+		position: relative; /* For tools button positioning */
 	}
 
 	.optionPickerContainer {

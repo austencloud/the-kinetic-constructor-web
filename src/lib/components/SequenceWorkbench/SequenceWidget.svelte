@@ -1,31 +1,41 @@
+<!-- src/lib/components/SequenceWorkbench/SequenceWidget.svelte -->
 <script lang="ts">
 	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout';
 	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
 	import { sequenceStore } from '$lib/state/stores/sequenceStore';
-	import { derived } from 'svelte/store';
+	import { derived, writable } from 'svelte/store';
 	import {
 		isSequenceFullScreen,
 		openSequenceFullScreen,
 		closeSequenceFullScreen
 	} from '$lib/stores/sequence/fullScreenStore';
+	import { onMount, onDestroy } from 'svelte';
 
 	// Import Type for Button Definitions
-	import type { ButtonDefinition } from './ButtonPanel/types'; // Adjust path if necessary
+	import type { ButtonDefinition, ActionEventDetail } from './ButtonPanel/types';
 
 	// Components
 	import IndicatorLabel from './Labels/IndicatorLabel.svelte';
 	import CurrentWordLabel from './Labels/CurrentWordLabel.svelte';
 	import DifficultyLabel from './Labels/DifficultyLabel.svelte';
-	// Import the ButtonPanel component (ensure path/name matches your file structure)
 	import BeatFrame from './SequenceBeatFrame/SequenceBeatFrame.svelte';
 	import ButtonPanel from './ButtonPanel';
 	import FullScreenOverlay from './components/FullScreenOverlay.svelte';
+	import ToolsButton from './ToolsButton.svelte';
+	import ToolsPanel from './ToolsPanel/ToolsPanel.svelte';
+
+	// Import stores for sequence state
+	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
+	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 
 	// Props
 	export let workbenchHeight: number;
 
 	// Use responsive layout hook for dimensions
 	const { dimensions } = useResponsiveLayout();
+
+	// Track tools panel state
+	const isToolsPanelOpen = writable(false);
 
 	// Calculate workbench orientation based on workbench dimensions instead of window
 	$: workbenchIsPortrait = $dimensions.width < workbenchHeight;
@@ -88,7 +98,7 @@
 	}
 
 	// Handler for button panel actions
-	function handleButtonAction(event: CustomEvent<{ id: string }>) {
+	function handleButtonAction(event: CustomEvent<ActionEventDetail>) {
 		const { id } = event.detail;
 
 		// Map button actions to state machine actions
@@ -130,11 +140,43 @@
 			case 'clearSequence':
 				// Call the clearSequence action directly
 				sequenceActions.clearSequence();
+				selectedStartPos.set(null);
+				isSequenceEmpty.set(true);
 				status = 'editing';
 				setTimeout(() => (status = 'ready'), 200);
 				break;
 		}
+
+		// After action is processed, close tools panel if it's open
+		if ($isToolsPanelOpen) {
+			isToolsPanelOpen.set(false);
+		}
 	}
+
+	// Toggle tools panel visibility
+	function toggleToolsPanel() {
+		isToolsPanelOpen.update((value) => !value);
+	}
+
+	// Track event listener for cleanup
+	let buttonActionListener: (event: CustomEvent) => void;
+
+	onMount(() => {
+		// Set up event listener for button actions
+		buttonActionListener = (event: CustomEvent) => {
+			if (event.detail && event.detail.id) {
+				handleButtonAction(event);
+			}
+		};
+		document.addEventListener('action', buttonActionListener as EventListener);
+	});
+
+	onDestroy(() => {
+		// Clean up event listener
+		if (buttonActionListener) {
+			document.removeEventListener('action', buttonActionListener as EventListener);
+		}
+	});
 </script>
 
 <div class="sequence-widget">
@@ -142,6 +184,10 @@
 		<div class="left-vbox">
 			<div class="centered-group">
 				<div class="sequence-widget-labels">
+					<ToolsButton
+						isToolsPanelOpen={$isToolsPanelOpen}
+						on:toggleToolsPanel={toggleToolsPanel}
+					/>
 					<CurrentWordLabel currentWord={$sequenceName} width={$dimensions.width} />
 					<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
 				</div>
@@ -153,25 +199,25 @@
 			<div class="indicator-label-container">
 				<IndicatorLabel text={statusText} width={$dimensions.width} />
 			</div>
-
-			{#if workbenchIsPortrait}
-				<ButtonPanel
-					containerWidth={$dimensions.width}
-					containerHeight={$dimensions.height}
-					buttons={buttonPanelButtons}
-					on:action={handleButtonAction}
-				/>
-			{/if}
 		</div>
 
-		{#if !workbenchIsPortrait}
-			<ButtonPanel
-				containerWidth={$dimensions.width}
-				containerHeight={workbenchHeight}
-				buttons={buttonPanelButtons}
-				on:action={handleButtonAction}
-			/>
-		{/if}
+		<div class="right-panel">
+			{#if $isToolsPanelOpen}
+				<ToolsPanel
+					buttons={buttonPanelButtons}
+					on:action={handleButtonAction}
+					on:close={() => isToolsPanelOpen.set(false)}
+				/>
+			{:else if $isSequenceEmpty}
+				<div class="start-pos-picker">
+					<slot name="startPosPicker"></slot>
+				</div>
+			{:else}
+				<div class="option-picker">
+					<slot name="optionPicker"></slot>
+				</div>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Full Screen Overlay -->
@@ -218,6 +264,13 @@
 		overflow: hidden; /* Prevent overflow */
 	}
 
+	.right-panel {
+		height: 100%;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+
 	.centered-group {
 		display: flex;
 		flex-direction: column;
@@ -227,6 +280,7 @@
 		width: 100%;
 		flex-grow: 1; /* Allow group to grow */
 		min-height: 0; /* Prevent overflow */
+		position: relative; /* For absolute positioning of tools button */
 	}
 
 	.sequence-widget-labels {
@@ -238,6 +292,8 @@
 		padding-top: 0;
 		margin-bottom: 0;
 		padding-bottom: 5px;
+		position: relative; /* For positioning the tools button */
+		width: 100%;
 	}
 
 	.beat-frame-container {
@@ -260,6 +316,13 @@
 		color: white;
 		flex-shrink: 0; /* Prevent shrinking */
 		/* Removed flex: 1 to avoid taking too much space */
+	}
+
+	.start-pos-picker,
+	.option-picker {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
 	}
 
 	/* Ensure ButtonPanel has appropriate flex properties */
