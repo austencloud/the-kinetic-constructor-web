@@ -43,6 +43,20 @@
 		// Notify parent component
 		onBackgroundChange(type);
 	}
+
+	// Function to get a user-friendly display name for each background
+	function getDisplayName(type: string): string {
+		switch (type) {
+			case 'snowfall':
+				return 'Snowfall';
+			case 'nightSky':
+				return 'Night Sky';
+			case 'summerDay':
+				return 'Summer Day';
+			default:
+				return type;
+		}
+	}
 </script>
 
 <div class="background-settings">
@@ -53,7 +67,7 @@
 			<label for="background-type">Background Type:</label>
 			<select id="background-type" value={currentBackground} on:change={handleBackgroundChange}>
 				{#each availableBackgrounds as type}
-					<option value={type}>{type}</option>
+					<option value={type}>{getDisplayName(type)}</option>
 				{/each}
 			</select>
 		</div>

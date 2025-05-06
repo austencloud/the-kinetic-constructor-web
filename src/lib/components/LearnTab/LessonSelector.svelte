@@ -4,33 +4,21 @@
 	import { elasticOut, cubicOut } from 'svelte/easing';
 	import { learnStore, type LessonMode } from '$lib/state/stores/learn/learnStore';
 	import { lessonConfigs } from '$lib/state/stores/learn/lesson_configs';
+	import { progressStore, badgeStatus } from '$lib/state/stores/learn/progressStore';
 	import LessonModeToggle from './LessonModeToggle.svelte';
 
 	// Track hover state for cards
 	let hoveredCard: string | null = null;
 
-	// Progress data (would come from user data in a real app)
-	const progressData = {
-		letter_to_pictograph: { completed: 12, total: 30, lastScore: 85 },
-		pictograph_to_letter: { completed: 8, total: 30, lastScore: 70 },
-		turns: { completed: 0, total: 30, lastScore: 0 },
-		positions: { completed: 0, total: 30, lastScore: 0 }
-	};
-
 	// Calculate progress percentage
 	function getProgressPercentage(lessonId: string): number {
-		const data = progressData[lessonId as keyof typeof progressData];
-		return data ? Math.round((data.completed / data.total) * 100) : 0;
+		const lessonProgress = $progressStore.lessonProgress[lessonId];
+		return lessonProgress ? Math.round((lessonProgress.completed / lessonProgress.total) * 100) : 0;
 	}
 
-	// Get badge status
+	// Get badge status from the derived store
 	function getBadgeStatus(lessonId: string): 'none' | 'bronze' | 'silver' | 'gold' {
-		const data = progressData[lessonId as keyof typeof progressData];
-		if (!data || data.lastScore === 0) return 'none';
-		if (data.lastScore >= 90) return 'gold';
-		if (data.lastScore >= 75) return 'silver';
-		if (data.lastScore >= 60) return 'bronze';
-		return 'none';
+		return $badgeStatus[lessonId] || 'none';
 	}
 
 	// Handle lesson selection
@@ -147,17 +135,17 @@
 
 		<div class="stats-container" in:fly={{ y: 20, duration: 500, delay: 500 }}>
 			<div class="stat-card">
-				<div class="stat-value">2</div>
+				<div class="stat-value">{$progressStore.totalLessonsStarted}</div>
 				<div class="stat-label">Lessons Started</div>
 			</div>
 
 			<div class="stat-card">
-				<div class="stat-value">20</div>
+				<div class="stat-value">{$progressStore.totalQuestionsAnswered}</div>
 				<div class="stat-label">Questions Answered</div>
 			</div>
 
 			<div class="stat-card">
-				<div class="stat-value">78<span class="percent">%</span></div>
+				<div class="stat-value">{$progressStore.averageScore}<span class="percent">%</span></div>
 				<div class="stat-label">Average Score</div>
 			</div>
 		</div>
@@ -236,8 +224,11 @@
 
 	.lessons-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 		gap: 1.5rem;
+		width: 100%;
+		max-width: 100%;
+		overflow-x: hidden;
 	}
 
 	.lesson-card {
@@ -250,12 +241,13 @@
 		text-align: left;
 		border: 1px solid rgba(255, 255, 255, 0.05);
 		cursor: pointer;
-		transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+		transition: all 0.2s ease-out;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
 		overflow: hidden;
 		height: 100%;
+		width: 100%;
 		box-shadow:
 			0 4px 12px rgba(0, 0, 0, 0.1),
 			0 1px 3px rgba(0, 0, 0, 0.05);
@@ -266,19 +258,19 @@
 		z-index: 2;
 		padding: 1.5rem;
 		width: 100%;
-		transition: transform 0.3s ease;
+		transition: transform 0.2s ease-out;
 	}
 
 	.lesson-card:hover {
-		transform: translateY(-5px);
+		transform: translateY(-3px); /* Reduced from -5px to -3px for subtler effect */
 		box-shadow:
-			0 12px 24px rgba(0, 0, 0, 0.15),
+			0 8px 16px rgba(0, 0, 0, 0.15),
 			0 1px 3px rgba(0, 0, 0, 0.1);
 		border-color: rgba(58, 123, 213, 0.3);
 	}
 
 	.lesson-card:hover .card-content {
-		transform: translateY(-2.5rem);
+		transform: translateY(-1.5rem); /* Reduced from -2.5rem to -1.5rem for subtler effect */
 	}
 
 	.card-overlay {
@@ -345,8 +337,10 @@
 
 	.lesson-format {
 		display: flex;
+		flex-wrap: wrap; /* Allow wrapping to prevent overflow */
 		gap: 0.5rem;
 		margin-bottom: 1.25rem;
+		max-width: 100%; /* Ensure it doesn't exceed container width */
 	}
 
 	.format-label {
@@ -356,6 +350,7 @@
 		font-size: 0.75rem;
 		color: var(--color-text-secondary, rgba(255, 255, 255, 0.7));
 		text-transform: capitalize;
+		white-space: nowrap; /* Prevent label text from wrapping */
 	}
 
 	.progress-container {

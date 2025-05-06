@@ -2,11 +2,12 @@
 	import { writable } from 'svelte/store';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
+	import type { PictographData } from '$lib/types/PictographData';
 
-	export let pictograph: any = null;
+	export let pictograph: PictographData | null = null;
 
 	// Create a writable store for the pictograph data
-	const pictographDataStore = writable(pictograph || defaultPictographData);
+	const pictographDataStore = writable<PictographData>(pictograph || defaultPictographData);
 
 	// Update the store when pictograph changes
 	$: if (pictograph) {

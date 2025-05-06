@@ -10,6 +10,7 @@
 	import type { BeatData } from './BeatData';
 	import { browser } from '$app/environment'; // Import browser check
 	import { initDevToolsUpdater, updateDevTools } from '$lib/utils/devToolsUpdater';
+	import { layoutStore } from '$lib/stores/layout/layoutStore';
 
 	// Import the sequence machine actions and selectors
 	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
@@ -174,15 +175,47 @@
 		unsubscribeGlobalStartPos();
 	});
 
-	// Create start position beat data
+	// Create start position beat data - always create it even if startPosition is null
 	$: startPosBeatData = {
 		beatNumber: 0,
-		filled: !!startPosition,
-		pictographData: startPosition || defaultPictographData
+		filled: !!startPosition, // This will be false when startPosition is null
+		pictographData: startPosition || defaultPictographData // Use defaultPictographData when startPosition is null
 	};
 
 	// Reactive layout calculations based on beat count
-	$: [beatRows, beatCols] = autoAdjustLayout(beats.length);
+	// Always ensure at least one row for the start position beat
+	$: [beatRows, beatCols] = autoAdjustLayout(Math.max(1, beats.length));
+
+	// Track previous layout for detecting changes
+	let prevRows = 1;
+	let prevCols = 1;
+
+	// Update the layout store when the layout changes
+	$: {
+		// Check if the layout has changed
+		if (beatRows !== prevRows || beatCols !== prevCols) {
+			console.log(`Layout changed from ${prevRows}x${prevCols} to ${beatRows}x${beatCols}`);
+
+			// Update the layout store
+			layoutStore.updateLayout(beatRows, beatCols, beats.length);
+
+			// Update previous values
+			prevRows = beatRows;
+			prevCols = beatCols;
+
+			// Dispatch a custom event for layout changes
+			const event = new CustomEvent('layout-changed', {
+				bubbles: true,
+				detail: {
+					rows: beatRows,
+					cols: beatCols,
+					beatCount: beats.length,
+					previousLayout: { rows: prevRows, cols: prevCols }
+				}
+			});
+			document.dispatchEvent(event);
+		}
+	}
 
 	// Calculate cell size based on container dimensions
 	// For scrollable layouts (more than 16 beats), we only need to consider 4 rows for height calculation
@@ -191,7 +224,8 @@
 		$size.width,
 		$size.height,
 		// For small grids, use actual rows; for large grids, limit to 4 rows for consistent sizing
-		beats.length > 16 ? Math.min(4, beatRows) : beatRows,
+		// Always ensure at least 1 row for the start position beat
+		beats.length > 16 ? Math.min(4, beatRows) : Math.max(1, beatRows),
 		beatCols + 1,
 		0
 	);
@@ -212,7 +246,19 @@
 	function handleBeatClick(beatIndex: number) {
 		// Get the beat ID from the index
 		if (beatIndex >= 0 && beatIndex < beats.length) {
-			const beatId = beats[beatIndex].id;
+			const beat = beats[beatIndex];
+			const beatId = beat.id;
+
+			// Log detailed information about the beat being selected
+			console.log(
+				`Selecting beat - Index: ${beatIndex}, Beat Number: ${beat.beatNumber}, ID: ${beatId}, ` +
+					`Grid Layout: ${beatRows}x${beatCols}, ` +
+					`Position: Row ${Math.floor(beatIndex / beatCols) + 1}, Col ${(beatIndex % beatCols) + 1}, ` +
+					`Red Motion Type: ${beat.pictographData?.redMotionData?.motionType || 'none'}, ` +
+					`Blue Motion Type: ${beat.pictographData?.blueMotionData?.motionType || 'none'}\n` +
+					`Stack trace: ${new Error().stack}`
+			);
+
 			if (beatId) {
 				sequenceActions.selectBeat(beatId);
 			}

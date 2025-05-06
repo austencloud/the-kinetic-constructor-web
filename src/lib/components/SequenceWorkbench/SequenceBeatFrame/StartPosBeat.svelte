@@ -14,7 +14,8 @@
 	export let onClick: () => void;
 
 	// Create a local store for the pictograph data for the Pictograph component
-	const pictographDataStore = writable(beatData.pictographData);
+	// Ensure we always have valid pictograph data, even if beatData.pictographData is null
+	const pictographDataStore = writable(beatData.pictographData || defaultPictographData);
 
 	// Helper function to safely copy pictograph data without circular references
 	function safeCopyPictographData(data: PictographData): PictographData {

@@ -36,11 +36,7 @@ export function updateDevTools() {
       // @ts-ignore - Adding custom property to window
       window.sequence = JSON.parse(JSON.stringify(sequenceState));
 
-      // Log to console for visibility in dev tools
-      console.log('[Dev Tools] Sequence state updated:', sequenceState);
-      
-      // Force the dev tools to update by creating a temporary object
-      console.log('[Dev Tools] Current sequence state available at window.sequence');
+    
     }
   } catch (error) {
     console.error('[Dev Tools] Error updating dev tools:', error);
@@ -82,9 +78,6 @@ export function initDevToolsUpdater() {
     // @ts-ignore - Adding custom property to window
     window.sequence = JSON.parse(JSON.stringify(initialState));
 
-    console.log('[Dev Tools] Updater initialized');
-    console.log('[Dev Tools] Current sequence state available at window.sequence');
-    
     // Return the unsubscribe function
     return unsubscribe;
   } catch (error) {

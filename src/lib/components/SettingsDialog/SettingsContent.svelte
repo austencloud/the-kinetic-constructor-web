@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { appActions } from '$lib/state/machines/app/app.actions';
+	import { appService } from '$lib/state/machines/app/app.machine';
+	import { onMount } from 'svelte';
+
 	// Define better types for our settings
 	type BaseSetting = {
 		label: string;
@@ -57,12 +61,17 @@
 
 	// Define a single settings list with minimal placeholder settings
 	const settings: Setting[] = [
-		{ label: 'Background Type', type: 'select', options: ['Snowfall', 'Night Sky'], defaultValue: 'Snowfall' },
+		{
+			label: 'Background Type',
+			type: 'select',
+			options: ['Snowfall', 'Night Sky', 'Summer Day'],
+			defaultValue: 'Snowfall'
+		},
 		{ label: 'Show Grid', type: 'toggle', defaultValue: true },
 		{ label: 'Dark Mode', type: 'toggle', defaultValue: true }
 	];
 
-	// Props
+	// PropsAbsolute angel an absolute angel You
 	export let onClose: () => void;
 
 	// State
@@ -71,21 +80,101 @@
 	let settingsValues: Record<string, any> = {};
 
 	// Initialize settings
-	$: {
+	onMount(() => {
 		// Initialize settings values from defaults
 		settingsValues = settings.reduce<Record<string, any>>((acc, setting) => {
 			acc[setting.label] = setting.defaultValue;
 			return acc;
 		}, {});
-	}
+
+		// Get current background from app state
+		const currentState = appService.getSnapshot();
+		const currentBackground = currentState.context.background;
+		console.log('Current background from app state:', currentBackground);
+
+		// Find the matching background option
+		if (currentBackground) {
+			// Find the matching option in our settings
+			// Type assertion to access options property
+			const backgroundSetting = settings[0] as SelectSetting;
+			console.log('Available background options:', backgroundSetting.options);
+
+			let backgroundOption;
+
+			// Direct mapping for known types
+			if (currentBackground === 'snowfall') {
+				backgroundOption = 'Snowfall';
+			} else if (currentBackground === 'nightSky') {
+				backgroundOption = 'Night Sky';
+			} else if (currentBackground === 'summerDay') {
+				backgroundOption = 'Summer Day';
+			} else {
+				// Fallback to search
+				backgroundOption = backgroundSetting.options.find(
+					(opt: string) => opt.toLowerCase().replace(/\s+/g, '') === currentBackground.toLowerCase()
+				);
+			}
+
+			console.log('Selected background option:', backgroundOption);
+
+			if (backgroundOption) {
+				settingsValues['Background Type'] = backgroundOption;
+				console.log('Set initial background value to:', backgroundOption);
+			}
+		}
+	});
 
 	// Save changes
 	function handleSave() {
-		// Placeholder: Implement actual saving logic here
+		// Apply settings
 		console.log('Saving settings:', settingsValues);
+
+		// Handle background type change
+		if (settingsValues['Background Type']) {
+			// Direct mapping from display name to internal name
+			let backgroundType: string;
+
+			// Map display names to internal types
+			switch (settingsValues['Background Type']) {
+				case 'Snowfall':
+					backgroundType = 'snowfall';
+					break;
+				case 'Night Sky':
+					backgroundType = 'nightSky';
+					break;
+				case 'Summer Day':
+					backgroundType = 'summerDay';
+					break;
+				default:
+					backgroundType = 'snowfall'; // Default fallback
+			}
+
+			console.log('Selected background:', settingsValues['Background Type']);
+			console.log('Mapped to internal type:', backgroundType);
+
+			// Update the background
+			if (['snowfall', 'nightSky', 'summerDay'].includes(backgroundType)) {
+				console.log('Updating background to:', backgroundType);
+				appActions.updateBackground(backgroundType as any);
+
+				// Dispatch a change event to update the UI
+				if (typeof window !== 'undefined') {
+					const event = new CustomEvent('changeBackground', {
+						detail: backgroundType,
+						bubbles: true
+					});
+					window.dispatchEvent(event);
+				}
+			} else {
+				console.warn('Invalid background type:', backgroundType);
+			}
+		}
+
 		// We'll use a custom event instead of dispatch
-		const saveEvent = new CustomEvent('save', { detail: settingsValues });
-		document.dispatchEvent(saveEvent);
+		if (typeof window !== 'undefined') {
+			const saveEvent = new CustomEvent('save', { detail: settingsValues });
+			window.dispatchEvent(saveEvent);
+		}
 		hasUnsavedChanges = false;
 	}
 
@@ -96,12 +185,26 @@
 			acc[setting.label] = setting.defaultValue;
 			return acc;
 		}, {});
-		
+
+		// Apply default background
+		appActions.updateBackground('snowfall');
+
+		// Dispatch a change event to update the UI
+		if (typeof window !== 'undefined') {
+			const backgroundEvent = new CustomEvent('changeBackground', {
+				detail: 'snowfall',
+				bubbles: true
+			});
+			window.dispatchEvent(backgroundEvent);
+		}
+
 		// Placeholder: Implement actual reset logic if needed beyond local state
 		console.log('Resetting settings');
 		// We'll use a custom event instead of dispatch
-		const resetEvent = new CustomEvent('reset', { detail: { settings: settingsValues } });
-		document.dispatchEvent(resetEvent);
+		if (typeof window !== 'undefined') {
+			const resetEvent = new CustomEvent('reset', { detail: { settings: settingsValues } });
+			window.dispatchEvent(resetEvent);
+		}
 		hasUnsavedChanges = false;
 	}
 
@@ -115,9 +218,7 @@
 	<div class="settings-header">
 		<div class="settings-title">
 			<i class="fa-solid fa-gear icon-style text-sky-400"></i>
-			<h2 id="settings-title-h2" class="text-xl font-semibold text-slate-100">
-				Settings
-			</h2>
+			<h2 id="settings-title-h2" class="text-xl font-semibold text-slate-100">Settings</h2>
 		</div>
 
 		<div class="settings-actions">

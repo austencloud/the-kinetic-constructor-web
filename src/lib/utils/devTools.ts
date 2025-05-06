@@ -79,10 +79,7 @@ export function initSequenceDevTools() {
   // Set up a subscription to the sequence store
   const unsubscribe = sequenceStore.subscribe((_state) => {
     // Update the window.__sequenceState property
-    if (window.hasOwnProperty('__sequenceState')) {
-      // This will trigger the getter, which is fine
-      console.log('[Dev Tools] Sequence state updated');
-    }
+
   });
 
   // Return a cleanup function

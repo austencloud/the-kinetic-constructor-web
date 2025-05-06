@@ -105,7 +105,7 @@
 		height: 100%;
 		position: relative;
 		overflow: hidden;
-		background-color: var(--color-background, #121824);
+		/* Removed background-color to allow user's background to show through */
 	}
 
 	.learn-tab-background {
@@ -119,6 +119,8 @@
 			radial-gradient(circle at 80% 70%, rgba(41, 98, 255, 0.03) 0%, transparent 50%);
 		z-index: 0;
 		pointer-events: none;
+		/* Add a subtle overlay to ensure content is readable regardless of background */
+		background-color: rgba(0, 0, 0, 0.1);
 	}
 
 	.learn-tab-content {

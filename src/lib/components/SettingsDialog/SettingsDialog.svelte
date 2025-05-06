@@ -22,15 +22,19 @@
 			// Here you would handle the reset
 		};
 
-		// Add event listeners
-		document.addEventListener('save', handleSaveEvent as EventListener);
-		document.addEventListener('reset', handleResetEvent as EventListener);
+		// Add event listeners only in browser environment
+		if (typeof window !== 'undefined') {
+			window.addEventListener('save', handleSaveEvent as EventListener);
+			window.addEventListener('reset', handleResetEvent as EventListener);
 
-		// Return cleanup function
-		return () => {
-			document.removeEventListener('save', handleSaveEvent as EventListener);
-			document.removeEventListener('reset', handleResetEvent as EventListener);
-		};
+			// Return cleanup function
+			return () => {
+				window.removeEventListener('save', handleSaveEvent as EventListener);
+				window.removeEventListener('reset', handleResetEvent as EventListener);
+			};
+		}
+
+		return () => {}; // Empty cleanup function for SSR
 	}
 
 	// Set up event listeners when component is mounted
