@@ -55,16 +55,18 @@
 			clearTimeout(feedbackTimeout);
 		}
 
-		// Show feedback for 1.5 seconds
+		// Shorter feedback time based on whether answer is correct or not
+		const feedbackTime = $learnStore.isAnswerCorrect ? 700 : 1000;
+
 		feedbackTimeout = setTimeout(async () => {
 			if ($learnStore.isAnswerCorrect) {
 				// Start transition animation
 				isTransitioning = true;
 				showFeedback = false;
 
-				// Wait for feedback to fade out
+				// Wait for feedback to fade out - reduced delay
 				await tick();
-				await new Promise((resolve) => setTimeout(resolve, 300));
+				await new Promise((resolve) => setTimeout(resolve, 150));
 
 				// Move to next question
 				learnStore.nextQuestionOrEnd();
@@ -75,15 +77,15 @@
 					answerAnimating = true;
 					learnStore.generateNextQuestion();
 
-					// Reset transition state after a short delay
+					// Reset transition state after a shorter delay
 					setTimeout(() => {
 						isTransitioning = false;
-					}, 500);
+					}, 300);
 				}
 			} else {
 				showFeedback = false;
 			}
-		}, 1500);
+		}, feedbackTime);
 	}
 
 	function handleBack() {
@@ -200,10 +202,10 @@
 	.lesson-widget {
 		display: flex;
 		flex-direction: column;
-		max-width: 1000px;
+		max-width: 1200px;
 		margin: 0 auto;
 		width: 100%;
-		height: 100%;
+		height: 100vh;
 		position: relative;
 		padding: 1.5rem;
 	}
@@ -272,9 +274,11 @@
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: 4rem;
+		justify-content: space-between;
+		gap: 2rem;
 		position: relative;
 		z-index: 1;
+		min-height: 0; /* Important for flex container to properly size */
 	}
 
 	.question-section {
@@ -283,6 +287,8 @@
 		align-items: center;
 		gap: 1.5rem;
 		position: relative;
+		flex: 1;
+		padding-top: 2rem;
 	}
 
 	.question-section.animating::after {
@@ -332,7 +338,7 @@
 			0 8px 32px rgba(0, 0, 0, 0.1),
 			0 0 0 1px rgba(255, 255, 255, 0.05);
 		width: 100%;
-		max-width: 500px;
+		max-width: 600px;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -353,10 +359,14 @@
 		flex-direction: column;
 		align-items: center;
 		position: relative;
+		flex: 2;
+		width: 100%;
 	}
 
 	.answers-container {
 		width: 100%;
+		max-width: 950px;
+		margin: 0 auto;
 	}
 
 	.streak-indicator {
@@ -426,10 +436,11 @@
 	@media (max-width: 768px) {
 		.lesson-widget {
 			padding: 1rem;
+			height: calc(100vh - 2rem);
 		}
 
 		.content {
-			gap: 2rem;
+			gap: 1.5rem;
 		}
 
 		.prompt {

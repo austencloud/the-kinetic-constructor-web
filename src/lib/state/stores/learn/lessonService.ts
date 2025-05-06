@@ -1,495 +1,68 @@
 import { LessonConfig } from './lesson_configs';
 import { fetchPictographsForLetter } from '$lib/services/sequenceService';
+import pictographDataStore from '$lib/stores/pictograph/pictographStore';
+import { get } from 'svelte/store';
+import { writable } from 'svelte/store';
 
 // Import the PictographData type
 import type { PictographData } from '$lib/types/PictographData';
 import type { Letter } from '$lib/types/Letter';
 import { DIAMOND } from '$lib/types/Constants';
 
-// Dictionary mapping letters to their pictograph representations with proper data structure
-const letterToPictographMap: Record<string, PictographData> = {
-	A: {
-		id: 'a_pictograph',
-		letter: 'A' as Letter,
-		startPos: 'alpha1',
-		endPos: 'alpha1',
-		timing: null,
-		direction: null,
-		gridMode: DIAMOND,
-		grid: DIAMOND,
-		blueMotionData: {
-			color: 'blue',
-			motionType: 'clockwise',
-			startOri: 'high',
-			endOri: 'high',
-			turns: 1
-		},
-		redMotionData: {
-			color: 'red',
-			motionType: 'clockwise',
-			startOri: 'high',
-			endOri: 'high',
-			turns: 1
-		},
-		redPropData: {
-			propType: 'poi',
-			color: 'red',
-			coords: { x: 425, y: 475 },
-			rotAngle: 0
-		},
-		bluePropData: {
-			propType: 'poi',
-			color: 'blue',
-			coords: { x: 525, y: 475 },
-			rotAngle: 0
-		},
-		redArrowData: {
-			color: 'red',
-			motionType: 'clockwise',
-			startOri: 'high',
-			endOri: 'high',
-			turns: 1,
-			coords: { x: 425, y: 375 },
-			rotAngle: -90
-		},
-		blueArrowData: {
-			color: 'blue',
-			motionType: 'clockwise',
-			startOri: 'high',
-			endOri: 'high',
-			turns: 1,
-			coords: { x: 525, y: 375 },
-			rotAngle: -90
-		},
-		gridData: null,
-		motions: [],
-		redMotion: null,
-		blueMotion: null,
-		props: []
-	},
-	B: {
-		id: 'b_pictograph',
-		letter: 'B' as Letter,
-		startPos: 'beta5',
-		endPos: 'beta5',
-		timing: null,
-		direction: null,
-		gridMode: DIAMOND,
-		grid: DIAMOND,
-		blueMotionData: {
-			color: 'blue',
-			motionType: 'counter',
-			startOri: 'middle',
-			endOri: 'middle',
-			turns: 1
-		},
-		redMotionData: {
-			color: 'red',
-			motionType: 'counter',
-			startOri: 'middle',
-			endOri: 'middle',
-			turns: 1
-		},
-		redPropData: {
-			propType: 'poi',
-			color: 'red',
-			coords: { x: 425, y: 475 },
-			rotAngle: 0
-		},
-		bluePropData: {
-			propType: 'poi',
-			color: 'blue',
-			coords: { x: 525, y: 475 },
-			rotAngle: 0
-		},
-		redArrowData: {
-			color: 'red',
-			motionType: 'counter',
-			startOri: 'middle',
-			endOri: 'middle',
-			turns: 1,
-			coords: { x: 425, y: 475 },
-			rotAngle: 90
-		},
-		blueArrowData: {
-			color: 'blue',
-			motionType: 'counter',
-			startOri: 'middle',
-			endOri: 'middle',
-			turns: 1,
-			coords: { x: 525, y: 475 },
-			rotAngle: 90
-		},
-		gridData: null,
-		motions: [],
-		redMotion: null,
-		blueMotion: null,
-		props: []
-	},
-	C: {
-		id: 'c_pictograph',
-		letter: 'C' as Letter,
-		startPos: 'alpha1',
-		endPos: 'alpha1',
-		timing: null,
-		direction: null,
-		gridMode: DIAMOND,
-		grid: DIAMOND,
-		blueMotionData: {
-			color: 'blue',
-			motionType: 'counter',
-			startOri: 'high',
-			endOri: 'high',
-			turns: 1
-		},
-		redMotionData: {
-			color: 'red',
-			motionType: 'counter',
-			startOri: 'high',
-			endOri: 'high',
-			turns: 1
-		},
-		redPropData: {
-			propType: 'poi',
-			color: 'red',
-			coords: { x: 425, y: 475 },
-			rotAngle: 0
-		},
-		bluePropData: {
-			propType: 'poi',
-			color: 'blue',
-			coords: { x: 525, y: 475 },
-			rotAngle: 0
-		},
-		redArrowData: {
-			color: 'red',
-			motionType: 'counter',
-			startOri: 'high',
-			endOri: 'high',
-			turns: 1,
-			coords: { x: 425, y: 375 },
-			rotAngle: 90
-		},
-		blueArrowData: {
-			color: 'blue',
-			motionType: 'counter',
-			startOri: 'high',
-			endOri: 'high',
-			turns: 1,
-			coords: { x: 525, y: 375 },
-			rotAngle: 90
-		},
-		gridData: null,
-		motions: [],
-		redMotion: null,
-		blueMotion: null,
-		props: []
-	},
-	D: {
-		id: 'd_pictograph',
-		letter: 'D' as Letter,
-		startPos: 'gamma11',
-		endPos: 'gamma11',
-		timing: null,
-		direction: null,
-		gridMode: DIAMOND,
-		grid: DIAMOND,
-		blueMotionData: {
-			color: 'blue',
-			motionType: 'clockwise',
-			startOri: 'low',
-			endOri: 'low',
-			turns: 1
-		},
-		redMotionData: {
-			color: 'red',
-			motionType: 'clockwise',
-			startOri: 'low',
-			endOri: 'low',
-			turns: 1
-		},
-		redPropData: {
-			propType: 'poi',
-			color: 'red',
-			coords: { x: 425, y: 575 },
-			rotAngle: 0
-		},
-		bluePropData: {
-			propType: 'poi',
-			color: 'blue',
-			coords: { x: 525, y: 575 },
-			rotAngle: 0
-		},
-		redArrowData: {
-			color: 'red',
-			motionType: 'clockwise',
-			startOri: 'low',
-			endOri: 'low',
-			turns: 1,
-			coords: { x: 425, y: 575 },
-			rotAngle: -90
-		},
-		blueArrowData: {
-			color: 'blue',
-			motionType: 'clockwise',
-			startOri: 'low',
-			endOri: 'low',
-			turns: 1,
-			coords: { x: 525, y: 575 },
-			rotAngle: -90
-		},
-		gridData: null,
-		motions: [],
-		redMotion: null,
-		blueMotion: null,
-		props: []
-	},
-	L: {
-		id: 'l_pictograph',
-		letter: 'L' as Letter,
-		startPos: 'beta5',
-		endPos: 'beta5',
-		timing: null,
-		direction: null,
-		gridMode: DIAMOND,
-		grid: DIAMOND,
-		blueMotionData: {
-			color: 'blue',
-			motionType: 'clockwise',
-			startOri: 'middle',
-			endOri: 'middle',
-			turns: 1
-		},
-		redMotionData: {
-			color: 'red',
-			motionType: 'clockwise',
-			startOri: 'middle',
-			endOri: 'middle',
-			turns: 1
-		},
-		redPropData: {
-			propType: 'poi',
-			color: 'red',
-			coords: { x: 425, y: 475 },
-			rotAngle: 0
-		},
-		bluePropData: {
-			propType: 'poi',
-			color: 'blue',
-			coords: { x: 525, y: 475 },
-			rotAngle: 0
-		},
-		redArrowData: {
-			color: 'red',
-			motionType: 'clockwise',
-			startOri: 'middle',
-			endOri: 'middle',
-			turns: 1,
-			coords: { x: 425, y: 475 },
-			rotAngle: -90
-		},
-		blueArrowData: {
-			color: 'blue',
-			motionType: 'clockwise',
-			startOri: 'middle',
-			endOri: 'middle',
-			turns: 1,
-			coords: { x: 525, y: 475 },
-			rotAngle: -90
-		},
-		gridData: null,
-		motions: [],
-		redMotion: null,
-		blueMotion: null,
-		props: []
-	},
-	M: {
-		id: 'm_pictograph',
-		letter: 'M' as Letter,
-		startPos: 'beta5',
-		endPos: 'beta5',
-		timing: null,
-		direction: null,
-		gridMode: DIAMOND,
-		grid: DIAMOND,
-		blueMotionData: {
-			color: 'blue',
-			motionType: 'both',
-			startOri: 'middle',
-			endOri: 'middle',
-			turns: 1
-		},
-		redMotionData: {
-			color: 'red',
-			motionType: 'both',
-			startOri: 'middle',
-			endOri: 'middle',
-			turns: 1
-		},
-		redPropData: {
-			propType: 'poi',
-			color: 'red',
-			coords: { x: 425, y: 475 },
-			rotAngle: 0
-		},
-		bluePropData: {
-			propType: 'poi',
-			color: 'blue',
-			coords: { x: 525, y: 475 },
-			rotAngle: 0
-		},
-		redArrowData: {
-			color: 'red',
-			motionType: 'both',
-			startOri: 'middle',
-			endOri: 'middle',
-			turns: 1,
-			coords: { x: 425, y: 475 },
-			rotAngle: 0
-		},
-		blueArrowData: {
-			color: 'blue',
-			motionType: 'both',
-			startOri: 'middle',
-			endOri: 'middle',
-			turns: 1,
-			coords: { x: 525, y: 475 },
-			rotAngle: 0
-		},
-		gridData: null,
-		motions: [],
-		redMotion: null,
-		blueMotion: null,
-		props: []
-	},
-	R: {
-		id: 'r_pictograph',
-		letter: 'R' as Letter,
-		startPos: 'gamma11',
-		endPos: 'gamma11',
-		timing: null,
-		direction: null,
-		gridMode: DIAMOND,
-		grid: DIAMOND,
-		blueMotionData: {
-			color: 'blue',
-			motionType: 'counter',
-			startOri: 'low',
-			endOri: 'low',
-			turns: 1
-		},
-		redMotionData: {
-			color: 'red',
-			motionType: 'counter',
-			startOri: 'low',
-			endOri: 'low',
-			turns: 1
-		},
-		redPropData: {
-			propType: 'poi',
-			color: 'red',
-			coords: { x: 425, y: 575 },
-			rotAngle: 0
-		},
-		bluePropData: {
-			propType: 'poi',
-			color: 'blue',
-			coords: { x: 525, y: 575 },
-			rotAngle: 0
-		},
-		redArrowData: {
-			color: 'red',
-			motionType: 'counter',
-			startOri: 'low',
-			endOri: 'low',
-			turns: 1,
-			coords: { x: 425, y: 575 },
-			rotAngle: 90
-		},
-		blueArrowData: {
-			color: 'blue',
-			motionType: 'counter',
-			startOri: 'low',
-			endOri: 'low',
-			turns: 1,
-			coords: { x: 525, y: 575 },
-			rotAngle: 90
-		},
-		gridData: null,
-		motions: [],
-		redMotion: null,
-		blueMotion: null,
-		props: []
-	},
-	T: {
-		id: 't_pictograph',
-		letter: 'T' as Letter,
-		startPos: 'alpha1',
-		endPos: 'alpha1',
-		timing: null,
-		direction: null,
-		gridMode: DIAMOND,
-		grid: DIAMOND,
-		blueMotionData: {
-			color: 'blue',
-			motionType: 'both',
-			startOri: 'high',
-			endOri: 'high',
-			turns: 1
-		},
-		redMotionData: {
-			color: 'red',
-			motionType: 'both',
-			startOri: 'high',
-			endOri: 'high',
-			turns: 1
-		},
-		redPropData: {
-			propType: 'poi',
-			color: 'red',
-			coords: { x: 425, y: 375 },
-			rotAngle: 0
-		},
-		bluePropData: {
-			propType: 'poi',
-			color: 'blue',
-			coords: { x: 525, y: 375 },
-			rotAngle: 0
-		},
-		redArrowData: {
-			color: 'red',
-			motionType: 'both',
-			startOri: 'high',
-			endOri: 'high',
-			turns: 1,
-			coords: { x: 425, y: 375 },
-			rotAngle: 0
-		},
-		blueArrowData: {
-			color: 'blue',
-			motionType: 'both',
-			startOri: 'high',
-			endOri: 'high',
-			turns: 1,
-			coords: { x: 525, y: 375 },
-			rotAngle: 0
-		},
-		gridData: null,
-		motions: [],
-		redMotion: null,
-		blueMotion: null,
-		props: []
-	}
-};
+// Track previous question letters to avoid repetition
+const previousLetterStore = writable<Letter | null>(null);
 
 // Lists of possible options for different lesson types
 const letters = ['A', 'B', 'C', 'D', 'L', 'M', 'R', 'T'];
 const positions = ['high', 'middle', 'low'];
-const turns = ['clockwise', 'counter', 'both'];
+const motionTypes = ['anti', 'pro', 'static', 'dash', 'float'];
 
 // Helper to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
 	return [...array].sort(() => Math.random() - 0.5);
+}
+
+// Helper function to ensure pictograph data is complete
+function ensurePictographComplete(pictograph: PictographData): PictographData {
+	// Make a deep copy to avoid modifying the original
+	const data = { ...pictograph };
+
+	// Ensure grid is set if gridMode is present
+	if (data.gridMode && !data.grid) {
+		data.grid = data.gridMode;
+	}
+
+	// Pre-populate default values for required fields
+	if (!data.motions) data.motions = [];
+	if (!data.props) data.props = [];
+
+	return data;
+}
+
+// Function to get all available pictograph data from the store
+function getAllPictographs(): PictographData[] {
+	return get(pictographDataStore) || [];
+}
+
+// Function to get pictographs for a specific letter
+function getPictographsForLetter(letter: string): PictographData[] {
+	const allPictographs = getAllPictographs();
+	return allPictographs.filter((p) => p.letter === (letter as Letter));
+}
+
+// Function to randomly select a letter that isn't the previous one
+function getRandomLetter(availableLetters: Letter[]): Letter {
+	if (availableLetters.length === 0) return 'A' as Letter;
+	if (availableLetters.length === 1) return availableLetters[0];
+
+	const previousLetter = get(previousLetterStore);
+	const filteredLetters = previousLetter
+		? availableLetters.filter((l) => l !== previousLetter)
+		: availableLetters;
+
+	const randomLetter = filteredLetters[Math.floor(Math.random() * filteredLetters.length)];
+	previousLetterStore.set(randomLetter);
+	return randomLetter;
 }
 
 // Generate a new question based on lesson config and current index
@@ -500,7 +73,7 @@ export function generateQuestion(lessonConfig: LessonConfig, questionIndex: numb
 		case 'pictograph_to_letter':
 			return generatePictographToLetterQuestion(lessonConfig, questionIndex);
 		case 'turns':
-			return generateTurnRecognitionQuestion(lessonConfig, questionIndex);
+			return generateMotionTypeQuestion(lessonConfig, questionIndex);
 		case 'positions':
 			return generatePositionRecognitionQuestion(lessonConfig, questionIndex);
 		default:
@@ -511,19 +84,67 @@ export function generateQuestion(lessonConfig: LessonConfig, questionIndex: numb
 
 // Generate question for Letter to Pictograph lesson
 function generateLetterToPictographQuestion(lessonConfig: LessonConfig, index: number) {
-	// Select a letter (could be random or determined by index)
-	const letter = letters[index % letters.length];
-	const correctPictograph = letterToPictographMap[letter];
+	// Get all available pictographs
+	const allPictographs = getAllPictographs();
 
-	// Generate wrong options
-	const wrongOptions = Object.values(letterToPictographMap)
-		.filter((p) => p.letter !== letter)
-		.slice(0, (lessonConfig.options?.numOptions || 4) - 1);
+	if (allPictographs.length === 0) {
+		console.warn('No pictograph data available');
+		return { question: null, options: [], correctAnswer: null };
+	}
 
-	// Combine and shuffle options if needed
-	const allOptions = lessonConfig.options?.randomizeOptions
-		? shuffleArray([correctPictograph, ...wrongOptions])
-		: [correctPictograph, ...wrongOptions];
+	// Get all available letters
+	const availableLetters = [...new Set(allPictographs.map((p) => p.letter))].filter(
+		Boolean
+	) as Letter[];
+
+	// Select a random letter that's different from the previous one
+	const letter = getRandomLetter(availableLetters);
+
+	// Get pictographs for this letter
+	const pictographsForLetter = getPictographsForLetter(letter as string);
+
+	if (pictographsForLetter.length === 0) {
+		console.warn(`No pictographs found for letter ${letter}`);
+		return { question: null, options: [], correctAnswer: null };
+	}
+
+	// Select a random pictograph as the correct answer
+	const randomIndex = Math.floor(Math.random() * pictographsForLetter.length);
+	const correctPictograph = ensurePictographComplete(pictographsForLetter[randomIndex]);
+
+	// Collect all pictographs with different letters
+	const otherLetterPictographs = allPictographs.filter((p) => p.letter !== letter);
+
+	// Group them by letter to ensure we pick one from each letter
+	const pictographsByLetter = new Map<Letter, PictographData[]>();
+	otherLetterPictographs.forEach((p) => {
+		if (p.letter) {
+			if (!pictographsByLetter.has(p.letter)) {
+				pictographsByLetter.set(p.letter, []);
+			}
+			pictographsByLetter.get(p.letter)?.push(p);
+		}
+	});
+
+	// Select one random pictograph from each letter group
+	const wrongOptions: PictographData[] = [];
+	const uniqueLetters = Array.from(pictographsByLetter.keys());
+	const shuffledLetters = shuffleArray(uniqueLetters);
+
+	// Take enough letters to fill our options (usually 3 wrong answers)
+	const wrongLetters = shuffledLetters.slice(0, (lessonConfig.options?.numOptions || 4) - 1);
+
+	// For each wrong letter, pick a random pictograph
+	wrongLetters.forEach((letter) => {
+		const pictographsForLetter = pictographsByLetter.get(letter) || [];
+		if (pictographsForLetter.length > 0) {
+			const randomIndex = Math.floor(Math.random() * pictographsForLetter.length);
+			wrongOptions.push(ensurePictographComplete(pictographsForLetter[randomIndex]));
+		}
+	});
+
+	// Combine and shuffle options
+	const allOptions = shuffleArray([correctPictograph, ...wrongOptions]);
 
 	return {
 		question: letter,
@@ -534,18 +155,42 @@ function generateLetterToPictographQuestion(lessonConfig: LessonConfig, index: n
 
 // Generate question for Pictograph to Letter lesson
 function generatePictographToLetterQuestion(lessonConfig: LessonConfig, index: number) {
-	// Select a pictograph (could be random or determined by index)
-	const letter = letters[index % letters.length];
-	const pictograph = letterToPictographMap[letter];
+	// Get all available pictographs
+	const allPictographs = getAllPictographs();
+
+	if (allPictographs.length === 0) {
+		console.warn('No pictograph data available');
+		return { question: null, options: [], correctAnswer: null };
+	}
+
+	// Get all available letters
+	const availableLetters = [...new Set(allPictographs.map((p) => p.letter))].filter(
+		Boolean
+	) as Letter[];
+
+	// Select a random letter that's different from the previous one
+	const letter = getRandomLetter(availableLetters);
+
+	// Get pictographs for this letter
+	const pictographsForLetter = getPictographsForLetter(letter as string);
+
+	if (pictographsForLetter.length === 0) {
+		console.warn(`No pictographs found for letter ${letter}`);
+		return { question: null, options: [], correctAnswer: null };
+	}
+
+	// Select a random pictograph as the question
+	const randomIndex = Math.floor(Math.random() * pictographsForLetter.length);
+	const pictograph = ensurePictographComplete(pictographsForLetter[randomIndex]);
 
 	// Generate wrong options (other letters)
-	const wrongOptions = letters.filter((l) => l !== letter);
-	const selectedWrongOptions = wrongOptions.slice(0, (lessonConfig.options?.numOptions || 4) - 1);
+	// Make sure to select letters that are all different from each other
+	const otherLetters = availableLetters.filter((l) => l !== letter);
+	const shuffledLetters = shuffleArray(otherLetters);
+	const wrongOptions = shuffledLetters.slice(0, (lessonConfig.options?.numOptions || 4) - 1);
 
-	// Combine and shuffle options if needed
-	const allOptions = lessonConfig.options?.randomizeOptions
-		? shuffleArray([letter, ...selectedWrongOptions])
-		: [letter, ...selectedWrongOptions];
+	// Combine and shuffle options
+	const allOptions = shuffleArray([letter, ...wrongOptions]);
 
 	return {
 		question: pictograph,
@@ -554,57 +199,107 @@ function generatePictographToLetterQuestion(lessonConfig: LessonConfig, index: n
 	};
 }
 
-// Generate question for Turn Recognition lesson
-function generateTurnRecognitionQuestion(lessonConfig: LessonConfig, index: number) {
-	// Select a turn type (could be random or determined by index)
-	const turnType = turns[index % turns.length];
+// Generate question for motion type recognition
+function generateMotionTypeQuestion(lessonConfig: LessonConfig, index: number) {
+	// Get all available pictographs
+	const allPictographs = getAllPictographs();
 
-	// Find a pictograph with that turn type
-	const pictographsWithTurn = Object.values(letterToPictographMap).filter(
-		(p) => p.data.turn === turnType
+	if (allPictographs.length === 0) {
+		console.warn('No pictograph data available');
+		return { question: null, options: [], correctAnswer: null };
+	}
+
+	// Filter pictographs that have motion data
+	const pictographsWithMotion = allPictographs.filter(
+		(p) => p.redMotionData?.motionType || p.blueMotionData?.motionType
 	);
 
-	const selectedPictograph = pictographsWithTurn[index % pictographsWithTurn.length];
+	if (pictographsWithMotion.length === 0) {
+		console.warn('No pictographs with motion data found');
+		return { question: null, options: [], correctAnswer: null };
+	}
 
-	// Generate wrong options (other turn types)
-	const wrongOptions = turns.filter((t) => t !== turnType);
+	// Select a pictograph for the question
+	const selectedPictograph = pictographsWithMotion[index % pictographsWithMotion.length];
+
+	// Get the motion type (prefer red motion type if available)
+	const motionType =
+		selectedPictograph.redMotionData?.motionType ||
+		selectedPictograph.blueMotionData?.motionType ||
+		'static';
+
+	// Generate wrong options (other motion types)
+	const wrongOptions = motionTypes.filter((m) => m !== motionType);
+	const selectedWrongOptions = wrongOptions.slice(0, (lessonConfig.options?.numOptions || 4) - 1);
 
 	// Combine and shuffle options if needed
 	const allOptions = lessonConfig.options?.randomizeOptions
-		? shuffleArray([turnType, ...wrongOptions])
-		: [turnType, ...wrongOptions];
+		? shuffleArray([motionType, ...selectedWrongOptions])
+		: [motionType, ...selectedWrongOptions];
 
 	return {
-		question: selectedPictograph,
+		question: ensurePictographComplete(selectedPictograph),
 		options: allOptions,
-		correctAnswer: turnType
+		correctAnswer: motionType
 	};
 }
 
 // Generate question for Position Recognition lesson
 function generatePositionRecognitionQuestion(lessonConfig: LessonConfig, index: number) {
-	// Select a position (could be random or determined by index)
-	const positionType = positions[index % positions.length];
+	// Get all available pictographs
+	const allPictographs = getAllPictographs();
 
-	// Find a pictograph with that position
-	const pictographsWithPosition = Object.values(letterToPictographMap).filter(
-		(p) => p.data.position === positionType
+	if (allPictographs.length === 0) {
+		console.warn('No pictograph data available');
+		return { question: null, options: [], correctAnswer: null };
+	}
+
+	// Find pictographs with start/end positions defined
+	const pictographsWithPosition = allPictographs.filter(
+		(p) => p.redMotionData?.startLoc || p.blueMotionData?.startLoc
 	);
 
+	if (pictographsWithPosition.length === 0) {
+		console.warn('No pictographs with position data found');
+		return { question: null, options: [], correctAnswer: null };
+	}
+
+	// Select a pictograph for the question
 	const selectedPictograph = pictographsWithPosition[index % pictographsWithPosition.length];
 
+	// Get the position (prefer red position if available)
+	const position = (
+		selectedPictograph.redMotionData?.startLoc ||
+		selectedPictograph.blueMotionData?.startLoc ||
+		'n'
+	).toUpperCase();
+
 	// Generate wrong options (other positions)
-	const wrongOptions = positions.filter((p) => p !== positionType);
+	const allPositions = [
+		...new Set(
+			allPictographs
+				.flatMap((p) => {
+					const redLoc = p.redMotionData?.startLoc;
+					const blueLoc = p.blueMotionData?.startLoc;
+					// Type guard that ensures only defined values of type string pass through
+					return [redLoc, blueLoc].filter((loc): loc is NonNullable<typeof loc> => typeof loc === 'string');
+				})
+				.map((loc) => loc.toUpperCase())
+		)
+	];
+
+	const wrongOptions = allPositions.filter((p) => p !== position);
+	const selectedWrongOptions = wrongOptions.slice(0, (lessonConfig.options?.numOptions || 4) - 1);
 
 	// Combine and shuffle options if needed
 	const allOptions = lessonConfig.options?.randomizeOptions
-		? shuffleArray([positionType, ...wrongOptions])
-		: [positionType, ...wrongOptions];
+		? shuffleArray([position, ...selectedWrongOptions])
+		: [position, ...selectedWrongOptions];
 
 	return {
-		question: selectedPictograph,
+		question: ensurePictographComplete(selectedPictograph),
 		options: allOptions,
-		correctAnswer: positionType
+		correctAnswer: position
 	};
 }
 
@@ -616,7 +311,8 @@ export function checkAnswerLogic(
 ): boolean {
 	switch (lessonConfig.id) {
 		case 'letter_to_pictograph':
-			return userAnswer.id === correctAnswer.id;
+			// Compare letter property instead of ID since we're now using real data
+			return userAnswer.letter === correctAnswer.letter;
 
 		case 'pictograph_to_letter':
 			return userAnswer === correctAnswer;
@@ -630,16 +326,5 @@ export function checkAnswerLogic(
 		default:
 			console.error(`Unknown lesson type for answer checking: ${lessonConfig.id}`);
 			return false;
-	}
-}
-
-// Function to retrieve pictographs for a given letter
-export async function getPictographsForLetter(letter: string): Promise<any[]> {
-	try {
-		// Use the imported function from sequenceService
-		return await fetchPictographsForLetter(letter);
-	} catch (error) {
-		console.error('Error fetching pictographs:', error);
-		return [];
 	}
 }
