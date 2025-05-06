@@ -28,27 +28,32 @@ const createPanelStore = () => {
 // Export the panel store instance
 export const panelStore = createPanelStore();
 
-// --- Derived Store for Button Size Calculation ---
+// Number of buttons to account for in sizing (update this if buttons count changes)
+const TYPICAL_BUTTON_COUNT = 7;
+const BUTTON_GAP = 12; // Gap between buttons (matches CSS in ButtonsContainer)
+const BUTTON_PADDING = 8 * 2; // Padding on both sides (matches CSS in ButtonsContainer)
 
 // Helper function (extracted from original component)
 function calculateButtonSize(width: number, height: number, isPortrait: boolean): number {
 	// Check for browser environment for window access if needed, though here width/height are passed in
 	const isMobile = browser ? window.innerWidth <= 768 : width <= 768; // Example of browser check if needed
 
-	// Use passed width/height primarily
-	const effectiveWidth = width;
-	const effectiveHeight = height;
+	// Calculate available space for buttons
+	let maxSize: number;
 
-	if (isMobile) {
-		// Mobile calculation based on width - slightly smaller
-		return Math.max(28, Math.min(55, effectiveWidth / 11));
-	} else if (isPortrait) {
-		// Desktop portrait calculation based on width - slightly smaller
-		return Math.max(28, Math.min(55, effectiveWidth / 11));
+	if (isPortrait || isMobile) {
+		// For horizontal layout (portrait or mobile), divide the width
+		const availableWidth = width - BUTTON_PADDING;
+		// Account for button count and gaps between buttons
+		maxSize = (availableWidth - BUTTON_GAP * (TYPICAL_BUTTON_COUNT - 1)) / TYPICAL_BUTTON_COUNT;
 	} else {
-		// Desktop landscape calculation based on height - slightly smaller
-		return Math.max(28, Math.min(55, effectiveHeight / 15));
+		// For vertical layout (landscape desktop), use height with more breathing room
+		const availableHeight = height - BUTTON_PADDING;
+		maxSize = (availableHeight - BUTTON_GAP * (TYPICAL_BUTTON_COUNT - 1)) / TYPICAL_BUTTON_COUNT;
 	}
+
+	// Enforce min/max boundaries for aesthetics and usability
+	return Math.max(28, Math.min(55, maxSize));
 }
 
 // Derived store that provides the calculation *function*

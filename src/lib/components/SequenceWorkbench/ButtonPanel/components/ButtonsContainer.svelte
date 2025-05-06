@@ -7,7 +7,7 @@
 	// Props
 	export let buttons: ButtonDefinition[];
 	export let buttonSize: number;
-	export let layout: LayoutOrientation; // Receive layout from parent (ActionToolbar)
+	export let layout: LayoutOrientation; 
 
 	// Always visible now
 	const isVisible = true;
@@ -30,7 +30,7 @@
 	class:vertical={layout === 'vertical'}
 	class:visible={isVisible || isAnimatingOut}
 	class:animating-out={isAnimatingOut}
-	style="--wrapper-transition-duration: {wrapperTransitionDuration};"
+	style="--wrapper-transition-duration: {wrapperTransitionDuration}; --button-size: {buttonSize}px;"
 	role="list"
 	aria-hidden={!(isVisible || isAnimatingOut)}
 >
@@ -57,8 +57,7 @@
 		padding: 8px;
 		opacity: 1;
 		pointer-events: auto;
-		width: max-content; /* Fit width to buttons */
-		height: max-content; /* Fit height to buttons */
+		box-sizing: border-box;
 		flex-shrink: 0; /* Prevent shrinking */
 	}
 
@@ -77,6 +76,9 @@
 		flex-direction: column;
 		width: max-content; /* Fit width */
 		min-width: 60px; /* Ensure minimum width */
+		max-height: 100%;
+		overflow-y: auto;
+		justify-content: flex-start;
 		flex-shrink: 0; /* Prevent shrinking */
 	}
 
@@ -84,8 +86,17 @@
 		flex-direction: row;
 		height: max-content; /* Fit height */
 		min-height: 60px; /* Ensure minimum height */
-		flex-shrink: 0; /* Prevent shrinking */
+		width: 100%;
 		flex-wrap: wrap; /* Allow wrapping on very small screens */
 		justify-content: center; /* Center wrapped items */
+		box-sizing: border-box;
+	}
+
+	/* Responsive behavior for very small screens */
+	@media (max-width: 480px) {
+		.buttons-wrapper:not(.vertical) {
+			padding: 4px;
+			gap: 8px;
+		}
 	}
 </style>
