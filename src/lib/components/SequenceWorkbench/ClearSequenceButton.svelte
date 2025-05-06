@@ -1,41 +1,35 @@
-<!-- src/lib/components/SequenceWorkbench/ToolsButton.svelte -->
+<!-- src/lib/components/SequenceWorkbench/ClearSequenceButton.svelte -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
 
-	// Props
-	export let isToolsPanelOpen = false;
-
-	// Event dispatcher
 	const dispatch = createEventDispatcher<{
-		toggleToolsPanel: void;
+		clearSequence: void;
 	}>();
 
-	// Handle click event
 	function handleClick() {
-		dispatch('toggleToolsPanel');
+		dispatch('clearSequence');
 	}
 </script>
 
 <button
-	class="tools-button ripple"
+	class="clear-button ripple"
 	on:click={handleClick}
-	aria-label={isToolsPanelOpen ? 'Close Tools Panel' : 'Open Tools Panel'}
-	aria-expanded={isToolsPanelOpen}
+	aria-label="Clear sequence"
 	data-mdb-ripple="true"
 	data-mdb-ripple-color="light"
-	in:fly={{ x: 20, duration: 300, delay: 200 }}
+	in:fly={{ x: -20, duration: 300, delay: 200 }}
 >
 	<div class="icon-wrapper">
-		<i class="fa-solid fa-screwdriver-wrench"></i>
+		<i class="fa-solid fa-eraser"></i>
 	</div>
 </button>
 
 <style>
-	.tools-button {
+	.clear-button {
 		position: absolute;
 		bottom: 10px;
-		left: 10px;
+		right: 10px;
 		z-index: 10;
 		background: white;
 		border: none;
@@ -53,13 +47,13 @@
 		pointer-events: auto;
 	}
 
-	.tools-button:hover {
+	.clear-button:hover {
 		transform: translateY(-2px);
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-		background: #f8f9fa;
+		background: #fff0f0;
 	}
 
-	.tools-button:active {
+	.clear-button:active {
 		transform: scale(0.98);
 	}
 
@@ -67,7 +61,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		background: linear-gradient(135deg, #6a11cb, #2575fc);
+		background: linear-gradient(135deg, #ff7b00, #ff9e00);
 		color: white;
 		width: 24px;
 		height: 24px;
@@ -76,7 +70,7 @@
 	}
 
 	@media (max-width: 480px) {
-		.tools-button {
+		.clear-button {
 			padding: 8px;
 		}
 	}

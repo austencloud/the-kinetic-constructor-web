@@ -22,6 +22,7 @@
 	import FullScreenOverlay from './components/FullScreenOverlay.svelte';
 	import ToolsButton from './ToolsButton.svelte';
 	import ToolsPanel from './ToolsPanel/ToolsPanel.svelte';
+	import ClearSequenceButton from './ClearSequenceButton.svelte';
 
 	// Import stores for sequence state
 	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
@@ -39,6 +40,9 @@
 
 	// Calculate workbench orientation based on workbench dimensions instead of window
 	$: workbenchIsPortrait = $dimensions.width < workbenchHeight;
+
+	// Subscribe to stores
+	$: toolsPanelOpen = $isToolsPanelOpen;
 
 	// Subscribe to the sequence store for metadata and status
 	const sequenceName = derived(sequenceStore, ($store) => $store.metadata.name);
@@ -66,8 +70,7 @@
 		},
 		{ icon: 'fa-paintbrush', title: 'Swap Colors', id: 'swapColors', color: '#ff6b6b' },
 		{ icon: 'fa-rotate', title: 'Rotate', id: 'rotateSequence', color: '#f72585' },
-		{ icon: 'fa-trash', title: 'Delete Beat', id: 'deleteBeat', color: '#ff9e00' },
-		{ icon: 'fa-eraser', title: 'Clear All', id: 'clearSequence', color: '#ff7b00' }
+		{ icon: 'fa-trash', title: 'Delete Beat', id: 'deleteBeat', color: '#ff9e00' }
 	];
 
 	// Track status for UI
@@ -153,6 +156,14 @@
 		}
 	}
 
+	// Create a wrapper function for clearSequence that creates a proper CustomEvent
+	function handleClearSequence() {
+		const event = new CustomEvent<ActionEventDetail>('action', {
+			detail: { id: 'clearSequence' }
+		});
+		handleButtonAction(event);
+	}
+
 	// Toggle tools panel visibility
 	function toggleToolsPanel() {
 		isToolsPanelOpen.update((value) => !value);
@@ -184,7 +195,6 @@
 		<div class="left-vbox">
 			<div class="centered-group">
 				<div class="sequence-widget-labels">
-
 					<CurrentWordLabel currentWord={$sequenceName} width={$dimensions.width} />
 					<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
 				</div>
@@ -198,16 +208,18 @@
 			</div>
 		</div>
 
-			{#if $isToolsPanelOpen}
-				<div class="tools-panel-container" transition:fly={{ duration: 300, y: 10 }}>
-					<ToolsPanel
-						buttons={buttonPanelButtons}
-						on:action={handleButtonAction}
-						on:close={() => isToolsPanelOpen.set(false)}
-					/>
-				</div>
+		{#if toolsPanelOpen}
+			<div class="tools-panel-container" transition:fly={{ duration: 300, y: 10 }}>
+				<ToolsPanel
+					buttons={buttonPanelButtons}
+					on:action={handleButtonAction}
+					on:close={() => isToolsPanelOpen.set(false)}
+				/>
+			</div>
+		{/if}
 
-			{/if}
+		<ToolsButton isToolsPanelOpen={toolsPanelOpen} on:toggleToolsPanel={toggleToolsPanel} />
+		<ClearSequenceButton on:clearSequence={handleClearSequence} />
 	</div>
 
 	<!-- Full Screen Overlay -->
@@ -254,34 +266,12 @@
 		overflow: hidden;
 	}
 
-	.right-panel {
-		height: 100%;
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		transition: all 0.3s ease;
-	}
-
-	.right-panel.tools-panel-mode {
-		flex: 0.8; /* Make tools panel more compact */
-	}
-
 	.tools-panel-container {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
 		padding: 10px;
 		background-color: #f8f9fa;
-	}
-
-	.picker-container {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-		width: 100%;
-		height: 100%;
 	}
 
 	.centered-group {
@@ -343,11 +333,6 @@
 
 	/* Responsive mobile layout adjustments */
 	@media (max-width: 768px) {
-		.main-layout.portrait .right-panel.tools-panel-mode {
-			flex: 0.6; /* Even more compact on mobile portrait mode */
-			min-height: 230px; /* Ensure minimum height to fit all buttons */
-		}
-
 		.main-layout.portrait .tools-panel-container {
 			padding: 6px;
 		}
