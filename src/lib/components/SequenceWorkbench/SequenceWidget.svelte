@@ -182,6 +182,8 @@
 		display: flex;
 		flex-direction: row;
 		height: 100%;
+		width: 100%; /* Ensure full width */
+		overflow: hidden; /* Prevent overflow */
 	}
 
 	.main-layout.portrait {
@@ -194,7 +196,8 @@
 		height: 100%;
 		width: 100%;
 		min-height: 0;
-		flex: 14; /* Adjust flex basis as needed */
+		flex: 1; /* Changed from 14 to 1 to use proportional space */
+		overflow: hidden; /* Prevent overflow */
 	}
 
 	.centered-group {

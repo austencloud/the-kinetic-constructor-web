@@ -246,13 +246,6 @@ export class PictographService {
 	}
 
 	updateData(newData: PictographData): void {
-		// Log the motion types before preservation
-		console.log(
-			`PictographService.updateData - Before preservation: ` +
-				`Red Motion Type: ${newData.redMotionData?.motionType || 'none'} -> ${this.data?.redMotionData?.motionType || 'none'}, ` +
-				`Blue Motion Type: ${newData.blueMotionData?.motionType || 'none'} -> ${this.data?.blueMotionData?.motionType || 'none'}`
-		);
-
 		// Check if this is a layout shift update
 		// We can detect this by looking at the stack trace for affected beats
 		const stackTrace = new Error().stack || '';
@@ -263,10 +256,13 @@ export class PictographService {
 			stackTrace.includes('Beat 10');
 
 		// Also check for grid changes that indicate layout shifts
+		// Use type assertion to avoid TypeScript errors since these properties might be added dynamically
+		const oldGridData = this.data?.gridData as any;
+		const newGridData = newData.gridData as any;
 		const isGridChanged =
-			this.data?.gridData?.cellSize !== newData.gridData?.cellSize ||
-			this.data?.gridData?.width !== newData.gridData?.width ||
-			this.data?.gridData?.height !== newData.gridData?.height;
+			oldGridData?.cellSize !== newGridData?.cellSize ||
+			oldGridData?.width !== newGridData?.width ||
+			oldGridData?.height !== newGridData?.height;
 
 		// Combine both checks
 		const shouldForceReset = isLayoutShift || isGridChanged;
@@ -281,7 +277,7 @@ export class PictographService {
 			if (newData.redArrowData) {
 				// Force recalculation of rotation angle
 				if (newData.redMotion) {
-					const rotAngleManager = new ArrowRotAngleManager(newData);
+					const rotAngleManager = new ArrowRotAngleManager(newData, this);
 					newData.redArrowData.rotAngle = rotAngleManager.calculateRotationAngle(
 						newData.redMotion,
 						newData.redArrowData.loc,
@@ -337,13 +333,6 @@ export class PictographService {
 				}
 			}
 		}
-
-		// Log the motion types after preservation
-		console.log(
-			`PictographService.updateData - After preservation: ` +
-				`Red Motion Type: ${newData.redMotionData?.motionType || 'none'}, ` +
-				`Blue Motion Type: ${newData.blueMotionData?.motionType || 'none'}`
-		);
 
 		this.data = newData;
 		this.checker = new PictographChecker(newData);

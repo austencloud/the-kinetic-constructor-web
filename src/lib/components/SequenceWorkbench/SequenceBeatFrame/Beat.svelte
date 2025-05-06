@@ -43,13 +43,7 @@
 				// Preserve motion types from the previous data if they exist
 				const currentData = get(pictographDataStore);
 				if (currentData) {
-					// Log the motion types before preservation
-					console.log(
-						`Beat ${beat.beatNumber} - Before preservation: ` +
-							`Red Motion Type: ${copy.redMotionData?.motionType || 'none'} -> ${currentData.redMotionData?.motionType || 'none'}, ` +
-							`Blue Motion Type: ${copy.blueMotionData?.motionType || 'none'} -> ${currentData.blueMotionData?.motionType || 'none'}\n` +
-							`Stack trace: ${new Error().stack}`
-					);
+
 
 					// Special case for Beat 5 - don't preserve motion types when the layout shifts
 					// This is when we go from 2x2 to 3x3 layout
@@ -59,7 +53,6 @@
 					// Since GridData doesn't have rows/cols properties, we'll just use the beat number
 					const isGridLayoutChanging = copy.gridMode !== currentData.gridMode || isLayoutShiftBeat; // For beat 5, we know it's a layout shift
 
-					// Only skip preservation if we're actually changing the grid layout
 					if (!isLayoutShiftBeat || !isGridLayoutChanging) {
 						// Preserve red motion type if it exists
 						if (currentData.redMotionData?.motionType && copy.redMotionData) {
@@ -76,12 +69,7 @@
 						);
 					}
 
-					// Log the motion types after preservation
-					console.log(
-						`Beat ${beat.beatNumber} - After preservation: ` +
-							`Red Motion Type: ${copy.redMotionData?.motionType || 'none'}, ` +
-							`Blue Motion Type: ${copy.blueMotionData?.motionType || 'none'}`
-					);
+
 				}
 
 				pictographDataStore.set(copy);
