@@ -188,7 +188,7 @@
 					<CurrentWordLabel currentWord={$sequenceName} width={$dimensions.width} />
 					<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
 				</div>
-				<div class="beat-frame-container">Hell yeah
+				<div class="beat-frame-container">
 					<BeatFrame />
 				</div>
 			</div>
