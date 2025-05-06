@@ -30,7 +30,7 @@
   const orderedButtons = [...topButtons, ...middleButtons, ...bottomButtons];
 
   let gridContainer: HTMLDivElement;
-  let minButtonWidth = 120; // Starting point
+  let minButtonWidth = 100; // Reduced minimum width
 
   function updateGridLayout() {
     if (!gridContainer) return;
@@ -39,21 +39,32 @@
     const containerHeight = gridContainer.clientHeight;
     const buttonCount = orderedButtons.length;
     
-    // Calculate how many columns we can fit while keeping buttons square
-    // and ensuring all buttons are visible without scrolling
-    const maxColumns = Math.floor(containerWidth / minButtonWidth);
-    const minRows = Math.ceil(buttonCount / maxColumns);
-    const availableHeight = containerHeight - 24; // Account for padding
+    // Try to fit all buttons in one row first
+    let buttonSize = Math.floor((containerWidth - ((buttonCount - 1) * 8)) / buttonCount);
     
-    // Calculate the maximum button size that will fit all buttons
-    const maxButtonHeight = availableHeight / minRows;
-    const maxButtonWidth = containerWidth / maxColumns;
-    const buttonSize = Math.floor(Math.min(maxButtonHeight, maxButtonWidth));
+    // If buttons would be too small in one row, calculate optimal multi-row layout
+    if (buttonSize < minButtonWidth) {
+      const maxColumns = Math.floor(containerWidth / minButtonWidth);
+      const minRows = Math.ceil(buttonCount / maxColumns);
+      const availableHeight = containerHeight - 16; // Account for gaps
+      
+      const maxButtonHeight = Math.floor(availableHeight / minRows);
+      const maxButtonWidth = Math.floor((containerWidth - ((maxColumns - 1) * 8)) / maxColumns);
+      buttonSize = Math.min(maxButtonHeight, maxButtonWidth);
+    }
     
-    // Update grid template
+    // Never let buttons get smaller than minimum size
+    buttonSize = Math.max(minButtonWidth, buttonSize);
+    
+    // Calculate content scaling based on button size
+    const iconScale = Math.min(0.35, Math.max(0.25, buttonSize / 120));
+    const textScale = Math.min(0.12, Math.max(0.09, buttonSize / 120));
+    
+    // Update CSS variables
     gridContainer.style.setProperty('--button-size', `${buttonSize}px`);
-    gridContainer.style.setProperty('--icon-size', `${Math.max(24, buttonSize * 0.3)}px`);
-    gridContainer.style.setProperty('--title-size', `${Math.max(11, buttonSize * 0.11)}px`);
+    gridContainer.style.setProperty('--icon-size', `${Math.max(24, Math.floor(buttonSize * iconScale))}px`);
+    gridContainer.style.setProperty('--title-size', `${Math.max(11, Math.floor(buttonSize * textScale))}px`);
+    gridContainer.style.setProperty('--button-padding', `${Math.max(6, Math.floor(buttonSize * 0.06))}px`);
   }
 
   onMount(() => {
@@ -145,15 +156,15 @@
 
   .tools-content {
     flex: 1;
-    padding: 12px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
   }
 
   .tools-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, var(--button-size, 120px));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, var(--button-size, 100px));
+    gap: 8px;
     justify-content: center;
     align-content: center;
     width: 100%;
@@ -165,15 +176,17 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: var(--button-size, 120px);
-    height: var(--button-size, 120px);
+    width: var(--button-size, 100px);
+    height: var(--button-size, 100px);
     border: 1px solid #eee;
     background: #f8f9fa;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
     color: #333;
-    padding: 8px;
+    padding: var(--button-padding, 6px);
+    box-sizing: border-box;
+    position: relative;
   }
 
   .tool-button:hover {
@@ -190,7 +203,7 @@
   .tool-button i {
     font-size: var(--icon-size, 24px);
     color: var(--button-color, #555);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
 
   .button-title {
