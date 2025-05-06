@@ -9,77 +9,66 @@
 	import DashRenderer from './components/DashRenderer.svelte';
 	import DotsRenderer from './components/DotsRenderer.svelte';
 	import TurnsRenderer from './components/TurnsRenderer.svelte';
-  
+
 	// Props with TypeScript interface
 	interface TKAGlyphProps {
-	  letter: Letter | null;
-	  turnsTuple: string;
-	  x: number;
-	  y: number;
-	  scale?: number;
+		letter: Letter | null;
+		turnsTuple: string;
+		x: number;
+		y: number;
+		scale?: number;
 	}
-	
+
 	export let letter: TKAGlyphProps['letter'] = null;
 	export let turnsTuple: TKAGlyphProps['turnsTuple'] = '';
 	export let x: TKAGlyphProps['x'] = 0;
 	export let y: TKAGlyphProps['y'] = 0;
 	export let scale: TKAGlyphProps['scale'] = 1;
-	
+
 	// Local state
 	let letterRect: Rect | null = null;
 	let letterLoaded = false;
-	
+
 	// Parse the turnsTuple
 	$: parsedTurns = parseTurnsTuple(turnsTuple);
-	
+
 	// Destructure for easier access
 	$: direction = parsedTurns?.direction || null;
-	$: topTurn = parsedTurns?.top || 0 as TKATurns;
-	$: bottomTurn = parsedTurns?.bottom || 0 as TKATurns;
-	
+	$: topTurn = parsedTurns?.top || (0 as TKATurns);
+	$: bottomTurn = parsedTurns?.bottom || (0 as TKATurns);
+	$: hasTurns =
+		(topTurn !== 'fl' && Number(topTurn) > 0) || (bottomTurn !== 'fl' && Number(bottomTurn) > 0);
+	$: shouldShowDots = hasTurns;
+
 	// Ensure common assets are loaded
 	onMount(() => {
-	  if (!$assetCache.dotSVG || !$assetCache.dashSVG) {
-		preloadCommonAssets();
-	  }
+		if (!$assetCache.dotSVG || !$assetCache.dashSVG) {
+			preloadCommonAssets();
+		}
 	});
-	
+
 	// Helper functions
 	function parseTurnsTuple(tuple: string) {
-	  if (!tuple) return { direction: null, top: 0 as TKATurns, bottom: 0 as TKATurns };
-	  
-	  const [dir, top, bottom] = parseTurnsTupleString(tuple);
-	  return { direction: dir, top, bottom };
+		if (!tuple) return { direction: null, top: 0 as TKATurns, bottom: 0 as TKATurns };
+
+		const [dir, top, bottom] = parseTurnsTupleString(tuple);
+		return { direction: dir, top, bottom };
 	}
-	
+
 	function handleLetterLoaded(event: CustomEvent<Rect>) {
-	  letterRect = event.detail;
-	  letterLoaded = true;
+		letterRect = event.detail;
+		letterLoaded = true;
 	}
-  </script>
-  
-  <g class="tka-glyph" transform={`translate(${x}, ${y}) scale(${scale})`}>
-	<LetterRenderer 
-	  {letter} 
-	  on:letterLoaded={handleLetterLoaded} 
-	/>
-	
+</script>
+
+<g class="tka-glyph" transform={`translate(${x}, ${y}) scale(${scale})`}>
+	<LetterRenderer {letter} on:letterLoaded={handleLetterLoaded} />
+
 	{#if letterLoaded && letterRect}
-	  <DashRenderer 
-		{letter} 
-		letterRect={letterRect} 
-	  />
-	  
-	  <DotsRenderer 
-		direction={direction} 
-		letterRect={letterRect} 
-		{letter} 
-	  />
-	  
-	  <TurnsRenderer 
-		topValue={topTurn} 
-		bottomValue={bottomTurn} 
-		letterRect={letterRect} 
-	  />
+		<DashRenderer {letter} {letterRect} />
+
+		<DotsRenderer {direction} {letterRect} {letter} {shouldShowDots} />
+
+		<TurnsRenderer topValue={topTurn} bottomValue={bottomTurn} {letterRect} />
 	{/if}
-  </g>
+</g>

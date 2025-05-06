@@ -19,7 +19,6 @@
 	import CurrentWordLabel from './Labels/CurrentWordLabel.svelte';
 	import DifficultyLabel from './Labels/DifficultyLabel.svelte';
 	import BeatFrame from './SequenceBeatFrame/SequenceBeatFrame.svelte';
-	import ButtonPanel from './ButtonPanel';
 	import FullScreenOverlay from './components/FullScreenOverlay.svelte';
 	import ToolsButton from './ToolsButton.svelte';
 	import ToolsPanel from './ToolsPanel/ToolsPanel.svelte';
@@ -27,6 +26,7 @@
 	// Import stores for sequence state
 	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	import { fly } from 'svelte/transition';
 
 	// Props
 	export let workbenchHeight: number;
@@ -56,18 +56,18 @@
 			id: 'addToDictionary',
 			color: '#4361ee'
 		},
-		{ icon: 'fa-save', title: 'Save Image', id: 'saveImage', color: '#3a86ff' },
-		{ icon: 'fa-expand', title: 'View Full Screen', id: 'viewFullScreen', color: '#4cc9f0' },
+		{ icon: 'fa-share-nodes', title: 'Share', id: 'saveImage', color: '#3a86ff' },
+		{ icon: 'fa-expand', title: 'Full Screen', id: 'viewFullScreen', color: '#4cc9f0' },
 		{
 			icon: 'fa-arrows-left-right',
-			title: 'Mirror Sequence',
+			title: 'Mirror',
 			id: 'mirrorSequence',
 			color: '#4895ef'
 		},
 		{ icon: 'fa-paintbrush', title: 'Swap Colors', id: 'swapColors', color: '#ff6b6b' },
-		{ icon: 'fa-rotate', title: 'Rotate Sequence', id: 'rotateSequence', color: '#f72585' },
+		{ icon: 'fa-rotate', title: 'Rotate', id: 'rotateSequence', color: '#f72585' },
 		{ icon: 'fa-trash', title: 'Delete Beat', id: 'deleteBeat', color: '#ff9e00' },
-		{ icon: 'fa-eraser', title: 'Clear Sequence', id: 'clearSequence', color: '#ff7b00' }
+		{ icon: 'fa-eraser', title: 'Clear All', id: 'clearSequence', color: '#ff7b00' }
 	];
 
 	// Track status for UI
@@ -201,23 +201,16 @@
 			</div>
 		</div>
 
-		<div class="right-panel">
 			{#if $isToolsPanelOpen}
-				<ToolsPanel
-					buttons={buttonPanelButtons}
-					on:action={handleButtonAction}
-					on:close={() => isToolsPanelOpen.set(false)}
-				/>
-			{:else if $isSequenceEmpty}
-				<div class="start-pos-picker">
-					<slot name="startPosPicker"></slot>
+				<div class="tools-panel-container" transition:fly={{ duration: 300, y: 10 }}>
+					<ToolsPanel
+						buttons={buttonPanelButtons}
+						on:action={handleButtonAction}
+						on:close={() => isToolsPanelOpen.set(false)}
+					/>
 				</div>
-			{:else}
-				<div class="option-picker">
-					<slot name="optionPicker"></slot>
-				</div>
+
 			{/if}
-		</div>
 	</div>
 
 	<!-- Full Screen Overlay -->
@@ -244,14 +237,14 @@
 		display: flex;
 		flex-direction: row;
 		height: 100%;
-		width: 100%; /* Ensure full width */
-		overflow: hidden; /* Prevent overflow */
-		justify-content: space-between; /* Distribute space between children */
+		width: 100%;
+		overflow: hidden;
+		justify-content: space-between;
 	}
 
 	.main-layout.portrait {
 		flex-direction: column;
-		justify-content: flex-start; /* Align children to the top */
+		justify-content: flex-start;
 	}
 
 	.left-vbox {
@@ -260,8 +253,8 @@
 		height: 100%;
 		width: 100%;
 		min-height: 0;
-		flex: 1; /* Changed from 14 to 1 to use proportional space */
-		overflow: hidden; /* Prevent overflow */
+		flex: 1;
+		overflow: hidden;
 	}
 
 	.right-panel {
@@ -269,6 +262,29 @@
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
+		flex: 1;
+		transition: all 0.3s ease;
+	}
+
+	.right-panel.tools-panel-mode {
+		flex: 0.8; /* Make tools panel more compact */
+	}
+
+	.tools-panel-container {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		padding: 10px;
+		background-color: #f8f9fa;
+	}
+
+	.picker-container {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		width: 100%;
+		height: 100%;
 	}
 
 	.centered-group {
@@ -276,11 +292,11 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		height: 100%; /* Take remaining height */
+		height: 100%;
 		width: 100%;
-		flex-grow: 1; /* Allow group to grow */
-		min-height: 0; /* Prevent overflow */
-		position: relative; /* For absolute positioning of tools button */
+		flex-grow: 1;
+		min-height: 0;
+		position: relative;
 	}
 
 	.sequence-widget-labels {
@@ -292,7 +308,7 @@
 		padding-top: 0;
 		margin-bottom: 0;
 		padding-bottom: 5px;
-		position: relative; /* For positioning the tools button */
+		position: relative;
 		width: 100%;
 	}
 
@@ -314,37 +330,7 @@
 		align-items: center;
 		justify-content: center;
 		color: white;
-		flex-shrink: 0; /* Prevent shrinking */
-		/* Removed flex: 1 to avoid taking too much space */
-	}
-
-	.start-pos-picker,
-	.option-picker {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-	}
-
-	/* Ensure ButtonPanel has appropriate flex properties */
-	:global(.sequence-widget .toolbar-container.vertical) {
-		/* Target the vertical toolbar container */
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		justify-content: center; /* Center vertically */
-		align-items: center;
-		margin: auto 0; /* Ensure equal space above and below */
-		min-width: 60px; /* Ensure minimum width */
-		flex-shrink: 0; /* Prevent shrinking */
-	}
-
-	/* Ensure the button panel container doesn't get pushed off-screen */
-	:global(.sequence-widget .main-layout:not(.portrait) > .toolbar-container) {
-		flex-shrink: 0; /* Prevent shrinking */
-		min-width: 60px; /* Ensure minimum width */
-		width: auto; /* Allow natural width */
-		margin-left: 5px; /* Add a small margin */
-		margin-right: 5px; /* Add a small margin */
+		flex-shrink: 0;
 	}
 
 	/* Full screen beat container styles */
@@ -356,6 +342,18 @@
 		align-items: center;
 		padding: 0;
 		box-sizing: border-box;
+	}
+
+	/* Responsive mobile layout adjustments */
+	@media (max-width: 768px) {
+		.main-layout.portrait .right-panel.tools-panel-mode {
+			flex: 0.6; /* Even more compact on mobile portrait mode */
+			min-height: 230px; /* Ensure minimum height to fit all buttons */
+		}
+
+		.main-layout.portrait .tools-panel-container {
+			padding: 6px;
+		}
 	}
 
 	/* Make the beat frame take up as much space as possible in full screen mode */
@@ -378,7 +376,7 @@
 
 	/* Adjust cell size for optimal visibility based on grid size */
 	:global(.fullscreen-beat-container .beat-frame) {
-		--cell-size-multiplier: 2.5; /* Default multiplier for small grids */
+		--cell-size-multiplier: 2.5;
 		--adjusted-cell-size: calc(var(--cell-size) * var(--cell-size-multiplier));
 	}
 

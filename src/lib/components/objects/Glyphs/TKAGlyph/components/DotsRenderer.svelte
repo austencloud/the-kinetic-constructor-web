@@ -5,10 +5,19 @@
 	import type { Letter } from '$lib/types/Letter';
 	import type { DirRelation, PropRotDir } from '$lib/types/Types';
 
+	// Props interface
+	interface DotsRendererProps {
+		direction: DirRelation | PropRotDir | null;
+		letterRect: Rect;
+		letter: Letter | null;
+		shouldShowDots: boolean;
+	}
+
 	// Props
-	export let direction: DirRelation | PropRotDir | null = null;
-	export let letterRect: Rect;
-	export let letter: Letter | null = null;
+	export let direction: DotsRendererProps['direction'] = null;
+	export let letterRect: DotsRendererProps['letterRect'];
+	export let letter: DotsRendererProps['letter'] = null;
+	export let shouldShowDots: DotsRendererProps['shouldShowDots'] = true;
 
 	// Config
 	const DOT_PADDING = 20;
@@ -17,6 +26,7 @@
 	$: dotPositions = calculateDotPositions(letterRect, $assetCache.dotSVG?.dimensions);
 	$: canShowDots = letter && LetterType.getLetterType(letter) !== LetterType.Type1;
 	$: dotsAvailable = $assetCache.dotSVG !== null;
+	$: dotsVisible = canShowDots && dotsAvailable && direction !== null && shouldShowDots;
 
 	// Pure functions for calculations
 	function calculateDotPositions(rect: Rect, dimensions?: { width: number; height: number }) {
@@ -42,7 +52,7 @@
 </script>
 
 <g class="dot-renderer">
-	{#if canShowDots && dotsAvailable}
+	{#if dotsVisible}
 		<!-- Same Dot -->
 		<g
 			class="tka-dot"
