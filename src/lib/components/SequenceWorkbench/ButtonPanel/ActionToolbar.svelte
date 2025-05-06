@@ -33,7 +33,7 @@
 	// Calculate orientation based on received container dimensions
 	$: isContainerPortrait = containerHeight > containerWidth;
 	// Determine the desired layout based on the container's orientation
-	$: newLayout = isContainerPortrait ? 'horizontal' : 'vertical' as LayoutOrientation;
+	$: newLayout = isContainerPortrait ? 'horizontal' : ('vertical' as LayoutOrientation);
 
 	// Update the central store only if the calculated layout differs from the stored one
 	$: if (browser && newLayout !== layoutFromStore) {
@@ -116,7 +116,7 @@
 
 <div
 	class="toolbar-container"
-	class:vertical={newLayout === 'vertical'} 
+	class:vertical={newLayout === 'vertical'}
 	style="--button-size: {buttonSize}px;"
 >
 	<ButtonsContainer {buttons} {buttonSize} layout={newLayout} on:action={handleButtonClick} />
@@ -131,15 +131,20 @@
 		position: relative;
 		overflow: visible;
 		box-sizing: border-box; /* Include padding in dimensions */
+		min-width: 60px; /* Ensure minimum width */
+		flex-shrink: 0; /* Prevent shrinking */
 	}
 
 	/* Vertical Layout */
 	.toolbar-container.vertical {
 		flex-direction: column; /* Stack child vertically */
 		width: max-content; /* Fit width to content (ButtonsContainer) */
+		min-width: 60px; /* Ensure minimum width */
 		height: 100%; /* Crucial: Take full height of its parent */
 		justify-content: center; /* Center child (ButtonsContainer) vertically */
 		align-items: center; /* Center child horizontally */
+		flex-shrink: 0; /* Prevent shrinking */
+		padding: 0 5px; /* Add horizontal padding */
 	}
 
 	/* Horizontal Layout (Default) */
@@ -147,8 +152,11 @@
 		flex-direction: row; /* Arrange child horizontally */
 		width: 100%; /* Take full width */
 		height: max-content; /* Fit height to content */
+		min-height: 60px; /* Ensure minimum height */
 		align-items: center; /* Center child vertically */
 		justify-content: center; /* Center child horizontally */
+		flex-shrink: 0; /* Prevent shrinking */
+		padding: 5px 0; /* Add vertical padding */
 	}
 
 	/* Ensure ripple works correctly */

@@ -377,8 +377,12 @@
 
 	.beat-frame {
 		display: grid;
-		grid-template-columns: var(--cell-size) repeat(var(--total-cols) - 1, var(--cell-size));
-		grid-template-rows: repeat(var(--total-rows), var(--cell-size));
+		/* Use adjusted cell size if available, otherwise use the regular cell size */
+		grid-template-columns: var(--adjusted-cell-size, var(--cell-size)) repeat(
+				var(--total-cols) - 1,
+				var(--adjusted-cell-size, var(--cell-size))
+			);
+		grid-template-rows: repeat(var(--total-rows), var(--adjusted-cell-size, var(--cell-size)));
 		gap: 0; /* No gap at all */
 		justify-content: center;
 		align-content: center; /* Center vertically by default */
@@ -394,8 +398,8 @@
 
 	.beat-container {
 		position: relative;
-		width: var(--cell-size);
-		height: var(--cell-size);
+		width: var(--adjusted-cell-size, var(--cell-size));
+		height: var(--adjusted-cell-size, var(--cell-size));
 		display: flex;
 		justify-content: center;
 		align-items: center;

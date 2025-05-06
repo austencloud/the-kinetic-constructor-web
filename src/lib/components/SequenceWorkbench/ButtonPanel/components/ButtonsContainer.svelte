@@ -1,4 +1,3 @@
-
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import ActionButton from './ActionButton.svelte';
@@ -28,7 +27,7 @@
 
 <div
 	class="buttons-wrapper"
-	class:vertical={layout === 'vertical'} 
+	class:vertical={layout === 'vertical'}
 	class:visible={isVisible || isAnimatingOut}
 	class:animating-out={isAnimatingOut}
 	style="--wrapper-transition-duration: {wrapperTransitionDuration};"
@@ -42,7 +41,7 @@
 				{buttonSize}
 				index={i}
 				{isAnimatingOut}
-				{layout} 
+				{layout}
 				on:click={handleButtonClick}
 			/>
 		{/each}
@@ -60,6 +59,7 @@
 		pointer-events: auto;
 		width: max-content; /* Fit width to buttons */
 		height: max-content; /* Fit height to buttons */
+		flex-shrink: 0; /* Prevent shrinking */
 	}
 
 	.buttons-wrapper.visible {
@@ -76,10 +76,16 @@
 	.buttons-wrapper.vertical {
 		flex-direction: column;
 		width: max-content; /* Fit width */
+		min-width: 60px; /* Ensure minimum width */
+		flex-shrink: 0; /* Prevent shrinking */
 	}
 
 	.buttons-wrapper:not(.vertical) {
 		flex-direction: row;
 		height: max-content; /* Fit height */
+		min-height: 60px; /* Ensure minimum height */
+		flex-shrink: 0; /* Prevent shrinking */
+		flex-wrap: wrap; /* Allow wrapping on very small screens */
+		justify-content: center; /* Center wrapped items */
 	}
 </style>

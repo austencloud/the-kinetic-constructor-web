@@ -3,6 +3,11 @@
 	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
 	import { sequenceStore } from '$lib/state/stores/sequenceStore';
 	import { derived } from 'svelte/store';
+	import {
+		isSequenceFullScreen,
+		openSequenceFullScreen,
+		closeSequenceFullScreen
+	} from '$lib/stores/sequence/fullScreenStore';
 
 	// Import Type for Button Definitions
 	import type { ButtonDefinition } from './ButtonPanel/types'; // Adjust path if necessary
@@ -14,6 +19,7 @@
 	// Import the ButtonPanel component (ensure path/name matches your file structure)
 	import BeatFrame from './SequenceBeatFrame/SequenceBeatFrame.svelte';
 	import ButtonPanel from './ButtonPanel';
+	import FullScreenOverlay from './components/FullScreenOverlay.svelte';
 
 	// Props
 	export let workbenchHeight: number;
@@ -96,7 +102,7 @@
 				setTimeout(() => (status = 'ready'), 500);
 				break;
 			case 'viewFullScreen':
-				console.log('Entering full screen mode');
+				openSequenceFullScreen();
 				break;
 			case 'mirrorSequence':
 				// TODO: Implement mirror sequence in the state machine
@@ -168,6 +174,17 @@
 			/>
 		{/if}
 	</div>
+
+	<!-- Full Screen Overlay -->
+	<FullScreenOverlay
+		isOpen={$isSequenceFullScreen}
+		title={$sequenceName}
+		on:close={closeSequenceFullScreen}
+	>
+		<div class="fullscreen-beat-container">
+			<BeatFrame />
+		</div>
+	</FullScreenOverlay>
 </div>
 
 <style>
@@ -184,10 +201,12 @@
 		height: 100%;
 		width: 100%; /* Ensure full width */
 		overflow: hidden; /* Prevent overflow */
+		justify-content: space-between; /* Distribute space between children */
 	}
 
 	.main-layout.portrait {
 		flex-direction: column;
+		justify-content: flex-start; /* Align children to the top */
 	}
 
 	.left-vbox {
@@ -250,5 +269,63 @@
 		justify-content: center; /* Center vertically */
 		align-items: center;
 		margin: auto 0; /* Ensure equal space above and below */
+		min-width: 60px; /* Ensure minimum width */
+		flex-shrink: 0; /* Prevent shrinking */
+	}
+
+	/* Ensure the button panel container doesn't get pushed off-screen */
+	:global(.sequence-widget .main-layout:not(.portrait) > .toolbar-container) {
+		flex-shrink: 0; /* Prevent shrinking */
+		min-width: 60px; /* Ensure minimum width */
+		width: auto; /* Allow natural width */
+		margin-left: 5px; /* Add a small margin */
+		margin-right: 5px; /* Add a small margin */
+	}
+
+	/* Full screen beat container styles */
+	.fullscreen-beat-container {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 0;
+		box-sizing: border-box;
+	}
+
+	/* Make the beat frame take up as much space as possible in full screen mode */
+	:global(.fullscreen-beat-container .beat-frame) {
+		width: auto;
+		height: auto;
+		max-width: 95vw;
+		max-height: 95vh;
+		transform: scale(1);
+	}
+
+	/* Ensure the beat frame container fills the available space */
+	:global(.fullscreen-beat-container .beat-frame-container) {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	/* Adjust cell size for optimal visibility based on grid size */
+	:global(.fullscreen-beat-container .beat-frame) {
+		--cell-size-multiplier: 2.5; /* Default multiplier for small grids */
+		--adjusted-cell-size: calc(var(--cell-size) * var(--cell-size-multiplier));
+	}
+
+	/* Smaller multiplier for larger grids */
+	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 3']),
+	:global(.fullscreen-beat-container .beat-frame[style*='--total-cols: 4']) {
+		--cell-size-multiplier: 2;
+	}
+
+	/* Even smaller multiplier for very large grids */
+	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 4']),
+	:global(.fullscreen-beat-container .beat-frame[style*='--total-cols: 5']) {
+		--cell-size-multiplier: 1.5;
 	}
 </style>

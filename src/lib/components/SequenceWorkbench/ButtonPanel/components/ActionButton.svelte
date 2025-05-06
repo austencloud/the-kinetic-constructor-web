@@ -61,6 +61,9 @@
 		/* Apply default (horizontal fly-in) animation using the shorthand property */
 		/* Ensure ease timing function is included if desired */
 		animation: flyInHorizontal 0.5s var(--animation-delay) backwards ease;
+		flex-shrink: 0; /* Prevent shrinking */
+		min-width: 50px; /* Ensure minimum width */
+		min-height: 50px; /* Ensure minimum height */
 	}
 
 	/* --- Reverted to overriding specific properties --- */
