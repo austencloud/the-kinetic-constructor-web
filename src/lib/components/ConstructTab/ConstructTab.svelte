@@ -3,6 +3,7 @@
 	import { derived, writable } from 'svelte/store';
 	import { fade, crossfade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
+	import { onMount, onDestroy } from 'svelte';
 	import SequenceWorkbench from '$lib/components/SequenceWorkbench/Workbench.svelte';
 	import OptionPicker from './OptionPicker/OptionPicker.svelte';
 	import StartPosPicker from './StartPosPicker/StartPosPicker.svelte';
@@ -99,6 +100,25 @@
 	function toggleToolsPanel() {
 		isToolsPanelOpen.update((value) => !value);
 	}
+
+	// Track if we're showing the start position picker due to an immediate click
+	const showingStartPosPicker = writable(false);
+
+	// Listen for the start position click event for immediate feedback
+	onMount(() => {
+		const handleStartPosClick = (event: CustomEvent) => {
+			if (event.detail?.immediate) {
+				// Force the start position picker to show immediately
+				showingStartPosPicker.set(true);
+			}
+		};
+
+		document.addEventListener('start-position-click', handleStartPosClick as EventListener);
+
+		return () => {
+			document.removeEventListener('start-position-click', handleStartPosClick as EventListener);
+		};
+	});
 </script>
 
 <div class="construct-tab">
@@ -115,7 +135,7 @@
 					on:close={() => isToolsPanelOpen.set(false)}
 				/>
 			</div>
-		{:else if $isEmpty}
+		{:else if $isEmpty || $showingStartPosPicker}
 			<div class="picker-container" in:receive={{ key: 'startpos' }} out:send={{ key: 'startpos' }}>
 				<StartPosPicker />
 			</div>

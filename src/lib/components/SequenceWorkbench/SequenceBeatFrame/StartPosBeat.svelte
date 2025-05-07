@@ -170,9 +170,22 @@
 	});
 
 	// Handle clicks at this level to prevent multiple event handlers
+	let isClicked = false;
+
 	function handleContainerClick(event: MouseEvent) {
 		// Only handle clicks directly on the container, not on children
 		if (event.target === event.currentTarget) {
+			// Set clicked state for immediate visual feedback
+			isClicked = true;
+
+			// Dispatch a custom event for immediate UI response
+			const immediateEvent = new CustomEvent('start-position-click', {
+				bubbles: true,
+				detail: { immediate: true }
+			});
+			document.dispatchEvent(immediateEvent);
+
+			// Call the actual click handler
 			onClick();
 
 			// Update dev tools after click
@@ -181,7 +194,12 @@
 	}
 </script>
 
-<button class="start-pos-beat" on:click={handleContainerClick} type="button">
+<button
+	class="start-pos-beat"
+	class:clicked={isClicked}
+	on:click={handleContainerClick}
+	type="button"
+>
 	<Beat beat={beatData} {onClick} isStartPosition={true} />
 </button>
 
@@ -199,5 +217,15 @@
 		padding: 0; /* Remove default button padding */
 		margin: 0; /* Remove any margin */
 		box-sizing: border-box; /* Ensure padding is included in width/height */
+		transition:
+			transform 0.1s ease,
+			box-shadow 0.1s ease;
+	}
+
+	/* Visual feedback for clicked state */
+	.start-pos-beat.clicked {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+		background-color: rgba(66, 153, 225, 0.1);
 	}
 </style>

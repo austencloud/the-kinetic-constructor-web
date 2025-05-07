@@ -61,18 +61,33 @@
 		// If data is initially empty/null, isLoading remains true until data arrives or timeout occurs
 	});
 
+	// Listen for the immediate start position click event
+	function handleStartPosClick(event: CustomEvent) {
+		if (event.detail?.immediate) {
+			// Reset loading state to show immediate feedback
+			isLoading = true;
+			dataInitializationChecked = false;
+			loadingError = false;
+		}
+	}
+
 	onMount(() => {
-		// Safety timeout: If data hasn't been checked/processed after 10s, show error
+		// Add event listener for immediate start position click
+		document.addEventListener('start-position-click', handleStartPosClick as EventListener);
+
+		// Safety timeout: If data hasn't been checked/processed after 5s, show error
+		// Reduced from 10s to 5s for faster feedback
 		initialDataTimeout = window.setTimeout(() => {
 			if (isLoading && !dataInitializationChecked) {
 				console.error('StartPosPicker: Timeout waiting for pictographDataStore initialization.');
 				isLoading = false;
 				loadingError = true; // Set error flag
 			}
-		}, 10000); // 10 seconds
+		}, 5000); // 5 seconds
 
 		return () => {
 			unsubscribe();
+			document.removeEventListener('start-position-click', handleStartPosClick as EventListener);
 			if (initialDataTimeout) {
 				clearTimeout(initialDataTimeout);
 			}
@@ -208,7 +223,7 @@
 
 	{#if isLoading}
 		<div class="loading-container">
-			<LoadingSpinner />
+			<LoadingSpinner size="large" />
 			<p class="loading-text">Loading Start Positions...</p>
 		</div>
 	{:else if loadingError}
@@ -278,6 +293,19 @@
 		margin-top: 20px;
 		font-size: 1.2rem;
 		color: #555;
+		animation: pulse 1.5s infinite ease-in-out;
+	}
+
+	@keyframes pulse {
+		0% {
+			opacity: 0.6;
+		}
+		50% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0.6;
+		}
 	}
 
 	.error-container {
