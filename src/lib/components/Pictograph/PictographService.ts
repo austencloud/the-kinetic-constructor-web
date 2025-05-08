@@ -7,7 +7,7 @@ import type { MotionData } from '$lib/components/objects/Motion/MotionData';
 import { PropType, type Color, type Loc } from '$lib/types/Types';
 
 import { Motion } from '$lib/components/objects/Motion/Motion';
-import { RED, BLUE } from '$lib/types/Constants';
+import { RED, BLUE, DASH } from '$lib/types/Constants';
 
 import { PictographChecker } from './services/PictographChecker';
 import { pictographStore } from '$lib/stores/pictograph/pictographStore';
@@ -16,6 +16,7 @@ import ArrowRotAngleManager from '$lib/components/objects/Arrow/ArrowRotAngleMan
 import { LetterConditions } from './constants/LetterConditions';
 import { ArrowPlacementManager } from '../objects/Arrow/ArrowPlacementManager';
 import { BetaPropPositioner } from '../objects/Prop/PropPlacementManager/BetaPropPositioner';
+import { LetterType } from '$lib/types/LetterType';
 
 export class PictographService {
 	private data: PictographData;
@@ -70,9 +71,44 @@ export class PictographService {
 	}
 	createArrowData(motionData: MotionData, color: Color): ArrowData {
 		const motion = color === 'red' ? this.data.redMotion : this.data.blueMotion;
-		const arrowLoc = motion
-			? this.calculateArrowLocation(motion, motionData.endLoc)
-			: motionData.endLoc;
+
+		// Special handling for Type 3 motions with dash
+		const letterType = this.data.letter ? LetterType.getLetterType(this.data.letter) : null;
+		const isType3 = letterType === LetterType.Type3;
+		const isDash = motionData.motionType === DASH;
+
+		// Ensure the gridMode is set
+		if (motion && !motion.gridMode && this.data.gridMode) {
+			console.log(`Setting gridMode for motion to ${this.data.gridMode}`);
+			motion.gridMode = this.data.gridMode;
+		}
+
+		let arrowLoc;
+
+		if (isType3 && isDash && motion) {
+			// For Type 3 motions with dash, calculate the location based on the shift motion
+			const locationManager = new ArrowLocationManager(this);
+
+			// Log the motion state for debugging
+			console.log(
+				`Type 3 dash motion - gridMode: ${motion.gridMode}, startLoc: ${motion.startLoc}, endLoc: ${motion.endLoc}`
+			);
+
+			arrowLoc =
+				locationManager.getArrowLocation(
+					motion,
+					(m) => this.getOtherMotion(m),
+					() => this.getShiftMotion(),
+					this.data.letter
+				) || motionData.endLoc;
+
+			console.log(`Type 3 dash arrow location: ${arrowLoc}`);
+		} else {
+			// For other motions, use the standard calculation
+			arrowLoc = motion
+				? this.calculateArrowLocation(motion, motionData.endLoc)
+				: motionData.endLoc;
+		}
 
 		const arrowData: ArrowData = {
 			id: crypto.randomUUID(),
@@ -145,23 +181,64 @@ export class PictographService {
 	): void {
 		// Create a rotation angle manager once to be reused
 		const rotAngleManager = new ArrowRotAngleManager(this.data, this);
+		const locationManager = new ArrowLocationManager(this);
 
 		// First, determine the arrow locations
 		if (redArrow && this.data.redMotion) {
-			const locationManager = new ArrowLocationManager(this);
-			const arrowLoc = redArrow.loc;
+			// Recalculate the arrow location for Type 3 motions
+			const letterType = this.data.letter ? LetterType.getLetterType(this.data.letter) : null;
+			const isType3 = letterType === LetterType.Type3;
 
-			if (arrowLoc) {
-				redArrow.loc = arrowLoc;
+			if (isType3 && this.data.redMotion.motionType === DASH) {
+				try {
+					// For Type 3 dash motions, recalculate the location
+					const arrowLoc = locationManager.getArrowLocation(
+						this.data.redMotion,
+						(m) => this.getOtherMotion(m),
+						() => this.getShiftMotion(),
+						this.data.letter
+					);
+
+					if (arrowLoc) {
+						console.log(`Type 3 red dash arrow location recalculated: ${arrowLoc}`);
+						redArrow.loc = arrowLoc;
+					} else {
+						console.warn(
+							'Failed to recalculate Type 3 red dash arrow location, keeping original location'
+						);
+					}
+				} catch (error) {
+					console.error('Error recalculating Type 3 red dash arrow location:', error);
+				}
 			}
 		}
 
 		if (blueArrow && this.data.blueMotion) {
-			const locationManager = new ArrowLocationManager(this);
-			const arrowLoc = blueArrow.loc;
+			// Recalculate the arrow location for Type 3 motions
+			const letterType = this.data.letter ? LetterType.getLetterType(this.data.letter) : null;
+			const isType3 = letterType === LetterType.Type3;
 
-			if (arrowLoc) {
-				blueArrow.loc = arrowLoc;
+			if (isType3 && this.data.blueMotion.motionType === DASH) {
+				try {
+					// For Type 3 dash motions, recalculate the location
+					const arrowLoc = locationManager.getArrowLocation(
+						this.data.blueMotion,
+						(m) => this.getOtherMotion(m),
+						() => this.getShiftMotion(),
+						this.data.letter
+					);
+
+					if (arrowLoc) {
+						console.log(`Type 3 blue dash arrow location recalculated: ${arrowLoc}`);
+						blueArrow.loc = arrowLoc;
+					} else {
+						console.warn(
+							'Failed to recalculate Type 3 blue dash arrow location, keeping original location'
+						);
+					}
+				} catch (error) {
+					console.error('Error recalculating Type 3 blue dash arrow location:', error);
+				}
 			}
 		}
 
@@ -231,13 +308,33 @@ export class PictographService {
 
 	getShiftMotion(): Motion | null {
 		const motions = [this.data.redMotion, this.data.blueMotion].filter((m): m is Motion => !!m);
-		return motions.find((m) => ['pro', 'anti', 'float'].includes(m.motionType)) ?? null;
+
+		// Find the shift motion
+		const shiftMotion =
+			motions.find((m) => ['pro', 'anti', 'float'].includes(m.motionType)) ?? null;
+
+		// Ensure the gridMode is set on the shift motion
+		if (shiftMotion && !shiftMotion.gridMode && this.data.gridMode) {
+			console.log(`Setting gridMode for shift motion to ${this.data.gridMode}`);
+			shiftMotion.gridMode = this.data.gridMode;
+		}
+
+		return shiftMotion;
 	}
 
 	getOtherMotion(motion: Motion): Motion | null {
 		if (!motion) return null;
 		const otherColor = motion.color === RED ? BLUE : RED;
-		return otherColor === RED ? (this.data.redMotion ?? null) : (this.data.blueMotion ?? null);
+		const otherMotion =
+			otherColor === RED ? (this.data.redMotion ?? null) : (this.data.blueMotion ?? null);
+
+		// Ensure the gridMode is set on the other motion
+		if (otherMotion && !otherMotion.gridMode && this.data.gridMode) {
+			console.log(`Setting gridMode for other motion to ${this.data.gridMode}`);
+			otherMotion.gridMode = this.data.gridMode;
+		}
+
+		return otherMotion;
 	}
 
 	// Getter for the pictograph data

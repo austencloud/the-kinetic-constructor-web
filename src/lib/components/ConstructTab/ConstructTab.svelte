@@ -3,12 +3,11 @@
 	import { derived, writable } from 'svelte/store';
 	import { fade, crossfade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import SequenceWorkbench from '$lib/components/SequenceWorkbench/Workbench.svelte';
 	import OptionPicker from './OptionPicker/OptionPicker.svelte';
 	import StartPosPicker from './StartPosPicker/StartPosPicker.svelte';
 	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
-	import ToolsButton from '../SequenceWorkbench/ToolsButton.svelte';
 
 	// Import for button definition types
 	import type {
@@ -16,32 +15,10 @@
 		ActionEventDetail
 	} from '$lib/components/SequenceWorkbench/ButtonPanel/types';
 
-	// Import sequence actions for button functionality
-	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
-	import { sequenceStore } from '$lib/state/stores/sequenceStore';
-	import {
-		isSequenceFullScreen,
-		openSequenceFullScreen
-	} from '$lib/stores/sequence/fullScreenStore';
 	import ToolsPanel from '../SequenceWorkbench/ToolsPanel/ToolsPanel.svelte';
 
 	// Track tools panel state
 	const isToolsPanelOpen = writable(false);
-
-	// Track status for UI
-	let status = 'ready';
-
-	// Subscribe to the sequence store for status
-	const sequenceStatus = derived(sequenceStore, ($store) =>
-		$store.isModified ? 'editing' : 'ready'
-	);
-
-	// Update status when sequence changes
-	$: {
-		if ($sequenceStatus === 'editing') {
-			status = 'editing';
-		}
-	}
 
 	// Derived store to determine which picker to show
 	const isEmpty = derived(isSequenceEmpty, ($isEmpty) => $isEmpty);
@@ -96,9 +73,9 @@
 		}
 	}
 
-	// Toggle tools panel visibility
-	function toggleToolsPanel() {
-		isToolsPanelOpen.update((value) => !value);
+	// Function to close tools panel
+	function closeToolsPanel() {
+		isToolsPanelOpen.set(false);
 	}
 
 	// Track if we're showing the start position picker due to an immediate click
@@ -124,7 +101,6 @@
 <div class="construct-tab">
 	<div class="sequenceWorkbenchContainer">
 		<SequenceWorkbench />
-		<ToolsButton isToolsPanelOpen={$isToolsPanelOpen} on:toggleToolsPanel={toggleToolsPanel} />
 	</div>
 	<div class="optionPickerContainer">
 		{#if $isToolsPanelOpen}
@@ -132,7 +108,7 @@
 				<ToolsPanel
 					buttons={buttonPanelButtons}
 					on:action={handleButtonAction}
-					on:close={() => isToolsPanelOpen.set(false)}
+					on:close={closeToolsPanel}
 				/>
 			</div>
 		{:else if $isEmpty || $showingStartPosPicker}

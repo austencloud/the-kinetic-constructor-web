@@ -262,8 +262,27 @@ export function calculateDashLocation(
 	const currentLetter = letter ? LetterUtils.getLetter(letter) : null;
 	const letterType = letter ? LetterType.getLetterType(letter) : null;
 
+	// Ensure motion has a gridMode set
+	if (!motion.gridMode) {
+		console.warn('Motion has no gridMode set, defaulting to DIAMOND');
+		motion.gridMode = DIAMOND;
+	}
+
+	// For Type 3 letters with dash motion, calculate based on shift
 	if (letterType === LetterType.Type3 && motion.turns === 0 && getShiftMotion) {
-		return calculateDashLocationBasedOnShift(motion, getShiftMotion, getOtherMotion);
+		console.log(
+			`Calculating Type 3 dash location for letter: ${letter}, gridMode: ${motion.gridMode}`
+		);
+		const dashLocation = calculateDashLocationBasedOnShift(motion, getShiftMotion, getOtherMotion);
+
+		// If we couldn't calculate a location based on shift, fall back to the motion's end location
+		if (dashLocation) {
+			console.log(`Successfully calculated Type 3 dash location: ${dashLocation}`);
+			return dashLocation;
+		}
+
+		// If the dash location calculation failed, log a warning and fall back to default
+		console.warn('Type 3 dash location calculation failed, falling back to default calculation');
 	}
 
 	if (currentLetter && [Letter.Φ_DASH, Letter.Ψ_DASH].includes(currentLetter) && getOtherMotion) {
@@ -337,9 +356,16 @@ function calculateDashLocationBasedOnShift(
 	const shiftMotion = getShiftMotion();
 
 	// Get the dash motion by getting the other motion from shift
-	const dashMotion = shiftMotion && getOtherMotion ? getOtherMotion(shiftMotion) : null;
+	// For Type 3 motions, the current motion is the dash motion
+	const dashMotion =
+		motion.motionType === DASH
+			? motion
+			: shiftMotion && getOtherMotion
+				? getOtherMotion(shiftMotion)
+				: null;
 
 	if (!shiftMotion || !dashMotion) {
+		console.warn('calculateDashLocationBasedOnShift: Missing shift or dash motion');
 		return null;
 	}
 
@@ -348,20 +374,51 @@ function calculateDashLocationBasedOnShift(
 
 	// Get the dash start location from the dash motion
 	const dashStartLoc = dashMotion.startLoc;
-	const gridMode = motion.gridMode;
+
+	// Ensure we have a valid gridMode, defaulting to DIAMOND if not specified
+	const gridMode = motion.gridMode || DIAMOND;
 
 	if (!shiftLocation || !dashStartLoc) {
+		console.warn(
+			`calculateDashLocationBasedOnShift: Missing locations - shiftLoc: ${shiftLocation}, dashStartLoc: ${dashStartLoc}`
+		);
 		return null;
 	}
 
+	// Debug info
+	console.log(
+		`Type 3 dash calculation - gridMode: ${gridMode}, dashStartLoc: ${dashStartLoc}, shiftLocation: ${shiftLocation}`
+	);
+
 	// Lookup in grid-specific maps
 	if (gridMode === DIAMOND) {
-		const result = DIAMOND_DASH_LOCATION_MAP[dashStartLoc]?.[shiftLocation];
-		return result || null;
+		if (!DIAMOND_DASH_LOCATION_MAP[dashStartLoc]) {
+			console.warn(`No DIAMOND_DASH_LOCATION_MAP entry for dashStartLoc: ${dashStartLoc}`);
+			return dashMotion.endLoc; // Fall back to end location
+		}
+
+		const result = DIAMOND_DASH_LOCATION_MAP[dashStartLoc][shiftLocation];
+		if (!result) {
+			console.warn(`No DIAMOND_DASH_LOCATION_MAP result for ${dashStartLoc}[${shiftLocation}]`);
+			return dashMotion.endLoc; // Fall back to end location
+		}
+
+		return result;
 	} else if (gridMode === BOX) {
-		const result = BOX_DASH_LOCATION_MAP[dashStartLoc]?.[shiftLocation];
-		return result || null;
+		if (!BOX_DASH_LOCATION_MAP[dashStartLoc]) {
+			console.warn(`No BOX_DASH_LOCATION_MAP entry for dashStartLoc: ${dashStartLoc}`);
+			return dashMotion.endLoc; // Fall back to end location
+		}
+
+		const result = BOX_DASH_LOCATION_MAP[dashStartLoc][shiftLocation];
+		if (!result) {
+			console.warn(`No BOX_DASH_LOCATION_MAP result for ${dashStartLoc}[${shiftLocation}]`);
+			return dashMotion.endLoc; // Fall back to end location
+		}
+
+		return result;
 	}
 
-	return null;
+	console.warn(`Unknown grid mode: ${gridMode}`);
+	return dashMotion.endLoc; // Fall back to end location
 }

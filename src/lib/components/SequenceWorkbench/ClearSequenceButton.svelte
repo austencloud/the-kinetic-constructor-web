@@ -3,9 +3,8 @@
 	import { createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
 
-	const dispatch = createEventDispatcher<{
-		clearSequence: void;
-	}>();
+	// Event dispatcher
+	const dispatch = createEventDispatcher();
 
 	function handleClick() {
 		dispatch('clearSequence');
@@ -27,24 +26,36 @@
 
 <style>
 	.clear-button {
+		/* Base sizes - increased for better touch targets */
+		--base-size: 44px;
+		--base-padding: 10px;
+		--base-margin: 12px;
+		--base-font-size: 16px;
+		--base-icon-size: 28px;
+		--base-icon-font-size: 14px;
+		--base-border-radius: 8px;
+
 		position: absolute;
-		bottom: 10px;
-		right: 10px;
+		bottom: calc(var(--button-size-factor, 1) * var(--base-margin));
+		right: calc(var(--button-size-factor, 1) * var(--base-margin));
 		z-index: 10;
 		background: white;
 		border: none;
-		border-radius: 8px;
-		padding: 8px;
+		border-radius: 10px; /* Slightly larger border radius */
+		padding: calc(var(--button-size-factor, 1) * var(--base-padding));
 		display: flex;
 		align-items: center;
 		gap: 8px;
 		cursor: pointer;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 		transition: all 0.2s ease-in-out;
-		font-size: 14px;
+		font-size: calc(var(--button-size-factor, 1) * var(--base-font-size));
 		color: #333;
 		font-weight: 500;
 		pointer-events: auto;
+		/* Ensure minimum size for small screens */
+		min-width: 44px;
+		min-height: 44px;
 	}
 
 	.clear-button:hover {
@@ -63,15 +74,23 @@
 		align-items: center;
 		background: linear-gradient(135deg, #ff7b00, #ff9e00);
 		color: white;
-		width: 24px;
-		height: 24px;
-		border-radius: 6px;
-		font-size: 12px;
+		width: calc(var(--button-size-factor, 1) * var(--base-icon-size));
+		height: calc(var(--button-size-factor, 1) * var(--base-icon-size));
+		font-size: calc(var(--button-size-factor, 1) * var(--base-icon-font-size));
+		border-radius: calc(var(--button-size-factor, 1) * var(--base-border-radius));
+		/* Ensure minimum size for small screens */
+		min-width: 32px;
+		min-height: 32px;
 	}
 
+	/* Responsive adjustments for small screens */
 	@media (max-width: 480px) {
 		.clear-button {
-			padding: 8px;
+			/* Increase size on small screens for better touch targets */
+			--base-margin: 10px;
+			--base-padding: 10px;
+			--base-icon-size: 32px;
+			--base-icon-font-size: 16px;
 		}
 	}
 </style>

@@ -14,7 +14,6 @@
 	import type { ButtonDefinition, ActionEventDetail } from './ButtonPanel/types';
 
 	// Components
-	import IndicatorLabel from './Labels/IndicatorLabel.svelte';
 	import CurrentWordLabel from './Labels/CurrentWordLabel.svelte';
 	import DifficultyLabel from './Labels/DifficultyLabel.svelte';
 	import BeatFrame from './SequenceBeatFrame/SequenceBeatFrame.svelte';
@@ -40,15 +39,47 @@
 	// Calculate workbench orientation based on workbench dimensions instead of window
 	$: workbenchIsPortrait = $dimensions.width < workbenchHeight;
 
+	// Calculate button size factor based on container dimensions
+	$: buttonSizeFactor = calculateButtonSizeFactor($dimensions.width, $dimensions.height);
+
+	// Function to calculate button size factor based on container dimensions
+	function calculateButtonSizeFactor(width: number, height: number): number {
+		const smallerDimension = Math.min(width, height);
+
+		// Use a more fluid approach with constraints
+		// Map the dimension to a factor between 0.9 (minimum) and 1.4 (maximum)
+		// with a smooth transition for better touch targets on small screens
+
+		// Constants for the calculation
+		const minDimension = 320; // Very small mobile screens
+		const maxDimension = 1200; // Large desktop screens
+		const minFactor = 0.9; // Increased minimum size factor for better touch targets
+		const maxFactor = 1.4; // Increased maximum size factor
+		const defaultFactor = 1.1; // Increased default size factor
+
+		// If dimensions are invalid, return default
+		if (!width || !height || width <= 0 || height <= 0) {
+			return defaultFactor;
+		}
+
+		// Clamp the dimension between min and max
+		const clampedDimension = Math.max(minDimension, Math.min(smallerDimension, maxDimension));
+
+		// Calculate the factor using linear interpolation
+		const range = maxDimension - minDimension;
+		const normalizedPosition = (clampedDimension - minDimension) / range;
+		const factor = minFactor + normalizedPosition * (maxFactor - minFactor);
+
+		// Round to 2 decimal places for better performance
+		return Math.round(factor * 100) / 100;
+	}
+
 	// Subscribe to stores
 	$: toolsPanelOpen = $isToolsPanelOpen;
 
-	// Subscribe to the sequence store for metadata and status
+	// Subscribe to the sequence store for metadata
 	const sequenceName = derived(sequenceStore, ($store) => $store.metadata.name);
 	const difficultyLevel = derived(sequenceStore, ($store) => $store.metadata.difficulty);
-	const sequenceStatus = derived(sequenceStore, ($store) =>
-		$store.isModified ? 'editing' : 'ready'
-	);
 
 	// --- Define Button Panel Data ---
 	const buttonPanelButtons: ButtonDefinition[] = [
@@ -71,71 +102,39 @@
 		{ icon: 'fa-trash', title: 'Delete Beat', id: 'deleteBeat', color: '#ff9e00' }
 	];
 
-	// Track status for UI
-	let status = 'ready';
-	$: statusText = getStatusText(status);
-
-	// Update status when sequence changes
-	$: {
-		if ($sequenceStatus === 'editing') {
-			status = 'editing';
-		}
-	}
-
-	function getStatusText(status: string): string {
-		switch (status) {
-			case 'ready':
-				return 'Ready';
-			case 'editing':
-				return 'Editing';
-			case 'saving':
-				return 'Saving...';
-			case 'error':
-				return 'Error';
-			default:
-				return 'Ready';
-		}
-	}
+	// No status tracking needed anymore
 
 	function handleButtonAction(event: CustomEvent<ActionEventDetail>) {
 		const { id } = event.detail;
 		switch (id) {
 			case 'addToDictionary':
-				status = 'saving';
-				setTimeout(() => (status = 'ready'), 500);
+				// Handle add to dictionary action
 				break;
 			case 'saveImage':
-				status = 'saving';
-				setTimeout(() => (status = 'ready'), 500);
+				// Handle save image action
 				break;
 			case 'viewFullScreen':
 				openSequenceFullScreen();
 				break;
 			case 'mirrorSequence':
-				status = 'editing';
-				setTimeout(() => (status = 'ready'), 200);
+				// Handle mirror sequence action
 				break;
 			case 'swapColors':
-				status = 'editing';
-				setTimeout(() => (status = 'ready'), 200);
+				// Handle swap colors action
 				break;
 			case 'rotateSequence':
-				status = 'editing';
-				setTimeout(() => (status = 'ready'), 200);
+				// Handle rotate sequence action
 				break;
 			case 'deleteBeat':
 				const selectedBeatIds = sequenceSelectors.selectedBeatIds();
 				if (selectedBeatIds.length > 0) {
 					sequenceActions.removeBeatAndFollowing(selectedBeatIds[0]);
-					status = 'editing';
 				}
 				break;
 			case 'clearSequence':
 				sequenceActions.clearSequence();
 				selectedStartPos.set(null);
 				isSequenceEmpty.set(true);
-				status = 'editing';
-				setTimeout(() => (status = 'ready'), 200);
 				break;
 		}
 		if ($isToolsPanelOpen) {
@@ -171,20 +170,22 @@
 </script>
 
 <div class="sequence-widget">
-	<div class="main-layout" class:portrait={workbenchIsPortrait}>
+	<div
+		class="main-layout"
+		class:portrait={workbenchIsPortrait}
+		style="--container-width: {$dimensions.width}px;
+		       --container-height: {$dimensions.height}px;
+		       --button-size-factor: {buttonSizeFactor};"
+	>
 		<div class="left-vbox">
 			<div class="sequence-container">
 				<div class="sequence-widget-labels">
 					<CurrentWordLabel currentWord={$sequenceName} width={$dimensions.width} />
 					<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
 				</div>
-				
-				<div class="beat-frame-wrapper"> 
+
+				<div class="beat-frame-wrapper">
 					<BeatFrame />
-				</div>
-				
-				<div class="indicator-label-container">
-					<IndicatorLabel text={statusText} width={$dimensions.width} />
 				</div>
 			</div>
 		</div>
@@ -280,28 +281,18 @@
 		padding: 0 10px; /* Horizontal padding for the beat frame area */
 		box-sizing: border-box;
 	}
-	
+
 	/* This is the actual container passed to BeatFrame via use:resizeObserver */
 	/* Its styles are in SequenceBeatFrame.svelte but its flex behavior is controlled here */
 	:global(.beat-frame-container) {
-		/* The BeatFrame's direct parent (from SequenceBeatFrame.svelte) 
+		/* The BeatFrame's direct parent (from SequenceBeatFrame.svelte)
 		   should fill the .beat-frame-wrapper */
 		width: 100%;
-		height: 100%; 
+		height: 100%;
 		/* overflow: auto; If you want this div to scroll instead of BeatFrame internal grid */
 	}
 
-
-	.indicator-label-container {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		color: white;
-		width: 100%;
-		flex-shrink: 0; /* Prevent label from shrinking */
-		padding-top: 10px; /* Space between beat frame and indicator */
-	}
+	/* Indicator label container removed */
 
 	.tools-panel-container {
 		/* This style is for the container that holds ToolsPanel when it slides in */
@@ -316,10 +307,9 @@
 		background-color: #f8f9fa; /* Or your desired panel background */
 		z-index: 50; /* Ensure it's above other content if overlapping */
 	}
-	
+
 	/* Conditional alignment for when content might need to scroll */
 	/* (Removed unused .scrolling-active selectors) */
-
 
 	/* Full screen beat container styles */
 	.fullscreen-beat-container {
@@ -340,21 +330,18 @@
 		.sequence-widget-labels {
 			padding-bottom: 5px;
 		}
-		.indicator-label-container {
-			padding-top: 5px;
-		}
 	}
-	
+
 	/* Styles from previous .beat-frame-container (now .beat-frame-wrapper) */
-    /*
+	/*
 	@media (min-height: 800px) {
 		.sequence-container {
-			justify-content: flex-start; 
+			justify-content: flex-start;
 		}
 
 		.beat-frame-wrapper {  // Changed from .beat-frame-container
-			flex: 1 1 auto; 
-			margin: 10px 0; 
+			flex: 1 1 auto;
+			margin: 10px 0;
             overflow-y: auto; // Added scroll for wrapper if it exceeds this height
 		}
 	}
