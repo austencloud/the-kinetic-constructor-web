@@ -26,17 +26,17 @@ describe('Background Store', () => {
 		expect(state.isVisible).toBe(true);
 		expect(state.quality).toBe('medium');
 		expect(state.performanceMetrics).toBeNull();
-		expect(state.availableBackgrounds).toEqual(['snowfall', 'nightSky', 'summerDay']);
+		expect(state.availableBackgrounds).toEqual(['snowfall', 'nightSky']);
 		expect(state.error).toBeNull();
 	});
 
 	it('should set background', () => {
-		backgroundStore.setBackground('summerDay');
+		backgroundStore.setBackground('nightSky');
 
 		const state = get(backgroundStore);
-		expect(state.currentBackground).toBe('summerDay');
+		expect(state.currentBackground).toBe('nightSky');
 		expect(state.isReady).toBe(false); // Should reset ready state
-		expect(get(selectCurrentBackground)).toBe('summerDay');
+		expect(get(selectCurrentBackground)).toBe('nightSky');
 	});
 
 	it('should validate background type', () => {

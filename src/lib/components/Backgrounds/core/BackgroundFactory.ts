@@ -1,7 +1,6 @@
 // src/lib/components/Backgrounds/core/BackgroundFactory.ts
 import { SnowfallBackgroundSystem } from '../snowfall/SnowfallBackgroundSystem';
 import { NightSkyBackgroundSystem } from '../nightSky/NightSkyBackgroundSystem';
-import { SummerDayBackgroundSystem } from '../summerDay/SummerDayBackgroundSystem';
 import type {
 	BackgroundSystem,
 	BackgroundType,
@@ -60,9 +59,6 @@ export class BackgroundFactory {
 			case 'nightSky':
 				backgroundSystem = new NightSkyBackgroundSystem();
 				break;
-			case 'summerDay':
-				backgroundSystem = new SummerDayBackgroundSystem();
-				break;
 			default:
 				console.warn(`Unknown background type "${options.type}". Defaulting to snowfall.`);
 				backgroundSystem = new SnowfallBackgroundSystem(); // Default to snowfall
@@ -100,7 +96,6 @@ export class BackgroundFactory {
 		switch (type) {
 			case 'snowfall':
 			case 'nightSky':
-			case 'summerDay':
 				return quality !== 'minimal'; // Disable on minimal quality
 			default:
 				return false;

@@ -11,7 +11,7 @@
 <style>
 	.overlay {
 		position: absolute;
-		inset: -4px; /* Extend beyond the beat container */
+		inset: 1px; /* Extend beyond the beat container */
 		border: 4px solid transparent;
 		border-radius: 8px;
 		pointer-events: none; /* Important - this lets events pass through */

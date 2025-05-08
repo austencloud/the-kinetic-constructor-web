@@ -9,7 +9,6 @@ import { LetterType } from '$lib/types/LetterType';
 import { DASH, PRO, RED, BLUE } from '$lib/types/Constants';
 import ArrowLocationManager, {
 	calculateDashLocation,
-	calculateDashLocationBasedOnShift
 } from '$lib/components/objects/Arrow/ArrowLocationManager';
 import { Motion } from '$lib/components/objects/Motion/Motion';
 
@@ -52,7 +51,10 @@ const createType3PictographData = (): PictographData => {
 			startOri: 'in',
 			endOri: 'in',
 			turns: 0,
-			propRotDir: 'cw'
+			propRotDir: 'cw',
+			leadState: null,
+			prefloatMotionType: null,
+			prefloatPropRotDir: null
 		},
 		blueMotionData: {
 			id: 'blue-motion',
@@ -63,7 +65,10 @@ const createType3PictographData = (): PictographData => {
 			startOri: 'in',
 			endOri: 'in',
 			turns: 0,
-			propRotDir: 'cw'
+			propRotDir: 'cw',
+			leadState: null,
+			prefloatMotionType: null,
+			prefloatPropRotDir: null
 		},
 		redPropData: null,
 		bluePropData: null,

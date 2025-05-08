@@ -1,5 +1,4 @@
 import { LessonConfig } from './lesson_configs';
-import { fetchPictographsForLetter } from '$lib/services/sequenceService';
 import pictographDataStore from '$lib/stores/pictograph/pictographStore';
 import { get } from 'svelte/store';
 import { writable } from 'svelte/store';
@@ -11,10 +10,6 @@ import { DIAMOND } from '$lib/types/Constants';
 
 // Track previous question letters to avoid repetition
 const previousLetterStore = writable<Letter | null>(null);
-
-// Lists of possible options for different lesson types
-const letters = ['A', 'B', 'C', 'D', 'L', 'M', 'R', 'T'];
-const positions = ['high', 'middle', 'low'];
 const motionTypes = ['anti', 'pro', 'static', 'dash', 'float'];
 
 // Helper to shuffle an array

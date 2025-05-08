@@ -22,25 +22,6 @@
 		if (beat?.pictographData) {
 			// Force a fresh copy to ensure reactivity
 			const copy = JSON.parse(JSON.stringify(beat.pictographData));
-			const currentData = get(pictographDataStore);
-
-			// Only preserve motion types if not during a layout shift
-			const stackTrace = new Error().stack || '';
-			const isLayoutShift =
-				stackTrace.includes('Beat 4') ||
-				stackTrace.includes('Beat 5') ||
-				stackTrace.includes('Beat 9') ||
-				stackTrace.includes('Beat 10');
-
-			if (!isLayoutShift) {
-				if (currentData.redMotionData?.motionType && copy.redMotionData) {
-					copy.redMotionData.motionType = currentData.redMotionData.motionType;
-				}
-				if (currentData.blueMotionData?.motionType && copy.blueMotionData) {
-					copy.blueMotionData.motionType = currentData.blueMotionData.motionType;
-				}
-			}
-
 			pictographDataStore.set(copy);
 		}
 	}
@@ -90,15 +71,6 @@
 		transform-origin: center center;
 	}
 
-	.beat:hover {
-		transform: scale(1.05);
-	}
 
-	.beat:active {
-		transform: scale(0.95);
-	}
 
-	.filled {
-		box-shadow: 0 0 8px transparent;
-	}
 </style>

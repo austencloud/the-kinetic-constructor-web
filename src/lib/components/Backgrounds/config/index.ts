@@ -4,7 +4,6 @@ import { SnowfallConfig } from './snowfall';
 import { SeasonalConfig } from './seasonal';
 import { SantaConfig } from './santa';
 import { NightSkyConfig } from './nightSky';
-import { SummerDayConfig } from './summerDay'; // Import summer day config
 import type { QualityLevel } from '../types/types';
 
 export {
@@ -13,7 +12,6 @@ export {
 	SeasonalConfig,
 	SantaConfig,
 	NightSkyConfig,
-	SummerDayConfig, // Export summer day config
 	detectAppropriateQuality,
 	isWebGL2Supported
 };
@@ -28,8 +26,7 @@ export function getOptimizedConfig(quality: QualityLevel) {
 		snowfall: { ...SnowfallConfig },
 		seasonal: { ...SeasonalConfig },
 		santa: { ...SantaConfig },
-		nightSky: { ...NightSkyConfig },
-		summerDay: { ...SummerDayConfig } // Include summer day config
+		nightSky: { ...NightSkyConfig }
 	};
 
 	// --- Keep existing accessibility and seasonal logic ---
@@ -44,12 +41,6 @@ export function getOptimizedConfig(quality: QualityLevel) {
 		config.nightSky.shootingStar.maxSpeed *= speedFactor;
 		config.nightSky.spaceship.speedPercent *= speedFactor;
 		config.nightSky.celestialBody.driftSpeed *= speedFactor;
-		// Adjustments for summerDay
-		config.summerDay.clouds.speed.min *= speedFactor;
-		config.summerDay.clouds.speed.max *= speedFactor;
-		config.summerDay.birds.speed *= speedFactor;
-		config.summerDay.butterflies.speed *= speedFactor;
-		config.summerDay.butterflies.flutterSpeed *= speedFactor;
 	}
 
 	if (CoreConfig.accessibility.highContrast.enabled) {
@@ -59,12 +50,6 @@ export function getOptimizedConfig(quality: QualityLevel) {
 		config.nightSky.stars.colors = CoreConfig.accessibility.highContrast.colors.particles;
 		config.nightSky.shootingStar.colors = CoreConfig.accessibility.highContrast.colors.particles;
 		config.nightSky.celestialBody.color = '#FFFFFF'; // High contrast planet
-		// Adjustments for summerDay
-		config.summerDay.sun.color = '#FFFFFF'; // High contrast sun
-		config.summerDay.sun.glowColor = '#FFFF00'; // High contrast sun glow
-		config.summerDay.clouds.color = '#FFFFFF'; // High contrast clouds
-		config.summerDay.birds.color = '#000000'; // High contrast birds
-		config.summerDay.butterflies.colors = ['#FFFF00', '#FF00FF', '#00FF00', '#00FFFF']; // High contrast butterflies
 	}
 
 	// Apply seasonal themes if enabled (Can be adapted or removed for nightSky)

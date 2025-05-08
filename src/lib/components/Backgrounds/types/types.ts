@@ -1,10 +1,14 @@
 // src/lib/components/Backgrounds/types/types.ts
 
 // Background types
-export type BackgroundType = 'snowfall' | 'nightSky' | 'summerDay'; // Added 'summerDay'
+export type BackgroundType = 'snowfall' | 'nightSky';
 
 // --- Other type definitions remain the same ---
-export interface ParallaxLayer { stars: Star[]; driftX:number; driftY:number }
+export interface ParallaxLayer {
+	stars: Star[];
+	driftX: number;
+	driftY: number;
+}
 
 export type Dimensions = {
 	width: number;
@@ -145,49 +149,6 @@ export interface EasterEggState<T> {
 }
 // --- End Night Sky specific types ---
 
-// --- Summer Day specific types ---
-export interface Cloud {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-	speed: number;
-	opacity: number;
-	color: string;
-}
-
-export interface Sun {
-	x: number;
-	y: number;
-	radius: number;
-	color: string;
-	glowColor: string;
-	glowSize: number;
-	driftX?: number;
-	driftY?: number;
-}
-
-export interface Bird {
-	x: number;
-	y: number;
-	size: number;
-	speed: number;
-	wingPhase: number;
-	wingSpeed: number;
-	color: string;
-}
-
-export interface Butterfly {
-	x: number;
-	y: number;
-	size: number;
-	speed: number;
-	wingPhase: number;
-	wingSpeed: number;
-	color: string;
-	path: number; // Path variation (0-1)
-}
-// --- End Summer Day specific types ---
 
 export interface AnimationSystem<T> {
 	initialize: (dimensions: Dimensions, quality: QualityLevel) => T;

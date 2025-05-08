@@ -53,7 +53,7 @@ export function calculateCellSize(
 	const totalGapWidth = gap * (totalCols - 1);
 
 	// Calculate available space after accounting for gaps and padding
-	const padding = beatCount === 0 ? containerWidth * 0.3 : 16; // Larger padding when only start position
+	const padding = beatCount === 0 ? containerWidth * 0.1 : 16; // Larger padding when only start position
 	const availableWidth = Math.max(0, containerWidth - totalGapWidth - padding * 2);
 
 	// Calculate cell size based on available space

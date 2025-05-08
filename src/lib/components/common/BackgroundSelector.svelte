@@ -51,8 +51,7 @@
 				return 'Snowfall';
 			case 'nightSky':
 				return 'Night Sky';
-			case 'summerDay':
-				return 'Summer Day';
+
 			default:
 				return type;
 		}

@@ -29,7 +29,7 @@ const initialState: BackgroundStoreState = {
 	isVisible: true,
 	quality: 'medium',
 	performanceMetrics: null,
-	availableBackgrounds: ['snowfall', 'nightSky', 'summerDay'],
+	availableBackgrounds: ['snowfall', 'nightSky'],
 	error: null
 };
 

@@ -64,7 +64,7 @@
 		{
 			label: 'Background Type',
 			type: 'select',
-			options: ['Snowfall', 'Night Sky', 'Summer Day'],
+			options: ['Snowfall', 'Night Sky'],
 			defaultValue: 'Snowfall'
 		},
 		{ label: 'Show Grid', type: 'toggle', defaultValue: true },
@@ -106,8 +106,7 @@
 				backgroundOption = 'Snowfall';
 			} else if (currentBackground === 'nightSky') {
 				backgroundOption = 'Night Sky';
-			} else if (currentBackground === 'summerDay') {
-				backgroundOption = 'Summer Day';
+
 			} else {
 				// Fallback to search
 				backgroundOption = backgroundSetting.options.find(
@@ -142,9 +141,7 @@
 				case 'Night Sky':
 					backgroundType = 'nightSky';
 					break;
-				case 'Summer Day':
-					backgroundType = 'summerDay';
-					break;
+
 				default:
 					backgroundType = 'snowfall'; // Default fallback
 			}

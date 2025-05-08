@@ -190,7 +190,7 @@ export const appMachine = createMachine(
 						actions: [
 							assign({
 								background: ({ event, context }) => {
-									const validBackgrounds: BackgroundType[] = ['snowfall', 'nightSky', 'summerDay'];
+									const validBackgrounds: BackgroundType[] = ['snowfall', 'nightSky'];
 									return validBackgrounds.includes(event.background as BackgroundType)
 										? (event.background as BackgroundType)
 										: context.background;
@@ -200,11 +200,7 @@ export const appMachine = createMachine(
 								// Save the background preference to localStorage immediately
 								if (browser) {
 									try {
-										const validBackgrounds: BackgroundType[] = [
-											'snowfall',
-											'nightSky',
-											'summerDay'
-										];
+										const validBackgrounds: BackgroundType[] = ['snowfall', 'nightSky'];
 										const background = event.background as BackgroundType;
 
 										if (validBackgrounds.includes(background)) {

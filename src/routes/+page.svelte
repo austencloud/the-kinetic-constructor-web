@@ -60,7 +60,7 @@
 	}
 
 	function handleBackgroundChange(event: CustomEvent<string>) {
-		const validBackgrounds = ['snowfall', 'nightSky', 'summerDay'] as const;
+		const validBackgrounds = ['snowfall', 'nightSky'] as const;
 		type ValidBackground = (typeof validBackgrounds)[number];
 
 		if (validBackgrounds.includes(event.detail as any)) {
