@@ -194,11 +194,15 @@
 			<div class="sequence-container">
 				<div class="sequence-widget-labels">
 					<CurrentWordLabel currentWord={$sequenceName} width={$dimensions.width} />
-					<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
 				</div>
 
 				<div class="beat-frame-wrapper">
 					<BeatFrame />
+				</div>
+
+				<!-- Difficulty label moved below the beats -->
+				<div class="difficulty-label-container">
+					<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
 				</div>
 			</div>
 		</div>
@@ -288,6 +292,16 @@
 		padding-bottom: 10px; /* Space between labels and beat frame */
 	}
 
+	/* Container for the difficulty label below the beats */
+	.difficulty-label-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		width: 100%;
+		margin-top: 10px; /* Space between beat frame and difficulty label */
+		flex-shrink: 0; /* Prevent from shrinking */
+	}
+
 	/* This wrapper ensures BeatFrame can grow and scroll if needed */
 	.beat-frame-wrapper {
 		display: flex; /* Allow BeatFrame to be centered if it's smaller than wrapper */
@@ -354,6 +368,9 @@
 		}
 		.sequence-widget-labels {
 			padding-bottom: 5px;
+		}
+		.difficulty-label-container {
+			margin-top: 5px; /* Reduced space on mobile */
 		}
 	}
 
