@@ -11,41 +11,71 @@
 		close: void;
 	}>();
 
-	// Handle close button click
+	// Handle close action
 	function handleClose() {
 		dispatch('close');
 	}
 
-	// Handle escape key press
-	function handleKeydown(event: KeyboardEvent) {
+	// Handle escape key press on the window
+	function handleWindowKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape' && isOpen) {
 			handleClose();
 		}
 	}
 
-	// Handle backdrop click (close if clicking outside the content)
-	function handleBackdropClick(event: MouseEvent) {
-		// Only close if clicking directly on the backdrop, not on its children
-		if (event.target === event.currentTarget) {
-			handleClose();
+	// Handle background click - this is the main function to close when clicking on blank areas
+	function handleBackgroundClick() {
+		console.log('Background clicked, closing overlay');
+		handleClose();
+	}
+
+	// Prevent clicks on the content from closing the overlay
+	function handleContentClick(event: MouseEvent) {
+		// Stop propagation to prevent the click from reaching the background
+		event.stopPropagation();
+	}
+
+	// Reference to the content element for focus management
+	let contentElement: HTMLDivElement;
+
+	// Focus the content element when the overlay opens
+	function handleOverlayOpen() {
+		if (contentElement) {
+			setTimeout(() => {
+				contentElement.focus();
+			}, 50);
 		}
 	}
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window on:keydown={handleWindowKeydown} />
 
 {#if isOpen}
+	<!-- The overlay wrapper - this is what receives the background click -->
 	<div
-		class="fullscreen-overlay"
-		on:click={handleBackdropClick}
-		on:keydown={handleKeydown}
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby={title ? 'fullscreen-title' : undefined}
-		tabindex="-1"
+		class="fullscreen-overlay-wrapper"
 		transition:fade={{ duration: 200 }}
+		on:introend={handleOverlayOpen}
 	>
-		<div class="fullscreen-content" transition:scale={{ duration: 200, start: 0.95 }}>
+		<!-- Clickable background button - this is accessible and clickable -->
+		<button
+			class="background-button"
+			on:click={handleBackgroundClick}
+			aria-label="Close fullscreen view"
+		></button>
+
+		<!-- The actual content container -->
+		<div
+			class="fullscreen-content"
+			transition:scale={{ duration: 200, start: 0.95 }}
+			on:click={handleContentClick}
+			on:keydown={() => {}}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby={title ? 'fullscreen-title' : undefined}
+			tabindex="-1"
+			bind:this={contentElement}
+		>
 			{#if title}
 				<div class="fullscreen-header">
 					<h2 id="fullscreen-title">{title}</h2>
@@ -74,42 +104,70 @@
 				</svg>
 			</button>
 
+			<!-- Content area with slot -->
 			<div class="fullscreen-body">
-				<slot />
+				<!-- Wrap slot in a div to prevent clicks from closing the overlay -->
+				<div class="content-wrapper">
+					<slot />
+				</div>
 			</div>
 		</div>
 	</div>
 {/if}
 
 <style>
-	.fullscreen-overlay {
+	/* Wrapper for the entire overlay */
+	.fullscreen-overlay-wrapper {
 		position: fixed;
 		top: 0;
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background-color: rgba(0, 0, 0, 0.9);
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		z-index: 9999; /* Ensure it's above everything else */
-		backdrop-filter: blur(3px);
-		padding: 1rem;
+		z-index: 9999;
 		box-sizing: border-box;
 	}
 
+	/* Background button that covers the entire screen */
+	.background-button {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.9);
+		backdrop-filter: blur(3px);
+		border: none;
+		padding: 0;
+		margin: 0;
+		cursor: pointer;
+		z-index: 1;
+	}
+
+	/* The actual content container */
 	.fullscreen-content {
 		position: relative;
 		width: 100%;
 		height: 100%;
-		max-width: 90vw;
-		max-height: 90vh;
+		max-width: 100vw;
+		max-height: 95vh;
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-		background-color: rgba(0, 0, 0, 0.5);
+		background-color: transparent; /* Make it transparent */
 		border-radius: 8px;
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+		z-index: 2; /* Above the background button */
+		outline: none;
+	}
+
+	@media (orientation: landscape) and (max-height: 600px) {
+		.fullscreen-content {
+			max-height: 100vh;
+			max-width: 90vw;
+		}
 	}
 
 	.fullscreen-header {
@@ -117,6 +175,9 @@
 		justify-content: center;
 		align-items: center;
 		padding: 0.5rem 1rem;
+		min-height: 40px;
+		flex-shrink: 0;
+		background-color: rgba(0, 0, 0, 0.5);
 	}
 
 	.fullscreen-header h2 {
@@ -132,6 +193,29 @@
 		justify-content: center;
 		align-items: center;
 		overflow: hidden;
+		padding: 0;
+		box-sizing: border-box;
+		width: 100%;
+		position: relative;
+	}
+
+	/* Wrapper for the slot content */
+	.content-wrapper {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	@media (orientation: landscape) and (max-height: 600px) {
+		.fullscreen-header {
+			min-height: 30px;
+			padding: 0.25rem 0.5rem;
+		}
+		.fullscreen-header h2 {
+			font-size: 1rem;
+		}
 	}
 
 	.close-button {
@@ -154,6 +238,15 @@
 			transform 0.2s,
 			box-shadow 0.2s;
 		box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+	}
+
+	@media (orientation: landscape) and (max-height: 600px) {
+		.close-button {
+			top: 8px;
+			right: 8px;
+			width: 40px;
+			height: 40px;
+		}
 	}
 
 	.close-button:hover {

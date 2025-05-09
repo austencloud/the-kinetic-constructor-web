@@ -23,6 +23,10 @@
 	// Derived store to determine which picker to show
 	const isEmpty = derived(isSequenceEmpty, ($isEmpty) => $isEmpty);
 
+	// Create a derived store to determine if we should show the tools panel
+	// This will be used to communicate with the SequenceWorkbench component
+	const showToolsPanel = derived(isToolsPanelOpen, ($isOpen) => $isOpen);
+
 	// Create crossfade transition
 	const [send, receive] = crossfade({
 		duration: 300,
@@ -100,11 +104,18 @@
 
 <div class="construct-tab">
 	<div class="sequenceWorkbenchContainer">
-		<SequenceWorkbench />
+		<SequenceWorkbench
+			toolsPanelOpen={$isToolsPanelOpen}
+			on:toggleToolsPanel={() => isToolsPanelOpen.update((v) => !v)}
+		/>
 	</div>
 	<div class="optionPickerContainer">
 		{#if $isToolsPanelOpen}
-			<div class="picker-container" in:receive={{ key: 'tools' }} out:send={{ key: 'tools' }}>
+			<div
+				class="picker-container tools-picker-container"
+				in:receive={{ key: 'tools' }}
+				out:send={{ key: 'tools' }}
+			>
 				<ToolsPanel
 					buttons={buttonPanelButtons}
 					on:action={handleButtonAction}
@@ -147,6 +158,8 @@
 		display: flex;
 		flex-direction: column;
 		position: relative;
+		/* Added to ensure proper sizing */
+		box-sizing: border-box;
 	}
 
 	.picker-container {
@@ -161,6 +174,14 @@
 		bottom: 0;
 		width: 100%;
 		height: 100%;
+		background-color: transparent; /* Make background transparent */
+		border-radius: 8px; /* Match the tools panel style */
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1); /* Match the tools panel style */
+	}
+
+	/* Special styling for the tools panel container */
+	.tools-picker-container {
+		padding: 0; /* Remove padding to let the ToolsPanel fill the space */
 	}
 
 	@media (max-width: 768px) {

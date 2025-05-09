@@ -34,63 +34,149 @@
 	const orderedButtons = [...topButtons, ...middleButtons, ...bottomButtons];
 
 	let gridContainer: HTMLDivElement;
-	let minButtonWidth = 100; // Reduced minimum width
 
+	// Debounce function to prevent too many layout updates
+	function debounce<T extends (...args: any[]) => any>(
+		func: T,
+		wait: number
+	): (...args: Parameters<T>) => void {
+		let timeout: ReturnType<typeof setTimeout> | undefined;
+		return function executedFunction(...args: Parameters<T>): void {
+			const later = () => {
+				clearTimeout(timeout);
+				func(...args);
+			};
+			clearTimeout(timeout);
+			timeout = setTimeout(later, wait);
+		};
+	}
+
+	// Modern grid layout function with better calculations
 	function updateGridLayout() {
 		if (!gridContainer) return;
 
 		const containerWidth = gridContainer.clientWidth;
 		const containerHeight = gridContainer.clientHeight;
 		const buttonCount = orderedButtons.length;
-		const gap = 8;
 
-		// Calculate optimal number of columns based on container width and minimum button size
-		const maxColumns = Math.floor((containerWidth + gap) / (minButtonWidth + gap));
-		const optimalColumns = Math.min(maxColumns, buttonCount);
-		const rows = Math.ceil(buttonCount / optimalColumns);
+		// Determine gap and padding based on container size
+		const gap = containerWidth < 480 ? 6 : containerWidth < 768 ? 8 : 12;
+		const padding = containerWidth < 480 ? 4 : containerWidth < 768 ? 6 : 8;
 
-		// Calculate maximum button size that will fit both width and height constraints
-		const maxButtonWidth = Math.floor(
-			(containerWidth - gap * (optimalColumns - 1)) / optimalColumns
+		// Set these values as CSS variables
+		gridContainer.style.setProperty('--grid-gap', `${gap}px`);
+		gridContainer.style.setProperty('--grid-padding', `${padding}px`);
+
+		// Calculate available space
+		const availableWidth = containerWidth - padding * 2;
+		const availableHeight = containerHeight - padding * 2;
+
+		// Calculate the minimum number of columns needed based on button count
+		// We need to ensure all buttons fit without overlapping
+		const minButtonSize = 70; // Absolute minimum size for a button
+		const maxButtonsPerRow = Math.floor(availableWidth / minButtonSize);
+
+		// Calculate minimum columns needed to fit all buttons
+		const minColumnsNeeded = Math.ceil(buttonCount / Math.floor(availableHeight / minButtonSize));
+
+		// Calculate ideal columns based on container width and minimum button size
+		const idealColumns = Math.max(
+			1, // At least 1 column
+			Math.min(
+				buttonCount, // Don't exceed button count
+				maxButtonsPerRow // Don't exceed what can fit horizontally
+			)
 		);
-		const maxButtonHeight = Math.floor((containerHeight - gap * (rows - 1)) / rows);
 
-		// Use the smaller of the two dimensions to maintain square buttons
-		let buttonSize = Math.min(maxButtonWidth, maxButtonHeight);
+		// Determine final column count based on container dimensions and button count
+		let columns;
 
-		// Ensure buttons don't get too large or too small
-		buttonSize = Math.max(minButtonWidth, Math.min(buttonSize, 160));
+		// For very small screens
+		if (containerWidth < 320) {
+			columns = Math.min(2, buttonCount);
+		}
+		// For mobile screens (target 3x3 layout if possible)
+		else if (containerWidth < 600) {
+			columns = Math.min(3, buttonCount, maxButtonsPerRow);
+		}
+		// For medium screens
+		else if (containerWidth < 900) {
+			columns = Math.min(4, buttonCount, maxButtonsPerRow);
+		}
+		// For large screens
+		else {
+			columns = Math.min(5, buttonCount, maxButtonsPerRow);
+		}
 
-		// Calculate content scaling based on button size
-		const iconScale = buttonSize < 120 ? 0.25 : 0.3;
-		const textScale = buttonSize < 120 ? 0.09 : 0.11;
+		// Ensure we have at least the minimum columns needed
+		columns = Math.max(columns, minColumnsNeeded);
 
-		// Update CSS variables
-		const columns = Math.min(Math.floor((containerWidth + gap) / (buttonSize + gap)), buttonCount);
+		// Log column calculation for debugging
+		console.debug(
+			`ToolsPanel columns: ideal=${idealColumns}, min=${minColumnsNeeded}, max=${maxButtonsPerRow}, final=${columns}`
+		);
 
+		// Calculate rows needed based on final column count
+		const rows = Math.ceil(buttonCount / columns);
+
+		// Calculate available space per button, accounting for gaps
+		// Subtract the total gap space from available dimensions
+		const availableWidthForButtons = availableWidth - gap * (columns - 1);
+		const availableHeightForButtons = availableHeight - gap * (rows - 1);
+
+		// Calculate maximum button dimensions that would fit
+		const maxButtonWidth = availableWidthForButtons / columns;
+		const maxButtonHeight = availableHeightForButtons / rows;
+
+		// Use the smaller dimension to ensure buttons fit and remain square
+		// Floor the value to avoid fractional pixels
+		let buttonSize = Math.floor(Math.min(maxButtonWidth, maxButtonHeight));
+
+		// Set reasonable limits
+		const minSize = 44; // Minimum touch target size for accessibility
+		const maxSize = containerWidth < 600 ? 90 : 160; // Limit size based on screen
+
+		// Ensure button size is within limits
+		buttonSize = Math.max(minSize, Math.min(buttonSize, maxSize));
+
+		// Log button size calculation for debugging
+		console.debug(`ToolsPanel button size: ${buttonSize}px for ${columns}x${rows} grid`);
+
+		// Set CSS variables for the grid
 		gridContainer.style.setProperty('--button-size', `${buttonSize}px`);
 		gridContainer.style.setProperty('--columns', `${columns}`);
-		gridContainer.style.setProperty(
-			'--icon-size',
-			`${Math.max(24, Math.floor(buttonSize * iconScale))}px`
-		);
-		gridContainer.style.setProperty(
-			'--title-size',
-			`${Math.max(11, Math.floor(buttonSize * textScale))}px`
-		);
-		gridContainer.style.setProperty(
-			'--button-padding',
-			`${Math.max(6, Math.floor(buttonSize * 0.06))}px`
-		);
+
+		// Log layout information for debugging
+		console.debug(`ToolsPanel layout: ${columns}x${rows} grid, ${buttonSize}px buttons`);
 	}
 
+	// Create debounced version for better performance
+	const debouncedUpdateLayout = debounce(updateGridLayout, 100);
+
 	onMount(() => {
+		// Initial layout calculation
 		updateGridLayout();
-		const resizeObserver = new ResizeObserver(updateGridLayout);
+
+		// Create a ResizeObserver with the debounced update function
+		const resizeObserver = new ResizeObserver(() => {
+			debouncedUpdateLayout();
+		});
+
+		// Observe the grid container for size changes
 		if (gridContainer) {
 			resizeObserver.observe(gridContainer);
 		}
-		return () => resizeObserver.disconnect();
+
+		// Also observe the parent container if possible
+		const parentContainer = gridContainer?.parentElement;
+		if (parentContainer) {
+			resizeObserver.observe(parentContainer);
+		}
+
+		// Clean up on component destruction
+		return () => {
+			resizeObserver.disconnect();
+		};
 	});
 </script>
 
@@ -126,10 +212,13 @@
 		height: 100%;
 		display: flex;
 		flex-direction: column;
-		background: white;
+		background: transparent; /* Changed to transparent */
 		border-radius: 8px;
 		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 		overflow: hidden;
+		/* Added to ensure it fills the container properly */
+		position: relative;
+		flex: 1;
 	}
 
 	.tools-header {
@@ -137,8 +226,9 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 10px 12px;
-		background: linear-gradient(135deg, #6a11cb, #2575fc);
+		background: linear-gradient(135deg, rgba(106, 17, 203, 0.85), rgba(37, 117, 252, 0.85));
 		color: white;
+		backdrop-filter: blur(3px); /* Add a blur effect to the header */
 	}
 
 	.tools-header h2 {
@@ -172,18 +262,33 @@
 		padding: 8px;
 		display: flex;
 		flex-direction: column;
+		overflow: auto; /* Allow scrolling if needed */
+		background: transparent; /* Ensure content background is also transparent */
 	}
 
 	.tools-grid {
 		display: grid;
-		grid-template-columns: repeat(var(--columns, auto-fit), var(--button-size, 100px));
-		gap: 8px;
+		/* Modern approach using auto-fill and minmax for truly responsive layouts */
+		grid-template-columns: repeat(var(--columns, 3), 1fr);
+		gap: var(--grid-gap, 12px);
 		justify-content: center;
-		align-content: center;
+		align-content: center; /* Center content vertically */
 		width: 100%;
 		height: 100%;
-		padding: 4px;
+		padding: var(--grid-padding, 8px);
 		box-sizing: border-box;
+		/* Added to ensure it fills the container properly */
+		flex: 1;
+		min-height: 0;
+		/* Allow overflow in case of extreme sizing issues, but hide scrollbars */
+		overflow: auto;
+		scrollbar-width: none; /* Firefox */
+		-ms-overflow-style: none; /* IE and Edge */
+	}
+
+	/* Hide scrollbar for Chrome, Safari and Opera */
+	.tools-grid::-webkit-scrollbar {
+		display: none;
 	}
 
 	.tool-button {
@@ -191,10 +296,10 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		width: var(--button-size, 100px);
-		height: var(--button-size, 100px);
-		border: 1px solid #eee;
-		background: #f8f9fa;
+		width: 100%; /* Fill the grid cell width */
+		aspect-ratio: 1 / 1; /* Keep buttons square */
+		border: 1px solid rgba(238, 238, 238, 0.7);
+		background: rgba(248, 249, 250, 0.8); /* Semi-transparent background */
 		border-radius: 8px;
 		cursor: pointer;
 		transition: all 0.2s ease;
@@ -202,10 +307,18 @@
 		padding: var(--button-padding, 6px);
 		box-sizing: border-box;
 		position: relative;
+		backdrop-filter: blur(2px); /* Add a slight blur effect */
+		/* Ensure minimum touch target size for accessibility */
+		min-width: 44px;
+		min-height: 44px;
+		/* Prevent text from overflowing */
+		overflow: hidden;
+		/* Ensure content scales properly */
+		font-size: calc(var(--button-size, 80px) * 0.12);
 	}
 
 	.tool-button:hover {
-		background: white;
+		background: rgba(255, 255, 255, 0.9);
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 		border-color: var(--button-color, #555);
 		transform: translateY(-2px);
@@ -219,6 +332,8 @@
 		font-size: var(--icon-size, 24px);
 		color: var(--button-color, #555);
 		margin-bottom: 6px;
+		/* Use modern fluid typography */
+		font-size: clamp(18px, calc(var(--button-size, 80px) * 0.3), 32px);
 	}
 
 	.button-title {
@@ -229,14 +344,72 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		/* Use modern fluid typography */
+		font-size: clamp(9px, calc(var(--button-size, 80px) * 0.12), 14px);
+		/* Add padding to prevent text from touching edges */
+		padding: 0 2px;
 	}
 
 	.destructive {
-		background-color: #fff5f5;
-		border-color: #ffe0e0;
+		background-color: rgba(255, 245, 245, 0.8);
+		border-color: rgba(255, 224, 224, 0.7);
 	}
 
 	.destructive:hover {
-		background-color: #fff0f0;
+		background-color: rgba(255, 240, 240, 0.9);
+	}
+
+	/* Modern container-based responsive design */
+	/* Small screens and mobile devices */
+	@media (max-width: 480px) {
+		.tools-panel {
+			border-radius: 6px; /* Smaller border radius */
+		}
+
+		.tools-header {
+			padding: 8px 10px; /* Smaller padding */
+		}
+
+		.tools-header h2 {
+			font-size: 1rem; /* Smaller font size */
+		}
+	}
+
+	/* Medium screens */
+	@media (min-width: 481px) and (max-width: 768px) {
+		.tools-panel {
+			border-radius: 8px;
+		}
+	}
+
+	/* Large screens */
+	@media (min-width: 769px) {
+		.tools-grid {
+			/* Allow more space between buttons on larger screens */
+			gap: var(--grid-gap, 12px);
+		}
+	}
+
+	/* Extra large screens */
+	@media (min-width: 1200px) {
+		.tools-grid {
+			gap: var(--grid-gap, 16px);
+		}
+	}
+
+	/* Handle portrait vs landscape orientation */
+	@media (orientation: portrait) and (max-width: 768px) {
+		.tools-grid {
+			/* Optimize for vertical space in portrait mode */
+			align-content: start;
+		}
+	}
+
+	/* Handle high-density displays */
+	@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+		.tool-button {
+			/* Sharper borders on high-DPI screens */
+			border-width: 0.5px;
+		}
 	}
 </style>

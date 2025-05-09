@@ -87,9 +87,9 @@ export function createMachineContainer<
 		// @ts-ignore - $effect is not recognized by TypeScript yet
 		$effect(() => {
 			const unsubscribe = actor.subscribe((snapshot) => {
-				state.value = snapshot.value;
-				state.context = snapshot.context;
-				state.status = snapshot.status;
+				state.value = (snapshot as any).value;
+				state.context = (snapshot as any).context;
+				state.status = (snapshot as any).status;
 			});
 
 			return unsubscribe;
@@ -100,7 +100,7 @@ export function createMachineContainer<
 			get state() {
 				return state;
 			},
-			send: (event: TEvent) => actor.send(event),
+			send: (event: TEvent) => actor.send(event as any),
 			getSnapshot: () => actor.getSnapshot(),
 			stop: () => actor.stop(),
 			actor
@@ -109,22 +109,22 @@ export function createMachineContainer<
 		// For Svelte 4, use a container with a writable store
 		return createContainer(
 			{
-				value: actor.getSnapshot().value,
-				context: actor.getSnapshot().context,
-				status: actor.getSnapshot().status
+				value: (actor.getSnapshot() as any).value,
+				context: (actor.getSnapshot() as any).context,
+				status: (actor.getSnapshot() as any).status
 			},
 			(state, update) => {
 				// Set up subscription to update state
 				actor.subscribe((snapshot) => {
 					update(() => {
-						state.value = snapshot.value;
-						state.context = snapshot.context;
-						state.status = snapshot.status;
+						state.value = (snapshot as any).value;
+						state.context = (snapshot as any).context;
+						state.status = (snapshot as any).status;
 					});
 				});
 
 				return {
-					send: (event: TEvent) => actor.send(event),
+					send: (event: TEvent) => actor.send(event as any),
 					getSnapshot: () => actor.getSnapshot(),
 					stop: () => actor.stop()
 				};

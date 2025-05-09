@@ -29,6 +29,7 @@ export function applyLayout(
 
 /**
  * Calculate the optimal cell size for the beat frame grid
+ * @param beatCount Number of beats in the sequence
  * @param containerWidth Width of the container
  * @param containerHeight Height of the container
  * @param totalRows Number of rows in the grid
@@ -51,22 +52,34 @@ export function calculateCellSize(
 
 	// Calculate total space needed for gaps
 	const totalGapWidth = gap * (totalCols - 1);
+	const totalGapHeight = gap * (totalRows - 1);
 
 	// Calculate available space after accounting for gaps and padding
 	const padding = beatCount === 0 ? containerWidth * 0.1 : 16; // Larger padding when only start position
 	const availableWidth = Math.max(0, containerWidth - totalGapWidth - padding * 2);
 
-	// Calculate cell size based on available space
+	// Calculate cell size based on available space in both dimensions
 	const cellWidthByContainer = Math.floor(availableWidth / totalCols);
 
 	// Use the smaller dimension to maintain square cells and prevent overflow
-	const baseSize = cellWidthByContainer;
+	const baseSize = cellWidthByContainer
 
-	// For start position only, make it proportionally smaller
-	const cellSize = beatCount === 0 ? baseSize * 1 : baseSize;
+	// For start position only, make it proportionally larger
+	const cellSize = beatCount === 0 ? baseSize * 1.2 : baseSize;
 
-	// Apply minimum and maximum constraints
-	return Math.min(Math.max(cellSize, 60), 200); // Min 60px, Max 200px
+	// Detect if we're in fullscreen mode by checking container dimensions
+	// Fullscreen containers are typically much larger
+	const isLikelyFullscreen = containerWidth > 800 && containerHeight > 600;
+
+	// Apply different constraints based on mode
+	if (isLikelyFullscreen) {
+		// In fullscreen, allow larger cells but ensure they're not too large
+		// This helps ensure pictographs are displayed side by side correctly
+		return Math.min(Math.max(cellSize, 80), 250); // Min 80px, Max 250px for fullscreen
+	} else {
+		// In normal mode, use more conservative constraints
+		return Math.min(Math.max(cellSize, 60), 200); // Min 60px, Max 200px for normal view
+	}
 }
 
 const beatCountGridMap: Record<number, [number, number]> = {
@@ -102,9 +115,6 @@ const beatCountGridMap: Record<number, [number, number]> = {
 	30: [8, 4],
 	31: [8, 4],
 	32: [8, 4]
-	
-
-
 };
 
 export function autoAdjustLayout(beatCount: number): [number, number] {

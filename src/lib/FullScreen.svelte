@@ -155,8 +155,8 @@
 	.fs-btn {
 		z-index: 9999;
 		position: absolute;
-		right: 20px; /* Moved to bottom right */
-		bottom: 20px;
+		right: 10px; /* Moved to bottom right */
+		bottom: 10px;
 		border: none;
 		background: #fff;
 		color: #212529; /* Icon color */

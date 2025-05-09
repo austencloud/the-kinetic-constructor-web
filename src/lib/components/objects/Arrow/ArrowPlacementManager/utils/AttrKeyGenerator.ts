@@ -119,13 +119,13 @@ export class AttrKeyGenerator {
 
 		// Check for different orientation types
 		const radialOrientations = [IN, OUT];
-		const rotationalOrientations = [CLOCK, COUNTER];
+		const nonradialOrientations = [CLOCK, COUNTER];
 
 		const redIsRadial = radialOrientations.includes(redStartOri);
-		const redIsRotational = rotationalOrientations.includes(redStartOri);
+		const redIsNonRadial = nonradialOrientations.includes(redStartOri);
 		const blueIsRadial = radialOrientations.includes(blueStartOri);
-		const blueIsRotational = rotationalOrientations.includes(blueStartOri);
+		const blueIsNonRadial = nonradialOrientations.includes(blueStartOri);
 
-		return (redIsRadial && blueIsRotational) || (redIsRotational && blueIsRadial);
+		return (redIsRadial && blueIsNonRadial) || (redIsNonRadial && blueIsRadial);
 	}
 }

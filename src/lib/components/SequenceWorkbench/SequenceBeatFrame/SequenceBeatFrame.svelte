@@ -396,12 +396,14 @@
 		display: grid;
 		grid-template-columns: repeat(var(--total-cols), var(--cell-size));
 		grid-template-rows: repeat(var(--total-rows), var(--cell-size));
-		gap: 0;
+		gap: 0; /* No gap between cells */
 		justify-content: center;
 		align-content: center;
 		width: fit-content;
 		height: fit-content;
 		margin: auto;
+		/* Add transition for smooth size changes */
+		transition: all 0.3s ease;
 	}
 
 	/* Only align to top when scrolling and there are beats */
@@ -417,6 +419,14 @@
 		justify-content: center;
 		align-items: center;
 		background-color: transparent;
+		/* Add transition for smooth size changes */
+		transition:
+			width 0.3s ease,
+			height 0.3s ease;
+		/* Ensure content is properly centered */
+		box-sizing: border-box;
+		/* Prevent overflow */
+		overflow: hidden;
 	}
 
 	/* Specific styling for start position when it's the only beat */

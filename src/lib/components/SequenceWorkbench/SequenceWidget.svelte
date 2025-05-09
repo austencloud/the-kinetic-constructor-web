@@ -8,7 +8,7 @@
 		openSequenceFullScreen,
 		closeSequenceFullScreen
 	} from '$lib/stores/sequence/fullScreenStore';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 
 	// Import Type for Button Definitions
 	import type { ButtonDefinition, ActionEventDetail } from './ButtonPanel/types';
@@ -29,12 +29,16 @@
 
 	// Props
 	export let workbenchHeight: number;
+	export let toolsPanelOpen = false;
 
 	// Use responsive layout hook for dimensions
 	const { dimensions } = useResponsiveLayout();
 
-	// Track tools panel state
-	const isToolsPanelOpen = writable(false);
+	// Track tools panel state - use the prop value
+	const isToolsPanelOpen = writable(toolsPanelOpen);
+
+	// Update the store when the prop changes
+	$: isToolsPanelOpen.set(toolsPanelOpen);
 
 	// Calculate workbench orientation based on workbench dimensions instead of window
 	$: workbenchIsPortrait = $dimensions.width < workbenchHeight;
@@ -149,8 +153,17 @@
 		handleButtonAction(event);
 	}
 
+	// Initialize the event dispatcher
+	const dispatch = createEventDispatcher();
+
 	function toggleToolsPanel() {
-		isToolsPanelOpen.update((value) => !value);
+		// Always dispatch the event to the parent component
+		dispatch('toggleToolsPanel');
+
+		// If parent's panel is not open, also toggle our local panel
+		if (!toolsPanelOpen) {
+			isToolsPanelOpen.update((value) => !value);
+		}
 	}
 
 	let buttonActionListener: (event: CustomEvent) => void;
@@ -190,7 +203,8 @@
 			</div>
 		</div>
 
-		{#if toolsPanelOpen}
+		{#if $isToolsPanelOpen && !toolsPanelOpen}
+			<!-- Only show this tools panel if the parent's panel is not open -->
 			<div class="tools-panel-container" transition:fly={{ duration: 300, y: 10 }}>
 				<ToolsPanel
 					buttons={buttonPanelButtons}
@@ -200,7 +214,10 @@
 			</div>
 		{/if}
 
-		<ToolsButton isToolsPanelOpen={$isToolsPanelOpen} on:toggleToolsPanel={toggleToolsPanel} />
+		{#if !toolsPanelOpen}
+			<!-- Only show the tools button if the parent's panel is not open -->
+			<ToolsButton isToolsPanelOpen={$isToolsPanelOpen} on:toggleToolsPanel={toggleToolsPanel} />
+		{/if}
 		<ClearSequenceButton on:clearSequence={handleClearSequence} />
 	</div>
 
@@ -210,6 +227,7 @@
 		on:close={closeSequenceFullScreen}
 	>
 		<div class="fullscreen-beat-container">
+			<!-- BeatFrame will be wrapped in a container in the FullScreenOverlay component -->
 			<BeatFrame />
 		</div>
 	</FullScreenOverlay>
@@ -318,9 +336,16 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		padding: 0;
+		padding: 0; /* Remove padding to maximize space */
 		box-sizing: border-box;
+		/* Ensure content is centered and as large as possible */
+		position: relative;
+		overflow: hidden; /* Prevent scrolling within the container */
+		/* Add aspect ratio handling to maximize width usage */
+		min-width: 100%;
 	}
+
+	/* Full screen container styling */
 
 	/* Responsive mobile layout adjustments */
 	@media (max-width: 768px) {
@@ -347,30 +372,104 @@
 	}
     */
 
+	/* Improved fullscreen styling for better pictograph display */
 	:global(.fullscreen-beat-container .beat-frame) {
 		width: auto;
 		height: auto;
-		max-width: 95vw;
-		max-height: 95vh;
+		max-width: 100vw; /* Use full width */
+		max-height: 85vh; /* Reduced to prevent overflow */
 		transform: scale(1);
+		/* No gap between pictographs */
+		gap: 0;
+		/* Ensure pictographs are properly aligned */
+		justify-content: center;
+		align-items: center;
 	}
+
+	/* Handle landscape orientation specifically */
+	@media (orientation: landscape) {
+		:global(.fullscreen-beat-container .beat-frame) {
+			max-height: 80vh; /* Further reduce height in landscape */
+		}
+	}
+
+	/* Handle small height screens in landscape */
+	@media (orientation: landscape) and (max-height: 600px) {
+		:global(.fullscreen-beat-container .beat-frame) {
+			max-height: 75vh; /* Even smaller on very small screens */
+			max-width: 95vw; /* Also reduce width slightly */
+		}
+	}
+
 	:global(.fullscreen-beat-container .beat-frame-container) {
 		width: 100%;
 		height: 100%;
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		/* Remove padding to maximize space */
+		padding: 0;
+		box-sizing: border-box;
+		/* Ensure container takes up full width */
+		min-width: 100%;
 	}
+
+	/* Fixed cell size multipliers to prevent overlapping */
 	:global(.fullscreen-beat-container .beat-frame) {
-		--cell-size-multiplier: 2.5;
+		/* Default multiplier for small grids */
+		--cell-size-multiplier: 1;
 		--adjusted-cell-size: calc(var(--cell-size) * var(--cell-size-multiplier));
 	}
-	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 3']),
-	:global(.fullscreen-beat-container .beat-frame[style*='--total-cols: 4']) {
-		--cell-size-multiplier: 2;
+
+	/* Single row layouts */
+	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 1']) {
+		--cell-size-multiplier: 1;
 	}
-	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 4']),
-	:global(.fullscreen-beat-container .beat-frame[style*='--total-cols: 5']) {
-		--cell-size-multiplier: 1.5;
+
+	/* Two row layouts */
+	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 2']) {
+		--cell-size-multiplier: 1;
+	}
+
+	/* Three row layouts */
+	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 3']) {
+		--cell-size-multiplier: 1;
+	}
+
+	/* Four row layouts */
+	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 4']) {
+		--cell-size-multiplier: 1;
+	}
+
+	/* Five or more row layouts */
+	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 5']),
+	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 6']),
+	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 7']),
+	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 8']) {
+		--cell-size-multiplier: 1;
+	}
+
+	/* Responsive adjustments for different screen sizes */
+	@media (max-width: 768px) {
+		:global(.fullscreen-beat-container .beat-frame) {
+			/* Keep consistent multiplier on mobile */
+			--cell-size-multiplier: 1;
+			gap: 0; /* No gap between pictographs */
+		}
+	}
+
+	@media (max-height: 600px) {
+		:global(.fullscreen-beat-container .beat-frame) {
+			/* Keep consistent multiplier on short screens */
+			--cell-size-multiplier: 1;
+		}
+	}
+
+	/* Handle landscape orientation on mobile devices */
+	@media (orientation: landscape) and (max-height: 500px) {
+		:global(.fullscreen-beat-container .beat-frame) {
+			/* Slightly smaller multiplier for very short screens */
+			--cell-size-multiplier: 0.9;
+		}
 	}
 </style>
