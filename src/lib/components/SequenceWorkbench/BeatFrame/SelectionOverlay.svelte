@@ -1,4 +1,4 @@
-<!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/SelectionOverlay.svelte -->
+<!-- src/lib/components/SequenceWorkbench/BeatFrame/SelectionOverlay.svelte -->
 <script lang="ts">
 	export let isSelected: boolean = false;
 

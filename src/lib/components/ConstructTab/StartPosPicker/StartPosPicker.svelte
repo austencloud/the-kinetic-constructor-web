@@ -7,7 +7,7 @@
 	import LoadingSpinner from '$lib/components/MainWidget/loading/LoadingSpinner.svelte';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import pictographDataStore from '$lib/stores/pictograph/pictographStore';
-	import { pictographStore } from '$lib/state/stores/pictograph/pictograph.store';
+	import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 	import startPositionService from '$lib/services/StartPositionService';
 	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 	import { browser } from '$app/environment'; // Import browser check
@@ -181,9 +181,9 @@
 			console.log('StartPosPicker.handleSelect: Updating selectedStartPos store');
 			selectedStartPos.set(startPosCopy);
 
-			// Update the new pictographStore as well
-			console.log('StartPosPicker.handleSelect: Updating pictographStore');
-			pictographStore.setData(startPosCopy);
+			// Update the pictographContainer
+			console.log('StartPosPicker.handleSelect: Updating pictographContainer');
+			pictographContainer.setData(startPosCopy);
 
 			// Update sequence state to not empty
 			console.log('StartPosPicker.handleSelect: Setting isSequenceEmpty to false');

@@ -1,4 +1,5 @@
 <script lang="ts">
+	// We can't import runes directly with $ prefix
 	import { fade } from 'svelte/transition';
 	import type { PictographData } from '$lib/types/PictographData';
 	// Import types for TypeScript type checking
@@ -17,46 +18,45 @@
 	import BeatLabel from './components/BeatLabel.svelte';
 	import { errorService, ErrorSeverity } from '../../services/ErrorHandlingService';
 	import { logger } from '$lib/core/logging';
-	import { pictographContainer } from '$lib/state/stores/pictograph/modernPictographContainer';
+	import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
+	import { pictographMachineContainer } from '$lib/state/machines/pictographMachine/pictographMachine';
+	import type { PictographMachineContext } from '$lib/state/machines/pictographMachine/pictographMachine';
 	import { defaultPictographData } from './utils/defaultPictographData';
 
 	// Props using Svelte 5 runes
-	const props = $props<{
-		pictographData?: PictographData;
-		onClick?: () => void;
-		debug?: boolean;
-		animationDuration?: number;
-		showLoadingIndicator?: boolean;
-		beatNumber?: number | null;
-		isStartPosition?: boolean;
-	}>();
+	const {
+		pictographData: propPictographData,
+		onClick,
+		debug = false,
+		animationDuration = 300,
+		showLoadingIndicator = true,
+		beatNumber = null,
+		isStartPosition = false,
+		onComponentLoaded,
+		onLoaded,
+		onError,
+		onDataUpdated
+	} = $props();
 
-	// Set default values for props
-	const debug = props.debug ?? false;
-	const animationDuration = props.animationDuration ?? 300;
-	const showLoadingIndicator = props.showLoadingIndicator ?? true;
-	const beatNumber = props.beatNumber ?? null;
-	const isStartPosition = props.isStartPosition ?? false;
-	const onClick = props.onClick;
+	// Component state with Svelte 5 runes for reactivity
+	// Define state types first to avoid "used before declaration" errors
+	type PictographState = 'initializing' | 'loading' | 'grid_only' | 'complete' | 'error';
 
-	// Component state with reactivity
-	// Using regular variables for now since we're using the feature flag approach
-	// Note: These warnings about non-reactive updates are expected and will be fixed
-	// when we fully migrate to Svelte 5 and remove the feature flag
-	let state = 'initializing';
-	let errorMessage: string | null = null;
-	let gridData: GridData | null = null;
-	let redPropData: PropData | null = null;
-	let bluePropData: PropData | null = null;
-	let redArrowData: ArrowData | null = null;
-	let blueArrowData: ArrowData | null = null;
-	let loadedComponents = new Set<string>();
-	let requiredComponents = ['grid'];
-	let totalComponentsToLoad = 1;
-	let componentsLoaded = 0;
-	let renderCount = 0;
-	let loadProgress = 0;
-	let service: PictographService | null = null;
+	// Rename the variable to avoid conflict with $state rune
+	let pictographState = $state('initializing' as PictographState);
+	let errorMessage = $state(null as string | null);
+	let gridData = $state(null as GridData | null);
+	let redPropData = $state(null as PropData | null);
+	let bluePropData = $state(null as PropData | null);
+	let redArrowData = $state(null as ArrowData | null);
+	let blueArrowData = $state(null as ArrowData | null);
+	let loadedComponents = $state(new Set<string>());
+	let requiredComponents = $state(['grid'] as string[]);
+	let totalComponentsToLoad = $state(1);
+	let componentsLoaded = $state(0);
+	let renderCount = $state(0);
+	let loadProgress = $state(0);
+	let service = $state(null as PictographService | null);
 
 	// Store tracked data snapshot for comparison
 	interface TrackedDataSnapshot {
@@ -84,13 +84,15 @@
 	}
 	let lastDataSnapshot: TrackedDataSnapshot | null = null;
 
-	// Event handling
-	import { createEventDispatcher } from 'svelte';
-	const dispatch = createEventDispatcher();
+	// Get machine state
+	const machineState = $derived(pictographMachineContainer.state);
 
-	// Get pictograph data from props or container
+	// Get pictograph data from props, machine, or container
 	const pictographData = $derived(
-		props.pictographData || pictographContainer.state.data || defaultPictographData
+		propPictographData ||
+			machineState.context.data ||
+			pictographContainer.state.data ||
+			defaultPictographData
 	);
 
 	// Reactive values derived from pictograph data
@@ -116,6 +118,7 @@
 			if (!pictographData) {
 				// If no data is available, use default data
 				pictographContainer.setData(defaultPictographData);
+				pictographMachineContainer.send({ type: 'SET_DATA', data: defaultPictographData });
 				return;
 			}
 
@@ -129,13 +132,17 @@
 				}
 			});
 
+			// Initialize the service
 			service = new PictographService(pictographData);
+
+			// Send data to the machine
+			pictographMachineContainer.send({ type: 'SET_DATA', data: pictographData });
 
 			// Initialize data snapshot
 			updateLastKnownValues(pictographData);
 
 			if (hasRequiredMotionData(pictographData)) {
-				state = 'loading';
+				pictographState = 'loading';
 				logger.debug('Pictograph: Motion data available, entering loading state', {
 					data: {
 						redMotionData: pictographData?.redMotionData ? true : false,
@@ -143,7 +150,7 @@
 					}
 				});
 			} else {
-				state = 'grid_only';
+				pictographState = 'grid_only';
 				logger.debug('Pictograph: No motion data, entering grid-only state');
 			}
 
@@ -151,7 +158,7 @@
 			logger.info(`Pictograph initialized in ${initTime.toFixed(2)}ms`, {
 				duration: initTime,
 				data: {
-					state,
+					pictographState,
 					letter: pictographData?.letter,
 					gridMode: pictographData?.gridMode
 				}
@@ -183,14 +190,14 @@
 				updateComponentsFromData();
 
 				// Notify parent about the update
-				dispatch('dataUpdated', { type: 'all' });
+				onDataUpdated?.({ type: 'all' });
 			}
 		}
 	});
 
 	// Update the container when pictograph data changes
 	$effect(() => {
-		if (pictographData && !props.pictographData) {
+		if (pictographData && !propPictographData) {
 			pictographContainer.setData(pictographData);
 		}
 	});
@@ -297,9 +304,9 @@
 	}
 
 	function getPictographAriaLabel(): string {
-		if (state === 'error') return `Pictograph error: ${errorMessage}`;
+		if (pictographState === 'error') return `Pictograph error: ${errorMessage}`;
 		const letterPart = letter ? `for letter ${letter}` : '';
-		const statePart = state === 'complete' ? 'complete' : 'loading';
+		const statePart = pictographState === 'complete' ? 'complete' : 'loading';
 		return `Pictograph visualization ${letterPart} - ${statePart}`;
 	}
 
@@ -311,22 +318,22 @@
 	function updateComponentsFromData() {
 		try {
 			// Reset state if needed
-			if (state === 'error') {
-				state = 'loading';
+			if (pictographState === 'error') {
+				pictographState = 'loading';
 				errorMessage = null;
 			}
 
 			// Make sure we have data to work with
 			if (!pictographData) {
-				state = 'grid_only';
+				pictographState = 'grid_only';
 				return;
 			}
 
 			// Update state based on available motion data
 			if (hasRequiredMotionData(pictographData)) {
-				if (state === 'grid_only') state = 'loading';
+				if (pictographState === 'grid_only') pictographState = 'loading';
 			} else {
-				state = 'grid_only';
+				pictographState = 'grid_only';
 			}
 
 			// Only recreate components if grid data is available
@@ -340,7 +347,7 @@
 				// If all required components were already loaded previously,
 				// mark as complete immediately
 				if (requiredComponents.every((comp: string) => loadedComponents.has(comp))) {
-					state = 'complete';
+					pictographState = 'complete';
 				}
 			}
 		} catch (error) {
@@ -355,13 +362,15 @@
 			componentsLoaded++;
 			loadedComponents.add('grid');
 
-			// Update the container
+			// Update the container and machine
 			pictographContainer.updateGridData(data);
 			pictographContainer.updateComponentLoaded('grid');
+			pictographMachineContainer.send({ type: 'UPDATE_GRID_DATA', gridData: data });
+			pictographMachineContainer.send({ type: 'UPDATE_COMPONENT_LOADED', component: 'grid' });
 
 			// Exit if grid-only mode
-			if (state === 'grid_only') {
-				dispatch('loaded', { complete: false });
+			if (pictographState === 'grid_only') {
+				onLoaded?.({ complete: false });
 				return;
 			}
 
@@ -378,7 +387,7 @@
 			requiredComponents = ['grid'];
 
 			// Don't reset total components to load since we may already have loaded some
-			if (state !== 'complete') totalComponentsToLoad = 1;
+			if (pictographState !== 'complete') totalComponentsToLoad = 1;
 
 			// Make sure we have data to work with
 			if (!pictographData || !service) return;
@@ -390,7 +399,7 @@
 
 				if (!requiredComponents.includes('redProp')) {
 					requiredComponents.push('redProp', 'redArrow');
-					if (state !== 'complete') totalComponentsToLoad += 2;
+					if (pictographState !== 'complete') totalComponentsToLoad += 2;
 				}
 			} else {
 				// Clear red components if no longer needed
@@ -405,7 +414,7 @@
 
 				if (!requiredComponents.includes('blueProp')) {
 					requiredComponents.push('blueProp', 'blueArrow');
-					if (state !== 'complete') totalComponentsToLoad += 2;
+					if (pictographState !== 'complete') totalComponentsToLoad += 2;
 				}
 			} else {
 				// Clear blue components if no longer needed
@@ -424,11 +433,39 @@
 				);
 			}
 
-			// Update the container
-			if (redPropData) pictographContainer.updatePropData('red', redPropData);
-			if (bluePropData) pictographContainer.updatePropData('blue', bluePropData);
-			if (redArrowData) pictographContainer.updateArrowData('red', redArrowData);
-			if (blueArrowData) pictographContainer.updateArrowData('blue', blueArrowData);
+			// Update the container and machine
+			if (redPropData) {
+				pictographContainer.updatePropData('red', redPropData);
+				pictographMachineContainer.send({
+					type: 'UPDATE_PROP_DATA',
+					color: 'red',
+					propData: redPropData
+				});
+			}
+			if (bluePropData) {
+				pictographContainer.updatePropData('blue', bluePropData);
+				pictographMachineContainer.send({
+					type: 'UPDATE_PROP_DATA',
+					color: 'blue',
+					propData: bluePropData
+				});
+			}
+			if (redArrowData) {
+				pictographContainer.updateArrowData('red', redArrowData);
+				pictographMachineContainer.send({
+					type: 'UPDATE_ARROW_DATA',
+					color: 'red',
+					arrowData: redArrowData
+				});
+			}
+			if (blueArrowData) {
+				pictographContainer.updateArrowData('blue', blueArrowData);
+				pictographMachineContainer.send({
+					type: 'UPDATE_ARROW_DATA',
+					color: 'blue',
+					arrowData: blueArrowData
+				});
+			}
 		} catch (error) {
 			handleError('component creation', error);
 		}
@@ -437,8 +474,15 @@
 	function handleComponentLoaded(component: string) {
 		loadedComponents.add(component);
 		componentsLoaded++;
+
+		// Update both container and machine
 		pictographContainer.updateComponentLoaded(component as any); // Cast needed if updateComponentLoaded has specific string literal types
-		dispatch('componentLoaded', { componentName: component });
+		pictographMachineContainer.send({
+			type: 'UPDATE_COMPONENT_LOADED',
+			component: component as keyof PictographMachineContext['components']
+		});
+
+		onComponentLoaded?.({ componentName: component });
 		checkLoadingComplete();
 	}
 
@@ -449,7 +493,7 @@
 		);
 
 		if (allLoaded) {
-			state = 'complete';
+			pictographState = 'complete';
 			renderCount++;
 
 			const loadTime = performance.now() - startCheck;
@@ -465,7 +509,7 @@
 				}
 			});
 
-			dispatch('loaded', { complete: true });
+			onLoaded?.({ complete: true });
 		}
 	}
 
@@ -546,7 +590,7 @@
 			logger.pictograph(`Error in ${source}`, {
 				letter: letter ? letter : undefined,
 				gridMode: gridMode,
-				componentState: state,
+				componentState: pictographState,
 				renderMetrics: {
 					componentsLoaded: componentsLoaded,
 					totalComponents: totalComponentsToLoad,
@@ -576,11 +620,18 @@
 
 			// Set local error message
 			errorMessage = errorMsg;
-			state = 'error';
+			pictographState = 'error';
+
+			// Send error to the machine
+			pictographMachineContainer.send({
+				type: 'SET_ERROR',
+				message: errorMsg,
+				component: source
+			});
 
 			// Dispatch events
-			dispatch('error', { source, error: { message: errorMsg }, message: errorMsg });
-			dispatch('loaded', { complete: false, error: true, message: errorMsg });
+			onError?.({ source, error: { message: errorMsg }, message: errorMsg });
+			onLoaded?.({ complete: false, error: true, message: errorMsg });
 		} catch (errorHandlingError) {
 			// If error handling itself fails, use a simpler approach
 			logger.error('Error in Pictograph error handler', {
@@ -592,9 +643,16 @@
 			});
 
 			errorMessage = 'Error in Pictograph component';
-			state = 'error';
-			dispatch('error', { source, error: null, message: 'Error in Pictograph component' });
-			dispatch('loaded', {
+			pictographState = 'error';
+
+			// Send error to the machine
+			pictographMachineContainer.send({
+				type: 'SET_ERROR',
+				message: 'Error in Pictograph component'
+			});
+
+			onError?.({ source, error: null, message: 'Error in Pictograph component' });
+			onLoaded?.({
 				complete: false,
 				error: true,
 				message: 'Error in Pictograph component'
@@ -613,7 +671,7 @@
 		}
 	}}
 	{...interactiveProps}
-	data-state={state}
+	data-state={pictographState}
 	data-letter={letter || 'none'}
 >
 	<svg
@@ -623,11 +681,11 @@
 		role="img"
 		aria-label={pictographAriaLabel}
 	>
-		{#if state === 'initializing'}
+		{#if pictographState === 'initializing'}
 			{#if showLoadingIndicator}
 				<InitializingSpinner {animationDuration} />
 			{/if}
-		{:else if state === 'error'}
+		{:else if pictographState === 'error'}
 			<PictographError {errorMessage} {animationDuration} />
 		{:else}
 			<Grid
@@ -645,7 +703,7 @@
 				/>
 			{/if}
 
-			{#if state !== 'grid_only'}
+			{#if pictographState !== 'grid_only'}
 				{#if letter}
 					<g transition:fade={{ duration: animationDuration, delay: 100 }}>
 						<TKAGlyph {letter} turnsTuple="(s, 0, 0)" x={50} y={800} />
@@ -683,13 +741,13 @@
 		{/if}
 	</svg>
 
-	{#if state === 'loading' && showLoadingIndicator}
+	{#if pictographState === 'loading' && showLoadingIndicator}
 		<LoadingProgress {loadProgress} showText={true} />
 	{/if}
 
 	{#if debug}
 		<PictographDebug
-			{state}
+			state={pictographState}
 			{componentsLoaded}
 			totalComponents={totalComponentsToLoad}
 			{renderCount}

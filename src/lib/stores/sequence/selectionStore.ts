@@ -2,7 +2,7 @@
 import { writable, derived, type Readable } from 'svelte/store';
 import type { PictographData } from '$lib/types/PictographData';
 import { beatsStore } from './beatsStore';
-import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData';
+import type { BeatData } from '$lib/components/SequenceWorkbench/BeatFrame/BeatData';
 import { browser } from '$app/environment';
 
 // Storage key for the start position

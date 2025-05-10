@@ -545,6 +545,11 @@
 		{showLoadingIndicator}
 		{beatNumber}
 		{isStartPosition}
+		onComponentLoaded={(e: { componentName: string }) => dispatch('componentLoaded', e)}
+		onLoaded={(e: { complete: boolean; error?: boolean; message?: string }) =>
+			dispatch('loaded', e)}
+		onError={(e: { source: string; error: any; message: string }) => dispatch('error', e)}
+		onDataUpdated={(e: { type: string }) => dispatch('dataUpdated', e)}
 		{...$$restProps}
 	/>
 {:else}

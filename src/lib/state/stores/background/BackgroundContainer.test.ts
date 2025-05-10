@@ -2,7 +2,7 @@
  * Tests for the modern background container
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { backgroundContainer } from './modernBackgroundContainer';
+import { backgroundContainer } from './BackgroundContainer';
 import { get } from 'svelte/store';
 import { backgroundStore } from './backgroundAdapter';
 

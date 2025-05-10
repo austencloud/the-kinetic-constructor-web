@@ -10,7 +10,10 @@
 		"sourceMap": true,
 		"strict": true,
 		"allowArbitraryExtensions": true,
-		"verbatimModuleSyntax": false,
+		"verbatimModuleSyntax": true,
+		"isolatedModules": true,
+		"target": "ES2022",
+		"useDefineForClassFields": true,
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true
 	},

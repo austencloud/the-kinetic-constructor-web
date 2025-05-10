@@ -5,8 +5,8 @@
 
 import { sequenceStore } from '$lib/state/stores/sequence/sequenceAdapter';
 import { sequenceActions as modernSequenceActions } from '$lib/state/machines/sequenceMachine';
-import type { BeatData as LegacyBeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData';
-import type { BeatData as ModernBeatData } from '$lib/state/stores/sequence/modernSequenceContainer';
+import type { BeatData as LegacyBeatData } from '$lib/components/SequenceWorkbench/BeatFrame/BeatData';
+import type { BeatData as ModernBeatData } from '$lib/state/stores/sequence/SequenceContainer';
 
 // Type adapter functions to convert between legacy and modern BeatData types
 function convertToModernBeat(legacyBeat: LegacyBeatData): ModernBeatData {

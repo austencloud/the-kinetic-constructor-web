@@ -2,8 +2,8 @@
  * Tests for the modern sequence container
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { sequenceContainer } from './modernSequenceContainer';
-import type { BeatData } from './modernSequenceContainer';
+import { sequenceContainer } from './SequenceContainer';
+import type { BeatData } from './SequenceContainer';
 import { getState } from '$lib/state/core/modernTesting';
 
 // Mock localStorage
@@ -81,7 +81,7 @@ describe('Modern Sequence Container', () => {
 
 		// First add a beat to ensure it gets replaced
 		sequenceContainer.addBeat({ id: '3', number: 3, letter: 'C' });
-		
+
 		// Then set the sequence
 		sequenceContainer.setSequence(beats);
 
@@ -211,7 +211,7 @@ describe('Modern Sequence Container', () => {
 	it('should mark as saved', () => {
 		sequenceContainer.addBeat({ id: '1', number: 1 });
 		expect(getState(sequenceContainer).isModified).toBe(true);
-		
+
 		sequenceContainer.markAsSaved();
 		expect(getState(sequenceContainer).isModified).toBe(false);
 	});
@@ -253,12 +253,12 @@ describe('Modern Sequence Container', () => {
 		};
 
 		localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(mockData));
-		
+
 		const result = sequenceContainer.loadFromLocalStorage();
-		
+
 		expect(result).toBe(true);
 		expect(localStorageMock.getItem).toHaveBeenCalledWith('sequence');
-		
+
 		const state = getState(sequenceContainer);
 		expect(state.beats).toHaveLength(2);
 		expect(state.selectedBeatIds).toEqual(['1']);

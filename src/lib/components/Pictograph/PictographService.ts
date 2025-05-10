@@ -10,8 +10,7 @@ import { Motion } from '$lib/components/objects/Motion/Motion';
 import { RED, BLUE, DASH } from '$lib/types/Constants';
 
 import { PictographChecker } from './services/PictographChecker';
-import { pictographStore } from '$lib/state/stores/pictograph/pictographAdapter';
-import { pictographContainer } from '$lib/state/stores/pictograph/modernPictographContainer';
+import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 import ArrowLocationManager from '$lib/components/objects/Arrow/ArrowLocationManager';
 import ArrowRotAngleManager from '$lib/components/objects/Arrow/ArrowRotAngleManager';
 import { LetterConditions } from './constants/LetterConditions';
@@ -36,12 +35,12 @@ export class PictographService {
 			// Create a safe copy of the data without any Promise objects
 			const safeData = this.createSafeDataCopy(this.data);
 
-			// Update the store with the safe data
-			pictographStore.setData(safeData);
+			// Update the container with the safe data
+			pictographContainer.setData(safeData);
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : 'Pictograph initialization failed';
-			pictographStore.setError(errorMessage, 'initialization');
+			pictographContainer.setError(errorMessage, 'initialization');
 		}
 	}
 
@@ -94,7 +93,7 @@ export class PictographService {
 			rotAngle: 0
 		};
 
-		pictographStore.updatePropData(color, propData);
+		pictographContainer.updatePropData(color, propData);
 		return propData;
 	}
 	createArrowData(motionData: MotionData, color: Color): ArrowData {
@@ -152,7 +151,7 @@ export class PictographService {
 			...(({ id: _id, color: _color, ...rest }) => rest)(motionData)
 		};
 
-		pictographStore.updateArrowData(color, arrowData);
+		pictographContainer.updateArrowData(color, arrowData);
 		return arrowData;
 	}
 
@@ -192,7 +191,7 @@ export class PictographService {
 			this.positionArrows(redArrow, blueArrow, grid);
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : 'Component positioning failed';
-			pictographStore.setError(errorMessage, 'positioning');
+			pictographContainer.setError(errorMessage, 'positioning');
 		}
 	}
 
@@ -471,7 +470,7 @@ export class PictographService {
 			// Handle the error gracefully
 			const errorMessage =
 				error instanceof Error ? error.message : 'Failed to update pictograph data';
-			pictographStore.setError(errorMessage, 'update');
+			pictographContainer.setError(errorMessage, 'update');
 		}
 	}
 }

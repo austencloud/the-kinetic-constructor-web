@@ -5,8 +5,8 @@
  * instead of the legacy sequence store.
  */
 
-import { sequenceContainer } from '../../stores/sequence/modernSequenceContainer';
-import type { BeatData } from '../../stores/sequence/modernSequenceContainer';
+import { sequenceContainer } from '../../stores/sequence/SequenceContainer';
+import type { BeatData } from '../../stores/sequence/SequenceContainer';
 import { convertToStoreBeatData } from './types';
 import { updateDevTools } from '$lib/utils/devToolsUpdater';
 import { isSequenceEmpty } from './persistence';

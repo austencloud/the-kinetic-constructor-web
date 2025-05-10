@@ -1,4 +1,4 @@
-import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData.js';
+import type { BeatData } from '$lib/components/SequenceWorkbench/BeatFrame/BeatData.js';
 import { beatsStore } from '$lib/stores/sequence/beatsStore';
 
 /**

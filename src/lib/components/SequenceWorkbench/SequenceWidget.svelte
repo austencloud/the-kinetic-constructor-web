@@ -20,7 +20,7 @@
 	// Components
 	import CurrentWordLabel from './Labels/CurrentWordLabel.svelte';
 	import DifficultyLabel from './Labels/DifficultyLabel.svelte';
-	import BeatFrame from './SequenceBeatFrame/BeatFrame.svelte';
+	import BeatFrame from './BeatFrame/BeatFrame.svelte';
 	import FullScreenOverlay from './components/FullScreenOverlay.svelte';
 	import ToolsButton from './ToolsButton.svelte';
 	import ToolsPanel from './ToolsPanel/ToolsPanel.svelte';
@@ -320,9 +320,9 @@
 	}
 
 	/* This is the actual container passed to BeatFrame via use:resizeObserver */
-	/* Its styles are in SequenceBeatFrame.svelte but its flex behavior is controlled here */
+	/* Its styles are in BeatFrame.svelte but its flex behavior is controlled here */
 	:global(.beat-frame-container) {
-		/* The BeatFrame's direct parent (from SequenceBeatFrame.svelte)
+		/* The BeatFrame's direct parent (from BeatFrame.svelte)
 		   should fill the .beat-frame-wrapper */
 		width: 100%;
 		height: 100%;

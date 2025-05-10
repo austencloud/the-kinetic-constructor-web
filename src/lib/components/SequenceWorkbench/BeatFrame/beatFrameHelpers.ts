@@ -1,4 +1,4 @@
-// src/lib/components/SequenceWorkbench/SequenceBeatFrame/beatFrameHelpers.ts
+// src/lib/components/SequenceWorkbench/BeatFrame/beatFrameHelpers.ts
 
 export type LayoutDict = Record<string, [number, number]>;
 
@@ -62,7 +62,7 @@ export function calculateCellSize(
 	const cellWidthByContainer = Math.floor(availableWidth / totalCols);
 
 	// Use the smaller dimension to maintain square cells and prevent overflow
-	const baseSize = cellWidthByContainer
+	const baseSize = cellWidthByContainer;
 
 	// For start position only, make it proportionally larger
 	const cellSize = beatCount === 0 ? baseSize * 1.2 : baseSize;

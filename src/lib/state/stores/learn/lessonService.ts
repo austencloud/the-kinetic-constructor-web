@@ -1,4 +1,4 @@
-import { LessonConfig } from './lesson_configs';
+import type { LessonConfig } from './lesson_configs';
 import pictographDataStore from '$lib/stores/pictograph/pictographStore';
 import { get } from 'svelte/store';
 import { writable } from 'svelte/store';

@@ -1,4 +1,4 @@
-<!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/SequenceBeatFrame.svelte -->
+<!-- src/lib/components/SequenceWorkbench/BeatFrame/BeatFrame.svelte -->
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
@@ -129,7 +129,7 @@
 			// Create a deep copy to avoid reference issues
 			const startPosCopy = JSON.parse(JSON.stringify(startPos));
 			startPositionStore.set(startPosCopy);
-			console.log('SequenceBeatFrame: Updated startPositionStore with startPos:', startPosCopy);
+			console.log('BeatFrame: Updated startPositionStore with startPos:', startPosCopy);
 		}
 	});
 
@@ -298,10 +298,7 @@
 			// Create a deep copy to avoid reference issues
 			const startPosCopy = JSON.parse(JSON.stringify(newStartPos));
 			startPositionStore.set(startPosCopy);
-			console.log(
-				'SequenceBeatFrame.updateStartPosition: Updated startPositionStore with:',
-				startPosCopy
-			);
+			console.log('BeatFrame.updateStartPosition: Updated startPositionStore with:', startPosCopy);
 		}
 	}
 
@@ -311,7 +308,7 @@
 		const handleStartPosSelected = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
 				console.log(
-					'SequenceBeatFrame: Received start-position-selected event with data:',
+					'BeatFrame: Received start-position-selected event with data:',
 					event.detail.startPosition
 				);
 				updateStartPosition(event.detail.startPosition);

@@ -6,7 +6,7 @@
  */
 
 import { createModernMachine, createMachineContainer } from '../../core/modernMachine';
-import { sequenceContainer } from '../../stores/sequence/modernSequenceContainer';
+import { sequenceContainer } from '../../stores/sequence/SequenceContainer';
 import {
 	updateSequence,
 	selectBeat,

@@ -1,11 +1,11 @@
-<!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/StartPosBeat.svelte -->
+<!-- src/lib/components/SequenceWorkbench/BeatFrame/StartPosBeat.svelte -->
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import Beat from './Beat.svelte';
 	import type { BeatData } from './BeatData';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
-	import { pictographStore } from '$lib/state/stores/pictograph/pictograph.store';
+	import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 	import { writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { updateDevTools } from '$lib/utils/devToolsUpdater';
@@ -98,8 +98,8 @@
 			// Update the local pictograph data when the start position changes
 			pictographDataStore.set(startPosCopy);
 
-			// Also update the new pictographStore
-			pictographStore.setData(startPosCopy);
+			// Also update the pictographContainer
+			pictographContainer.setData(startPosCopy);
 
 			console.log('StartPosBeat: Updated pictographDataStore with startPos:', startPosCopy);
 
@@ -113,8 +113,8 @@
 			// If no start position is set, use default data
 			pictographDataStore.set(defaultPictographData);
 
-			// Also update the new pictographStore
-			pictographStore.setData(defaultPictographData);
+			// Also update the pictographContainer
+			pictographContainer.setData(defaultPictographData);
 
 			// Update the beat data accordingly
 			beatData = {
@@ -137,8 +137,8 @@
 				// Update the pictograph store with the new data
 				pictographDataStore.set(newStartPos);
 
-				// Also update the new pictographStore
-				pictographStore.setData(newStartPos);
+				// Also update the pictographContainer
+				pictographContainer.setData(newStartPos);
 
 				// Update the beat data
 				beatData = {

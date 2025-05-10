@@ -13,8 +13,8 @@ import {
 	currentBeat,
 	beatCount,
 	sequenceDifficulty
-} from './modernSequenceContainer';
-import type { SequenceState, BeatData } from './modernSequenceContainer';
+} from './SequenceContainer';
+import type { SequenceState, BeatData } from './SequenceContainer';
 
 /**
  * Create a store adapter for the sequence container

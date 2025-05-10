@@ -11,7 +11,7 @@
  */
 
 // Re-export types from the modern implementation
-export type { BeatData, SequenceState } from './sequence/modernSequenceContainer';
+export type { BeatData, SequenceState } from './sequence/SequenceContainer';
 
 // Re-export the store and derived stores from the adapter
 export {
@@ -23,7 +23,7 @@ export {
 } from './sequence/sequenceAdapter';
 
 // Export the container for modern usage
-export { sequenceContainer } from './sequence/modernSequenceContainer';
+export { sequenceContainer } from './sequence/SequenceContainer';
 
 // Note: The sequence machine is already connected to the store
 // through the updateSequence action in the sequenceMachine.ts file.

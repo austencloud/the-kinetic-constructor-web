@@ -1,4 +1,4 @@
-// src/lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData.ts
+// src/lib/components/SequenceWorkbench/BeatFrame/BeatData.ts
 import type { PictographData } from '$lib/types/PictographData.js';
 
 /**

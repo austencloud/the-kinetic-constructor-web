@@ -14,7 +14,7 @@
 	import { Letter } from '$lib/types/Letter';
 	import type { VTGTiming, VTGDir, GridMode } from '$lib/types/Types';
 	import { PropType } from '$lib/types/Types';
-	import type { BeatData } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData';
+	import type { BeatData } from '$lib/components/SequenceWorkbench/BeatFrame/BeatData';
 
 	// XState & new stores
 	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';

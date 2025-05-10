@@ -3,15 +3,15 @@ import { sequenceDataService } from './SequenceDataService';
 import type { PictographData } from '$lib/types/PictographData';
 import type { SequenceBeat, SequenceStartPos } from './SequenceDataService';
 import { beatsStore } from '$lib/stores/sequence/beatsStore';
-import { createBeat } from '$lib/components/SequenceWorkbench/SequenceBeatFrame/BeatData';
+import { createBeat } from '$lib/components/SequenceWorkbench/BeatFrame/BeatData';
 import { browser } from '$app/environment';
 
 export class StartPositionService {
 	convertPictographToStartPosition(pictograph: PictographData): SequenceStartPos {
 		return {
 			beat: 0,
-			letter: "α", // Adding a letter for the start position
-			sequence_start_position: pictograph.startPos?.replace(/\d+/, "") || "alpha", // Store the base name
+			letter: 'α', // Adding a letter for the start position
+			sequence_start_position: pictograph.startPos?.replace(/\d+/, '') || 'alpha', // Store the base name
 			start_pos: pictograph.startPos ?? undefined,
 			end_pos: pictograph.endPos ?? undefined,
 			blue_attributes: {
@@ -44,7 +44,7 @@ export class StartPositionService {
 
 		// 2. IMPORTANT: Don't touch beatsStore at all!
 		// The UI is already handling the start position display separately
-		
+
 		// 3. Dispatch a custom event to notify components that sequence data changed
 		if (browser) {
 			const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { backgroundContainer } from '$lib/state/stores/background/modernBackgroundContainer';
+  import { backgroundContainer } from '$lib/state/stores/background/BackgroundContainer';
   import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
   import type { BackgroundType, QualityLevel } from './types/types';
   

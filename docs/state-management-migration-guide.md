@@ -18,14 +18,15 @@ This document outlines our progress and plan for migrating from the legacy store
 ### Remaining Phases
 
 7. ✅ **Pictograph Store Migration**: Migrate the pictograph store to use the new container-based architecture
-8. 🔄 **Settings Store Migration**: Migrate the settings store to use the new container-based architecture
-9. 🔄 **Grid Store Migration**: Migrate the grid store to use the new container-based architecture
-10. 🔄 **UI Store Migration**: Migrate UI stores to use the new container-based architecture
-11. 🔄 **Act Store Migration**: Migrate the act store to use the new container-based architecture
-12. 🔄 **PageTransition Component Update**: Update the PageTransition component to use Svelte 5 runes
-13. 🔄 **Testing and Verification**: Ensure all functionality works correctly with the new implementation
-14. 🔄 **Documentation**: Update documentation to reflect the Svelte 5 and XState 5 architecture
-15. 🔄 **Legacy Code Removal**: Remove deprecated code and compatibility layers
+8. ✅ **File Renaming**: Rename files with "modern" in their names to reflect full migration to Svelte 5 and XState 5
+9. 🔄 **Settings Store Migration**: Migrate the settings store to use the new container-based architecture
+10. 🔄 **Grid Store Migration**: Migrate the grid store to use the new container-based architecture
+11. 🔄 **UI Store Migration**: Migrate UI stores to use the new container-based architecture
+12. 🔄 **Act Store Migration**: Migrate the act store to use the new container-based architecture
+13. 🔄 **PageTransition Component Update**: Update the PageTransition component to use Svelte 5 runes
+14. 🔄 **Testing and Verification**: Ensure all functionality works correctly with the new implementation
+15. 🔄 **Documentation**: Update documentation to reflect the Svelte 5 and XState 5 architecture
+16. 🔄 **Legacy Code Removal**: Remove deprecated code and compatibility layers
 
 ## Successfully Migrated Components
 
@@ -81,11 +82,22 @@ The pictograph system has been fully migrated to use Svelte 5 and the new contai
 
 The migration includes:
 
-1. **Modern Pictograph Container**: A container-based implementation that manages pictograph state
+1. **Pictograph Container**: A container-based implementation that manages pictograph state
 2. **Pictograph State Machine**: An XState 5 machine for managing pictograph state transitions
 3. **Pictograph Store Adapter**: An adapter that provides backward compatibility with the old store API
 4. **Pictograph Component Rewrite**: Completely rewrote the component using Svelte 5 runes
 5. **Backward Compatibility Wrapper**: Created a thin wrapper to maintain the same API for existing code
+
+### File Renaming
+
+As part of the migration to Svelte 5 and XState 5, we've renamed files that had "modern" in their names to reflect that they are now the standard implementation:
+
+- Renamed `modernPictographContainer.ts` to `pictographContainer.ts`
+- Renamed `modernPictographSelectors.ts` to `pictographSelectors.ts`
+- Renamed `modernPictographContainer.test.ts` to `pictographContainer.test.ts`
+- Renamed `ModernStateExample.svelte` to `StateExample.svelte`
+
+For backward compatibility, we've created compatibility layers that re-export from the new files. These compatibility layers will be removed once all references have been updated.
 
 ## Lessons Learned and Challenges
 
@@ -93,7 +105,7 @@ The migration includes:
 
 One of the most significant challenges was dealing with type compatibility between different implementations of the `BeatData` interface:
 
-- The legacy implementation in `SequenceBeatFrame/BeatData.ts` used properties like `beatNumber` and `filled`
+- The legacy implementation in `BeatFrame/BeatData.ts` used properties like `beatNumber` and `filled`
 - The modern implementation in `modernSequenceContainer.ts` used properties like `id` and `number`
 - We created type adapters to convert between these different data models
 

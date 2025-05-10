@@ -8,7 +8,7 @@ import {
 	sequenceSelectors,
 	sequenceActions
 } from './SequenceMachine';
-import { sequenceContainer } from '../../stores/sequence/modernSequenceContainer';
+import { sequenceContainer } from '../../stores/sequence/SequenceContainer';
 import { waitFor } from '@testing-library/svelte';
 
 // Mock the generateSequenceActor

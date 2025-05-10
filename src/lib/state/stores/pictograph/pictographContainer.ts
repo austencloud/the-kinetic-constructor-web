@@ -1,8 +1,8 @@
 /**
- * Modern Pictograph Container
+ * Pictograph Container
  *
- * This module provides a modern implementation of the pictograph state using
- * the new container-based approach with Svelte 5 runes.
+ * This module provides an implementation of the pictograph state using
+ * the container-based approach with Svelte 5 runes.
  */
 
 import { createContainer } from '$lib/state/core/container';
