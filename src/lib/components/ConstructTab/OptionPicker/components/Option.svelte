@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getContext } from 'svelte'; // Import getContext
-	import { writable } from 'svelte/store';
+	// Removed writable import as we're passing pictographData directly
 	// Removed crossfade and fade transitions
 	// Removed cubicOut easing
 	import type { PictographData } from '$lib/types/PictographData';
@@ -30,12 +30,12 @@
 
 	// Removed crossfade transition setup
 
-	// Generate a unique key for the pictograph based on its data
+	// We'll use a key to force re-render when pictograph data changes
 	$: pictographKey = `${pictographData.letter || ''}-${pictographData.startPos || ''}-${pictographData.endPos || ''}`;
+	$: console.log('Option pictographData:', pictographData);
 
-	// Keep pictograph data up-to-date in its own store for the Pictograph component
-	const pictographDataStore = writable(pictographData);
-	$: pictographDataStore.set(pictographData);
+	// We'll pass pictographData directly to the Pictograph component
+	// This ensures proper initialization of motion objects
 </script>
 
 <div
@@ -50,11 +50,10 @@
 	aria-label={ariaLabel}
 	aria-pressed={isSelected}
 >
-	<div
-		class="pictograph-container"
-		style="transform: scale({scaleFactor})"
-	>
-		<Pictograph {pictographDataStore} />
+	<div class="pictograph-container" style="transform: scale({scaleFactor})">
+		{#key pictographKey}
+			<Pictograph {pictographData} showLoadingIndicator={false} useNewStateManagement={false} />
+		{/key}
 	</div>
 </div>
 

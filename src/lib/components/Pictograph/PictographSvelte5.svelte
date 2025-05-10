@@ -1,12 +1,10 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { writable, get } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
+	// Import types for TypeScript type checking
 	import type { PropData } from '../objects/Prop/PropData';
 	import type { ArrowData } from '../objects/Arrow/ArrowData';
 	import type { GridData } from '../objects/Grid/GridData';
-	import type { MotionData } from '../objects/Motion/MotionData';
 	import Grid from '../objects/Grid/Grid.svelte';
 	import Prop from '../objects/Prop/Prop.svelte';
 	import Arrow from '../objects/Arrow/Arrow.svelte';
@@ -19,34 +17,32 @@
 	import BeatLabel from './components/BeatLabel.svelte';
 	import { errorService, ErrorSeverity } from '../../services/ErrorHandlingService';
 	import { logger } from '$lib/core/logging';
-	// Import both legacy and modern implementations
+	import { pictographContainer } from '$lib/state/stores/pictograph/modernPictographContainer';
 	import { defaultPictographData } from './utils/defaultPictographData';
-	import PictographSvelte5 from './PictographSvelte5.svelte';
 
-	// Feature flag for using new state management
-	export let useNewStateManagement = false;
+	// Props using Svelte 5 runes
+	const props = $props<{
+		pictographData?: PictographData;
+		onClick?: () => void;
+		debug?: boolean;
+		animationDuration?: number;
+		showLoadingIndicator?: boolean;
+		beatNumber?: number | null;
+		isStartPosition?: boolean;
+	}>();
 
-	// Props
-	export let pictographData: PictographData | undefined = undefined;
-	export let onClick: (() => void) | undefined = undefined;
-	export let debug = false;
-	export let animationDuration = 300;
-	export let showLoadingIndicator = true;
-	export let beatNumber: number | null = null;
-	export let isStartPosition = false;
+	// Set default values for props
+	const debug = props.debug ?? false;
+	const animationDuration = props.animationDuration ?? 300;
+	const showLoadingIndicator = props.showLoadingIndicator ?? true;
+	const beatNumber = props.beatNumber ?? null;
+	const isStartPosition = props.isStartPosition ?? false;
+	const onClick = props.onClick;
 
-	// Create a local pictograph data store
-	const pictographDataStore = writable(pictographData || defaultPictographData);
-
-	// Reactively update the pictographDataStore when the pictographData changes.
-	// Since pictographData is already a new object when the beat itself is updated
-	// (due to the mapping in BeatFrameState), a direct assignment is sufficient and safer
-	// than JSON.parse(JSON.stringify()), which can corrupt complex data.
-	$: if (pictographData) {
-		pictographDataStore.set(pictographData);
-	}
-
-	// Component state
+	// Component state with reactivity
+	// Using regular variables for now since we're using the feature flag approach
+	// Note: These warnings about non-reactive updates are expected and will be fixed
+	// when we fully migrate to Svelte 5 and remove the feature flag
 	let state = 'initializing';
 	let errorMessage: string | null = null;
 	let gridData: GridData | null = null;
@@ -61,19 +57,65 @@
 	let renderCount = 0;
 	let loadProgress = 0;
 	let service: PictographService | null = null;
-	let lastDataSnapshot: any = null;
 
-	// Event dispatcher
+	// Store tracked data snapshot for comparison
+	interface TrackedDataSnapshot {
+		letter: string | null;
+		gridMode: string;
+		startPos: string | null;
+		endPos: string | null;
+		direction: string | null;
+		redMotionData: {
+			id: string;
+			startLoc: string;
+			endLoc: string;
+			startOri: string;
+			endOri: string;
+			motionType: string;
+		} | null;
+		blueMotionData: {
+			id: string;
+			startLoc: string;
+			endLoc: string;
+			startOri: string;
+			endOri: string;
+			motionType: string;
+		} | null;
+	}
+	let lastDataSnapshot: TrackedDataSnapshot | null = null;
+
+	// Event handling
+	import { createEventDispatcher } from 'svelte';
 	const dispatch = createEventDispatcher();
 
-	onMount(() => {
+	// Get pictograph data from props or container
+	const pictographData = $derived(
+		props.pictographData || pictographContainer.state.data || defaultPictographData
+	);
+
+	// Reactive values derived from pictograph data
+	const letter = $derived(pictographData?.letter || null);
+	const gridMode = $derived(pictographData?.gridMode || 'diamond');
+	const pictographAriaLabel = $derived(getPictographAriaLabel());
+	const interactiveProps = $derived(
+		onClick
+			? {
+					role: 'button',
+					tabIndex: 0,
+					'aria-label': `Pictograph for letter ${letter || 'unknown'}`
+				}
+			: {}
+	);
+
+	// Initialize the service when component mounts
+	$effect(() => {
 		const startTime = performance.now();
 
 		try {
 			// Make sure we have data to work with
-			if (!pictographData && !get(pictographDataStore)) {
+			if (!pictographData) {
 				// If no data is available, use default data
-				pictographDataStore.set(defaultPictographData);
+				pictographContainer.setData(defaultPictographData);
 				return;
 			}
 
@@ -81,23 +123,23 @@
 			logger.info('Pictograph component initializing', {
 				data: {
 					debug,
-					hasMotionData: hasRequiredMotionData(get(pictographDataStore)),
-					letter: get(pictographDataStore)?.letter,
-					gridMode: get(pictographDataStore)?.gridMode
+					hasMotionData: hasRequiredMotionData(pictographData),
+					letter: pictographData?.letter,
+					gridMode: pictographData?.gridMode
 				}
 			});
 
-			service = new PictographService(get(pictographDataStore));
+			service = new PictographService(pictographData);
 
 			// Initialize data snapshot
-			updateLastKnownValues(get(pictographDataStore));
+			updateLastKnownValues(pictographData);
 
-			if (hasRequiredMotionData(get(pictographDataStore))) {
+			if (hasRequiredMotionData(pictographData)) {
 				state = 'loading';
 				logger.debug('Pictograph: Motion data available, entering loading state', {
 					data: {
-						redMotionData: get(pictographDataStore)?.redMotionData ? true : false,
-						blueMotionData: get(pictographDataStore)?.blueMotionData ? true : false
+						redMotionData: pictographData?.redMotionData ? true : false,
+						blueMotionData: pictographData?.blueMotionData ? true : false
 					}
 				});
 			} else {
@@ -110,8 +152,8 @@
 				duration: initTime,
 				data: {
 					state,
-					letter: get(pictographDataStore)?.letter,
-					gridMode: get(pictographDataStore)?.gridMode
+					letter: pictographData?.letter,
+					gridMode: pictographData?.gridMode
 				}
 			});
 		} catch (error) {
@@ -124,18 +166,18 @@
 		};
 	});
 
-	// Subscribe to the pictographDataStore to update components when it changes
-	pictographDataStore.subscribe((data) => {
-		if (data && service) {
+	// Watch for changes to pictographData and update components when it changes
+	$effect(() => {
+		if (pictographData && service) {
 			// Use a safe comparison method that avoids circular references
-			const hasChanged = checkForDataChanges(data);
+			const hasChanged = checkForDataChanges(pictographData);
 
 			// Only process if there's a real change and service is initialized
 			if (hasChanged) {
 				if (debug) console.debug('Pictograph data changed, updating components');
 
 				// Update the service with new data
-				service.updateData(data);
+				service.updateData(pictographData);
 
 				// Update local state
 				updateComponentsFromData();
@@ -143,6 +185,25 @@
 				// Notify parent about the update
 				dispatch('dataUpdated', { type: 'all' });
 			}
+		}
+	});
+
+	// Update the container when pictograph data changes
+	$effect(() => {
+		if (pictographData && !props.pictographData) {
+			pictographContainer.setData(pictographData);
+		}
+	});
+
+	// Update load progress when components loaded or total changes
+	$effect(() => {
+		loadProgress = Math.floor((componentsLoaded / Math.max(totalComponentsToLoad, 1)) * 100);
+	});
+
+	// For debugging - log when pictographData changes
+	$effect(() => {
+		if (debug && pictographData) {
+			console.log('Pictograph data changed:', pictographData);
 		}
 	});
 
@@ -179,9 +240,9 @@
 
 		// Helper function to compare motion data
 		function compareMotionData(color: 'red' | 'blue'): boolean {
-			const key = color === 'red' ? 'redMotionData' : 'blueMotionData';
-			const oldMotion = lastDataSnapshot[key as keyof typeof lastDataSnapshot] as MotionData | null;
-			const newMotion = newData[key as keyof typeof newData] as MotionData | null;
+			const key = `${color}MotionData` as 'redMotionData' | 'blueMotionData';
+			const oldMotion = lastDataSnapshot![key]; // Use non-null assertion if sure it's initialized
+			const newMotion = newData[key];
 
 			// If both null/undefined or same reference, no change
 			if (oldMotion === newMotion) return false;
@@ -235,6 +296,17 @@
 		};
 	}
 
+	function getPictographAriaLabel(): string {
+		if (state === 'error') return `Pictograph error: ${errorMessage}`;
+		const letterPart = letter ? `for letter ${letter}` : '';
+		const statePart = state === 'complete' ? 'complete' : 'loading';
+		return `Pictograph visualization ${letterPart} - ${statePart}`;
+	}
+
+	function hasRequiredMotionData(data: PictographData): boolean {
+		return Boolean(data?.redMotionData || data?.blueMotionData);
+	}
+
 	// Function to update components when pictographData changes
 	function updateComponentsFromData() {
 		try {
@@ -245,13 +317,13 @@
 			}
 
 			// Make sure we have data to work with
-			if (!get(pictographDataStore)) {
+			if (!pictographData) {
 				state = 'grid_only';
 				return;
 			}
 
 			// Update state based on available motion data
-			if (hasRequiredMotionData(get(pictographDataStore))) {
+			if (hasRequiredMotionData(pictographData)) {
 				if (state === 'grid_only') state = 'loading';
 			} else {
 				state = 'grid_only';
@@ -267,7 +339,7 @@
 
 				// If all required components were already loaded previously,
 				// mark as complete immediately
-				if (requiredComponents.every((comp) => loadedComponents.has(comp))) {
+				if (requiredComponents.every((comp: string) => loadedComponents.has(comp))) {
 					state = 'complete';
 				}
 			}
@@ -282,6 +354,10 @@
 			gridData = data;
 			componentsLoaded++;
 			loadedComponents.add('grid');
+
+			// Update the container
+			pictographContainer.updateGridData(data);
+			pictographContainer.updateComponentLoaded('grid');
 
 			// Exit if grid-only mode
 			if (state === 'grid_only') {
@@ -305,13 +381,12 @@
 			if (state !== 'complete') totalComponentsToLoad = 1;
 
 			// Make sure we have data to work with
-			if (!get(pictographDataStore) || !service) return;
+			if (!pictographData || !service) return;
 
 			// Create red components if needed
-			if (get(pictographDataStore).redMotionData) {
-				const redMotionData = get(pictographDataStore).redMotionData as MotionData;
-				redPropData = service.createPropData(redMotionData, 'red');
-				redArrowData = service.createArrowData(redMotionData, 'red');
+			if (pictographData.redMotionData) {
+				redPropData = service.createPropData(pictographData.redMotionData, 'red');
+				redArrowData = service.createArrowData(pictographData.redMotionData, 'red');
 
 				if (!requiredComponents.includes('redProp')) {
 					requiredComponents.push('redProp', 'redArrow');
@@ -324,10 +399,9 @@
 			}
 
 			// Create blue components if needed
-			if (get(pictographDataStore).blueMotionData) {
-				const blueMotionData = get(pictographDataStore).blueMotionData as MotionData;
-				bluePropData = service.createPropData(blueMotionData, 'blue');
-				blueArrowData = service.createArrowData(blueMotionData, 'blue');
+			if (pictographData.blueMotionData) {
+				bluePropData = service.createPropData(pictographData.blueMotionData, 'blue');
+				blueArrowData = service.createArrowData(pictographData.blueMotionData, 'blue');
 
 				if (!requiredComponents.includes('blueProp')) {
 					requiredComponents.push('blueProp', 'blueArrow');
@@ -349,6 +423,12 @@
 					gridData
 				);
 			}
+
+			// Update the container
+			if (redPropData) pictographContainer.updatePropData('red', redPropData);
+			if (bluePropData) pictographContainer.updatePropData('blue', bluePropData);
+			if (redArrowData) pictographContainer.updateArrowData('red', redArrowData);
+			if (blueArrowData) pictographContainer.updateArrowData('blue', blueArrowData);
 		} catch (error) {
 			handleError('component creation', error);
 		}
@@ -357,13 +437,16 @@
 	function handleComponentLoaded(component: string) {
 		loadedComponents.add(component);
 		componentsLoaded++;
+		pictographContainer.updateComponentLoaded(component as any); // Cast needed if updateComponentLoaded has specific string literal types
 		dispatch('componentLoaded', { componentName: component });
 		checkLoadingComplete();
 	}
 
 	function checkLoadingComplete() {
 		const startCheck = performance.now();
-		const allLoaded = requiredComponents.every((component) => loadedComponents.has(component));
+		const allLoaded = requiredComponents.every((component: string) =>
+			loadedComponents.has(component)
+		);
 
 		if (allLoaded) {
 			state = 'complete';
@@ -376,8 +459,8 @@
 					componentsLoaded,
 					totalComponentsToLoad,
 					renderCount,
-					letter: get(pictographDataStore)?.letter,
-					gridMode: get(pictographDataStore)?.gridMode,
+					letter: pictographData?.letter,
+					gridMode: pictographData?.gridMode,
 					loadedComponents: Array.from(loadedComponents)
 				}
 			});
@@ -391,8 +474,8 @@
 			error: error instanceof Error ? error : new Error(String(error)),
 			data: {
 				component,
-				letter: get(pictographDataStore)?.letter,
-				gridMode: get(pictographDataStore)?.gridMode,
+				letter: pictographData?.letter,
+				gridMode: pictographData?.gridMode,
 				applyingFallback: true
 			}
 		});
@@ -461,10 +544,8 @@
 
 			// Log using the new structured logging system
 			logger.pictograph(`Error in ${source}`, {
-				letter: get(pictographDataStore)?.letter
-					? String(get(pictographDataStore)?.letter)
-					: undefined,
-				gridMode: get(pictographDataStore)?.gridMode,
+				letter: letter ? letter : undefined,
+				gridMode: gridMode,
 				componentState: state,
 				renderMetrics: {
 					componentsLoaded: componentsLoaded,
@@ -520,133 +601,101 @@
 			});
 		}
 	}
-
-	function getPictographAriaLabel(): string {
-		if (state === 'error') return `Pictograph error: ${errorMessage}`;
-		const letterPart = get(pictographDataStore)?.letter
-			? `for letter ${get(pictographDataStore)?.letter}`
-			: '';
-		const statePart = state === 'complete' ? 'complete' : 'loading';
-		return `Pictograph visualization ${letterPart} - ${statePart}`;
-	}
-
-	function hasRequiredMotionData(data: PictographData): boolean {
-		return Boolean(data?.redMotionData || data?.blueMotionData);
-	}
 </script>
 
-{#if useNewStateManagement}
-	<svelte:component
-		this={PictographSvelte5}
-		{pictographData}
-		{onClick}
-		{debug}
-		{animationDuration}
-		{showLoadingIndicator}
-		{beatNumber}
-		{isStartPosition}
-		{...$$restProps}
-	/>
-{:else}
-	<!-- Use a button if onClick is provided, otherwise use a div -->
-	<svelte:element
-		this={onClick ? 'button' : 'div'}
-		class="pictograph-wrapper"
-		on:click={onClick ? () => onClick() : undefined}
-		aria-label={onClick
-			? `Pictograph for letter ${get(pictographDataStore)?.letter || 'unknown'}`
-			: undefined}
-		role={onClick ? 'button' : 'img'}
-		data-state={state}
-		data-letter={get(pictographDataStore)?.letter || 'none'}
-		type={onClick ? 'button' : undefined}
+<div
+	class="pictograph-wrapper"
+	onclick={onClick ? () => onClick() : undefined}
+	onkeydown={(e) => {
+		if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+			e.preventDefault();
+			onClick();
+		}
+	}}
+	{...interactiveProps}
+	data-state={state}
+	data-letter={letter || 'none'}
+>
+	<svg
+		class="pictograph"
+		viewBox="0 0 950 950"
+		xmlns="http://www.w3.org/2000/svg"
+		role="img"
+		aria-label={pictographAriaLabel}
 	>
-		<svg
-			class="pictograph"
-			viewBox="0 0 950 950"
-			xmlns="http://www.w3.org/2000/svg"
-			role="img"
-			aria-label={getPictographAriaLabel()}
-		>
-			{#if state === 'initializing'}
-				{#if showLoadingIndicator}
-					<InitializingSpinner {animationDuration} />
-				{/if}
-			{:else if state === 'error'}
-				<PictographError {errorMessage} {animationDuration} />
-			{:else}
-				<Grid
-					gridMode={get(pictographDataStore)?.gridMode}
-					onPointsReady={handleGridLoaded}
-					on:error={(e) => handleComponentError('grid', e.detail)}
-					{debug}
+		{#if state === 'initializing'}
+			{#if showLoadingIndicator}
+				<InitializingSpinner {animationDuration} />
+			{/if}
+		{:else if state === 'error'}
+			<PictographError {errorMessage} {animationDuration} />
+		{:else}
+			<Grid
+				{gridMode}
+				onPointsReady={handleGridLoaded}
+				on:error={(e) => handleComponentError('grid', e.detail)}
+				{debug}
+			/>
+
+			{#if beatNumber !== null}
+				<BeatLabel
+					text={isStartPosition ? 'Start' : beatNumber.toString()}
+					position="top-left"
+					{animationDuration}
 				/>
+			{/if}
 
-				{#if beatNumber !== null}
-					<BeatLabel
-						text={isStartPosition ? 'Start' : beatNumber.toString()}
-						position="top-left"
-						{animationDuration}
-					/>
+			{#if state !== 'grid_only'}
+				{#if letter}
+					<g transition:fade={{ duration: animationDuration, delay: 100 }}>
+						<TKAGlyph {letter} turnsTuple="(s, 0, 0)" x={50} y={800} />
+					</g>
 				{/if}
 
-				{#if state !== 'grid_only'}
-					{#if get(pictographDataStore)?.letter}
-						<g transition:fade={{ duration: animationDuration, delay: 100 }}>
-							<TKAGlyph
-								letter={get(pictographDataStore)?.letter}
-								turnsTuple="(s, 0, 0)"
-								x={50}
-								y={800}
+				{#each [{ color: 'red', propData: redPropData, arrowData: redArrowData, delay: 150 }, { color: 'blue', propData: bluePropData, arrowData: blueArrowData, delay: 200 }] as { color, propData: currentPropData, arrowData: currentArrowData, delay }}
+					{#if currentPropData}
+						<g
+							transition:fade={{ duration: animationDuration, delay }}
+							style="transform-origin: center center;"
+						>
+							<Prop
+								propData={currentPropData}
+								on:loaded={() => handleComponentLoaded(`${color}Prop`)}
+								on:error={(e) => handleComponentError(`${color}Prop`, e.detail)}
 							/>
 						</g>
 					{/if}
 
-					{#each [{ color: 'red', propData: redPropData, arrowData: redArrowData, delay: 150 }, { color: 'blue', propData: bluePropData, arrowData: blueArrowData, delay: 200 }] as { color, propData, arrowData, delay }}
-						{#if propData}
-							<g
-								transition:fade={{ duration: animationDuration, delay }}
-								style="transform-origin: center center;"
-							>
-								<Prop
-									{propData}
-									on:loaded={() => handleComponentLoaded(`${color}Prop`)}
-									on:error={(e) => handleComponentError(`${color}Prop`, e.detail)}
-								/>
-							</g>
-						{/if}
-
-						{#if arrowData}
-							<g
-								transition:fade={{ duration: animationDuration, delay }}
-								style="transform-origin: center center;"
-							>
-								<Arrow
-									{arrowData}
-									on:loaded={() => handleComponentLoaded(`${color}Arrow`)}
-									on:error={(e) => handleComponentError(`${color}Arrow`, e.detail)}
-								/>
-							</g>
-						{/if}
-					{/each}
-				{/if}
+					{#if currentArrowData}
+						<g
+							transition:fade={{ duration: animationDuration, delay }}
+							style="transform-origin: center center;"
+						>
+							<Arrow
+								arrowData={currentArrowData}
+								on:loaded={() => handleComponentLoaded(`${color}Arrow`)}
+								on:error={(e) => handleComponentError(`${color}Arrow`, e.detail)}
+							/>
+						</g>
+					{/if}
+				{/each}
 			{/if}
-		</svg>
-
-		{#if state === 'loading' && showLoadingIndicator}
-			<LoadingProgress {loadProgress} showText={true} />
 		{/if}
+	</svg>
 
-		{#if debug}
-			<PictographDebug
-				{state}
-				{componentsLoaded}
-				totalComponents={totalComponentsToLoad}
-				{renderCount}
-			/>
-		{/if}
-	</svelte:element>
-{/if}
+	{#if state === 'loading' && showLoadingIndicator}
+		<LoadingProgress {loadProgress} showText={true} />
+	{/if}
+
+	{#if debug}
+		<PictographDebug
+			{state}
+			{componentsLoaded}
+			totalComponents={totalComponentsToLoad}
+			{renderCount}
+		/>
+	{/if}
+</div>
 
 <style>
 	.pictograph-wrapper {
@@ -681,15 +730,15 @@
 		overflow: visible;
 		transform-origin: center center;
 		box-sizing: border-box;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		/* display: flex; /* Removed as SVG content handles its own layout */
+		/* align-items: center; */
+		/* justify-content: center; */
 	}
 
 	.pictograph-wrapper:hover .pictograph {
 		transform: scale(1.05);
 		z-index: 4;
-		border: 4px solid #48bb78;
+		border: 4px solid #48bb78; /* Tailwind green-500 */
 		box-shadow:
 			0 0 0 2px rgba(72, 187, 120, 0.4),
 			0 4px 12px rgba(0, 0, 0, 0.2);
@@ -705,12 +754,12 @@
 	}
 
 	.pictograph-wrapper:focus-visible .pictograph {
-		outline: 3px solid #4299e1;
+		outline: 3px solid #4299e1; /* Tailwind blue-500 */
 		outline-offset: 2px;
 	}
 
 	.pictograph-wrapper[data-state='error'] .pictograph {
-		border-color: #fc8181;
-		box-shadow: 0 0 0 1px #fc8181;
+		border-color: #fc8181; /* Tailwind red-400 */
+		box-shadow: 0 0 0 1px #fc8181; /* Tailwind red-400 */
 	}
 </style>

@@ -1,6 +1,5 @@
-<script lang="ts">
+I don't really want the labels on things we got water I mean somebody could fill it up with probably nobody will somebody always drinks the water and that's gone it's poisonous sustenance is a lie That is the only constant oh it's completely full I mean 2 it's a small portable device that attaches magnetically to the back of your acoustic guitar And creates reverbs delays chorus<script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { writable } from 'svelte/store';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import type { PictographData } from '$lib/types/PictographData';
@@ -36,7 +35,8 @@
 
 		// Initialize service to generate missing components if needed
 		try {
-			const service = new PictographService(processingData);
+			// Create a service instance to initialize the motion objects
+			new PictographService(processingData);
 			return processingData;
 		} catch (err) {
 			console.error('Error processing pictograph data:', err);
@@ -44,24 +44,13 @@
 		}
 	}
 
-	// Safely handle pictograph processing with null/undefined checking
-	$: safeProcessedPictographs = Array.isArray(pictographs)
+	// Process pictographs for direct use
+	$: processedPictographs = Array.isArray(pictographs)
 		? pictographs.map((p) => (p ? processData(p) : defaultPictographData))
 		: [];
 
-	// Create and manage stores for pictographs
-	let pictographStores: Array<ReturnType<typeof writable<PictographData>>> = [];
-
-	// Update stores when pictographs change, with safety checks
-	$: {
-		if (Array.isArray(pictographs) && pictographs.length > 0) {
-			// Regenerate all stores when pictographs change
-			pictographStores = safeProcessedPictographs.map((p) => writable<PictographData>(p));
-		} else if (!Array.isArray(pictographs) || pictographs.length === 0) {
-			// Reset stores if no pictographs
-			pictographStores = [];
-		}
-	}
+	// We'll use the processed pictographs directly instead of creating stores
+	// This ensures proper initialization of motion objects in the Pictograph component
 
 	function handleSelect(pictograph: PictographData) {
 		if (!disabled) {
@@ -71,22 +60,24 @@
 </script>
 
 <div class="pictograph-answers">
-	{#if Array.isArray(pictographs) && pictographs.length > 0}
-		{#each pictographs as pictograph, i}
-			{#if pictographStores[i]}
-				{#key pictographIds[i]}
-					<button
-						class="pictograph-button"
-						on:click={() => handleSelect(pictograph)}
-						{disabled}
-						aria-label="Pictograph answer option"
-					>
-						<div class="pictograph-container">
-							<Pictograph pictographDataStore={pictographStores[i]} showLoadingIndicator={false} />
-						</div>
-					</button>
-				{/key}
-			{/if}
+	{#if Array.isArray(processedPictographs) && processedPictographs.length > 0}
+		{#each processedPictographs as processedPictograph, i}
+			{#key pictographIds[i]}
+				<button
+					class="pictograph-button"
+					on:click={() => handleSelect(pictographs[i])}
+					{disabled}
+					aria-label="Pictograph answer option"
+				>
+					<div class="pictograph-container">
+						<Pictograph
+							pictographData={processedPictograph}
+							showLoadingIndicator={false}
+							useNewStateManagement={false}
+						/>
+					</div>
+				</button>
+			{/key}
 		{/each}
 	{:else}
 		<div class="no-options">No options available</div>

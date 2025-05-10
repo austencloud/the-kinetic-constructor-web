@@ -10,6 +10,15 @@ import { writable } from 'svelte/store';
 // Create a replacement for the removed isSequenceEmpty store
 export const isSequenceEmpty = writable(true);
 
+// Set up a subscription to update isSequenceEmpty whenever the sequence changes
+if (typeof window !== 'undefined') {
+	sequenceStore.subscribe((state) => {
+		// Update isSequenceEmpty based on whether there are any beats
+		isSequenceEmpty.set(state.beats.length === 0);
+		console.log('isSequenceEmpty updated:', state.beats.length === 0);
+	});
+}
+
 /**
  * Initialize persistence by loading backup data
  */

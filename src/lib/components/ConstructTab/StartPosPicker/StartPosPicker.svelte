@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import StartPositionLabel from './StartPosLabel.svelte';
 	import type { PictographData } from '$lib/types/PictographData.js';
-	import { writable } from 'svelte/store';
+	// No longer need writable with Svelte 5 approach
 	import LoadingSpinner from '$lib/components/MainWidget/loading/LoadingSpinner.svelte';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import pictographDataStore from '$lib/stores/pictograph/pictographStore';
@@ -242,7 +242,6 @@
 	{:else}
 		<div class="pictograph-row">
 			{#each startPositionPictographs as pictograph (pictograph.letter + '_' + pictograph.startPos + '_' + pictograph.endPos)}
-				{@const pictographStore = writable(pictograph)}
 				<div
 					class="pictograph-container"
 					role="button"
@@ -260,9 +259,10 @@
 					}}
 				>
 					<Pictograph
-						pictographDataStore={pictographStore}
+						pictographData={pictograph}
 						showLoadingIndicator={false}
 						debug={true}
+						useNewStateManagement={false}
 					/>
 				</div>
 			{/each}

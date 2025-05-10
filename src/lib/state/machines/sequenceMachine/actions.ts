@@ -1,6 +1,6 @@
 /**
  * Modern actions for the sequence state machine
- * 
+ *
  * This module provides actions that interact with the modern sequence container
  * instead of the legacy sequence store.
  */
@@ -9,6 +9,7 @@ import { sequenceContainer } from '../../stores/sequence/modernSequenceContainer
 import type { BeatData } from '../../stores/sequence/modernSequenceContainer';
 import { convertToStoreBeatData } from './types';
 import { updateDevTools } from '$lib/utils/devToolsUpdater';
+import { isSequenceEmpty } from './persistence';
 
 /**
  * Update the word name in the sequence metadata based on the current beats
@@ -168,16 +169,18 @@ export function removeBeat({ event }: { event: any }) {
  */
 export function removeBeatAndFollowing({ event }: { event: any }) {
 	const removeEvent = event as { type: 'REMOVE_BEAT_AND_FOLLOWING'; beatId: string };
-	
+
 	// Find the beat index
-	const beatIndex = sequenceContainer.state.beats.findIndex(beat => beat.id === removeEvent.beatId);
-	
+	const beatIndex = sequenceContainer.state.beats.findIndex(
+		(beat) => beat.id === removeEvent.beatId
+	);
+
 	if (beatIndex >= 0) {
 		// Get all beats that should be removed (the selected beat and all following beats)
-		const beatsToRemove = sequenceContainer.state.beats.slice(beatIndex).map(beat => beat.id);
+		const beatsToRemove = sequenceContainer.state.beats.slice(beatIndex).map((beat) => beat.id);
 
 		// Remove each beat
-		beatsToRemove.forEach(id => {
+		beatsToRemove.forEach((id) => {
 			sequenceContainer.removeBeat(id);
 		});
 
@@ -234,6 +237,10 @@ export function clearSequence() {
 
 	// Update the sequence word
 	updateSequenceWord();
+
+	// Ensure isSequenceEmpty is set to true
+	// This is a backup in case the subscription in persistence.ts doesn't trigger
+	isSequenceEmpty.set(true);
 
 	// Dispatch a custom event
 	if (typeof document !== 'undefined') {

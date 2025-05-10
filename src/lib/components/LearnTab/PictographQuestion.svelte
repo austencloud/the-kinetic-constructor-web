@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { writable } from 'svelte/store';
+	// No longer need writable with Svelte 5 approach
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import type { PictographData } from '$lib/types/PictographData';
@@ -9,9 +9,6 @@
 
 	// Track a unique ID for the pictograph that changes with each new pictograph
 	let pictographId = crypto.randomUUID();
-
-	// Create a writable store for the pictograph data
-	const pictographDataStore = writable<PictographData>(pictograph || defaultPictographData);
 
 	// Process the pictograph data to ensure it has all required properties
 	function processData(data: PictographData): PictographData {
@@ -38,14 +35,14 @@
 		}
 	}
 
-	// Update the store when pictograph changes and generate new ID
+	// Process pictograph data when it changes
+	$: processedPictographData = pictograph ? processData(pictograph) : defaultPictographData;
+
+	// Update the ID when pictograph changes
 	$: if (pictograph) {
 		pictographId = crypto.randomUUID(); // Generate new ID when pictograph changes
-		const processedData = processData(pictograph);
-		pictographDataStore.set(processedData);
 	} else {
 		pictographId = crypto.randomUUID(); // Generate new ID for default data too
-		pictographDataStore.set(defaultPictographData);
 	}
 </script>
 
@@ -53,7 +50,11 @@
 	{#if pictograph}
 		{#key pictographId}
 			<div class="pictograph-container">
-				<Pictograph {pictographDataStore} showLoadingIndicator={false} />
+				<Pictograph
+					pictographData={processedPictographData}
+					showLoadingIndicator={false}
+					useNewStateManagement={false}
+				/>
 			</div>
 		{/key}
 	{:else}

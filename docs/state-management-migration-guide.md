@@ -13,14 +13,19 @@ This document outlines our progress and plan for migrating from the legacy store
 3. ✅ **Sequence Container Implementation**: Created the modern sequence container with XState 5 state machines
 4. ✅ **Compatibility Layer**: Created adapters to bridge between Svelte 4 and Svelte 5 implementations
 5. ✅ **Initial Component Migration**: Updated key components to use the new state management system
+6. ✅ **Background System Migration**: Migrated the background system to use the new container-based architecture
 
 ### Remaining Phases
 
-6. 🔄 **Svelte 5 Runes Migration**: Update components to use Svelte 5 runes for state management
-7. 🔄 **XState 5 Integration**: Migrate remaining state machines to XState 5 with improved typings
-8. 🔄 **Testing and Verification**: Ensure all functionality works correctly with the new implementation
-9. 🔄 **Documentation**: Update documentation to reflect the Svelte 5 and XState 5 architecture
-10. 🔄 **Legacy Code Removal**: Remove deprecated code and compatibility layers
+7. ✅ **Pictograph Store Migration**: Migrate the pictograph store to use the new container-based architecture
+8. 🔄 **Settings Store Migration**: Migrate the settings store to use the new container-based architecture
+9. 🔄 **Grid Store Migration**: Migrate the grid store to use the new container-based architecture
+10. 🔄 **UI Store Migration**: Migrate UI stores to use the new container-based architecture
+11. 🔄 **Act Store Migration**: Migrate the act store to use the new container-based architecture
+12. 🔄 **PageTransition Component Update**: Update the PageTransition component to use Svelte 5 runes
+13. 🔄 **Testing and Verification**: Ensure all functionality works correctly with the new implementation
+14. 🔄 **Documentation**: Update documentation to reflect the Svelte 5 and XState 5 architecture
+15. 🔄 **Legacy Code Removal**: Remove deprecated code and compatibility layers
 
 ## Successfully Migrated Components
 
@@ -47,6 +52,40 @@ The ActionToolbar component has been modified to use the new sequence store:
 - Replaced direct manipulation of the `beatsStore` with calls to the `sequenceStore`
 - Updated the clearSequence action to work with the new state management
 - Removed dependencies on the deprecated `isSequenceEmpty` store
+
+### Background System
+
+The background system has been migrated to use the new container-based architecture:
+
+- Created a modern container for background state management
+- Implemented an adapter for backward compatibility
+- Created new components that use Svelte 5 runes for reactivity
+- Added comprehensive tests for the new implementation
+
+The migration includes:
+
+1. **Modern Background Container**: A container-based implementation that manages background state
+2. **Background Store Adapter**: An adapter that provides backward compatibility with the old store API
+3. **Modern Background Controller**: A component that uses Svelte 5 runes for reactivity
+4. **Background Settings Component**: A new component for controlling background settings
+
+### Pictograph System
+
+The pictograph system has been fully migrated to use Svelte 5 and the new container-based architecture:
+
+- Created a modern container for pictograph state management using Svelte 5 runes
+- Implemented an XState 5 machine for state transitions
+- Created an adapter for backward compatibility
+- Completely rewrote the Pictograph component using Svelte 5 runes
+- Added comprehensive tests for the new implementation
+
+The migration includes:
+
+1. **Modern Pictograph Container**: A container-based implementation that manages pictograph state
+2. **Pictograph State Machine**: An XState 5 machine for managing pictograph state transitions
+3. **Pictograph Store Adapter**: An adapter that provides backward compatibility with the old store API
+4. **Pictograph Component Rewrite**: Completely rewrote the component using Svelte 5 runes
+5. **Backward Compatibility Wrapper**: Created a thin wrapper to maintain the same API for existing code
 
 ## Lessons Learned and Challenges
 

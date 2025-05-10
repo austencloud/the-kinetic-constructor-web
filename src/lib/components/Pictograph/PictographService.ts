@@ -10,7 +10,8 @@ import { Motion } from '$lib/components/objects/Motion/Motion';
 import { RED, BLUE, DASH } from '$lib/types/Constants';
 
 import { PictographChecker } from './services/PictographChecker';
-import { pictographStore } from '$lib/stores/pictograph/pictographStore';
+import { pictographStore } from '$lib/state/stores/pictograph/pictographAdapter';
+import { pictographContainer } from '$lib/state/stores/pictograph/modernPictographContainer';
 import ArrowLocationManager from '$lib/components/objects/Arrow/ArrowLocationManager';
 import ArrowRotAngleManager from '$lib/components/objects/Arrow/ArrowRotAngleManager';
 import { LetterConditions } from './constants/LetterConditions';
@@ -31,12 +32,39 @@ export class PictographService {
 	private initialize(): void {
 		try {
 			this.initializeMotions();
-			pictographStore.setData(this.data);
+
+			// Create a safe copy of the data without any Promise objects
+			const safeData = this.createSafeDataCopy(this.data);
+
+			// Update the store with the safe data
+			pictographStore.setData(safeData);
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : 'Pictograph initialization failed';
 			pictographStore.setError(errorMessage, 'initialization');
 		}
+	}
+
+	/**
+	 * Creates a safe copy of the data without any Promise objects
+	 * This prevents the DataCloneError when using structuredClone()
+	 */
+	private createSafeDataCopy(data: PictographData): PictographData {
+		// Create a shallow copy first
+		const safeCopy = { ...data };
+
+		// Remove any properties that might contain Promise objects
+		// or that aren't needed for rendering
+		if (safeCopy.redMotion) {
+			safeCopy.redMotion = null;
+		}
+
+		if (safeCopy.blueMotion) {
+			safeCopy.blueMotion = null;
+		}
+
+		// Return the safe copy
+		return safeCopy;
 	}
 
 	private initializeMotions(): void {
@@ -343,96 +371,107 @@ export class PictographService {
 	}
 
 	updateData(newData: PictographData): void {
-		// Check if this is a layout shift update
-		// We can detect this by looking at the stack trace for affected beats
-		const stackTrace = new Error().stack || '';
-		const isLayoutShift =
-			stackTrace.includes('Beat 4') ||
-			stackTrace.includes('Beat 5') ||
-			stackTrace.includes('Beat 9') ||
-			stackTrace.includes('Beat 10');
+		try {
+			// Check if this is a layout shift update
+			// We can detect this by looking at the stack trace for affected beats
+			const stackTrace = new Error().stack || '';
+			const isLayoutShift =
+				stackTrace.includes('Beat 4') ||
+				stackTrace.includes('Beat 5') ||
+				stackTrace.includes('Beat 9') ||
+				stackTrace.includes('Beat 10');
 
-		// Also check for grid changes that indicate layout shifts
-		// Use type assertion to avoid TypeScript errors since these properties might be added dynamically
-		const oldGridData = this.data?.gridData as any;
-		const newGridData = newData.gridData as any;
-		const isGridChanged =
-			oldGridData?.cellSize !== newGridData?.cellSize ||
-			oldGridData?.width !== newGridData?.width ||
-			oldGridData?.height !== newGridData?.height;
+			// Also check for grid changes that indicate layout shifts
+			// Use type assertion to avoid TypeScript errors since these properties might be added dynamically
+			const oldGridData = this.data?.gridData as any;
+			const newGridData = newData.gridData as any;
+			const isGridChanged =
+				oldGridData?.cellSize !== newGridData?.cellSize ||
+				oldGridData?.width !== newGridData?.width ||
+				oldGridData?.height !== newGridData?.height;
 
-		// Combine both checks
-		const shouldForceReset = isLayoutShift || isGridChanged;
+			// Combine both checks
+			const shouldForceReset = isLayoutShift || isGridChanged;
 
-		if (shouldForceReset) {
-			console.log(
-				`PictographService.updateData - Layout shift detected (${isLayoutShift ? 'beat' : 'grid'} change), NOT preserving motion types`
-			);
+			if (shouldForceReset) {
+				console.log(
+					`PictographService.updateData - Layout shift detected (${isLayoutShift ? 'beat' : 'grid'} change), NOT preserving motion types`
+				);
 
-			// For layout shifts, we need to ensure the arrows are completely recreated
-			// This is the key to fixing the issue
-			if (newData.redArrowData) {
-				// Force recalculation of rotation angle
-				if (newData.redMotion) {
-					const rotAngleManager = new ArrowRotAngleManager(newData, this);
-					newData.redArrowData.rotAngle = rotAngleManager.calculateRotationAngle(
-						newData.redMotion,
-						newData.redArrowData.loc,
-						newData.redArrowData.svgMirrored
-					);
-					console.log(`Recalculated red arrow rotation angle: ${newData.redArrowData.rotAngle}`);
+				// For layout shifts, we need to ensure the arrows are completely recreated
+				// This is the key to fixing the issue
+				if (newData.redArrowData) {
+					// Force recalculation of rotation angle
+					if (newData.redMotion) {
+						const rotAngleManager = new ArrowRotAngleManager(newData, this);
+						newData.redArrowData.rotAngle = rotAngleManager.calculateRotationAngle(
+							newData.redMotion,
+							newData.redArrowData.loc,
+							newData.redArrowData.svgMirrored
+						);
+						console.log(`Recalculated red arrow rotation angle: ${newData.redArrowData.rotAngle}`);
+					}
+
+					// Ensure the motion type is correct
+					if (newData.redMotion && newData.redMotionData) {
+						if (newData.redArrowData.motionType !== newData.redMotionData.motionType) {
+							console.log(
+								`Correcting red arrow motion type from ${newData.redArrowData.motionType} to ${newData.redMotionData.motionType}`
+							);
+							newData.redArrowData.motionType = newData.redMotionData.motionType;
+						}
+					}
 				}
 
-				// Ensure the motion type is correct
-				if (newData.redMotion && newData.redMotionData) {
-					if (newData.redArrowData.motionType !== newData.redMotionData.motionType) {
-						console.log(
-							`Correcting red arrow motion type from ${newData.redArrowData.motionType} to ${newData.redMotionData.motionType}`
+				if (newData.blueArrowData) {
+					// Force recalculation of rotation angle
+					if (newData.blueMotion) {
+						const rotAngleManager = new ArrowRotAngleManager(newData);
+						newData.blueArrowData.rotAngle = rotAngleManager.calculateRotationAngle(
+							newData.blueMotion,
+							newData.blueArrowData.loc,
+							newData.blueArrowData.svgMirrored
 						);
-						newData.redArrowData.motionType = newData.redMotionData.motionType;
+						console.log(
+							`Recalculated blue arrow rotation angle: ${newData.blueArrowData.rotAngle}`
+						);
+					}
+
+					// Ensure the motion type is correct
+					if (newData.blueMotion && newData.blueMotionData) {
+						if (newData.blueArrowData.motionType !== newData.blueMotionData.motionType) {
+							console.log(
+								`Correcting blue arrow motion type from ${newData.blueArrowData.motionType} to ${newData.blueMotionData.motionType}`
+							);
+							newData.blueArrowData.motionType = newData.blueMotionData.motionType;
+						}
+					}
+				}
+			} else {
+				// Preserve motion types from the current data if they exist
+				if (this.data) {
+					// Preserve red motion type if it exists
+					if (this.data.redMotionData?.motionType && newData.redMotionData) {
+						newData.redMotionData.motionType = this.data.redMotionData.motionType;
+					}
+
+					// Preserve blue motion type if it exists
+					if (this.data.blueMotionData?.motionType && newData.blueMotionData) {
+						newData.blueMotionData.motionType = this.data.blueMotionData.motionType;
 					}
 				}
 			}
 
-			if (newData.blueArrowData) {
-				// Force recalculation of rotation angle
-				if (newData.blueMotion) {
-					const rotAngleManager = new ArrowRotAngleManager(newData);
-					newData.blueArrowData.rotAngle = rotAngleManager.calculateRotationAngle(
-						newData.blueMotion,
-						newData.blueArrowData.loc,
-						newData.blueArrowData.svgMirrored
-					);
-					console.log(`Recalculated blue arrow rotation angle: ${newData.blueArrowData.rotAngle}`);
-				}
+			this.data = newData;
+			this.checker = new PictographChecker(newData);
+			this.initialize();
+		} catch (error) {
+			console.error('Error in PictographService.updateData:', error);
 
-				// Ensure the motion type is correct
-				if (newData.blueMotion && newData.blueMotionData) {
-					if (newData.blueArrowData.motionType !== newData.blueMotionData.motionType) {
-						console.log(
-							`Correcting blue arrow motion type from ${newData.blueArrowData.motionType} to ${newData.blueMotionData.motionType}`
-						);
-						newData.blueArrowData.motionType = newData.blueMotionData.motionType;
-					}
-				}
-			}
-		} else {
-			// Preserve motion types from the current data if they exist
-			if (this.data) {
-				// Preserve red motion type if it exists
-				if (this.data.redMotionData?.motionType && newData.redMotionData) {
-					newData.redMotionData.motionType = this.data.redMotionData.motionType;
-				}
-
-				// Preserve blue motion type if it exists
-				if (this.data.blueMotionData?.motionType && newData.blueMotionData) {
-					newData.blueMotionData.motionType = this.data.blueMotionData.motionType;
-				}
-			}
+			// Handle the error gracefully
+			const errorMessage =
+				error instanceof Error ? error.message : 'Failed to update pictograph data';
+			pictographStore.setError(errorMessage, 'update');
 		}
-
-		this.data = newData;
-		this.checker = new PictographChecker(newData);
-		this.initialize();
 	}
 }

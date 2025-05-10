@@ -28,9 +28,18 @@ export function createContainer<T extends object, A extends Record<string, Funct
 	// Function to update state immutably
 	const update = (fn: (state: T) => void) => {
 		store.update((currentState) => {
-			const copy = structuredClone(currentState);
-			fn(copy);
-			return copy;
+			try {
+				// Try to use structuredClone for deep cloning
+				const copy = structuredClone(currentState);
+				fn(copy);
+				return copy;
+			} catch (error) {
+				// If structuredClone fails (e.g., with Promise objects), fall back to a shallow copy
+				console.warn('structuredClone failed, falling back to shallow copy:', error);
+				const shallowCopy = { ...currentState };
+				fn(shallowCopy);
+				return shallowCopy;
+			}
 		});
 	};
 
@@ -56,7 +65,14 @@ export function createContainer<T extends object, A extends Record<string, Funct
 
 	// Create a reset function
 	const reset = () => {
-		store.set(structuredClone(initialState));
+		try {
+			// Try to use structuredClone for deep cloning
+			store.set(structuredClone(initialState));
+		} catch (error) {
+			// If structuredClone fails (e.g., with Promise objects), fall back to a shallow copy
+			console.warn('structuredClone failed in reset, falling back to shallow copy:', error);
+			store.set({ ...initialState });
+		}
 	};
 
 	// Create the container object with proper typing
