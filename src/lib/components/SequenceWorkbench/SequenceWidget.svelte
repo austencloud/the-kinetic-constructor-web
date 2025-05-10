@@ -16,7 +16,7 @@
 	// Components
 	import CurrentWordLabel from './Labels/CurrentWordLabel.svelte';
 	import DifficultyLabel from './Labels/DifficultyLabel.svelte';
-	import BeatFrame from './SequenceBeatFrame/SequenceBeatFrame.svelte';
+	import BeatFrame from './SequenceBeatFrame/BeatFrame.svelte';
 	import FullScreenOverlay from './components/FullScreenOverlay.svelte';
 	import ToolsButton from './ToolsButton.svelte';
 	import ToolsPanel from './ToolsPanel/ToolsPanel.svelte';

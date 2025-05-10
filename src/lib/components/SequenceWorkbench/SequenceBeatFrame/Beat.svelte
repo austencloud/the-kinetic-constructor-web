@@ -1,4 +1,3 @@
-<!-- src/lib/components/SequenceWorkbench/SequenceBeatFrame/Beat.svelte -->
 <script lang="ts">
 	import { writable, get } from 'svelte/store';
 	import { onMount, onDestroy } from 'svelte';
@@ -14,16 +13,15 @@
 	// Import the default pictograph data
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 
-	// Create a local pictograph data store with the initial data
+	// Create a local pictograph data store
 	const pictographDataStore = writable(beat.pictographData || defaultPictographData);
 
-	// This is important: update the store whenever the beat's pictograph data changes
-	$: {
-		if (beat?.pictographData) {
-			// Force a fresh copy to ensure reactivity
-			const copy = JSON.parse(JSON.stringify(beat.pictographData));
-			pictographDataStore.set(copy);
-		}
+	// Reactively update the pictographDataStore when the beat.pictographData changes.
+	// Since beat.pictographData is already a new object when the beat itself is updated
+	// (due to the mapping in BeatFrameState), a direct assignment is sufficient and safer
+	// than JSON.parse(JSON.stringify()), which can corrupt complex data.
+	$: if (beat) {
+		pictographDataStore.set(beat.pictographData || defaultPictographData);
 	}
 
 	// Handle the click event
@@ -32,8 +30,6 @@
 		onClick();
 		updateDevTools();
 	}
-
-
 </script>
 
 <button
@@ -70,7 +66,4 @@
 		overflow: visible;
 		transform-origin: center center;
 	}
-
-
-
 </style>
