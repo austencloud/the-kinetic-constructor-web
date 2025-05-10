@@ -9,6 +9,10 @@
 		closeSequenceFullScreen
 	} from '$lib/stores/sequence/fullScreenStore';
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	// Define the event types for better type safety
+	interface SequenceWidgetEvents {
+		toggleToolsPanel: void;
+	}
 
 	// Import Type for Button Definitions
 	import type { ButtonDefinition, ActionEventDetail } from './ButtonPanel/types';
@@ -23,9 +27,10 @@
 	import ClearSequenceButton from './ClearSequenceButton.svelte';
 
 	// Import stores for sequence state
-	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import { fly } from 'svelte/transition';
+
+	// We no longer need the isSequenceEmpty store as it's not used in this component
 
 	// Props
 	export let workbenchHeight: number;
@@ -138,7 +143,7 @@
 			case 'clearSequence':
 				sequenceActions.clearSequence();
 				selectedStartPos.set(null);
-				isSequenceEmpty.set(true);
+				// isSequenceEmpty is now derived and will update automatically
 				break;
 		}
 		if ($isToolsPanelOpen) {

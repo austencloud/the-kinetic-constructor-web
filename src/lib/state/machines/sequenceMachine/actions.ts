@@ -1,8 +1,12 @@
 /**
- * Actions for the sequence state machine
+ * Modern actions for the sequence state machine
+ * 
+ * This module provides actions that interact with the modern sequence container
+ * instead of the legacy sequence store.
  */
-import { sequenceStore } from '../../stores/sequenceStore';
-import type { BeatData as StoreBeatData, SequenceState } from '../../stores/sequenceStore';
+
+import { sequenceContainer } from '../../stores/sequence/modernSequenceContainer';
+import type { BeatData } from '../../stores/sequence/modernSequenceContainer';
 import { convertToStoreBeatData } from './types';
 import { updateDevTools } from '$lib/utils/devToolsUpdater';
 
@@ -10,15 +14,8 @@ import { updateDevTools } from '$lib/utils/devToolsUpdater';
  * Update the word name in the sequence metadata based on the current beats
  */
 function updateSequenceWord() {
-	// Get the current sequence
-	let currentState: SequenceState | undefined;
-	sequenceStore.subscribe((state) => {
-		currentState = state;
-	})();
-
-	if (!currentState) return;
-
-	const beats = currentState.beats;
+	const state = sequenceContainer.state;
+	const beats = state.beats;
 
 	// Update difficulty based on whether beats exist
 	const difficulty = beats.length > 0 ? 1 : 0;
@@ -32,13 +29,13 @@ function updateSequenceWord() {
 				(beat.metadata && typeof beat.metadata.letter === 'string' ? beat.metadata.letter : null)
 			);
 		})
-		.filter((letter) => letter !== null);
+		.filter((letter): letter is string => letter !== null);
 
 	// Build the word from letters
 	const word = letters.join('');
 
 	// Update metadata with word and difficulty
-	sequenceStore.updateMetadata({
+	sequenceContainer.updateMetadata({
 		name: word,
 		difficulty: difficulty
 	});
@@ -47,17 +44,17 @@ function updateSequenceWord() {
 }
 
 /**
- * Update the sequence store with the generated sequence
+ * Update the sequence container with the generated sequence
  */
 export function updateSequence({ event }: { event: any }) {
 	// Type assertion for the custom event
 	const doneEvent = event as { type: 'GENERATION_COMPLETE'; output?: any[] };
 
-	// Update the sequence store with the generated beats
+	// Update the sequence container with the generated beats
 	if (doneEvent.output && Array.isArray(doneEvent.output)) {
-		// Convert the output to the store's BeatData format
+		// Convert the output to the container's BeatData format
 		const storeBeats = convertToStoreBeatData(doneEvent.output);
-		sequenceStore.setSequence(storeBeats);
+		sequenceContainer.setSequence(storeBeats);
 		console.log('Sequence updated with new data:', storeBeats);
 
 		// Update the sequence word
@@ -73,7 +70,7 @@ export function updateSequence({ event }: { event: any }) {
  */
 export function selectBeat({ event }: { event: any }) {
 	const selectEvent = event as { type: 'SELECT_BEAT'; beatId: string };
-	sequenceStore.selectBeat(selectEvent.beatId);
+	sequenceContainer.selectBeat(selectEvent.beatId);
 
 	// Dispatch a custom event for components that need to know about selection changes
 	if (typeof document !== 'undefined') {
@@ -89,18 +86,11 @@ export function selectBeat({ event }: { event: any }) {
 }
 
 /**
- * Deselect a beat or all beats in the sequence
+ * Deselect a beat in the sequence
  */
 export function deselectBeat({ event }: { event: any }) {
-	const deselectEvent = event as { type: 'DESELECT_BEAT'; beatId?: string };
-
-	if (deselectEvent.beatId) {
-		// Deselect a specific beat
-		sequenceStore.deselectBeat(deselectEvent.beatId);
-	} else {
-		// Deselect all beats
-		sequenceStore.clearSelection();
-	}
+	const deselectEvent = event as { type: 'DESELECT_BEAT'; beatId: string };
+	sequenceContainer.deselectBeat(deselectEvent.beatId);
 
 	// Dispatch a custom event
 	if (typeof document !== 'undefined') {
@@ -119,20 +109,20 @@ export function deselectBeat({ event }: { event: any }) {
  * Add a beat to the sequence
  */
 export function addBeat({ event }: { event: any }) {
-	const addEvent = event as { type: 'ADD_BEAT'; beat: Partial<StoreBeatData> };
+	const addEvent = event as { type: 'ADD_BEAT'; beat: Partial<BeatData> };
 
 	// Generate a unique ID if not provided
 	const beatId = addEvent.beat.id || crypto.randomUUID();
 
 	// Create a complete beat object
-	const newBeat: StoreBeatData = {
+	const newBeat: BeatData = {
 		id: beatId,
 		number: addEvent.beat.number || 0,
 		...addEvent.beat
 	};
 
-	// Add the beat to the sequence store
-	sequenceStore.addBeat(newBeat);
+	// Add the beat to the sequence container
+	sequenceContainer.addBeat(newBeat);
 
 	// Update the sequence word
 	updateSequenceWord();
@@ -155,7 +145,7 @@ export function addBeat({ event }: { event: any }) {
  */
 export function removeBeat({ event }: { event: any }) {
 	const removeEvent = event as { type: 'REMOVE_BEAT'; beatId: string };
-	sequenceStore.removeBeat(removeEvent.beatId);
+	sequenceContainer.removeBeat(removeEvent.beatId);
 
 	// Update the sequence word
 	updateSequenceWord();
@@ -178,27 +168,17 @@ export function removeBeat({ event }: { event: any }) {
  */
 export function removeBeatAndFollowing({ event }: { event: any }) {
 	const removeEvent = event as { type: 'REMOVE_BEAT_AND_FOLLOWING'; beatId: string };
-
-	// Get the current beats
-	let currentState: SequenceState | undefined;
-	sequenceStore.subscribe((state) => {
-		currentState = state;
-	})();
-
-	if (!currentState) return;
-
-	const beats = currentState.beats;
-
-	// Find the index of the beat to remove
-	const beatIndex = beats.findIndex((beat: StoreBeatData) => beat.id === removeEvent.beatId);
-
+	
+	// Find the beat index
+	const beatIndex = sequenceContainer.state.beats.findIndex(beat => beat.id === removeEvent.beatId);
+	
 	if (beatIndex >= 0) {
 		// Get all beats that should be removed (the selected beat and all following beats)
-		const beatsToRemove = beats.slice(beatIndex).map((beat: StoreBeatData) => beat.id);
+		const beatsToRemove = sequenceContainer.state.beats.slice(beatIndex).map(beat => beat.id);
 
 		// Remove each beat
-		beatsToRemove.forEach((id: string) => {
-			sequenceStore.removeBeat(id);
+		beatsToRemove.forEach(id => {
+			sequenceContainer.removeBeat(id);
 		});
 
 		// Update the sequence word
@@ -225,9 +205,9 @@ export function updateBeat({ event }: { event: any }) {
 	const updateEvent = event as {
 		type: 'UPDATE_BEAT';
 		beatId: string;
-		updates: Partial<StoreBeatData>;
+		updates: Partial<BeatData>;
 	};
-	sequenceStore.updateBeat(updateEvent.beatId, updateEvent.updates);
+	sequenceContainer.updateBeat(updateEvent.beatId, updateEvent.updates);
 
 	// Update the sequence word
 	updateSequenceWord();
@@ -250,7 +230,7 @@ export function updateBeat({ event }: { event: any }) {
  */
 export function clearSequence() {
 	// Set an empty sequence
-	sequenceStore.setSequence([]);
+	sequenceContainer.setSequence([]);
 
 	// Update the sequence word
 	updateSequenceWord();

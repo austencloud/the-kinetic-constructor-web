@@ -42,9 +42,9 @@ test.describe('Sequence Generation Flow', () => {
 
 		// Click the generate button using JavaScript
 		await page.evaluate(() => {
-			const button = document.querySelector('.generate-button');
+			const button = document.querySelector('.generate-button') as HTMLElement | null;
 			if (button) {
-				button.click();
+				(button as HTMLElement).click();
 			}
 		});
 
@@ -88,7 +88,7 @@ test.describe('Sequence Generation Flow', () => {
 		await page.evaluate(() => {
 			const button = document.querySelector('.generate-button');
 			if (button) {
-				button.click();
+				(button as HTMLElement).click();
 			}
 		});
 

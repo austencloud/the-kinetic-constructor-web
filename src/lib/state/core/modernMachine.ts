@@ -16,8 +16,8 @@ import {
 import { stateRegistry } from './registry';
 import { createContainer } from './container';
 
-// Check if we're running in a Svelte 5 environment with runes support
-const hasRunes = typeof globalThis.$state !== 'undefined';
+// We're using Svelte 4, so no runes support
+const hasRunes = false;
 
 /**
  * Creates an XState machine with improved ergonomics

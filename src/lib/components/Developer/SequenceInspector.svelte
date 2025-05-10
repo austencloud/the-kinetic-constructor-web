@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getBeats, beatsStore } from '$lib/stores/sequence/beatsStore';
+	import { sequenceStore } from '$lib/state/stores/sequence/sequenceAdapter';
 	import { writable, get } from 'svelte/store';
 	import { fade, fly } from 'svelte/transition'; // Import transitions
 	import { cubicOut } from 'svelte/easing'; // Import easing

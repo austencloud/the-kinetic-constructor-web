@@ -1,5 +1,13 @@
-// src/lib/stores/sequence/sequenceStateStore.ts
+/**
+ * @deprecated This file is deprecated and will be removed in a future version.
+ * Use sequenceStore from '$lib/state/stores/sequence/sequenceAdapter' instead.
+ */
 
-import { writable } from "svelte/store";
+import { sequenceStore } from '$lib/state/stores/sequence/sequenceAdapter';
+import { derived, writable } from 'svelte/store';
 
-export const isSequenceEmpty = writable(true);
+// Create a derived store to check if sequence is empty
+export const isSequenceEmpty = derived(
+  sequenceStore,
+  ($sequenceStore) => $sequenceStore.beats.length === 0
+);

@@ -7,7 +7,8 @@
 	// legacy stores
 	import { settingsStore, numBeats, turnIntensity, propContinuity } from '../store/settings';
 	import { generatorStore } from '../store/generator';
-	import { beatsStore } from '../../../stores/sequence/beatsStore';
+	// Use beatsStore for compatibility with legacy BeatData type
+	import { beatsStore } from '$lib/stores/sequence/beatsStore';
 
 	// shared types / enums
 	import { Letter } from '$lib/types/Letter';
@@ -48,13 +49,14 @@
 	──────────────────────────────── */
 	async function handleGenerateSequence() {
 		if (useNewStateManagement) {
+			// Call the generate action with the correct parameters
 			sequenceActions.generate(
 				{
 					numBeats: $numBeats,
 					turnIntensity: $turnIntensity,
 					propContinuity: $propContinuity,
 					letterTypes: selectedLetterTypes
-				},
+				} as any,
 				'freeform'
 			);
 			return;
@@ -116,6 +118,7 @@
 				} satisfies BeatData;
 			});
 
+			// Use the beatsStore for compatibility with legacy BeatData type
 			beatsStore.set(workbenchBeats);
 			generatorStore.completeGeneration();
 		} catch (err) {

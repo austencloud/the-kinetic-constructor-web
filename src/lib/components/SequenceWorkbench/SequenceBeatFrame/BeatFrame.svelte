@@ -12,8 +12,9 @@
 	import { initDevToolsUpdater, updateDevTools } from '$lib/utils/devToolsUpdater';
 	import { layoutStore } from '$lib/stores/layout/layoutStore';
 
-	// Import the sequence machine actions and selectors
-	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
+	// Import the sequence store and actions
+	import { sequenceStore } from '$lib/state/stores/sequenceStore';
+	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
 
 	// Components
 	import StartPosBeat from './StartPosBeat.svelte';
@@ -37,46 +38,58 @@
 
 	// Function to update local state from the sequence store
 	function updateLocalState() {
-		// Get beats from the sequence store and convert them to our BeatData format
-		const storeBeats = sequenceSelectors.beats();
-		const convertedBeats = storeBeats.map((storeBeat) => {
-			// Convert from store BeatData to our BeatData format
-			// Create a proper pictographData object from the store beat data
-			const pictographData = {
-				letter: storeBeat.metadata?.letter || null,
-				startPos: storeBeat.metadata?.startPos || null,
-				endPos: storeBeat.metadata?.endPos || null,
-				redPropData: storeBeat.redPropData || null,
-				bluePropData: storeBeat.bluePropData || null,
-				redMotionData: storeBeat.redMotionData || null,
-				blueMotionData: storeBeat.blueMotionData || null,
-				redArrowData: storeBeat.redArrowData || null,
-				blueArrowData: storeBeat.blueArrowData || null
-			};
+		try {
+			// Get the sequence state from the sequence store
+			const unsubscribe = sequenceStore.subscribe((state) => {
+				// Convert beats from the store to our BeatData format
+				const convertedBeats = state.beats.map((storeBeat: any) => {
+					// Create a proper pictographData object from the store beat data
+					const pictographData = {
+						letter: storeBeat.metadata?.letter || null,
+						startPos: storeBeat.metadata?.startPos || null,
+						endPos: storeBeat.metadata?.endPos || null,
+						redPropData: storeBeat.redPropData || null,
+						bluePropData: storeBeat.bluePropData || null,
+						redMotionData: storeBeat.redMotionData || null,
+						blueMotionData: storeBeat.blueMotionData || null,
+						redArrowData: storeBeat.redArrowData || null,
+						blueArrowData: storeBeat.blueArrowData || null
+					};
 
-			return {
-				id: storeBeat.id,
-				beatNumber: storeBeat.number,
-				filled: true, // Assume filled if it exists in the store
-				pictographData: pictographData,
-				duration: 1, // Default duration
-				metadata: storeBeat.metadata
-			} as BeatData;
-		});
+					return {
+						id: storeBeat.id,
+						beatNumber: storeBeat.number,
+						filled: true, // Assume filled if it exists in the store
+						pictographData: pictographData,
+						duration: 1, // Default duration
+						metadata: storeBeat.metadata
+					} as BeatData;
+				});
 
-		// Update the beats store
-		beatsStore.set(convertedBeats);
+				// Update the beats store
+				beatsStore.set(convertedBeats);
 
-		// Get selected beat IDs from the sequence store
-		const selectedIds = sequenceSelectors.selectedBeatIds();
-		selectedBeatIdsStore.set(selectedIds);
+				// Get selected beat IDs from the store
+				const selectedIds = state.selectedBeatIds || [];
+				selectedBeatIdsStore.set(selectedIds);
 
-		// Calculate the selected beat index based on the selected beat ID
-		if (selectedIds.length > 0) {
-			const selectedId = selectedIds[0];
-			const index = convertedBeats.findIndex((beat) => beat.id === selectedId);
-			selectedBeatIndexStore.set(index);
-		} else {
+				// Calculate the selected beat index based on the selected beat ID
+				if (selectedIds.length > 0) {
+					const selectedId = selectedIds[0];
+					const index = convertedBeats.findIndex((beat: any) => beat.id === selectedId);
+					selectedBeatIndexStore.set(index);
+				} else {
+					selectedBeatIndexStore.set(-1);
+				}
+			});
+
+			// Unsubscribe immediately to avoid memory leaks
+			unsubscribe();
+		} catch (error) {
+			console.error('Error updating local state from sequence store:', error);
+			// Set empty state as fallback
+			beatsStore.set([]);
+			selectedBeatIdsStore.set([]);
 			selectedBeatIndexStore.set(-1);
 		}
 	}
@@ -246,8 +259,8 @@
 
 	// Event handlers
 	function handleStartPosBeatClick() {
-		// Deselect current beat
-		sequenceActions.deselectBeat();
+		// Deselect current beat - clear all selections
+		sequenceStore.clearSelection();
 
 		// Dispatch a custom event to trigger the start position selector
 		const event = new CustomEvent('select-start-pos', {
