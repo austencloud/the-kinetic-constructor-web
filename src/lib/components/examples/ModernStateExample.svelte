@@ -1,53 +1,41 @@
 <!-- src/lib/components/examples/ModernStateExample.svelte -->
 <script lang="ts">
-	// Define types for our state
-	interface BeatData {
-		id: string;
-		name: string;
-		data: {
-			value: number;
-		};
-	}
+	import { sequenceContainer } from '$lib/state/stores/sequence/modernSequenceContainer';
+	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 
 	// Local state for the form
-	let beatName = '';
-	let isDarkTheme = false;
-	let theme: 'light' | 'dark' | 'system' = 'light';
-	let sequence: BeatData[] = [];
-	let selectedBeatIndex: number | null = null;
-	let isGenerating = false;
-	let generationProgress = 0;
-	let generationMessage = '';
-	let error: string | null = null;
+	let beatName = $state('');
+	let isDarkTheme = $state(false);
+	let theme = $state<'light' | 'dark' | 'system'>('light');
+	let isGenerating = $state(false);
+	let generationProgress = $state(0);
+	let generationMessage = $state('');
+	let error = $state<string | null>(null);
+
+	// Use the sequence container with Svelte 5 runes
+	const sequence = useContainer(sequenceContainer);
 
 	// Handle form submission
 	function handleAddBeat() {
 		if (!beatName.trim()) return;
 
-		sequence = [
-			...sequence,
-			{
-				id: `beat-${Date.now()}`,
-				name: beatName,
-				data: { value: Math.random() }
-			}
-		];
+		sequenceContainer.addBeat({
+			id: crypto.randomUUID(),
+			number: sequence.beats.length + 1,
+			letter: beatName
+		});
 
 		beatName = '';
 	}
 
 	// Handle beat selection
-	function handleSelectBeat(index: number) {
-		if (selectedBeatIndex === index) {
-			selectedBeatIndex = null;
-		} else {
-			selectedBeatIndex = index;
-		}
+	function handleSelectBeat(beatId: string, multiSelect = false) {
+		sequenceContainer.selectBeat(beatId, multiSelect);
 	}
 
 	// Handle beat removal
-	function handleRemoveBeat(index: number) {
-		sequence = sequence.filter((_, i) => i !== index);
+	function handleRemoveBeat(beatId: string) {
+		sequenceContainer.removeBeat(beatId);
 	}
 
 	// Handle theme toggle
@@ -75,12 +63,13 @@
 				clearInterval(interval);
 
 				// Generate a simple sequence
-				sequence = Array.from({ length: 8 }, (_, i) => ({
-					id: `beat-${i}`,
-					name: `Generated Beat ${i + 1}`,
-					data: { value: Math.random() }
+				const generatedBeats = Array.from({ length: 8 }, (_, i) => ({
+					id: crypto.randomUUID(),
+					number: i + 1,
+					letter: `Generated Beat ${i + 1}`
 				}));
 
+				sequenceContainer.setSequence(generatedBeats);
 				isGenerating = false;
 			}
 		}, 200);
@@ -95,15 +84,14 @@
 
 	// Clear sequence
 	function clearSequence() {
-		sequence = [];
-		selectedBeatIndex = null;
+		sequenceContainer.setSequence([]);
 	}
 </script>
 
 <div class="container" class:dark={isDarkTheme}>
 	<header>
-		<h1>Modern State Management Example</h1>
-		<button on:click={toggleTheme}>
+		<h1>Modern State Management Example (Svelte 5 + XState 5)</h1>
+		<button onclick={toggleTheme}>
 			Toggle Theme ({theme})
 		</button>
 	</header>
@@ -112,9 +100,8 @@
 		<h2>Sequence Controls</h2>
 
 		<div class="control-group">
-			<button on:click={generateSequence} disabled={isGenerating}> Generate Sequence </button>
-
-			<button on:click={clearSequence} disabled={sequence.length === 0}> Clear Sequence </button>
+			<button onclick={generateSequence} disabled={isGenerating}>Generate Sequence</button>
+			<button onclick={clearSequence} disabled={sequence.beats.length === 0}>Clear Sequence</button>
 		</div>
 
 		{#if isGenerating}
@@ -124,7 +111,7 @@
 					{generationMessage}
 					({generationProgress}%)
 				</div>
-				<button on:click={cancelGeneration}> Cancel </button>
+				<button onclick={cancelGeneration}>Cancel</button>
 			</div>
 		{/if}
 
@@ -137,41 +124,63 @@
 
 	<div class="add-beat-form">
 		<h2>Add Beat</h2>
-		<form on:submit|preventDefault={handleAddBeat}>
+		<form
+			onsubmit={(e) => {
+				e.preventDefault();
+				handleAddBeat();
+			}}
+		>
 			<input type="text" bind:value={beatName} placeholder="Beat name" disabled={isGenerating} />
-			<button type="submit" disabled={!beatName.trim() || isGenerating}> Add Beat </button>
+			<button type="submit" disabled={!beatName.trim() || isGenerating}>Add Beat</button>
 		</form>
 	</div>
 
 	<div class="sequence-display">
-		<h2>Sequence ({sequence.length} beats)</h2>
+		<h2>Sequence ({sequence.beats.length} beats)</h2>
 
-		{#if sequence.length === 0}
+		{#if sequence.beats.length === 0}
 			<div class="empty-state">No beats in sequence. Generate or add beats to get started.</div>
 		{:else}
 			<ul class="beat-list">
-				{#each sequence as beat, index}
+				{#each sequence.beats as beat}
 					<div
 						class="beat-item"
-						class:selected={selectedBeatIndex === index}
-						on:click={() => handleSelectBeat(index)}
-						on:keydown={(e) => e.key === 'Enter' && handleSelectBeat(index)}
+						class:selected={sequence.selectedBeatIds.includes(beat.id)}
+						onclick={() => handleSelectBeat(beat.id)}
+						onkeydown={(e) => e.key === 'Enter' && handleSelectBeat(beat.id)}
 						tabindex="0"
 						role="button"
 					>
 						<div class="beat-content">
-							<span class="beat-index">{index + 1}</span>
-							<span class="beat-name">{beat.name || `Beat ${index + 1}`}</span>
-							<span class="beat-value">{beat.data?.value?.toFixed(2) || 'N/A'}</span>
+							<span class="beat-index">{beat.number}</span>
+							<span class="beat-name">{beat.letter || `Beat ${beat.number}`}</span>
+							<span class="beat-value">{beat.id.substring(0, 8)}</span>
 						</div>
 						<button
 							class="remove-button"
-							on:click|stopPropagation={() => handleRemoveBeat(index)}
-							aria-label={`Remove beat ${index + 1}`}
+							onclick={(e) => {
+								e.stopPropagation();
+								handleRemoveBeat(beat.id);
+							}}
+							aria-label={`Remove beat ${beat.number}`}
 						>
 							✕
 						</button>
 					</div>
+				{/each}
+			</ul>
+		{/if}
+	</div>
+
+	<div class="selection-info">
+		<h2>Selected Beats ({sequence.selectedBeatIds.length})</h2>
+
+		{#if sequence.selectedBeatIds.length === 0}
+			<div class="empty-state">No beats selected. Click on a beat to select it.</div>
+		{:else}
+			<ul class="selected-beats">
+				{#each sequence.beats.filter((beat) => sequence.selectedBeatIds.includes(beat.id)) as beat}
+					<li>Beat {beat.number} - {beat.letter || 'Unnamed'}</li>
 				{/each}
 			</ul>
 		{/if}
@@ -321,8 +330,29 @@
 		border-color: #555;
 	}
 
-	.sequence-display {
+	.sequence-display,
+	.selection-info {
 		margin-top: 20px;
+	}
+
+	.selected-beats {
+		list-style: none;
+		padding: 0;
+		margin: 10px 0;
+	}
+
+	.selected-beats li {
+		background-color: #e3f2fd;
+		padding: 8px 12px;
+		margin-bottom: 5px;
+		border-radius: 4px;
+		border-left: 4px solid #2196f3;
+	}
+
+	.container.dark .selected-beats li {
+		background-color: #1a3f5f;
+		border-left-color: #64b5f6;
+		color: #eee;
 	}
 
 	.empty-state {

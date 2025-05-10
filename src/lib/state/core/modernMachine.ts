@@ -2,7 +2,7 @@
  * Modern state machine utilities
  *
  * This module provides utilities for working with XState v5 in a way that's
- * compatible with our new state management approach.
+ * compatible with our new state management approach using Svelte stores.
  */
 
 import {
@@ -11,13 +11,11 @@ import {
 	createActor,
 	type AnyActorRef,
 	type AnyStateMachine,
-	type ActorOptions
+	type ActorOptions,
+	type SnapshotFrom
 } from 'xstate';
 import { stateRegistry } from './registry';
-import { createContainer } from './container';
-
-// We're using Svelte 4, so no runes support
-const hasRunes = false;
+import { createContainer, createEffect } from './container';
 
 /**
  * Creates an XState machine with improved ergonomics
@@ -57,7 +55,7 @@ export function createModernMachine<
  * Creates a state container from an XState machine
  *
  * This provides a unified API for working with state machines that's
- * compatible with our container-based approach.
+ * compatible with our container-based approach using Svelte stores.
  *
  * @param machine An XState machine
  * @param options Actor options
@@ -65,7 +63,6 @@ export function createModernMachine<
  */
 export function createMachineContainer<
 	TMachine extends AnyStateMachine,
-	TSnapshot = any,
 	TEvent extends { type: string } = any
 >(machine: TMachine, options: ActorOptions<TMachine> = {}) {
 	// Create the actor
@@ -74,63 +71,45 @@ export function createMachineContainer<
 	// Start the actor
 	actor.start();
 
-	if (hasRunes) {
-		// Create a reactive state object using runes
-		// @ts-ignore - $state is not recognized by TypeScript yet
-		const state = $state({
-			value: (actor.getSnapshot() as any).value,
-			context: (actor.getSnapshot() as any).context,
-			status: (actor.getSnapshot() as any).status
-		});
+	// Get the initial snapshot
+	const initialSnapshot = actor.getSnapshot();
 
-		// Set up an effect to update the state when the actor changes
-		// @ts-ignore - $effect is not recognized by TypeScript yet
-		$effect(() => {
+	// Create a container with the state and actions
+	return createContainer(
+		{
+			value: initialSnapshot.value,
+			context: initialSnapshot.context,
+			status: initialSnapshot.status,
+			// Add additional properties for better XState 5 integration
+			nextEvents: initialSnapshot.nextEvents
+		},
+		(state, update) => {
+			// Set up subscription to update state
 			const unsubscribe = actor.subscribe((snapshot) => {
-				state.value = (snapshot as any).value;
-				state.context = (snapshot as any).context;
-				state.status = (snapshot as any).status;
+				update(() => {
+					state.value = snapshot.value;
+					state.context = snapshot.context;
+					state.status = snapshot.status;
+					state.nextEvents = snapshot.nextEvents;
+				});
 			});
 
-			return unsubscribe;
-		});
-
-		// Create a container with the state and actions
-		return {
-			get state() {
-				return state;
-			},
-			send: (event: TEvent) => actor.send(event as any),
-			getSnapshot: () => actor.getSnapshot(),
-			stop: () => actor.stop(),
-			actor
-		};
-	} else {
-		// For Svelte 4, use a container with a writable store
-		return createContainer(
-			{
-				value: (actor.getSnapshot() as any).value,
-				context: (actor.getSnapshot() as any).context,
-				status: (actor.getSnapshot() as any).status
-			},
-			(state, update) => {
-				// Set up subscription to update state
-				actor.subscribe((snapshot) => {
-					update(() => {
-						state.value = (snapshot as any).value;
-						state.context = (snapshot as any).context;
-						state.status = (snapshot as any).status;
-					});
-				});
-
-				return {
-					send: (event: TEvent) => actor.send(event as any),
-					getSnapshot: () => actor.getSnapshot(),
-					stop: () => actor.stop()
-				};
-			}
-		);
-	}
+			// Return actions and helper methods
+			return {
+				send: (event: TEvent) => actor.send(event as any),
+				getSnapshot: () => actor.getSnapshot(),
+				stop: () => {
+					unsubscribe();
+					actor.stop();
+				},
+				// Add helper methods for better ergonomics
+				can: (eventType: string) => actor.getSnapshot().can({ type: eventType } as any),
+				matches: (stateValue: string) => actor.getSnapshot().matches(stateValue),
+				hasTag: (tag: string) => actor.getSnapshot().hasTag(tag),
+				actor
+			};
+		}
+	);
 }
 
 /**

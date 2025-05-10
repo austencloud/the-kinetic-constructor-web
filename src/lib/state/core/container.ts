@@ -5,8 +5,8 @@
  * It's designed to replace the more complex store/registry pattern with a more direct
  * and ergonomic API.
  *
- * Note: This implementation uses Svelte 4 stores but is designed to be easily migrated
- * to Svelte 5 Runes in the future.
+ * Note: This implementation uses Svelte stores which are compatible with both Svelte 4
+ * and Svelte 5. For Svelte 5 runes integration, use the container in Svelte components.
  */
 
 import { writable, get, type Writable } from 'svelte/store';
@@ -21,7 +21,7 @@ import { writable, get, type Writable } from 'svelte/store';
 export function createContainer<T extends object, A extends Record<string, Function>>(
 	initialState: T,
 	actions: (state: T, update: (fn: (state: T) => void) => void) => A
-): { state: T } & A & { reset: () => void } {
+): { state: T } & A & { reset: () => void; subscribe: Writable<T>['subscribe'] } {
 	// Create a writable store
 	const store = writable<T>(structuredClone(initialState));
 
@@ -59,16 +59,11 @@ export function createContainer<T extends object, A extends Record<string, Funct
 		store.set(structuredClone(initialState));
 	};
 
-	// Create a getter for the current state
-	const stateGetter = {
-		get state() {
-			return get(store);
-		}
-	};
-
 	// Create the container object with proper typing
 	const container = {
-		...stateGetter,
+		get state() {
+			return get(store);
+		},
 		...boundActions,
 		reset,
 		// Add subscribe method for compatibility with Svelte stores
@@ -86,8 +81,7 @@ export function createContainer<T extends object, A extends Record<string, Funct
  * @returns The derived value
  */
 export function createDerived<T>(fn: () => T): { value: T; _update: () => void } {
-	// For Svelte 4, we need to manually track dependencies
-	// This is a simplified implementation that won't track all dependencies correctly
+	// Create a store that can be manually updated
 	const store = writable<T>(fn());
 
 	return {
@@ -104,9 +98,12 @@ export function createDerived<T>(fn: () => T): { value: T; _update: () => void }
  * Creates an effect that runs when dependencies change
  *
  * @param fn A function that performs side effects
+ * @returns A cleanup function
  */
-export function createEffect(fn: () => void): void {
-	// For Svelte 4, we need to manually set up the effect
-	// This is a simplified implementation that won't track all dependencies correctly
-	fn();
+export function createEffect(fn: () => void | (() => void)): () => void {
+	// Execute the function immediately
+	const cleanup = fn();
+
+	// Return a cleanup function if one was provided
+	return typeof cleanup === 'function' ? cleanup : () => {};
 }

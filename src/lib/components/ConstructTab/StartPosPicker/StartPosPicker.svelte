@@ -9,7 +9,7 @@
 	import pictographDataStore from '$lib/stores/pictograph/pictographStore';
 	import { pictographStore } from '$lib/state/stores/pictograph/pictograph.store';
 	import startPositionService from '$lib/services/StartPositionService';
-	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
+	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 	import { browser } from '$app/environment'; // Import browser check
 	import sequenceDataService from '$lib/services/SequenceDataService';
 

@@ -7,7 +7,7 @@
 	import SequenceWorkbench from '$lib/components/SequenceWorkbench/Workbench.svelte';
 	import OptionPicker from './OptionPicker/OptionPicker.svelte';
 	import StartPosPicker from './StartPosPicker/StartPosPicker.svelte';
-	import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore';
+	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 
 	// Import for button definition types
 	import type {
