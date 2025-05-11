@@ -18,20 +18,25 @@
 		groups: Array<{ key: string; options: PictographData[] }>;
 	};
 
-	export let selectedTab: string | null = null;
-	export let options: PictographData[] = [];
-	export let transitionKey: string | number = 'default'; // Add transition key prop
+	const { selectedTab = null, options = [], transitionKey = 'default' } = $props<{
+		selectedTab?: string | null;
+		options?: PictographData[];
+		transitionKey?: string | number;
+	}>();
 
 	let panelElement: HTMLElement;
-	let contentIsShort = false;
-	let layoutRows: LayoutRow[] = [];
+	let contentIsShort = $state(false); // Use $state for reactive updates
+	let layoutRows: LayoutRow[] = $state([]); // Use $state for reactive updates
 	let previousTab: string | null = null;
+	let isReady = $state(false); // Track if component is ready to be shown, use $state
 
 	// Get sort method from store
 	let sortMethod: SortMethod;
-	uiState.subscribe((state) => {
-		sortMethod = state.sortMethod;
+	// No need for manual subscription with $effect
+	$effect(() => {
+		sortMethod = $uiState.sortMethod;
 	});
+
 
 	// Save scroll position when scrolling
 	function handleScroll() {
@@ -48,7 +53,8 @@
 	}
 
 	// Track tab changes for scroll position management
-	$: {
+	$effect(() => {
+		// This effect runs when selectedTab changes
 		if (selectedTab !== previousTab && previousTab !== null) {
 			// Save the scroll position of the previous tab before switching
 			if (panelElement && previousTab) {
@@ -56,33 +62,44 @@
 			}
 		}
 		previousTab = selectedTab;
-	}
 
-	// Restore scroll position when component mounts
-	onMount(() => {
-		restoreScrollPosition();
+		// When selectedTab changes, try to restore its scroll position
+		// This needs to happen after the DOM updates for the new tab
+		// Using a timeout allows the DOM to update.
+		setTimeout(() => {
+			restoreScrollPosition();
+		}, 0);
 	});
 
-	$: groupedOptions = (() => {
+
+	// Restore scroll position when component mounts for the initial tab
+	onMount(() => {
+		// Ensure this runs after the panelElement is available and initial content is rendered
+		setTimeout(() => {
+			restoreScrollPosition();
+		}, 50); // A small delay might be needed for initial render
+	});
+
+
+	// Group options based on the 'type' sort method, regardless of the global sortMethod
+	// This ensures consistent grouping within the OptionsPanel.
+	const MAX_ITEMS_FOR_SMALL_GROUP = 2;
+
+	$effect(() => {
 		const subGroups: Record<string, PictographData[]> = {};
-		options.forEach((option) => {
-			// Ensure 'type' is used for grouping within OptionsPanel, regardless of the main sort method
-			const groupKey = determineGroupKey(option, 'type');
+		options.forEach((option: PictographData) => {
+			const groupKey = determineGroupKey(option, 'type'); // Always group by 'type' here
 			if (!subGroups[groupKey]) subGroups[groupKey] = [];
 			subGroups[groupKey].push(option);
 		});
-		return subGroups;
-	})();
 
-	// Ensure keys are sorted according to 'type' logic
-	$: sortedGroupKeys = getSortedGroupKeys(Object.keys(groupedOptions), 'type');
+		const currentSortedGroupKeys = getSortedGroupKeys(Object.keys(subGroups), 'type'); // Sort keys by 'type' logic
 
-	$: layoutRows = (() => {
 		const rows: LayoutRow[] = [];
 		let i = 0;
-		while (i < sortedGroupKeys.length) {
-			const currentKey = sortedGroupKeys[i];
-			const currentOptions = groupedOptions[currentKey];
+		while (i < currentSortedGroupKeys.length) {
+			const currentKey = currentSortedGroupKeys[i];
+			const currentOptions = subGroups[currentKey];
 			if (!currentOptions || currentOptions.length === 0) {
 				i++;
 				continue;
@@ -92,9 +109,9 @@
 			if (isCurrentSmall) {
 				const smallGroupSequence = [{ key: currentKey, options: currentOptions }];
 				let j = i + 1;
-				while (j < sortedGroupKeys.length) {
-					const nextKey = sortedGroupKeys[j];
-					const nextOptions = groupedOptions[nextKey];
+				while (j < currentSortedGroupKeys.length) {
+					const nextKey = currentSortedGroupKeys[j];
+					const nextOptions = subGroups[nextKey];
 					if (
 						nextOptions &&
 						nextOptions.length > 0 &&
@@ -118,47 +135,61 @@
 				i++;
 			}
 		}
-		return rows;
-	})();
+		layoutRows = rows; // Update the $state variable
+	});
 
-	// Define the maximum number of items that can be in a group for it to be considered "small"
-	// and potentially combined with other small groups in a multi-group row
-	const MAX_ITEMS_FOR_SMALL_GROUP = 2;
 
-	// Use a debounced version of checkContentHeight to prevent infinite loops
+	// Debounced function to check content height
 	const debouncedCheckContentHeight = (() => {
 		let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
 		return () => {
-			if (timeoutId !== null) {
-				clearTimeout(timeoutId);
-			}
-
+			if (timeoutId !== null) clearTimeout(timeoutId);
 			timeoutId = setTimeout(() => {
 				if (!panelElement) return;
-				const fits = panelElement.scrollHeight <= panelElement.clientHeight;
+				const panelContent = panelElement.querySelector('.panel-content');
+				if (!panelContent) return;
+
+				// Simplified check: scrollHeight includes content's own padding.
+				// Compare directly with container's clientHeight.
+				const buffer = 10; // Small buffer to prevent flickering
+				const fits = panelContent.scrollHeight + buffer <= panelElement.clientHeight;
+				
 				if (fits !== contentIsShort) {
-					contentIsShort = fits;
+					contentIsShort = fits; // Update $state variable
+					if (import.meta.env.DEV) {
+						console.debug('OptionsPanel content fits:', fits, {
+							contentHeight: panelContent.scrollHeight,
+							containerHeight: panelElement.clientHeight,
+							buffer
+						});
+					}
 				}
 				timeoutId = null;
-			}, 100);
+			}, 100); // Debounce delay
 		};
 	})();
 
-	// Only check content height when options change, not on every render
-	$: if (options) {
-		// Use setTimeout to move this out of the reactive context
-		setTimeout(() => debouncedCheckContentHeight(), 0);
-	}
-
-	onMount(() => {
-		// Check content height after initial render
-		setTimeout(() => debouncedCheckContentHeight(), 100);
+	// Effect to check content height when options or panelElement change
+	$effect(() => {
+		if (options && panelElement) {
+			// Use setTimeout to ensure check runs after DOM updates
+			setTimeout(() => debouncedCheckContentHeight(), 0);
+		}
 	});
+
+	// Effect for initial readiness and content height check
+	onMount(() => {
+		setTimeout(() => {
+			debouncedCheckContentHeight();
+			isReady = true; // Update $state variable
+		}, 100); // Delay for initial render
+	});
+
 </script>
 
 <div
 	class="options-panel"
+	class:ready={isReady}
 	bind:this={panelElement}
 	use:resize={debouncedCheckContentHeight}
 	class:vertically-center={contentIsShort}
@@ -168,7 +199,6 @@
 	onscroll={handleScroll}
 >
 	<div class="panel-content">
-		<!-- Removed transition -->
 		{#each layoutRows as row, rowIndex (transitionKey + '-row-' + rowIndex)}
 			{#if row.type === 'single'}
 				{#each row.groups as group (transitionKey + '-group-' + group.key)}
@@ -202,30 +232,51 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		overflow-y: auto;
-		overflow-x: hidden;
+		overflow-y: auto; /* Allows vertical scrolling */
+		overflow-x: hidden; /* Prevents horizontal scrolling */
 		box-sizing: border-box;
-		/* padding: 1rem; */
-		display: flex;
+		display: flex; /* Using flex to help with centering logic */
 		flex-direction: column;
-		justify-content: center; /* Center content vertically by default */
+		/* justify-content: flex-start; Default, but explicit for scrollable content */
+		opacity: 0;
+		transition: opacity 0.2s ease-out;
+	}
+
+	.options-panel.ready {
+		opacity: 1;
 	}
 
 	.panel-content {
 		width: 100%;
-		padding: 0.5rem 0;
+		padding: 0.5rem 0; /* Consistent padding, includes 0.5rem top and bottom */
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		/* min-height: fit-content; /* Ensures it takes at least the height of its content */
+		/* flex-grow: 1; /* Allows panel-content to grow if options-panel is taller and not vertically centered */
 	}
 
-	/* When content is short enough to fit, center it vertically */
+	/* When content is short, center it. panel-content itself is absolutely positioned. */
+	.options-panel.vertically-center {
+		justify-content: center; /* Center .panel-content if it's smaller than .options-panel */
+	}
 	.options-panel.vertically-center .panel-content {
-		position: absolute;
+		position: absolute; /* Detach from flow for centering */
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
+		/* Padding is already 0.5rem 0 from its own rule, no need to override here unless different */
+		/* max-height: 100%; /* Ensure it doesn't overflow its centered container */
 	}
+
+	/* REMOVED THIS RULE: This was the primary cause of the scrolling issue.
+	   By applying padding-top here, it was added *inside* the scrollable area.
+	*/
+	/*
+	.options-panel:not(.vertically-center) .panel-content {
+		padding-top: 20px; 
+	}
+	*/
 
 	.multi-group-row {
 		display: flex;
@@ -249,12 +300,10 @@
 		border-radius: 12px;
 	}
 
-	/* Responsive adjustments for mobile */
 	@media (max-width: 640px) {
 		.multi-group-row {
 			gap: 0.1rem;
 		}
-
 		.multi-group-item {
 			min-width: 100px;
 			margin: 0.1rem;
@@ -262,26 +311,35 @@
 		}
 	}
 
-	/* Even smaller screens */
 	@media (max-width: 380px) {
 		.multi-group-item {
 			min-width: 80px;
 		}
 	}
 
-	/* --- Scrollbar Styles --- */
+	.options-panel {
+		scrollbar-width: thin;
+		scrollbar-color: rgba(100, 116, 139, 0.7) rgba(30, 41, 59, 0.1);
+	}
+
 	.options-panel::-webkit-scrollbar {
-		width: 8px;
+		width: 10px;
 	}
+
 	.options-panel::-webkit-scrollbar-track {
-		background: rgba(30, 41, 59, 0.3);
-		border-radius: 4px;
+		background: rgba(30, 41, 59, 0.1);
+		border-radius: 6px;
+		margin: 2px 0;
 	}
+
 	.options-panel::-webkit-scrollbar-thumb {
 		background-color: rgba(100, 116, 139, 0.7);
-		border-radius: 4px;
+		border-radius: 6px;
+		border: 2px solid transparent;
+		background-clip: padding-box;
 	}
+
 	.options-panel::-webkit-scrollbar-thumb:hover {
-		background-color: rgba(148, 163, 184, 0.8);
+		background-color: rgba(148, 163, 184, 0.9);
 	}
 </style>

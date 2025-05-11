@@ -1,95 +1,39 @@
 <script lang="ts">
 	// Import necessary components
-	import PlaceholderTab from './PlaceholderTab.svelte';
 	import ConstructTab from '$lib/components/ConstructTab/ConstructTab.svelte';
-	import BrowseTab from '$lib/components/BrowseTab/BrowseTab.svelte';
-	import LearnTab from '$lib/components/LearnTab/LearnTab.svelte';
-	import WriteTab from '$lib/components/WriteTab/WriteTab.svelte';
-	// Import transitions
-	import { crossfade, fade } from 'svelte/transition';
+	import { fade } from 'svelte/transition';
+	import { onMount } from 'svelte';
+	import { appActions } from '$lib/state/machines/app/app.actions';
 
-	// --- XState Imports ---
-	import { tabs } from '$lib/components/MainWidget/state/appState';
-	import { useSelector } from '@xstate/svelte';
-	import { appService } from '$lib/state/machines/app/app.machine';
-
-	// --- Get current tab index directly from the app service ---
-	const currentTabStore = useSelector(appService, (state) => state.context.currentTab);
-
-	// --- Reactive derivations ---
-	$: currentTabIndex = $currentTabStore as number;
-	$: activeTab =
-		currentTabIndex >= 0 && currentTabIndex < tabs.length ? tabs[currentTabIndex] : null;
-
-	// Track if we're in the Generate tab
-	$: isGenerateTab = activeTab?.id === 'generate';
-
-	// Create a crossfade transition
-	const [send, receive] = crossfade({
-		duration: 400,
-		fallback(node) {
-			return fade(node, { duration: 300 });
-		}
+	// Force the app to always show the Construct tab (index 0)
+	onMount(() => {
+		appActions.changeTab(0);
 	});
+
+	// We're always in Construct mode
+	const isGenerateTab = false;
 </script>
 
 <div class="tab-content-container">
-	{#if activeTab}
-		{#key activeTab.id}
-			<div
-				in:receive={{ key: activeTab.id }}
-				out:send={{ key: activeTab.id }}
-				class={activeTab.id === 'construct' ||
-				activeTab.id === 'generate' ||
-				activeTab.id === 'browse' ||
-				activeTab.id === 'learn' ||
-				activeTab.id === 'write'
-					? 'split-view-container'
-					: 'placeholderContainer'}
-			>
-				{#if activeTab.id === 'construct' || activeTab.id === 'generate'}
-					<ConstructTab isGenerateMode={isGenerateTab} />
-				{:else if activeTab.id === 'browse'}
-					<BrowseTab />
-				{:else if activeTab.id === 'learn'}
-					<LearnTab />
-				{:else if activeTab.id === 'write'}
-					<WriteTab />
-				{:else}
-					<PlaceholderTab icon={activeTab.icon} title={activeTab.title} />
-				{/if}
-			</div>
-		{/key}
-	{/if}
+	<div class="split-view-container" in:fade={{ duration: 300 }}>
+		<ConstructTab isGenerateMode={isGenerateTab} />
+	</div>
 </div>
 
 <style>
 	.tab-content-container {
-		position: relative; /* Crucial for absolute positioning of children during transition */
+		position: relative;
 		width: 100%;
 		height: 100%;
-		overflow: hidden; /* Prevent content spill during transition */
+		overflow: hidden;
 	}
 
-	/* Ensure the direct children of the #key block can overlap during transition */
-	.split-view-container,
-	.placeholderContainer {
-		position: absolute; /* Changed from relative to absolute */
-		top: 0;
-		left: 0;
+	.split-view-container {
+		position: relative;
 		width: 100%;
 		height: 100%;
-		display: flex; /* Keep flex for split-view */
-		box-sizing: border-box; /* Include padding/border in element's total width and height */
-	}
-
-	/* Styles for the placeholder content */
-	.placeholderContainer {
-		/* display: flex; is already set above */
-		/* width: 100%; height: 100%; position: absolute; are set above */
-		/* Ensure placeholder content inside is centered if needed */
-		align-items: center;
-		justify-content: center;
+		display: flex;
+		box-sizing: border-box;
 	}
 
 	/* Responsive styles */

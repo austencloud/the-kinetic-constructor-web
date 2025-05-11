@@ -1,13 +1,7 @@
 <!-- src/lib/components/GenerateTab/layout/GenerateTabContent.svelte -->
 <script lang="ts">
-	import { writable } from 'svelte/store';
-	import SequenceWorkbench from '$lib/components/SequenceWorkbench/Workbench.svelte';
-	import RightPanel from '$lib/components/SequenceWorkbench/RightPanel/RightPanel.svelte';
 	import type { ButtonDefinition } from '$lib/components/SequenceWorkbench/ButtonPanel/types';
 	import SharedWorkbench from '$lib/components/SequenceWorkbench/SharedWorkbench.svelte';
-
-	// Track tools panel state
-	const isToolsPanelOpen = writable(false);
 
 	// Define Button Panel Data
 	const buttonPanelButtons: ButtonDefinition[] = [
@@ -30,16 +24,6 @@
 			composed: true
 		});
 		document.dispatchEvent(buttonEvent);
-
-		// After action is processed, close tools panel
-		if ($isToolsPanelOpen) {
-			isToolsPanelOpen.set(false);
-		}
-	}
-
-	// Function to close tools panel
-	function closeToolsPanel() {
-		isToolsPanelOpen.set(false);
 	}
 
 	// Note: The RightPanel component will automatically set its active tab to 'generate'

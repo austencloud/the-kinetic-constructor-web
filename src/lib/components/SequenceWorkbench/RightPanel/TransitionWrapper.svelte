@@ -160,21 +160,35 @@
 
 		// If transitioning to StartPosPicker
 		if (isSequenceEmpty) {
-			// Show StartPosPicker and hide OptionPicker after transition
+			// Show StartPosPicker immediately to ensure animation plays
 			showStartPosPicker = true;
+
+			// Force a reflow to ensure the animation triggers properly
+			if (startPosPickerElement) {
+				void startPosPickerElement.offsetHeight;
+			}
+
+			// Hide OptionPicker after transition completes
 			setTimeout(() => {
 				showOptionPicker = false;
 				isTransitioning = false;
-			}, transitionDuration);
+			}, transitionDuration + 50); // Add a small buffer to ensure animation completes
 		}
 		// If transitioning to OptionPicker
 		else {
-			// Show OptionPicker and hide StartPosPicker after transition
+			// Show OptionPicker immediately to ensure animation plays
 			showOptionPicker = true;
+
+			// Force a reflow to ensure the animation triggers properly
+			if (optionPickerElement) {
+				void optionPickerElement.offsetHeight;
+			}
+
+			// Hide StartPosPicker after transition completes
 			setTimeout(() => {
 				showStartPosPicker = false;
 				isTransitioning = false;
-			}, transitionDuration);
+			}, transitionDuration + 50); // Add a small buffer to ensure animation completes
 		}
 	}
 
@@ -184,16 +198,28 @@
 	const flyInParams = {
 		duration: transitionDuration,
 		easing: cubicInOut,
-		y: 30,
-		opacity: 0
+		y: 20, // Reduced distance for smoother animation
+		opacity: 0,
+		delay: 50 // Small delay to ensure proper sequencing
 	};
 
 	const flyOutParams = {
-		duration: transitionDuration * 0.8,
+		duration: transitionDuration * 0.7, // Slightly faster exit for better UX
 		easing: cubicInOut,
-		y: -20,
+		y: -15, // Reduced distance for smoother animation
 		opacity: 0
 	};
+
+	// Track if this is the first render to prevent animation on initial load
+	let isFirstRender = true;
+
+	// After component is mounted, set isFirstRender to false
+	onMount(() => {
+		// Set isFirstRender to false after a short delay
+		setTimeout(() => {
+			isFirstRender = false;
+		}, 100);
+	});
 </script>
 
 <div class="transition-container" bind:this={containerElement}>
@@ -202,7 +228,7 @@
 			class="component-wrapper start-pos-wrapper"
 			class:active={isSequenceEmpty}
 			bind:this={startPosPickerElement}
-			in:fly={flyInParams}
+			in:fly={isFirstRender ? { duration: 0 } : flyInParams}
 			out:fly={flyOutParams}
 		>
 			<slot name="startPosPicker" />
@@ -214,7 +240,7 @@
 			class="component-wrapper option-picker-wrapper"
 			class:active={!isSequenceEmpty}
 			bind:this={optionPickerElement}
-			in:fly={flyInParams}
+			in:fly={isFirstRender ? { duration: 0 } : flyInParams}
 			out:fly={flyOutParams}
 		>
 			<slot name="optionPicker" />
@@ -232,6 +258,7 @@
 		will-change: height;
 		display: flex;
 		flex-direction: column;
+		transform: translateZ(0); /* Force hardware acceleration */
 	}
 
 	.component-wrapper {
@@ -251,6 +278,11 @@
 		flex-direction: column;
 		justify-content: center; /* Center content vertically */
 		align-items: center; /* Center content horizontally */
+		transform-origin: center center; /* Ensure transforms are centered */
+		backface-visibility: hidden; /* Prevent flickering */
+		-webkit-backface-visibility: hidden;
+		transform-style: preserve-3d; /* Improve rendering */
+		-webkit-transform-style: preserve-3d; /* Improve rendering on WebKit */
 	}
 
 	.component-wrapper.active {

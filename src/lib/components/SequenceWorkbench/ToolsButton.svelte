@@ -1,19 +1,17 @@
-<!-- src/lib/components/SequenceWorkbench/ToolsButton.svelte -->
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { createEventDispatcher } from 'svelte';
 
 	// Props
 	export let isToolsPanelOpen = false;
 
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		toggleToolsPanel: void;
-	}>();
-
 	// Handle click event
 	function handleClick() {
-		dispatch('toggleToolsPanel');
+		// Create and dispatch a custom event
+		const event = new CustomEvent('toggleToolsPanel', {
+			bubbles: true,
+			composed: true
+		});
+		document.dispatchEvent(event);
 	}
 </script>
 
@@ -34,60 +32,68 @@
 <style>
 	.tools-button {
 		/* Base sizes - increased for better touch targets */
-		--base-size: 44px;
-		--base-padding: 10px;
-		--base-margin: 12px;
-		--base-font-size: 16px;
-		--base-icon-size: 28px;
-		--base-icon-font-size: 14px;
-		--base-border-radius: 8px;
+		--base-size: 56px;
+		--base-margin: 10px;
+		--base-icon-size: 24px;
 
 		position: absolute;
 		bottom: calc(var(--button-size-factor, 1) * var(--base-margin));
 		right: calc(var(--button-size-factor, 1) * var(--base-margin));
 		z-index: 10;
-		background: white;
+		width: calc(var(--button-size-factor, 1) * var(--base-size));
+		height: calc(var(--button-size-factor, 1) * var(--base-size));
 		border: none;
-		border-radius: 10px; /* Slightly larger border radius */
-		padding: calc(var(--button-size-factor, 1) * var(--base-padding));
+		border-radius: 50%; /* Perfectly circular */
+		padding: 0;
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		justify-content: center;
 		cursor: pointer;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-		transition: all 0.2s ease-in-out;
-		font-size: calc(var(--button-size-factor, 1) * var(--base-font-size));
-		color: #333;
-		font-weight: 500;
+		box-shadow:
+			0 4px 12px rgba(0, 0, 0, 0.15),
+			0 0 0 1px rgba(255, 255, 255, 0.1);
+		transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy animation */
+		color: white;
+		background: linear-gradient(135deg, #6a11cb, #2575fc);
 		pointer-events: auto;
 		/* Ensure minimum size for small screens */
-		min-width: 44px;
-		min-height: 44px;
+		min-width: 48px;
+		min-height: 48px;
+		overflow: hidden; /* Ensure content stays within the circle */
 	}
 
 	.tools-button:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-		background: #f8f9fa;
+		transform: translateY(-4px) scale(1.05);
+		box-shadow:
+			0 8px 24px rgba(0, 0, 0, 0.2),
+			0 0 0 2px rgba(255, 255, 255, 0.2);
 	}
 
 	.tools-button:active {
-		transform: scale(0.98);
+		transform: scale(0.95);
 	}
 
 	.icon-wrapper {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		background: linear-gradient(135deg, #6a11cb, #2575fc);
-		color: white;
-		width: calc(var(--button-size-factor, 1) * var(--base-icon-size));
-		height: calc(var(--button-size-factor, 1) * var(--base-icon-size));
-		font-size: calc(var(--button-size-factor, 1) * var(--base-icon-font-size));
-		border-radius: calc(var(--button-size-factor, 1) * var(--base-border-radius));
-		/* Ensure minimum size for small screens */
-		min-width: 32px;
-		min-height: 32px;
+		width: 100%;
+		height: 100%;
+		font-size: calc(var(--button-size-factor, 1) * var(--base-icon-size));
+		/* Add a subtle pulse animation */
+		animation: pulse 2s infinite ease-in-out;
+	}
+
+	@keyframes pulse {
+		0% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.05);
+		}
+		100% {
+			transform: scale(1);
+		}
 	}
 
 	/* Responsive adjustments for small screens */

@@ -12,7 +12,7 @@
 	import { layoutStore } from '$lib/stores/layout/layoutStore';
 
 	// Import the sequence container and integration utilities
-	import { sequenceContainer } from '$lib/state/stores/sequenceStore';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 
 	// Helper function for safe logging of reactive state
@@ -61,19 +61,8 @@
 	);
 	const beatCount = $derived(beats.length);
 
-	// Check if the layout is in portrait mode
-	let isPortraitLayout = $state(false);
-	$effect(() => {
-		// Get the layout orientation from the layoutStore
-		const unsubscribe = layoutStore.subscribe((layout) => {
-			// If rows > cols, it's portrait orientation
-			isPortraitLayout = layout.rows > layout.cols;
-		});
-
-		return () => {
-			unsubscribe();
-		};
-	});
+	// We don't need to track layout orientation locally
+	// as it's already managed by the layoutStore
 
 	// Subscribe to isSequenceEmpty store
 	let sequenceIsEmpty = $state(true);
@@ -167,20 +156,157 @@
 				}
 			});
 			document.dispatchEvent(event);
+
+			// Check for overflow after layout changes
+			// Delay to ensure DOM is updated
+			setTimeout(checkForOverflow, 100);
 		}
 	});
 
-	// Calculate cell size based on container dimensions
-	$effect(() => {
-		cellSize = calculateCellSize(
-			beatCount,
-			size.width,
-			size.height,
-			beatRows,
-			beatCols + 1, // Add 1 for start position column
-			0 // No gap
+	// Calculate the total height needed for labels and other UI elements
+	// Based on the padding and margins in SequenceWidget.svelte
+	const calculateLabelsTotalHeight = () => {
+		// From SequenceWidget.svelte:
+		// - sequence-container has padding: 10px 0 (top and bottom)
+		// - sequence-widget-labels has padding-bottom: 10px
+		// - difficulty-label-container has margin-top: 10px
+		// - beat-frame-wrapper has padding: 0 10px (horizontal only)
+		// - Mobile adjustments reduce these values
+
+		// Container padding
+		const containerPaddingTop = 10;
+		const containerPaddingBottom = 10;
+
+		// Label spacing
+		const labelsPaddingBottom = 10;
+		const difficultyMarginTop = 10;
+
+		// Actual label heights (more accurate estimates)
+		const currentWordLabelHeight = 36; // Increased for better accuracy
+		const difficultyLabelHeight = 36; // Increased for better accuracy
+
+		// Additional padding for the beat frame
+		const beatFramePaddingBottom = 20; // From .beat-frame padding-bottom in CSS
+
+		// Calculate total height needed for non-pictograph elements
+		return (
+			containerPaddingTop +
+			containerPaddingBottom +
+			labelsPaddingBottom +
+			difficultyMarginTop +
+			currentWordLabelHeight +
+			difficultyLabelHeight +
+			beatFramePaddingBottom
 		);
+	};
+
+	// Track the full sequence widget dimensions
+	let sequenceWidgetWidth = $state(0);
+	let sequenceWidgetHeight = $state(0);
+
+	// Track if content overflows container
+	let contentOverflows = $state(false);
+	let beatFrameContainerRef: HTMLElement;
+
+	// Listen for sequence widget dimensions
+	let sequenceWidgetDimensionsListener: (event: CustomEvent) => void;
+
+	onMount(() => {
+		// Create a listener for the sequence-widget-dimensions event
+		sequenceWidgetDimensionsListener = (event: CustomEvent) => {
+			if (event.detail && event.detail.width && event.detail.height) {
+				sequenceWidgetWidth = event.detail.width;
+				sequenceWidgetHeight = event.detail.height;
+			}
+		};
+
+		// Add the event listener
+		document.addEventListener(
+			'sequence-widget-dimensions',
+			sequenceWidgetDimensionsListener as EventListener
+		);
+
+		return () => {
+			// Remove the event listener when the component is destroyed
+			document.removeEventListener(
+				'sequence-widget-dimensions',
+				sequenceWidgetDimensionsListener as EventListener
+			);
+		};
 	});
+
+	// Calculate cell size based on the full sequence widget dimensions
+	$effect(() => {
+		// Only calculate if we have valid dimensions
+		if (sequenceWidgetWidth > 0 && sequenceWidgetHeight > 0) {
+			const labelsTotalHeight = calculateLabelsTotalHeight();
+
+			// Use the full sequence widget height instead of the beat frame's height
+			cellSize = calculateCellSize(
+				beatCount,
+				sequenceWidgetWidth,
+				sequenceWidgetHeight,
+				beatRows,
+				beatCols + 1, // Add 1 for start position column
+				0, // No gap
+				labelsTotalHeight // Pass the labels' total height
+			);
+		} else {
+			// Fallback to using the beat frame's dimensions if sequence widget dimensions aren't available
+			const labelsTotalHeight = calculateLabelsTotalHeight();
+
+			cellSize = calculateCellSize(
+				beatCount,
+				size.width,
+				size.height,
+				beatRows,
+				beatCols + 1, // Add 1 for start position column
+				0, // No gap
+				labelsTotalHeight // Pass the labels' total height
+			);
+		}
+
+		// Check for overflow after cell size is calculated
+		// This needs to be delayed to ensure DOM is updated
+		setTimeout(checkForOverflow, 50);
+	});
+
+	// Function to check if content overflows container
+	function checkForOverflow() {
+		if (!beatFrameContainerRef) return;
+
+		const container = beatFrameContainerRef;
+		const beatFrame = container.querySelector('.beat-frame');
+
+		if (!beatFrame) return;
+
+		// Check if content is larger than container
+		const containerHeight = container.clientHeight;
+		const contentHeight = beatFrame.clientHeight;
+
+		// Add a small buffer to prevent flickering at the boundary
+		const buffer = 10; // 10px buffer
+
+		// Update overflow state with buffer
+		contentOverflows = contentHeight > containerHeight + buffer;
+
+		// Update class based on overflow state
+		if (contentOverflows) {
+			container.classList.add('overflow-content');
+		} else {
+			container.classList.remove('overflow-content');
+		}
+
+		// Log overflow state in dev mode
+		safeLog('Overflow check', {
+			containerHeight,
+			contentHeight,
+			isOverflowing: contentOverflows,
+			beatRows,
+			beatCols,
+			beatCount
+		});
+	}
 
 	// Initialize dev tools and set up event listeners
 	onMount(() => {
@@ -211,6 +337,16 @@
 
 		document.addEventListener('start-position-selected', handleStartPosSelected as EventListener);
 
+		// Check for overflow after component is mounted
+		// Delay to ensure DOM is fully rendered
+		setTimeout(checkForOverflow, 200);
+
+		// Add window resize listener to check for overflow on window resize
+		const handleResize = () => {
+			setTimeout(checkForOverflow, 100);
+		};
+		window.addEventListener('resize', handleResize);
+
 		// Set up an interval to periodically update dev tools
 		const intervalId = setInterval(() => {
 			updateDevTools();
@@ -221,6 +357,7 @@
 				'start-position-selected',
 				handleStartPosSelected as EventListener
 			);
+			window.removeEventListener('resize', handleResize);
 			clearInterval(intervalId);
 		};
 	});
@@ -301,9 +438,52 @@
 		// Use the sequence container to clear the sequence
 		sequenceContainer.setSequence([]);
 	}
+
+	// Add a test method to verify persistence
+	export function testPersistence() {
+		// Log the current state
+		console.log('Current sequence state:', {
+			beats: sequence.beats.length,
+			startPosition: startPosition ? 'set' : 'not set'
+		});
+
+		// Check localStorage
+		if (browser) {
+			const savedSequence = localStorage.getItem('sequence');
+			const startPosData = localStorage.getItem('start_position');
+			const backupData = localStorage.getItem('sequence_backup');
+
+			console.log('localStorage state:', {
+				sequence: savedSequence ? 'found' : 'not found',
+				startPosition: startPosData ? 'found' : 'not found',
+				backup: backupData ? 'found' : 'not found'
+			});
+
+			if (savedSequence) {
+				try {
+					const parsed = JSON.parse(savedSequence);
+					console.log('Saved sequence contains:', {
+						beats: parsed.beats?.length || 0,
+						metadata: parsed.metadata ? 'present' : 'missing'
+					});
+				} catch (e) {
+					console.error('Error parsing saved sequence:', e);
+				}
+			}
+		}
+
+		// Force a save
+		sequenceContainer.saveToLocalStorage();
+		console.log('Forced save to localStorage');
+
+		return {
+			success: true,
+			message: 'Persistence test complete. Check console for details.'
+		};
+	}
 </script>
 
-<div use:resizeObserver class="beat-frame-container scrollable">
+<div use:resizeObserver class="beat-frame-container scrollable" bind:this={beatFrameContainerRef}>
 	<div
 		class="beat-frame"
 		style="--total-rows: {beatRows}; --total-cols: {beatCount === 0
@@ -360,15 +540,41 @@
 		height: 100%;
 		display: flex;
 		justify-content: center;
-		/* align-items: center; by default, changed by .scrollable */
-		overflow: hidden; /* Default, overridden by .scrollable */
-		position: relative;
+		align-items: center;
+		position: relative; /* Create positioning context */
+		transition: all 0.3s ease-out; /* Smooth transitions */
 	}
 
 	.scrollable {
 		overflow-y: auto;
 		overflow-x: hidden;
-		align-items: flex-start; /* Content will align to the top when scrollable */
+		/* Show scrollbars only when needed */
+		scrollbar-width: thin; /* For Firefox */
+		scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* For Firefox */
+	}
+
+	/* Webkit scrollbar styling */
+	.scrollable::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+
+	.scrollable::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.scrollable::-webkit-scrollbar-thumb {
+		background-color: rgba(0, 0, 0, 0.3);
+		border-radius: 4px;
+	}
+
+	/* Apply different alignment for scrollable containers */
+	.scrollable.beat-frame-container {
+		/* Always center content initially */
+		align-items: center;
+		justify-content: center;
+		/* No padding to ensure proper centering */
+		padding: 0;
 	}
 
 	.beat-frame {
@@ -377,17 +583,28 @@
 		grid-template-rows: repeat(var(--total-rows), var(--cell-size));
 		gap: 0; /* No gap between cells */
 		justify-content: center;
-		align-content: center; /* Default, overridden by .scrollable .beat-frame:not(:only-child) */
+		align-content: center; /* Center by default for short sequences */
 		width: fit-content;
 		height: fit-content;
-		margin: auto;
+		margin: auto; /* Center in all cases initially */
 		/* Add transition for smooth size changes */
-		transition: all 0.3s ease;
+		transition: all 0.3s ease-out;
+		padding-bottom: 20px; /* Add padding at bottom for scrolling */
+		/* Ensure the grid stays centered during transitions */
+		transform-origin: center center;
 	}
 
-	/* Only align to top when scrolling and there are beats */
-	.scrollable .beat-frame:not(:only-child) {
+	/* Only apply scrolling styles when content exceeds container */
+	:global(.scrollable.beat-frame-container.overflow-content) .beat-frame {
+		margin-top: 0;
+		margin-bottom: auto;
 		align-content: start;
+		padding-top: 20px; /* Add padding at top to prevent "dead zone" */
+	}
+
+	/* For short sequences in scrollable containers, maintain centering */
+	:global(.scrollable.beat-frame-container:not(.overflow-content)) .beat-frame {
+		margin: auto; /* Center when content fits */
 	}
 
 	.beat-container {
@@ -421,4 +638,3 @@
 		z-index: 2;
 	}
 </style>
-

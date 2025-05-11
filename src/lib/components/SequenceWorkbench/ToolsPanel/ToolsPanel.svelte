@@ -1,6 +1,6 @@
 <!-- src/lib/components/SequenceWorkbench/ToolsPanel/ToolsPanel.svelte -->
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import type { ButtonDefinition, ActionEventDetail } from '../ButtonPanel/types';
 
@@ -8,23 +8,33 @@
 	export let buttons: ButtonDefinition[] = [];
 	export let activeMode: 'construct' | 'generate' | null = null;
 
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		action: ActionEventDetail;
-		close: void;
-	}>();
-
 	// Handle button click directly
 	function handleToolClick(id: string) {
-		dispatch('action', { id });
+		// Add a small vibration for tactile feedback on mobile devices
+		if (navigator.vibrate) {
+			navigator.vibrate(30);
+		}
+
+		// Create and dispatch a custom event
+		const event = new CustomEvent('action', {
+			detail: { id },
+			bubbles: true,
+			composed: true
+		});
+		document.dispatchEvent(event);
 	}
 
 	// Close tools panel
 	function handleClose() {
-		dispatch('close');
+		// Create and dispatch a custom event
+		const event = new CustomEvent('close-tools-panel', {
+			bubbles: true,
+			composed: true
+		});
+		document.dispatchEvent(event);
 	}
 
-	// Organize buttons in logical groups
+	// Organize buttons in logical groups with improved categorization
 	const modeButtons = buttons.filter((b) => ['constructMode', 'generateMode'].includes(b.id));
 	const sharingButtons = buttons.filter((b) => ['viewFullScreen', 'saveImage'].includes(b.id));
 	const manipulationButtons = buttons.filter((b) =>
@@ -32,6 +42,8 @@
 	);
 	const dictionaryButtons = buttons.filter((b) => ['addToDictionary'].includes(b.id));
 	const destructiveButtons = buttons.filter((b) => ['deleteBeat', 'clearSequence'].includes(b.id));
+
+	// Combine all buttons in a logical order
 	const orderedButtons = [
 		...modeButtons,
 		...sharingButtons,
@@ -87,13 +99,7 @@
 		const minColumnsNeeded = Math.ceil(buttonCount / Math.floor(availableHeight / minButtonSize));
 
 		// Calculate ideal columns based on container width and minimum button size
-		const idealColumns = Math.max(
-			1, // At least 1 column
-			Math.min(
-				buttonCount, // Don't exceed button count
-				maxButtonsPerRow // Don't exceed what can fit horizontally
-			)
-		);
+		// (This calculation is used for reference but not directly applied)
 
 		// Determine final column count based on container dimensions and button count
 		let columns;
@@ -118,11 +124,6 @@
 		// Ensure we have at least the minimum columns needed
 		columns = Math.max(columns, minColumnsNeeded);
 
-		// Log column calculation for debugging
-		console.debug(
-			`ToolsPanel columns: ideal=${idealColumns}, min=${minColumnsNeeded}, max=${maxButtonsPerRow}, final=${columns}`
-		);
-
 		// Calculate rows needed based on final column count
 		const rows = Math.ceil(buttonCount / columns);
 
@@ -146,15 +147,25 @@
 		// Ensure button size is within limits
 		buttonSize = Math.max(minSize, Math.min(buttonSize, maxSize));
 
-		// Log button size calculation for debugging
-		console.debug(`ToolsPanel button size: ${buttonSize}px for ${columns}x${rows} grid`);
-
 		// Set CSS variables for the grid
 		gridContainer.style.setProperty('--button-size', `${buttonSize}px`);
 		gridContainer.style.setProperty('--columns', `${columns}`);
 
-		// Log layout information for debugging
-		console.debug(`ToolsPanel layout: ${columns}x${rows} grid, ${buttonSize}px buttons`);
+		// Calculate and set icon and text sizes based on button size
+		const iconSize = Math.max(18, Math.min(32, Math.floor(buttonSize * 0.4)));
+		const titleSize = Math.max(9, Math.min(14, Math.floor(buttonSize * 0.15)));
+
+		gridContainer.style.setProperty('--icon-size', `${iconSize}px`);
+		gridContainer.style.setProperty('--title-size', `${titleSize}px`);
+
+		// Set a flag for small screens to adjust layout
+		const isSmallScreen = containerWidth < 480;
+		gridContainer.classList.toggle('small-screen', isSmallScreen);
+
+		// Set a flag for portrait/landscape orientation
+		const isPortrait = containerWidth < containerHeight;
+		gridContainer.classList.toggle('portrait', isPortrait);
+		gridContainer.classList.toggle('landscape', !isPortrait);
 	}
 
 	// Create debounced version for better performance
@@ -222,49 +233,63 @@
 		height: 100%;
 		display: flex;
 		flex-direction: column;
-		background: transparent; /* Changed to transparent */
-		border-radius: 8px;
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+		background: rgba(248, 249, 250, 0.2); /* Very subtle background */
+		border-radius: 12px;
+		box-shadow:
+			0 4px 16px rgba(0, 0, 0, 0.1),
+			0 0 0 1px rgba(255, 255, 255, 0.05);
 		overflow: hidden;
-		/* Added to ensure it fills the container properly */
 		position: relative;
 		flex: 1;
+		backdrop-filter: blur(5px); /* Enhanced blur effect for the entire panel */
+		-webkit-backdrop-filter: blur(5px);
 	}
 
 	.tools-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 10px 12px;
-		background: linear-gradient(135deg, rgba(106, 17, 203, 0.85), rgba(37, 117, 252, 0.85));
+		padding: 12px 16px;
+		background: linear-gradient(135deg, rgba(106, 17, 203, 0.9), rgba(37, 117, 252, 0.9));
 		color: white;
-		backdrop-filter: blur(3px); /* Add a blur effect to the header */
+		backdrop-filter: blur(8px); /* Enhanced blur effect for the header */
+		-webkit-backdrop-filter: blur(8px);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 	}
 
 	.tools-header h2 {
 		margin: 0;
-		font-size: 1.1rem;
+		font-size: 1.2rem;
 		font-weight: 600;
+		letter-spacing: 0.5px;
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 	}
 
 	.close-button {
 		background: rgba(255, 255, 255, 0.2);
 		border: none;
 		border-radius: 50%;
-		width: 28px;
-		height: 28px;
+		width: 32px;
+		height: 32px;
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		cursor: pointer;
 		color: white;
 		font-weight: bold;
-		transition: all 0.2s ease;
-		font-size: 12px;
+		transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy animation */
+		font-size: 14px;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 	}
 
 	.close-button:hover {
 		background: rgba(255, 255, 255, 0.4);
+		transform: scale(1.1);
+	}
+
+	.close-button:active {
+		transform: scale(0.95);
 	}
 
 	.tools-content {

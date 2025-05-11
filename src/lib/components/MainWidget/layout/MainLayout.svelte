@@ -1,25 +1,38 @@
 <script lang="ts">
-	import MenuBar from '$lib/components/MenuBar/MenuBar.svelte';
 	import TabContent from '../tabs/TabContent.svelte';
-	import { createEventDispatcher } from 'svelte';
-	import DeveloperTools from '$lib/components/Developer/DeveloperTools.svelte';
+	import { onMount } from 'svelte';
 	import SettingsContent from '$lib/components/SettingsDialog/SettingsContent.svelte';
 	import { appActions } from '$lib/state/machines/app/app.actions';
 	import { useSelector } from '@xstate/svelte';
 	import { appService } from '$lib/state/machines/app/app.machine';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut, quintOut } from 'svelte/easing';
-
-	// --- Props & Events ---
-
-	// --- Events Emitted Up ---
-	const dispatch = createEventDispatcher<{
-		changeBackground: string;
-	}>();
+	import { uiStore } from '$lib/state/stores/uiStore';
 
 	// --- Get State from App State Machine ---
 	const isSettingsOpenStore = useSelector(appService, (state) => state.context.isSettingsOpen);
 	$: isSettingsDialogOpen = $isSettingsOpenStore;
+
+	// --- Settings Button Size Calculation ---
+	let buttonSize = 50;
+	let iconSize = 38;
+
+	// Use the UI store to get responsive information
+	$: if ($uiStore && $uiStore.windowWidth) {
+		buttonSize = Math.max(30, Math.min(50, $uiStore.windowWidth / 12));
+		iconSize = buttonSize * 0.75;
+	}
+
+	onMount(() => {
+		// Initial size calculation
+		if (typeof window !== 'undefined') {
+			buttonSize = Math.max(30, Math.min(50, window.innerWidth / 12));
+			iconSize = buttonSize * 0.75;
+		}
+
+		// Force the app to always show the Construct tab (index 0)
+		appActions.changeTab(0);
+	});
 
 	// --- Event Handlers ---
 	function handleToggleSettings() {
@@ -28,23 +41,6 @@
 			appActions.closeSettings();
 		} else {
 			appActions.openSettings();
-		}
-	}
-
-	// This function will be passed down as a prop.
-	function handleBackgroundChange(event: CustomEvent<string>) {
-		const newBackground = event.detail;
-		// Accept any valid background type
-		const validBackgrounds = ['snowfall', 'nightSky'] as const;
-		type ValidBackground = (typeof validBackgrounds)[number];
-
-		if (validBackgrounds.includes(newBackground as any)) {
-			appActions.updateBackground(newBackground as ValidBackground);
-			dispatch('changeBackground', newBackground);
-		} else {
-			console.warn(`Invalid background type requested: ${newBackground}. Using default.`);
-			appActions.updateBackground('snowfall');
-			dispatch('changeBackground', 'snowfall');
 		}
 	}
 
@@ -57,8 +53,22 @@
 </script>
 
 <div class="content">
-	<div class="menuBar">
-		<MenuBar on:openSettings={handleToggleSettings} on:changeBackground={handleBackgroundChange} />
+	<div class="settings-button-container">
+		<button
+			class="settings-button"
+			style="--button-size: {buttonSize}px;"
+			on:click={handleToggleSettings}
+			aria-label="Settings"
+		>
+			<div class="button-content">
+				<i
+					class="fa-solid fa-gear settings-icon"
+					style="--icon-size: {iconSize}px;"
+					aria-hidden="true"
+				></i>
+			</div>
+			<div class="button-background"></div>
+		</button>
 	</div>
 
 	<div class="mainContent">
@@ -97,6 +107,16 @@
 		min-height: 0;
 		z-index: 1;
 		width: 100%;
+		position: relative;
+	}
+	.settings-button-container {
+		position: absolute;
+		top: 15px;
+		right: 15px;
+		z-index: 5;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 	.mainContent {
 		display: flex;
@@ -132,8 +152,110 @@
 		z-index: 10;
 		overflow: hidden;
 	}
-	.menuBar {
-		padding: 5px 0; /* Remove horizontal padding */
-		width: 100%; /* Ensure full width */
+
+	/* Settings Button Styles */
+	.settings-button {
+		width: var(--button-size);
+		height: var(--button-size);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		cursor: pointer;
+		border: none;
+		border-radius: 12px;
+		background-color: transparent;
+		color: rgba(255, 255, 255, 0.9);
+		transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+		padding: 0;
+		overflow: hidden;
+		position: relative;
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+	}
+
+	.button-content {
+		position: relative;
+		z-index: 2;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		width: 100%;
+		height: 100%;
+	}
+
+	.button-background {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.3);
+		border-radius: 12px;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+		transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+		z-index: 1;
+	}
+
+	.settings-button:hover {
+		transform: translateY(-2px);
+		color: #6c9ce9;
+	}
+
+	.settings-button:hover .button-background {
+		background: rgba(30, 60, 114, 0.4);
+		border-color: rgba(108, 156, 233, 0.3);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+	}
+
+	.settings-button:active {
+		transform: translateY(0);
+	}
+
+	.settings-button:active .button-background {
+		background: rgba(30, 60, 114, 0.6);
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	}
+
+	.settings-button:focus-visible {
+		outline: none;
+	}
+
+	.settings-button:focus-visible .button-background {
+		box-shadow: 0 0 0 2px rgba(108, 156, 233, 0.6);
+	}
+
+	.settings-icon {
+		font-size: var(--icon-size);
+		line-height: 1;
+		transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		display: block;
+	}
+
+	.settings-button:hover .settings-icon {
+		transform: rotate(90deg);
+	}
+
+	/* Responsive adjustments */
+	@media (max-width: 768px) {
+		.settings-button-container {
+			top: 10px;
+			right: 10px;
+		}
+
+		.settings-button {
+			border-radius: 10px;
+		}
+
+		.button-background {
+			border-radius: 10px;
+		}
+	}
+
+	/* Safe area inset for notched devices */
+	@supports (padding-top: env(safe-area-inset-top)) {
+		.settings-button-container {
+			top: max(15px, env(safe-area-inset-top));
+			right: max(15px, env(safe-area-inset-right));
+		}
 	}
 </style>

@@ -21,9 +21,7 @@
 {#key undefined}
 	<div class="sequence-workbench" use:resizeObserver>
 		<SequenceWidget
-			workbenchHeight={sequenceWorkbenchHeight}
 			{toolsPanelOpen}
-			on:toggleToolsPanel={() => dispatch('toggleToolsPanel')}
 		/>
 	</div>
 {/key}

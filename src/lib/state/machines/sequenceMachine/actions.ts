@@ -233,17 +233,26 @@ export function updateBeat({ event }: { event: any }) {
 
 /**
  * Clear the entire sequence
+ *
+ * This function has been improved to:
+ * 1. Ensure both sequence and start position are properly cleared
+ * 2. Properly reset state to allow creating new sequences
+ * 3. Notify all components of the change
  */
 export function clearSequence() {
+	console.log('Clearing sequence and start position');
+
 	// Set an empty sequence
 	sequenceContainer.setSequence([]);
 
 	// Update the sequence word
 	updateSequenceWord();
 
-	// Explicitly set the word to empty string to ensure it's cleared
+	// Reset metadata to initial state instead of just clearing the name
 	sequenceContainer.updateMetadata({
-		name: ''
+		name: '',
+		difficulty: 0,
+		tags: []
 	});
 
 	// Ensure isSequenceEmpty is set to true
@@ -256,33 +265,61 @@ export function clearSequence() {
 	// Reset the pictograph container to default data
 	pictographContainer.setData(defaultPictographData);
 
-	// Save the empty sequence to both storage mechanisms
-	sequenceContainer.saveToLocalStorage();
-
-	// Also clear the legacy backup
+	// Instead of removing localStorage items, save the empty state
+	// This ensures we have a valid empty state rather than missing data
 	if (typeof window !== 'undefined') {
 		try {
+			// Save the empty sequence state to localStorage
+			sequenceContainer.saveToLocalStorage();
+
+			// Save empty start position
+			localStorage.setItem('start_position', JSON.stringify(null));
+
+			// Save empty backup
 			localStorage.setItem(
 				'sequence_backup',
 				JSON.stringify({
 					beats: [],
-					options: null
+					options: null,
+					word: ''
 				})
 			);
+
+			console.log('Saved empty sequence state to localStorage');
 		} catch (error) {
-			console.error('Error clearing sequence backup:', error);
+			console.error('Error saving empty sequence state:', error);
 		}
 	}
 
-	// Dispatch a custom event
+	// Mark the sequence as not modified after clearing
+	// This prevents unnecessary saves
+	sequenceContainer.markAsSaved();
+
+	// Dispatch custom events to notify components
 	if (typeof document !== 'undefined') {
+		// Notify about sequence clearing
 		const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
 			detail: { type: 'sequence-cleared' },
 			bubbles: true
 		});
 		document.dispatchEvent(sequenceUpdatedEvent);
 
+		// Notify about start position clearing
+		const startPosEvent = new CustomEvent('start-position-selected', {
+			detail: { startPosition: null },
+			bubbles: true
+		});
+		document.dispatchEvent(startPosEvent);
+
+		// Dispatch an additional event to reset the Option Picker state
+		const resetOptionPickerEvent = new CustomEvent('reset-option-picker', {
+			bubbles: true
+		});
+		document.dispatchEvent(resetOptionPickerEvent);
+
 		// Update dev tools
 		updateDevTools();
+
+		console.log('Dispatched events for sequence clearing');
 	}
 }

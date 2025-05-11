@@ -2,17 +2,13 @@
 	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout';
 	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
 	import { sequenceStore } from '$lib/state/stores/sequenceStore';
-	import { derived, writable } from 'svelte/store';
 	import {
 		isSequenceFullScreen,
 		openSequenceFullScreen,
 		closeSequenceFullScreen
 	} from '$lib/stores/sequence/fullScreenStore';
-	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
-	// Define the event types for better type safety
-	interface SequenceWidgetEvents {
-		toggleToolsPanel: void;
-	}
+	import { onMount, onDestroy } from 'svelte';
+	import { useResizeObserver } from '$lib/composables/useResizeObserver';
 
 	// Import Type for Button Definitions
 	import type { ButtonDefinition, ActionEventDetail } from './ButtonPanel/types';
@@ -26,33 +22,56 @@
 	import ToolsPanel from './ToolsPanel/ToolsPanel.svelte';
 	import ClearSequenceButton from './ClearSequenceButton.svelte';
 
-	// Import stores for sequence state
-	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	// Import transition for animations
 	import { fly } from 'svelte/transition';
 
-	// We no longer need the isSequenceEmpty store as it's not used in this component
+	// Props using Svelte 5 runes
+	const props = $props<{
+		toolsPanelOpen?: boolean;
+	}>();
 
-	// Props
-	export let workbenchHeight: number;
-	export let toolsPanelOpen = false;
+	// Set up resize observer for the component
+	const { size, resizeObserver } = useResizeObserver();
 
 	// Use responsive layout hook for dimensions
 	const { dimensions } = useResponsiveLayout();
 
-	// Track tools panel state - use the prop value
-	const isToolsPanelOpen = writable(toolsPanelOpen);
+	// Track tools panel state
+	let isToolsPanelOpen = $state(false);
 
-	// Update the store when the prop changes
-	$: isToolsPanelOpen.set(toolsPanelOpen);
+	// Update local state when prop changes
+	$effect(() => {
+		isToolsPanelOpen = props.toolsPanelOpen ?? false;
+	});
 
 	// Track the active mode
-	const activeMode = writable<'construct' | 'generate' | null>('construct');
+	let activeMode = $state<'construct' | 'generate'>('construct');
 
-	// Calculate workbench orientation based on workbench dimensions instead of window
-	$: workbenchIsPortrait = $dimensions.width < workbenchHeight;
+	// Emit the full sequence widget dimensions whenever they change
+	$effect(() => {
+		// Only emit if we have valid dimensions
+		if ($size && $size.width > 0 && $size.height > 0) {
+			// Create a custom event with the full widget dimensions
+			const event = new CustomEvent('sequence-widget-dimensions', {
+				bubbles: true,
+				detail: {
+					width: $size.width,
+					height: $size.height
+				}
+			});
+
+			// Dispatch the event
+			document.dispatchEvent(event);
+		}
+	});
+
+	// Calculate workbench orientation based on container dimensions
+	const workbenchIsPortrait = $derived($dimensions.width < $size.height);
 
 	// Calculate button size factor based on container dimensions
-	$: buttonSizeFactor = calculateButtonSizeFactor($dimensions.width, $dimensions.height);
+	const buttonSizeFactor = $derived(
+		calculateButtonSizeFactor($dimensions.width, $dimensions.height)
+	);
 
 	// Function to calculate button size factor based on container dimensions
 	function calculateButtonSizeFactor(width: number, height: number): number {
@@ -86,12 +105,21 @@
 		return Math.round(factor * 100) / 100;
 	}
 
-	// Subscribe to stores
-	$: toolsPanelOpen = $isToolsPanelOpen;
-
 	// Subscribe to the sequence store for metadata
-	const sequenceName = derived(sequenceStore, ($store) => $store.metadata.name);
-	const difficultyLevel = derived(sequenceStore, ($store) => $store.metadata.difficulty);
+	let sequenceName = $state('');
+	let difficultyLevel = $state(0);
+
+	// Update metadata from the sequence store
+	$effect(() => {
+		const unsubscribe = sequenceStore.subscribe((store) => {
+			sequenceName = store.metadata.name;
+			difficultyLevel = store.metadata.difficulty;
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	});
 
 	// --- Define Button Panel Data ---
 	const buttonPanelButtons: ButtonDefinition[] = [
@@ -138,7 +166,7 @@
 		switch (id) {
 			case 'constructMode':
 				// Switch to construct mode
-				activeMode.set('construct');
+				activeMode = 'construct';
 				// Dispatch an event to notify parent components
 				const constructEvent = new CustomEvent('switch-mode', {
 					detail: { mode: 'construct' },
@@ -148,7 +176,7 @@
 				break;
 			case 'generateMode':
 				// Switch to generate mode
-				activeMode.set('generate');
+				activeMode = 'generate';
 				// Dispatch an event to notify parent components
 				const generateEvent = new CustomEvent('switch-mode', {
 					detail: { mode: 'generate' },
@@ -185,8 +213,8 @@
 				// The clearSequence action now handles resetting the start position
 				break;
 		}
-		if ($isToolsPanelOpen) {
-			isToolsPanelOpen.set(false);
+		if (isToolsPanelOpen) {
+			isToolsPanelOpen = false;
 		}
 	}
 
@@ -197,38 +225,52 @@
 		handleButtonAction(event);
 	}
 
-	// Initialize the event dispatcher
-	const dispatch = createEventDispatcher();
-
 	function toggleToolsPanel() {
-		// Always dispatch the event to the parent component
-		dispatch('toggleToolsPanel');
+		// Create and dispatch a custom event
+		const event = new CustomEvent('toggleToolsPanel', {
+			bubbles: true,
+			composed: true
+		});
+		document.dispatchEvent(event);
 
 		// If parent's panel is not open, also toggle our local panel
-		if (!toolsPanelOpen) {
-			isToolsPanelOpen.update((value) => !value);
+		if (!props.toolsPanelOpen) {
+			isToolsPanelOpen = !isToolsPanelOpen;
 		}
 	}
 
 	let buttonActionListener: (event: CustomEvent) => void;
+	let closeToolsPanelListener: (event: Event) => void;
+
 	onMount(() => {
+		// Listen for button actions
 		buttonActionListener = (event: CustomEvent) => {
 			if (event.detail && event.detail.id) {
 				handleButtonAction(event);
 			}
 		};
 		document.addEventListener('action', buttonActionListener as EventListener);
+
+		// Listen for close tools panel events
+		closeToolsPanelListener = () => {
+			isToolsPanelOpen = false;
+		};
+		document.addEventListener('close-tools-panel', closeToolsPanelListener);
 	});
+
 	onDestroy(() => {
 		if (buttonActionListener) {
 			document.removeEventListener('action', buttonActionListener as EventListener);
+		}
+		if (closeToolsPanelListener) {
+			document.removeEventListener('close-tools-panel', closeToolsPanelListener);
 		}
 	});
 </script>
 
 {#key null}
 	<!-- Never trigger pictograph re-render -->
-	<div class="sequence-widget">
+	<div class="sequence-widget" use:resizeObserver>
 		<div
 			class="main-layout"
 			class:portrait={workbenchIsPortrait}
@@ -239,7 +281,7 @@
 			<div class="left-vbox">
 				<div class="sequence-container">
 					<div class="sequence-widget-labels">
-						<CurrentWordLabel currentWord={$sequenceName} width={$dimensions.width} />
+						<CurrentWordLabel currentWord={sequenceName} width={$dimensions.width} />
 					</div>
 
 					<div class="beat-frame-wrapper">
@@ -247,35 +289,35 @@
 					</div>
 
 					<!-- Difficulty label moved below the beats -->
-					<div class="difficulty-label-container">
-						<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
-					</div>
+					<!-- <div class="difficulty-label-container">
+						<DifficultyLabel {difficultyLevel} width={$dimensions.width} />
+					</div> -->
 				</div>
 			</div>
 
-			{#if $isToolsPanelOpen && !toolsPanelOpen}
+			{#if isToolsPanelOpen && !props.toolsPanelOpen}
 				<!-- Only show this tools panel if the parent's panel is not open -->
-				<div class="tools-panel-container" transition:fly={{ duration: 300, y: 10 }}>
+				<div class="tools-panel-container" transition:fly={{ duration: 300, y: 0, x: 20 }}>
 					<ToolsPanel
 						buttons={buttonPanelButtons}
-						activeMode={$activeMode}
+						{activeMode}
 						on:action={handleButtonAction}
-						on:close={() => isToolsPanelOpen.set(false)}
+						on:close={() => (isToolsPanelOpen = false)}
 					/>
 				</div>
 			{/if}
 
 			<ClearSequenceButton on:clearSequence={handleClearSequence} />
 
-			{#if !toolsPanelOpen}
+			{#if !props.toolsPanelOpen}
 				<!-- Only show the tools button if the parent's panel is not open -->
-				<ToolsButton isToolsPanelOpen={$isToolsPanelOpen} on:toggleToolsPanel={toggleToolsPanel} />
+				<ToolsButton {isToolsPanelOpen} on:toggleToolsPanel={toggleToolsPanel} />
 			{/if}
 		</div>
 
 		<FullScreenOverlay
 			isOpen={$isSequenceFullScreen}
-			title={$sequenceName}
+			title={sequenceName}
 			on:close={closeSequenceFullScreen}
 		>
 			<div class="fullscreen-beat-container">
@@ -358,35 +400,75 @@
 		align-items: center;
 		width: 100%;
 		min-height: 0; /* Crucial for allowing BeatFrame to not push layout */
-		overflow: hidden; /* BeatFrame will handle its own scroll if its content overflows */
+		overflow: hidden; /* Hide overflow but let BeatFrame handle scrolling */
 		padding: 0 10px; /* Horizontal padding for the beat frame area */
 		box-sizing: border-box;
+		flex: 1; /* Allow it to grow and fill available space */
+		position: relative; /* Create positioning context for absolute children */
+		/* Add transition to prevent jumps during layout changes */
+		transition: all 0.3s ease-out;
 	}
 
 	/* This is the actual container passed to BeatFrame via use:resizeObserver */
 	/* Its styles are in BeatFrame.svelte but its flex behavior is controlled here */
 	:global(.beat-frame-container) {
-		/* The BeatFrame's direct parent (from BeatFrame.svelte)
-		   should fill the .beat-frame-wrapper */
+		/* The BeatFrame's direct parent (from BeatFrame.svelte) */
 		width: 100%;
 		height: 100%;
-		/* overflow: auto; If you want this div to scroll instead of BeatFrame internal grid */
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		position: absolute; /* Position absolutely to maintain centering during transitions */
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		/* Add transition for smooth layout changes */
+		transition: all 0.3s ease-out;
 	}
 
 	/* Indicator label container removed */
 
 	.tools-panel-container {
-		/* This style is for the container that holds ToolsPanel when it slides in */
-		/* Ensure it is positioned correctly relative to main-layout if it's a direct child */
-		position: absolute; /* Or fixed, depending on desired behavior */
-		/* right: 0; top:0; bottom:0; width: 300px; etc. for a sidebar style */
-		/* For now, assuming it replaces another view or is part of the flex flow */
-		flex: 1; /* If it's part of the flex flow */
+		/* Position the tools panel to take up the entire right side */
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: 320px; /* Fixed width for desktop */
 		display: flex;
 		flex-direction: column;
-		padding: 10px;
-		background-color: #f8f9fa; /* Or your desired panel background */
-		z-index: 50; /* Ensure it's above other content if overlapping */
+		padding: 0; /* Remove padding to let the panel handle its own spacing */
+		background-color: transparent; /* Transparent background */
+		z-index: 50; /* Ensure it's above other content */
+		box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1); /* Add shadow on the left side */
+		overflow: hidden; /* Prevent content from overflowing */
+		backdrop-filter: blur(5px); /* Add blur effect */
+		-webkit-backdrop-filter: blur(5px);
+	}
+
+	/* Responsive adjustments for the tools panel */
+	@media (max-width: 768px) {
+		.tools-panel-container {
+			width: 280px; /* Slightly smaller on tablets */
+		}
+	}
+
+	@media (max-width: 480px) {
+		.tools-panel-container {
+			width: 100%; /* Full width on mobile */
+			left: 0; /* Cover the entire screen */
+		}
+	}
+
+	/* Adjust for portrait mode */
+	.main-layout.portrait .tools-panel-container {
+		width: 100%; /* Full width in portrait mode */
+		height: 70%; /* Take up 70% of the height */
+		top: auto; /* Reset top position */
+		bottom: 0; /* Align to bottom */
+		left: 0; /* Cover full width */
+		box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1); /* Shadow on top */
 	}
 
 	/* Conditional alignment for when content might need to scroll */
@@ -421,6 +503,16 @@
 		.difficulty-label-container {
 			margin-top: 5px; /* Reduced space on mobile */
 		}
+	}
+
+	/* Ensure smooth transitions between portrait and landscape modes */
+	.main-layout {
+		transition: flex-direction 0.3s ease-out;
+	}
+
+	/* Ensure beat frame wrapper maintains consistent dimensions during transitions */
+	.beat-frame-wrapper {
+		transition: all 0.3s ease-out;
 	}
 
 	/* Styles from previous .beat-frame-container (now .beat-frame-wrapper) */
