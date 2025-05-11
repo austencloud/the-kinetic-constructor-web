@@ -95,22 +95,27 @@ export const actions = {
 
 			optionsStore.set(nextOptions || []);
 
-			// Always ensure we're showing 'all' options when loading new options
-			// This ensures users see options immediately after selecting a start position
-			const currentSortMethod = get(uiState).sortMethod;
+			// Get the current UI state
+			const currentState = get(uiState);
+			const currentSortMethod = currentState.sortMethod;
 
+			// Instead of always resetting to 'all', retain the current tab selection
 			uiState.update((state) => ({
 				...state,
-				isLoading: false,
-				// Always set the last selected tab to 'all' for the current sort method
-				lastSelectedTab: {
-					...state.lastSelectedTab,
-					[currentSortMethod]: 'all'
-				}
+				isLoading: false
+				// No longer forcing the tab to 'all' - we'll keep the user's selection
 			}));
 
-			// Dispatch a viewchange event to ensure the UI updates
-			if (typeof document !== 'undefined') {
+			// Only dispatch a viewchange event if we don't have a selected tab yet
+			if (
+				typeof document !== 'undefined' &&
+				(!currentState.lastSelectedTab[currentSortMethod] ||
+					currentState.lastSelectedTab[currentSortMethod] === null)
+			) {
+				console.log('No tab selected yet, defaulting to "all"');
+				// Only in this case, set the default tab to 'all'
+				actions.setLastSelectedTabForSort(currentSortMethod, 'all');
+
 				const viewChangeEvent = new CustomEvent('viewchange', {
 					detail: { mode: 'all' },
 					bubbles: true

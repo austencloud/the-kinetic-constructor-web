@@ -108,14 +108,21 @@
 				: { mode: 'group', method: option.value as SortMethod };
 
 		// Create a DOM event that will bubble up
-		const customEvent = new CustomEvent('viewchange', {
+		const customEvent = new CustomEvent('viewChange', {
 			detail,
 			bubbles: true,
 			composed: true
 		});
 
-		// Dispatch the event from the document to ensure it's captured by the global listener
-		document.dispatchEvent(customEvent);
+		// Dispatch the event from the button element if available
+		if (buttonElement) {
+			console.log('Dispatching viewChange event with detail:', detail);
+			buttonElement.dispatchEvent(customEvent);
+		} else {
+			// Fallback to dispatching from the document
+			console.warn('Button element not available, using document for event dispatch');
+			document.dispatchEvent(customEvent);
+		}
 
 		closeDropdown();
 	}

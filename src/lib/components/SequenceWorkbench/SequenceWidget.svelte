@@ -15,6 +15,7 @@
 
 	// Import Type for Button Definitions
 	import type { ActionEventDetail } from './ButtonPanel/types';
+	import { appActions } from '$lib/state/machines/app/app.actions'; // Added import
 
 	// Components
 	import CurrentWordLabel from './Labels/CurrentWordLabel.svelte';
@@ -23,7 +24,8 @@
 	import ToolsButton from './ToolsButton.svelte';
 	import ToolsPanel from './ToolsPanel/ToolsPanel.svelte';
 	import ClearSequenceButton from './ClearSequenceButton.svelte';
-	import ShareButton from './ShareButton.svelte'; // Import the new ShareButton
+	import ShareButton from './ShareButton.svelte';
+	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte'; // Added import
 
 	// Import transition for animations
 	import { fly } from 'svelte/transition';
@@ -182,6 +184,13 @@
 		handleButtonActionWrapper(event);
 	}
 
+	function handleSettingsClick() {
+		// Placeholder for settings functionality
+		console.log('Settings button clicked in SequenceWidget');
+		appActions.openSettings(); // Call appActions to open the main settings dialog
+		// TODO: Implement settings panel toggle or other action
+	}
+
 	let buttonActionListener: (event: CustomEvent) => void;
 
 	onMount(() => {
@@ -256,6 +265,7 @@
 				</div>
 			{/if}
 
+			<SettingsButton on:click={handleSettingsClick} />
 			<ClearSequenceButton on:clearSequence={handleClearSequence} />
 			<ShareButton {beatFrameElement} />
 
@@ -598,6 +608,23 @@
 			/* Slightly smaller multiplier for very short screens */
 			--cell-size-multiplier: 0.9;
 		}
+	}
+
+	/* Add styles for the new SettingsButton to position it top-left */
+	:global(.sequence-widget > .main-layout > .settings-button) {
+		position: absolute;
+		top: calc(var(--button-size-factor, 1) * 10px); /* Consistent with other buttons */
+		left: calc(var(--button-size-factor, 1) * 10px);
+		width: calc(var(--button-size-factor, 1) * 45px); /* Base size from ShareButton */
+		height: calc(var(--button-size-factor, 1) * 45px);
+		z-index: 40; /* Consistent with other FABs */
+		/* Override default margin from SettingsButton's own style if necessary */
+		margin: 0 !important;
+	}
+
+	/* Ensure the icon inside scales correctly if its internal styling doesn't use a factor */
+	:global(.sequence-widget > .main-layout > .settings-button .settings-icon) {
+		font-size: calc(var(--button-size-factor, 1) * 19px); /* Base icon size from ShareButton */
 	}
 
 	/* REMOVED .styled-clear-button STYLES AS THEY ARE NOW IN ClearSequenceButton.svelte */

@@ -261,6 +261,7 @@
 
 <div class="transition-container" bind:this={containerElement}>
 	{#if showStartPosPicker}
+		<!-- svelte-ignore slot_element_deprecated -->
 		<div
 			class="component-wrapper start-pos-wrapper"
 			class:active={props.isSequenceEmpty}
@@ -273,6 +274,7 @@
 	{/if}
 
 	{#if showOptionPicker}
+		<!-- svelte-ignore slot_element_deprecated -->
 		<div
 			class="component-wrapper option-picker-wrapper"
 			class:active={!props.isSequenceEmpty}

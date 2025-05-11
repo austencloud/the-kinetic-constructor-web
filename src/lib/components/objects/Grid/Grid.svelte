@@ -13,7 +13,6 @@
 	}>();
 
 	// State variables
-	let gridLoaded = $state(false);
 	let gridError = $state(false);
 	let gridErrorMessage = $state('');
 
@@ -30,7 +29,10 @@
 	// Compute grid source based on mode
 	let gridSrc = $state('');
 	$effect(() => {
-		gridSrc = effectiveGridMode === 'diamond' ? '/diamond_grid.svg' : '/box_grid.svg';
+		gridSrc =
+			effectiveGridMode === 'diamond'
+				? '/images/grid/diamond_grid.svg'
+				: '/images/grid/box_grid.svg';
 	});
 
 	/**
@@ -149,8 +151,6 @@
 					Object.entries(gridData.allHandPointsNormal).slice(0, 3)
 				);
 			}
-
-			gridLoaded = true;
 
 			// Use setTimeout to break potential reactive cycles
 			setTimeout(() => {

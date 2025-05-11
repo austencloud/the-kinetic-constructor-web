@@ -353,6 +353,26 @@
 
 	// --- onMount: Load options based on sequence ---
 	onMount(() => {
+		// Set up event listeners for tab selection and view changes
+		const optionPickerElement = document.querySelector('.option-picker');
+		if (optionPickerElement) {
+			// Listen for tabSelect events
+			optionPickerElement.addEventListener('tabSelect', (event) => {
+				if (event instanceof CustomEvent) {
+					console.log('OptionPicker received tabSelect event:', event.detail);
+					handleSubTabSelect(event as CustomEvent<string>);
+				}
+			});
+
+			// Listen for viewChange events
+			optionPickerElement.addEventListener('viewChange', (event) => {
+				if (event instanceof CustomEvent) {
+					console.log('OptionPicker received viewChange event:', event.detail);
+					handleViewChange(event as CustomEvent<ViewModeDetail>);
+				}
+			});
+		}
+
 		// --- Initialization Logic ---
 		const savedState = get(uiState);
 		const savedSortMethod = savedState.sortMethod;
@@ -447,18 +467,28 @@
 			window.removeEventListener('resize', updateWindowSize);
 			document.removeEventListener('sequence-updated', handleSequenceUpdate);
 			unsubscribeSequence();
+
+			// Remove custom event listeners
+			const optionPickerElement = document.querySelector('.option-picker');
+			if (optionPickerElement) {
+				optionPickerElement.removeEventListener('tabSelect', (event) => {
+					if (event instanceof CustomEvent) {
+						handleSubTabSelect(event as CustomEvent<string>);
+					}
+				});
+
+				optionPickerElement.removeEventListener('viewChange', (event) => {
+					if (event instanceof CustomEvent) {
+						handleViewChange(event as CustomEvent<ViewModeDetail>);
+					}
+				});
+			}
 		};
 	});
 </script>
 
 <div class="option-picker" class:mobile={context.isMobile} class:portrait={context.isPortrait}>
-	<OptionPickerHeader
-		selectedTab={$selectedTab}
-		categoryKeys={actualCategoryKeys}
-		{showTabs}
-		on:viewChange={handleViewChange}
-		on:tabSelect={handleSubTabSelect}
-	/>
+	<OptionPickerHeader selectedTab={$selectedTab} categoryKeys={actualCategoryKeys} {showTabs} />
 
 	<div class="options-container" use:resize={debouncedHandleContainerResize}>
 		<OptionDisplayArea
