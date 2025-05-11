@@ -2,7 +2,7 @@
 <script lang="ts">
   import { sequenceSelectors } from '$lib/state/machines/sequenceMachine';
   import { isGenerating, hasError, statusMessage } from '../store/generator';
-  import GenerateButton from '../ui/GenerateButton.svelte';
+  import GenerateButton from '../components/GenerateButton.svelte';
 
   // Use both old and new state management during migration
   export let useNewStateManagement = true;

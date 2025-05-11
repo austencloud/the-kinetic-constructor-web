@@ -12,36 +12,29 @@
 		propContinuity,
 		capType,
 		level
-	} from './store/settings';
+	} from '../store/settings';
 
 	// Import layout components
-	import GenerateTabHeader from './layout/GenerateTabHeader.svelte';
-	import GenerateTabContent from './layout/GenerateTabContent.svelte';
-
-	// Use both old and new state management during migration
-	// We'll gradually switch from old to new as components are migrated
-	$: useNewStateManagement = true; // Set to true to use the new state management
+	import GenerateTabHeader from './GenerateTabHeader.svelte';
+	import GenerateTabContent from './GenerateTabContent.svelte';
 
 	// Initialization logic
 	onMount(() => {
-		if (useNewStateManagement) {
-			// Initialize the sequence machine with the current settings
-			console.log('Initializing sequence machine with current settings');
+		// Initialize the sequence machine with the current settings
+		console.log('Initializing sequence machine with current settings');
 
-			// Sync the old settings to the new settings store
-			newSettingsStore.setGeneratorType($activeGeneratorType);
-			newSettingsStore.setNumBeats($numBeats);
-			newSettingsStore.setTurnIntensity($turnIntensity);
-			newSettingsStore.setPropContinuity($propContinuity);
-			newSettingsStore.setCAPType($capType);
-			newSettingsStore.setLevel($level);
-		}
+		// Sync the old settings to the new settings store
+		newSettingsStore.setGeneratorType($activeGeneratorType);
+		newSettingsStore.setNumBeats($numBeats);
+		newSettingsStore.setTurnIntensity($turnIntensity);
+		newSettingsStore.setPropContinuity($propContinuity);
+		newSettingsStore.setCAPType($capType);
+		newSettingsStore.setLevel($level);
 	});
 </script>
 
 <div class="generate-tab">
-	<GenerateTabHeader />
-	<GenerateTabContent {useNewStateManagement} />
+	<GenerateTabContent />
 </div>
 
 <style>
@@ -52,7 +45,6 @@
 		width: 100%;
 		padding: 1.5rem;
 		gap: 1.5rem;
-		background: var(--color-background, #121824);
 		color: var(--color-text-primary, white);
 		position: relative;
 		overflow: hidden;

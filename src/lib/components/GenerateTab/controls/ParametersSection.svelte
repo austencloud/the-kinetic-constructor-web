@@ -1,9 +1,9 @@
 <!-- src/lib/components/GenerateTab/controls/ParametersSection.svelte -->
 <script lang="ts">
-	import LengthSelector from '../ui/LengthSelector.svelte';
-	import TurnIntensity from '../ui/TurnIntensity.svelte';
-	import PropContinuity from '../ui/PropContinuity.svelte';
-	import LevelSelector from '../ui/LevelSelector/LevelSelector.svelte';
+	import LengthSelector from '../components/LengthSelector.svelte';
+	import TurnIntensity from '../components/TurnIntensity.svelte';
+	import PropContinuity from '../components/PropContinuity.svelte';
+	import LevelSelector from '../components/LevelSelector.svelte';
 </script>
 
 <section class="control-section parameters-section">

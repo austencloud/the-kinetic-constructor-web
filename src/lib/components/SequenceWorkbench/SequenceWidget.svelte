@@ -45,6 +45,9 @@
 	// Update the store when the prop changes
 	$: isToolsPanelOpen.set(toolsPanelOpen);
 
+	// Track the active mode
+	const activeMode = writable<'construct' | 'generate' | null>('construct');
+
 	// Calculate workbench orientation based on workbench dimensions instead of window
 	$: workbenchIsPortrait = $dimensions.width < workbenchHeight;
 
@@ -92,14 +95,23 @@
 
 	// --- Define Button Panel Data ---
 	const buttonPanelButtons: ButtonDefinition[] = [
+		// Mode switching tools
 		{
-			icon: 'fa-book-medical',
-			title: 'Add to Dictionary',
-			id: 'addToDictionary',
+			icon: 'fa-hammer',
+			title: 'Construct',
+			id: 'constructMode',
 			color: '#4361ee'
 		},
+		{
+			icon: 'fa-robot',
+			title: 'Generate',
+			id: 'generateMode',
+			color: '#3a86ff'
+		},
+		// Sharing and viewing tools
 		{ icon: 'fa-share-nodes', title: 'Share', id: 'saveImage', color: '#3a86ff' },
 		{ icon: 'fa-expand', title: 'Full Screen', id: 'viewFullScreen', color: '#4cc9f0' },
+		// Sequence manipulation tools
 		{
 			icon: 'fa-arrows-left-right',
 			title: 'Mirror',
@@ -108,6 +120,14 @@
 		},
 		{ icon: 'fa-paintbrush', title: 'Swap Colors', id: 'swapColors', color: '#ff6b6b' },
 		{ icon: 'fa-rotate', title: 'Rotate', id: 'rotateSequence', color: '#f72585' },
+		// Dictionary tool
+		{
+			icon: 'fa-book-medical',
+			title: 'Add to Dictionary',
+			id: 'addToDictionary',
+			color: '#4361ee'
+		},
+		// Destructive actions
 		{ icon: 'fa-trash', title: 'Delete Beat', id: 'deleteBeat', color: '#ff9e00' }
 	];
 
@@ -116,6 +136,26 @@
 	function handleButtonAction(event: CustomEvent<ActionEventDetail>) {
 		const { id } = event.detail;
 		switch (id) {
+			case 'constructMode':
+				// Switch to construct mode
+				activeMode.set('construct');
+				// Dispatch an event to notify parent components
+				const constructEvent = new CustomEvent('switch-mode', {
+					detail: { mode: 'construct' },
+					bubbles: true
+				});
+				document.dispatchEvent(constructEvent);
+				break;
+			case 'generateMode':
+				// Switch to generate mode
+				activeMode.set('generate');
+				// Dispatch an event to notify parent components
+				const generateEvent = new CustomEvent('switch-mode', {
+					detail: { mode: 'generate' },
+					bubbles: true
+				});
+				document.dispatchEvent(generateEvent);
+				break;
 			case 'addToDictionary':
 				// Handle add to dictionary action
 				break;
@@ -187,60 +227,65 @@
 	});
 </script>
 
-<div class="sequence-widget">
-	<div
-		class="main-layout"
-		class:portrait={workbenchIsPortrait}
-		style="--container-width: {$dimensions.width}px;
+{#key null}
+	<!-- Never trigger pictograph re-render -->
+	<div class="sequence-widget">
+		<div
+			class="main-layout"
+			class:portrait={workbenchIsPortrait}
+			style="--container-width: {$dimensions.width}px;
 		       --container-height: {$dimensions.height}px;
 		       --button-size-factor: {buttonSizeFactor};"
-	>
-		<div class="left-vbox">
-			<div class="sequence-container">
-				<div class="sequence-widget-labels">
-					<CurrentWordLabel currentWord={$sequenceName} width={$dimensions.width} />
-				</div>
+		>
+			<div class="left-vbox">
+				<div class="sequence-container">
+					<div class="sequence-widget-labels">
+						<CurrentWordLabel currentWord={$sequenceName} width={$dimensions.width} />
+					</div>
 
-				<div class="beat-frame-wrapper">
-					<BeatFrame />
-				</div>
+					<div class="beat-frame-wrapper">
+						<BeatFrame />
+					</div>
 
-				<!-- Difficulty label moved below the beats -->
-				<div class="difficulty-label-container">
-					<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
+					<!-- Difficulty label moved below the beats -->
+					<div class="difficulty-label-container">
+						<DifficultyLabel difficultyLevel={$difficultyLevel} width={$dimensions.width} />
+					</div>
 				</div>
 			</div>
+
+			{#if $isToolsPanelOpen && !toolsPanelOpen}
+				<!-- Only show this tools panel if the parent's panel is not open -->
+				<div class="tools-panel-container" transition:fly={{ duration: 300, y: 10 }}>
+					<ToolsPanel
+						buttons={buttonPanelButtons}
+						activeMode={$activeMode}
+						on:action={handleButtonAction}
+						on:close={() => isToolsPanelOpen.set(false)}
+					/>
+				</div>
+			{/if}
+
+			<ClearSequenceButton on:clearSequence={handleClearSequence} />
+
+			{#if !toolsPanelOpen}
+				<!-- Only show the tools button if the parent's panel is not open -->
+				<ToolsButton isToolsPanelOpen={$isToolsPanelOpen} on:toggleToolsPanel={toggleToolsPanel} />
+			{/if}
 		</div>
 
-		{#if $isToolsPanelOpen && !toolsPanelOpen}
-			<!-- Only show this tools panel if the parent's panel is not open -->
-			<div class="tools-panel-container" transition:fly={{ duration: 300, y: 10 }}>
-				<ToolsPanel
-					buttons={buttonPanelButtons}
-					on:action={handleButtonAction}
-					on:close={() => isToolsPanelOpen.set(false)}
-				/>
+		<FullScreenOverlay
+			isOpen={$isSequenceFullScreen}
+			title={$sequenceName}
+			on:close={closeSequenceFullScreen}
+		>
+			<div class="fullscreen-beat-container">
+				<!-- BeatFrame will be wrapped in a container in the FullScreenOverlay component -->
+				<BeatFrame />
 			</div>
-		{/if}
-
-		{#if !toolsPanelOpen}
-			<!-- Only show the tools button if the parent's panel is not open -->
-			<ToolsButton isToolsPanelOpen={$isToolsPanelOpen} on:toggleToolsPanel={toggleToolsPanel} />
-		{/if}
-		<ClearSequenceButton on:clearSequence={handleClearSequence} />
+		</FullScreenOverlay>
 	</div>
-
-	<FullScreenOverlay
-		isOpen={$isSequenceFullScreen}
-		title={$sequenceName}
-		on:close={closeSequenceFullScreen}
-	>
-		<div class="fullscreen-beat-container">
-			<!-- BeatFrame will be wrapped in a container in the FullScreenOverlay component -->
-			<BeatFrame />
-		</div>
-	</FullScreenOverlay>
-</div>
+{/key}
 
 <style>
 	.sequence-widget {

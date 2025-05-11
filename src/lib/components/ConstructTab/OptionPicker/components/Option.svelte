@@ -32,7 +32,6 @@
 
 	// We'll use a key to force re-render when pictograph data changes
 	$: pictographKey = `${pictographData.letter || ''}-${pictographData.startPos || ''}-${pictographData.endPos || ''}`;
-	$: console.log('Option pictographData:', pictographData);
 
 	// We'll pass pictographData directly to the Pictograph component
 	// This ensures proper initialization of motion objects

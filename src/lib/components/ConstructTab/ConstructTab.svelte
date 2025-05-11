@@ -1,43 +1,11 @@
 <!-- src/lib/components/ConstructTab/ConstructTab.svelte -->
 <script lang="ts">
-	import { derived, writable } from 'svelte/store';
-	import { fade, crossfade } from 'svelte/transition';
-	import { cubicOut } from 'svelte/easing';
-	import { onMount } from 'svelte';
-	import SequenceWorkbench from '$lib/components/SequenceWorkbench/Workbench.svelte';
-	import OptionPicker from './OptionPicker/OptionPicker.svelte';
-	import StartPosPicker from './StartPosPicker/StartPosPicker.svelte';
-	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
+	import SharedWorkbench from '$lib/components/SequenceWorkbench/SharedWorkbench.svelte';
+	import { workbenchStore } from '$lib/state/stores/workbenchStore';
+	import type { ButtonDefinition } from '$lib/components/SequenceWorkbench/ButtonPanel/types';
 
-	// Import for button definition types
-	import type {
-		ButtonDefinition,
-		ActionEventDetail
-	} from '$lib/components/SequenceWorkbench/ButtonPanel/types';
-
-	import ToolsPanel from '../SequenceWorkbench/ToolsPanel/ToolsPanel.svelte';
-
-	// Track tools panel state
-	const isToolsPanelOpen = writable(false);
-
-	// Derived store to determine which picker to show
-	const isEmpty = derived(isSequenceEmpty, ($isEmpty) => $isEmpty);
-
-	// Create a derived store to determine if we should show the tools panel
-	// This will be used to communicate with the SequenceWorkbench component
-	const showToolsPanel = derived(isToolsPanelOpen, ($isOpen) => $isOpen);
-
-	// Create crossfade transition
-	const [send, receive] = crossfade({
-		duration: 300,
-		easing: cubicOut,
-		fallback(node, _params) {
-			return fade(node, {
-				duration: 300,
-				easing: cubicOut
-			});
-		}
-	});
+	// Props
+	export let isGenerateMode = false;
 
 	// Define Button Panel Data
 	const buttonPanelButtons: ButtonDefinition[] = [
@@ -62,76 +30,22 @@
 	];
 
 	// Handler for button panel actions
-	function handleButtonAction(event: CustomEvent<ActionEventDetail>) {
+	function handleButtonAction(id: string) {
 		const buttonEvent = new CustomEvent('action', {
-			detail: event.detail,
+			detail: { id },
 			bubbles: true,
 			cancelable: true,
-			composed: true // Ensures the event can cross shadow DOM boundaries if needed
+			composed: true
 		});
 		document.dispatchEvent(buttonEvent);
-
-		// After action is processed, close tools panel
-		if ($isToolsPanelOpen) {
-			isToolsPanelOpen.set(false);
-		}
 	}
 
-	// Function to close tools panel
-	function closeToolsPanel() {
-		isToolsPanelOpen.set(false);
-	}
-
-	// Track if we're showing the start position picker due to an immediate click
-	const showingStartPosPicker = writable(false);
-
-	// Listen for the start position click event for immediate feedback
-	onMount(() => {
-		const handleStartPosClick = (event: CustomEvent) => {
-			if (event.detail?.immediate) {
-				// Force the start position picker to show immediately
-				showingStartPosPicker.set(true);
-			}
-		};
-
-		document.addEventListener('start-position-click', handleStartPosClick as EventListener);
-
-		return () => {
-			document.removeEventListener('start-position-click', handleStartPosClick as EventListener);
-		};
-	});
+	// Set active tab when component mounts
+	$: workbenchStore.update((state) => ({ ...state, activeTab: isGenerateMode ? 'generate' : 'construct' }));
 </script>
 
 <div class="construct-tab">
-	<div class="sequenceWorkbenchContainer">
-		<SequenceWorkbench
-			toolsPanelOpen={$isToolsPanelOpen}
-			on:toggleToolsPanel={() => isToolsPanelOpen.update((v) => !v)}
-		/>
-	</div>
-	<div class="optionPickerContainer">
-		{#if $isToolsPanelOpen}
-			<div
-				class="picker-container tools-picker-container"
-				in:receive={{ key: 'tools' }}
-				out:send={{ key: 'tools' }}
-			>
-				<ToolsPanel
-					buttons={buttonPanelButtons}
-					on:action={handleButtonAction}
-					on:close={closeToolsPanel}
-				/>
-			</div>
-		{:else if $isEmpty || $showingStartPosPicker}
-			<div class="picker-container" in:receive={{ key: 'startpos' }} out:send={{ key: 'startpos' }}>
-				<StartPosPicker />
-			</div>
-		{:else}
-			<div class="picker-container" in:receive={{ key: 'options' }} out:send={{ key: 'options' }}>
-				<OptionPicker />
-			</div>
-		{/if}
-	</div>
+	<SharedWorkbench toolsPanelButtons={buttonPanelButtons} onToolsPanelAction={handleButtonAction} />
 </div>
 
 <style>
@@ -142,61 +56,9 @@
 		overflow: hidden;
 	}
 
-	.sequenceWorkbenchContainer {
-		flex: 1;
-		min-width: 0;
-		height: 100%;
-		overflow: hidden;
-		position: relative; /* For tools button positioning */
-	}
-
-	.optionPickerContainer {
-		flex: 1;
-		min-width: 0;
-		height: 100%;
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		position: relative;
-		/* Added to ensure proper sizing */
-		box-sizing: border-box;
-	}
-
-	.picker-container {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		width: 100%;
-		height: 100%;
-		background-color: transparent; /* Make background transparent */
-		border-radius: 8px; /* Match the tools panel style */
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1); /* Match the tools panel style */
-	}
-
-	/* Special styling for the tools panel container */
-	.tools-picker-container {
-		padding: 0; /* Remove padding to let the ToolsPanel fill the space */
-	}
-
 	@media (max-width: 768px) {
 		.construct-tab {
 			flex-direction: column;
-		}
-
-		.sequenceWorkbenchContainer {
-			flex: 1;
-			height: 50%;
-		}
-
-		.optionPickerContainer {
-			flex: 1;
-			height: 50%;
 		}
 	}
 </style>

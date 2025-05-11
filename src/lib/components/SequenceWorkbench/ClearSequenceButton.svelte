@@ -1,10 +1,12 @@
 <!-- src/lib/components/SequenceWorkbench/ClearSequenceButton.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
+	import { createEventDispatcher } from 'svelte';
 
 	// Event dispatcher
-	const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher<{
+		clearSequence: void;
+	}>();
 
 	function handleClick() {
 		dispatch('clearSequence');
@@ -37,7 +39,7 @@
 
 		position: absolute;
 		bottom: calc(var(--button-size-factor, 1) * var(--base-margin));
-		right: calc(var(--button-size-factor, 1) * var(--base-margin));
+		left: calc(var(--button-size-factor, 1) * var(--base-margin));
 		z-index: 10;
 		background: white;
 		border: none;

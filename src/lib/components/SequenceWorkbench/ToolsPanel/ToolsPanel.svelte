@@ -6,6 +6,7 @@
 
 	// Props
 	export let buttons: ButtonDefinition[] = [];
+	export let activeMode: 'construct' | 'generate' | null = null;
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher<{
@@ -24,14 +25,20 @@
 	}
 
 	// Organize buttons in logical groups
-	const topButtons = buttons.filter((b) =>
-		['viewFullScreen', 'saveImage', 'addToDictionary'].includes(b.id)
-	);
-	const middleButtons = buttons.filter((b) =>
+	const modeButtons = buttons.filter((b) => ['constructMode', 'generateMode'].includes(b.id));
+	const sharingButtons = buttons.filter((b) => ['viewFullScreen', 'saveImage'].includes(b.id));
+	const manipulationButtons = buttons.filter((b) =>
 		['mirrorSequence', 'swapColors', 'rotateSequence'].includes(b.id)
 	);
-	const bottomButtons = buttons.filter((b) => ['deleteBeat', 'clearSequence'].includes(b.id));
-	const orderedButtons = [...topButtons, ...middleButtons, ...bottomButtons];
+	const dictionaryButtons = buttons.filter((b) => ['addToDictionary'].includes(b.id));
+	const destructiveButtons = buttons.filter((b) => ['deleteBeat', 'clearSequence'].includes(b.id));
+	const orderedButtons = [
+		...modeButtons,
+		...sharingButtons,
+		...manipulationButtons,
+		...dictionaryButtons,
+		...destructiveButtons
+	];
 
 	let gridContainer: HTMLDivElement;
 
@@ -192,6 +199,9 @@
 				<button
 					class="tool-button {button.id.includes('delete') || button.id.includes('clear')
 						? 'destructive'
+						: ''} {(button.id === 'constructMode' && activeMode === 'construct') ||
+					(button.id === 'generateMode' && activeMode === 'generate')
+						? 'active-mode'
 						: ''}"
 					on:click={() => handleToolClick(button.id)}
 					style="--button-color: {button.color}"
@@ -315,6 +325,24 @@
 		overflow: hidden;
 		/* Ensure content scales properly */
 		font-size: calc(var(--button-size, 80px) * 0.12);
+	}
+
+	/* Special styling for mode buttons */
+	.tool-button[title='Construct'],
+	.tool-button[title='Generate'] {
+		background: rgba(255, 255, 255, 0.9);
+		border-width: 2px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	}
+
+	/* Active mode styling */
+	.tool-button.active-mode {
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 240, 255, 0.95));
+		border-color: var(--button-color, #4361ee);
+		box-shadow:
+			0 0 0 2px rgba(67, 97, 238, 0.3),
+			0 4px 12px rgba(0, 0, 0, 0.15);
+		transform: translateY(-2px);
 	}
 
 	.tool-button:hover {

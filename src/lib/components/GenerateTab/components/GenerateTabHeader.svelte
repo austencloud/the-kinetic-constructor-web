@@ -1,6 +1,6 @@
 <!-- src/lib/components/GenerateTab/layout/GenerateTabHeader.svelte -->
 <script lang="ts">
-  import HeaderLabel from '../ui/HeaderLabel.svelte';
+  import HeaderLabel from './HeaderLabel.svelte';
 </script>
 
 <div class="generate-tab-header">

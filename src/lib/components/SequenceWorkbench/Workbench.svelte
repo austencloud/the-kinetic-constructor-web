@@ -18,20 +18,23 @@
 	});
 </script>
 
-<div class="sequence-workbench" use:resizeObserver>
-	<SequenceWidget
-		workbenchHeight={sequenceWorkbenchHeight}
-		{toolsPanelOpen}
-		on:toggleToolsPanel={() => dispatch('toggleToolsPanel')}
-	/>
-</div>
+{#key undefined}
+	<div class="sequence-workbench" use:resizeObserver>
+		<SequenceWidget
+			workbenchHeight={sequenceWorkbenchHeight}
+			{toolsPanelOpen}
+			on:toggleToolsPanel={() => dispatch('toggleToolsPanel')}
+		/>
+	</div>
+{/key}
 
 <style>
 	.sequence-workbench {
-		display: flex;
-		flex-direction: column;
+		position: relative;
 		width: 100%;
 		height: 100%;
-		position: relative;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
 	}
 </style>

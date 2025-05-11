@@ -1,6 +1,6 @@
 <!-- src/lib/components/GenerateTab/ui/LevelSelector/LevelSelector.svelte -->
 <script lang="ts">
-	import { settingsStore, level } from '../../store/settings';
+	import { settingsStore, level } from '../store/settings';
 	import LevelButton from './LevelButton.svelte';
 
 	// Constants

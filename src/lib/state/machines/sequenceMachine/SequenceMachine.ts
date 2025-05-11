@@ -7,6 +7,7 @@
 
 import { createModernMachine, createMachineContainer } from '../../core/modernMachine';
 import { sequenceContainer } from '../../stores/sequence/SequenceContainer';
+import type { GeneratorType, SettingsState } from '../../stores/settingsStore';
 import {
 	updateSequence,
 	selectBeat,
@@ -231,10 +232,10 @@ export const sequenceSelectors = {
  * Create actions for the sequence machine
  */
 export const sequenceActions = {
-	generate: (generationType: string, options: any) => {
+	generate: (generatorType: GeneratorType, options: Omit<SettingsState, 'generatorType' | 'theme' | 'animationsEnabled' | 'lastUsedGeneratorType' | 'favoriteCapTypes'>) => {
 		modernSequenceContainer.send({
 			type: 'GENERATE',
-			generationType,
+			generationType: generatorType,
 			options
 		});
 	},

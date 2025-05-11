@@ -1,13 +1,15 @@
 <!-- src/lib/components/SequenceWorkbench/ToolsButton.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
+	import { createEventDispatcher } from 'svelte';
 
 	// Props
 	export let isToolsPanelOpen = false;
 
 	// Event dispatcher
-	const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher<{
+		toggleToolsPanel: void;
+	}>();
 
 	// Handle click event
 	function handleClick() {
@@ -42,7 +44,7 @@
 
 		position: absolute;
 		bottom: calc(var(--button-size-factor, 1) * var(--base-margin));
-		left: calc(var(--button-size-factor, 1) * var(--base-margin));
+		right: calc(var(--button-size-factor, 1) * var(--base-margin));
 		z-index: 10;
 		background: white;
 		border: none;

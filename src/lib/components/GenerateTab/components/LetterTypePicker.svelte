@@ -6,13 +6,13 @@
 		label: string;
 		description: string;
 	}[];
-
-	// Local state
-	let selectedTypes: string[] = [];
+	export let selectedTypes: string[] = [];
 
 	// Events
 	import { createEventDispatcher } from 'svelte';
-	const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher<{
+		select: string[];
+	}>();
 
 	// Toggle selection of a letter type
 	function toggleSelection(typeId: string) {
@@ -22,7 +22,7 @@
 			selectedTypes = [...selectedTypes, typeId];
 		}
 
-		dispatch('select', { detail: selectedTypes });
+		dispatch('select', selectedTypes);
 	}
 </script>
 

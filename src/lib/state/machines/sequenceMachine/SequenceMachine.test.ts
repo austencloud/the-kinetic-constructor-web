@@ -10,12 +10,13 @@ import {
 } from './SequenceMachine';
 import { sequenceContainer } from '../../stores/sequence/SequenceContainer';
 import { waitFor } from '@testing-library/svelte';
+import type { GeneratorType } from '../../stores/settingsStore';
 
 // Mock the generateSequenceActor
 vi.mock('./actors', () => ({
 	generateSequenceActor: vi.fn(({ input }) => {
 		return new Promise((resolve, reject) => {
-			if (input.type === 'error') {
+			if (input.type === 'freeform' && input.options.turnIntensity === 5) {
 				reject(new Error('Test error'));
 			} else {
 				// Simulate a successful generation
@@ -56,16 +57,32 @@ describe('Modern Sequence Machine', () => {
 	});
 
 	it('should transition to generating state when generate action is called', () => {
-		sequenceActions.generate('circular', { count: 4 });
+		const settings = {
+			numBeats: 4,
+			turnIntensity: 2,
+			propContinuity: 'continuous' as const,
+			capType: 'mirrored' as const,
+			level: 1
+		};
+
+		sequenceActions.generate('circular', settings);
 
 		expect(modernSequenceContainer.state.value).toBe('generating');
 		expect(modernSequenceContainer.state.context.generationType).toBe('circular');
-		expect(modernSequenceContainer.state.context.generationOptions).toEqual({ count: 4 });
+		expect(modernSequenceContainer.state.context.generationOptions).toEqual(settings);
 		expect(sequenceSelectors.isGenerating()).toBe(true);
 	});
 
 	it('should update progress during generation', () => {
-		sequenceActions.generate('circular', { count: 4 });
+		const settings = {
+			numBeats: 4,
+			turnIntensity: 2,
+			propContinuity: 'continuous' as const,
+			capType: 'mirrored' as const,
+			level: 1
+		};
+
+		sequenceActions.generate('circular', settings);
 
 		// Manually send a progress update
 		modernSequenceContainer.send({
@@ -81,7 +98,15 @@ describe('Modern Sequence Machine', () => {
 	});
 
 	it('should update the sequence when generation completes', async () => {
-		sequenceActions.generate('circular', { count: 4 });
+		const settings = {
+			numBeats: 4,
+			turnIntensity: 2,
+			propContinuity: 'continuous' as const,
+			capType: 'mirrored' as const,
+			level: 1
+		};
+
+		sequenceActions.generate('circular', settings);
 
 		// Wait for the generation to complete
 		await waitFor(() => expect(modernSequenceContainer.state.value).toBe('idle'));
@@ -93,7 +118,16 @@ describe('Modern Sequence Machine', () => {
 	});
 
 	it('should transition to error state when generation fails', async () => {
-		sequenceActions.generate('error', {});
+		// Use maximum turn intensity to trigger error in mock
+		const settings = {
+			numBeats: 4,
+			turnIntensity: 5,
+			propContinuity: 'continuous' as const,
+			capType: 'mirrored' as const,
+			level: 1
+		};
+
+		sequenceActions.generate('freeform', settings);
 
 		// Wait for the error state
 		await waitFor(() => expect(modernSequenceContainer.state.value).toBe('error'));
@@ -105,7 +139,15 @@ describe('Modern Sequence Machine', () => {
 
 	it('should retry generation when retry action is called', async () => {
 		// First generate with an error
-		sequenceActions.generate('error', {});
+		const settings = {
+			numBeats: 4,
+			turnIntensity: 5,
+			propContinuity: 'continuous' as const,
+			capType: 'mirrored' as const,
+			level: 1
+		};
+
+		sequenceActions.generate('freeform', settings);
 
 		// Wait for the error state
 		await waitFor(() => expect(modernSequenceContainer.state.value).toBe('error'));
@@ -132,7 +174,15 @@ describe('Modern Sequence Machine', () => {
 
 	it('should reset the error state when reset action is called', async () => {
 		// First generate with an error
-		sequenceActions.generate('error', {});
+		const settings = {
+			numBeats: 4,
+			turnIntensity: 5,
+			propContinuity: 'continuous' as const,
+			capType: 'mirrored' as const,
+			level: 1
+		};
+
+		sequenceActions.generate('freeform', settings);
 
 		// Wait for the error state
 		await waitFor(() => expect(modernSequenceContainer.state.value).toBe('error'));

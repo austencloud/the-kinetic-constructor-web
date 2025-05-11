@@ -3,7 +3,7 @@
   import { settingsStore as newSettingsStore } from '$lib/state/stores/settingsStore';
   import { settingsStore, generatorType as activeGeneratorType } from '../store/settings';
   import { sequenceSelectors } from '$lib/state/machines/sequenceMachine';
-  import GeneratorToggle from '../ui/GeneratorToggle.svelte';
+  import GeneratorToggle from '../components/GeneratorToggle.svelte';
 
   // Generator types for the toggle
   export let generatorTypes = [

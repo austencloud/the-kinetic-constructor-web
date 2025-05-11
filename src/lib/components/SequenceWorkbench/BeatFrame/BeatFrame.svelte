@@ -1,217 +1,130 @@
 <!-- src/lib/components/SequenceWorkbench/BeatFrame/BeatFrame.svelte -->
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import { autoAdjustLayout, calculateCellSize } from './beatFrameHelpers';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
-	import { writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
-	import type { BeatData } from './BeatData';
-	import { browser } from '$app/environment'; // Import browser check
+	import type { BeatData as LegacyBeatData } from './BeatData';
+	import { browser } from '$app/environment';
 	import { initDevToolsUpdater, updateDevTools } from '$lib/utils/devToolsUpdater';
 	import { layoutStore } from '$lib/stores/layout/layoutStore';
 
-	// Import the sequence store and actions
-	import { sequenceStore } from '$lib/state/stores/sequenceStore';
-	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
+	// Import the sequence container and integration utilities
+	import { sequenceContainer } from '$lib/state/stores/sequenceStore';
+	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+
+	// Helper function for safe logging of reactive state
+	function safeLog(message: string, data: any) {
+		if (import.meta.env.DEV) {
+			// Use $state.snapshot to avoid Svelte 5 proxy warnings
+			console.log(message, data instanceof Object ? $state.snapshot(data) : data);
+		}
+	}
 
 	// Components
 	import StartPosBeat from './StartPosBeat.svelte';
 	import Beat from './Beat.svelte';
 	import SelectionOverlay from './SelectionOverlay.svelte';
 	import ReversalGlyph from './ReversalGlyph.svelte';
-	const ssrDefaults = { width: 800, height: 600 }; // Example reasonable defaults
-	const { size, resizeObserver } = useResizeObserver({
+
+	// Use Svelte 5 runes for reactive state
+	const { size: sizeStore, resizeObserver } = useResizeObserver({
 		width: browser ? window.innerWidth : 800,
 		height: browser ? window.innerHeight : 600
 	});
 
-	// No gap between cells
+	// Convert the size store to a reactive value
+	const size = $derived({
+		width: $sizeStore?.width || 0,
+		height: $sizeStore?.height || 0
+	});
 
-	// Use reactive stores for beats and selection state
-	// Create a store that updates whenever the sequence store changes
-	const beatsStore = writable<BeatData[]>([]);
-	const selectedBeatIdsStore = writable<string[]>([]);
-	const selectedBeatIndexStore = writable<number>(-1);
-	let startPosition: PictographData | null = null;
+	// Use the sequence container with Svelte 5 runes
+	const sequence = useContainer(sequenceContainer);
 
-	// Function to update local state from the sequence store
-	function updateLocalState() {
-		try {
-			// Get the sequence state from the sequence store
-			const unsubscribe = sequenceStore.subscribe((state) => {
-				// Convert beats from the store to our BeatData format
-				const convertedBeats = state.beats.map((storeBeat: any) => {
-					// Create a proper pictographData object from the store beat data
-					const pictographData = {
-						letter: storeBeat.metadata?.letter || null,
-						startPos: storeBeat.metadata?.startPos || null,
-						endPos: storeBeat.metadata?.endPos || null,
-						redPropData: storeBeat.redPropData || null,
-						bluePropData: storeBeat.bluePropData || null,
-						redMotionData: storeBeat.redMotionData || null,
-						blueMotionData: storeBeat.blueMotionData || null,
-						redArrowData: storeBeat.redArrowData || null,
-						blueArrowData: storeBeat.blueArrowData || null
-					};
+	// Local state
+	let startPosition = $state<PictographData | null>(null);
+	let beatRows = $state(1);
+	let beatCols = $state(1);
+	let prevRows = $state(1);
+	let prevCols = $state(1);
+	let cellSize = $state(100);
 
-					return {
-						id: storeBeat.id,
-						beatNumber: storeBeat.number,
-						filled: true, // Assume filled if it exists in the store
-						pictographData: pictographData,
-						duration: 1, // Default duration
-						metadata: storeBeat.metadata
-					} as BeatData;
-				});
+	// Derived values
+	const beats = $derived(convertContainerBeatsToLegacyFormat(sequence.beats));
+	const selectedBeatIds = $derived(sequence.selectedBeatIds);
+	const selectedBeatIndex = $derived(
+		selectedBeatIds.length > 0 ? beats.findIndex((beat) => beat.id === selectedBeatIds[0]) : -1
+	);
+	const beatCount = $derived(beats.length);
+	const isScrollable = $derived(beatCount > 28);
 
-				// Update the beats store
-				beatsStore.set(convertedBeats);
+	// Create start position beat data
+	const startPosBeatData = $derived({
+		beatNumber: 0,
+		filled: !!startPosition,
+		pictographData: startPosition || defaultPictographData
+	});
 
-				// Get selected beat IDs from the store
-				const selectedIds = state.selectedBeatIds || [];
-				selectedBeatIdsStore.set(selectedIds);
+	// Convert container beats to legacy BeatData format
+	function convertContainerBeatsToLegacyFormat(containerBeats: any[]): LegacyBeatData[] {
+		return containerBeats.map((beat) => {
+			// Create a proper pictographData object from the container beat data
+			const pictographData = {
+				letter: beat.metadata?.letter || null,
+				startPos: beat.metadata?.startPos || null,
+				endPos: beat.metadata?.endPos || null,
+				gridMode: beat.metadata?.gridMode || 'diamond',
+				redPropData: beat.redPropData || null,
+				bluePropData: beat.bluePropData || null,
+				redMotionData: beat.redMotionData || null,
+				blueMotionData: beat.blueMotionData || null,
+				redArrowData: beat.redArrowData || null,
+				blueArrowData: beat.blueArrowData || null,
+				grid: beat.metadata?.grid || ''
+			};
 
-				// Calculate the selected beat index based on the selected beat ID
-				if (selectedIds.length > 0) {
-					const selectedId = selectedIds[0];
-					const index = convertedBeats.findIndex((beat: any) => beat.id === selectedId);
-					selectedBeatIndexStore.set(index);
-				} else {
-					selectedBeatIndexStore.set(-1);
-				}
-			});
-
-			// Unsubscribe immediately to avoid memory leaks
-			unsubscribe();
-		} catch (error) {
-			console.error('Error updating local state from sequence store:', error);
-			// Set empty state as fallback
-			beatsStore.set([]);
-			selectedBeatIdsStore.set([]);
-			selectedBeatIndexStore.set(-1);
-		}
+			return {
+				id: beat.id,
+				beatNumber: beat.number,
+				filled: true, // Assume filled if it exists in the container
+				pictographData,
+				duration: 1, // Default duration
+				metadata: beat.metadata
+			} as LegacyBeatData;
+		});
 	}
 
-	// Subscribe to the stores to get the current values
-	let beats: BeatData[] = [];
-	let selectedBeatIndex: number = -1;
-
-	const unsubscribeBeats = beatsStore.subscribe((value) => (beats = value));
-	// We don't need to track selectedBeatIds directly in the component
-	const unsubscribeSelectedIds = selectedBeatIdsStore.subscribe(() => {
-		// Just keep the subscription active for reactivity
-	});
-	const unsubscribeSelectedIndex = selectedBeatIndexStore.subscribe(
-		(value) => (selectedBeatIndex = value)
-	);
-
-	// Clean up subscriptions on component destroy
-	onDestroy(() => {
-		unsubscribeBeats();
-		unsubscribeSelectedIds();
-		unsubscribeSelectedIndex();
-	});
-
-	// Initial update
-	updateLocalState();
-
-	// Local store just for the start position
-	const startPositionStore = writable<PictographData | null>(null);
-
-	// Subscribe to the local start position store
-	const unsubscribeStartPos = startPositionStore.subscribe((value) => (startPosition = value));
-
-	// Also subscribe to the global selectedStartPos store
-	const unsubscribeGlobalStartPos = selectedStartPos.subscribe((startPos) => {
-		if (startPos) {
-			// Create a deep copy to avoid reference issues
-			const startPosCopy = JSON.parse(JSON.stringify(startPos));
-			startPositionStore.set(startPosCopy);
-			console.log('BeatFrame: Updated startPositionStore with startPos:', startPosCopy);
-		}
-	});
-
-	// Set up event listeners for sequence updates
+	// Get the initial value from the selectedStartPos store
 	onMount(() => {
-		// Initialize dev tools updater
-		if (browser) {
-			initDevToolsUpdater();
-		}
-
-		// Update local state when sequence is updated
-		const handleSequenceUpdate = () => {
-			// Update the local state and trigger reactivity
-			updateLocalState();
-			// Force a component update by triggering a state change
-			beatsStore.update((beats) => [...beats]);
-			// Update dev tools
-			updateDevTools();
-		};
-
-		// Listen for sequence-updated events
-		document.addEventListener('sequence-updated', handleSequenceUpdate);
-		document.addEventListener('beat-selected', handleSequenceUpdate);
-		document.addEventListener('beat-deselected', handleSequenceUpdate);
-		document.addEventListener('beat-added', handleSequenceUpdate);
-		document.addEventListener('beat-removed', handleSequenceUpdate);
-		document.addEventListener('beat-updated', handleSequenceUpdate);
-
-		// Listen for dev tools update events
-		document.addEventListener('dev-tools-update', () => {
-			console.log('[Dev Tools] Update event received');
+		// One-time subscription to get the initial value
+		const unsubscribe = selectedStartPos.subscribe((newStartPos) => {
+			if (newStartPos && !startPosition) {
+				// Create a deep copy to avoid reference issues
+				startPosition = JSON.parse(JSON.stringify(newStartPos));
+				// Log using our safe logging helper (only in dev mode)
+				safeLog('BeatFrame: Initialized startPosition with:', startPosition);
+			}
 		});
 
-		// Set up an interval to periodically check for updates (as a fallback)
-		const intervalId = setInterval(() => {
-			updateLocalState();
-			// Update dev tools periodically
-			updateDevTools();
-		}, 500);
-
-		return () => {
-			// Clean up event listeners
-			document.removeEventListener('sequence-updated', handleSequenceUpdate);
-			document.removeEventListener('beat-selected', handleSequenceUpdate);
-			document.removeEventListener('beat-deselected', handleSequenceUpdate);
-			document.removeEventListener('beat-added', handleSequenceUpdate);
-			document.removeEventListener('beat-removed', handleSequenceUpdate);
-			document.removeEventListener('beat-updated', handleSequenceUpdate);
-			document.removeEventListener('dev-tools-update', () => {});
-			clearInterval(intervalId);
-		};
+		// Immediately unsubscribe to prevent further updates
+		unsubscribe();
 	});
 
-	// Clean up on component destroy
-	onDestroy(() => {
-		unsubscribeStartPos();
-		unsubscribeGlobalStartPos();
-	});
+	// Calculate layout based on beat count
+	$effect(() => {
+		// Always ensure at least one row for the start position beat
+		[beatRows, beatCols] = autoAdjustLayout(Math.max(1, beatCount));
 
-	// Create start position beat data - always create it even if startPosition is null
-	$: startPosBeatData = {
-		beatNumber: 0,
-		filled: !!startPosition, // This will be false when startPosition is null
-		pictographData: startPosition || defaultPictographData // Use defaultPictographData when startPosition is null
-	};
-
-	// Reactive layout calculations based on beat count
-	// Always ensure at least one row for the start position beat
-	$: [beatRows, beatCols] = autoAdjustLayout(Math.max(1, beats.length));
-
-	// Track previous layout for detecting changes
-	let prevRows = 1;
-	let prevCols = 1;
-
-	// Update the layout store when the layout changes
-	$: {
 		// Check if the layout has changed
 		if (beatRows !== prevRows || beatCols !== prevCols) {
-			console.log(`Layout changed from ${prevRows}x${prevCols} to ${beatRows}x${beatCols}`);
+			// Log layout changes
+			safeLog(`Layout changed`, { from: `${prevRows}x${prevCols}`, to: `${beatRows}x${beatCols}` });
 
 			// Update the layout store
-			layoutStore.updateLayout(beatRows, beatCols, beats.length);
+			layoutStore.updateLayout(beatRows, beatCols, beatCount);
 
 			// Update previous values
 			prevRows = beatRows;
@@ -223,49 +136,81 @@
 				detail: {
 					rows: beatRows,
 					cols: beatCols,
-					beatCount: beats.length,
+					beatCount,
 					previousLayout: { rows: prevRows, cols: prevCols }
 				}
 			});
 			document.dispatchEvent(event);
 		}
-	}
-	$: beatCount = beats.length;
+	});
 
 	// Calculate cell size based on container dimensions
-	$: cellSize = calculateCellSize(
-		beatCount,
-		$size.width || 0,
-		$size.height || 0,
-		beatRows,
-		beatCols, // Add 1 for start position column
-		0 // No gap
-	);
-
-	// Force recalculation when layout changes
-	$: if (beatRows || beatCols) {
+	$effect(() => {
 		cellSize = calculateCellSize(
 			beatCount,
-			$size.width || 0,
-			$size.height || 0,
+			size.width,
+			size.height,
 			beatRows,
-			beatCols + 1,
-			0
+			beatCols + 1, // Add 1 for start position column
+			0 // No gap
 		);
-	}
+	});
 
-	// Update class based on actual content overflow rather than beat count
-	$: isScrollable = beats.length > 28; // Only scroll when we exceed 5 rows (5x4=20 beats)
+	// Initialize dev tools and set up event listeners
+	onMount(() => {
+		// Initialize dev tools updater
+		if (browser) {
+			initDevToolsUpdater();
+		}
+
+		// Listen for the custom event when a start position is selected
+		const handleStartPosSelected = (event: CustomEvent) => {
+			if (event.detail?.startPosition) {
+				// Log the received start position (only in dev mode)
+				safeLog(
+					'BeatFrame: Received start-position-selected event with data:',
+					event.detail.startPosition
+				);
+
+				// Create a deep copy to avoid reference issues
+				const newStartPos = JSON.parse(JSON.stringify(event.detail.startPosition));
+
+				// Update the local state
+				startPosition = newStartPos;
+
+				// Update the store (but don't subscribe to its changes to avoid loops)
+				selectedStartPos.set(newStartPos);
+			}
+		};
+
+		document.addEventListener('start-position-selected', handleStartPosSelected as EventListener);
+
+		// Set up an interval to periodically update dev tools
+		const intervalId = setInterval(() => {
+			updateDevTools();
+		}, 1000);
+
+		return () => {
+			document.removeEventListener(
+				'start-position-selected',
+				handleStartPosSelected as EventListener
+			);
+			clearInterval(intervalId);
+		};
+	});
 
 	// Event handlers
 	function handleStartPosBeatClick() {
 		// Deselect current beat - clear all selections
-		sequenceStore.clearSelection();
+		sequenceContainer.clearSelection();
 
 		// Dispatch a custom event to trigger the start position selector
+		// Create a deep copy of startPosition to avoid reference issues
+		const startPosCopy = startPosition ? JSON.parse(JSON.stringify(startPosition)) : null;
+
 		const event = new CustomEvent('select-start-pos', {
 			bubbles: true,
-			detail: { currentStartPos: startPosition }
+			detail: { currentStartPos: startPosCopy }
 		});
 		document.dispatchEvent(event);
 	}
@@ -277,67 +222,59 @@
 			const beatId = beat.id;
 
 			// Log detailed information about the beat being selected
-			console.log(
-				`Selecting beat - Index: ${beatIndex}, Beat Number: ${beat.beatNumber}, ID: ${beatId}, ` +
-					`Grid Layout: ${beatRows}x${beatCols}, ` +
-					`Position: Row ${Math.floor(beatIndex / beatCols) + 1}, Col ${(beatIndex % beatCols) + 1}, ` +
-					`Red Motion Type: ${beat.pictographData?.redMotionData?.motionType || 'none'}, ` +
-					`Blue Motion Type: ${beat.pictographData?.blueMotionData?.motionType || 'none'}\n` +
-					`Stack trace: ${new Error().stack}`
-			);
+			safeLog('Selecting beat', {
+				index: beatIndex,
+				beatNumber: beat.beatNumber,
+				id: beatId,
+				gridLayout: `${beatRows}x${beatCols}`,
+				position: {
+					row: Math.floor(beatIndex / beatCols) + 1,
+					col: (beatIndex % beatCols) + 1
+				},
+				motionTypes: {
+					red: beat.pictographData?.redMotionData?.motionType || 'none',
+					blue: beat.pictographData?.blueMotionData?.motionType || 'none'
+				}
+			});
 
 			if (beatId) {
-				sequenceActions.selectBeat(beatId);
+				sequenceContainer.selectBeat(beatId);
 			}
 		}
 	}
 
-	// Handle start position selection
-	function updateStartPosition(newStartPos: PictographData) {
-		if (newStartPos) {
-			// Create a deep copy to avoid reference issues
-			const startPosCopy = JSON.parse(JSON.stringify(newStartPos));
-			startPositionStore.set(startPosCopy);
-			console.log('BeatFrame.updateStartPosition: Updated startPositionStore with:', startPosCopy);
-		}
-	}
-
-	// Set up event listener for when a start position is selected
-	onMount(() => {
-		// Listen for the custom event when a start position is selected
-		const handleStartPosSelected = (event: CustomEvent) => {
-			if (event.detail?.startPosition) {
-				console.log(
-					'BeatFrame: Received start-position-selected event with data:',
-					event.detail.startPosition
-				);
-				updateStartPosition(event.detail.startPosition);
-			}
-		};
-
-		document.addEventListener('start-position-selected', handleStartPosSelected as EventListener);
-
-		return () => {
-			document.removeEventListener(
-				'start-position-selected',
-				handleStartPosSelected as EventListener
-			);
-		};
-	});
-
-	// Add a method to add beats (could be called from parent)
-	export function addBeat(beatData: BeatData) {
+	// Public methods that can be called from parent components
+	export function addBeat(beatData: LegacyBeatData) {
 		// Ensure the beat has an ID
 		const beatWithId = beatData.id ? beatData : { ...beatData, id: crypto.randomUUID() };
 
-		// Use the sequence machine to add the beat
-		sequenceActions.addBeat(beatWithId);
+		// Convert from legacy BeatData to container BeatData format
+		const containerBeat = {
+			id: beatWithId.id || crypto.randomUUID(), // Ensure ID is never undefined
+			number: beatWithId.beatNumber,
+			redPropData: beatWithId.pictographData.redPropData,
+			bluePropData: beatWithId.pictographData.bluePropData,
+			redMotionData: beatWithId.pictographData.redMotionData,
+			blueMotionData: beatWithId.pictographData.blueMotionData,
+			redArrowData: beatWithId.pictographData.redArrowData,
+			blueArrowData: beatWithId.pictographData.blueArrowData,
+			metadata: {
+				...beatWithId.metadata,
+				letter: beatWithId.pictographData.letter,
+				startPos: beatWithId.pictographData.startPos,
+				endPos: beatWithId.pictographData.endPos,
+				gridMode: beatWithId.pictographData.gridMode
+			}
+		};
+
+		// Add the beat to the sequence container
+		sequenceContainer.addBeat(containerBeat as any); // Use type assertion to bypass TypeScript error
 	}
 
 	// Add a method to clear beats (could be called from parent)
 	export function clearBeats() {
-		// Use the sequence machine to clear the sequence
-		sequenceActions.clearSequence();
+		// Use the sequence container to clear the sequence
+		sequenceContainer.setSequence([]);
 	}
 </script>
 

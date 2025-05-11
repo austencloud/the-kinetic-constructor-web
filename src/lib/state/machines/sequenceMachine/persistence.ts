@@ -15,7 +15,6 @@ if (typeof window !== 'undefined') {
 	sequenceStore.subscribe((state) => {
 		// Update isSequenceEmpty based on whether there are any beats
 		isSequenceEmpty.set(state.beats.length === 0);
-		console.log('isSequenceEmpty updated:', state.beats.length === 0);
 	});
 }
 

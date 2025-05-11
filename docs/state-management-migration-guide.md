@@ -86,18 +86,7 @@ The migration includes:
 2. **Pictograph State Machine**: An XState 5 machine for managing pictograph state transitions
 3. **Pictograph Store Adapter**: An adapter that provides backward compatibility with the old store API
 4. **Pictograph Component Rewrite**: Completely rewrote the component using Svelte 5 runes
-5. **Backward Compatibility Wrapper**: Created a thin wrapper to maintain the same API for existing code
 
-### File Renaming
-
-As part of the migration to Svelte 5 and XState 5, we've renamed files that had "modern" in their names to reflect that they are now the standard implementation:
-
-- Renamed `modernPictographContainer.ts` to `pictographContainer.ts`
-- Renamed `modernPictographSelectors.ts` to `pictographSelectors.ts`
-- Renamed `modernPictographContainer.test.ts` to `pictographContainer.test.ts`
-- Renamed `ModernStateExample.svelte` to `StateExample.svelte`
-
-For backward compatibility, we've created compatibility layers that re-export from the new files. These compatibility layers will be removed once all references have been updated.
 
 ## Lessons Learned and Challenges
 

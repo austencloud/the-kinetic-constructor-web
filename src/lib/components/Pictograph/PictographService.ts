@@ -45,21 +45,50 @@ export class PictographService {
 	}
 
 	/**
-	 * Creates a safe copy of the data without any Promise objects
+	 * Creates a safe copy of the data without any non-cloneable objects
 	 * This prevents the DataCloneError when using structuredClone()
 	 */
 	private createSafeDataCopy(data: PictographData): PictographData {
 		// Create a shallow copy first
 		const safeCopy = { ...data };
 
-		// Remove any properties that might contain Promise objects
-		// or that aren't needed for rendering
-		if (safeCopy.redMotion) {
-			safeCopy.redMotion = null;
+		// Explicitly set Motion objects to null as they can't be cloned
+		safeCopy.redMotion = null;
+		safeCopy.blueMotion = null;
+
+		// Handle any SVG data that might be present in arrow data
+		if (safeCopy.redArrowData?.svgData) {
+			// Create a safe copy of svgData without DOM elements
+			const originalSvgData = safeCopy.redArrowData.svgData;
+			// Use type assertion to handle properties that might not be in the type definition
+			safeCopy.redArrowData.svgData = {
+				...originalSvgData
+			} as any;
+
+			// Remove DOM elements and other non-serializable properties
+			if ((safeCopy.redArrowData.svgData as any).element) {
+				(safeCopy.redArrowData.svgData as any).element = null;
+			}
+			if ((safeCopy.redArrowData.svgData as any).paths) {
+				(safeCopy.redArrowData.svgData as any).paths = null;
+			}
 		}
 
-		if (safeCopy.blueMotion) {
-			safeCopy.blueMotion = null;
+		if (safeCopy.blueArrowData?.svgData) {
+			// Create a safe copy of svgData without DOM elements
+			const originalSvgData = safeCopy.blueArrowData.svgData;
+			// Use type assertion to handle properties that might not be in the type definition
+			safeCopy.blueArrowData.svgData = {
+				...originalSvgData
+			} as any;
+
+			// Remove DOM elements and other non-serializable properties
+			if ((safeCopy.blueArrowData.svgData as any).element) {
+				(safeCopy.blueArrowData.svgData as any).element = null;
+			}
+			if ((safeCopy.blueArrowData.svgData as any).paths) {
+				(safeCopy.blueArrowData.svgData as any).paths = null;
+			}
 		}
 
 		// Return the safe copy

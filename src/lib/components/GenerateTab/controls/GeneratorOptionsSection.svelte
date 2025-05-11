@@ -2,8 +2,8 @@
 <script lang="ts">
   import { settingsStore, generatorType as activeGeneratorType } from '../store/settings';
   import { sequenceSelectors } from '$lib/state/machines/sequenceMachine';
-  import CircularSequencer from '../circular/CircularSequencer.svelte';
-  import FreeformSequencer from '../Freeform/FreeformSequencer.svelte';
+  import CircularSequencer from '../components/CircularSequencer.svelte';
+  import FreeformSequencer from '../components/FreeformSequencer.svelte';
 
   // Use both old and new state management during migration
   export let useNewStateManagement = true;

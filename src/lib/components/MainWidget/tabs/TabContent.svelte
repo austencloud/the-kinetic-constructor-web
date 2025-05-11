@@ -2,7 +2,6 @@
 	// Import necessary components
 	import PlaceholderTab from './PlaceholderTab.svelte';
 	import ConstructTab from '$lib/components/ConstructTab/ConstructTab.svelte';
-	import GenerateTab from '$lib/components/GenerateTab/GenerateTab.svelte';
 	import BrowseTab from '$lib/components/BrowseTab/BrowseTab.svelte';
 	import LearnTab from '$lib/components/LearnTab/LearnTab.svelte';
 	import WriteTab from '$lib/components/WriteTab/WriteTab.svelte';
@@ -21,6 +20,9 @@
 	$: currentTabIndex = $currentTabStore as number;
 	$: activeTab =
 		currentTabIndex >= 0 && currentTabIndex < tabs.length ? tabs[currentTabIndex] : null;
+
+	// Track if we're in the Generate tab
+	$: isGenerateTab = activeTab?.id === 'generate';
 
 	// Create a crossfade transition
 	const [send, receive] = crossfade({
@@ -45,10 +47,8 @@
 					? 'split-view-container'
 					: 'placeholderContainer'}
 			>
-				{#if activeTab.id === 'construct'}
-					<ConstructTab />
-				{:else if activeTab.id === 'generate'}
-					<GenerateTab />
+				{#if activeTab.id === 'construct' || activeTab.id === 'generate'}
+					<ConstructTab isGenerateMode={isGenerateTab} />
 				{:else if activeTab.id === 'browse'}
 					<BrowseTab />
 				{:else if activeTab.id === 'learn'}
