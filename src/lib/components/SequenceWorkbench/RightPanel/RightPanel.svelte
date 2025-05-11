@@ -4,28 +4,53 @@
 	import ButtonPanel from '../ButtonPanel/ActionToolbar.svelte';
 	import ModernGenerationControls from './ModernGenerationControls.svelte';
 	import OptionPicker from '$lib/components/ConstructTab/OptionPicker/OptionPicker.svelte';
+	import StartPosPicker from '$lib/components/ConstructTab/StartPosPicker/StartPosPicker.svelte';
+	import TransitionWrapper from './TransitionWrapper.svelte';
 	import type { ButtonDefinition } from '../ButtonPanel/types';
+	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
+	import { fade, fly } from 'svelte/transition';
+	import { cubicInOut } from 'svelte/easing';
 
 	// Props
 	export let toolsPanelOpen: boolean;
 	export let toolsPanelButtons: ButtonDefinition[];
 	export let onToolsPanelAction: (id: string) => void;
+
+	// Transition parameters
+	const transitionDuration = 400;
+	const fadeParams = { duration: transitionDuration, easing: cubicInOut };
+	const flyParams = {
+		duration: transitionDuration,
+		easing: cubicInOut,
+		y: 20
+	};
 </script>
 
 <div class="right-panel">
 	{#if $workbenchStore.activeTab === 'generate'}
-		<ModernGenerationControls />
+		<div in:fly={flyParams} out:fade={fadeParams}>
+			<ModernGenerationControls />
+		</div>
 	{:else}
-		<OptionPicker />
+		<TransitionWrapper isSequenceEmpty={$isSequenceEmpty} {transitionDuration}>
+			<div slot="startPosPicker" class="full-height-wrapper">
+				<StartPosPicker />
+			</div>
+			<div slot="optionPicker" class="full-height-wrapper">
+				<OptionPicker />
+			</div>
+		</TransitionWrapper>
 	{/if}
 
 	{#if toolsPanelOpen}
-		<ButtonPanel
-			buttons={toolsPanelButtons}
-			containerWidth={200}
-			containerHeight={400}
-			on:action={(e) => onToolsPanelAction(e.detail.id)}
-		/>
+		<div class="button-panel-container" in:fade={fadeParams}>
+			<ButtonPanel
+				buttons={toolsPanelButtons}
+				containerWidth={200}
+				containerHeight={400}
+				on:action={(e) => onToolsPanelAction(e.detail.id)}
+			/>
+		</div>
 	{/if}
 </div>
 
@@ -39,5 +64,18 @@
 		border-radius: 0.75rem;
 		border: 1px solid rgba(255, 255, 255, 0.1);
 		overflow: hidden;
+	}
+
+	.button-panel-container {
+		position: absolute;
+		top: 0;
+		right: 0;
+		z-index: 10;
+	}
+
+	.full-height-wrapper {
+		height: 100%;
+		display: flex;
+		flex-direction: column;
 	}
 </style>

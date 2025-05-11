@@ -182,8 +182,7 @@
 				break;
 			case 'clearSequence':
 				sequenceActions.clearSequence();
-				selectedStartPos.set(null);
-				// isSequenceEmpty is now derived and will update automatically
+				// The clearSequence action now handles resetting the start position
 				break;
 		}
 		if ($isToolsPanelOpen) {

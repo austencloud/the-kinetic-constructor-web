@@ -164,7 +164,8 @@
 		$selectedTab === 'all'
 			? filteredOptions // Show all (filtered/sorted) options if 'all' is selected
 			: ($selectedTab && groupedOptions && groupedOptions[$selectedTab]) || []; // Show options for the specific category tab
-	$: panelKey = $selectedTab || 'none'; // Key for transitions based on the selected tab
+	// Key for transitions based on the selected tab
+	// This is used in the template for keyed each blocks
 	$: showTabs = $selectedTab !== 'all'; // Flag to determine if category tabs should be shown in the header
 
 	// --- Derived Layout Context ---
@@ -191,11 +192,7 @@
 			$selectedTab
 		]) => {
 			// 1. Get enhanced device info using container width (more reliable for component layout)
-			const {
-				deviceType: enhancedDeviceType,
-				isFoldable,
-				foldableInfo
-			} = getEnhancedDeviceType(
+			const { deviceType: enhancedDeviceType, foldableInfo } = getEnhancedDeviceType(
 				$containerWidth > 0 ? $containerWidth : $windowWidth,
 				$windowWidth < BREAKPOINTS.tablet
 			);
@@ -249,31 +246,42 @@
 
 	// --- Event Handlers ---
 
-	// Update container dimensions when the container resizes
-	function handleContainerResize(width: number, height: number) {
-		// Ensure we never set invalid dimensions (0 or negative values)
-		// This prevents the "getResponsiveLayout called with invalid dimensions" error
-		if (width > 0 && height > 0) {
-			containerWidth.set(width);
-			containerHeight.set(height);
-		} else {
-			// If we get invalid dimensions, use fallback values based on window size
-			// This can happen during initial render or when container is hidden
-			if (width <= 0) {
-				const fallbackWidth =
-					typeof window !== 'undefined'
-						? Math.max(300, window.innerWidth * 0.8)
-						: BREAKPOINTS.desktop;
-				containerWidth.set(fallbackWidth);
+	// Debounced function to update container dimensions when the container resizes
+	const debouncedHandleContainerResize = (() => {
+		let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+		return (width: number, height: number) => {
+			if (timeoutId !== null) {
+				clearTimeout(timeoutId);
 			}
 
-			if (height <= 0) {
-				const fallbackHeight =
-					typeof window !== 'undefined' ? Math.max(200, window.innerHeight * 0.6) : 768;
-				containerHeight.set(fallbackHeight);
-			}
-		}
-	}
+			timeoutId = setTimeout(() => {
+				// Ensure we never set invalid dimensions (0 or negative values)
+				// This prevents the "getResponsiveLayout called with invalid dimensions" error
+				if (width > 0 && height > 0) {
+					containerWidth.set(width);
+					containerHeight.set(height);
+				} else {
+					// If we get invalid dimensions, use fallback values based on window size
+					// This can happen during initial render or when container is hidden
+					if (width <= 0) {
+						const fallbackWidth =
+							typeof window !== 'undefined'
+								? Math.max(300, window.innerWidth * 0.8)
+								: BREAKPOINTS.desktop;
+						containerWidth.set(fallbackWidth);
+					}
+
+					if (height <= 0) {
+						const fallbackHeight =
+							typeof window !== 'undefined' ? Math.max(200, window.innerHeight * 0.6) : 768;
+						containerHeight.set(fallbackHeight);
+					}
+				}
+				timeoutId = null;
+			}, 100);
+		};
+	})();
 
 	// Handle changes from the ViewControl (Show All / Group By...)
 	function handleViewChange(event: CustomEvent<ViewModeDetail>) {
@@ -452,7 +460,7 @@
 		on:tabSelect={handleSubTabSelect}
 	/>
 
-	<div class="options-container" use:resize={handleContainerResize}>
+	<div class="options-container" use:resize={debouncedHandleContainerResize}>
 		<OptionDisplayArea
 			{isLoading}
 			selectedTab={$selectedTab}
@@ -473,6 +481,7 @@
 		overflow: hidden;
 		position: relative;
 		background-color: transparent; /* Or your desired background */
+		justify-content: center; /* Center content vertically */
 	}
 	.option-picker.mobile {
 		padding: clamp(8px, 1.5vw, 12px);
@@ -485,6 +494,7 @@
 		background-color: transparent; /* Or your desired background */
 		min-height: 0; /* Crucial for flex child sizing */
 		overflow: hidden; /* Contains children, prevents double scrollbars */
+		justify-content: center; /* Center content vertically */
 	}
 	/* Optional: Constrain max width on large screens */
 	@media (min-width: 1400px) {

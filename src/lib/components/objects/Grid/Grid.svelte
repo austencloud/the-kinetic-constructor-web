@@ -1,29 +1,37 @@
 <script lang="ts">
-	import { onMount, tick, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import { circleCoordinates } from './circleCoordinates';
 	import type { GridData } from './GridData';
 	import { settingsStore } from '$lib/state/stores/settings/settings.store';
 	import type { GridMode } from './types';
 
-	// Allow override via prop, but default to the settings store value
-	export let gridMode: GridMode | undefined = undefined;
-	export let onPointsReady: (gridData: GridData) => void;
-	export let debug: boolean | undefined = undefined;
+	// Props using Svelte 5 runes
+	const props = $props<{
+		gridMode?: GridMode;
+		onPointsReady: (gridData: GridData) => void;
+		debug?: boolean;
+	}>();
 
-	let gridSrc = '';
-	let gridLoaded = false;
-	let gridError = false;
-	let gridErrorMessage = '';
+	// State variables
+	let gridLoaded = $state(false);
+	let gridError = $state(false);
+	let gridErrorMessage = $state('');
 
-	const dispatch = createEventDispatcher();
-
-	// Get values from settings store with fallbacks
-	$: effectiveGridMode = gridMode ?? $settingsStore.defaultGridMode;
-	$: effectiveDebug = debug ?? $settingsStore.showGridDebug;
-
-	$: {
-		gridSrc = effectiveGridMode === 'diamond' ? '/diamond_grid.svg' : '/box_grid.svg';
+	// Create custom event functions
+	function dispatchError(message: string) {
+		const event = new CustomEvent('error', { detail: { message } });
+		document.dispatchEvent(event);
 	}
+
+	// Get values from settings store with fallbacks using derived values
+	const effectiveGridMode = $derived(props.gridMode ?? $settingsStore.defaultGridMode);
+	const effectiveDebug = $derived(props.debug ?? $settingsStore.showGridDebug);
+
+	// Compute grid source based on mode
+	let gridSrc = $state('');
+	$effect(() => {
+		gridSrc = effectiveGridMode === 'diamond' ? '/diamond_grid.svg' : '/box_grid.svg';
+	});
 
 	/**
 	 * Parses a string coordinate in the format "(x, y)" into a { x, y } object.
@@ -91,15 +99,25 @@
 		};
 	}
 
-	onMount(async () => {
-		try {
-			await tick(); // Wait for DOM to render
+	// Flag to prevent multiple initializations
+	let isInitialized = false;
 
-			if (!circleCoordinates || !circleCoordinates[effectiveGridMode]) {
+	// Initialize grid data without using tick()
+	function initializeGridData() {
+		// Prevent multiple initializations
+		if (isInitialized) return;
+		isInitialized = true;
+
+		try {
+			// No need for tick() - just process the data directly
+			if (
+				!circleCoordinates ||
+				!circleCoordinates[effectiveGridMode as keyof typeof circleCoordinates]
+			) {
 				throw new Error(`Invalid circle coordinates for grid mode: ${effectiveGridMode}`);
 			}
 
-			const modeData = circleCoordinates[effectiveGridMode];
+			const modeData = circleCoordinates[effectiveGridMode as keyof typeof circleCoordinates];
 
 			const parsePoints = (points: Record<string, string>) =>
 				Object.fromEntries(
@@ -108,6 +126,7 @@
 						{ coordinates: parseCoordinates(value) }
 					])
 				);
+
 			// Convert raw data into structured `GridData`
 			const gridData: GridData = {
 				allHandPointsStrict: parsePoints(modeData.hand_points.strict),
@@ -132,26 +151,39 @@
 			}
 
 			gridLoaded = true;
-			onPointsReady(gridData);
+
+			// Use setTimeout to break potential reactive cycles
+			setTimeout(() => {
+				props.onPointsReady(gridData);
+			}, 0);
 		} catch (error) {
 			console.error('Error initializing grid:', error);
 			gridError = true;
 			gridErrorMessage = error instanceof Error ? error.message : 'Unknown grid error';
 
 			// Dispatch error event
-			dispatch('error', { message: gridErrorMessage });
+			dispatchError(gridErrorMessage);
 
 			// Create and return fallback grid data
 			const fallbackData = createFallbackGridData();
-			onPointsReady(fallbackData);
+
+			// Use setTimeout to break potential reactive cycles
+			setTimeout(() => {
+				props.onPointsReady(fallbackData);
+			}, 0);
 		}
+	}
+
+	// Call initialization on mount
+	onMount(() => {
+		initializeGridData();
 	});
 
 	function handleImageError() {
 		console.error('Failed to load grid SVG image');
 		gridError = true;
 		gridErrorMessage = 'Failed to load grid image';
-		dispatch('error', { message: gridErrorMessage });
+		dispatchError(gridErrorMessage);
 	}
 </script>
 
@@ -163,7 +195,7 @@
 	width="950"
 	height="950"
 	preserveAspectRatio="none"
-	on:error={handleImageError}
+	onerror={handleImageError}
 />
 
 <!-- Error indicator (only visible when debugging) -->

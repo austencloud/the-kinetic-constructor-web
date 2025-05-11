@@ -68,7 +68,6 @@
 	<div class="beat-frame">
 		{#each beats as beat (beat.id)}
 			<Pictograph
-				{beat}
 				shouldAnimate={!hasAnimated.has(beat.id)}
 				on:animationComplete={() => {
 					hasAnimated.set(beat.id, true);

@@ -11,7 +11,7 @@
 	}>();
 
 	// Props (maintaining the same API)
-	export let backgroundType: BackgroundType = 'snowfall';
+	export let backgroundType: BackgroundType = 'nightSky';
 	export let appIsLoading = true;
 
 	// Get the context (if it exists)

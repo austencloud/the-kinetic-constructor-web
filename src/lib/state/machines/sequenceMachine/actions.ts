@@ -10,6 +10,9 @@ import type { BeatData } from '../../stores/sequence/SequenceContainer';
 import { convertToStoreBeatData } from './types';
 import { updateDevTools } from '$lib/utils/devToolsUpdater';
 import { isSequenceEmpty } from './persistence';
+import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
+import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 
 /**
  * Update the word name in the sequence metadata based on the current beats
@@ -238,9 +241,38 @@ export function clearSequence() {
 	// Update the sequence word
 	updateSequenceWord();
 
+	// Explicitly set the word to empty string to ensure it's cleared
+	sequenceContainer.updateMetadata({
+		name: ''
+	});
+
 	// Ensure isSequenceEmpty is set to true
 	// This is a backup in case the subscription in persistence.ts doesn't trigger
 	isSequenceEmpty.set(true);
+
+	// Reset the start position to null
+	selectedStartPos.set(null);
+
+	// Reset the pictograph container to default data
+	pictographContainer.setData(defaultPictographData);
+
+	// Save the empty sequence to both storage mechanisms
+	sequenceContainer.saveToLocalStorage();
+
+	// Also clear the legacy backup
+	if (typeof window !== 'undefined') {
+		try {
+			localStorage.setItem(
+				'sequence_backup',
+				JSON.stringify({
+					beats: [],
+					options: null
+				})
+			);
+		} catch (error) {
+			console.error('Error clearing sequence backup:', error);
+		}
+	}
 
 	// Dispatch a custom event
 	if (typeof document !== 'undefined') {

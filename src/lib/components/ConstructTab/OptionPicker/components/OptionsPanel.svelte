@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { onMount } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { uiState } from '../store';
 	import { determineGroupKey, getSortedGroupKeys } from '../services/OptionsService';
@@ -125,28 +125,47 @@
 	// and potentially combined with other small groups in a multi-group row
 	const MAX_ITEMS_FOR_SMALL_GROUP = 2;
 
-	async function checkContentHeight() {
-		await tick();
-		if (!panelElement) return;
-		const fits = panelElement.scrollHeight <= panelElement.clientHeight;
-		if (fits !== contentIsShort) {
-			contentIsShort = fits;
-		}
+	// Use a debounced version of checkContentHeight to prevent infinite loops
+	const debouncedCheckContentHeight = (() => {
+		let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+		return () => {
+			if (timeoutId !== null) {
+				clearTimeout(timeoutId);
+			}
+
+			timeoutId = setTimeout(() => {
+				if (!panelElement) return;
+				const fits = panelElement.scrollHeight <= panelElement.clientHeight;
+				if (fits !== contentIsShort) {
+					contentIsShort = fits;
+				}
+				timeoutId = null;
+			}, 100);
+		};
+	})();
+
+	// Only check content height when options change, not on every render
+	$: if (options) {
+		// Use setTimeout to move this out of the reactive context
+		setTimeout(() => debouncedCheckContentHeight(), 0);
 	}
 
-	$: options, checkContentHeight();
-	onMount(checkContentHeight);
+	onMount(() => {
+		// Check content height after initial render
+		setTimeout(() => debouncedCheckContentHeight(), 100);
+	});
 </script>
 
 <div
 	class="options-panel"
 	bind:this={panelElement}
-	use:resize={checkContentHeight}
+	use:resize={debouncedCheckContentHeight}
 	class:vertically-center={contentIsShort}
 	role="tabpanel"
 	aria-labelledby="tab-{selectedTab}"
 	id="options-panel-{selectedTab}"
-	on:scroll={handleScroll}
+	onscroll={handleScroll}
 >
 	<div class="panel-content">
 		<!-- Removed transition -->
@@ -187,11 +206,17 @@
 		overflow-x: hidden;
 		box-sizing: border-box;
 		/* padding: 1rem; */
+		display: flex;
+		flex-direction: column;
+		justify-content: center; /* Center content vertically by default */
 	}
 
 	.panel-content {
 		width: 100%;
 		padding: 0.5rem 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 	}
 
 	/* When content is short enough to fit, center it vertically */

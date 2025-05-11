@@ -63,39 +63,10 @@
 		height: 100%;
 	}
 
-	.sequenceWorkbenchContainer {
-		flex: 1;
-		min-width: 0;
-		height: 100%;
-		overflow: hidden;
-		position: relative;
-	}
-
-	.optionPickerContainer {
-		flex: 1;
-		min-width: 0;
-		height: 100%;
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		position: relative;
-		box-sizing: border-box;
-	}
-
 	/* Responsive adjustments */
 	@media (max-width: 732px) {
 		.generate-tab-content {
 			flex-direction: column;
-		}
-
-		.sequenceWorkbenchContainer {
-			flex: 1;
-			height: 50%;
-		}
-
-		.optionPickerContainer {
-			flex: 1;
-			height: 50%;
 		}
 	}
 </style>

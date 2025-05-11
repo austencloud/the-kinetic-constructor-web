@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import { onMount } from 'svelte';
-	import StartPositionLabel from './StartPosLabel.svelte';
 	import type { PictographData } from '$lib/types/PictographData.js';
 	// No longer need writable with Svelte 5 approach
 	import LoadingSpinner from '$lib/components/MainWidget/loading/LoadingSpinner.svelte';
@@ -219,8 +218,6 @@
 </script>
 
 <div class="start-pos-picker">
-	<StartPositionLabel />
-
 	{#if isLoading}
 		<div class="loading-container">
 			<LoadingSpinner size="large" />
@@ -274,10 +271,12 @@
 	.start-pos-picker {
 		display: flex;
 		flex-direction: column;
-		justify-content: center;
+		justify-content: center; /* Center vertically */
 		align-items: center;
 		height: 100%;
 		width: 100%;
+		min-height: 300px; /* Ensure minimum height */
+		padding: 20px 0; /* Add some padding */
 	}
 
 	.loading-container {
@@ -285,8 +284,9 @@
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		height: 60%;
+		height: 100%;
 		width: 100%;
+		flex: 1;
 	}
 
 	.loading-text {
@@ -313,11 +313,12 @@
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		height: 60%;
+		height: 100%;
 		width: 100%;
 		background-color: rgba(255, 220, 220, 0.7);
 		padding: 20px;
 		border-radius: 10px;
+		flex: 1;
 	}
 
 	.pictograph-row {
@@ -327,6 +328,9 @@
 		align-items: center;
 		width: 90%;
 		gap: 3%;
+		margin: auto; /* Center in available space */
+		flex: 0 0 auto; /* Don't grow or shrink */
+		padding: 2rem 0; /* Add vertical padding */
 	}
 
 	.pictograph-container {
@@ -335,5 +339,10 @@
 		height: auto;
 		position: relative;
 		cursor: pointer;
+		transition: transform 0.2s ease-in-out;
+	}
+
+	.pictograph-container:hover {
+		transform: scale(1.05);
 	}
 </style>

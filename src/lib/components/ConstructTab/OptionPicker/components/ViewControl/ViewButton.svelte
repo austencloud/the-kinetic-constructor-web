@@ -10,7 +10,7 @@
 <button
 	class="view-button"
 	bind:this={buttonElement}
-	on:click={onClick}
+	onclick={onClick}
 	aria-label="Change view mode"
 	aria-expanded={isOpen}
 	aria-haspopup="listbox"

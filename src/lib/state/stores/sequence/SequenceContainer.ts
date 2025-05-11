@@ -197,7 +197,80 @@ function createSequenceContainer() {
 		saveToLocalStorage: () => {
 			if (browser) {
 				try {
-					localStorage.setItem('sequence', JSON.stringify(state));
+					// Import the pictograph utilities
+					import('$lib/utils/pictographUtils').then(({ createSafeBeatCopy }) => {
+						// Update the sequence word before saving
+						const beats = state.beats;
+
+						// Create safe copies of beats to handle circular references
+						const safeBeats = beats.map((beat) => {
+							// Create a safe copy of the beat
+							const safeBeat = createSafeBeatCopy(beat);
+
+							// Ensure pictographData is properly preserved
+							if (!safeBeat.pictographData && beat.metadata) {
+								// Try to reconstruct pictographData from metadata and other properties
+								safeBeat.pictographData = {
+									letter: beat.letter || beat.metadata.letter || null,
+									startPos: beat.position || beat.metadata.startPos || null,
+									endPos: beat.metadata.endPos || null,
+									gridMode: beat.metadata.gridMode || 'diamond',
+									redPropData: beat.redPropData || null,
+									bluePropData: beat.bluePropData || null,
+									redMotionData: beat.redMotionData || null,
+									blueMotionData: beat.blueMotionData || null,
+									redArrowData: beat.redArrowData || null,
+									blueArrowData: beat.blueArrowData || null,
+									grid: beat.metadata.grid || '',
+									timing: null,
+									direction: null,
+									gridData: null,
+									motions: [],
+									redMotion: null,
+									blueMotion: null,
+									props: []
+								};
+							}
+
+							return safeBeat;
+						});
+
+						// Extract letters from beats and combine into a word
+						const letters = beats
+							.map((beat) => {
+								// Look for letter data according to the BeatData interface
+								return (
+									beat.letter ||
+									(beat.metadata && typeof beat.metadata.letter === 'string'
+										? beat.metadata.letter
+										: null)
+								);
+							})
+							.filter((letter): letter is string => letter !== null);
+
+						// Build the word from letters
+						const word = letters.join('');
+
+						// Update metadata with word
+						update((state) => {
+							state.metadata.name = word;
+						});
+
+						// Create a safe copy of the state with the safe beats
+						const safeState = {
+							...state,
+							beats: safeBeats
+						};
+
+						// Now save to localStorage
+						localStorage.setItem('sequence', JSON.stringify(safeState));
+						console.log(
+							'Saved sequence to localStorage with word:',
+							word,
+							'and beats:',
+							safeBeats.length
+						);
+					});
 				} catch (e) {
 					console.error('Failed to save sequence to localStorage:', e);
 				}
@@ -213,11 +286,93 @@ function createSequenceContainer() {
 					const savedSequence = localStorage.getItem('sequence');
 					if (savedSequence) {
 						const parsed = JSON.parse(savedSequence);
+
+						// Process the beats to ensure pictographData is properly restored
+						if (parsed.beats && Array.isArray(parsed.beats)) {
+							parsed.beats = parsed.beats.map((beat: any) => {
+								// Ensure the beat has a valid pictographData property
+								if (!beat.pictographData && beat.metadata) {
+									// Try to reconstruct pictographData from metadata and other properties
+									beat.pictographData = {
+										letter: beat.letter || beat.metadata.letter || null,
+										startPos: beat.position || beat.metadata.startPos || null,
+										endPos: beat.metadata.endPos || null,
+										gridMode: beat.metadata.gridMode || 'diamond',
+										redPropData: beat.redPropData || null,
+										bluePropData: beat.bluePropData || null,
+										redMotionData: beat.redMotionData || null,
+										blueMotionData: beat.blueMotionData || null,
+										redArrowData: beat.redArrowData || null,
+										blueArrowData: beat.blueArrowData || null,
+										grid: beat.metadata.grid || '',
+										timing: null,
+										direction: null,
+										gridData: null,
+										motions: [],
+										redMotion: null,
+										blueMotion: null,
+										props: []
+									};
+								}
+
+								// Ensure the beat has all required properties
+								return {
+									id: beat.id || `beat-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+									number: beat.number || 0,
+									letter: beat.letter || beat.metadata?.letter || null,
+									position: beat.position || beat.metadata?.startPos || null,
+									orientation: beat.orientation || '',
+									turnsTuple: beat.turnsTuple || '',
+									redPropData: beat.redPropData || beat.pictographData?.redPropData || null,
+									bluePropData: beat.bluePropData || beat.pictographData?.bluePropData || null,
+									redArrowData: beat.redArrowData || beat.pictographData?.redArrowData || null,
+									blueArrowData: beat.blueArrowData || beat.pictographData?.blueArrowData || null,
+									redMotionData: beat.redMotionData || beat.pictographData?.redMotionData || null,
+									blueMotionData:
+										beat.blueMotionData || beat.pictographData?.blueMotionData || null,
+									metadata: beat.metadata || {},
+									pictographData: beat.pictographData || null
+								};
+							});
+						}
+
 						update((state) => {
 							Object.assign(state, parsed);
 							// Ensure dates are properly converted from strings
 							state.metadata.createdAt = new Date(state.metadata.createdAt);
 							state.metadata.lastModified = new Date(state.metadata.lastModified);
+
+							// Recalculate the word from beats to ensure consistency
+							if (state.beats && state.beats.length > 0) {
+								// Extract letters from beats and combine into a word
+								const letters = state.beats
+									.map((beat) => {
+										// Look for letter data according to the BeatData interface
+										return (
+											beat.letter ||
+											(beat.metadata && typeof beat.metadata.letter === 'string'
+												? beat.metadata.letter
+												: null)
+										);
+									})
+									.filter((letter): letter is string => letter !== null);
+
+								// Build the word from letters
+								const word = letters.join('');
+
+								// Update metadata with word
+								state.metadata.name = word;
+								console.log(
+									'Loaded sequence with recalculated word:',
+									word,
+									'and beats:',
+									state.beats.length
+								);
+							} else {
+								// Reset the word if there are no beats
+								state.metadata.name = '';
+								console.log('Loaded empty sequence, reset word to empty string');
+							}
 						});
 						return true;
 					}
@@ -234,20 +389,16 @@ function createSequenceContainer() {
 export const sequenceContainer = createSequenceContainer();
 
 // Create derived values
-export const selectedBeats = createDerived(() => 
-	sequenceContainer.state.beats.filter(beat => 
+export const selectedBeats = createDerived(() =>
+	sequenceContainer.state.beats.filter((beat) =>
 		sequenceContainer.state.selectedBeatIds.includes(beat.id)
 	)
 );
 
-export const currentBeat = createDerived(() => 
-	sequenceContainer.state.beats[sequenceContainer.state.currentBeatIndex] || null
+export const currentBeat = createDerived(
+	() => sequenceContainer.state.beats[sequenceContainer.state.currentBeatIndex] || null
 );
 
-export const beatCount = createDerived(() => 
-	sequenceContainer.state.beats.length
-);
+export const beatCount = createDerived(() => sequenceContainer.state.beats.length);
 
-export const sequenceDifficulty = createDerived(() => 
-	sequenceContainer.state.metadata.difficulty
-);
+export const sequenceDifficulty = createDerived(() => sequenceContainer.state.metadata.difficulty);

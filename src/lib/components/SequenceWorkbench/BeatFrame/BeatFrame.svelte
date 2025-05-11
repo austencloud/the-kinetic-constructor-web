@@ -25,9 +25,10 @@
 
 	// Components
 	import StartPosBeat from './StartPosBeat.svelte';
-	import Beat from './Beat.svelte';
-	import SelectionOverlay from './SelectionOverlay.svelte';
+	import AnimatedBeat from './AnimatedBeat.svelte';
 	import ReversalGlyph from './ReversalGlyph.svelte';
+	import EmptyStartPosLabel from './EmptyStartPosLabel.svelte';
+	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 
 	// Use Svelte 5 runes for reactive state
 	const { size: sizeStore, resizeObserver } = useResizeObserver({
@@ -59,7 +60,32 @@
 		selectedBeatIds.length > 0 ? beats.findIndex((beat) => beat.id === selectedBeatIds[0]) : -1
 	);
 	const beatCount = $derived(beats.length);
-	const isScrollable = $derived(beatCount > 28);
+
+	// Check if the layout is in portrait mode
+	let isPortraitLayout = $state(false);
+	$effect(() => {
+		// Get the layout orientation from the layoutStore
+		const unsubscribe = layoutStore.subscribe((layout) => {
+			// If rows > cols, it's portrait orientation
+			isPortraitLayout = layout.rows > layout.cols;
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	});
+
+	// Subscribe to isSequenceEmpty store
+	let sequenceIsEmpty = $state(true);
+	$effect(() => {
+		const unsubscribe = isSequenceEmpty.subscribe((value) => {
+			sequenceIsEmpty = value;
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	});
 
 	// Create start position beat data
 	const startPosBeatData = $derived({
@@ -202,7 +228,6 @@
 	// Event handlers
 	function handleStartPosBeatClick() {
 		// Deselect current beat - clear all selections
-		sequenceContainer.clearSelection();
 
 		// Dispatch a custom event to trigger the start position selector
 		// Create a deep copy of startPosition to avoid reference issues
@@ -278,7 +303,7 @@
 	}
 </script>
 
-<div use:resizeObserver class="beat-frame-container" class:scrollable={isScrollable}>
+<div use:resizeObserver class="beat-frame-container scrollable">
 	<div
 		class="beat-frame"
 		style="--total-rows: {beatRows}; --total-cols: {beatCount === 0
@@ -288,7 +313,11 @@
 		{#each Array(beatRows) as _, rowIndex}
 			{#if rowIndex === 0}
 				<div class="beat-container start-position" style="grid-row: 1; grid-column: 1;">
-					<StartPosBeat beatData={startPosBeatData} onClick={handleStartPosBeatClick} />
+					{#if sequenceIsEmpty}
+						<EmptyStartPosLabel onClick={handleStartPosBeatClick} />
+					{:else}
+						<StartPosBeat beatData={startPosBeatData} onClick={handleStartPosBeatClick} />
+					{/if}
 				</div>
 			{/if}
 
@@ -303,7 +332,11 @@
 							class:selected={selectedBeatIndex === beatIndex}
 							style="grid-row: {rowIndex + 1}; grid-column: {colIndex + (beatCount === 0 ? 1 : 2)};"
 						>
-							<Beat {beat} onClick={() => handleBeatClick(beatIndex)} />
+							<AnimatedBeat
+								{beat}
+								onClick={() => handleBeatClick(beatIndex)}
+								isSelected={selectedBeatIndex === beatIndex}
+							/>
 
 							{#if beat.metadata?.blueReversal || beat.metadata?.redReversal}
 								<div class="reversal-indicator">
@@ -313,7 +346,6 @@
 									/>
 								</div>
 							{/if}
-							<SelectionOverlay isSelected={selectedBeatIndex === beatIndex} />
 						</div>
 					{/key}
 				{/if}
@@ -328,15 +360,15 @@
 		height: 100%;
 		display: flex;
 		justify-content: center;
-		align-items: center;
-		overflow: hidden;
+		/* align-items: center; by default, changed by .scrollable */
+		overflow: hidden; /* Default, overridden by .scrollable */
 		position: relative;
 	}
 
 	.scrollable {
 		overflow-y: auto;
 		overflow-x: hidden;
-		align-items: flex-start;
+		align-items: flex-start; /* Content will align to the top when scrollable */
 	}
 
 	.beat-frame {
@@ -345,7 +377,7 @@
 		grid-template-rows: repeat(var(--total-rows), var(--cell-size));
 		gap: 0; /* No gap between cells */
 		justify-content: center;
-		align-content: center;
+		align-content: center; /* Default, overridden by .scrollable .beat-frame:not(:only-child) */
 		width: fit-content;
 		height: fit-content;
 		margin: auto;
@@ -389,3 +421,4 @@
 		z-index: 2;
 	}
 </style>
+

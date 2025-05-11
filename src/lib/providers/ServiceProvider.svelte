@@ -31,6 +31,17 @@
 			await import('$lib/state/machines/app/app.machine');
 			await import('$lib/state/machines/sequenceMachine');
 
+			// Import the sequence container to ensure it's available
+			const { sequenceContainer } = await import('$lib/state/stores/sequence/SequenceContainer');
+
+			// Explicitly try to load sequence from localStorage
+			try {
+				const loaded = sequenceContainer.loadFromLocalStorage();
+				console.log('ServiceProvider: Loaded sequence from localStorage:', loaded);
+			} catch (error) {
+				console.error('ServiceProvider: Error loading sequence from localStorage:', error);
+			}
+
 			// Now initialize state management
 			initializeStateManagement();
 			isStateInitialized = true;

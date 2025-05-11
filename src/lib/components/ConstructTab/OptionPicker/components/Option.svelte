@@ -1,40 +1,49 @@
 <script lang="ts">
-	import { getContext } from 'svelte'; // Import getContext
-	// Removed writable import as we're passing pictographData directly
-	// Removed crossfade and fade transitions
-	// Removed cubicOut easing
+	import { getContext } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
 	import { optionPickerStore } from '../store';
-	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext'; // Import context key and type
+	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
-	// Removed prefersReducedMotion
+	import StyledBorderOverlay from '$lib/components/Pictograph/components/StyledBorderOverlay.svelte';
 
-	// --- Props ---
-	export let pictographData: PictographData;
-	export let isPartOfTwoItems: boolean = false;
+	// Props using Svelte 5 runes
+	const props = $props<{
+		pictographData: PictographData;
+		isPartOfTwoItems?: boolean;
+	}>();
 
-	// --- Consume context ---
+	// Default values for optional props
+	const isPartOfTwoItems = $derived(props.isPartOfTwoItems ?? false);
+
+	// Consume context
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-	$: isMobileDevice = $layoutContext.isMobile; // Get from context
-	// Use the scale factor determined by the overall layout configuration
-	$: scaleFactor = $layoutContext.layoutConfig.scaleFactor;
 
-	// --- Reactive Computations ---
-	$: isSelected = $selectedPictograph === pictographData;
-	$: ariaLabel = `Select option ${pictographData.letter || 'Unnamed'}`;
-
-	function handleSelect() {
-		optionPickerStore.selectOption(pictographData);
-	}
-
-	// Removed crossfade transition setup
+	// Reactive state using Svelte 5 runes
+	const isMobileDevice = $derived($layoutContext.isMobile);
+	const scaleFactor = $derived($layoutContext.layoutConfig.scaleFactor);
+	const isSelected = $derived($selectedPictograph === props.pictographData);
+	const ariaLabel = $derived(`Select option ${props.pictographData.letter || 'Unnamed'}`);
 
 	// We'll use a key to force re-render when pictograph data changes
-	$: pictographKey = `${pictographData.letter || ''}-${pictographData.startPos || ''}-${pictographData.endPos || ''}`;
+	const pictographKey = $derived(
+		`${props.pictographData.letter || ''}-${props.pictographData.startPos || ''}-${props.pictographData.endPos || ''}`
+	);
 
-	// We'll pass pictographData directly to the Pictograph component
-	// This ensures proper initialization of motion objects
+	// Show border state
+	let showBorder = $state(false);
+
+	function handleSelect() {
+		optionPickerStore.selectOption(props.pictographData);
+	}
+
+	function handleMouseEnter() {
+		showBorder = true;
+	}
+
+	function handleMouseLeave() {
+		showBorder = false;
+	}
 </script>
 
 <div
@@ -44,20 +53,32 @@
 	class:two-item-option={isPartOfTwoItems}
 	role="button"
 	tabindex="0"
-	on:click={handleSelect}
-	on:keydown={(e) => e.key === 'Enter' && handleSelect()}
+	onclick={handleSelect}
+	onkeydown={(e) => e.key === 'Enter' && handleSelect()}
+	onmouseenter={handleMouseEnter}
+	onmouseleave={handleMouseLeave}
 	aria-label={ariaLabel}
 	aria-pressed={isSelected}
 >
 	<div class="pictograph-container" style="transform: scale({scaleFactor})">
 		{#key pictographKey}
-			<Pictograph {pictographData} showLoadingIndicator={false} useNewStateManagement={false} />
+			<div class="pictograph-wrapper">
+				<Pictograph
+					pictographData={props.pictographData}
+					showLoadingIndicator={false}
+					useNewStateManagement={false}
+				/>
+				<StyledBorderOverlay
+					pictographData={props.pictographData}
+					isEnabled={showBorder || isSelected}
+					isGold={isSelected}
+				/>
+			</div>
 		{/key}
 	</div>
 </div>
 
 <style>
-	/* Styles remain the same */
 	.option {
 		position: relative;
 		display: flex;
@@ -77,6 +98,14 @@
 		width: 100%;
 		height: 100%;
 		transition: transform 0.2s ease-in-out;
+	}
+	.pictograph-wrapper {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 	/* In Option.svelte */
 	.option:hover {

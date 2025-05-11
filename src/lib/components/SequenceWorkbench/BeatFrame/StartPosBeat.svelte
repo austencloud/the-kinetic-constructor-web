@@ -1,21 +1,32 @@
 <!-- src/lib/components/SequenceWorkbench/BeatFrame/StartPosBeat.svelte -->
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import Beat from './Beat.svelte';
 	import type { BeatData } from './BeatData';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
-	import { writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { updateDevTools } from '$lib/utils/devToolsUpdater';
+	import StyledBorderOverlay from '$lib/components/Pictograph/components/StyledBorderOverlay.svelte';
 
-	export let beatData: BeatData;
-	export let onClick: () => void;
+	// Props using Svelte 5 runes
+	const props = $props<{
+		beatData: BeatData;
+		onClick: () => void;
+	}>();
 
-	// Create a local store for the pictograph data for the Pictograph component
-	// Ensure we always have valid pictograph data, even if beatData.pictographData is null
-	const pictographDataStore = writable(beatData.pictographData || defaultPictographData);
+	// Local state
+	let beatData = $state(props.beatData);
+	let showBorder = $state(false);
+	let pictographData = $state<PictographData>(defaultPictographData);
+
+	// Initialize pictographData from props
+	$effect(() => {
+		if (props.beatData && props.beatData.pictographData) {
+			pictographData = safeCopyPictographData(props.beatData.pictographData);
+		}
+	});
 
 	// Helper function to safely copy pictograph data without circular references
 	function safeCopyPictographData(data: PictographData): PictographData {
@@ -83,69 +94,89 @@
 		return safeCopy;
 	}
 
-	// Make sure the pictographDataStore is updated when beatData changes
-	$: if (beatData && beatData.pictographData) {
-		const safeCopy = safeCopyPictographData(beatData.pictographData);
-		pictographDataStore.set(safeCopy);
-	}
+	// Flag to prevent circular updates
+	let isUpdatingFromStartPos = false;
 
-	// Subscribe to the selectedStartPos store directly from the global store
-	const unsubscribeStartPos = selectedStartPos.subscribe((startPos) => {
-		if (startPos) {
-			// Create a deep copy to avoid reference issues
-			const startPosCopy = JSON.parse(JSON.stringify(startPos));
-
-			// Update the local pictograph data when the start position changes
-			pictographDataStore.set(startPosCopy);
-
-			// Also update the pictographContainer
-			pictographContainer.setData(startPosCopy);
-
-			console.log('StartPosBeat: Updated pictographDataStore with startPos:', startPosCopy);
-
-			// Also update the beat data directly
-			beatData = {
-				...beatData,
-				pictographData: startPosCopy,
-				filled: true
-			};
-		} else {
-			// If no start position is set, use default data
-			pictographDataStore.set(defaultPictographData);
-
-			// Also update the pictographContainer
-			pictographContainer.setData(defaultPictographData);
-
-			// Update the beat data accordingly
-			beatData = {
-				...beatData,
-				pictographData: defaultPictographData,
-				filled: false
-			};
+	// Update pictographData when beatData changes, but only if not already updating from selectedStartPos
+	$effect(() => {
+		if (!isUpdatingFromStartPos && beatData && beatData.pictographData) {
+			pictographData = safeCopyPictographData(beatData.pictographData);
 		}
+	});
+
+	// Subscribe to the selectedStartPos store
+	onMount(() => {
+		const unsubscribe = selectedStartPos.subscribe((startPos) => {
+			// Set flag to prevent circular updates
+			isUpdatingFromStartPos = true;
+
+			try {
+				if (startPos) {
+					// Create a deep copy to avoid reference issues
+					const startPosCopy = JSON.parse(JSON.stringify(startPos));
+
+					// Update the local pictograph data
+					pictographData = safeCopyPictographData(startPosCopy);
+
+					// Also update the pictographContainer
+					pictographContainer.setData(pictographData);
+
+					// Update the beat data
+					beatData = {
+						...beatData,
+						pictographData: startPosCopy,
+						filled: true
+					};
+				} else {
+					// If no start position is set, use default data
+					pictographData = defaultPictographData;
+
+					// Also update the pictographContainer
+					pictographContainer.setData(defaultPictographData);
+
+					// Update the beat data
+					beatData = {
+						...beatData,
+						pictographData: defaultPictographData,
+						filled: false
+					};
+				}
+			} finally {
+				// Reset flag after updates are complete
+				isUpdatingFromStartPos = false;
+			}
+		});
+
+		return () => unsubscribe();
 	});
 
 	// Listen for the custom event as an alternative way to receive updates
 	onMount(() => {
 		const handleStartPosSelectedEvent = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
-				// Create a deep copy to avoid reference issues
-				const newStartPos = JSON.parse(JSON.stringify(event.detail.startPosition));
+				// Set flag to prevent circular updates
+				isUpdatingFromStartPos = true;
 
-				console.log('StartPosBeat: Received start-position-selected event with data:', newStartPos);
+				try {
+					// Create a deep copy to avoid reference issues
+					const newStartPos = JSON.parse(JSON.stringify(event.detail.startPosition));
 
-				// Update the pictograph store with the new data
-				pictographDataStore.set(newStartPos);
+					// Update the pictograph data
+					pictographData = safeCopyPictographData(newStartPos);
 
-				// Also update the pictographContainer
-				pictographContainer.setData(newStartPos);
+					// Also update the pictographContainer
+					pictographContainer.setData(pictographData);
 
-				// Update the beat data
-				beatData = {
-					...beatData,
-					pictographData: newStartPos,
-					filled: true
-				};
+					// Update the beat data
+					beatData = {
+						...beatData,
+						pictographData: newStartPos,
+						filled: true
+					};
+				} finally {
+					// Reset flag after updates are complete
+					isUpdatingFromStartPos = false;
+				}
 			}
 		};
 
@@ -164,43 +195,38 @@
 		};
 	});
 
-	// Clean up subscription when component is destroyed
-	onDestroy(() => {
-		unsubscribeStartPos();
-	});
-
 	// Handle clicks at this level to prevent multiple event handlers
-	let isClicked = false;
-
 	function handleContainerClick(event: MouseEvent) {
 		// Only handle clicks directly on the container, not on children
 		if (event.target === event.currentTarget) {
-			// Set clicked state for immediate visual feedback
-			isClicked = true;
-
-			// Dispatch a custom event for immediate UI response
-			const immediateEvent = new CustomEvent('start-position-click', {
-				bubbles: true,
-				detail: { immediate: true }
-			});
-			document.dispatchEvent(immediateEvent);
-
 			// Call the actual click handler
-			onClick();
+			props.onClick();
 
 			// Update dev tools after click
 			updateDevTools();
 		}
 	}
+
+	function handleMouseEnter() {
+		showBorder = true;
+	}
+
+	function handleMouseLeave() {
+		showBorder = false;
+	}
 </script>
 
 <button
 	class="start-pos-beat"
-	class:clicked={isClicked}
-	on:click={handleContainerClick}
+	onclick={handleContainerClick}
+	onmouseenter={handleMouseEnter}
+	onmouseleave={handleMouseLeave}
 	type="button"
 >
-	<Beat beat={beatData} {onClick} isStartPosition={true} />
+	<div class="pictograph-wrapper">
+		<Beat beat={beatData} onClick={props.onClick} isStartPosition={true} />
+		<StyledBorderOverlay {pictographData} isEnabled={showBorder} />
+	</div>
 </button>
 
 <style>
@@ -217,15 +243,15 @@
 		padding: 0; /* Remove default button padding */
 		margin: 0; /* Remove any margin */
 		box-sizing: border-box; /* Ensure padding is included in width/height */
-		transition:
-			transform 0.1s ease,
-			box-shadow 0.1s ease;
+		transition: transform 0.1s ease;
 	}
 
-	/* Visual feedback for clicked state */
-	.start-pos-beat.clicked {
-		transform: scale(0.95);
-		box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
-		background-color: rgba(66, 153, 225, 0.1);
+	.pictograph-wrapper {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 </style>

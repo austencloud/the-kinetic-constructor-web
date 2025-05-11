@@ -7,8 +7,7 @@
 
 	// Import Stores
 	import { panelStore, buttonSizeStore } from './stores/panelStore';
-	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
-	import { sequenceStore } from '$lib/state/stores/sequence/sequenceAdapter'; // Modern sequence store
+	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
 
 	// Import Types
 	import type { ButtonDefinition, ActionEventDetail, LayoutOrientation } from './types';
@@ -49,8 +48,9 @@
 		dispatch('action', { id });
 
 		if (id === 'clearSequence') {
-			selectedStartPos.set(null);
-			sequenceStore.setSequence([]);
+			// Use the sequence actions to clear the sequence
+			// This will also reset the start position
+			sequenceActions.clearSequence();
 
 			if (browser) {
 				const customEvent = new CustomEvent('sequence-cleared', { bubbles: true });

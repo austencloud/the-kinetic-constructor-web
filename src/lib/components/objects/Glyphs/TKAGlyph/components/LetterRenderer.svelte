@@ -1,6 +1,6 @@
 <!-- src/lib/components/objects/Glyphs/TKAGlyph/components/LetterRenderer.svelte -->
 <script lang="ts">
-	import { onMount, createEventDispatcher, tick } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { getLetterPath, assetCache, fetchSVGDimensions, type Rect } from '$lib/stores/glyphStore';
 	import type { Letter } from '$lib/types/Letter';
 
@@ -59,12 +59,13 @@
 		}
 	}
 
-	// Handle image loaded with proper layout calculation
-	async function handleImageLoad() {
-		if (!imageElement) return;
+	// Flag to prevent multiple dispatches
+	let hasDispatchedLetterLoaded = false;
 
-		// Use Promise.all to ensure SVG is fully rendered
-		await Promise.all([new Promise((resolve) => setTimeout(resolve, 50)), tick()]);
+	// Handle image loaded with proper layout calculation
+	function handleImageLoad() {
+		// Prevent multiple dispatches for the same image load
+		if (hasDispatchedLetterLoaded || !imageElement) return;
 
 		try {
 			const bbox = imageElement.getBBox();
@@ -77,10 +78,19 @@
 				bottom: bbox.y + bbox.height
 			};
 
+			// Set flag to prevent multiple dispatches
+			hasDispatchedLetterLoaded = true;
+
+			// Dispatch the event directly - no need for setTimeout or async
 			dispatch('letterLoaded', rect);
 		} catch (error) {
 			console.error('Error calculating letter bounding box:', error);
 		}
+	}
+
+	// Reset the dispatch flag when letter changes
+	$: if (letter) {
+		hasDispatchedLetterLoaded = false;
 	}
 </script>
 
@@ -92,7 +102,7 @@
 			width={dimensions.width}
 			height={dimensions.height}
 			preserveAspectRatio="xMinYMin meet"
-			on:load={handleImageLoad}
+			onload={handleImageLoad}
 		/>
 	{:else if isFetchFailed}
 		<!-- Fallback for failed loads -->

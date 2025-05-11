@@ -542,7 +542,6 @@
 		border-radius: 0.5rem;
 		padding: 0.75rem;
 		border: 1px solid rgba(255, 255, 255, 0.05);
-		max-height: 200px;
 		overflow-y: auto;
 	}
 
@@ -586,9 +585,7 @@
 			grid-template-columns: 1fr;
 		}
 
-		.generator-options {
-			max-height: 150px;
-		}
+
 	}
 
 	/* Touch device optimizations */
