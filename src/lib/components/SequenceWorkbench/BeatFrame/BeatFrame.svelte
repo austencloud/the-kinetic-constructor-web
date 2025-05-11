@@ -288,7 +288,7 @@
 		const buffer = 10; // 10px buffer
 
 		// Update overflow state with buffer
-		contentOverflows = contentHeight > containerHeight + buffer;
+		contentOverflows = contentHeight > (containerHeight + buffer);
 
 		// Update class based on overflow state
 		if (contentOverflows) {
@@ -599,7 +599,6 @@
 		margin-top: 0;
 		margin-bottom: auto;
 		align-content: start;
-		padding-top: 20px; /* Add padding at top to prevent "dead zone" */
 	}
 
 	/* For short sequences in scrollable containers, maintain centering */

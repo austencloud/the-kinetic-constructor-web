@@ -280,12 +280,14 @@
 		>
 			<div class="left-vbox">
 				<div class="sequence-container">
-					<div class="sequence-widget-labels">
-						<CurrentWordLabel currentWord={sequenceName} width={$dimensions.width} />
-					</div>
+					<div class="content-wrapper">
+						<div class="sequence-widget-labels">
+							<CurrentWordLabel currentWord={sequenceName} width={$dimensions.width} />
+						</div>
 
-					<div class="beat-frame-wrapper">
-						<BeatFrame />
+						<div class="beat-frame-wrapper">
+							<BeatFrame />
+						</div>
 					</div>
 
 					<!-- Difficulty label moved below the beats -->
@@ -372,6 +374,18 @@
 		box-sizing: border-box;
 	}
 
+	/* Content wrapper for label + beat frame that can be centered as a unit */
+	.content-wrapper {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+		/* Allow natural sizing based on content */
+		height: auto;
+		/* Center the entire unit vertically when there's extra space */
+		margin: auto 0;
+	}
+
 	.sequence-widget-labels {
 		display: flex;
 		flex-direction: column;
@@ -380,7 +394,8 @@
 		color: white;
 		width: 100%;
 		flex-shrink: 0; /* Prevent labels from shrinking */
-		padding-bottom: 10px; /* Space between labels and beat frame */
+		padding-bottom: 5px; /* Reduced space between labels and beat frame */
+		margin-bottom: 0; /* Ensure it hugs the beat frame */
 	}
 
 	/* Container for the difficulty label below the beats */
@@ -393,19 +408,19 @@
 		flex-shrink: 0; /* Prevent from shrinking */
 	}
 
-	/* This wrapper ensures BeatFrame can grow and scroll if needed */
+	/* This wrapper ensures BeatFrame maintains its natural size */
 	.beat-frame-wrapper {
-		display: flex; /* Allow BeatFrame to be centered if it's smaller than wrapper */
+		display: flex; /* Allow BeatFrame to be centered */
 		justify-content: center;
-		align-items: center;
+		align-items: flex-start; /* Align to top to hug the label */
 		width: 100%;
 		min-height: 0; /* Crucial for allowing BeatFrame to not push layout */
 		overflow: hidden; /* Hide overflow but let BeatFrame handle scrolling */
 		padding: 0 10px; /* Horizontal padding for the beat frame area */
 		box-sizing: border-box;
-		flex: 1; /* Allow it to grow and fill available space */
 		position: relative; /* Create positioning context for absolute children */
-		/* Add transition to prevent jumps during layout changes */
+		/* No flex: 1 to prevent automatic expansion */
+		/* Add transition for smooth layout changes */
 		transition: all 0.3s ease-out;
 	}
 

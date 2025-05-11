@@ -9,34 +9,26 @@
 	import { cubicOut, quintOut } from 'svelte/easing';
 	import { uiStore } from '$lib/state/stores/uiStore';
 
-	// --- Get State from App State Machine ---
 	const isSettingsOpenStore = useSelector(appService, (state) => state.context.isSettingsOpen);
 	$: isSettingsDialogOpen = $isSettingsOpenStore;
 
-	// --- Settings Button Size Calculation ---
 	let buttonSize = 50;
 	let iconSize = 38;
 
-	// Use the UI store to get responsive information
 	$: if ($uiStore && $uiStore.windowWidth) {
 		buttonSize = Math.max(30, Math.min(50, $uiStore.windowWidth / 12));
 		iconSize = buttonSize * 0.75;
 	}
 
 	onMount(() => {
-		// Initial size calculation
 		if (typeof window !== 'undefined') {
 			buttonSize = Math.max(30, Math.min(50, window.innerWidth / 12));
 			iconSize = buttonSize * 0.75;
 		}
-
-		// Force the app to always show the Construct tab (index 0)
 		appActions.changeTab(0);
 	});
 
-	// --- Event Handlers ---
 	function handleToggleSettings() {
-		// Toggle settings dialog
 		if (isSettingsDialogOpen) {
 			appActions.closeSettings();
 		} else {
@@ -44,7 +36,6 @@
 		}
 	}
 
-	// Handle backdrop keyboard events for accessibility
 	function handleBackdropKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
 			appActions.closeSettings();
@@ -93,10 +84,6 @@
 			<SettingsContent onClose={() => appActions.closeSettings()} />
 		</div>
 	{/if}
-	<!--
-	{#if import.meta.env.DEV}
-		<DeveloperTools />
-	{/if} -->
 </div>
 
 <style>
@@ -112,7 +99,7 @@
 	.settings-button-container {
 		position: absolute;
 		top: 15px;
-		right: 15px;
+		left: 15px;
 		z-index: 5;
 		display: flex;
 		justify-content: center;
@@ -153,7 +140,6 @@
 		overflow: hidden;
 	}
 
-	/* Settings Button Styles */
 	.settings-button {
 		width: var(--button-size);
 		height: var(--button-size);
@@ -235,11 +221,11 @@
 		transform: rotate(90deg);
 	}
 
-	/* Responsive adjustments */
 	@media (max-width: 768px) {
 		.settings-button-container {
 			top: 10px;
-			right: 10px;
+			left: 10px;
+			right: auto;
 		}
 
 		.settings-button {
@@ -251,11 +237,11 @@
 		}
 	}
 
-	/* Safe area inset for notched devices */
 	@supports (padding-top: env(safe-area-inset-top)) {
 		.settings-button-container {
 			top: max(15px, env(safe-area-inset-top));
-			right: max(15px, env(safe-area-inset-right));
+			left: max(15px, env(safe-area-inset-left));
+			right: auto;
 		}
 	}
 </style>
