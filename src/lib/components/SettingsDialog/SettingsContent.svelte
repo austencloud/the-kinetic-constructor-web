@@ -67,8 +67,8 @@
 			options: ['Snowfall', 'Night Sky'],
 			defaultValue: 'Snowfall'
 		},
-		{ label: 'Show Grid', type: 'toggle', defaultValue: true },
-		{ label: 'Dark Mode', type: 'toggle', defaultValue: true }
+		// { label: 'Show Grid', type: 'toggle', defaultValue: true },
+		// { label: 'Dark Mode', type: 'toggle', defaultValue: true }
 	];
 
 	// PropsAbsolute angel an absolute angel You
