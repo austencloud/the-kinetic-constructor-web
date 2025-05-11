@@ -1,5 +1,5 @@
 <script lang="ts">
-	import StateExample from '$lib/components/examples/StateExample.svelte';
+	import StateExample from '$lib/components/examples/ModernStateExample.svelte';
 	import ModernStateExample from '$lib/components/examples/ModernStateExample.svelte';
 
 	// Toggle between old and new state management examples
