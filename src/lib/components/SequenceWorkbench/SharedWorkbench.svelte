@@ -28,7 +28,6 @@
 			toolsPanelOpen={$workbenchStore.toolsPanelOpen}
 			{toolsPanelButtons}
 			{onToolsPanelAction}
-			onToolsPanelClose={closeToolsPanel}
 		/>
 	</div>
 </div>

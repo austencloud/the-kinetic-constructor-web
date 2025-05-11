@@ -41,7 +41,10 @@
 	}
 
 	// Set active tab when component mounts
-	$: workbenchStore.update((state) => ({ ...state, activeTab: isGenerateMode ? 'generate' : 'construct' }));
+	$: workbenchStore.update((state) => ({
+		...state,
+		activeTab: isGenerateMode ? 'generate' : 'construct'
+	}));
 </script>
 
 <div class="construct-tab">

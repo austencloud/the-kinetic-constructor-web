@@ -4,7 +4,6 @@
 	import { createEventDispatcher } from 'svelte';
 
 	// Props
-	export let beat: Beat;
 	export let shouldAnimate: boolean = false;
 
 	const dispatch = createEventDispatcher();

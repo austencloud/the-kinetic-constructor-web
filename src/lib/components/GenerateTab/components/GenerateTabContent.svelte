@@ -1,8 +1,13 @@
 <!-- src/lib/components/GenerateTab/layout/GenerateTabContent.svelte -->
 <script lang="ts">
-	import SharedWorkbench from '$lib/components/SequenceWorkbench/SharedWorkbench.svelte';
-	import { workbenchStore } from '$lib/state/stores/workbenchStore';
+	import { writable } from 'svelte/store';
+	import SequenceWorkbench from '$lib/components/SequenceWorkbench/Workbench.svelte';
+	import RightPanel from '$lib/components/SequenceWorkbench/RightPanel/RightPanel.svelte';
 	import type { ButtonDefinition } from '$lib/components/SequenceWorkbench/ButtonPanel/types';
+	import SharedWorkbench from '$lib/components/SequenceWorkbench/SharedWorkbench.svelte';
+
+	// Track tools panel state
+	const isToolsPanelOpen = writable(false);
 
 	// Define Button Panel Data
 	const buttonPanelButtons: ButtonDefinition[] = [
@@ -25,20 +30,31 @@
 			composed: true
 		});
 		document.dispatchEvent(buttonEvent);
+
+		// After action is processed, close tools panel
+		if ($isToolsPanelOpen) {
+			isToolsPanelOpen.set(false);
+		}
 	}
 
-	// Set active tab when component mounts
-	$: workbenchStore.update((state) => ({ ...state, activeTab: 'generate' }));
+	// Function to close tools panel
+	function closeToolsPanel() {
+		isToolsPanelOpen.set(false);
+	}
+
+	// Note: The RightPanel component will automatically set its active tab to 'generate'
+	// when it detects it's being used in the GenerateTab
 </script>
 
 <div class="generate-tab-content">
-	<SharedWorkbench {buttonPanelButtons} onToolsPanelAction={handleButtonAction} />
+	<SharedWorkbench toolsPanelButtons={buttonPanelButtons} onToolsPanelAction={handleButtonAction} />
 </div>
 
 <style>
 	.generate-tab-content {
 		display: flex;
 		flex: 1;
+		gap: 1.5rem;
 		min-height: 0;
 		overflow: hidden;
 		position: relative;
@@ -47,9 +63,39 @@
 		height: 100%;
 	}
 
+	.sequenceWorkbenchContainer {
+		flex: 1;
+		min-width: 0;
+		height: 100%;
+		overflow: hidden;
+		position: relative;
+	}
+
+	.optionPickerContainer {
+		flex: 1;
+		min-width: 0;
+		height: 100%;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		position: relative;
+		box-sizing: border-box;
+	}
+
+	/* Responsive adjustments */
 	@media (max-width: 732px) {
 		.generate-tab-content {
 			flex-direction: column;
+		}
+
+		.sequenceWorkbenchContainer {
+			flex: 1;
+			height: 50%;
+		}
+
+		.optionPickerContainer {
+			flex: 1;
+			height: 50%;
 		}
 	}
 </style>

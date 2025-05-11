@@ -36,7 +36,6 @@
 		height: 100%;
 		display: flex;
 		flex-direction: column;
-		background: var(--color-surface-600, rgba(40, 50, 70, 0.7));
 		border-radius: 0.75rem;
 		border: 1px solid rgba(255, 255, 255, 0.1);
 		overflow: hidden;
