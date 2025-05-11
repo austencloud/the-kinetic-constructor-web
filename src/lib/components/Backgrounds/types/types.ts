@@ -1,5 +1,4 @@
 // src/lib/components/Backgrounds/types/types.ts
-
 // Background types
 export type BackgroundType = 'snowfall' | 'nightSky';
 
@@ -122,11 +121,15 @@ export interface CelestialBody {
 	x: number;
 	y: number;
 	radius: number;
-	color: string; // Simple color for now
-	// image?: HTMLImageElement; // Optional image
-	// imageLoaded?: boolean;
-	driftX?: number; // Optional slow drift
+	color: string; // This will be the illuminated color of the moon
+	driftX?: number;
 	driftY?: number;
+	// NEW: Moon phase specific properties
+	illumination?: {
+		fraction: number; // Illuminated fraction (0.0 to 1.0)
+		phaseValue: number; // Moon phase (0=new, 0.25=1st Q, 0.5=full, 0.75=3rd Q, 1=new again)
+		angle: number; // Angle of the moon's bright limb (from SunCalc)
+	};
 }
 
 export interface Spaceship {
@@ -148,7 +151,6 @@ export interface EasterEggState<T> {
 	interval: number;
 }
 // --- End Night Sky specific types ---
-
 
 export interface AnimationSystem<T> {
 	initialize: (dimensions: Dimensions, quality: QualityLevel) => T;

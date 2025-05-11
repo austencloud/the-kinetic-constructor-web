@@ -1,34 +1,189 @@
 <script lang="ts">
-	import { getContext, createEventDispatcher } from 'svelte';
+	import { getContext } from 'svelte';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 	import ViewControl from './ViewControl';
-	import type { ViewModeDetail } from './ViewControl/types';
 
-	// --- Props ---
-	export let selectedTab: string | null;
-	export let categoryKeys: string[] = [];
-	export let showTabs: boolean = false;
+	// --- Props using Svelte 5 runes ---
+	const props = $props<{
+		selectedTab: string | null;
+		categoryKeys?: string[];
+		showTabs?: boolean;
+	}>();
+
+	// Default values for optional props
+	$effect(() => {
+		if (props.categoryKeys === undefined) props.categoryKeys = [];
+		if (props.showTabs === undefined) props.showTabs = false;
+	});
 
 	// --- Context ---
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-	$: isMobileDevice = $layoutContext.isMobile;
 
 	// --- Local State ---
-	$: useShortLabels = isMobileDevice;
+	let isMobileDevice = $state(false);
+	let useShortLabels = $state(false);
+	let tabsContainerRef = $state<HTMLDivElement | null>(null);
+	let isScrollable = $state(false);
+	let compactMode = $state(false);
+	let showScrollIndicator = $state(false);
 
-	// --- Events ---
-	const dispatch = createEventDispatcher<{
-		viewChange: ViewModeDetail;
-		tabSelect: string;
-	}>();
+	// Update mobile device state from context and set compact mode
+	$effect(() => {
+		// Get the layout context value safely
+		const contextValue = layoutContext;
 
-	// --- Event Handlers & Helpers ---
-	function handleViewChange(event: CustomEvent<ViewModeDetail>) {
-		dispatch('viewChange', event.detail);
+		// Check if the context exists and has the isMobile property
+		if (contextValue && typeof contextValue === 'object' && 'isMobile' in contextValue) {
+			// Use type assertion to ensure TypeScript knows this is a boolean
+			isMobileDevice = Boolean(contextValue.isMobile);
+
+			// Proactively set compact mode on mobile devices
+			if (isMobileDevice) {
+				compactMode = true;
+			}
+		} else {
+			// Fallback to window width if context is not available
+			isMobileDevice = window.innerWidth <= 640;
+			if (isMobileDevice) {
+				compactMode = true;
+			}
+		}
+
+		// Add resize listener to update mobile state when window size changes
+		const handleResize = () => {
+			// Check if window width is mobile size
+			const isMobile = window.innerWidth <= 640;
+			if (isMobile) {
+				isMobileDevice = true;
+				compactMode = true;
+			} else if (contextValue && typeof contextValue === 'object' && 'isMobile' in contextValue) {
+				isMobileDevice = Boolean(contextValue.isMobile);
+			} else {
+				isMobileDevice = false;
+			}
+
+			// Force a re-check of tab overflow
+			if (tabsContainerRef) {
+				checkTabsOverflow();
+			}
+		};
+
+		window.addEventListener('resize', handleResize);
+
+		return () => {
+			window.removeEventListener('resize', handleResize);
+		};
+	});
+
+	// Determine when to use short labels - always use short labels on mobile
+	$effect(() => {
+		useShortLabels = isMobileDevice || compactMode;
+	});
+
+	// Check if tabs are scrollable
+	$effect(() => {
+		if (tabsContainerRef) {
+			checkTabsOverflow();
+		}
+	});
+
+	// Function to check if tabs are overflowing
+	function checkTabsOverflow() {
+		if (!tabsContainerRef) return;
+
+		const { scrollWidth, clientWidth } = tabsContainerRef;
+
+		// Check if content is wider than container
+		isScrollable = scrollWidth > clientWidth;
+
+		// Check if we're close to overflowing (within 20px)
+		const isNearlyOverflowing = scrollWidth > clientWidth - 20;
+
+		// Switch to compact mode if we're overflowing or nearly overflowing
+		if ((isScrollable || isNearlyOverflowing) && !compactMode) {
+			compactMode = true;
+
+			// Force a re-check after a short delay to see if compact mode fixed the overflow
+			setTimeout(() => {
+				if (tabsContainerRef) {
+					const { scrollWidth, clientWidth } = tabsContainerRef;
+					isScrollable = scrollWidth > clientWidth;
+					showScrollIndicator = isScrollable;
+				}
+			}, 50);
+		}
+
+		// Show scroll indicator when scrollable
+		showScrollIndicator = isScrollable;
 	}
 
+	// --- Event Handlers & Helpers ---
+	// Set up event listener for viewchange events
+	$effect(() => {
+		if (!tabsContainerRef) return;
+
+		// Function to handle viewchange events
+		const viewChangeHandler = (event: Event) => {
+			// Check if this is a CustomEvent with detail
+			if (event instanceof CustomEvent && event.detail) {
+				// Forward the event to the parent
+				const customEvent = new CustomEvent('viewChange', {
+					detail: event.detail,
+					bubbles: true
+				});
+
+				// Make sure tabsContainerRef is not null
+				if (tabsContainerRef) {
+					tabsContainerRef.dispatchEvent(customEvent);
+				}
+			}
+		};
+
+		// Add event listener
+		document.addEventListener('viewchange', viewChangeHandler);
+
+		// Clean up on destroy
+		return () => {
+			document.removeEventListener('viewchange', viewChangeHandler);
+		};
+	});
+
 	function handleTabClick(categoryKey: string) {
-		dispatch('tabSelect', categoryKey);
+		// Create a custom event that will bubble up to the parent component
+		const customEvent = new CustomEvent('tabSelect', {
+			detail: categoryKey,
+			bubbles: true,
+			composed: true // Allows the event to cross the shadow DOM boundary
+		});
+
+		// Dispatch the event directly from the component's root element
+		// This ensures it bubbles up properly to parent components
+		document.dispatchEvent(customEvent);
+	}
+
+	// Add resize observer to check for overflow
+	$effect(() => {
+		if (!tabsContainerRef) return;
+
+		const resizeObserver = new ResizeObserver(() => {
+			checkTabsOverflow();
+		});
+
+		resizeObserver.observe(tabsContainerRef);
+
+		return () => {
+			resizeObserver.disconnect();
+		};
+	});
+
+	// Handle scroll events to update scroll indicator
+	function handleScroll() {
+		if (!tabsContainerRef) return;
+
+		const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef;
+
+		// Show indicator when not at the end of scroll
+		showScrollIndicator = scrollLeft + clientWidth < scrollWidth - 10;
 	}
 
 	// --- Mappings for Labels ---
@@ -59,8 +214,8 @@
 		beta: 'β',
 		gamma: 'Γ',
 		Continuous: 'Cont.',
-		'One Reversal': '1 Rev',
-		'Two Reversals': '2 Rev'
+		'One Reversal': '1 Rev.',
+		'Two Reversals': '2 Rev.'
 	};
 
 	// --- Formatting Functions ---
@@ -82,20 +237,27 @@
 
 <div class="option-picker-header" class:mobile={isMobileDevice} data-testid="option-picker-header">
 	<div class="header-content">
-		<div class="view-controls">
-			<ViewControl on:viewChange={handleViewChange} />
+		<div class="view-controls" class:compact={compactMode}>
+			<ViewControl compact={compactMode} />
 		</div>
 
-		{#if showTabs}
-			{#if categoryKeys.length > 0}
-				<div class="tabs" role="tablist" aria-label="Option Categories">
-					{#each categoryKeys as categoryKey (categoryKey)}
+		{#if props.showTabs}
+			{#if props.categoryKeys && props.categoryKeys.length > 0}
+				<div
+					class="tabs"
+					role="tablist"
+					aria-label="Option Categories"
+					bind:this={tabsContainerRef}
+					onscroll={() => handleScroll()}
+					class:scrollable={isScrollable}
+				>
+					{#each props.categoryKeys as categoryKey (categoryKey)}
 						<button
 							class="tab"
-							class:active={selectedTab === categoryKey}
-							on:click={() => handleTabClick(categoryKey)}
+							class:active={props.selectedTab === categoryKey}
+							onclick={() => handleTabClick(categoryKey)}
 							role="tab"
-							aria-selected={selectedTab === categoryKey}
+							aria-selected={props.selectedTab === categoryKey}
 							aria-controls={`options-panel-${categoryKey}`}
 							id="tab-{categoryKey}"
 							title={formatTabName(categoryKey)}
@@ -103,6 +265,10 @@
 							{useShortLabels ? formatShortTabName(categoryKey) : formatTabName(categoryKey)}
 						</button>
 					{/each}
+
+					{#if showScrollIndicator}
+						<div class="scroll-indicator"></div>
+					{/if}
 				</div>
 			{:else}
 				<!-- Placeholder when tabs are shown but empty -->
@@ -152,7 +318,7 @@
 	.tabs {
 		display: flex;
 		justify-content: flex-start;
-		flex-wrap: wrap;
+		flex-wrap: nowrap; /* Prevent tabs from wrapping to a new line */
 		gap: 4px 8px;
 		padding: 0;
 		margin: 0;
@@ -160,6 +326,45 @@
 		flex-shrink: 1;
 		flex-basis: 0;
 		min-width: 50px;
+		overflow-x: auto; /* Enable horizontal scrolling */
+		scrollbar-width: thin; /* For Firefox */
+		scrollbar-color: rgba(255, 255, 255, 0.3) transparent; /* For Firefox */
+		-ms-overflow-style: none; /* Hide scrollbar in IE and Edge */
+		position: relative; /* For scroll indicator positioning */
+		padding-bottom: 4px; /* Space for scrollbar */
+	}
+
+	/* Hide scrollbar in Webkit browsers by default */
+	.tabs::-webkit-scrollbar {
+		height: 4px;
+		background: transparent;
+	}
+
+	.tabs::-webkit-scrollbar-thumb {
+		background-color: rgba(255, 255, 255, 0.3);
+		border-radius: 4px;
+	}
+
+	/* Show scrollbar on hover for better UX */
+	.tabs:hover::-webkit-scrollbar {
+		height: 6px;
+	}
+
+	/* Scrollable class for visual indication */
+	.tabs.scrollable {
+		padding-right: 20px; /* Space for scroll indicator */
+	}
+
+	/* Scroll indicator */
+	.scroll-indicator {
+		position: absolute;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		width: 20px;
+		background: linear-gradient(to right, transparent, rgba(15, 23, 42, 0.8) 40%);
+		pointer-events: none; /* Allow clicks to pass through */
+		z-index: 1;
 	}
 
 	/* Placeholder used only for "No sub-categories" message */
@@ -177,14 +382,16 @@
 	.tab {
 		background: transparent;
 		border: none;
-		padding: clamp(0.5rem, 1vw, 0.7rem) clamp(0.8rem, 1.2vw, 1.2rem);
+		padding: clamp(0.4rem, 0.8vw, 0.7rem) clamp(0.6rem, 1vw, 1.2rem);
 		cursor: pointer;
 		font-weight: 500;
-		font-size: clamp(0.9rem, 2vw, 1.05rem);
+		font-size: clamp(0.85rem, 1.5vw, 1.05rem);
 		color: white;
 		transition:
 			background-color 0.15s ease,
-			color 0.15s ease;
+			color 0.15s ease,
+			padding 0.3s ease,
+			font-size 0.3s ease;
 		white-space: nowrap;
 		flex-shrink: 0;
 		border-radius: 8px;
@@ -192,8 +399,12 @@
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 		overflow: hidden;
 		text-overflow: ellipsis;
-		min-width: 25px;
+		min-width: 36px; /* Ensure minimum touch target size */
+		min-height: 36px; /* Ensure minimum touch target size */
 		max-width: 180px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.tab.active {
@@ -236,13 +447,20 @@
 		/* text-align: center; Removed, placeholder is justify-content: flex-start */
 	}
 
-	/* --- Mobile Responsiveness --- */
-	@media (max-width: 640px) {
+	/* --- Responsive Layout --- */
+	/* Compact mode styles */
+	.view-controls.compact {
+		flex-shrink: 0; /* Prevent view controls from shrinking */
+		margin-right: 8px; /* Add some space between view controls and tabs */
+	}
+
+	/* Styles for when container width is constrained */
+	@media (max-width: 768px) {
 		.header-content {
 			flex-direction: row; /* Keep items on the same line */
 			align-items: center; /* Center align items vertically */
 			width: 100%;
-			gap: 4px; /* Reduced horizontal gap for mobile */
+			gap: 4px; /* Reduced horizontal gap */
 			flex-wrap: nowrap; /* Prevent wrapping to next line */
 			justify-content: space-between; /* Distribute space better */
 		}
@@ -255,20 +473,40 @@
 			max-width: calc(100% - 90px); /* Leave space for view control */
 		}
 
-		.tabs {
-			justify-content: flex-start; /* Ensure tabs start from left */
-			flex-wrap: nowrap; /* Prevent tabs from wrapping */
-			overflow-x: visible; /* Don't create scrollable area */
-			width: auto; /* Allow container to size to content */
-			display: flex;
+		.tab {
+			padding: clamp(0.3rem, 0.6vw, 0.5rem) clamp(0.4rem, 0.8vw, 0.8rem);
+			font-size: clamp(0.8rem, 1.2vw, 0.9rem);
+		}
+	}
+
+	/* Compact mode styles for tabs */
+	.option-picker-header.mobile .tab,
+	.view-controls.compact ~ .tabs .tab {
+		padding: 6px 8px;
+		font-size: 0.8rem;
+		margin: 0 2px 2px 0;
+		min-width: 36px;
+		max-width: 45px; /* Narrower max-width to fit more tabs */
+		height: 36px; /* Fixed height for better touch targets */
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* Mobile styles */
+	@media (max-width: 640px) {
+		.header-content {
+			gap: 2px; /* Further reduce gap on mobile */
 		}
 
 		.view-controls {
 			flex-shrink: 0; /* Prevent view controls from shrinking */
+			margin-right: 4px; /* Reduce margin to save space */
 		}
 
 		.helper-message {
 			padding-left: 0; /* Adjust padding if needed */
+			font-size: 0.9rem; /* Smaller font size */
 		}
 
 		.tabs-placeholder {
@@ -277,19 +515,54 @@
 
 		/* Make tabs more compact on mobile but still easily clickable */
 		.tab {
-			padding: 6px 8px;
-			font-size: 0.85rem;
+			padding: 4px 6px;
+			font-size: 0.75rem;
 			margin: 0 2px 2px 0;
 			min-width: 36px;
 			height: 36px; /* Fixed height for better touch targets */
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
-			flex: 1; /* Allow buttons to grow and shrink */
-			max-width: 60px; /* Limit maximum width */
-			display: flex;
-			align-items: center;
-			justify-content: center;
+			max-width: 40px; /* Limit maximum width */
+		}
+
+		.no-categories-message {
+			font-size: 0.9rem;
+			padding: 0.4rem 0.6rem;
+		}
+
+		/* Reduce gap between tabs */
+		.tabs {
+			gap: 2px 4px;
+		}
+	}
+
+	/* Very small screens */
+	@media (max-width: 480px) {
+		.tab {
+			padding: 4px 4px;
+			font-size: 0.7rem;
+			max-width: 36px; /* Make tabs even narrower */
+			min-width: 32px; /* Allow slightly smaller min-width */
+		}
+
+		.helper-message {
+			font-size: 0.8rem;
+		}
+
+		/* Further reduce gap between tabs */
+		.tabs {
+			gap: 1px 2px;
+		}
+
+		/* Reduce the header content gap */
+		.header-content {
+			gap: 1px;
+		}
+
+		/* Make view controls more compact */
+		.view-controls {
+			margin-right: 2px;
 		}
 	}
 </style>

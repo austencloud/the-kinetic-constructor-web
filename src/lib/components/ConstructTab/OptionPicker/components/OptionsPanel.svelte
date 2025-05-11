@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { uiState } from '../store';
 	import { determineGroupKey, getSortedGroupKeys } from '../services/OptionsService';
-	import type { SortMethod } from '../config';
 	import { resize } from '../actions/resize';
-	// Removed optionGridTransition import
+	// Removed unused imports
 
 	import SectionHeader from './SectionHeader.svelte';
 	import OptionGroupGrid from './OptionGroupGrid.svelte';
@@ -18,7 +16,11 @@
 		groups: Array<{ key: string; options: PictographData[] }>;
 	};
 
-	const { selectedTab = null, options = [], transitionKey = 'default' } = $props<{
+	const {
+		selectedTab = null,
+		options = [],
+		transitionKey = 'default'
+	} = $props<{
 		selectedTab?: string | null;
 		options?: PictographData[];
 		transitionKey?: string | number;
@@ -30,13 +32,8 @@
 	let previousTab: string | null = null;
 	let isReady = $state(false); // Track if component is ready to be shown, use $state
 
-	// Get sort method from store
-	let sortMethod: SortMethod;
-	// No need for manual subscription with $effect
-	$effect(() => {
-		sortMethod = $uiState.sortMethod;
-	});
-
+	// We don't need to track sortMethod in this component anymore
+	// The grouping logic uses 'type' directly regardless of the global sortMethod
 
 	// Save scroll position when scrolling
 	function handleScroll() {
@@ -71,7 +68,6 @@
 		}, 0);
 	});
 
-
 	// Restore scroll position when component mounts for the initial tab
 	onMount(() => {
 		// Ensure this runs after the panelElement is available and initial content is rendered
@@ -79,7 +75,6 @@
 			restoreScrollPosition();
 		}, 50); // A small delay might be needed for initial render
 	});
-
 
 	// Group options based on the 'type' sort method, regardless of the global sortMethod
 	// This ensures consistent grouping within the OptionsPanel.
@@ -138,28 +133,87 @@
 		layoutRows = rows; // Update the $state variable
 	});
 
-
 	// Debounced function to check content height
 	const debouncedCheckContentHeight = (() => {
 		let timeoutId: ReturnType<typeof setTimeout> | null = null;
+		let lastCheckTime = 0;
+		let lastContentHeight = 0;
+		let lastContainerHeight = 0;
+		let checkCount = 0;
+		const MIN_CHECK_INTERVAL = 300; // Increased minimum time between checks
+		const MAX_CHECKS_PER_CYCLE = 3; // Maximum number of checks in a short period
+
 		return () => {
-			if (timeoutId !== null) clearTimeout(timeoutId);
+			// Clear any pending timeout
+			if (timeoutId !== null) {
+				clearTimeout(timeoutId);
+				timeoutId = null;
+			}
+
+			// Check if we've run this too recently or too many times
+			const now = Date.now();
+			if (now - lastCheckTime < MIN_CHECK_INTERVAL) {
+				// Increment check count for this cycle
+				checkCount++;
+
+				// If we've checked too many times in a short period, back off
+				if (checkCount > MAX_CHECKS_PER_CYCLE) {
+					console.debug('Too many content height checks, backing off');
+					// Reset after a longer delay
+					setTimeout(() => {
+						checkCount = 0;
+					}, 1000);
+					return;
+				}
+
+				// Schedule a check after the minimum interval has passed
+				timeoutId = setTimeout(() => {
+					debouncedCheckContentHeight();
+				}, MIN_CHECK_INTERVAL);
+				return;
+			}
+
+			// Reset check count if enough time has passed
+			if (now - lastCheckTime > 1000) {
+				checkCount = 0;
+			}
+
+			// Set a timeout to perform the actual check
 			timeoutId = setTimeout(() => {
 				if (!panelElement) return;
 				const panelContent = panelElement.querySelector('.panel-content');
 				if (!panelContent) return;
 
+				// Get current dimensions
+				const contentHeight = panelContent.scrollHeight;
+				const containerHeight = panelElement.clientHeight;
+
+				// Skip check if dimensions haven't changed significantly
+				if (
+					Math.abs(contentHeight - lastContentHeight) < 2 &&
+					Math.abs(containerHeight - lastContainerHeight) < 2
+				) {
+					timeoutId = null;
+					return;
+				}
+
+				// Record that we're performing a check
+				lastCheckTime = Date.now();
+				lastContentHeight = contentHeight;
+				lastContainerHeight = containerHeight;
+
 				// Simplified check: scrollHeight includes content's own padding.
 				// Compare directly with container's clientHeight.
 				const buffer = 10; // Small buffer to prevent flickering
-				const fits = panelContent.scrollHeight + buffer <= panelElement.clientHeight;
-				
+				const fits = contentHeight + buffer <= containerHeight;
+
+				// Only update state if the value has actually changed
 				if (fits !== contentIsShort) {
 					contentIsShort = fits; // Update $state variable
 					if (import.meta.env.DEV) {
 						console.debug('OptionsPanel content fits:', fits, {
-							contentHeight: panelContent.scrollHeight,
-							containerHeight: panelElement.clientHeight,
+							contentHeight,
+							containerHeight,
 							buffer
 						});
 					}
@@ -169,22 +223,57 @@
 		};
 	})();
 
-	// Effect to check content height when options or panelElement change
+	// Effect to check content height when options length changes
+	// This prevents infinite loops by only triggering on meaningful changes
+	let previousOptionsLength = -1;
+	let previousOptionsKey = '';
+
 	$effect(() => {
-		if (options && panelElement) {
-			// Use setTimeout to ensure check runs after DOM updates
-			setTimeout(() => debouncedCheckContentHeight(), 0);
+		// Skip if we don't have the necessary elements
+		if (!options || !panelElement) return;
+
+		// Create a key based on options length and transitionKey to detect meaningful changes
+		const optionsKey = `${options.length}-${transitionKey}`;
+
+		// Only run when options length or transitionKey actually changes
+		if (options.length !== previousOptionsLength || optionsKey !== previousOptionsKey) {
+			previousOptionsLength = options.length;
+			previousOptionsKey = optionsKey;
+
+			// Use a longer timeout to ensure DOM is fully updated
+			// This helps prevent cascading updates that can cause infinite loops
+			setTimeout(() => {
+				// Only run if component is still mounted
+				if (panelElement) {
+					debouncedCheckContentHeight();
+				}
+			}, 150);
 		}
 	});
 
 	// Effect for initial readiness and content height check
 	onMount(() => {
-		setTimeout(() => {
-			debouncedCheckContentHeight();
-			isReady = true; // Update $state variable
-		}, 100); // Delay for initial render
-	});
+		// Use a longer timeout for initial render to ensure DOM is fully ready
+		// This helps prevent cascading updates during initial load
+		let initialCheckTimeout: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+			// Only proceed if component is still mounted
+			if (panelElement) {
+				debouncedCheckContentHeight();
+				// Set ready state after a small delay to ensure smooth transition
+				setTimeout(() => {
+					isReady = true; // Update $state variable
+				}, 50);
+			}
+			initialCheckTimeout = null;
+		}, 200); // Longer delay for initial render
 
+		// Cleanup function
+		return () => {
+			if (initialCheckTimeout) {
+				clearTimeout(initialCheckTimeout);
+			}
+		};
+	});
 </script>
 
 <div
@@ -274,7 +363,7 @@
 	*/
 	/*
 	.options-panel:not(.vertically-center) .panel-content {
-		padding-top: 20px; 
+		padding-top: 20px;
 	}
 	*/
 

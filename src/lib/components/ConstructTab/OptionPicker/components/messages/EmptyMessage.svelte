@@ -4,7 +4,14 @@
 </script>
 
 <div class="message-container {type}">
-	{message}
+	<div class="message-content">
+		{#if type === 'empty'}
+			<div class="icon">📋</div>
+		{:else if type === 'initial'}
+			<div class="icon">👆</div>
+		{/if}
+		<div class="text">{message}</div>
+	</div>
 </div>
 
 <style>
@@ -24,12 +31,45 @@
 		font-size: 1.1rem;
 	}
 
+	.message-content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		max-width: 80%;
+	}
+
+	.icon {
+		font-size: 2.5rem;
+		margin-bottom: 0.5rem;
+		opacity: 0.8;
+	}
+
+	.text {
+		font-size: 1.1rem;
+		line-height: 1.5;
+	}
+
 	.message-container.empty {
-		font-style: italic;
+		color: #6b7280;
 	}
 
 	.message-container.initial {
-		font-style: italic;
 		color: #9ca3af;
+	}
+
+	/* Responsive styles */
+	@media (max-width: 640px) {
+		.message-container {
+			padding: 1rem;
+		}
+
+		.icon {
+			font-size: 2rem;
+		}
+
+		.text {
+			font-size: 1rem;
+		}
 	}
 </style>

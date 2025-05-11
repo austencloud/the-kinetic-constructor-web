@@ -1,26 +1,29 @@
 <script lang="ts">
 	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout';
-	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
-	import { sequenceStore } from '$lib/state/stores/sequenceStore';
-	import {
-		isSequenceFullScreen,
-		openSequenceFullScreen,
-		closeSequenceFullScreen
-	} from '$lib/stores/sequence/fullScreenStore';
 	import { onMount, onDestroy } from 'svelte';
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
 
+	// Import extracted modules
+	import { getButtonPanelButtons, handleButtonAction } from './ButtonPanel/ButtonPanelLogic';
+	import { useToolsPanelManager } from './ToolsPanel/ToolsPanelManager';
+	import {
+		calculateWorkbenchIsPortrait,
+		calculateButtonSizeFactor
+	} from './utils/LayoutCalculator';
+	import { useSequenceMetadata } from './utils/SequenceMetadataManager';
+	import { useFullScreenManager } from './FullScreen/FullScreenManager';
+
 	// Import Type for Button Definitions
-	import type { ButtonDefinition, ActionEventDetail } from './ButtonPanel/types';
+	import type { ActionEventDetail } from './ButtonPanel/types';
 
 	// Components
 	import CurrentWordLabel from './Labels/CurrentWordLabel.svelte';
-	import DifficultyLabel from './Labels/DifficultyLabel.svelte';
 	import BeatFrame from './BeatFrame/BeatFrame.svelte';
 	import FullScreenOverlay from './components/FullScreenOverlay.svelte';
 	import ToolsButton from './ToolsButton.svelte';
 	import ToolsPanel from './ToolsPanel/ToolsPanel.svelte';
 	import ClearSequenceButton from './ClearSequenceButton.svelte';
+	import ShareButton from './ShareButton.svelte'; // Import the new ShareButton
 
 	// Import transition for animations
 	import { fly } from 'svelte/transition';
@@ -47,6 +50,12 @@
 	// Track the active mode
 	let activeMode = $state<'construct' | 'generate'>('construct');
 
+	// Track beat frame natural height and scrolling state
+	let beatFrameNaturalHeight = $state(0);
+	let beatFrameShouldScroll = $state(false);
+	let currentWordLabelElement = $state<HTMLElement | null>(null);
+	let beatFrameElement = $state<HTMLElement | null>(null); // State for BeatFrame element
+
 	// Emit the full sequence widget dimensions whenever they change
 	$effect(() => {
 		// Only emit if we have valid dimensions
@@ -65,205 +74,132 @@
 		}
 	});
 
+	// Determine if beat frame should scroll based on natural height and available space
+	$effect(() => {
+		if (!$size || $size.height === 0 || !currentWordLabelElement) return;
+
+		const labelHeight = currentWordLabelElement.offsetHeight || 0;
+
+		// Define overall vertical padding for the main content area
+		const widgetVerticalPadding = 20; // 10px top + 10px bottom for .sequence-container
+
+		// Padding for the beat-frame-wrapper that is outside the scrollable area
+		const beatFrameWrapperPaddingBottom = 10;
+
+		const availableHeightForBeatFrameAndLabel = $size.height - widgetVerticalPadding;
+		const availableHeightForBeatFrameItself =
+			availableHeightForBeatFrameAndLabel - labelHeight - beatFrameWrapperPaddingBottom;
+
+		if (beatFrameNaturalHeight > 0) {
+			beatFrameShouldScroll = beatFrameNaturalHeight > availableHeightForBeatFrameItself;
+
+			// Log for debugging
+			if (import.meta.env.DEV) {
+				console.log('Scroll calculation:', {
+					beatFrameNaturalHeight,
+					availableHeightForBeatFrameItself,
+					shouldScroll: beatFrameShouldScroll,
+					labelHeight,
+					totalHeight: $size.height
+				});
+			}
+		} else {
+			beatFrameShouldScroll = false; // Default if natural height isn't reported yet
+		}
+	});
+
+	// Handle beat frame height change event
+	function handleBeatFrameHeightChange(event: CustomEvent<{ height: number }>) {
+		beatFrameNaturalHeight = event.detail.height;
+
+		// Log for debugging
+		if (import.meta.env.DEV) {
+			console.log('Beat frame natural height changed:', beatFrameNaturalHeight);
+		}
+	}
+
 	// Calculate workbench orientation based on container dimensions
-	const workbenchIsPortrait = $derived($dimensions.width < $size.height);
+	const workbenchIsPortrait = $derived(
+		calculateWorkbenchIsPortrait($dimensions.width, $size.height)
+	);
 
 	// Calculate button size factor based on container dimensions
 	const buttonSizeFactor = $derived(
 		calculateButtonSizeFactor($dimensions.width, $dimensions.height)
 	);
 
-	// Function to calculate button size factor based on container dimensions
-	function calculateButtonSizeFactor(width: number, height: number): number {
-		const smallerDimension = Math.min(width, height);
-
-		// Use a more fluid approach with constraints
-		// Map the dimension to a factor between 0.9 (minimum) and 1.4 (maximum)
-		// with a smooth transition for better touch targets on small screens
-
-		// Constants for the calculation
-		const minDimension = 320; // Very small mobile screens
-		const maxDimension = 1200; // Large desktop screens
-		const minFactor = 0.9; // Increased minimum size factor for better touch targets
-		const maxFactor = 1.4; // Increased maximum size factor
-		const defaultFactor = 1.1; // Increased default size factor
-
-		// If dimensions are invalid, return default
-		if (!width || !height || width <= 0 || height <= 0) {
-			return defaultFactor;
-		}
-
-		// Clamp the dimension between min and max
-		const clampedDimension = Math.max(minDimension, Math.min(smallerDimension, maxDimension));
-
-		// Calculate the factor using linear interpolation
-		const range = maxDimension - minDimension;
-		const normalizedPosition = (clampedDimension - minDimension) / range;
-		const factor = minFactor + normalizedPosition * (maxFactor - minFactor);
-
-		// Round to 2 decimal places for better performance
-		return Math.round(factor * 100) / 100;
-	}
-
 	// Subscribe to the sequence store for metadata
 	let sequenceName = $state('');
-	let difficultyLevel = $state(0);
 
 	// Update metadata from the sequence store
 	$effect(() => {
-		const unsubscribe = sequenceStore.subscribe((store) => {
-			sequenceName = store.metadata.name;
-			difficultyLevel = store.metadata.difficulty;
+		const { unsubscribe } = useSequenceMetadata((metadata) => {
+			sequenceName = metadata.name;
 		});
 
-		return () => {
-			unsubscribe();
-		};
+		return unsubscribe;
 	});
 
-	// --- Define Button Panel Data ---
-	const buttonPanelButtons: ButtonDefinition[] = [
-		// Mode switching tools
-		{
-			icon: 'fa-hammer',
-			title: 'Construct',
-			id: 'constructMode',
-			color: '#4361ee'
-		},
-		{
-			icon: 'fa-robot',
-			title: 'Generate',
-			id: 'generateMode',
-			color: '#3a86ff'
-		},
-		// Sharing and viewing tools
-		{ icon: 'fa-share-nodes', title: 'Share', id: 'saveImage', color: '#3a86ff' },
-		{ icon: 'fa-expand', title: 'Full Screen', id: 'viewFullScreen', color: '#4cc9f0' },
-		// Sequence manipulation tools
-		{
-			icon: 'fa-arrows-left-right',
-			title: 'Mirror',
-			id: 'mirrorSequence',
-			color: '#4895ef'
-		},
-		{ icon: 'fa-paintbrush', title: 'Swap Colors', id: 'swapColors', color: '#ff6b6b' },
-		{ icon: 'fa-rotate', title: 'Rotate', id: 'rotateSequence', color: '#f72585' },
-		// Dictionary tool
-		{
-			icon: 'fa-book-medical',
-			title: 'Add to Dictionary',
-			id: 'addToDictionary',
-			color: '#4361ee'
-		},
-		// Destructive actions
-		{ icon: 'fa-trash', title: 'Delete Beat', id: 'deleteBeat', color: '#ff9e00' }
-	];
+	// Get button panel buttons
+	const buttonPanelButtons = getButtonPanelButtons();
 
-	// No status tracking needed anymore
+	// Set up full screen manager
+	const fullScreenManager = useFullScreenManager();
 
-	function handleButtonAction(event: CustomEvent<ActionEventDetail>) {
-		const { id } = event.detail;
-		switch (id) {
-			case 'constructMode':
-				// Switch to construct mode
-				activeMode = 'construct';
-				// Dispatch an event to notify parent components
-				const constructEvent = new CustomEvent('switch-mode', {
-					detail: { mode: 'construct' },
-					bubbles: true
-				});
-				document.dispatchEvent(constructEvent);
-				break;
-			case 'generateMode':
-				// Switch to generate mode
-				activeMode = 'generate';
-				// Dispatch an event to notify parent components
-				const generateEvent = new CustomEvent('switch-mode', {
-					detail: { mode: 'generate' },
-					bubbles: true
-				});
-				document.dispatchEvent(generateEvent);
-				break;
-			case 'addToDictionary':
-				// Handle add to dictionary action
-				break;
-			case 'saveImage':
-				// Handle save image action
-				break;
-			case 'viewFullScreen':
-				openSequenceFullScreen();
-				break;
-			case 'mirrorSequence':
-				// Handle mirror sequence action
-				break;
-			case 'swapColors':
-				// Handle swap colors action
-				break;
-			case 'rotateSequence':
-				// Handle rotate sequence action
-				break;
-			case 'deleteBeat':
-				const selectedBeatIds = sequenceSelectors.selectedBeatIds();
-				if (selectedBeatIds.length > 0) {
-					sequenceActions.removeBeatAndFollowing(selectedBeatIds[0]);
+	// Set up tools panel manager
+	const { toggleToolsPanel, setupEventListeners } = useToolsPanelManager({
+		setToolsPanelOpen: (isOpen) => {
+			if (typeof isOpen === 'function') {
+				isToolsPanelOpen = isOpen(isToolsPanelOpen);
+			} else {
+				isToolsPanelOpen = isOpen;
+			}
+		},
+		parentPanelOpen: props.toolsPanelOpen
+	});
+
+	// Handle button actions
+	function handleButtonActionWrapper(event: CustomEvent<ActionEventDetail>) {
+		handleButtonAction({
+			id: event.detail.id,
+			activeMode,
+			setActiveMode: (mode) => {
+				activeMode = mode;
+			},
+			closeToolsPanel: () => {
+				if (isToolsPanelOpen) {
+					isToolsPanelOpen = false;
 				}
-				break;
-			case 'clearSequence':
-				sequenceActions.clearSequence();
-				// The clearSequence action now handles resetting the start position
-				break;
-		}
-		if (isToolsPanelOpen) {
-			isToolsPanelOpen = false;
-		}
+			},
+			openFullScreen: fullScreenManager.openFullScreen
+		});
 	}
 
 	function handleClearSequence() {
 		const event = new CustomEvent<ActionEventDetail>('action', {
 			detail: { id: 'clearSequence' }
 		});
-		handleButtonAction(event);
-	}
-
-	function toggleToolsPanel() {
-		// Create and dispatch a custom event
-		const event = new CustomEvent('toggleToolsPanel', {
-			bubbles: true,
-			composed: true
-		});
-		document.dispatchEvent(event);
-
-		// If parent's panel is not open, also toggle our local panel
-		if (!props.toolsPanelOpen) {
-			isToolsPanelOpen = !isToolsPanelOpen;
-		}
+		handleButtonActionWrapper(event);
 	}
 
 	let buttonActionListener: (event: CustomEvent) => void;
-	let closeToolsPanelListener: (event: Event) => void;
 
 	onMount(() => {
 		// Listen for button actions
 		buttonActionListener = (event: CustomEvent) => {
 			if (event.detail && event.detail.id) {
-				handleButtonAction(event);
+				handleButtonActionWrapper(event);
 			}
 		};
 		document.addEventListener('action', buttonActionListener as EventListener);
 
-		// Listen for close tools panel events
-		closeToolsPanelListener = () => {
-			isToolsPanelOpen = false;
-		};
-		document.addEventListener('close-tools-panel', closeToolsPanelListener);
+		// Set up tools panel event listeners
+		setupEventListeners();
 	});
 
 	onDestroy(() => {
 		if (buttonActionListener) {
 			document.removeEventListener('action', buttonActionListener as EventListener);
-		}
-		if (closeToolsPanelListener) {
-			document.removeEventListener('close-tools-panel', closeToolsPanelListener);
 		}
 	});
 </script>
@@ -279,14 +215,25 @@
 		       --button-size-factor: {buttonSizeFactor};"
 		>
 			<div class="left-vbox">
-				<div class="sequence-container">
-					<div class="content-wrapper">
-						<div class="sequence-widget-labels">
-							<CurrentWordLabel currentWord={sequenceName} width={$dimensions.width} />
-						</div>
+				<div
+					class="sequence-container"
+					style:justify-content={beatFrameShouldScroll ? 'flex-start' : 'center'}
+					style:align-items={beatFrameShouldScroll ? 'stretch' : 'center'}
+				>
+					<div class="content-wrapper" class:scroll-mode-active={beatFrameShouldScroll}>
+						<!-- Group label and beat frame together as a single unit -->
+						<div class="label-and-beatframe-unit" class:scroll-mode-active={beatFrameShouldScroll}>
+							<div bind:this={currentWordLabelElement} class="sequence-widget-labels">
+								<CurrentWordLabel currentWord={sequenceName} width={$dimensions.width} />
+							</div>
 
-						<div class="beat-frame-wrapper">
-							<BeatFrame />
+							<div class="beat-frame-wrapper" class:scroll-mode-active={beatFrameShouldScroll}>
+								<BeatFrame
+									on:naturalheightchange={handleBeatFrameHeightChange}
+									isScrollable={beatFrameShouldScroll}
+									elementReceiver={(el: HTMLElement | null) => (beatFrameElement = el)}
+								/>
+							</div>
 						</div>
 					</div>
 
@@ -303,13 +250,14 @@
 					<ToolsPanel
 						buttons={buttonPanelButtons}
 						{activeMode}
-						on:action={handleButtonAction}
+						on:action={handleButtonActionWrapper}
 						on:close={() => (isToolsPanelOpen = false)}
 					/>
 				</div>
 			{/if}
 
 			<ClearSequenceButton on:clearSequence={handleClearSequence} />
+			<ShareButton {beatFrameElement} />
 
 			{#if !props.toolsPanelOpen}
 				<!-- Only show the tools button if the parent's panel is not open -->
@@ -318,9 +266,9 @@
 		</div>
 
 		<FullScreenOverlay
-			isOpen={$isSequenceFullScreen}
+			isOpen={fullScreenManager.isFullScreen}
 			title={sequenceName}
-			on:close={closeSequenceFullScreen}
+			on:close={fullScreenManager.closeFullScreen}
 		>
 			<div class="fullscreen-beat-container">
 				<!-- BeatFrame will be wrapped in a container in the FullScreenOverlay component -->
@@ -361,6 +309,8 @@
 		min-height: 0; /* Important for flex children in a flex container */
 		flex: 1;
 		overflow: hidden; /* Let children handle their own scrolling if necessary */
+		/* Add transition for smooth layout changes */
+		transition: all 0.3s ease-out;
 	}
 
 	.sequence-container {
@@ -368,10 +318,12 @@
 		flex-direction: column;
 		height: 100%;
 		width: 100%;
-		align-items: center; /* Center children horizontally */
-		justify-content: center; /* Center children vertically by default */
+		/* align-items will be dynamic */
+		/* justify-content will be dynamic */
 		padding: 10px 0; /* Add some vertical padding */
 		box-sizing: border-box;
+		/* Add transition for smooth layout changes */
+		transition: all 0.3s ease-out;
 	}
 
 	/* Content wrapper for label + beat frame that can be centered as a unit */
@@ -379,11 +331,42 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		justify-content: center; /* Center children vertically */
 		width: 100%;
 		/* Allow natural sizing based on content */
-		height: auto;
-		/* Center the entire unit vertically when there's extra space */
-		margin: auto 0;
+		height: 100%; /* Take full height to enable vertical centering */
+		/* Ensure it can grow to fill available space when needed */
+		flex: 1;
+		min-height: 0; /* Crucial for flex-grow in a flex column */
+		/* Add transition for smooth layout changes */
+		transition: all 0.3s ease-out;
+	}
+
+	/* Apply different styles when in scroll mode */
+	.content-wrapper.scroll-mode-active {
+		justify-content: flex-start; /* Align to top in scroll mode */
+	}
+
+	/* Container that keeps the label and beat frame together as a single unit */
+	.label-and-beatframe-unit {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+		/* Keep the label and beat frame together with no gap */
+		gap: 0;
+		/* Don't grow to fill space in non-scrolling mode */
+		flex: 0 0 auto;
+		/* Add transition for smooth layout changes */
+		transition: all 0.3s ease-out;
+	}
+
+	/* Apply different styles when in scroll mode */
+	.label-and-beatframe-unit.scroll-mode-active {
+		width: 100%;
+		/* Take up all available space in scroll mode */
+		flex: 1 1 auto;
+		min-height: 0; /* Crucial for flex-grow in a flex column */
 	}
 
 	.sequence-widget-labels {
@@ -394,34 +377,39 @@
 		color: white;
 		width: 100%;
 		flex-shrink: 0; /* Prevent labels from shrinking */
-		padding-bottom: 5px; /* Reduced space between labels and beat frame */
+		padding-bottom: 2px; /* Minimal space between labels and beat frame */
 		margin-bottom: 0; /* Ensure it hugs the beat frame */
+		/* Ensure the label stays with the beat frame */
+		position: relative;
+		z-index: 1;
 	}
 
 	/* Container for the difficulty label below the beats */
-	.difficulty-label-container {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		width: 100%;
-		margin-top: 10px; /* Space between beat frame and difficulty label */
-		flex-shrink: 0; /* Prevent from shrinking */
-	}
 
-	/* This wrapper ensures BeatFrame maintains its natural size */
+	/* This wrapper ensures BeatFrame maintains its defined dimensions and handles overflow */
 	.beat-frame-wrapper {
-		display: flex; /* Allow BeatFrame to be centered */
-		justify-content: center;
-		align-items: flex-start; /* Align to top to hug the label */
+		display: flex; /* To center BeatFrame when not scrolling */
+		justify-content: center; /* To center BeatFrame when not scrolling */
+		align-items: center; /* To center BeatFrame when not scrolling */
 		width: 100%;
-		min-height: 0; /* Crucial for allowing BeatFrame to not push layout */
-		overflow: hidden; /* Hide overflow but let BeatFrame handle scrolling */
 		padding: 0 10px; /* Horizontal padding for the beat frame area */
 		box-sizing: border-box;
-		position: relative; /* Create positioning context for absolute children */
-		/* No flex: 1 to prevent automatic expansion */
-		/* Add transition for smooth layout changes */
+		position: relative;
+		overflow: visible; /* IMPORTANT: This wrapper does NOT scroll. BeatFrame does. */
+		/* Default: height determined by content (BeatFrame) */
 		transition: all 0.3s ease-out;
+		/* Remove vertical margin to hug the label */
+		margin: 0;
+	}
+
+	/* Apply different styles when in scroll mode */
+	.beat-frame-wrapper.scroll-mode-active {
+		flex-grow: 1; /* Allow it to take available space when scrolling */
+		min-height: 0; /* Crucial for flex-grow in a flex column */
+		align-items: stretch; /* Make BeatFrame fill height */
+		/* The actual height constraint is implicitly set by flex-grow and parent's height */
+		/* Remove auto margins in scroll mode */
+		margin: 0;
 	}
 
 	/* This is the actual container passed to BeatFrame via use:resizeObserver */
@@ -433,13 +421,10 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		position: absolute; /* Position absolutely to maintain centering during transitions */
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
+		position: relative; /* Changed from absolute to allow proper overflow handling */
 		/* Add transition for smooth layout changes */
 		transition: all 0.3s ease-out;
+		max-height: 100%; /* Prevent expanding beyond parent height */
 	}
 
 	/* Indicator label container removed */
@@ -514,9 +499,6 @@
 		}
 		.sequence-widget-labels {
 			padding-bottom: 5px;
-		}
-		.difficulty-label-container {
-			margin-top: 5px; /* Reduced space on mobile */
 		}
 	}
 
@@ -594,34 +576,6 @@
 		--adjusted-cell-size: calc(var(--cell-size) * var(--cell-size-multiplier));
 	}
 
-	/* Single row layouts */
-	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 1']) {
-		--cell-size-multiplier: 1;
-	}
-
-	/* Two row layouts */
-	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 2']) {
-		--cell-size-multiplier: 1;
-	}
-
-	/* Three row layouts */
-	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 3']) {
-		--cell-size-multiplier: 1;
-	}
-
-	/* Four row layouts */
-	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 4']) {
-		--cell-size-multiplier: 1;
-	}
-
-	/* Five or more row layouts */
-	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 5']),
-	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 6']),
-	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 7']),
-	:global(.fullscreen-beat-container .beat-frame[style*='--total-rows: 8']) {
-		--cell-size-multiplier: 1;
-	}
-
 	/* Responsive adjustments for different screen sizes */
 	@media (max-width: 768px) {
 		:global(.fullscreen-beat-container .beat-frame) {
@@ -645,4 +599,6 @@
 			--cell-size-multiplier: 0.9;
 		}
 	}
+
+	/* REMOVED .styled-clear-button STYLES AS THEY ARE NOW IN ClearSequenceButton.svelte */
 </style>

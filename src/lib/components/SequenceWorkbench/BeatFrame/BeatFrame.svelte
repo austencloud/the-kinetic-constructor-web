@@ -1,4 +1,3 @@
-<!-- src/lib/components/SequenceWorkbench/BeatFrame/BeatFrame.svelte -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
@@ -10,10 +9,12 @@
 	import { browser } from '$app/environment';
 	import { initDevToolsUpdater, updateDevTools } from '$lib/utils/devToolsUpdater';
 	import { layoutStore } from '$lib/stores/layout/layoutStore';
+	import { createEventDispatcher } from 'svelte';
 
 	// Import the sequence container and integration utilities
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import type { BeatFrameLayoutOptions } from '$lib/types/BeatFrameLayoutOptions'; // Added import
 
 	// Helper function for safe logging of reactive state
 	function safeLog(message: string, data: any) {
@@ -30,6 +31,9 @@
 	import EmptyStartPosLabel from './EmptyStartPosLabel.svelte';
 	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 
+	// Create event dispatcher for natural height changes
+	const dispatch = createEventDispatcher<{ naturalheightchange: { height: number } }>();
+
 	// Use Svelte 5 runes for reactive state
 	const { size: sizeStore, resizeObserver } = useResizeObserver({
 		width: browser ? window.innerWidth : 800,
@@ -45,6 +49,17 @@
 	// Use the sequence container with Svelte 5 runes
 	const sequence = useContainer(sequenceContainer);
 
+	// Props using Svelte 5 runes
+	const {
+		isScrollable = $bindable(false),
+		layoutOverride = $bindable(null),
+		elementReceiver = $bindable<(element: HTMLElement | null) => void>(() => {}) // Define with $bindable and default
+	} = $props<{
+		isScrollable?: boolean;
+		layoutOverride?: BeatFrameLayoutOptions | null;
+		elementReceiver?: (element: HTMLElement | null) => void;
+	}>();
+
 	// Local state
 	let startPosition = $state<PictographData | null>(null);
 	let beatRows = $state(1);
@@ -52,6 +67,7 @@
 	let prevRows = $state(1);
 	let prevCols = $state(1);
 	let cellSize = $state(100);
+	let naturalGridHeight = $state(0);
 
 	// Derived values
 	const beats = $derived(convertContainerBeatsToLegacyFormat(sequence.beats));
@@ -204,12 +220,57 @@
 	let sequenceWidgetWidth = $state(0);
 	let sequenceWidgetHeight = $state(0);
 
-	// Track if content overflows container
-	let contentOverflows = $state(false);
+	// Track container reference
 	let beatFrameContainerRef: HTMLElement;
 
 	// Listen for sequence widget dimensions
 	let sequenceWidgetDimensionsListener: (event: CustomEvent) => void;
+
+	// Calculate natural grid height
+	$effect(() => {
+		const gridElement = beatFrameContainerRef?.querySelector('.beat-frame');
+		if (gridElement) {
+			naturalGridHeight = gridElement.scrollHeight; // Use scrollHeight for the most accurate content height
+
+			// Log natural height in dev mode
+			safeLog('Natural grid height calculated', {
+				naturalGridHeight,
+				beatRows,
+				cellSize,
+				element: 'scrollHeight'
+			});
+		} else {
+			// Fallback calculation if element not ready
+			naturalGridHeight = beatRows * cellSize + 20; // Add padding-bottom (20px) of the .beat-frame
+
+			// Log fallback calculation in dev mode
+			safeLog('Natural grid height calculated (fallback)', {
+				naturalGridHeight,
+				beatRows,
+				cellSize,
+				element: 'fallback calculation'
+			});
+		}
+	});
+
+	// Dispatch natural height change event
+	$effect(() => {
+		if (naturalGridHeight > 0 && beatFrameContainerRef) {
+			// Dispatch the event using Svelte's event dispatcher
+			dispatch('naturalheightchange', { height: naturalGridHeight });
+
+			// Log event dispatch in dev mode
+			safeLog('Dispatched naturalheightchange event', {
+				height: naturalGridHeight
+			});
+		}
+	});
+
+	$effect(() => {
+		if (elementReceiver && beatFrameContainerRef) { // Changed containerElement to beatFrameContainerRef
+			elementReceiver(beatFrameContainerRef); // Changed containerElement to beatFrameContainerRef
+		}
+	});
 
 	onMount(() => {
 		// Create a listener for the sequence-widget-dimensions event
@@ -271,7 +332,7 @@
 		setTimeout(checkForOverflow, 50);
 	});
 
-	// Function to check if content overflows container
+	// Function to check if content overflows container - for debugging only
 	function checkForOverflow() {
 		if (!beatFrameContainerRef) return;
 
@@ -283,25 +344,25 @@
 		// Check if content is larger than container
 		const containerHeight = container.clientHeight;
 		const contentHeight = beatFrame.clientHeight;
+		const containerWidth = container.clientWidth;
+		const contentWidth = beatFrame.clientWidth;
 
 		// Add a small buffer to prevent flickering at the boundary
 		const buffer = 10; // 10px buffer
 
-		// Update overflow state with buffer
-		contentOverflows = contentHeight > (containerHeight + buffer);
-
-		// Update class based on overflow state
-		if (contentOverflows) {
-			container.classList.add('overflow-content');
-		} else {
-			container.classList.remove('overflow-content');
-		}
+		// Calculate overflow - check both height and width
+		const heightOverflow = contentHeight > containerHeight + buffer;
+		const widthOverflow = contentWidth > containerWidth + buffer;
 
 		// Log overflow state in dev mode
 		safeLog('Overflow check', {
 			containerHeight,
 			contentHeight,
-			isOverflowing: contentOverflows,
+			containerWidth,
+			contentWidth,
+			heightOverflow,
+			widthOverflow,
+			isScrollable: isScrollable, // Corrected: Use destructured prop
 			beatRows,
 			beatCols,
 			beatCount
@@ -483,7 +544,12 @@
 	}
 </script>
 
-<div use:resizeObserver class="beat-frame-container scrollable" bind:this={beatFrameContainerRef}>
+<div
+	use:resizeObserver
+	class="beat-frame-container"
+	class:scrollable-active={isScrollable} 
+	bind:this={beatFrameContainerRef}
+>
 	<div
 		class="beat-frame"
 		style="--total-rows: {beatRows}; --total-cols: {beatCount === 0
@@ -537,44 +603,53 @@
 <style>
 	.beat-frame-container {
 		width: 100%;
-		height: 100%;
+		/* height will be 'auto' by default, or '100%' when scrollable */
+		height: auto;
 		display: flex;
 		justify-content: center;
-		align-items: center;
-		position: relative; /* Create positioning context */
-		transition: all 0.3s ease-out; /* Smooth transitions */
+		align-items: center; /* Default alignment */
+		position: relative;
+		transition: all 0.3s ease-out;
+		overflow: visible; /* Default */
+		/* Add margin auto to help with vertical centering */
+		margin: auto;
 	}
 
-	.scrollable {
-		overflow-y: auto;
+	/* Apply scrolling only when needed */
+	.beat-frame-container.scrollable-active {
+		height: 100%; /* Fill the constrained height from SequenceWidget */
+		overflow-y: auto !important;
 		overflow-x: hidden;
-		/* Show scrollbars only when needed */
 		scrollbar-width: thin; /* For Firefox */
 		scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* For Firefox */
+		align-items: flex-start !important; /* Pin to top when scrolling */
+		padding-right: 8px; /* Space for scrollbar */
+		/* Remove auto margins in scroll mode */
+		margin: 0;
 	}
 
 	/* Webkit scrollbar styling */
-	.scrollable::-webkit-scrollbar {
+	.beat-frame-container.scrollable-active::-webkit-scrollbar {
 		width: 8px;
 		height: 8px;
 	}
 
-	.scrollable::-webkit-scrollbar-track {
+	.beat-frame-container.scrollable-active::-webkit-scrollbar-track {
 		background: transparent;
 	}
 
-	.scrollable::-webkit-scrollbar-thumb {
+	.beat-frame-container.scrollable-active::-webkit-scrollbar-thumb {
 		background-color: rgba(0, 0, 0, 0.3);
 		border-radius: 4px;
 	}
 
 	/* Apply different alignment for scrollable containers */
-	.scrollable.beat-frame-container {
-		/* Always center content initially */
-		align-items: center;
+	.beat-frame-container.scrollable-active {
+		/* Align to top when scrolling is needed */
+		align-items: flex-start;
 		justify-content: center;
-		/* No padding to ensure proper centering */
-		padding: 0;
+		/* Add padding to ensure content isn't cut off */
+		padding: 10px 0;
 	}
 
 	.beat-frame {
@@ -585,24 +660,22 @@
 		justify-content: center;
 		align-content: center; /* Center by default for short sequences */
 		width: fit-content;
-		height: fit-content;
-		margin: auto; /* Center in all cases initially */
-		/* Add transition for smooth size changes */
+		height: fit-content; /* Default for non-scrolling */
+		margin: auto; /* Default for centering */
 		transition: all 0.3s ease-out;
-		padding-bottom: 20px; /* Add padding at bottom for scrolling */
-		/* Ensure the grid stays centered during transitions */
+		padding-bottom: 20px; /* Keep this for scroll runway */
 		transform-origin: center center;
 	}
 
-	/* Only apply scrolling styles when content exceeds container */
-	:global(.scrollable.beat-frame-container.overflow-content) .beat-frame {
+	/* Only apply scrolling styles when parent is scrollable */
+	.beat-frame-container.scrollable-active .beat-frame {
 		margin-top: 0;
-		margin-bottom: auto;
-		align-content: start;
+		margin-bottom: 0; /* Remove auto margins */
+		align-content: flex-start; /* Align grid items to the top */
 	}
 
-	/* For short sequences in scrollable containers, maintain centering */
-	:global(.scrollable.beat-frame-container:not(.overflow-content)) .beat-frame {
+	/* For short sequences in non-scrollable containers, maintain centering */
+	.beat-frame-container:not(.scrollable-active) .beat-frame {
 		margin: auto; /* Center when content fits */
 	}
 

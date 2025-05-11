@@ -22,48 +22,47 @@ export const optionsStore = writable<PictographData[]>([]);
 // ===== UI State =====
 export type LastSelectedTabState = Partial<Record<SortMethod, string | null>>;
 
-// First define the helper function
+// Define the helper function to get stored state from localStorage
 function getStoredState() {
-	if (!browser) return {};
+	if (!browser) return { sortMethod: 'type', lastSelectedTab: {} };
 
 	try {
 		const stored = localStorage.getItem('optionPickerUIState');
 
-		if (!stored) return {};
+		if (!stored) return { sortMethod: 'type', lastSelectedTab: { type: 'all' } };
 
 		const parsed = JSON.parse(stored);
 
-		// Convert from simple format to the structure your code expects
+		// Ensure we have a valid structure
 		return {
-			[parsed.sortMethod]: parsed.currentTab
+			sortMethod: parsed.sortMethod || 'type',
+			lastSelectedTab: parsed.lastSelectedTab || { type: 'all' }
 		};
 	} catch (e) {
 		console.error('Error reading from localStorage:', e);
-		return {};
+		return { sortMethod: 'type', lastSelectedTab: { type: 'all' } };
 	}
 }
-// THEN get the stored state
-const storedState: { sortMethod?: SortMethod; lastSelectedTab?: LastSelectedTabState } =
-	getStoredState();
 
-// THEN initialize uiState with the stored values
+// Get the stored state
+const storedState = getStoredState();
+
+// Initialize uiState with the stored values
 export const uiState = writable({
-	sortMethod: storedState.sortMethod || ('type' as SortMethod),
+	sortMethod: storedState.sortMethod as SortMethod,
 	isLoading: false,
 	error: null as string | null,
-	lastSelectedTab: storedState.lastSelectedTab || ({} as LastSelectedTabState)
+	lastSelectedTab: storedState.lastSelectedTab as LastSelectedTabState
 });
 
-// FINALLY set up the localStorage subscription
+// Set up the localStorage subscription to persist state changes
 if (browser) {
 	uiState.subscribe((state) => {
 		try {
-			// Streamlined data - just what you need
+			// Save the complete state
 			const saveData = {
-				currentTab:
-					(state.lastSelectedTab as Partial<Record<SortMethod, string | null>>)[
-						state.sortMethod as SortMethod
-					] || 'all'
+				sortMethod: state.sortMethod,
+				lastSelectedTab: state.lastSelectedTab
 			};
 			localStorage.setItem('optionPickerUIState', JSON.stringify(saveData));
 		} catch (e) {
@@ -75,14 +74,49 @@ if (browser) {
 // ===== Actions =====
 export const actions = {
 	loadOptions: (sequence: PictographData[]) => {
+		// Don't try to load options if sequence is empty
+		if (!sequence || sequence.length === 0) {
+			console.warn('Attempted to load options with empty sequence');
+			optionsStore.set([]);
+			uiState.update((state) => ({ ...state, isLoading: false, error: null }));
+			return;
+		}
+
 		sequenceStore.set(sequence);
 		uiState.update((state) => ({ ...state, isLoading: true, error: null }));
+
 		try {
 			const nextOptions = getNextOptions(sequence);
-			optionsStore.set(nextOptions);
-			uiState.update((state) => ({ ...state, isLoading: false }));
-			// Note: We don't reset lastSelectedTabPerSortMethod here,
-			// allowing selections to persist across sequence changes if the tabs still exist.
+
+			// If we got no options, log a warning but don't treat it as an error
+			if (!nextOptions || nextOptions.length === 0) {
+				console.warn('No options available for the current sequence');
+			}
+
+			optionsStore.set(nextOptions || []);
+
+			// Always ensure we're showing 'all' options when loading new options
+			// This ensures users see options immediately after selecting a start position
+			const currentSortMethod = get(uiState).sortMethod;
+
+			uiState.update((state) => ({
+				...state,
+				isLoading: false,
+				// Always set the last selected tab to 'all' for the current sort method
+				lastSelectedTab: {
+					...state.lastSelectedTab,
+					[currentSortMethod]: 'all'
+				}
+			}));
+
+			// Dispatch a viewchange event to ensure the UI updates
+			if (typeof document !== 'undefined') {
+				const viewChangeEvent = new CustomEvent('viewchange', {
+					detail: { mode: 'all' },
+					bubbles: true
+				});
+				document.dispatchEvent(viewChangeEvent);
+			}
 		} catch (error) {
 			console.error('Error loading options:', error);
 			uiState.update((state) => ({
@@ -154,20 +188,26 @@ export const actions = {
 		}
 	},
 
-	// In the actions object in store.ts
+	// Reset the option picker state while preserving user preferences
 	reset: () => {
 		optionsStore.set([]);
 		sequenceStore.set([]);
 
-		// Get current state to preserve tab preferences
+		// Get current state to preserve user preferences
 		const currentState = get(uiState);
 
+		// Preserve the sort method and tab preferences
 		uiState.set({
-			sortMethod: 'type',
+			sortMethod: currentState.sortMethod || 'type',
 			isLoading: false,
 			error: null,
 			lastSelectedTab: currentState.lastSelectedTab || {}
 		});
+
+		// Ensure 'all' is set as the default tab for the current sort method
+		// This prevents "No options for X" messages when there are no options
+		const sortMethod = currentState.sortMethod || 'type';
+		actions.setLastSelectedTabForSort(sortMethod, 'all');
 
 		selectedPictograph.set(null);
 	}

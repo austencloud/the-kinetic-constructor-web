@@ -32,9 +32,9 @@
 <style>
 	.tools-button {
 		/* Base sizes - increased for better touch targets */
-		--base-size: 56px;
+		--base-size: 45px; /* Was 56px */
 		--base-margin: 10px;
-		--base-icon-size: 24px;
+		--base-icon-size: 19px; /* Was 24px */
 
 		position: absolute;
 		bottom: calc(var(--button-size-factor, 1) * var(--base-margin));
@@ -57,8 +57,8 @@
 		background: linear-gradient(135deg, #6a11cb, #2575fc);
 		pointer-events: auto;
 		/* Ensure minimum size for small screens */
-		min-width: 48px;
-		min-height: 48px;
+		min-width: 38px; /* Was 48px */
+		min-height: 38px; /* Was 48px */
 		overflow: hidden; /* Ensure content stays within the circle */
 	}
 
@@ -101,9 +101,9 @@
 		.tools-button {
 			/* Increase size on small screens for better touch targets */
 			--base-margin: 10px;
-			--base-padding: 10px;
-			--base-icon-size: 32px;
-			--base-icon-font-size: 16px;
+			/* --base-padding: 10px; */ /* Padding is 0 for these buttons */
+			--base-icon-size: 24px; /* Icon size can be larger on small screens if desired, or keep 19px */
+			/* --base-icon-font-size: 16px; */ /* Not used directly, icon size is base-icon-size */
 		}
 	}
 </style>

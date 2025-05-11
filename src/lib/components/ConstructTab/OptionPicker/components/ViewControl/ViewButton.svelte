@@ -1,24 +1,47 @@
 <script lang="ts">
 	import type { ViewOption } from './types';
 
-	export let selectedViewOption: ViewOption;
-	export let isOpen: boolean;
-	export let onClick: () => void;
-	export let buttonElement: HTMLButtonElement | null = null;
+	// Props using Svelte 5 runes
+	const props = $props<{
+		selectedViewOption: ViewOption;
+		isOpen: boolean;
+		onClick: () => void;
+		compact?: boolean;
+		onButtonRef?: (element: HTMLButtonElement) => void;
+	}>();
+
+	// Local state
+	let isCompact = $state(false);
+	let buttonRef = $state<HTMLButtonElement | null>(null);
+
+	// Update compact mode based on props
+	$effect(() => {
+		isCompact = props.compact || false;
+	});
+
+	// Use the buttonRef to call the callback prop
+	$effect(() => {
+		if (buttonRef && props.onButtonRef) {
+			props.onButtonRef(buttonRef);
+		}
+	});
 </script>
 
 <button
 	class="view-button"
-	bind:this={buttonElement}
-	onclick={onClick}
+	class:compact={isCompact}
+	bind:this={buttonRef}
+	onclick={props.onClick}
 	aria-label="Change view mode"
-	aria-expanded={isOpen}
+	aria-expanded={props.isOpen}
 	aria-haspopup="listbox"
-	title={selectedViewOption.description}
+	title={props.selectedViewOption.description}
 >
-	<span class="view-icon" aria-hidden="true">{selectedViewOption.icon}</span>
-	<span class="view-label">{selectedViewOption.label}</span>
-	<span class="dropdown-arrow" aria-hidden="true">{isOpen ? '▲' : '▼'}</span>
+	<span class="view-icon" aria-hidden="true">{props.selectedViewOption.icon}</span>
+	{#if !isCompact}
+		<span class="view-label">{props.selectedViewOption.label}</span>
+		<span class="dropdown-arrow" aria-hidden="true">{props.isOpen ? '▲' : '▼'}</span>
+	{/if}
 </button>
 
 <style>
@@ -148,6 +171,15 @@
 		.dropdown-arrow {
 			font-size: 0.8rem;
 		}
+	}
+
+	/* Compact mode styles */
+	.view-button.compact {
+		min-width: 36px;
+		max-width: 36px;
+		padding: 6px;
+		justify-content: center;
+		aspect-ratio: 1;
 	}
 
 	/* For very small screens, show only the icon */

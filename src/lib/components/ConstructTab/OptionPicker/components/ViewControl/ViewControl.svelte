@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { uiState } from '../../store';
 	import type { SortMethod } from '../../config';
 	import { viewOptions } from './viewOptions';
@@ -8,20 +8,41 @@
 	import ViewDropdown from './ViewDropdown.svelte';
 
 	// --- Props ---
-	export let initialSortMethod: SortMethod = 'type';
-
-	// --- State ---
-	let isOpen = false;
-	let selectedViewOption =
-		viewOptions.find((opt) => opt.value === initialSortMethod) || viewOptions[0];
-
-	// --- Event Handling ---
-	const dispatch = createEventDispatcher<{
-		viewChange: ViewModeDetail;
+	const props = $props<{
+		initialSortMethod?: SortMethod;
+		compact?: boolean;
 	}>();
 
+	// --- State ---
+	let isOpen = $state(false);
+	// Always default to the "All" view option initially
+	let selectedViewOption = $state<ViewOption>(
+		viewOptions.find((opt) => opt.value === 'all') || viewOptions[0]
+	);
+	let buttonElement = $state<HTMLButtonElement | null>(null);
+	let isCompact = $state(false);
+
+	// Update compact mode based on props and window size
+	$effect(() => {
+		// Force compact mode on mobile devices
+		const isMobile = window.innerWidth <= 640;
+		isCompact = props.compact || isMobile || false;
+
+		// Add resize listener to update compact mode when window size changes
+		const handleResize = () => {
+			const isMobile = window.innerWidth <= 640;
+			isCompact = props.compact || isMobile || false;
+		};
+
+		window.addEventListener('resize', handleResize);
+
+		return () => {
+			window.removeEventListener('resize', handleResize);
+		};
+	});
+
 	// --- Lifecycle ---
-	onMount(() => {
+	$effect(() => {
 		// Subscribe to UI state to keep the selected option in sync
 		const unsubscribe = uiState.subscribe((state) => {
 			if (state.sortMethod !== selectedViewOption.value && selectedViewOption.isSortMethod) {
@@ -44,8 +65,6 @@
 	});
 
 	// --- Dropdown Management ---
-	let buttonElement: HTMLButtonElement | null = null;
-
 	function toggleDropdown() {
 		isOpen = !isOpen;
 
@@ -82,12 +101,22 @@
 			}
 		}
 
-		if (option.value === 'all') {
-			dispatch('viewChange', { mode: 'all' });
-		} else if (option.isSortMethod) {
-			const method = option.value as SortMethod;
-			dispatch('viewChange', { mode: 'group', method: method });
-		}
+		// Create the event detail
+		const detail: ViewModeDetail =
+			option.value === 'all'
+				? { mode: 'all' }
+				: { mode: 'group', method: option.value as SortMethod };
+
+		// Create a DOM event that will bubble up
+		const customEvent = new CustomEvent('viewchange', {
+			detail,
+			bubbles: true,
+			composed: true
+		});
+
+		// Dispatch the event from the document to ensure it's captured by the global listener
+		document.dispatchEvent(customEvent);
+
 		closeDropdown();
 	}
 
@@ -145,8 +174,14 @@
 	}
 </script>
 
-<div class="view-control">
-	<ViewButton bind:buttonElement {selectedViewOption} {isOpen} onClick={toggleDropdown} />
+<div class="view-control" class:compact={isCompact}>
+	<ViewButton
+		{selectedViewOption}
+		{isOpen}
+		onClick={toggleDropdown}
+		compact={isCompact}
+		onButtonRef={(element) => (buttonElement = element)}
+	/>
 
 	<ViewDropdown
 		{isOpen}
@@ -163,5 +198,12 @@
 		position: relative;
 		font-size: 1.1rem;
 		z-index: 10;
+		transition: all 0.3s ease;
+	}
+
+	.view-control.compact {
+		font-size: 1rem;
+		min-width: 36px;
+		max-width: 36px;
 	}
 </style>

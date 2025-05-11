@@ -1,18 +1,20 @@
+// src/lib/components/Backgrounds/nightSky/NightSkyBackgroundSystem.ts
 import type {
 	BackgroundSystem,
 	Dimensions,
 	QualityLevel,
 	Star,
-	CelestialBody,
+	CelestialBody, // Ensure CelestialBody is imported
 	Spaceship,
 	ShootingStarState,
 	EasterEggState,
 	AccessibilitySettings
 } from '../types/types';
-import { drawBackgroundGradient } from '../snowfall/utils/backgroundUtils';
+import { drawBackgroundGradient } from '../snowfall/utils/backgroundUtils'; // Assuming this is a generic gradient util
 import { getOptimizedConfig } from '../config';
 import { createShootingStarSystem } from '../systems/ShootingStarSystem';
 import { NightSkyConfig } from '../config/nightSky';
+import SunCalc from 'suncalc'; // Import SunCalc
 
 type ParallaxLayer = { stars: Star[]; driftX: number; driftY: number };
 
@@ -22,7 +24,7 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 	private layers: Record<'far' | 'mid' | 'near', ParallaxLayer> = {} as any;
 	private nebulae: { x: number; y: number; baseR: number; phase: number; color: string }[] = [];
 	private constellationLines: { a: Star; b: Star; opacity: number; dir: number }[] = [];
-	private celestialBody: CelestialBody | null = null;
+	private celestialBody: CelestialBody | null = null; // This will be our moon
 	private shootingStarSystem = createShootingStarSystem();
 	private shootingStarState: ShootingStarState;
 	private spaceshipState: EasterEggState<Spaceship>;
@@ -47,10 +49,10 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 	// ------------------------------------------------------------------------
 	/* INITIALISE */
 	public initialize(dim: Dimensions, q: QualityLevel) {
-		this.setQuality(q);
+		this.setQuality(q); // Sets this.cfg and this.Q
 		this.initParallax(dim);
 		this.initNebulae(dim);
-		this.celestialBody = this.initBody(dim);
+		this.celestialBody = this.initBody(dim); // Initialize the moon (celestialBody)
 	}
 
 	/* UPDATE */
@@ -58,7 +60,7 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 		this.updateParallax(dim);
 		this.updateNebulae();
 		this.updateConstellations();
-		this.updateCelestialBody(dim);
+		this.updateCelestialBody(dim); // Update moon's position
 		if (this.Q.enableShootingStars)
 			this.shootingStarState = this.shootingStarSystem.update(this.shootingStarState, dim);
 		this.updateSpaceship(dim);
@@ -67,20 +69,16 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 
 	/* DRAW */
 	public draw(ctx: CanvasRenderingContext2D, dim: Dimensions) {
-		// Create default gradient stops if they don't exist
-		const gradientStops = (this.cfg.background as any)?.gradientStops || [
-			{ position: 0, color: '#0A0E2C' }, // Deep blue at top
-			{ position: 0.3, color: '#1A2151' }, // Navy blue
-			{ position: 0.6, color: '#2A3270' }, // Medium blue
-			{ position: 0.8, color: '#3A4380' }, // Lighter blue
-			{ position: 1, color: '#4A5490' } // Light blue/purple at bottom
+		const gradientStops = this.cfg.background?.gradientStops || [
+			{ position: 0, color: '#0A0E2C' },
+			{ position: 1, color: '#4A5490' }
 		];
-
 		drawBackgroundGradient(ctx, dim, gradientStops);
-		this.drawNebulae(ctx); // behind everything
-		this.drawParallax(ctx); // far→near stars
+
+		this.drawNebulae(ctx);
+		this.drawParallax(ctx);
 		this.drawConstellations(ctx);
-		this.drawCelestialBody(ctx);
+		this.drawCelestialBody(ctx); // Draw the moon with phase
 		if (this.Q.enableShootingStars) this.shootingStarSystem.draw(this.shootingStarState, ctx);
 		this.drawSpaceship(ctx);
 		this.drawComet(ctx);
@@ -90,17 +88,22 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 	public setQuality(q: QualityLevel) {
 		if (this.quality === q) return;
 		this.quality = q;
-		this.cfg = getOptimizedConfig(q).config.nightSky as typeof NightSkyConfig;
-		this.Q = getOptimizedConfig(q).qualitySettings;
+		// Re-fetch optimized config when quality changes
+		const optimized = getOptimizedConfig(q);
+		this.cfg = optimized.config.nightSky as typeof NightSkyConfig;
+		this.Q = optimized.qualitySettings;
 	}
 	public setAccessibility(s: AccessibilitySettings) {
 		this.a11y = s;
+		// Potentially re-initialize or update elements if accessibility affects them significantly
 	}
 
 	/* CLEANUP */
 	public cleanup() {
 		this.layers = {} as any;
 		this.nebulae = [];
+		this.constellationLines = [];
+		this.celestialBody = null;
 	}
 
 	// ============ internal helpers =========================================
@@ -115,41 +118,40 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 		};
 		this.layers = { far: mkLayer('far'), mid: mkLayer('mid'), near: mkLayer('near') };
 	}
+
 	private updateParallax(dim: Dimensions) {
-		// Check if layers are initialized
 		if (!this.layers || Object.keys(this.layers).length === 0) {
-			// Initialize layers if they don't exist
-			this.initParallax(dim);
+			this.initParallax(dim); // Initialize if not already
 			return;
 		}
-
 		(['far', 'mid', 'near'] as Array<keyof typeof this.layers>).forEach((key) => {
 			const L = this.layers[key];
-			// Add null check for layer and stars
 			if (L && L.stars && Array.isArray(L.stars)) {
 				L.stars.forEach((s: Star) => {
-					s.x = (s.x + L.driftX + dim.width) % dim.width;
-					s.y = (s.y + L.driftY + dim.height) % dim.height;
+					s.x = (s.x + L.driftX * (this.a11y.reducedMotion ? 0.3 : 1) + dim.width) % dim.width;
+					s.y = (s.y + L.driftY * (this.a11y.reducedMotion ? 0.3 : 1) + dim.height) % dim.height;
 					if (s.isTwinkling) {
 						s.currentOpacity =
-							s.baseOpacity * (0.7 + 0.3 * Math.sin((s.twinklePhase += s.twinkleSpeed)));
+							s.baseOpacity *
+							(0.7 +
+								0.3 *
+									Math.sin(
+										(s.twinklePhase += s.twinkleSpeed * (this.a11y.reducedMotion ? 0.3 : 1))
+									));
 					}
 				});
 			}
 		});
 	}
 	private drawParallax(ctx: CanvasRenderingContext2D) {
-		// Check if layers are initialized
-		if (!this.layers || Object.keys(this.layers).length === 0) {
-			return;
-		}
+		if (!this.layers || Object.keys(this.layers).length === 0) return;
 
 		(['far', 'mid', 'near'] as Array<keyof typeof this.layers>).forEach((key) => {
-			const alphaMult = key === 'far' ? 0.5 : key === 'mid' ? 0.8 : 1;
-			// Add null check for layer and stars
-			if (this.layers[key] && this.layers[key].stars && Array.isArray(this.layers[key].stars)) {
-				this.layers[key].stars.forEach((star: Star) => {
-					ctx.globalAlpha = star.currentOpacity * alphaMult;
+			const L = this.layers[key];
+			if (L && L.stars && Array.isArray(L.stars)) {
+				const alphaMult = key === 'far' ? 0.5 : key === 'mid' ? 0.8 : 1;
+				L.stars.forEach((star: Star) => {
+					ctx.globalAlpha = star.currentOpacity * alphaMult * (this.a11y.reducedMotion ? 0.7 : 1);
 					ctx.fillStyle = star.color;
 					ctx.beginPath();
 					ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
@@ -162,12 +164,15 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 
 	// ---- nebulae ----
 	private initNebulae(dim: Dimensions) {
-		if (!this.cfg.nebula.enabledOnQuality.includes(this.quality)) return;
+		if (!this.cfg.nebula.enabledOnQuality.includes(this.quality)) {
+			this.nebulae = [];
+			return;
+		}
 		this.nebulae = Array.from({ length: this.cfg.nebula.count }).map(() => {
 			const r = this.randFloat(this.cfg.nebula.minRadius, this.cfg.nebula.maxRadius);
 			return {
 				x: Math.random() * dim.width,
-				y: Math.random() * dim.height * 0.7,
+				y: Math.random() * dim.height * 0.7, // Keep them mostly in upper part
 				baseR: r,
 				phase: Math.random() * Math.PI * 2,
 				color: this.randItem(this.cfg.nebula.colors)
@@ -175,11 +180,16 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 		});
 	}
 	private updateNebulae() {
-		const speed = this.cfg.nebula.pulseSpeed;
-		this.nebulae.forEach((n) => (n.phase += this.randFloat(speed.min, speed.max)));
+		if (!this.nebulae.length) return;
+		const speedRange = this.cfg.nebula.pulseSpeed;
+		const effectiveSpeed = this.a11y.reducedMotion ? 0.3 : 1;
+		this.nebulae.forEach(
+			(n) => (n.phase += this.randFloat(speedRange.min, speedRange.max) * effectiveSpeed)
+		);
 	}
 	private drawNebulae(ctx: CanvasRenderingContext2D) {
 		if (!this.nebulae.length) return;
+		ctx.globalAlpha = this.a11y.reducedMotion ? 0.5 : 1;
 		this.nebulae.forEach((n) => {
 			const r = n.baseR * (0.9 + 0.1 * Math.sin(n.phase));
 			const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r);
@@ -190,27 +200,38 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 			ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
 			ctx.fill();
 		});
+		ctx.globalAlpha = 1;
 	}
 
 	// ---- constellations ----
 	private updateConstellations() {
-		if (!this.cfg.constellations.enabledOnQuality.includes(this.quality)) return;
-		// Build once then animate opacity
-		if (!this.constellationLines.length) {
+		if (!this.cfg.constellations.enabledOnQuality.includes(this.quality)) {
+			this.constellationLines = [];
+			return;
+		}
+		if (!this.layers.near || !this.layers.near.stars || this.layers.near.stars.length === 0) return;
+
+		if (this.constellationLines.length === 0 && this.layers.near.stars.length > 1) {
 			const nearStars = this.layers.near.stars;
-			for (let i = 0; i < this.cfg.constellations.maxLines; i++) {
-				const a = this.randItem(nearStars);
-				const b = this.randItem(nearStars);
+			const numLines = Math.min(this.cfg.constellations.maxLines, Math.floor(nearStars.length / 2));
+			for (let i = 0; i < numLines; i++) {
+				const aIndex = this.randInt(0, nearStars.length - 1);
+				let bIndex = this.randInt(0, nearStars.length - 1);
+				while (bIndex === aIndex) {
+					// Ensure different stars
+					bIndex = this.randInt(0, nearStars.length - 1);
+				}
 				this.constellationLines.push({
-					a,
-					b,
+					a: nearStars[aIndex],
+					b: nearStars[bIndex],
 					opacity: Math.random() * this.cfg.constellations.opacity,
 					dir: Math.random() > 0.5 ? 1 : -1
 				});
 			}
 		}
+		const effectiveSpeed = this.a11y.reducedMotion ? 0.3 : 1;
 		this.constellationLines.forEach((l) => {
-			l.opacity += l.dir * this.cfg.constellations.twinkleSpeed;
+			l.opacity += l.dir * this.cfg.constellations.twinkleSpeed * effectiveSpeed;
 			if (l.opacity > this.cfg.constellations.opacity || l.opacity < 0) {
 				l.dir *= -1;
 				l.opacity = Math.max(0, Math.min(this.cfg.constellations.opacity, l.opacity));
@@ -220,9 +241,11 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 	private drawConstellations(ctx: CanvasRenderingContext2D) {
 		if (!this.constellationLines.length) return;
 		ctx.lineWidth = 0.7;
+		const baseColor = this.a11y.highContrast ? '#FFFFFF' : '#89A7FF';
 		this.constellationLines.forEach((l) => {
-			ctx.globalAlpha = l.opacity;
-			ctx.strokeStyle = '#89A7FF';
+			if (!l.a || !l.b) return; // Guard against undefined stars if layers were reset
+			ctx.globalAlpha = l.opacity * (this.a11y.reducedMotion ? 0.5 : 1);
+			ctx.strokeStyle = baseColor;
 			ctx.beginPath();
 			ctx.moveTo(l.a.x, l.a.y);
 			ctx.lineTo(l.b.x, l.b.y);
@@ -231,117 +254,276 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 		ctx.globalAlpha = 1;
 	}
 
-	// ---- celestial body ----
+	// ---- celestial body (MOON) ----
 	private initBody(dim: Dimensions): CelestialBody | null {
-		// Use type assertion for celestialBody properties
-		const cfg = this.cfg.celestialBody as any;
-		if (!cfg.enabledOnQuality.includes(this.quality)) return null;
-		const base = Math.min(dim.width, dim.height);
-		const radius = Math.min(base * cfg.radiusPercent, cfg.maxRadiusPx);
-		const drift = this.a11y.reducedMotion ? cfg.driftSpeed * 0.1 : cfg.driftSpeed;
+		const bodyCfg = this.cfg.celestialBody;
+		if (!bodyCfg.enabledOnQuality.includes(this.quality)) return null;
+
+		const baseSize = Math.min(dim.width, dim.height);
+		const radius = Math.min(baseSize * bodyCfg.radiusPercent, bodyCfg.maxRadiusPx);
+
+		const moonIlluminationData = SunCalc.getMoonIllumination(new Date()); // Get current moon phase
+
 		return {
-			x: dim.width * cfg.position.x,
-			y: dim.height * cfg.position.y,
-			radius,
-			color: cfg.color,
-			driftX: (Math.random() - 0.5) * drift * dim.width,
-			driftY: (Math.random() - 0.5) * drift * dim.height
+			x: dim.width * bodyCfg.position.x,
+			y: dim.height * bodyCfg.position.y,
+			radius: radius,
+			color: this.a11y.highContrast ? '#FFFFFF' : bodyCfg.color, // Use config color for illuminated part
+			driftX: (Math.random() - 0.5) * bodyCfg.driftSpeed * dim.width,
+			driftY: (Math.random() - 0.5) * bodyCfg.driftSpeed * dim.height,
+			illumination: {
+				fraction: moonIlluminationData.fraction, // How much is lit (0 to 1)
+				phaseValue: moonIlluminationData.phase, // Phase cycle (0 new, 0.5 full, 1 new)
+				angle: moonIlluminationData.angle // Angle of bright limb
+			}
 		};
 	}
+
 	private updateCelestialBody(dim: Dimensions) {
 		if (!this.celestialBody) return;
 		const b = this.celestialBody;
-		b.x = (b.x + (b.driftX || 0) + dim.width) % dim.width;
-		b.y = (b.y + (b.driftY || 0) + dim.height) % dim.height;
-	}
-	private drawCelestialBody(ctx: CanvasRenderingContext2D) {
-		if (!this.celestialBody) return;
-		const b = this.celestialBody;
-		ctx.fillStyle = b.color;
-		ctx.shadowColor = b.color;
-		ctx.shadowBlur = b.radius * 0.5;
-		ctx.beginPath();
-		ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-		ctx.fill();
-		ctx.shadowBlur = 0;
-		ctx.shadowColor = 'transparent';
+		const effectiveDriftSpeed = this.a11y.reducedMotion ? 0.1 : 1;
+		b.x = (b.x + (b.driftX || 0) * effectiveDriftSpeed + dim.width) % dim.width;
+		b.y = (b.y + (b.driftY || 0) * effectiveDriftSpeed + dim.height * 1.5) % (dim.height * 1.5); // Allow to go off screen a bit at bottom
+		if (b.y > dim.height + b.radius) {
+			// Reset if goes too far below
+			b.y = -b.radius;
+			b.x = Math.random() * dim.width;
+		}
 	}
 
-	// ---- spaceship (unchanged logic, condensed) ----
-	private updateSpaceship(_dim: Dimensions) {
-		// Implementation omitted for brevity
+	private drawCelestialBody(ctx: CanvasRenderingContext2D) {
+		const b = this.celestialBody;
+		if (!b || !b.illumination) return;
+
+		const { x, y, radius, color } = b; // color is the lit color from config
+		const { fraction, phaseValue } = b.illumination;
+		const R = radius;
+
+		ctx.save();
+
+		// 1. Draw the base illuminated moon disk (color is the bright part of the moon)
+		ctx.fillStyle = color;
+		ctx.beginPath();
+		ctx.arc(x, y, R, 0, 2 * Math.PI);
+		ctx.fill();
+
+		// Apply shadow for phases other than full moon
+		if (fraction < 0.99) {
+			// If not almost full moon
+			// Determine shadow color - use darkest sky color or black for high contrast
+			const shadowColor = this.a11y.highContrast
+				? '#000000'
+				: this.cfg.background.gradientStops[0]?.color || '#0A0E2C';
+			ctx.fillStyle = shadowColor;
+
+			// Calculate the X coordinate of the center of the shadow-casting circle.
+			// phaseValue is SunCalc's phase: 0 (new) -> 0.5 (full) -> 1.0 (new)
+			// We convert this to an angle that represents the sun's position relative to the earth-moon line.
+			// angle: -PI at new moon (shadow comes from left, moon mostly dark)
+			//         0 at full moon (shadow is behind moon, moon fully lit)
+			//         PI at new moon (shadow comes from right)
+			const phaseAngleForShadow = (phaseValue - 0.5) * 2 * Math.PI;
+
+			// The X coordinate of the center of the dark, obscuring circle.
+			// When phaseValue = 0 (new moon), phaseAngleForShadow = -PI, cos = -1. shadowDiscCenterX = x - R*(-1) = x + R.
+			//   (Dark disc centered to the right, obscuring the lit disc from the right, leaving left crescent - this means lit disc is drawn first)
+			// When phaseValue = 0.25 (first quarter), phaseAngleForShadow = -PI/2, cos = 0. shadowDiscCenterX = x.
+			//   (Dark disc centered on moon, obscuring left half)
+			// When phaseValue = 0.5 (full moon), phaseAngleForShadow = 0, cos = 1. shadowDiscCenterX = x - R.
+			//   (Dark disc centered to the left, leaving moon fully visible)
+			const shadowDiscCenterX = x - R * Math.cos(phaseAngleForShadow);
+
+			ctx.beginPath();
+			ctx.arc(shadowDiscCenterX, y, R, 0, 2 * Math.PI);
+			ctx.fill();
+		}
+
+		// Optional: Add a very faint outline for the new moon if it's not high contrast mode
+		// and it's not nearly full (to avoid outline on full moon).
+		if (fraction < 0.03 && !this.a11y.highContrast && fraction < 0.98) {
+			ctx.strokeStyle = 'rgba(100, 100, 120, 0.3)'; // A very subtle grey
+			ctx.lineWidth = Math.max(0.5, R * 0.02); // Make outline proportional but not too thick
+			ctx.beginPath();
+			ctx.arc(x, y, R, 0, 2 * Math.PI);
+			ctx.stroke();
+		}
+
+		ctx.restore();
 	}
-	private drawSpaceship(_ctx: CanvasRenderingContext2D) {
-		// Implementation omitted for brevity
+
+	// ---- spaceship ----
+	private updateSpaceship(dim: Dimensions) {
+		if (!this.cfg.spaceship.enabledOnQuality.includes(this.quality)) {
+			this.spaceshipState.element = null;
+			return;
+		}
+		const sCfg = this.cfg.spaceship;
+		const effectiveSpeed = this.a11y.reducedMotion ? 0.2 : 1;
+
+		if (!this.spaceshipState.element) {
+			this.spaceshipState.timer++;
+			if (this.spaceshipState.timer >= this.spaceshipState.interval) {
+				const dir = Math.random() > 0.5 ? 1 : -1;
+				this.spaceshipState.element = {
+					x: dir > 0 ? -sCfg.size : dim.width + sCfg.size,
+					y: Math.random() * dim.height * 0.4 + dim.height * 0.1, // Upper part of sky
+					width: sCfg.size,
+					height: sCfg.size / 2,
+					speed: sCfg.speedPercent * dim.width * effectiveSpeed,
+					active: true,
+					direction: dir,
+					opacity: 1
+				};
+				this.spaceshipState.timer = 0;
+				this.spaceshipState.interval = this.randInt(sCfg.interval / 2, sCfg.interval * 1.5);
+			}
+		} else {
+			const ship = this.spaceshipState.element;
+			ship.x += ship.speed * ship.direction;
+			if (
+				(ship.direction > 0 && ship.x > dim.width + ship.width) ||
+				(ship.direction < 0 && ship.x < -ship.width)
+			) {
+				this.spaceshipState.element = null;
+			}
+		}
+	}
+	private drawSpaceship(ctx: CanvasRenderingContext2D) {
+		const ship = this.spaceshipState.element;
+		if (!ship) return;
+
+		ctx.fillStyle = this.a11y.highContrast ? '#FFFFFF' : this.cfg.spaceship.color;
+		ctx.globalAlpha = ship.opacity * (this.a11y.reducedMotion ? 0.6 : 1);
+		ctx.beginPath();
+		// Simple triangle shape for spaceship
+		if (ship.direction > 0) {
+			// Moving right
+			ctx.moveTo(ship.x, ship.y);
+			ctx.lineTo(ship.x - ship.width, ship.y - ship.height / 2);
+			ctx.lineTo(ship.x - ship.width, ship.y + ship.height / 2);
+		} else {
+			// Moving left
+			ctx.moveTo(ship.x, ship.y);
+			ctx.lineTo(ship.x + ship.width, ship.y - ship.height / 2);
+			ctx.lineTo(ship.x + ship.width, ship.y + ship.height / 2);
+		}
+		ctx.closePath();
+		ctx.fill();
+
+		// Thruster
+		ctx.fillStyle = this.a11y.highContrast ? '#FFFF00' : this.cfg.spaceship.thrusterColor;
+		const thrusterSize = ship.height / 1.5;
+		const thrusterX =
+			ship.direction > 0
+				? ship.x - ship.width - thrusterSize / 2
+				: ship.x + ship.width + thrusterSize / 2;
+		ctx.beginPath();
+		ctx.arc(thrusterX, ship.y, thrusterSize * (0.5 + Math.random() * 0.5), 0, Math.PI * 2);
+		ctx.fill();
+
+		ctx.globalAlpha = 1;
 	}
 
 	// ---- comet ----
 	private updateComet(dim: Dimensions) {
-		if (!this.cfg.comet.enabledOnQuality.includes(this.quality)) return;
+		if (!this.cfg.comet.enabledOnQuality.includes(this.quality)) {
+			this.cometState.element = null;
+			return;
+		}
 		const cCfg = this.cfg.comet;
+		const effectiveSpeed = this.a11y.reducedMotion ? 0.2 : 1;
+
 		if (!this.cometState.element) {
 			this.cometState.timer++;
 			if (this.cometState.timer >= this.cometState.interval) {
-				const dir = Math.random() > 0.5 ? 1 : -1;
+				const dir = Math.random() > 0.5 ? 1 : -1; // Direction: 1 for right-to-left, -1 for left-to-right
 				this.cometState.element = {
-					x: dir > 0 ? -cCfg.radius * 2 : dim.width + cCfg.radius * 2,
-					y: Math.random() * dim.height * 0.6 + dim.height * 0.1,
+					x: dir > 0 ? dim.width + cCfg.radius * 5 : -cCfg.radius * 5, // Start off-screen
+					y: Math.random() * dim.height * 0.5 + dim.height * 0.05, // Upper half
 					radius: cCfg.radius,
 					baseOpacity: 1,
-					currentOpacity: 1, // re‑using Star interface
+					currentOpacity: 1,
 					twinkleSpeed: 0,
 					twinklePhase: 0,
 					isTwinkling: false,
-					color: cCfg.color
-				} as Star;
+					color: this.a11y.highContrast ? '#FFFF00' : cCfg.color,
+					// Store direction for comet movement
+					_direction: dir,
+					_speed: cCfg.speed * dim.width * effectiveSpeed
+				} as Star & { _direction: number; _speed: number }; // Augment Star type for comet
 				this.cometState.timer = 0;
+				this.cometState.interval = cCfg.interval * (0.5 + Math.random()); // Randomize next appearance
 			}
 		} else {
-			const comet = this.cometState.element;
-			comet.x += cCfg.speed * dim.width * (comet.x < dim.width / 2 ? 1 : -1);
-			comet.currentOpacity = Math.max(0, comet.currentOpacity - 0.0005);
-			if (comet.currentOpacity <= 0) {
+			const comet = this.cometState.element as Star & { _direction: number; _speed: number };
+			comet.x -= comet._direction * comet._speed; // Move based on stored direction
+
+			// Fade out as it moves (optional, could be based on time or position)
+			// comet.currentOpacity -= 0.001;
+
+			// Check if off-screen
+			if (
+				(comet._direction > 0 && comet.x < -cCfg.tailLength) ||
+				(comet._direction < 0 && comet.x > dim.width + cCfg.tailLength) ||
+				comet.currentOpacity <= 0
+			) {
 				this.cometState.element = null;
-				this.cometState.interval = cCfg.interval;
 			}
 		}
 	}
 	private drawComet(ctx: CanvasRenderingContext2D) {
-		const comet = this.cometState.element;
-		if (!comet) return;
-		// tail
-		const tailGrad = ctx.createLinearGradient(comet.x, comet.y, comet.x - 100, comet.y + 50);
-		tailGrad.addColorStop(0, comet.color);
-		tailGrad.addColorStop(1, 'transparent');
-		ctx.globalAlpha = comet.currentOpacity;
-		ctx.fillStyle = tailGrad;
+		const comet = this.cometState.element as Star & { _direction?: number }; // Cast for augmented properties
+		if (!comet || !comet._direction) return;
+
+		const tailLength = this.cfg.comet.tailLength;
+		const headX = comet.x;
+		const headY = comet.y;
+
+		ctx.globalAlpha = comet.currentOpacity * (this.a11y.reducedMotion ? 0.6 : 1);
+
+		// Tail
+		const tailEndX = headX + comet._direction * tailLength; // Tail goes opposite to direction of movement
+		const tailEndY = headY; // Simple horizontal tail for now
+
+		const gradient = ctx.createLinearGradient(headX, headY, tailEndX, tailEndY);
+		gradient.addColorStop(0, comet.color); // Bright at head
+		gradient.addColorStop(1, 'transparent'); // Fades out
+
+		ctx.fillStyle = gradient;
 		ctx.beginPath();
-		ctx.arc(comet.x, comet.y, comet.radius * 4, 0, Math.PI * 2);
+		ctx.moveTo(headX, headY - comet.radius / 2);
+		ctx.lineTo(tailEndX, tailEndY - comet.radius / 8); // Narrower end
+		ctx.lineTo(tailEndX, tailEndY + comet.radius / 8);
+		ctx.lineTo(headX, headY + comet.radius / 2);
+		ctx.closePath();
 		ctx.fill();
-		// head
+
+		// Head
 		ctx.fillStyle = comet.color;
 		ctx.beginPath();
-		ctx.arc(comet.x, comet.y, comet.radius, 0, Math.PI * 2);
+		ctx.arc(headX, headY, comet.radius, 0, Math.PI * 2);
 		ctx.fill();
+
 		ctx.globalAlpha = 1;
 	}
 
 	// ============ utils =====================================================
 	private makeStar(dim: Dimensions): Star {
-		// Use type assertion for stars properties
-		const sCfg = this.cfg.stars as any;
-		const r = this.randFloat(sCfg.minSize, sCfg.maxSize);
+		const sCfg = this.cfg.stars;
+		const r =
+			this.randFloat(sCfg.minSize, sCfg.maxSize) * (this.a11y.visibleParticleSize > 2 ? 1.5 : 1);
 		const tw = Math.random() < sCfg.twinkleChance;
 		return {
 			x: Math.random() * dim.width,
 			y: Math.random() * dim.height,
 			radius: r,
 			baseOpacity: this.randFloat(sCfg.baseOpacityMin, sCfg.baseOpacityMax),
-			currentOpacity: 1,
+			currentOpacity: 1, // Will be set in updateParallax
 			twinkleSpeed: tw ? this.randFloat(sCfg.minTwinkleSpeed, sCfg.maxTwinkleSpeed) : 0,
 			twinklePhase: Math.random() * Math.PI * 2,
 			isTwinkling: tw,
-			color: this.randItem(sCfg.colors)
+			color: this.a11y.highContrast ? '#FFFFFF' : this.randItem(sCfg.colors)
 		};
 	}
 	private randFloat(m: number, M: number) {

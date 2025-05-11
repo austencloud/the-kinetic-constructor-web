@@ -6,51 +6,69 @@
 	import OptionsPanel from './OptionsPanel.svelte';
 	// Removed any transition containers or imports
 
-	export let isLoading: boolean;
-	export let selectedTab: string | null;
-	export let optionsToDisplay: PictographData[] = [];
-	export let hasCategories: boolean;
+	// Props using Svelte 5 runes
+	const props = $props<{
+		isLoading: boolean;
+		selectedTab: string | null;
+		optionsToDisplay?: PictographData[];
+		hasCategories: boolean;
+	}>();
+
+	// Set default values
+	$effect(() => {
+		if (!props.optionsToDisplay) props.optionsToDisplay = [];
+	});
 
 	/* ───────────── what we're going to show ───────────── */
-	$: hasOptions = optionsToDisplay.length > 0;
+	let hasOptions = $state(false);
+	let displayState = $state<'loading' | 'empty' | 'options'>('loading');
+	let messageText = $state('');
 
-	type Msg = 'loading' | 'empty' | 'initial' | null;
+	// Update display state based on props
+	$effect(() => {
+		// Update hasOptions
+		hasOptions = props.optionsToDisplay && props.optionsToDisplay.length > 0;
 
-	$: msgType = isLoading
-		? ('loading' as Msg)
-		: !hasOptions
-			? selectedTab
-				? ('empty' as Msg)
-				: hasCategories
-					? ('initial' as Msg)
-					: ('empty' as Msg)
-			: (null as Msg);
+		console.log('Display state calculation:', {
+			isLoading: props.isLoading,
+			hasOptions,
+			selectedTab: props.selectedTab,
+			optionsCount: props.optionsToDisplay?.length || 0
+		});
 
-	function msgText(t: Msg): string {
-		if (t === 'empty')
-			return selectedTab === 'all'
-				? 'No options match current filters.'
-				: `No options for ${selectedTab}.`;
-		if (t === 'initial') return 'Select a category above …';
-		return '';
-	}
+		// Determine display state
+		if (props.isLoading) {
+			displayState = 'loading';
+			messageText = 'Loading options...';
+		} else if (!hasOptions) {
+			displayState = 'empty';
+
+			// Set appropriate message text
+			if (props.selectedTab === 'all') {
+				messageText = 'No options available for the current position.';
+			} else if (props.selectedTab) {
+				messageText = `No options available in the "${props.selectedTab}" category.`;
+			} else {
+				messageText = 'No options available.';
+			}
+		} else {
+			displayState = 'options';
+		}
+	});
 </script>
 
 <div class="display-wrapper">
-	{#if msgType === 'loading'}
+	{#if displayState === 'loading'}
 		<div class="absolute-content">
-			<!-- Removed transitions -->
 			<LoadingMessage />
 		</div>
-	{:else if msgType}
+	{:else if displayState === 'empty'}
 		<div class="absolute-content">
-			<!-- Removed transitions -->
-			<EmptyMessage type={msgType} message={msgText(msgType)} />
+			<EmptyMessage type="empty" message={messageText} />
 		</div>
 	{:else}
 		<div class="absolute-content">
-			<!-- Direct display of options panel, no transition containers -->
-			<OptionsPanel options={optionsToDisplay} {selectedTab} />
+			<OptionsPanel options={props.optionsToDisplay} selectedTab={props.selectedTab} />
 		</div>
 	{/if}
 </div>

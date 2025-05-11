@@ -28,71 +28,73 @@
 
 <style>
 	.clear-button {
-		/* Base sizes - increased for better touch targets */
-		--base-size: 44px;
-		--base-padding: 10px;
-		--base-margin: 12px;
-		--base-font-size: 16px;
-		--base-icon-size: 28px;
-		--base-icon-font-size: 14px;
-		--base-border-radius: 8px;
+		/* Define base sizes for dynamic scaling */
+		--base-size: 45px; /* Base size of the button (was 56px) */
+		--base-icon-size: 19px; /* Base size of the icon (was 24px) */
+		--base-margin: 10px; /* Define base margin to match ToolsButton */
 
 		position: absolute;
-		bottom: calc(var(--button-size-factor, 1) * var(--base-margin));
-		left: calc(var(--button-size-factor, 1) * var(--base-margin));
-		z-index: 10;
-		background: white;
-		border: none;
-		border-radius: 10px; /* Slightly larger border radius */
-		padding: calc(var(--button-size-factor, 1) * var(--base-padding));
+		bottom: calc(var(--button-size-factor, 1) * var(--base-margin)); /* Dynamic bottom margin */
+		left: calc(var(--button-size-factor, 1) * var(--base-margin)); /* Dynamic left margin */
+		width: calc(var(--button-size-factor, 1) * var(--base-size)); /* Dynamic width */
+		height: calc(var(--button-size-factor, 1) * var(--base-size)); /* Dynamic height */
+		min-width: 38px; /* Minimum width to match ToolsButton (was 48px) */
+		min-height: 38px; /* Minimum height to match ToolsButton (was 48px) */
+		background-color: var(--tkc-button-panel-background, #2a2a2e); /* Dark background */
+		border-radius: 50%; /* Perfectly round */
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		justify-content: center;
 		cursor: pointer;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-		transition: all 0.2s ease-in-out;
-		font-size: calc(var(--button-size-factor, 1) * var(--base-font-size));
-		color: #333;
-		font-weight: 500;
-		pointer-events: auto;
-		/* Ensure minimum size for small screens */
-		min-width: 44px;
-		min-height: 44px;
+		transition:
+			transform 0.2s ease-out,
+			background-color 0.2s ease-out,
+			box-shadow 0.2s ease-out;
+		z-index: 40; /* Ensure it's above most content but potentially below modals/side panels */
+		box-shadow:
+			0 3px 6px rgba(0, 0, 0, 0.16),
+			0 3px 6px rgba(0, 0, 0, 0.23);
+		border: none; /* Remove any default button border */
+		padding: 0; /* Remove padding, icon centered by flex */
+		color: var(--tkc-icon-color-orange, orange); /* Icon color */
+		pointer-events: auto; /* Ensure it's clickable */
 	}
 
 	.clear-button:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-		background: #fff0f0;
+		background-color: var(
+			--tkc-button-panel-background-hover,
+			#3c3c41
+		); /* Slightly lighter on hover */
+		transform: translateY(-2px) scale(1.05);
+		box-shadow:
+			0 6px 12px rgba(0, 0, 0, 0.2),
+			0 4px 8px rgba(0, 0, 0, 0.26);
 	}
 
 	.clear-button:active {
-		transform: scale(0.98);
+		transform: translateY(0px) scale(1); /* Click down effect */
+		background-color: var(--tkc-button-panel-background-active, #1e1e21); /* Darker when pressed */
+		box-shadow:
+			0 1px 3px rgba(0, 0, 0, 0.12),
+			0 1px 2px rgba(0, 0, 0, 0.24);
 	}
 
 	.icon-wrapper {
+		background: transparent; /* Ensure wrapper doesn't obscure button background */
 		display: flex;
-		justify-content: center;
 		align-items: center;
-		background: linear-gradient(135deg, #ff7b00, #ff9e00);
-		color: white;
-		width: calc(var(--button-size-factor, 1) * var(--base-icon-size));
-		height: calc(var(--button-size-factor, 1) * var(--base-icon-size));
-		font-size: calc(var(--button-size-factor, 1) * var(--base-icon-font-size));
-		border-radius: calc(var(--button-size-factor, 1) * var(--base-border-radius));
-		/* Ensure minimum size for small screens */
-		min-width: 32px;
-		min-height: 32px;
+		justify-content: center;
+		width: auto;
+		height: auto;
+		color: inherit; /* Inherit color from .clear-button (orange) */
 	}
 
-	/* Responsive adjustments for small screens */
-	@media (max-width: 480px) {
-		.clear-button {
-			/* Increase size on small screens for better touch targets */
-			--base-margin: 10px;
-			--base-padding: 10px;
-			--base-icon-size: 32px;
-			--base-icon-font-size: 16px;
-		}
+	.icon-wrapper i.fa-eraser {
+		font-size: calc(var(--button-size-factor, 1) * var(--base-icon-size)); /* Dynamic icon size */
+		/* Color is inherited from .clear-button via .icon-wrapper */
 	}
+
+	/* Ensure MDB ripple effect visually integrates or remove if problematic */
+	/* The .ripple class and data-mdb-ripple attributes are for Material Design Bootstrap ripple */
+	/* If the ripple effect looks odd with the new style, consider removing the class and attributes from the button. */
 </style>

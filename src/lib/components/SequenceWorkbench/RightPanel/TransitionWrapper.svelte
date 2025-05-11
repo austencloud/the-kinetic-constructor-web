@@ -4,24 +4,29 @@
 	import { cubicInOut } from 'svelte/easing';
 	import { onMount } from 'svelte';
 
-	// Props
-	export let isSequenceEmpty: boolean;
-	export let transitionDuration = 400;
+	// Props using Svelte 5 runes
+	const props = $props<{
+		isSequenceEmpty: boolean;
+		transitionDuration?: number;
+	}>();
 
-	// State
-	let previousState = isSequenceEmpty;
-	let isTransitioning = false;
-	let showStartPosPicker = isSequenceEmpty;
-	let showOptionPicker = !isSequenceEmpty;
-	let containerHeight = 0;
-	let startPosPickerHeight = 0;
-	let optionPickerHeight = 0;
-	let startPosPickerElement: HTMLElement | null = null;
-	let optionPickerElement: HTMLElement | null = null;
-	let containerElement: HTMLElement | null = null;
+	// Set default values
+	$effect(() => {
+		if (props.transitionDuration === undefined) props.transitionDuration = 400;
+	});
 
-	// Track when the component is mounted
-	let isMounted = false;
+	// State using Svelte 5 runes
+	let previousState = $state(props.isSequenceEmpty);
+	let isTransitioning = $state(false);
+	let showStartPosPicker = $state(props.isSequenceEmpty);
+	let showOptionPicker = $state(!props.isSequenceEmpty);
+	let containerHeight = $state(0);
+	let startPosPickerHeight = $state(0);
+	let optionPickerHeight = $state(0);
+	let startPosPickerElement = $state<HTMLElement | null>(null);
+	let optionPickerElement = $state<HTMLElement | null>(null);
+	let containerElement = $state<HTMLElement | null>(null);
+	let isMounted = $state(false);
 
 	onMount(() => {
 		isMounted = true;
@@ -36,7 +41,7 @@
 			updateHeights();
 
 			// Hide the component that shouldn't be visible initially
-			if (isSequenceEmpty) {
+			if (props.isSequenceEmpty) {
 				showOptionPicker = false;
 			} else {
 				showStartPosPicker = false;
@@ -48,27 +53,43 @@
 	function updateHeights() {
 		if (!isMounted) return;
 
+		// Check if we're in fullscreen mode by looking at the document.fullscreenElement
+		const isFullScreen = !!document.fullscreenElement;
+
 		// For the start position picker, we want to use the full height of the container
 		// This ensures the start position picker is centered vertically
 		if (containerElement) {
-			const containerParentHeight = containerElement.parentElement?.clientHeight || 0;
-			if (containerParentHeight > 0) {
-				startPosPickerHeight = containerParentHeight;
+			// In fullscreen mode, use the viewport height
+			if (isFullScreen) {
+				startPosPickerHeight = window.innerHeight;
 			} else {
-				// Fallback to scrollHeight if parent height is not available
-				if (startPosPickerElement) {
-					startPosPickerHeight = startPosPickerElement.scrollHeight;
+				const containerParentHeight = containerElement.parentElement?.clientHeight || 0;
+				if (containerParentHeight > 0) {
+					startPosPickerHeight = containerParentHeight;
+				} else {
+					// Fallback to scrollHeight if parent height is not available
+					if (startPosPickerElement) {
+						startPosPickerHeight = startPosPickerElement.scrollHeight;
+					}
 				}
 			}
 		}
 
-		// For the option picker, we use its actual content height
+		// For the option picker, we need to ensure it has enough height
 		if (optionPickerElement) {
-			optionPickerHeight = optionPickerElement.scrollHeight;
+			// In fullscreen mode, use the viewport height
+			if (isFullScreen) {
+				optionPickerHeight = window.innerHeight;
+			} else {
+				// Use the greater of the content height or the container parent height
+				const contentHeight = optionPickerElement.scrollHeight;
+				const containerParentHeight = containerElement?.parentElement?.clientHeight || 0;
+				optionPickerHeight = Math.max(contentHeight, containerParentHeight);
+			}
 		}
 
 		// Set container height to the height of the visible component
-		const newHeight = isSequenceEmpty ? startPosPickerHeight : optionPickerHeight;
+		const newHeight = props.isSequenceEmpty ? startPosPickerHeight : optionPickerHeight;
 
 		// Only update if height has changed
 		if (newHeight !== containerHeight && newHeight > 0) {
@@ -76,7 +97,12 @@
 
 			// Update container style with animation
 			if (containerElement) {
-				containerElement.style.height = `${containerHeight}px`;
+				// In fullscreen mode, use 100% height instead of fixed pixel value
+				if (isFullScreen) {
+					containerElement.style.height = '100%';
+				} else {
+					containerElement.style.height = `${containerHeight}px`;
+				}
 			}
 		}
 	}
@@ -95,16 +121,39 @@
 			resizeObserver.observe(optionPickerElement);
 		}
 
+		// Add fullscreen change event listener
+		const handleFullscreenChange = () => {
+			// Update heights when entering or exiting fullscreen mode
+			updateHeights();
+
+			// Force a window resize event to ensure all components update
+			window.dispatchEvent(new Event('resize'));
+		};
+
+		// Add event listeners for all browser variants
+		document.addEventListener('fullscreenchange', handleFullscreenChange);
+		document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+		document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+		document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
 		return () => {
 			resizeObserver.disconnect();
+
+			// Remove fullscreen event listeners
+			document.removeEventListener('fullscreenchange', handleFullscreenChange);
+			document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+			document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+			document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
 		};
 	});
 
 	// Watch for changes in isSequenceEmpty and handle transitions
-	$: if (isMounted && previousState !== isSequenceEmpty) {
-		handleTransition();
-		previousState = isSequenceEmpty;
-	}
+	$effect(() => {
+		if (isMounted && previousState !== props.isSequenceEmpty) {
+			handleTransition();
+			previousState = props.isSequenceEmpty;
+		}
+	});
 
 	// Pre-initialize both components to ensure proper layout
 	function preInitializeComponents() {
@@ -150,7 +199,7 @@
 
 			// Animate to the new height
 			setTimeout(() => {
-				const newHeight = isSequenceEmpty ? startPosPickerHeight : optionPickerHeight;
+				const newHeight = props.isSequenceEmpty ? startPosPickerHeight : optionPickerHeight;
 				if (containerElement) {
 					containerElement.style.height = `${newHeight}px`;
 					containerHeight = newHeight;
@@ -159,7 +208,7 @@
 		}
 
 		// If transitioning to StartPosPicker
-		if (isSequenceEmpty) {
+		if (props.isSequenceEmpty) {
 			// Show StartPosPicker immediately to ensure animation plays
 			showStartPosPicker = true;
 
@@ -172,7 +221,7 @@
 			setTimeout(() => {
 				showOptionPicker = false;
 				isTransitioning = false;
-			}, transitionDuration + 50); // Add a small buffer to ensure animation completes
+			}, props.transitionDuration + 50); // Add a small buffer to ensure animation completes
 		}
 		// If transitioning to OptionPicker
 		else {
@@ -188,37 +237,25 @@
 			setTimeout(() => {
 				showStartPosPicker = false;
 				isTransitioning = false;
-			}, transitionDuration + 50); // Add a small buffer to ensure animation completes
+			}, props.transitionDuration + 50); // Add a small buffer to ensure animation completes
 		}
 	}
 
 	// Transition parameters
 
 	// Different fly parameters for entering and exiting
-	const flyInParams = {
-		duration: transitionDuration,
+	const flyInParams = $derived({
+		duration: props.transitionDuration,
 		easing: cubicInOut,
-		y: 20, // Reduced distance for smoother animation
-		opacity: 0,
-		delay: 50 // Small delay to ensure proper sequencing
-	};
-
-	const flyOutParams = {
-		duration: transitionDuration * 0.7, // Slightly faster exit for better UX
-		easing: cubicInOut,
-		y: -15, // Reduced distance for smoother animation
+		y: 30,
 		opacity: 0
-	};
+	});
 
-	// Track if this is the first render to prevent animation on initial load
-	let isFirstRender = true;
-
-	// After component is mounted, set isFirstRender to false
-	onMount(() => {
-		// Set isFirstRender to false after a short delay
-		setTimeout(() => {
-			isFirstRender = false;
-		}, 100);
+	const flyOutParams = $derived({
+		duration: props.transitionDuration * 0.8,
+		easing: cubicInOut,
+		y: -20,
+		opacity: 0
 	});
 </script>
 
@@ -226,9 +263,9 @@
 	{#if showStartPosPicker}
 		<div
 			class="component-wrapper start-pos-wrapper"
-			class:active={isSequenceEmpty}
+			class:active={props.isSequenceEmpty}
 			bind:this={startPosPickerElement}
-			in:fly={isFirstRender ? { duration: 0 } : flyInParams}
+			in:fly={flyInParams}
 			out:fly={flyOutParams}
 		>
 			<slot name="startPosPicker" />
@@ -238,9 +275,9 @@
 	{#if showOptionPicker}
 		<div
 			class="component-wrapper option-picker-wrapper"
-			class:active={!isSequenceEmpty}
+			class:active={!props.isSequenceEmpty}
 			bind:this={optionPickerElement}
-			in:fly={isFirstRender ? { duration: 0 } : flyInParams}
+			in:fly={flyInParams}
 			out:fly={flyOutParams}
 		>
 			<slot name="optionPicker" />
@@ -258,7 +295,8 @@
 		will-change: height;
 		display: flex;
 		flex-direction: column;
-		transform: translateZ(0); /* Force hardware acceleration */
+		flex: 1;
+		min-height: 0; /* Crucial for proper flex behavior */
 	}
 
 	.component-wrapper {
@@ -278,11 +316,9 @@
 		flex-direction: column;
 		justify-content: center; /* Center content vertically */
 		align-items: center; /* Center content horizontally */
-		transform-origin: center center; /* Ensure transforms are centered */
-		backface-visibility: hidden; /* Prevent flickering */
-		-webkit-backface-visibility: hidden;
-		transform-style: preserve-3d; /* Improve rendering */
-		-webkit-transform-style: preserve-3d; /* Improve rendering on WebKit */
+		flex: 1;
+		min-height: 0; /* Crucial for proper flex behavior */
+		overflow: auto; /* Allow scrolling if content overflows */
 	}
 
 	.component-wrapper.active {
@@ -299,6 +335,9 @@
 		align-items: center;
 		width: 100%;
 		height: 100%;
+		flex: 1;
+		min-height: 0; /* Crucial for proper flex behavior */
+		overflow: auto; /* Allow scrolling if content overflows */
 	}
 
 	/* Ensure the start position picker has proper styling */
