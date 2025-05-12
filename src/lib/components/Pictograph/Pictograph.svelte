@@ -17,10 +17,11 @@
 	import InitializingSpinner from './components/InitializingSpinner.svelte';
 	import LoadingProgress from './components/LoadingProgress.svelte';
 	import BeatLabel from './components/BeatLabel.svelte';
-	import { logger } from '$lib/core/logging';
+	import PictographWrapper from './components/PictographWrapper.svelte';
+	import PictographSVG from './components/PictographSVG.svelte';
 	// Import utility functions
 	import { defaultPictographData } from './utils/defaultPictographData';
-	import { createDataSnapshot, type PictographDataSnapshot } from './utils/dataComparison';
+	import type { PictographDataSnapshot } from './utils/dataComparison';
 	import {
 		handlePictographError,
 		handlePictographComponentError,
@@ -28,13 +29,8 @@
 		type ComponentErrorContext,
 		type FallbackDataContext
 	} from './handlers/PictographErrorHandler';
+	import { createAndPositionComponents as createAndPositionComponentsUtil } from './utils/componentPositioning';
 	import {
-		createAndPositionComponents as createAndPositionComponentsUtil,
-		getPictographAriaLabel
-	} from './utils/componentPositioning';
-	import {
-		getPictographElement,
-		getPictographRole,
 		shouldShowBeatLabel,
 		shouldShowDebugInfo,
 		shouldShowLoadingIndicator,
@@ -56,6 +52,13 @@
 		updateComponentsFromData as updateComponentsFromDataUtil,
 		setupPictographDataSubscription
 	} from './managers/PictographStateManager';
+
+	// Import lifecycle management functions
+	import {
+		initializePictograph,
+		createCleanupFunction,
+		createInitializationContext
+	} from './managers/PictographLifecycle';
 
 	// Props
 	export let pictographData: PictographData | undefined = undefined;
@@ -99,74 +102,87 @@
 	const dispatch = createEventDispatcher();
 
 	onMount(() => {
-		const startTime = performance.now();
-
-		try {
-			// Make sure we have data to work with
-			if (!pictographData && !get(pictographDataStore)) {
-				// If no data is available, use default data
-				pictographDataStore.set(defaultPictographData);
-				return;
-			}
-
-			// Log component initialization
-			logger.info('Pictograph component initializing', {
-				data: {
-					debug,
-					hasMotionData: hasRequiredMotionDataUtil(get(pictographDataStore)),
-					letter: get(pictographDataStore)?.letter,
-					gridMode: get(pictographDataStore)?.gridMode
-				}
-			});
-
-			service = initializePictographService(pictographDataStore);
-
-			// Initialize data snapshot
-			lastDataSnapshot = createDataSnapshot(get(pictographDataStore));
-
-			if (hasRequiredMotionDataUtil(get(pictographDataStore))) {
-				state = 'loading';
-				logger.debug('Pictograph: Motion data available, entering loading state', {
-					data: {
-						redMotionData: get(pictographDataStore)?.redMotionData ? true : false,
-						blueMotionData: get(pictographDataStore)?.blueMotionData ? true : false
-					}
-				});
-			} else {
-				state = 'grid_only';
-				logger.debug('Pictograph: No motion data, entering grid-only state');
-			}
-
-			const initTime = performance.now() - startTime;
-			logger.info(`Pictograph initialized in ${initTime.toFixed(2)}ms`, {
-				duration: initTime,
-				data: {
-					state,
-					letter: get(pictographDataStore)?.letter,
-					gridMode: get(pictographDataStore)?.gridMode
-				}
-			});
-		} catch (error) {
-			handleError('initialization', error);
+		// Make sure we have data to work with
+		if (!pictographData && !get(pictographDataStore)) {
+			// If no data is available, use default data
+			pictographDataStore.set(defaultPictographData);
+			return;
 		}
 
-		return () => {
-			loadedComponents.clear();
-			subscription.unsubscribe();
-			logger.debug('Pictograph component unmounting');
+		// Create a writable store for the service
+		const serviceStore = {
+			set: (value: PictographService | null) => {
+				service = value;
+			},
+			update: (updater: (value: PictographService | null) => PictographService | null) => {
+				service = updater(service);
+			},
+			subscribe: () => {
+				return () => {};
+			}
 		};
+
+		// Create a writable store for the state
+		const stateStore = {
+			set: (value: string) => {
+				state = value;
+			},
+			update: (updater: (value: string) => string) => {
+				state = updater(state);
+			},
+			subscribe: () => {
+				return () => {};
+			}
+		};
+
+		// Create a writable store for the lastDataSnapshot
+		const lastDataSnapshotStore = {
+			set: (value: PictographDataSnapshot | null) => {
+				lastDataSnapshot = value;
+			},
+			update: (
+				updater: (value: PictographDataSnapshot | null) => PictographDataSnapshot | null
+			) => {
+				lastDataSnapshot = updater(lastDataSnapshot);
+			},
+			subscribe: () => {
+				return () => {};
+			}
+		};
+
+		// Create initialization context
+		const context = createInitializationContext(
+			pictographDataStore,
+			serviceStore,
+			stateStore,
+			lastDataSnapshotStore,
+			initializePictographService,
+			handleError
+		);
+
+		// Initialize the pictograph
+		initializePictograph(context, debug);
+
+		// Return cleanup function
+		return createCleanupFunction(loadedComponents, subscription.unsubscribe);
 	});
 
-	// Subscribe to the pictographDataStore to update components when it changes
-	const subscription = setupPictographDataSubscription(
-		pictographDataStore,
-		service,
-		lastDataSnapshot,
-		updateComponentsFromData,
-		dispatch,
-		debug,
-		checkForDataChangesUtil
-	);
+	// Create subscription for the pictographDataStore
+	let subscription = { unsubscribe: () => {} };
+
+	// Initialize subscription in onMount to ensure proper order
+	onMount(() => {
+		// Set up subscription to the pictographDataStore
+		subscription = setupPictographDataSubscription(
+			pictographDataStore,
+			service,
+			lastDataSnapshot,
+			updateComponentsFromData,
+			dispatch,
+			debug,
+			checkForDataChangesUtil
+		);
+	});
 
 	// Function to update components when pictographData changes
 	function updateComponentsFromData() {
@@ -338,172 +354,83 @@
 	// Using imported utility functions
 </script>
 
-{#if false}
-	<!-- Svelte 5 implementation removed -->
-{:else}
-	<!-- Use a button if onClick is provided, otherwise use a div -->
-	<svelte:element
-		this={getPictographElement(onClick)}
-		class="pictograph-wrapper"
-		on:click={onClick ? () => onClick() : undefined}
-		aria-label={onClick
-			? `Pictograph for letter ${get(pictographDataStore)?.letter || 'unknown'}`
-			: undefined}
-		role={getPictographRole(onClick)}
-		data-state={state}
-		data-letter={get(pictographDataStore)?.letter || 'none'}
-		{...onClick ? { type: 'button' } : {}}
-	>
-		<svg
-			class="pictograph"
-			viewBox="0 0 950 950"
-			xmlns="http://www.w3.org/2000/svg"
-			role="img"
-			aria-label={getPictographAriaLabel(state, errorMessage, get(pictographDataStore))}
-		>
-			{#if state === 'initializing'}
-				{#if shouldShowLoadingIndicator(state, showLoadingIndicator)}
-					<InitializingSpinner {animationDuration} />
-				{/if}
-			{:else if state === 'error'}
-				<PictographError {errorMessage} {animationDuration} />
-			{:else}
-				<Grid
-					gridMode={get(pictographDataStore)?.gridMode}
-					onPointsReady={handleGridLoaded}
-					on:error={(e) => handleComponentError('grid', e.detail.message)}
-					{debug}
+<PictographWrapper {pictographDataStore} {onClick} {state}>
+	<PictographSVG {pictographDataStore} {state} {errorMessage}>
+		{#if state === 'initializing'}
+			{#if shouldShowLoadingIndicator(state, showLoadingIndicator)}
+				<InitializingSpinner {animationDuration} />
+			{/if}
+		{:else if state === 'error'}
+			<PictographError {errorMessage} {animationDuration} />
+		{:else}
+			<Grid
+				gridMode={get(pictographDataStore)?.gridMode}
+				onPointsReady={handleGridLoaded}
+				on:error={(e) => handleComponentError('grid', e.detail.message)}
+				{debug}
+			/>
+
+			{#if shouldShowBeatLabel(beatNumber, isStartPosition)}
+				<BeatLabel
+					text={isStartPosition ? 'Start' : beatNumber?.toString() || ''}
+					position="top-left"
+					{animationDuration}
 				/>
+			{/if}
 
-				{#if shouldShowBeatLabel(beatNumber, isStartPosition)}
-					<BeatLabel
-						text={isStartPosition ? 'Start' : beatNumber?.toString() || ''}
-						position="top-left"
-						{animationDuration}
-					/>
+			{#if shouldShowMotionComponents(state)}
+				{#if get(pictographDataStore)?.letter}
+					<g transition:fade={{ duration: animationDuration, delay: 100 }}>
+						<TKAGlyph
+							letter={get(pictographDataStore)?.letter}
+							turnsTuple="(s, 0, 0)"
+							x={50}
+							y={800}
+						/>
+					</g>
 				{/if}
 
-				{#if shouldShowMotionComponents(state)}
-					{#if get(pictographDataStore)?.letter}
-						<g transition:fade={{ duration: animationDuration, delay: 100 }}>
-							<TKAGlyph
-								letter={get(pictographDataStore)?.letter}
-								turnsTuple="(s, 0, 0)"
-								x={50}
-								y={800}
+				{#each [{ color: 'red', propData: redPropData, arrowData: redArrowData, delay: 150 }, { color: 'blue', propData: bluePropData, arrowData: blueArrowData, delay: 200 }] as { color, propData, arrowData, delay }}
+					{#if propData}
+						<g
+							transition:fade={{ duration: animationDuration, delay }}
+							style="transform-origin: center center;"
+						>
+							<Prop
+								{propData}
+								on:loaded={() => handleComponentLoaded(`${color}Prop`)}
+								on:error={(e) => handleComponentError(`${color}Prop`, e.detail.message)}
 							/>
 						</g>
 					{/if}
 
-					{#each [{ color: 'red', propData: redPropData, arrowData: redArrowData, delay: 150 }, { color: 'blue', propData: bluePropData, arrowData: blueArrowData, delay: 200 }] as { color, propData, arrowData, delay }}
-						{#if propData}
-							<g
-								transition:fade={{ duration: animationDuration, delay }}
-								style="transform-origin: center center;"
-							>
-								<Prop
-									{propData}
-									on:loaded={() => handleComponentLoaded(`${color}Prop`)}
-									on:error={(e) => handleComponentError(`${color}Prop`, e.detail.message)}
-								/>
-							</g>
-						{/if}
-
-						{#if arrowData}
-							<g
-								transition:fade={{ duration: animationDuration, delay }}
-								style="transform-origin: center center;"
-							>
-								<Arrow
-									{arrowData}
-									on:loaded={() => handleComponentLoaded(`${color}Arrow`)}
-									on:error={(e) => handleComponentError(`${color}Arrow`, e.detail.message)}
-								/>
-							</g>
-						{/if}
-					{/each}
-				{/if}
+					{#if arrowData}
+						<g
+							transition:fade={{ duration: animationDuration, delay }}
+							style="transform-origin: center center;"
+						>
+							<Arrow
+								{arrowData}
+								on:loaded={() => handleComponentLoaded(`${color}Arrow`)}
+								on:error={(e) => handleComponentError(`${color}Arrow`, e.detail.message)}
+							/>
+						</g>
+					{/if}
+				{/each}
 			{/if}
-		</svg>
-
-		{#if state === 'loading' && shouldShowLoadingIndicator(state, showLoadingIndicator)}
-			<LoadingProgress {loadProgress} showText={true} />
 		{/if}
+	</PictographSVG>
 
-		{#if shouldShowDebugInfo(debug)}
-			<PictographDebug
-				{state}
-				{componentsLoaded}
-				totalComponents={totalComponentsToLoad}
-				{renderCount}
-			/>
-		{/if}
-	</svelte:element>
-{/if}
+	{#if state === 'loading' && shouldShowLoadingIndicator(state, showLoadingIndicator)}
+		<LoadingProgress {loadProgress} showText={true} />
+	{/if}
 
-<style>
-	.pictograph-wrapper {
-		width: 100%;
-		height: 100%;
-		position: relative;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-sizing: border-box;
-		aspect-ratio: 1;
-	}
-
-	.pictograph-wrapper:hover {
-		cursor: pointer;
-	}
-
-	.pictograph {
-		width: 100%;
-		height: 100%;
-		max-width: 100%;
-		max-height: 100%;
-		display: block;
-		background-color: white;
-		transition: transform 0.1s ease-in-out;
-		transform: scale(1);
-		z-index: 1;
-		position: relative;
-		border: 1px solid #ccc;
-		aspect-ratio: 1;
-		margin: auto;
-		overflow: visible;
-		transform-origin: center center;
-		box-sizing: border-box;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.pictograph-wrapper:hover .pictograph {
-		transform: scale(1.05);
-		z-index: 4;
-		border: 4px solid #48bb78;
-		box-shadow:
-			0 0 0 2px rgba(72, 187, 120, 0.4),
-			0 4px 12px rgba(0, 0, 0, 0.2);
-	}
-
-	.pictograph-wrapper:active .pictograph {
-		transform: scale(1);
-		transition-duration: 0.05s;
-	}
-
-	.pictograph-wrapper:focus-visible {
-		outline: none;
-	}
-
-	.pictograph-wrapper:focus-visible .pictograph {
-		outline: 3px solid #4299e1;
-		outline-offset: 2px;
-	}
-
-	.pictograph-wrapper[data-state='error'] .pictograph {
-		border-color: #fc8181;
-		box-shadow: 0 0 0 1px #fc8181;
-	}
-</style>
+	{#if shouldShowDebugInfo(debug)}
+		<PictographDebug
+			{state}
+			{componentsLoaded}
+			totalComponents={totalComponentsToLoad}
+			{renderCount}
+		/>
+	{/if}
+</PictographWrapper>
