@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
 	import { type Readable } from 'svelte/store';
+	import { fade, scale } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 	import Option from './Option.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import {
@@ -63,6 +65,7 @@
 			class="grid-item-wrapper"
 			class:single-item={applySingleItemClass}
 			class:two-item={applyTwoItemClass}
+
 		>
 			<Option pictographData={option} isPartOfTwoItems={applyTwoItemClass} />
 		</div>
@@ -83,6 +86,11 @@
 		margin-right: auto;
 		/* Add some bottom margin for spacing between groups */
 		/* margin-bottom: 1rem; */
+		position: relative; /* For stacking context */
+		min-height: calc(var(--option-size, 100px) + var(--grid-gap, 16px)); /* Ensure minimum height */
+		transition: height 0.3s ease-out; /* Smooth height transitions */
+		will-change: transform; /* Optimize for animations */
+		transform: translateZ(0); /* Force GPU acceleration */
 	}
 
 	/* Add top margin only if it's NOT part of a multi-group item */
@@ -105,9 +113,14 @@
 		position: relative; /* For z-index */
 		z-index: 1;
 		margin: 0px; /* Add extra margin between items */
+		transform-origin: center center; /* Ensure scaling happens from center */
+		will-change: transform, opacity; /* Optimize for animations */
+		backface-visibility: hidden; /* Prevent flickering during animations */
+		transition: transform 0.2s ease-out; /* Smooth hover transition */
 	}
 	.grid-item-wrapper:hover {
 		z-index: 10; /* Bring hovered item to front */
+		transform: scale(1.03); /* Subtle scale on hover */
 	}
 
 	/* --- Responsive Grid Adjustments (Applied based on context) --- */

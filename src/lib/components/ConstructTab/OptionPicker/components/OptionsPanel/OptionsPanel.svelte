@@ -62,18 +62,18 @@
 	onMount(() => {
 		setTimeout(() => {
 			restoreScrollPosition();
-		}, 50); 
+		}, 50);
 	});
 
 	$effect(() => {
 		const subGroups: Record<string, PictographData[]> = {};
 		options.forEach((option: PictographData) => {
-			const groupKey = determineGroupKey(option, 'type'); 
+			const groupKey = determineGroupKey(option, 'type');
 			if (!subGroups[groupKey]) subGroups[groupKey] = [];
 			subGroups[groupKey].push(option);
 		});
 
-		const currentSortedGroupKeys = getSortedGroupKeys(Object.keys(subGroups), 'type'); 
+		const currentSortedGroupKeys = getSortedGroupKeys(Object.keys(subGroups), 'type');
 
 		const rows: LayoutRow[] = [];
 		let i = 0;
@@ -124,8 +124,8 @@
 		let lastContentHeight = 0;
 		let lastContainerHeight = 0;
 		let checkCount = 0;
-		const MIN_CHECK_INTERVAL = 300; 
-		const MAX_CHECKS_PER_CYCLE = 3; 
+		const MIN_CHECK_INTERVAL = 300;
+		const MAX_CHECKS_PER_CYCLE = 3;
 
 		return () => {
 			if (timeoutId !== null) {
@@ -173,11 +173,11 @@
 				lastContentHeight = contentHeight;
 				lastContainerHeight = containerHeight;
 
-				const buffer = 10; 
+				const buffer = 10;
 				const fits = contentHeight + buffer <= containerHeight;
 
 				if (fits !== contentIsShort) {
-					contentIsShort = fits; 
+					contentIsShort = fits;
 					if (import.meta.env.DEV) {
 						console.debug('OptionsPanel content fits:', fits, {
 							contentHeight,
@@ -187,7 +187,7 @@
 					}
 				}
 				timeoutId = null;
-			}, 100); 
+			}, 100);
 		};
 	})();
 
@@ -214,11 +214,11 @@
 			if (panelElement) {
 				debouncedCheckContentHeight();
 				setTimeout(() => {
-					isReady = true; 
+					isReady = true;
 				}, 50);
 			}
 			initialCheckTimeout = null;
-		}, 200); 
+		}, 200);
 
 		return () => {
 			if (initialCheckTimeout) {
@@ -263,7 +263,10 @@
 		display: flex; /* Using flex to help with centering logic */
 		flex-direction: column;
 		opacity: 0;
-		transition: opacity 0.2s ease-out;
+		transition: opacity 0.35s ease-out;
+		will-change: opacity; /* Optimize for animations */
+		transform: translateZ(0); /* Force GPU acceleration */
+		backface-visibility: hidden; /* Prevent flickering during animations */
 	}
 
 	.options-panel.ready {
@@ -272,17 +275,17 @@
 
 	.panel-content {
 		width: 100%;
-		padding: 0.5rem 0; 
+		padding: 0.5rem 0;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 	}
 
 	.options-panel.vertically-center {
-		justify-content: center; 
+		justify-content: center;
 	}
 	.options-panel.vertically-center .panel-content {
-		position: absolute; 
+		position: absolute;
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
