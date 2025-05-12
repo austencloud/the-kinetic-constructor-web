@@ -24,6 +24,22 @@
 </button>
 
 <style>
+	:global(.sequence-widget > .main-layout > .settings-button) {
+		position: absolute;
+		top: calc(var(--button-size-factor, 1) * 10px); /* Consistent with other buttons */
+		left: calc(var(--button-size-factor, 1) * 10px);
+		width: calc(var(--button-size-factor, 1) * 45px); /* Base size from ShareButton */
+		height: calc(var(--button-size-factor, 1) * 45px);
+		z-index: 40; /* Consistent with other FABs */
+		/* Override default margin from SettingsButton's own style if necessary */
+		margin: 0 !important;
+	}
+
+	/* Ensure the icon inside scales correctly if its internal styling doesn't use a factor */
+	:global(.sequence-widget > .main-layout > .settings-button .settings-icon) {
+		font-size: calc(var(--button-size-factor, 1) * 19px); /* Base icon size from ShareButton */
+	}
+
 	.settings-button {
 		display: flex;
 		align-items: center;

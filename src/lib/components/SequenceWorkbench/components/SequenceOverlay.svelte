@@ -1,19 +1,23 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
-	import { createEventDispatcher } from 'svelte';
+	import {
+		sequenceOverlayStore,
+		closeSequenceOverlay
+	} from '$lib/state/sequenceOverlay/sequenceOverlayState';
 
 	// Props
-	export let isOpen: boolean = false;
-	export let title: string | null = null;
-
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		close: void;
+	const { title = null, children = $bindable() } = $props<{
+		title?: string | null;
+		children?: () => any;
+		sequenceName?: string;
 	}>();
+
+	// Use the store with Svelte 5 runes
+	const isOpen = $derived($sequenceOverlayStore.isOpen);
 
 	// Handle close action
 	function handleClose() {
-		dispatch('close');
+		closeSequenceOverlay();
 	}
 
 	// Handle escape key press on the window
@@ -35,11 +39,10 @@
 		event.stopPropagation();
 	}
 
-	// Reference to the content element for focus management
-	let contentElement: HTMLDivElement;
-
 	// Focus the content element when the overlay opens
 	function handleOverlayOpen() {
+		// Use document.querySelector to find the content element
+		const contentElement = document.querySelector('.sequence-content') as HTMLDivElement | null;
 		if (contentElement) {
 			setTimeout(() => {
 				contentElement.focus();
@@ -48,19 +51,19 @@
 	}
 </script>
 
-<svelte:window on:keydown={handleWindowKeydown} />
+<svelte:window onkeydown={handleWindowKeydown} />
 
 {#if isOpen}
 	<!-- The overlay wrapper - this is what receives the background click -->
 	<div
 		class="sequence-overlay-wrapper"
 		transition:fade={{ duration: 200 }}
-		on:introend={handleOverlayOpen}
+		onintroend={handleOverlayOpen}
 	>
 		<!-- Clickable background button - this is accessible and clickable -->
 		<button
 			class="background-button"
-			on:click={handleBackgroundClick}
+			onclick={handleBackgroundClick}
 			aria-label="Close sequence overlay"
 		></button>
 
@@ -68,13 +71,12 @@
 		<div
 			class="sequence-content"
 			transition:scale={{ duration: 200, start: 0.95 }}
-			on:click={handleContentClick}
-			on:keydown={() => {}}
+			onclick={handleContentClick}
+			onkeydown={() => {}}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby={title ? 'sequence-title' : undefined}
 			tabindex="-1"
-			bind:this={contentElement}
 		>
 			{#if title}
 				<div class="sequence-header">
@@ -84,7 +86,7 @@
 
 			<button
 				class="close-button"
-				on:click={handleClose}
+				onclick={handleClose}
 				aria-label="Close sequence overlay"
 				title="Close sequence overlay"
 			>
@@ -104,11 +106,11 @@
 				</svg>
 			</button>
 
-			<!-- Content area with slot -->
+			<!-- Content area with render function -->
 			<div class="sequence-body">
-				<!-- Wrap slot in a div to prevent clicks from closing the overlay -->
+				<!-- Wrap content in a div to prevent clicks from closing the overlay -->
 				<div class="content-wrapper">
-					<slot />
+					{@render children?.()}
 				</div>
 			</div>
 		</div>
@@ -151,7 +153,7 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
-		max-width: 100vw;
+		max-width: 98vw; /* Increased from 95vw to use more space */
 		max-height: 95vh;
 		display: flex;
 		flex-direction: column;
@@ -166,7 +168,7 @@
 	@media (orientation: landscape) and (max-height: 600px) {
 		.sequence-content {
 			max-height: 100vh;
-			max-width: 90vw;
+			max-width: 95vw; /* Increased from 90vw to use more space */
 		}
 	}
 
@@ -197,6 +199,8 @@
 		box-sizing: border-box;
 		width: 100%;
 		position: relative;
+		/* Ensure the body takes up all available space */
+		min-height: 0; /* Important for flex children */
 	}
 
 	/* Wrapper for the slot content */
@@ -206,6 +210,13 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		/* Ensure the content wrapper takes up all available space */
+		flex: 1;
+		/* Prevent content from overflowing */
+		overflow: hidden;
+		/* Add padding to prevent content from touching the edges */
+		padding: 4px;
+		box-sizing: border-box;
 	}
 
 	@media (orientation: landscape) and (max-height: 600px) {

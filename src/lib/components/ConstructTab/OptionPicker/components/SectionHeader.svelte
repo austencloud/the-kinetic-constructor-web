@@ -4,10 +4,11 @@
 
 	export let groupKey: string; // The key for this header (e.g., "Type1")
 	export let isFirstHeader: boolean = false; // To adjust top margin
+	export let isCompact: boolean = false; // For compact display in multi-group rows
 </script>
 
-<div class="section-header-container" class:first={isFirstHeader}>
-	<span class="section-header">
+<div class="section-header-container" class:first={isFirstHeader} class:compact={isCompact}>
+	<span class="section-header" class:compact={isCompact}>
 		{@html formatStyledHeader(groupKey)}
 	</span>
 </div>
@@ -25,7 +26,13 @@
 	}
 
 	.section-header-container.first {
-		margin-top: 0.0rem; /* Less top margin for the very first header */
+		margin-top: 0rem; /* Less top margin for the very first header */
+	}
+
+	/* Compact styles for multi-group rows */
+	.section-header-container.compact {
+		margin-top: 0.25rem;
+		margin-bottom: 0.25rem;
 	}
 
 	.section-header {
@@ -43,6 +50,13 @@
 		white-space: nowrap;
 	}
 
+	/* Compact styles for multi-group rows */
+	.section-header.compact {
+		padding: 4px 12px;
+		font-size: 0.8rem;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	}
+
 	/* Responsive styles for mobile */
 	@media (max-width: 640px) {
 		.section-header {
@@ -51,6 +65,11 @@
 			min-width: 0;
 			max-width: 100%;
 		}
+
+		.section-header.compact {
+			padding: 3px 8px;
+			font-size: 0.75rem;
+		}
 	}
 
 	/* Even smaller for very small screens */
@@ -58,6 +77,11 @@
 		.section-header {
 			padding: 3px 8px;
 			font-size: 0.75rem;
+		}
+
+		.section-header.compact {
+			padding: 2px 6px;
+			font-size: 0.7rem;
 		}
 	}
 </style>

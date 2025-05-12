@@ -364,10 +364,18 @@
 				}
 			});
 
-			// Listen for viewChange events
+			// Listen for both viewChange and optionPickerViewChange events
 			optionPickerElement.addEventListener('viewChange', (event) => {
 				if (event instanceof CustomEvent) {
 					console.log('OptionPicker received viewChange event:', event.detail);
+					handleViewChange(event as CustomEvent<ViewModeDetail>);
+				}
+			});
+
+			// Add listener for the new event name to avoid infinite recursion
+			optionPickerElement.addEventListener('optionPickerViewChange', (event) => {
+				if (event instanceof CustomEvent) {
+					console.log('OptionPicker received optionPickerViewChange event:', event.detail);
 					handleViewChange(event as CustomEvent<ViewModeDetail>);
 				}
 			});
@@ -478,6 +486,13 @@
 				});
 
 				optionPickerElement.removeEventListener('viewChange', (event) => {
+					if (event instanceof CustomEvent) {
+						handleViewChange(event as CustomEvent<ViewModeDetail>);
+					}
+				});
+
+				// Also remove the new event listener
+				optionPickerElement.removeEventListener('optionPickerViewChange', (event) => {
 					if (event instanceof CustomEvent) {
 						handleViewChange(event as CustomEvent<ViewModeDetail>);
 					}

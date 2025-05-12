@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { circleCoordinates } from './circleCoordinates';
 	import type { GridData } from './GridData';
 	import { settingsStore } from '$lib/state/stores/settings/settings.store';
 	import type { GridMode } from './types';
+	import type { GridEvents, GridErrorEventDetail } from './GridEvents';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
@@ -16,10 +17,12 @@
 	let gridError = $state(false);
 	let gridErrorMessage = $state('');
 
+	// Create event dispatcher
+	const dispatch = createEventDispatcher();
+
 	// Create custom event functions
 	function dispatchError(message: string) {
-		const event = new CustomEvent('error', { detail: { message } });
-		document.dispatchEvent(event);
+		dispatch('error', { message });
 	}
 
 	// Get values from settings store with fallbacks using derived values

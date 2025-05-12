@@ -222,7 +222,7 @@
 			<div class="search-container">
 				<input
 					type="text"
-					placeholder="Search settings..."
+					placeholder="Search..."
 					bind:value={searchQuery}
 					class="search-input"
 				/>

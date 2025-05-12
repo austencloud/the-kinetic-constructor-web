@@ -1,15 +1,10 @@
 <!-- src/lib/components/SequenceWorkbench/SequenceOverlayButton.svelte -->
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { createEventDispatcher } from 'svelte';
-
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		viewSequenceOverlay: void;
-	}>();
+	import { openSequenceOverlay } from '$lib/state/sequenceOverlay/sequenceOverlayState';
 
 	function handleClick() {
-		dispatch('viewSequenceOverlay');
+		openSequenceOverlay();
 	}
 </script>
 

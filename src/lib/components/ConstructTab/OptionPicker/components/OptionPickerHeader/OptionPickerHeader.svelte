@@ -43,16 +43,24 @@
 			if (event instanceof CustomEvent && event.detail) {
 				console.log('Received viewChange event with detail:', event.detail);
 
-				// Forward the event to the parent component
-				// We'll use the header element itself to dispatch the event
-				// This ensures it bubbles up properly to the OptionPicker component
-				const headerElement = document.querySelector('.option-picker-header');
-				if (headerElement) {
-					const customEvent = new CustomEvent('viewChange', {
-						detail: event.detail,
-						bubbles: true
-					});
-					headerElement.dispatchEvent(customEvent);
+				// IMPORTANT: Check if the event is already from the header element
+				// This prevents infinite recursion by not re-dispatching events that originated from the header
+				const target = event.target as HTMLElement;
+				const isFromHeader = target && target.closest('.option-picker-header');
+
+				// Only forward events that didn't originate from the header
+				if (!isFromHeader) {
+					// Forward the event to the parent component using a custom event
+					// that doesn't trigger the document listeners again
+					const headerElement = document.querySelector('.option-picker-header');
+					if (headerElement) {
+						// Create a new event with a different name to avoid recursion
+						const customEvent = new CustomEvent('optionPickerViewChange', {
+							detail: event.detail,
+							bubbles: true
+						});
+						headerElement.dispatchEvent(customEvent);
+					}
 				}
 			}
 		};

@@ -35,7 +35,6 @@ export function applyLayout(
  * @param totalRows Number of rows in the grid
  * @param totalCols Number of columns in the grid
  * @param gap Gap between cells
- * @param labelsTotalHeight Combined height of CurrentWordLabel and DifficultyLabel
  * @returns Optimal cell size in pixels
  */
 export function calculateCellSize(
@@ -44,8 +43,7 @@ export function calculateCellSize(
 	containerHeight: number,
 	totalRows: number,
 	totalCols: number,
-	gap: number,
-	labelsTotalHeight: number = 0
+	gap: number
 ): number {
 	// Ensure we have valid dimensions
 	if (containerWidth <= 0 || containerHeight <= 0 || totalRows <= 0 || totalCols <= 0) {
@@ -56,23 +54,16 @@ export function calculateCellSize(
 	const totalGapWidth = gap * (totalCols - 1);
 	const totalGapHeight = gap * (totalRows - 1);
 
-	// Calculate available space after accounting for gaps, padding, and labels
+	// Calculate available space after accounting for gaps and padding
 	const padding = beatCount === 0 ? containerWidth * 0.1 : 16; // Larger padding when only start position
 	const availableWidth = Math.max(0, containerWidth - totalGapWidth - padding * 2);
-
-	// Use the full container height and subtract the space needed for labels and UI elements
-	// This ensures we're using the maximum available vertical space
-	const availableHeight = Math.max(
-		0,
-		containerHeight - totalGapHeight - padding * 2 - labelsTotalHeight
-	);
+	const availableHeight = Math.max(0, containerHeight - totalGapHeight - padding * 2);
 
 	// Calculate cell size based on available space in both dimensions
 	const cellWidthByContainer = Math.floor(availableWidth / totalCols);
-	const cellHeightByContainer = Math.floor(availableHeight / totalRows);
-
+	
 	// Use the smaller dimension to maintain square cells and prevent overflow
-	const baseSize = Math.min(cellWidthByContainer, cellHeightByContainer);
+	const baseSize = cellWidthByContainer;
 
 	// For start position only, make it proportionally larger
 	const cellSize = beatCount === 0 ? baseSize * 1.2 : baseSize;
@@ -85,11 +76,10 @@ export function calculateCellSize(
 	if (isLikelyFullscreen) {
 		// In fullscreen, allow larger cells but ensure they're not too large
 		// This helps ensure pictographs are displayed side by side correctly
-		return Math.min(Math.max(cellSize, 80), 300); // Min 80px, Max 300px for fullscreen
+		return Math.min(Math.max(cellSize, 80), 250); // Min 80px, Max 250px for fullscreen
 	} else {
-		// In normal mode, allow for larger cells to make better use of available space
-		// This ensures pictographs are properly sized based on the full available space
-		return Math.min(Math.max(cellSize, 70), 250); // Min 70px, Max 250px for normal view
+		// In normal mode, use more conservative constraints
+		return Math.min(Math.max(cellSize, 60), 200); // Min 60px, Max 200px for normal view
 	}
 }
 

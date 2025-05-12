@@ -313,7 +313,6 @@
 				beatRows,
 				beatCols + 1, // Add 1 for start position column
 				0, // No gap
-				labelsTotalHeight // Pass the labels' total height
 			);
 		} else {
 			// Fallback to using the beat frame's dimensions if sequence widget dimensions aren't available
@@ -326,7 +325,6 @@
 				beatRows,
 				beatCols + 1, // Add 1 for start position column
 				0, // No gap
-				labelsTotalHeight // Pass the labels' total height
 			);
 		}
 

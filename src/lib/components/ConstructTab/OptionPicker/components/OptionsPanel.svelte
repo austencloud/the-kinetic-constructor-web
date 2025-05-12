@@ -8,6 +8,117 @@
 	import SectionHeader from './SectionHeader.svelte';
 	import OptionGroupGrid from './OptionGroupGrid.svelte';
 
+	// Action to handle multi-group row overflow detection and prevention
+	function setupMultiGroupRow(node: HTMLElement) {
+		// Function to get the minimum width based on screen size
+		function getMinGroupWidth() {
+			// Match the media query breakpoints in the CSS
+			if (window.innerWidth <= 380) {
+				return 80; // Minimum width for very small screens
+			} else if (window.innerWidth <= 640) {
+				return 100; // Minimum width for small screens
+			} else {
+				return 140; // Default minimum width
+			}
+		}
+
+		// Function to get margin and padding values based on screen size
+		function getSpacingValues() {
+			// Match the media query breakpoints in the CSS
+			if (window.innerWidth <= 640) {
+				return {
+					margin: 0.1 * 16 * 2, // 0.1rem margin on each side for small screens
+					padding: 0.1 * 16 * 2, // 0.1rem padding on each side for small screens
+					gap: 0.1 * 16 // 0.1rem gap between items for small screens
+				};
+			} else {
+				return {
+					margin: 0.25 * 16 * 2, // 0.25rem margin on each side (from CSS)
+					padding: 0.25 * 16 * 2, // 0.25rem padding on each side (from CSS)
+					gap: 0.25 * 16 // 0.25rem gap between items (from CSS)
+				};
+			}
+		}
+
+		// Function to check and handle overflow
+		function checkOverflow() {
+			// Get all group items
+			const groupItems = node.querySelectorAll('.multi-group-item');
+			if (groupItems.length < 2) return; // No need to check if there's only one item
+
+			// Get container width
+			const containerWidth = node.clientWidth;
+
+			// Get the minimum width and spacing values based on screen size
+			const minGroupWidth = getMinGroupWidth();
+			const { margin, padding, gap } = getSpacingValues();
+
+			// Calculate minimum width needed for all items to fit in one row
+			// Each item needs: minGroupWidth + margin + padding
+			const itemWidth = minGroupWidth + margin + padding;
+			const totalMinWidth = itemWidth * groupItems.length + gap * (groupItems.length - 1);
+
+			// Check if items would overflow
+			const wouldOverflow = totalMinWidth > containerWidth;
+
+			// If items would overflow, add a class to the last item to force it to a new row
+			if (wouldOverflow) {
+				// Add class to the last item
+				const lastItem = groupItems[groupItems.length - 1] as HTMLElement;
+				lastItem.classList.add('force-new-row');
+
+				// Log for debugging
+				if (import.meta.env.DEV) {
+					console.debug('Multi-group row would overflow, forcing last item to new row', {
+						containerWidth,
+						totalMinWidth,
+						itemCount: groupItems.length
+					});
+				}
+			} else {
+				// Remove the class from all items if there's no overflow
+				groupItems.forEach((item) => {
+					item.classList.remove('force-new-row');
+				});
+
+				// Log for debugging
+				if (import.meta.env.DEV && groupItems.length > 1) {
+					console.debug('Multi-group row fits without overflow', {
+						containerWidth,
+						totalMinWidth,
+						itemCount: groupItems.length
+					});
+				}
+			}
+		}
+
+		// Create a resize observer to detect when the container width changes
+		const resizeObserver = new ResizeObserver(() => {
+			checkOverflow();
+		});
+
+		// Start observing the container
+		resizeObserver.observe(node);
+
+		// Also listen for window resize events to handle media query changes
+		const handleWindowResize = () => {
+			checkOverflow();
+		};
+
+		window.addEventListener('resize', handleWindowResize);
+
+		// Initial check
+		setTimeout(checkOverflow, 0);
+
+		// Clean up when the component is destroyed
+		return {
+			destroy() {
+				resizeObserver.disconnect();
+				window.removeEventListener('resize', handleWindowResize);
+			}
+		};
+	}
+
 	// Import scroll utilities
 	import { scrollActions } from '../store/scrollStore';
 
@@ -295,9 +406,9 @@
 					<OptionGroupGrid options={group.options} key={transitionKey + '-optgroup-' + group.key} />
 				{/each}
 			{:else if row.type === 'multi'}
-				<div class="multi-group-row">
+				<div class="multi-group-row" use:setupMultiGroupRow>
 					{#each row.groups as group, groupIndex (transitionKey + '-multi-' + group.key)}
-						<div class="multi-group-item">
+						<div class="multi-group-item" data-group-index={groupIndex}>
 							<SectionHeader
 								groupKey={group.key}
 								isFirstHeader={rowIndex === 0 && groupIndex === 0}
@@ -387,6 +498,15 @@
 		margin: 0.25rem;
 		padding: 0.25rem;
 		border-radius: 12px;
+		transition: all 0.2s ease-out; /* Smooth transition when forcing to new row */
+	}
+
+	/* Force an item to a new row when it would cause overflow */
+	.multi-group-item.force-new-row {
+		width: 100%; /* Take full width on the new row */
+		flex-basis: 100%; /* Ensure it takes the full row */
+		margin-top: 0.5rem; /* Add extra margin to separate from the row above */
+		box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.1); /* Subtle separator */
 	}
 
 	@media (max-width: 640px) {

@@ -1,54 +1,40 @@
 import {
-	isSequenceFullScreen,
-	openSequenceFullScreen,
-	closeSequenceFullScreen
-} from '$lib/stores/sequence/sequenceOverlayStore';
-import { onDestroy } from 'svelte';
+	sequenceOverlayState,
+	openSequenceOverlay,
+	closeSequenceOverlay
+} from '$lib/state/sequenceOverlay/sequenceOverlayState';
 
 /**
  * Interface for the sequence overlay manager return value
  */
 export interface SequenceOverlayManagerResult {
-	isFullScreen: boolean;
-	openFullScreen: () => void;
-	closeFullScreen: () => void;
+	isOpen: boolean;
+	openOverlay: () => void;
+	closeOverlay: () => void;
 }
 
 /**
- * Manages the overlay state for the sequence widget
+ * Manages the overlay state for the sequence widget using Svelte 5 runes
  * @returns Object with overlay state and functions
  */
 export function useSequenceOverlayManager(): SequenceOverlayManagerResult {
-	// Create a variable to hold the current state
-	let isFullScreen = false;
-
-	// Subscribe to the store to keep the value updated
-	const unsubscribe = isSequenceFullScreen.subscribe((value) => {
-		isFullScreen = value;
-	});
-
-	// Clean up subscription on component destroy
-	onDestroy(() => {
-		unsubscribe();
-	});
-
 	// Define the functions to open and close overlay
-	function openFullScreen() {
+	function openOverlay() {
 		console.log('Opening sequence overlay from manager');
-		openSequenceFullScreen();
+		openSequenceOverlay();
 	}
 
-	function closeFullScreen() {
+	function closeOverlay() {
 		console.log('Closing sequence overlay from manager');
-		closeSequenceFullScreen();
+		closeSequenceOverlay();
 	}
 
 	// Return the manager object
 	return {
-		get isFullScreen() {
-			return isFullScreen;
+		get isOpen() {
+			return sequenceOverlayState.isOpen;
 		},
-		openFullScreen,
-		closeFullScreen
+		openOverlay,
+		closeOverlay
 	};
 }

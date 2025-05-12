@@ -691,7 +691,7 @@
 			<Grid
 				{gridMode}
 				onPointsReady={handleGridLoaded}
-				on:error={(e) => handleComponentError('grid', e.detail)}
+				on:error={(e) => handleComponentError('grid', e.detail.message)}
 				{debug}
 			/>
 
@@ -719,7 +719,7 @@
 							<Prop
 								propData={currentPropData}
 								on:loaded={() => handleComponentLoaded(`${color}Prop`)}
-								on:error={(e) => handleComponentError(`${color}Prop`, e.detail)}
+								on:error={(e) => handleComponentError(`${color}Prop`, e.detail.message)}
 							/>
 						</g>
 					{/if}
@@ -732,7 +732,7 @@
 							<Arrow
 								arrowData={currentArrowData}
 								on:loaded={() => handleComponentLoaded(`${color}Arrow`)}
-								on:error={(e) => handleComponentError(`${color}Arrow`, e.detail)}
+								on:error={(e) => handleComponentError(`${color}Arrow`, e.detail.message)}
 							/>
 						</g>
 					{/if}
