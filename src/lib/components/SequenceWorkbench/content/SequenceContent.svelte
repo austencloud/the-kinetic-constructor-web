@@ -99,9 +99,40 @@
 					isScrollable={beatFrameShouldScroll}
 					elementReceiver={function (el: HTMLElement | null) {
 						// Use a function to update the bindable prop
-						// Add null check to prevent "Cannot read properties of null" error
-						if (beatFrameElement) {
-							beatFrameElement.set(el);
+						console.log('SequenceContent: BeatFrame element received:', el);
+
+						try {
+							// Add null check to prevent "Cannot read properties of null" error
+							if (beatFrameElement) {
+								beatFrameElement.set(el);
+								console.log('SequenceContent: Updated beatFrameElement prop');
+							} else {
+								console.error('SequenceContent: beatFrameElement is null, cannot set element');
+
+								// Try to dispatch a custom event as a fallback mechanism
+								if (el) {
+									console.log('SequenceContent: Dispatching beatframe-element-available event');
+									const event = new CustomEvent('beatframe-element-available', {
+										bubbles: true,
+										detail: { element: el }
+									});
+									document.dispatchEvent(event);
+								}
+							}
+						} catch (error) {
+							console.error('SequenceContent: Error updating beatFrameElement:', error);
+
+							// Always try to dispatch the event even if there was an error
+							if (el) {
+								console.log(
+									'SequenceContent: Dispatching beatframe-element-available event (after error)'
+								);
+								const event = new CustomEvent('beatframe-element-available', {
+									bubbles: true,
+									detail: { element: el }
+								});
+								document.dispatchEvent(event);
+							}
 						}
 					}}
 				/>

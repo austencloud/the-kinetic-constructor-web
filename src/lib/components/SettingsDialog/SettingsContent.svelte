@@ -2,6 +2,8 @@
 	import { appActions } from '$lib/state/machines/app/app.actions';
 	import { appService } from '$lib/state/machines/app/app.machine';
 	import { onMount } from 'svelte';
+	import HapticFeedbackSetting from '$lib/components/Settings/HapticFeedbackSetting.svelte';
+	import ImageExportTab from './ImageExportTab/ImageExportTab.svelte';
 
 	// Define better types for our settings
 	type BaseSetting = {
@@ -66,7 +68,7 @@
 			type: 'select',
 			options: ['Snowfall', 'Night Sky'],
 			defaultValue: 'Snowfall'
-		},
+		}
 		// { label: 'Show Grid', type: 'toggle', defaultValue: true },
 		// { label: 'Dark Mode', type: 'toggle', defaultValue: true }
 	];
@@ -106,7 +108,6 @@
 				backgroundOption = 'Snowfall';
 			} else if (currentBackground === 'nightSky') {
 				backgroundOption = 'Night Sky';
-
 			} else {
 				// Fallback to search
 				backgroundOption = backgroundSetting.options.find(
@@ -220,12 +221,7 @@
 
 		<div class="settings-actions">
 			<div class="search-container">
-				<input
-					type="text"
-					placeholder="Search..."
-					bind:value={searchQuery}
-					class="search-input"
-				/>
+				<input type="text" placeholder="Search..." bind:value={searchQuery} class="search-input" />
 				<i class="fa-solid fa-magnifying-glass search-icon"></i>
 			</div>
 
@@ -237,6 +233,26 @@
 
 	<div class="settings-content">
 		<div class="section-settings">
+			<!-- Mobile Settings Section -->
+			<div class="section-header">
+				<h3>Mobile Experience</h3>
+			</div>
+			<div class="mobile-settings">
+				<HapticFeedbackSetting />
+			</div>
+
+			<!-- Image Export Settings Section -->
+			<div class="section-header">
+				<h3>Image Export</h3>
+			</div>
+			<div class="image-export-settings">
+				<ImageExportTab />
+			</div>
+
+			<!-- Visual Settings Section -->
+			<div class="section-header">
+				<h3>Visual Settings</h3>
+			</div>
 			<div class="section-settings-grid">
 				{#each settings as setting (setting.label)}
 					{@const lowerCaseLabel = setting.label.toLowerCase()}
@@ -469,6 +485,24 @@
 	.section-settings {
 		flex: 1; /* Grow to fill space */
 		width: 100%;
+	}
+
+	.section-header {
+		margin: 1rem 0;
+		border-bottom: 1px solid rgba(108, 156, 233, 0.2);
+		padding-bottom: 0.5rem;
+	}
+
+	.section-header h3 {
+		font-size: 1.1rem;
+		font-weight: 500;
+		color: #6c9ce9;
+		margin: 0;
+	}
+
+	.mobile-settings,
+	.image-export-settings {
+		margin-bottom: 2rem;
 	}
 
 	.section-settings-grid {

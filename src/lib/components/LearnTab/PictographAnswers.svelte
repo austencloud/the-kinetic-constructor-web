@@ -1,4 +1,4 @@
-I don't really want the labels on things we got water I mean somebody could fill it up with probably nobody will somebody always drinks the water and that's gone it's poisonous sustenance is a lie That is the only constant oh it's completely full I mean 2 it's a small portable device that attaches magnetically to the back of your acoustic guitar And creates reverbs delays chorus<script lang="ts">
+<script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
@@ -70,11 +70,7 @@ I don't really want the labels on things we got water I mean somebody could fill
 					aria-label="Pictograph answer option"
 				>
 					<div class="pictograph-container">
-						<Pictograph
-							pictographData={processedPictograph}
-							showLoadingIndicator={false}
-							useNewStateManagement={false}
-						/>
+						<Pictograph pictographData={processedPictograph} showLoadingIndicator={false} />
 					</div>
 				</button>
 			{/key}

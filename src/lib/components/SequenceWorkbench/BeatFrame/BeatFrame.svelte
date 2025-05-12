@@ -271,10 +271,62 @@
 		}
 	});
 
+	// This effect ensures the element reference is passed to the parent component
+	// whenever the container element or the elementReceiver function changes
 	$effect(() => {
-		if (elementReceiver && beatFrameContainerRef) {
-			// Changed containerElement to beatFrameContainerRef
-			elementReceiver(beatFrameContainerRef); // Changed containerElement to beatFrameContainerRef
+		if (beatFrameContainerRef) {
+			console.log('BeatFrame: Container element available, calling elementReceiver');
+
+			// Make sure elementReceiver is a function before calling it
+			if (typeof elementReceiver === 'function') {
+				try {
+					elementReceiver(beatFrameContainerRef);
+					console.log('BeatFrame: Element passed to receiver:', beatFrameContainerRef);
+
+					// Store the element in a global variable as a fallback mechanism
+					if (browser) {
+						(window as any).__beatFrameElementRef = beatFrameContainerRef;
+						console.log('BeatFrame: Element stored in global fallback variable');
+					}
+				} catch (error) {
+					console.error('BeatFrame: Error calling elementReceiver:', error);
+				}
+			} else {
+				console.error('BeatFrame: elementReceiver is not a function:', elementReceiver);
+
+				// Even if the receiver isn't working, still store the element as a fallback
+				if (browser) {
+					(window as any).__beatFrameElementRef = beatFrameContainerRef;
+					console.log('BeatFrame: Element stored in global fallback variable (receiver error)');
+				}
+			}
+		} else {
+			console.log('BeatFrame: Container element not yet available');
+		}
+	});
+
+	// Add a MutationObserver to ensure the element is passed even after DOM changes
+	onMount(() => {
+		if (browser) {
+			// Set up a MutationObserver to detect when the element is added to the DOM
+			const observer = new MutationObserver((mutations) => {
+				if (beatFrameContainerRef && typeof elementReceiver === 'function') {
+					console.log('BeatFrame: DOM mutation detected, re-sending element reference');
+					elementReceiver(beatFrameContainerRef);
+					(window as any).__beatFrameElementRef = beatFrameContainerRef;
+				}
+			});
+
+			// Start observing the document body for DOM changes
+			observer.observe(document.body, {
+				childList: true,
+				subtree: true
+			});
+
+			return () => {
+				// Clean up the observer when the component is destroyed
+				observer.disconnect();
+			};
 		}
 	});
 

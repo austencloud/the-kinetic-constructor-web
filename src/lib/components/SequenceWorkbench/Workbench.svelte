@@ -4,7 +4,6 @@
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
 
 	// Props
-	export let toolsPanelOpen = false;
 
 	// Create event dispatcher for tools panel toggle
 	const dispatch = createEventDispatcher();
@@ -21,7 +20,6 @@
 {#key undefined}
 	<div class="sequence-workbench" use:resizeObserver>
 		<SequenceWidget
-			{toolsPanelOpen}
 		/>
 	</div>
 {/key}

@@ -169,8 +169,9 @@
 		:global(.header-content) {
 			flex-direction: row; /* Keep items on the same line */
 			align-items: center; /* Center align items vertically */
-			width: 100%;
 			flex-wrap: nowrap; /* Prevent wrapping to next line */
+			padding-right: 10px; /* Added padding for right side of ViewControl, need twice the amount of the items in the sequence widget for some reason */
+		
 		}
 
 		:global(.tabs),

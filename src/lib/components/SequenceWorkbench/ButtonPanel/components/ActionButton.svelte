@@ -1,32 +1,61 @@
 <script lang="ts">
 	// Import necessary modules and types
-	import { onMount } from 'svelte';
-	import { createEventDispatcher } from 'svelte';
 	import type { ButtonDefinition, ActionEventDetail, LayoutOrientation } from '../types'; // Import LayoutOrientation
 	import { getButtonAnimationDelayValue } from '../utils/animations';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
 
-	// Props
-	export let button: ButtonDefinition;
-	export let buttonSize: number;
-	export let index: number; // Index for stagger animation delay
-	// Accept animation state props from parent (ButtonsContainer)
-	export let isAnimatingOut = false;
-	export let layout: LayoutOrientation = 'horizontal';
+	// Props using Svelte 5 runes
+	const props = $props<{
+		button: ButtonDefinition;
+		buttonSize: number;
+		index: number; // Index for stagger animation delay
+		isAnimatingOut?: boolean;
+		layout?: LayoutOrientation;
+		onClick?: (detail: ActionEventDetail) => void;
+	}>();
 
-	// Event dispatcher for click events
-	const dispatch = createEventDispatcher<{ click: ActionEventDetail }>();
+	// Set default values
+	$effect(() => {
+		if (props.isAnimatingOut === undefined) props.isAnimatingOut = false;
+		if (props.layout === undefined) props.layout = 'horizontal';
+	});
+
+	// Extract props for easier access using $derived
+	const button = $derived(props.button);
+	const buttonSize = $derived(props.buttonSize);
+	const index = $derived(props.index);
+	const isAnimatingOut = $derived(props.isAnimatingOut || false);
+	const layout = $derived(props.layout || 'horizontal');
 
 	// Handle click event
 	function handleClick() {
-		// Dispatch the button's ID when clicked
-		dispatch('click', { id: button.id });
+		// Provide appropriate haptic feedback based on button type
+		if (browser) {
+			// Use different haptic patterns based on button action
+			if (button.id === 'clearSequence' || button.id === 'deleteBeat') {
+				// Warning feedback for destructive actions
+				hapticFeedbackService.trigger('warning');
+			} else if (button.id === 'saveImage' || button.id === 'viewFullScreen') {
+				// Success feedback for sharing/viewing actions
+				hapticFeedbackService.trigger('success');
+			} else {
+				// Default selection feedback for other actions
+				hapticFeedbackService.trigger('selection');
+			}
+		}
+
+		// Call the onClick handler if provided
+		if (props.onClick) {
+			props.onClick({ id: button.id });
+		}
 	}
 
 	// Reactive calculation for animation delay CSS variable
-	$: animationDelay = getButtonAnimationDelayValue(index);
+	const animationDelay = $derived(getButtonAnimationDelayValue(index));
 
 	// Reactive calculation for icon size based on button size
-	$: iconSize = buttonSize * 0.5; // Icon takes up half the button size
+	const iconSize = $derived(buttonSize * 0.5); // Icon takes up half the button size
 </script>
 
 <div
@@ -38,7 +67,7 @@
 >
 	<button
 		class="modern-button ripple"
-		on:click={handleClick}
+		onclick={handleClick}
 		title={button.title}
 		aria-label={button.title}
 		disabled={button.disabled || false}

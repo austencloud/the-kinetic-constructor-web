@@ -2,6 +2,7 @@
 	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout';
 	import { onMount, onDestroy } from 'svelte';
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
+	import { browser } from '$app/environment';
 
 	import { handleButtonAction } from './ButtonPanel/ButtonPanelLogic';
 	import {
@@ -30,6 +31,74 @@
 
 	let activeMode = $state<'construct' | 'generate'>('construct');
 	let beatFrameElement = $state<HTMLElement | null>(null);
+	let beatFrameElementFallback = $state<HTMLElement | null>(null);
+
+	// Log when beatFrameElement changes
+	$effect(() => {
+		console.log('SequenceWidget: beatFrameElement changed:', beatFrameElement);
+
+		// If we have a valid element, store it in localStorage for persistence across hot reloads
+		if (beatFrameElement && browser) {
+			try {
+				// We can't store the element directly, but we can mark that we have it
+				localStorage.setItem('beatFrameElementAvailable', 'true');
+			} catch (error) {
+				console.error('SequenceWidget: Error storing beatFrameElement availability:', error);
+			}
+		}
+	});
+
+	// Listen for the custom event as a fallback mechanism
+	onMount(() => {
+		if (browser) {
+			// Check if we have a global fallback reference
+			if ((window as any).__beatFrameElementRef) {
+				console.log('SequenceWidget: Found global fallback reference');
+				beatFrameElementFallback = (window as any).__beatFrameElementRef;
+			}
+
+			// Listen for the custom event
+			const handleBeatFrameElementAvailable = (event: CustomEvent) => {
+				console.log('SequenceWidget: Received beatframe-element-available event');
+				if (event.detail && event.detail.element) {
+					beatFrameElementFallback = event.detail.element;
+					console.log('SequenceWidget: Updated beatFrameElementFallback from event');
+				}
+			};
+
+			document.addEventListener(
+				'beatframe-element-available',
+				handleBeatFrameElementAvailable as EventListener
+			);
+
+			// Set up a MutationObserver to detect when the BeatFrame element is added to the DOM
+			const observer = new MutationObserver(() => {
+				if (!beatFrameElement) {
+					// Try to find the BeatFrame element in the DOM
+					const beatFrameElements = document.querySelectorAll('.beat-frame-container');
+					if (beatFrameElements.length > 0) {
+						console.log('SequenceWidget: Found BeatFrame element via MutationObserver');
+						beatFrameElementFallback = beatFrameElements[0] as HTMLElement;
+					}
+				}
+			});
+
+			// Start observing the document body for DOM changes
+			observer.observe(document.body, {
+				childList: true,
+				subtree: true
+			});
+
+			return () => {
+				// Clean up the event listener and observer when the component is destroyed
+				document.removeEventListener(
+					'beatframe-element-available',
+					handleBeatFrameElementAvailable as EventListener
+				);
+				observer.disconnect();
+			};
+		}
+	});
 	let isDeleteModalOpen = $state(false);
 	let isInDeletionMode = $state(false);
 	let deletionModeTooltip = $state<HTMLElement | null>(null);
@@ -280,7 +349,7 @@
 			<SettingsButton on:click={handleSettingsClick} />
 			<DeleteButton on:click={handleDeleteButtonClick} />
 			<SequenceOverlayButton />
-			<ShareButton {beatFrameElement} />
+			<ShareButton beatFrameElement={beatFrameElement || beatFrameElementFallback} />
 		</div>
 
 		<SequenceOverlay title={sequenceName}>

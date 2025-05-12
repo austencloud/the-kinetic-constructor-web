@@ -54,13 +54,18 @@
 	}
 
 	.view-button {
+		/* Base sizing variables - identical to other sequence buttons */
+		--base-size: 45px;
+		--base-icon-size: 19px;
+		--base-margin: 10px;
+
 		/* Sizing and Shape */
-		width: var(--view-button-base-size, 45px);
-		height: var(--view-button-base-size, 45px);
-		min-width: 38px; /* Consistent minimum */
+		width: calc(var(--button-size-factor, 1) * var(--base-size));
+		height: calc(var(--button-size-factor, 1) * var(--base-size));
+		min-width: 38px;
 		min-height: 38px;
-		border-radius: 50%; /* Round */
-		padding: 0; /* No padding for icon buttons */
+		border-radius: 50%;
+		padding: 0;
 
 		/* Display and Alignment */
 		display: flex;
@@ -69,7 +74,7 @@
 
 		/* Appearance */
 		background-color: var(--tkc-button-panel-background, #2a2a2e);
-		color: var(--tkc-icon-color-view); /* Use the defined icon color */
+		color: var(--tkc-icon-color-view, var(--tkc-icon-color-fullscreen, #4cc9f0));
 		border: none;
 		box-shadow:
 			0 3px 6px rgba(0, 0, 0, 0.16),
@@ -77,14 +82,14 @@
 		cursor: pointer;
 		overflow: hidden;
 		user-select: none;
-		position: relative; /* Kept from original, might be useful for future pseudo-elements if any */
+		position: relative;
+		z-index: 40;
 
-		/* Transitions for effects */
+		/* Transitions for effects - exact match with other buttons */
 		transition:
 			transform 0.2s ease-out,
 			background-color 0.2s ease-out,
-			box-shadow 0.2s ease-out,
-			color 0.2s ease-out;
+			box-shadow 0.2s ease-out;
 	}
 
 	.view-button:hover {
@@ -93,8 +98,6 @@
 		box-shadow:
 			0 6px 12px rgba(0, 0, 0, 0.2),
 			0 4px 8px rgba(0, 0, 0, 0.26);
-		/* Optionally change icon color on hover if desired, otherwise it inherits */
-		/* color: var(--tkc-icon-color-view-hover, var(--tkc-icon-color-view)); */
 	}
 
 	.view-button:active {
@@ -114,7 +117,7 @@
 	}
 
 	.view-icon {
-		font-size: var(--view-button-icon-size, 19px);
+		font-size: calc(var(--button-size-factor, 1) * var(--base-icon-size));
 		line-height: 1; /* Ensure consistent icon alignment */
 		/* Removed previous specific icon styles like filter, transform, custom transitions */
 	}
@@ -130,4 +133,17 @@
 		The .view-button.compact class styles are removed as the base style now dictates the compact, round look.
 		Responsive media queries (@media) that previously handled compactness are removed for the same reason.
 	*/
+
+	/* Responsive adjustments - match other buttons */
+	@media (max-width: 768px) {
+		.view-button {
+			--button-size-factor: 0.9;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.view-button {
+			--button-size-factor: 0.8;
+		}
+	}
 </style>

@@ -48,13 +48,7 @@
 	aria-label={`Beat ${beatNumber}`}
 >
 	<div class="pictograph-wrapper">
-		<Pictograph
-			{pictographData}
-			{beatNumber}
-			{isStartPosition}
-			showLoadingIndicator={false}
-			useNewStateManagement={false}
-		/>
+		<Pictograph {pictographData} {beatNumber} {isStartPosition} showLoadingIndicator={false} />
 		<StyledBorderOverlay {pictographData} isEnabled={showBorder} />
 	</div>
 </button>

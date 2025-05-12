@@ -1,21 +1,30 @@
 <!-- src/lib/components/SequenceWorkbench/RemoveBeatButton.svelte -->
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { createEventDispatcher } from 'svelte';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
 
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		removeBeat: void;
+	// Use Svelte 5 events
+	const dispatch = $props<{
+		onRemoveBeat?: () => void;
 	}>();
 
 	function handleClick() {
-		dispatch('removeBeat');
+		// Provide warning haptic feedback for deletion
+		if (browser) {
+			hapticFeedbackService.trigger('warning');
+		}
+
+		// Call the event handler if provided
+		if (dispatch.onRemoveBeat) {
+			dispatch.onRemoveBeat();
+		}
 	}
 </script>
 
 <button
 	class="remove-beat-button ripple"
-	on:click={handleClick}
+	onclick={handleClick}
 	aria-label="Remove beat"
 	data-mdb-ripple="true"
 	data-mdb-ripple-color="light"

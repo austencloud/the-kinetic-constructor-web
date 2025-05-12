@@ -1,5 +1,8 @@
 <!-- src/lib/components/SequenceWorkbench/RightPanel/RightPanelTabs.svelte -->
 <script lang="ts">
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
+
 	// Props using Svelte 5 runes
 	const props = $props<{
 		activeTab: 'construct' | 'generate';
@@ -17,6 +20,11 @@
 	function handleTabClick(tabId: 'construct' | 'generate') {
 		// Only allow tab changes if not in generate mode from the main tab
 		if (tabId !== props.activeTab && !props.isGenerateMode) {
+			// Provide subtle navigation haptic feedback
+			if (browser) {
+				hapticFeedbackService.trigger('navigation');
+			}
+
 			props.onTabChange(tabId);
 		}
 	}

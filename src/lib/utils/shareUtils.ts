@@ -457,11 +457,11 @@ function inferMotionType(startLoc: Loc, endLoc: Loc, rotDir: PropRotDir): string
 		ne: 'sw',
 		sw: 'ne',
 		nw: 'se',
-		se: 'nw',
+		se: 'nw'
 	};
 
 	// If ending at the opposite position, it's definitely a dash
-  if (oppositePairs[startLoc] === endLoc) {
+	if (oppositePairs[startLoc] === endLoc) {
 		return 'dash';
 	}
 
@@ -606,7 +606,14 @@ function inferLetter(blueMotion: MotionData | null, redMotion: MotionData | null
  * @returns {boolean} True if Web Share API is supported
  */
 export function isWebShareSupported(): boolean {
-	return browser && 'share' in navigator && typeof navigator.share === 'function';
+	console.log('shareUtils: Checking if Web Share API is supported');
+	console.log('shareUtils: browser:', browser);
+	console.log('shareUtils: share in navigator:', 'share' in navigator);
+	console.log('shareUtils: typeof navigator.share:', typeof navigator.share);
+
+	const isSupported = browser && 'share' in navigator && typeof navigator.share === 'function';
+	console.log('shareUtils: Web Share API supported:', isSupported);
+	return isSupported;
 }
 
 /**
@@ -614,8 +621,40 @@ export function isWebShareSupported(): boolean {
  * @returns {boolean} True if Web Share API with files is supported
  */
 export function isFileShareSupported(): boolean {
-	if (!browser) return false;
-	return isWebShareSupported() && 'canShare' in navigator && navigator.canShare({ files: [] });
+	console.log('shareUtils: Checking if File Share API is supported');
+
+	if (!browser) {
+		console.log('shareUtils: Not in browser environment');
+		return false;
+	}
+
+	try {
+		// First check if basic Web Share API is supported
+		const webShareSupported = isWebShareSupported();
+		console.log(
+			'shareUtils: Web Share API supported (from isFileShareSupported):',
+			webShareSupported
+		);
+		if (!webShareSupported) return false;
+
+		// Then check if canShare method exists
+		const canShareExists = 'canShare' in navigator && typeof navigator.canShare === 'function';
+		console.log('shareUtils: canShare method exists:', canShareExists);
+		if (!canShareExists) return false;
+
+		// Create a dummy file for testing
+		console.log('shareUtils: Creating dummy file for testing');
+		const dummyFile = new File(['test'], 'test.png', { type: 'image/png' });
+
+		// Check if the browser can share files
+		const canShareFiles = navigator.canShare({ files: [dummyFile] });
+		console.log('shareUtils: Browser can share files:', canShareFiles);
+		return canShareFiles;
+	} catch (error) {
+		// If any error occurs, assume file sharing is not supported
+		console.warn('shareUtils: File sharing check failed:', error);
+		return false;
+	}
 }
 
 /**
@@ -649,7 +688,9 @@ export function generateShareableUrl(beats: BeatData[], sequenceName: string): s
 					encoded = compressed;
 				}
 			} catch (e) {
-				logger.warn('LZString compression failed, using uncompressed format', { error: e instanceof Error ? e : new Error(String(e)) });
+				logger.warn('LZString compression failed, using uncompressed format', {
+					error: e instanceof Error ? e : new Error(String(e))
+				});
 			}
 		}
 
@@ -659,7 +700,9 @@ export function generateShareableUrl(beats: BeatData[], sequenceName: string): s
 
 		return url.toString();
 	} catch (error) {
-		logger.error('Failed to generate shareable URL', { error: error instanceof Error ? error : new Error(String(error)) });
+		logger.error('Failed to generate shareable URL', {
+			error: error instanceof Error ? error : new Error(String(error))
+		});
 		return window.location.href;
 	}
 }
@@ -714,11 +757,15 @@ export function checkForSequenceInUrl(sequenceContainer: any): boolean {
 			url.searchParams.delete('seq');
 			window.history.replaceState({}, '', url);
 
-			logger.info('Reconstructed sequence from URL', { beatCount: reconstructedBeats.length } as any);
+			logger.info('Reconstructed sequence from URL', {
+				beatCount: reconstructedBeats.length
+			} as any);
 
 			return true;
 		} catch (error) {
-			logger.error('Failed to reconstruct sequence from URL', { error: error instanceof Error ? error : new Error(String(error)) });
+			logger.error('Failed to reconstruct sequence from URL', {
+				error: error instanceof Error ? error : new Error(String(error))
+			});
 			showError('Failed to load sequence from URL');
 		}
 	}
@@ -756,47 +803,69 @@ export async function shareSequenceWithImage(
 	sequenceName: string,
 	shareUrl: string
 ): Promise<boolean> {
-	if (!isFileShareSupported()) {
+	console.log('shareUtils: shareSequenceWithImage called with:', { sequenceName, shareUrl });
+	console.log('shareUtils: imageResult:', imageResult);
+
+	// Double-check file sharing support
+	const fileShareSupported = isFileShareSupported();
+	console.log('shareUtils: File sharing supported (double-check):', fileShareSupported);
+
+	if (!browser || !fileShareSupported) {
+		console.log('shareUtils: File sharing not supported, returning false');
 		logger.warn('File sharing not supported on this device');
-		showError("Your device doesn't support sharing images");
 		return false;
 	}
 
 	try {
 		// Convert the data URL to a Blob
+		console.log('shareUtils: Converting data URL to Blob');
 		const blob = dataURLtoBlob(imageResult.dataUrl);
+		console.log('shareUtils: Blob created:', blob);
 
 		// Create a File from the Blob
-		const file = new File([blob], `${sequenceName}.png`, { type: 'image/png' });
+		console.log('shareUtils: Creating File from Blob');
+		const file = new File([blob], `${sequenceName || 'sequence'}.png`, { type: 'image/png' });
+		console.log('shareUtils: File created:', file);
 
 		// Create share data with the image file
 		const shareData: ShareData = {
 			title: 'Kinetic Constructor Sequence',
-			text: `Check out this sequence: ${sequenceName}\n\nOpen this link to reconstruct: ${shareUrl}`,
+			text: `Check out this sequence${sequenceName ? ': ' + sequenceName : ''}\n\nOpen this link to reconstruct: ${shareUrl}`,
 			url: shareUrl,
 			files: [file]
 		};
+		console.log('shareUtils: Share data created:', shareData);
 
 		// Check if the device can share this content
-		if (!navigator.canShare(shareData)) {
+		const canShareContent = navigator.canShare && navigator.canShare(shareData);
+		console.log('shareUtils: Device can share this content:', canShareContent);
+
+		if (!canShareContent) {
+			console.log('shareUtils: Device cannot share this content, returning false');
 			logger.warn('Device cannot share this content');
 			showError("Your device doesn't support sharing this type of content");
 			return false;
 		}
 
 		// Share the content
+		console.log('shareUtils: Calling navigator.share with shareData');
 		await navigator.share(shareData);
+		console.log('shareUtils: navigator.share completed successfully');
 		logger.info('Sequence shared successfully with image');
 		showSuccess('Sequence shared successfully with image');
 		return true;
 	} catch (error) {
 		// Don't show error for user cancellation
 		if (error instanceof Error && error.name === 'AbortError') {
+			console.log('shareUtils: User cancelled sharing');
 			logger.info('User cancelled sharing');
 			return false;
 		}
 
-		logger.error('Error sharing sequence with image', { error: error instanceof Error ? error : new Error(String(error)) });
+		console.error('shareUtils: Error in shareSequenceWithImage:', error);
+		logger.error('Error sharing sequence with image', {
+			error: error instanceof Error ? error : new Error(String(error))
+		});
 		showError('Failed to share sequence with image');
 		return false;
 	}
@@ -825,7 +894,9 @@ export async function shareSequence(shareData: ShareData): Promise<boolean> {
 			return false;
 		}
 
-		logger.error('Error sharing sequence', { error: error instanceof Error ? error : new Error(String(error)) });
+		logger.error('Error sharing sequence', {
+			error: error instanceof Error ? error : new Error(String(error))
+		});
 		showError('Failed to share sequence');
 		return false;
 	}
@@ -844,7 +915,9 @@ export async function copyToClipboard(url: string): Promise<boolean> {
 		showSuccess('Link copied to clipboard');
 		return true;
 	} catch (error) {
-		logger.error('Failed to copy to clipboard', { error: error instanceof Error ? error : new Error(String(error)) });
+		logger.error('Failed to copy to clipboard', {
+			error: error instanceof Error ? error : new Error(String(error))
+		});
 		showError('Failed to copy link to clipboard');
 		return false;
 	}

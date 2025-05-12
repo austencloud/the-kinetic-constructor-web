@@ -50,11 +50,7 @@
 	{#if pictograph}
 		{#key pictographId}
 			<div class="pictograph-container">
-				<Pictograph
-					pictographData={processedPictographData}
-					showLoadingIndicator={false}
-					useNewStateManagement={false}
-				/>
+				<Pictograph pictographData={processedPictographData} showLoadingIndicator={false} />
 			</div>
 		{/key}
 	{:else}
