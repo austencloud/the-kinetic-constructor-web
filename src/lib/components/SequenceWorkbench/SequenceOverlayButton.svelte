@@ -29,7 +29,12 @@
 		--base-margin: 10px; /* Base margin from corner */
 
 		position: absolute;
-		bottom: calc(var(--button-size-factor, 1) * var(--base-margin));
+		/* Bottom inset is important as it affects the entire bottom edge */
+		bottom: max(
+			calc(var(--button-size-factor, 1) * var(--base-margin)),
+			var(--safe-inset-bottom, 0px)
+		);
+		/* Right inset is rarely needed for corner buttons */
 		right: calc(var(--button-size-factor, 1) * var(--base-margin));
 
 		width: calc(var(--button-size-factor, 1) * var(--base-size)); /* Dynamic width */

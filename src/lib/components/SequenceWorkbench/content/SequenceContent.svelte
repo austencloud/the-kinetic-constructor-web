@@ -105,7 +105,9 @@
 		height: 100%;
 		min-height: 0; /* Important for flex children */
 		overflow: hidden; /* Let children handle their own scrolling */
-		padding: 10px 0; /* Add some vertical padding */
+		/* Add padding that respects safe area insets */
+		padding: calc(10px + var(--safe-inset-top, 0px)) calc(0px + var(--safe-inset-right, 0px))
+			calc(10px + var(--safe-inset-bottom, 0px)) calc(0px + var(--safe-inset-left, 0px));
 		box-sizing: border-box;
 		/* Add transition for smooth layout changes */
 		transition: all 0.3s ease-out;

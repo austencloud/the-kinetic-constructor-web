@@ -312,7 +312,7 @@
 				sequenceWidgetHeight,
 				beatRows,
 				beatCols + 1, // Add 1 for start position column
-				0, // No gap
+				0 // No gap
 			);
 		} else {
 			// Fallback to using the beat frame's dimensions if sequence widget dimensions aren't available
@@ -324,7 +324,7 @@
 				size.height,
 				beatRows,
 				beatCols + 1, // Add 1 for start position column
-				0, // No gap
+				0 // No gap
 			);
 		}
 
@@ -665,7 +665,9 @@
 		height: fit-content; /* Default for non-scrolling */
 		margin: auto; /* Default for centering */
 		transition: all 0.3s ease-out;
-		padding-bottom: 20px; /* Keep this for scroll runway */
+		/* Add padding that respects safe area insets */
+		padding: 0 calc(var(--safe-inset-right, 0px)) calc(20px + var(--safe-inset-bottom, 0px))
+			calc(var(--safe-inset-left, 0px));
 		transform-origin: center center;
 	}
 

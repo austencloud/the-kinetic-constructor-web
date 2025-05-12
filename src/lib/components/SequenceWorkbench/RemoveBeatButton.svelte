@@ -34,9 +34,12 @@
 		--base-margin: 10px; /* Define base margin to match other buttons */
 
 		position: absolute;
-		bottom: calc(
-			var(--button-size-factor, 1) * (var(--base-size) + var(--base-margin) * 1.5)
-		); /* Position above clear button */
+		/* Bottom inset is important as it affects the entire bottom edge */
+		bottom: max(
+			calc(var(--button-size-factor, 1) * (var(--base-size) + var(--base-margin) * 1.5)),
+			calc(var(--safe-inset-bottom, 0px) + calc(var(--button-size-factor, 1) * var(--base-size)))
+		); /* Position above clear button, respecting safe area inset */
+		/* Left inset is rarely needed for corner buttons */
 		left: calc(var(--button-size-factor, 1) * var(--base-margin));
 
 		width: calc(var(--button-size-factor, 1) * var(--base-size)); /* Dynamic width */

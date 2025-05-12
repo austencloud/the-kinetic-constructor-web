@@ -130,6 +130,9 @@
 		align-items: center;
 		z-index: 9999;
 		box-sizing: border-box;
+		/* Apply safe area insets */
+		padding: var(--safe-inset-top, 0px) var(--safe-inset-right, 0px) var(--safe-inset-bottom, 0px)
+			var(--safe-inset-left, 0px);
 	}
 
 	/* Background button that covers the entire screen */
@@ -163,6 +166,8 @@
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 		z-index: 2; /* Above the background button */
 		outline: none;
+		/* Ensure content respects safe area insets */
+		box-sizing: border-box;
 	}
 
 	@media (orientation: landscape) and (max-height: 600px) {
@@ -205,7 +210,6 @@
 
 	/* Wrapper for the slot content */
 
-
 	@media (orientation: landscape) and (max-height: 600px) {
 		.sequence-header {
 			min-height: 30px;
@@ -218,8 +222,8 @@
 
 	.close-button {
 		position: absolute;
-		top: 15px;
-		right: 15px;
+		top: max(15px, var(--safe-inset-top, 15px));
+		right: max(15px, var(--safe-inset-right, 15px));
 		background-color: rgba(255, 255, 255, 0.3);
 		border: 2px solid rgba(255, 255, 255, 0.5);
 		border-radius: 50%;
@@ -240,8 +244,8 @@
 
 	@media (orientation: landscape) and (max-height: 600px) {
 		.close-button {
-			top: 8px;
-			right: 8px;
+			top: max(8px, var(--safe-inset-top, 8px));
+			right: max(8px, var(--safe-inset-right, 8px));
 			width: 40px;
 			height: 40px;
 		}

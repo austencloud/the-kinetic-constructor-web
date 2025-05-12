@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, afterUpdate } from 'svelte';
+	import { onMount } from 'svelte';
 	export let currentWord = 'Word';
 	export let width = 100;
 
@@ -9,10 +9,10 @@
 
 	function adjustFontSize() {
 		if (!wordDisplay || !parentWidth) return;
-		
+
 		fontSize = Math.max(width / 40, 30);
 		wordDisplay.style.fontSize = `${fontSize}px`;
-		
+
 		while (wordDisplay.scrollWidth > parentWidth * 0.9 && fontSize > 12) {
 			fontSize -= 1;
 			wordDisplay.style.fontSize = `${fontSize}px`;
@@ -30,10 +30,7 @@
 </script>
 
 <div class="current-word-label">
-	<span 
-		bind:this={wordDisplay} 
-		class="word-display"
-	>
+	<span bind:this={wordDisplay} class="word-display">
 		{currentWord}
 	</span>
 </div>
@@ -43,8 +40,11 @@
 		text-align: center;
 		font-weight: bold;
 		position: relative;
-		padding: 2px 5px;
+		/* Add horizontal padding that respects safe area insets */
+		padding: 2px calc(5px + var(--safe-inset-right, 0px)) 2px
+			calc(5px + var(--safe-inset-left, 0px));
 		width: 100%;
+		box-sizing: border-box;
 	}
 
 	.word-display {

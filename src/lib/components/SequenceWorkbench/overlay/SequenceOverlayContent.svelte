@@ -115,9 +115,23 @@
 			deviceOrientation = viewportWidth > viewportHeight ? 'landscape' : 'portrait';
 		}
 
-		// Calculate available space (95% of viewport width, 90% of viewport height)
-		const availableWidth = viewportWidth * 0.95;
-		const availableHeight = viewportHeight * 0.9; // Leave room for header/footer
+		// Get safe area insets from CSS variables
+		const safeInsetTop = parseFloat(
+			getComputedStyle(document.documentElement).getPropertyValue('--safe-inset-top') || '0px'
+		);
+		const safeInsetRight = parseFloat(
+			getComputedStyle(document.documentElement).getPropertyValue('--safe-inset-right') || '0px'
+		);
+		const safeInsetBottom = parseFloat(
+			getComputedStyle(document.documentElement).getPropertyValue('--safe-inset-bottom') || '0px'
+		);
+		const safeInsetLeft = parseFloat(
+			getComputedStyle(document.documentElement).getPropertyValue('--safe-inset-left') || '0px'
+		);
+
+		// Calculate available space (95% of viewport width, 90% of viewport height) accounting for safe area insets
+		const availableWidth = (viewportWidth - safeInsetLeft - safeInsetRight) * 0.95;
+		const availableHeight = (viewportHeight - safeInsetTop - safeInsetBottom) * 0.9; // Leave room for header/footer
 
 		// Calculate optimal cell size
 		const maxCellWidth = availableWidth / cols;
@@ -263,7 +277,6 @@
 <style>
 	/* Fullscreen overlay container */
 
-
 	/* Sequence grid */
 	.sequence-grid {
 		display: grid;
@@ -315,7 +328,7 @@
 	/* Rotation indicator */
 	.rotation-indicator {
 		position: absolute;
-		bottom: 16px;
+		bottom: max(16px, var(--safe-inset-bottom, 16px));
 		left: 0;
 		right: 0;
 		z-index: 10;

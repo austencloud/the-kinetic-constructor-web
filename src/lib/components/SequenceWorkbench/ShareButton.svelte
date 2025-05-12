@@ -5,7 +5,7 @@
 	import type { BeatData as ContainerBeatData } from '$lib/state/stores/sequence/SequenceContainer';
 	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 	import { renderSequenceToImage, downloadDataUrl } from '$lib/utils/sequenceImageRenderer';
-	import type { SequenceRenderOptions } from '$lib/utils/sequenceImageRenderer';
+	import type { SequenceRenderOptions, SequenceRenderResult } from '$lib/utils/sequenceImageRenderer';
 	import type { BeatData as RendererBeatData } from '$lib/components/SequenceWorkbench/BeatFrame/BeatData';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { Letter } from '$lib/types/Letter';
@@ -15,6 +15,8 @@
 		isWebShareSupported,
 		generateShareableUrl,
 		shareSequence,
+		shareSequenceWithImage,
+		isFileShareSupported,
 		type ShareData
 	} from '$lib/utils/shareUtils';
 	import ShareDropdown from './ShareDropdown.svelte';
@@ -34,6 +36,7 @@
 	let shareUrl = $state('');
 	let isSharing = $state(false);
 	let sequenceName = $state('');
+	let lastRenderResult: SequenceRenderResult | null = $state(null);
 
 	// Generate share URL when component mounts or sequence changes
 	$effect(() => {
@@ -104,19 +107,19 @@
 		isDropdownOpen = false;
 	}
 
-	// Export sequence as image
-	async function exportSequenceAsImage() {
+	// Render the sequence to an image
+	async function renderSequence(): Promise<SequenceRenderResult | null> {
 		if (!props.beatFrameElement) {
 			logger.error('BeatFrame element not available for image export.');
 			showError('Could not export image: Beat frame not found');
-			return;
+			return null;
 		}
 
 		const currentSequenceBeats = sequence.beats;
 		if (!currentSequenceBeats || currentSequenceBeats.length === 0) {
 			logger.warn('No beats in the current sequence to export.');
 			showError('No sequence to export');
-			return;
+			return null;
 		}
 
 		const beatsToRender: RendererBeatData[] = currentSequenceBeats.map(
@@ -178,7 +181,21 @@
 				throw new Error('Could not find element to render');
 			}
 
-			const result = await renderSequenceToImage(imageToRenderElement, options);
+			return await renderSequenceToImage(imageToRenderElement, options);
+		} catch (error) {
+			logger.error('Error rendering sequence to image:', {
+				error: error instanceof Error ? error : new Error(String(error))
+			});
+			showError('Failed to render sequence as image');
+			return null;
+		}
+	}
+
+	// Export sequence as image
+	async function exportSequenceAsImage() {
+		const result = await renderSequence();
+		if (result) {
+			lastRenderResult = result;
 			downloadDataUrl(result.dataUrl, `${sequenceName}.png`);
 			showSuccess('Image downloaded successfully');
 
@@ -186,11 +203,42 @@
 			if (isDropdownOpen) {
 				closeDropdown();
 			}
+		}
+	}
+
+	// Share sequence with image
+	async function shareSequenceWithImageHandler() {
+		if (isSharing) return;
+
+		try {
+			isSharing = true;
+
+			// Check if we already have a render result
+			let result = lastRenderResult;
+			if (!result) {
+				// Render the sequence if we don't have a result
+				result = await renderSequence();
+				if (result) {
+					lastRenderResult = result;
+				} else {
+					return;
+				}
+			}
+
+			// Share the sequence with the image
+			await shareSequenceWithImage(result, sequenceName, shareUrl);
+
+			// Close dropdown after sharing
+			if (isDropdownOpen) {
+				closeDropdown();
+			}
 		} catch (error) {
-			logger.error('Error exporting sequence to image:', {
+			logger.error('Error sharing sequence with image', {
 				error: error instanceof Error ? error : new Error(String(error))
 			});
-			showError('Failed to export sequence as image');
+			showError('Failed to share sequence with image');
+		} finally {
+			isSharing = false;
 		}
 	}
 </script>
@@ -222,6 +270,7 @@
 			url={shareUrl}
 			{sequenceName}
 			onDownloadImage={exportSequenceAsImage}
+			onShareWithImage={shareSequenceWithImageHandler}
 			onClose={closeDropdown}
 		/>
 	{/if}

@@ -4,7 +4,7 @@
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../../layoutContext';
 	import ViewControl from '../ViewControl';
 	import TabsContainer from './TabsContainer.svelte';
-	import HeaderStyles from './HeaderStyles.svelte';
+	// import HeaderStyles from './HeaderStyles.svelte'; // Removed unused import
 	import { useResponsiveLayout } from './useResponsiveLayout'; // Changed import path
 	// --- Props using Svelte 5 runes ---
 	const props = $props();
@@ -83,10 +83,7 @@
 
 <div class="option-picker-header" class:mobile={$isMobileDevice} data-testid="option-picker-header">
 	<div class="header-content">
-		<div class="view-controls" class:compact={$compactMode}>
-			<ViewControl compact={$compactMode} />
-		</div>
-
+		<!-- TabsContainer or helper-message now comes first -->
 		{#if props.showTabs}
 			<TabsContainer
 				selectedTab={props.selectedTab}
@@ -103,10 +100,14 @@
 			<!-- Message shown when tabs are hidden (e.g., showing all) -->
 			<div class="helper-message">⬅️ Showing all - filter to see sections</div>
 		{/if}
+
+		<!-- ViewControl now comes second, will be on the right -->
+		<div class="view-controls" class:compact={$compactMode}>
+			<ViewControl compact={$compactMode} />
+		</div>
 	</div>
 </div>
 
-<!-- src/lib/components/ConstructTab/OptionPicker/components/OptionPickerHeader/HeaderStyles.svelte -->
 <style>
 	/* Export all styles as CSS custom properties */
 	:global(.option-picker-header) {
@@ -127,10 +128,9 @@
 
 	:global(.header-content) {
 		display: flex;
-		justify-content: flex-start; /* Align items to the start */
+		justify-content: space-between; /* Changed: Puts ViewControl on right, Tabs/Helper on left */
 		align-items: center;
 		flex-wrap: nowrap;
-		/* This gap provides spacing between .view-controls and the next element */
 	}
 
 	/* Add this rule to ensure .tabs can grow */
@@ -144,7 +144,8 @@
 		display: flex;
 		align-items: center;
 		flex-shrink: 0;
-		/* No specific margin needed here, gap on parent handles spacing */
+		/* No specific margin needed here by default, gap on parent handles spacing if using 'gap' property
+		   or specific margins below will handle it. */
 	}
 
 	/* Helper message shown when showTabs is false */
@@ -156,16 +157,14 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		/* No text-align needed, flex alignment handles it */
-		/* No flex-grow needed, it should hug the view controls */
-		flex-shrink: 1; /* Allow shrinking if needed */
+		flex-shrink: 1; /* Allow shrinking if needed, won't grow by default */
 	}
 
 	/* --- Responsive Layout --- */
 	/* Compact mode styles */
 	:global(.view-controls.compact) {
 		flex-shrink: 0; /* Prevent view controls from shrinking */
-		margin-right: 8px; /* Add some space between view controls and tabs */
+		margin-left: 8px; /* Changed: from margin-right to provide space on its left */
 	}
 
 	/* Styles for when container width is constrained */
@@ -190,7 +189,7 @@
 	@media (max-width: 640px) {
 		:global(.view-controls) {
 			flex-shrink: 0; /* Prevent view controls from shrinking */
-			margin-right: 4px; /* Reduce margin to save space */
+			margin-left: 4px; /* Changed: from margin-right */
 		}
 
 		:global(.helper-message) {
@@ -207,7 +206,7 @@
 
 		/* Make view controls more compact */
 		:global(.view-controls) {
-			margin-right: 2px;
+			margin-left: 2px; /* Changed: from margin-right */
 		}
 	}
 </style>

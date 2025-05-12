@@ -2,11 +2,12 @@
 <script lang="ts">
   import { fade, fly } from 'svelte/transition';
   import { clickOutside } from '$lib/utils/clickOutside';
-  import { copyToClipboard, shareViaEmail } from '$lib/utils/shareUtils';
+  import { copyToClipboard, shareViaEmail, isFileShareSupported } from '$lib/utils/shareUtils';
   
   export let url: string = '';
   export let sequenceName: string = '';
   export let onDownloadImage: () => void;
+  export let onShareWithImage: () => void;
   export let onClose: () => void;
 </script>
 
@@ -23,6 +24,13 @@
   </div>
   
   <div class="dropdown-content">
+    {#if isFileShareSupported()}
+      <button class="share-option" on:click={onShareWithImage}>
+        <i class="fa-solid fa-share-from-square"></i>
+        <span>Share with Image</span>
+      </button>
+    {/if}
+    
     <button class="share-option" on:click={() => copyToClipboard(url)}>
       <i class="fa-solid fa-link"></i>
       <span>Copy Link</span>

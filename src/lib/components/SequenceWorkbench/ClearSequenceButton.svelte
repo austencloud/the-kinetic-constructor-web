@@ -34,8 +34,13 @@
 		--base-margin: 10px; /* Define base margin to match ToolsButton */
 
 		position: absolute;
-		bottom: calc(var(--button-size-factor, 1) * var(--base-margin)); /* Dynamic bottom margin */
-		left: calc(var(--button-size-factor, 1) * var(--base-margin)); /* Dynamic left margin */
+		/* Bottom inset is important as it affects the entire bottom edge */
+		bottom: max(
+			calc(var(--button-size-factor, 1) * var(--base-margin)),
+			var(--safe-inset-bottom, 0px)
+		);
+		/* Left inset is rarely needed for corner buttons */
+		left: calc(var(--button-size-factor, 1) * var(--base-margin));
 		width: calc(var(--button-size-factor, 1) * var(--base-size)); /* Dynamic width */
 		height: calc(var(--button-size-factor, 1) * var(--base-size)); /* Dynamic height */
 		min-width: 38px; /* Minimum width to match ToolsButton (was 48px) */
