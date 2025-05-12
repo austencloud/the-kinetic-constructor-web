@@ -6,19 +6,19 @@ import {
 import { onDestroy } from 'svelte';
 
 /**
- * Interface for the full screen manager return value
+ * Interface for the sequence overlay manager return value
  */
-export interface FullScreenManagerResult {
+export interface SequenceOverlayManagerResult {
 	isFullScreen: boolean;
 	openFullScreen: () => void;
 	closeFullScreen: () => void;
 }
 
 /**
- * Manages the full screen state for the sequence widget
- * @returns Object with full screen state and functions
+ * Manages the overlay state for the sequence widget
+ * @returns Object with overlay state and functions
  */
-export function useFullScreenManager(): FullScreenManagerResult {
+export function useSequenceOverlayManager(): SequenceOverlayManagerResult {
 	// Create a variable to hold the current state
 	let isFullScreen = false;
 
@@ -32,7 +32,7 @@ export function useFullScreenManager(): FullScreenManagerResult {
 		unsubscribe();
 	});
 
-	// Define the functions to open and close fullscreen
+	// Define the functions to open and close overlay
 	function openFullScreen() {
 		console.log('Opening sequence overlay from manager');
 		openSequenceFullScreen();

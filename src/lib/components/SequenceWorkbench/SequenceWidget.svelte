@@ -4,50 +4,41 @@
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
 
 	// Import extracted modules
-	import { getButtonPanelButtons, handleButtonAction } from './ButtonPanel/ButtonPanelLogic';
-	import { useToolsPanelManager } from './ToolsPanel/ToolsPanelManager';
+	import { handleButtonAction } from './ButtonPanel/ButtonPanelLogic';
 	import {
 		calculateWorkbenchIsPortrait,
 		calculateButtonSizeFactor
 	} from './utils/LayoutCalculator';
 	import { useSequenceMetadata } from './utils/SequenceMetadataManager';
-	import { useFullScreenManager } from './FullScreen/FullScreenManager';
+	import { useSequenceOverlayManager } from './SequenceOverlay/SequenceOverlayManager';
+	import {
+		openSequenceFullScreen,
+		closeSequenceFullScreen
+	} from '$lib/stores/sequence/sequenceOverlayStore';
 
 	// Import Type for Button Definitions
 	import type { ActionEventDetail } from './ButtonPanel/types';
-	import { appActions } from '$lib/state/machines/app/app.actions'; // Added import
+	import { appActions } from '$lib/state/machines/app/app.actions';
+	import * as sequenceActions from '$lib/state/machines/sequenceMachine/actions';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 
 	// Components
 	import CurrentWordLabel from './Labels/CurrentWordLabel.svelte';
 	import BeatFrame from './BeatFrame/BeatFrame.svelte';
-	import FullScreenOverlay from './components/FullScreenOverlay.svelte';
-	import ToolsButton from './ToolsButton.svelte';
-	import ToolsPanel from './ToolsPanel/ToolsPanel.svelte';
+	import SequenceOverlay from './components/SequenceOverlay.svelte';
 	import ClearSequenceButton from './ClearSequenceButton.svelte';
+	import RemoveBeatButton from './RemoveBeatButton.svelte';
+	import SequenceOverlayButton from './SequenceOverlayButton.svelte';
 	import ShareButton from './ShareButton.svelte';
-	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte'; // Added import
+	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte';
 
-	// Import transition for animations
-	import { fly } from 'svelte/transition';
-
-	// Props using Svelte 5 runes
-	const props = $props<{
-		toolsPanelOpen?: boolean;
-	}>();
+	// No props needed
 
 	// Set up resize observer for the component
 	const { size, resizeObserver } = useResizeObserver();
 
 	// Use responsive layout hook for dimensions
 	const { dimensions } = useResponsiveLayout();
-
-	// Track tools panel state
-	let isToolsPanelOpen = $state(false);
-
-	// Update local state when prop changes
-	$effect(() => {
-		isToolsPanelOpen = props.toolsPanelOpen ?? false;
-	});
 
 	// Track the active mode
 	let activeMode = $state<'construct' | 'generate'>('construct');
@@ -142,23 +133,8 @@
 		return unsubscribe;
 	});
 
-	// Get button panel buttons
-	const buttonPanelButtons = getButtonPanelButtons();
-
-	// Set up full screen manager
-	const fullScreenManager = useFullScreenManager();
-
-	// Set up tools panel manager
-	const { toggleToolsPanel, setupEventListeners } = useToolsPanelManager({
-		setToolsPanelOpen: (isOpen) => {
-			if (typeof isOpen === 'function') {
-				isToolsPanelOpen = isOpen(isToolsPanelOpen);
-			} else {
-				isToolsPanelOpen = isOpen;
-			}
-		},
-		parentPanelOpen: props.toolsPanelOpen
-	});
+	// Set up sequence overlay manager with Svelte 5 reactivity
+	const fullScreenManager = $state(useSequenceOverlayManager());
 
 	// Handle button actions
 	function handleButtonActionWrapper(event: CustomEvent<ActionEventDetail>) {
@@ -168,13 +144,26 @@
 			setActiveMode: (mode) => {
 				activeMode = mode;
 			},
-			closeToolsPanel: () => {
-				if (isToolsPanelOpen) {
-					isToolsPanelOpen = false;
-				}
-			},
 			openFullScreen: fullScreenManager.openFullScreen
 		});
+	}
+
+	// Handle sequence overlay button click
+	function handleViewSequenceOverlay() {
+		console.log('Opening sequence overlay view');
+		// Direct call to store function for more reliable state updates
+		openSequenceFullScreen();
+	}
+
+	// Handle remove beat button click
+	function handleRemoveBeat() {
+		// Get the selected beat ID from the sequence container
+		const selectedBeatIds = sequenceContainer.state.selectedBeatIds;
+		if (selectedBeatIds.length > 0) {
+			// Create the event object expected by the action
+			const event = { type: 'REMOVE_BEAT_AND_FOLLOWING', beatId: selectedBeatIds[0] };
+			sequenceActions.removeBeatAndFollowing({ event });
+		}
 	}
 
 	function handleClearSequence() {
@@ -201,9 +190,6 @@
 			}
 		};
 		document.addEventListener('action', buttonActionListener as EventListener);
-
-		// Set up tools panel event listeners
-		setupEventListeners();
 	});
 
 	onDestroy(() => {
@@ -253,38 +239,23 @@
 				</div>
 			</div>
 
-			{#if isToolsPanelOpen && !props.toolsPanelOpen}
-				<!-- Only show this tools panel if the parent's panel is not open -->
-				<div class="tools-panel-container" transition:fly={{ duration: 300, y: 0, x: 20 }}>
-					<ToolsPanel
-						buttons={buttonPanelButtons}
-						{activeMode}
-						on:action={handleButtonActionWrapper}
-						on:close={() => (isToolsPanelOpen = false)}
-					/>
-				</div>
-			{/if}
-
 			<SettingsButton on:click={handleSettingsClick} />
 			<ClearSequenceButton on:clearSequence={handleClearSequence} />
+			<RemoveBeatButton on:removeBeat={handleRemoveBeat} />
+			<SequenceOverlayButton on:viewSequenceOverlay={handleViewSequenceOverlay} />
 			<ShareButton {beatFrameElement} />
-
-			{#if !props.toolsPanelOpen}
-				<!-- Only show the tools button if the parent's panel is not open -->
-				<ToolsButton {isToolsPanelOpen} on:toggleToolsPanel={toggleToolsPanel} />
-			{/if}
 		</div>
 
-		<FullScreenOverlay
+		<SequenceOverlay
 			isOpen={fullScreenManager.isFullScreen}
 			title={sequenceName}
-			on:close={fullScreenManager.closeFullScreen}
+			on:close={() => closeSequenceFullScreen()}
 		>
 			<div class="fullscreen-beat-container">
-				<!-- BeatFrame will be wrapped in a container in the FullScreenOverlay component -->
-				<BeatFrame />
+				<!-- Clone the BeatFrame with the same data but optimized for fullscreen display -->
+				<BeatFrame isScrollable={false} fullScreenMode={true} />
 			</div>
-		</FullScreenOverlay>
+		</SequenceOverlay>
 	</div>
 {/key}
 
@@ -439,47 +410,7 @@
 
 	/* Indicator label container removed */
 
-	.tools-panel-container {
-		/* Position the tools panel to take up the entire right side */
-		position: absolute;
-		top: 0;
-		right: 0;
-		bottom: 0;
-		width: 320px; /* Fixed width for desktop */
-		display: flex;
-		flex-direction: column;
-		padding: 0; /* Remove padding to let the panel handle its own spacing */
-		background-color: transparent; /* Transparent background */
-		z-index: 50; /* Ensure it's above other content */
-		box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1); /* Add shadow on the left side */
-		overflow: hidden; /* Prevent content from overflowing */
-		backdrop-filter: blur(5px); /* Add blur effect */
-		-webkit-backdrop-filter: blur(5px);
-	}
-
-	/* Responsive adjustments for the tools panel */
-	@media (max-width: 768px) {
-		.tools-panel-container {
-			width: 280px; /* Slightly smaller on tablets */
-		}
-	}
-
-	@media (max-width: 480px) {
-		.tools-panel-container {
-			width: 100%; /* Full width on mobile */
-			left: 0; /* Cover the entire screen */
-		}
-	}
-
-	/* Adjust for portrait mode */
-	.main-layout.portrait .tools-panel-container {
-		width: 100%; /* Full width in portrait mode */
-		height: 70%; /* Take up 70% of the height */
-		top: auto; /* Reset top position */
-		bottom: 0; /* Align to bottom */
-		left: 0; /* Cover full width */
-		box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1); /* Shadow on top */
-	}
+	/* Tools panel container removed */
 
 	/* Conditional alignment for when content might need to scroll */
 	/* (Removed unused .scrolling-active selectors) */
@@ -504,9 +435,6 @@
 
 	/* Responsive mobile layout adjustments */
 	@media (max-width: 768px) {
-		.main-layout.portrait .tools-panel-container {
-			padding: 6px;
-		}
 		.sequence-widget-labels {
 			padding-bottom: 5px;
 		}

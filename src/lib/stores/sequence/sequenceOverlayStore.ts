@@ -1,7 +1,7 @@
-// src/lib/stores/sequence/fullScreenStore.ts
+// src/lib/stores/sequence/sequenceOverlayStore.ts
 import { writable } from 'svelte/store';
 
-// Create a store to track the full-screen state of the sequence
+// Create a store to track the overlay state of the sequence
 export const isSequenceFullScreen = writable<boolean>(false);
 
 // Helper functions to manipulate the store

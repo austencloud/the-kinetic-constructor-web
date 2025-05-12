@@ -30,16 +30,12 @@
 		};
 		document.addEventListener('close-tools-panel', closeToolsPanelListener);
 
-		// Action listener for tool buttons
-		const actionListener = (event: CustomEvent) => {
-			if (event.detail && event.detail.id) {
-				onToolsPanelAction(event.detail.id);
-			}
-		};
-		document.addEventListener('action', actionListener as EventListener);
+		// We no longer need a document-level event listener for button actions
+		// as we're using Svelte's component events directly
+		// This prevents the circular reference that was causing infinite recursion
 
 		return () => {
-			document.removeEventListener('action', actionListener as EventListener);
+			// No need to remove the button action listener as it no longer exists
 		};
 	});
 
@@ -50,6 +46,7 @@
 		if (closeToolsPanelListener) {
 			document.removeEventListener('close-tools-panel', closeToolsPanelListener);
 		}
+		// We no longer need to clean up the buttonActionListener
 	});
 </script>
 

@@ -53,11 +53,13 @@
 	const {
 		isScrollable = $bindable(false),
 		layoutOverride = $bindable(null),
-		elementReceiver = $bindable<(element: HTMLElement | null) => void>(() => {}) // Define with $bindable and default
+		elementReceiver = $bindable<(element: HTMLElement | null) => void>(() => {}), // Define with $bindable and default
+		fullScreenMode = $bindable(false) // Add fullScreenMode prop
 	} = $props<{
 		isScrollable?: boolean;
 		layoutOverride?: BeatFrameLayoutOptions | null;
 		elementReceiver?: (element: HTMLElement | null) => void;
+		fullScreenMode?: boolean; // Add to type definition
 	}>();
 
 	// Local state
@@ -267,7 +269,8 @@
 	});
 
 	$effect(() => {
-		if (elementReceiver && beatFrameContainerRef) { // Changed containerElement to beatFrameContainerRef
+		if (elementReceiver && beatFrameContainerRef) {
+			// Changed containerElement to beatFrameContainerRef
 			elementReceiver(beatFrameContainerRef); // Changed containerElement to beatFrameContainerRef
 		}
 	});
@@ -547,7 +550,8 @@
 <div
 	use:resizeObserver
 	class="beat-frame-container"
-	class:scrollable-active={isScrollable} 
+	class:scrollable-active={isScrollable}
+	class:fullscreen-mode={fullScreenMode}
 	bind:this={beatFrameContainerRef}
 >
 	<div
@@ -677,6 +681,24 @@
 	/* For short sequences in non-scrollable containers, maintain centering */
 	.beat-frame-container:not(.scrollable-active) .beat-frame {
 		margin: auto; /* Center when content fits */
+	}
+
+	/* Fullscreen mode styles */
+	.beat-frame-container.fullscreen-mode {
+		height: 100%;
+		width: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		overflow: visible;
+		margin: 0;
+		padding: 20px;
+		box-sizing: border-box;
+	}
+
+	.beat-frame-container.fullscreen-mode .beat-frame {
+		transform: scale(1.2); /* Make the beat frame larger in fullscreen mode */
+		margin: auto;
 	}
 
 	.beat-container {

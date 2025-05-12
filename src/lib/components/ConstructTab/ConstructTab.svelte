@@ -3,6 +3,7 @@
 	import SharedWorkbench from '$lib/components/SequenceWorkbench/SharedWorkbench.svelte';
 	import { workbenchStore } from '$lib/state/stores/workbenchStore';
 	import type { ButtonDefinition } from '$lib/components/SequenceWorkbench/ButtonPanel/types';
+	import { openSequenceFullScreen } from '$lib/stores/sequence/fullScreenStore';
 
 	// Props
 	export let isGenerateMode = false;
@@ -16,7 +17,12 @@
 			color: '#4361ee'
 		},
 		{ icon: 'fa-save', title: 'Save Image', id: 'saveImage', color: '#3a86ff' },
-		{ icon: 'fa-expand', title: 'View Full Screen', id: 'viewFullScreen', color: '#4cc9f0' },
+		{
+			icon: 'fa-expand',
+			title: 'View Sequence Full Screen',
+			id: 'viewFullScreen',
+			color: '#4cc9f0'
+		},
 		{
 			icon: 'fa-arrows-left-right',
 			title: 'Mirror Sequence',
@@ -31,13 +37,64 @@
 
 	// Handler for button panel actions
 	function handleButtonAction(id: string) {
-		const buttonEvent = new CustomEvent('action', {
-			detail: { id },
-			bubbles: true,
-			cancelable: true,
-			composed: true
-		});
-		document.dispatchEvent(buttonEvent);
+		// Handle the action directly without dispatching any events
+		// This prevents the infinite recursion loop
+		console.log(`Handling button action: ${id}`);
+
+		// Handle specific actions based on the button ID
+		switch (id) {
+			case 'viewFullScreen':
+				// Use the fullScreenStore to open the fullscreen overlay
+				openSequenceFullScreen();
+				break;
+
+			case 'constructMode':
+				workbenchStore.update((state) => ({ ...state, activeTab: 'construct' }));
+				break;
+
+			case 'generateMode':
+				workbenchStore.update((state) => ({ ...state, activeTab: 'generate' }));
+				break;
+
+			case 'saveImage':
+				console.log('Save image action triggered');
+				// Implement save image functionality here
+				break;
+
+			case 'addToDictionary':
+				console.log('Add to dictionary action triggered');
+				// Implement add to dictionary functionality here
+				break;
+
+			case 'mirrorSequence':
+				console.log('Mirror sequence action triggered');
+				// Implement mirror sequence functionality here
+				break;
+
+			case 'swapColors':
+				console.log('Swap colors action triggered');
+				// Implement swap colors functionality here
+				break;
+
+			case 'rotateSequence':
+				console.log('Rotate sequence action triggered');
+				// Implement rotate sequence functionality here
+				break;
+
+			case 'deleteBeat':
+				console.log('Delete beat action triggered');
+				// Implement delete beat functionality here
+				break;
+
+			case 'clearSequence':
+				console.log('Clear sequence action triggered');
+				// Implement clear sequence functionality here
+				break;
+
+			default:
+				console.log(`Unhandled action: ${id}`);
+				break;
+		}
 	}
 
 	// Set active tab when component mounts

@@ -11,6 +11,15 @@
 	import type { Letter } from '$lib/types/Letter';
 	import type { TKAPosition } from '$lib/types/TKAPosition';
 	import type { GridMode, VTGDir, VTGTiming } from '$lib/types/Types';
+	import {
+		isWebShareSupported,
+		generateShareableUrl,
+		shareSequence,
+		type ShareData
+	} from '$lib/utils/shareUtils';
+	import ShareDropdown from './ShareDropdown.svelte';
+	import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
+	import { logger } from '$lib/core/logging';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
@@ -20,21 +29,93 @@
 
 	const sequence = useContainer(sequenceContainer);
 
+	// Local state
+	let isDropdownOpen = $state(false);
+	let shareUrl = $state('');
+	let isSharing = $state(false);
+	let sequenceName = $state('');
+
+	// Generate share URL when component mounts or sequence changes
+	$effect(() => {
+		const currentSequenceBeats = sequence.beats;
+		if (currentSequenceBeats && currentSequenceBeats.length > 0) {
+			// Update sequence name based on the letters in the sequence
+			const letters = currentSequenceBeats
+				.map((beat) => ((beat.letter || beat.metadata?.letter) as string) || '')
+				.filter((letter) => letter.trim() !== '')
+				.join('');
+
+			sequenceName = letters
+				? `Sequence: ${letters}`
+				: sequence.metadata?.name || 'Kinetic Sequence';
+
+			// Generate shareable URL
+			shareUrl = generateShareableUrl(currentSequenceBeats, sequenceName);
+		}
+	});
+
+	// Handle share button click
 	async function handleClick() {
+		// Call the original onShare callback if provided
 		if (props.onShare) {
 			props.onShare();
 		}
 
-		const currentSequenceBeats = sequence.beats;
-		const sequenceName = sequence.metadata?.name || 'sequence';
+		if (isSharing) return;
 
+		try {
+			isSharing = true;
+
+			const currentSequenceBeats = sequence.beats;
+
+			// Check if there are beats to share
+			if (!currentSequenceBeats || currentSequenceBeats.length === 0) {
+				showError('No sequence to share');
+				return;
+			}
+
+			// Check if Web Share API is supported
+			if (isWebShareSupported()) {
+				// Prepare share data
+				const shareData: ShareData = {
+					title: 'Kinetic Constructor Sequence',
+					text: `Check out this sequence: ${sequenceName}`,
+					url: shareUrl
+				};
+
+				// Share using Web Share API
+				await shareSequence(shareData);
+			} else {
+				// Show dropdown for desktop fallback
+				isDropdownOpen = !isDropdownOpen;
+			}
+		} catch (error) {
+			logger.error('Error sharing sequence', {
+				error: error instanceof Error ? error : new Error(String(error))
+			});
+			showError('Failed to share sequence');
+		} finally {
+			isSharing = false;
+		}
+	}
+
+	// Close dropdown
+	function closeDropdown() {
+		isDropdownOpen = false;
+	}
+
+	// Export sequence as image
+	async function exportSequenceAsImage() {
 		if (!props.beatFrameElement) {
-			console.error('BeatFrame element not available for image export.');
+			logger.error('BeatFrame element not available for image export.');
+			showError('Could not export image: Beat frame not found');
 			return;
 		}
 
+		const currentSequenceBeats = sequence.beats;
 		if (!currentSequenceBeats || currentSequenceBeats.length === 0) {
-			console.warn('No beats in the current sequence to export.');
+			logger.warn('No beats in the current sequence to export.');
+			showError('No sequence to export');
 			return;
 		}
 
@@ -92,37 +173,74 @@
 			const imageToRenderElement =
 				(props.beatFrameElement?.querySelector('.beat-frame') as HTMLElement) ||
 				props.beatFrameElement;
+
+			if (!imageToRenderElement) {
+				throw new Error('Could not find element to render');
+			}
+
 			const result = await renderSequenceToImage(imageToRenderElement, options);
 			downloadDataUrl(result.dataUrl, `${sequenceName}.png`);
+			showSuccess('Image downloaded successfully');
+
+			// Close dropdown after download
+			if (isDropdownOpen) {
+				closeDropdown();
+			}
 		} catch (error) {
-			console.error('Error exporting sequence to image:', error);
+			logger.error('Error exporting sequence to image:', {
+				error: error instanceof Error ? error : new Error(String(error))
+			});
+			showError('Failed to export sequence as image');
 		}
 	}
 </script>
 
-<button
-	class="share-button ripple"
-	onclick={handleClick}
-	aria-label="Share sequence"
-	data-mdb-ripple="true"
-	data-mdb-ripple-color="light"
-	in:fly={{ x: 20, duration: 300, delay: 200 }}
->
-	<div class="icon-wrapper">
-		<i class="fa-solid fa-share-alt"></i>
-	</div>
-</button>
+<div class="share-button-container">
+	<button
+		class="share-button ripple"
+		onclick={handleClick}
+		aria-label="Share sequence"
+		data-mdb-ripple="true"
+		data-mdb-ripple-color="light"
+		in:fly={{ x: 20, duration: 300, delay: 200 }}
+		class:sharing={isSharing}
+		class:active={isDropdownOpen}
+	>
+		<div class="icon-wrapper">
+			<i
+				class="fa-solid {isSharing
+					? 'fa-spinner fa-spin'
+					: isWebShareSupported()
+						? 'fa-share-alt'
+						: 'fa-share-nodes'}"
+			></i>
+		</div>
+	</button>
+
+	{#if isDropdownOpen}
+		<ShareDropdown
+			url={shareUrl}
+			{sequenceName}
+			onDownloadImage={exportSequenceAsImage}
+			onClose={closeDropdown}
+		/>
+	{/if}
+</div>
 
 <style>
+	.share-button-container {
+		position: absolute;
+		top: var(--button-top-position, 10px);
+		right: var(--button-right-position, 10px);
+		z-index: 40;
+	}
+
 	.share-button {
 		/* Base sizes for dynamic scaling */
 		--base-size: 45px; /* Base size of the button (was 56px) */
 		--base-icon-size: 19px; /* Base size of the icon (was 24px) */
 		--base-margin: 10px; /* Base margin from corner */
 
-		position: absolute;
-		top: calc(var(--button-size-factor, 1) * var(--base-margin)); /* Dynamic top margin */
-		right: calc(var(--button-size-factor, 1) * var(--base-margin)); /* Dynamic right margin */
 		width: calc(var(--button-size-factor, 1) * var(--base-size)); /* Dynamic width */
 		height: calc(var(--button-size-factor, 1) * var(--base-size)); /* Dynamic height */
 		min-width: 38px; /* Minimum width (was 48px) */
@@ -142,8 +260,8 @@
 		transition:
 			transform 0.2s ease-out,
 			background-color 0.2s ease-out,
-			box-shadow 0.2s ease-out;
-		z-index: 40; /* Consistent with other FABs */
+			box-shadow 0.2s ease-out,
+			color 0.2s ease-out;
 		box-shadow:
 			0 3px 6px rgba(0, 0, 0, 0.16),
 			0 3px 6px rgba(0, 0, 0, 0.23);
@@ -168,6 +286,18 @@
 			0 1px 2px rgba(0, 0, 0, 0.24);
 	}
 
+	.share-button.active {
+		background-color: var(--tkc-button-active-background, #00bcd4);
+		color: var(--tkc-button-active-color, #ffffff);
+		transform: scale(1.05);
+		box-shadow: 0 0 12px rgba(0, 188, 212, 0.4);
+	}
+
+	.share-button.sharing {
+		pointer-events: none;
+		opacity: 0.8;
+	}
+
 	.icon-wrapper {
 		background: transparent;
 		display: flex;
@@ -178,7 +308,20 @@
 		color: inherit; /* Inherits color from .share-button */
 	}
 
-	.icon-wrapper i.fa-share-alt {
+	.icon-wrapper i {
 		font-size: calc(var(--button-size-factor, 1) * var(--base-icon-size)); /* Dynamic icon size */
+	}
+
+	/* Responsive adjustments */
+	@media (max-width: 768px) {
+		.share-button {
+			--button-size-factor: 0.9;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.share-button {
+			--button-size-factor: 0.8;
+		}
 	}
 </style>

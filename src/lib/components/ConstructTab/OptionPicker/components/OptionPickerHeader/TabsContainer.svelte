@@ -1,22 +1,58 @@
 <!-- src/lib/components/ConstructTab/OptionPicker/components/OptionPickerHeader/TabsContainer.svelte -->
 <script lang="ts">
+	import { get, type Writable } from 'svelte/store';
 	import TabButton from './TabButton.svelte';
 	import ScrollIndicator from './ScrollIndicator.svelte';
 
 	// Props
-	const props = $props();
+	const props = $props<{
+		selectedTab: string | null;
+		categoryKeys: string[];
+		isScrollable: boolean;
+		showScrollIndicator: boolean;
+		useShortLabels: boolean;
+		isMobileDevice: boolean; // Keep if used directly for styling/logic within TabsContainer
+		compactMode: boolean; // Keep if used directly for styling/logic
+		tabsContainerRefStore?: Writable<HTMLDivElement | null>; // Expects the store itself
+		onScroll?: () => void; // Event handler for scroll
+	}>();
 
-	// Local state
-	let tabsContainerRef = $state<HTMLDivElement | null>(null);
+	// Local state for the DOM element
+	let actualTabsContainerElement = $state<HTMLDivElement | null>(null);
+
+	$effect(() => {
+		if (props.tabsContainerRefStore) {
+			props.tabsContainerRefStore.set(actualTabsContainerElement);
+		}
+		// Optional: Cleanup when the element is unmounted or store changes
+		// This might be more robustly handled by the hook's onDestroy if the hook manages the lifecycle
+		return () => {
+			if (
+				props.tabsContainerRefStore &&
+				actualTabsContainerElement &&
+				get(props.tabsContainerRefStore) === actualTabsContainerElement
+			) {
+				// If the hook doesn't clear it on its own destroy, uncommenting this might be useful.
+				// props.tabsContainerRefStore.set(null);
+			}
+		};
+	});
+
+	// Forward scroll event if onScroll prop is provided
+	function handleScroll() {
+		if (props.onScroll) {
+			props.onScroll();
+		}
+	}
 </script>
 
 {#if props.categoryKeys && props.categoryKeys.length > 0}
 	<div
 		class="tabs"
 		role="tablist"
-		aria-label="Option Categories"
-		bind:this={tabsContainerRef}
+		bind:this={actualTabsContainerElement}
 		class:scrollable={props.isScrollable}
+		onscroll={handleScroll}
 	>
 		<div class="tabs-inner-container">
 			{#each props.categoryKeys as categoryKey, index (categoryKey)}
@@ -63,12 +99,13 @@
 		padding-top: 2px;
 		padding-left: 2px;
 		padding-right: 2px;
+		width: 100%; /* Ensure .tabs itself takes full available width from parent */
 	}
 
 	.tabs-inner-container {
-		display: flex;
-		width: 100%;
-		min-width: min-content; /* Ensure container can grow to fit all tabs */
+		display: flex; /* Make this a flex container */
+		width: 100%; /* Make it take the full width of .tabs */
+		min-width: max-content; /* Ensure it's wide enough for all tabs if not scrollable */
 		gap: 4px;
 		padding: 0 4px;
 		/* Ensure inner container doesn't clip borders */

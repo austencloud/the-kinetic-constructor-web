@@ -1,12 +1,17 @@
 <!-- src/lib/components/SequenceWorkbench/ToolsPanel/ToolsPanel.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import type { ButtonDefinition, ActionEventDetail } from '../ButtonPanel/types';
+	import type { ButtonDefinition } from '../ButtonPanel/types';
 
 	// Props
 	export let buttons: ButtonDefinition[] = [];
 	export let activeMode: 'construct' | 'generate' | null = null;
+
+	// Create event dispatcher
+	const dispatch = createEventDispatcher<{
+		action: { id: string };
+	}>();
 
 	// Handle button click directly
 	function handleToolClick(id: string) {
@@ -15,13 +20,12 @@
 			navigator.vibrate(30);
 		}
 
-		// Create and dispatch a custom event
-		const event = new CustomEvent('action', {
-			detail: { id },
-			bubbles: true,
-			composed: true
-		});
-		document.dispatchEvent(event);
+		// Log the action for debugging
+		console.log(`ToolsPanel: Dispatching action for button ${id}`);
+
+		// Dispatch the action event to the parent component ONLY
+		// This prevents the circular reference that was causing infinite recursion
+		dispatch('action', { id });
 	}
 
 	// Close tools panel

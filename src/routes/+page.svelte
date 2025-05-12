@@ -3,7 +3,7 @@
 	import { fade } from 'svelte/transition';
 
 	// Components
-	import FullScreen from '$lib/FullScreen.svelte';
+	import FullScreen from '$lib/AppFullScreen.svelte';
 	import MainLayout from '$lib/components/MainWidget/layout/MainLayout.svelte';
 	import LoadingOverlay from '$lib/components/MainWidget/loading/LoadingOverlay.svelte';
 	import BackgroundCanvas from '$lib/components/Backgrounds/BackgroundCanvas.svelte';
