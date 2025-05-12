@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { writable, get } from 'svelte/store';
+	import { get } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { PropData } from '../objects/Prop/PropData';
 	import type { ArrowData } from '../objects/Arrow/ArrowData';
@@ -17,14 +17,45 @@
 	import InitializingSpinner from './components/InitializingSpinner.svelte';
 	import LoadingProgress from './components/LoadingProgress.svelte';
 	import BeatLabel from './components/BeatLabel.svelte';
-	import { errorService, ErrorSeverity } from '../../services/ErrorHandlingService';
 	import { logger } from '$lib/core/logging';
-	// Import both legacy and modern implementations
+	// Import utility functions
 	import { defaultPictographData } from './utils/defaultPictographData';
-	import PictographSvelte5 from './PictographSvelte5.svelte';
+	import { createDataSnapshot, type PictographDataSnapshot } from './utils/dataComparison';
+	import {
+		handlePictographError,
+		handlePictographComponentError,
+		type ErrorHandlerContext,
+		type ComponentErrorContext,
+		type FallbackDataContext
+	} from './handlers/PictographErrorHandler';
+	import {
+		createAndPositionComponents as createAndPositionComponentsUtil,
+		getPictographAriaLabel
+	} from './utils/componentPositioning';
+	import {
+		getPictographElement,
+		getPictographRole,
+		shouldShowBeatLabel,
+		shouldShowDebugInfo,
+		shouldShowLoadingIndicator,
+		shouldShowMotionComponents
+	} from './utils/PictographRenderUtils';
+	import {
+		handleGridLoaded as handleGridLoadedUtil,
+		handleComponentLoaded as handleComponentLoadedUtil,
+		checkLoadingComplete as checkLoadingCompleteUtil,
+		hasRequiredMotionData as hasRequiredMotionDataUtil,
+		type LoadingManagerContext
+	} from './managers/PictographLoadingManager';
 
-	// Feature flag for using new state management
-	export let useNewStateManagement = false;
+	// Import state management functions
+	import {
+		createPictographDataStore,
+		initializePictographService,
+		checkForDataChanges as checkForDataChangesUtil,
+		updateComponentsFromData as updateComponentsFromDataUtil,
+		setupPictographDataSubscription
+	} from './managers/PictographStateManager';
 
 	// Props
 	export let pictographData: PictographData | undefined = undefined;
@@ -36,7 +67,7 @@
 	export let isStartPosition = false;
 
 	// Create a local pictograph data store
-	const pictographDataStore = writable(pictographData || defaultPictographData);
+	const pictographDataStore = createPictographDataStore(pictographData);
 
 	// Reactively update the pictographDataStore when the pictographData changes.
 	// Since pictographData is already a new object when the beat itself is updated
@@ -61,9 +92,10 @@
 	let renderCount = 0;
 	let loadProgress = 0;
 	let service: PictographService | null = null;
-	let lastDataSnapshot: any = null;
+	let lastDataSnapshot: PictographDataSnapshot | null = null;
 
 	// Event dispatcher
+	// @ts-ignore - Ignoring deprecated warning
 	const dispatch = createEventDispatcher();
 
 	onMount(() => {
@@ -81,18 +113,18 @@
 			logger.info('Pictograph component initializing', {
 				data: {
 					debug,
-					hasMotionData: hasRequiredMotionData(get(pictographDataStore)),
+					hasMotionData: hasRequiredMotionDataUtil(get(pictographDataStore)),
 					letter: get(pictographDataStore)?.letter,
 					gridMode: get(pictographDataStore)?.gridMode
 				}
 			});
 
-			service = new PictographService(get(pictographDataStore));
+			service = initializePictographService(pictographDataStore);
 
 			// Initialize data snapshot
-			updateLastKnownValues(get(pictographDataStore));
+			lastDataSnapshot = createDataSnapshot(get(pictographDataStore));
 
-			if (hasRequiredMotionData(get(pictographDataStore))) {
+			if (hasRequiredMotionDataUtil(get(pictographDataStore))) {
 				state = 'loading';
 				logger.debug('Pictograph: Motion data available, entering loading state', {
 					data: {
@@ -120,461 +152,217 @@
 
 		return () => {
 			loadedComponents.clear();
+			subscription.unsubscribe();
 			logger.debug('Pictograph component unmounting');
 		};
 	});
 
 	// Subscribe to the pictographDataStore to update components when it changes
-	pictographDataStore.subscribe((data) => {
-		if (data && service) {
-			// Use a safe comparison method that avoids circular references
-			const hasChanged = checkForDataChanges(data);
-
-			// Only process if there's a real change and service is initialized
-			if (hasChanged) {
-				if (debug) console.debug('Pictograph data changed, updating components');
-
-				// Update the service with new data
-				service.updateData(data);
-
-				// Update local state
-				updateComponentsFromData();
-
-				// Notify parent about the update
-				dispatch('dataUpdated', { type: 'all' });
-			}
-		}
-	});
-
-	// Safe comparison function that avoids circular references
-	function checkForDataChanges(newData: PictographData): boolean {
-		// If this is the first time, always return true
-		if (!lastDataSnapshot) {
-			// Update last known values for safe comparison next time
-			updateLastKnownValues(newData);
-			return true;
-		}
-
-		try {
-			// Compare important fields directly - add any fields that should trigger a rerender
-			const fieldsChanged =
-				lastDataSnapshot.letter !== newData.letter ||
-				lastDataSnapshot.gridMode !== newData.gridMode ||
-				lastDataSnapshot.startPos !== newData.startPos ||
-				lastDataSnapshot.endPos !== newData.endPos ||
-				lastDataSnapshot.direction !== newData.direction ||
-				compareMotionData('red') ||
-				compareMotionData('blue');
-
-			// Update last known values if changed
-			if (fieldsChanged) {
-				updateLastKnownValues(newData);
-			}
-
-			return fieldsChanged;
-		} catch (error) {
-			console.warn('Error comparing pictograph data:', error);
-			return true; // Assume changed on error to be safe
-		}
-
-		// Helper function to compare motion data
-		function compareMotionData(color: 'red' | 'blue'): boolean {
-			const key = color === 'red' ? 'redMotionData' : 'blueMotionData';
-			const oldMotion = lastDataSnapshot[key as keyof typeof lastDataSnapshot] as MotionData | null;
-			const newMotion = newData[key as keyof typeof newData] as MotionData | null;
-
-			// If both null/undefined or same reference, no change
-			if (oldMotion === newMotion) return false;
-
-			// If one exists and the other doesn't, changed
-			if ((!oldMotion && newMotion) || (oldMotion && !newMotion)) return true;
-
-			// Compare critical motion properties
-			if (oldMotion && newMotion) {
-				return (
-					oldMotion.id !== newMotion.id ||
-					oldMotion.startLoc !== newMotion.startLoc ||
-					oldMotion.endLoc !== newMotion.endLoc ||
-					oldMotion.startOri !== newMotion.startOri ||
-					oldMotion.endOri !== newMotion.endOri ||
-					oldMotion.motionType !== newMotion.motionType
-				);
-			}
-
-			return false;
-		}
-	}
-
-	function updateLastKnownValues(data: PictographData): void {
-		lastDataSnapshot = {
-			letter: data.letter,
-			gridMode: data.gridMode,
-			startPos: data.startPos,
-			endPos: data.endPos,
-			direction: data.direction,
-			redMotionData: data.redMotionData
-				? {
-						id: data.redMotionData.id,
-						startLoc: data.redMotionData.startLoc,
-						endLoc: data.redMotionData.endLoc,
-						startOri: data.redMotionData.startOri,
-						endOri: data.redMotionData.endOri,
-						motionType: data.redMotionData.motionType
-					}
-				: null,
-			blueMotionData: data.blueMotionData
-				? {
-						id: data.blueMotionData.id,
-						startLoc: data.blueMotionData.startLoc,
-						endLoc: data.blueMotionData.endLoc,
-						startOri: data.blueMotionData.startOri,
-						endOri: data.blueMotionData.endOri,
-						motionType: data.blueMotionData.motionType
-					}
-				: null
-		};
-	}
+	const subscription = setupPictographDataSubscription(
+		pictographDataStore,
+		service,
+		lastDataSnapshot,
+		updateComponentsFromData,
+		dispatch,
+		debug,
+		checkForDataChangesUtil
+	);
 
 	// Function to update components when pictographData changes
 	function updateComponentsFromData() {
 		try {
-			// Reset state if needed
-			if (state === 'error') {
-				state = 'loading';
-				errorMessage = null;
-			}
+			const result = updateComponentsFromDataUtil(
+				pictographDataStore,
+				service,
+				state,
+				errorMessage,
+				gridData,
+				createAndPositionComponents,
+				requiredComponents,
+				loadedComponents,
+				hasRequiredMotionDataUtil
+			);
 
-			// Make sure we have data to work with
-			if (!get(pictographDataStore)) {
-				state = 'grid_only';
-				return;
-			}
-
-			// Update state based on available motion data
-			if (hasRequiredMotionData(get(pictographDataStore))) {
-				if (state === 'grid_only') state = 'loading';
-			} else {
-				state = 'grid_only';
-			}
-
-			// Only recreate components if grid data is available
-			if (gridData) {
-				// Create and position components
-				createAndPositionComponents();
-
-				// Update rendering count
-				renderCount++;
-
-				// If all required components were already loaded previously,
-				// mark as complete immediately
-				if (requiredComponents.every((comp) => loadedComponents.has(comp))) {
-					state = 'complete';
-				}
+			// Update local state
+			state = result.state;
+			errorMessage = result.errorMessage;
+			if (result.renderCount > 0) {
+				renderCount += result.renderCount;
 			}
 		} catch (error) {
 			handleError('data update', error);
 		}
 	}
 
+	// Create loading manager context
+	function getLoadingManagerContext(): LoadingManagerContext {
+		return {
+			state: {
+				set: (value: string) => {
+					state = value;
+				}
+			},
+			loadedComponents,
+			requiredComponents,
+			componentsLoaded,
+			totalComponentsToLoad,
+			dispatch,
+			pictographData: get(pictographDataStore)
+		};
+	}
+
+	// Wrapper for handleGridLoadedUtil to maintain local state
 	function handleGridLoaded(data: GridData) {
 		try {
-			// Update state
+			// Update local state
 			gridData = data;
-			componentsLoaded++;
-			loadedComponents.add('grid');
 
-			// Exit if grid-only mode
-			if (state === 'grid_only') {
-				dispatch('loaded', { complete: false });
-				return;
-			}
-
-			// Continue loading
-			createAndPositionComponents();
+			// Call the utility function
+			handleGridLoadedUtil(data, getLoadingManagerContext(), {
+				createAndPositionComponents
+			});
 		} catch (error) {
 			handleError('grid loading', error);
 		}
 	}
 
+	// Wrapper for createAndPositionComponentsUtil to maintain local state
 	function createAndPositionComponents() {
 		try {
-			// Initialize required components
-			requiredComponents = ['grid'];
-
-			// Don't reset total components to load since we may already have loaded some
-			if (state !== 'complete') totalComponentsToLoad = 1;
-
 			// Make sure we have data to work with
 			if (!get(pictographDataStore) || !service) return;
 
-			// Create red components if needed
-			if (get(pictographDataStore).redMotionData) {
-				const redMotionData = get(pictographDataStore).redMotionData as MotionData;
-				redPropData = service.createPropData(redMotionData, 'red');
-				redArrowData = service.createArrowData(redMotionData, 'red');
+			// Create state context
+			const stateContext = {
+				requiredComponents,
+				totalComponentsToLoad
+			};
 
-				if (!requiredComponents.includes('redProp')) {
-					requiredComponents.push('redProp', 'redArrow');
-					if (state !== 'complete') totalComponentsToLoad += 2;
-				}
-			} else {
-				// Clear red components if no longer needed
-				redPropData = null;
-				redArrowData = null;
-			}
+			// Call the utility function
+			const result = createAndPositionComponentsUtil(
+				get(pictographDataStore),
+				service,
+				gridData,
+				stateContext
+			);
 
-			// Create blue components if needed
-			if (get(pictographDataStore).blueMotionData) {
-				const blueMotionData = get(pictographDataStore).blueMotionData as MotionData;
-				bluePropData = service.createPropData(blueMotionData, 'blue');
-				blueArrowData = service.createArrowData(blueMotionData, 'blue');
-
-				if (!requiredComponents.includes('blueProp')) {
-					requiredComponents.push('blueProp', 'blueArrow');
-					if (state !== 'complete') totalComponentsToLoad += 2;
-				}
-			} else {
-				// Clear blue components if no longer needed
-				bluePropData = null;
-				blueArrowData = null;
-			}
-
-			// Position components if grid data is available
-			if (gridData) {
-				service.positionComponents(
-					redPropData,
-					bluePropData,
-					redArrowData,
-					blueArrowData,
-					gridData
-				);
-			}
+			// Update local state
+			requiredComponents = stateContext.requiredComponents;
+			totalComponentsToLoad = stateContext.totalComponentsToLoad;
+			redPropData = result.redPropData;
+			bluePropData = result.bluePropData;
+			redArrowData = result.redArrowData;
+			blueArrowData = result.blueArrowData;
 		} catch (error) {
 			handleError('component creation', error);
 		}
 	}
 
+	// Wrapper for handleComponentLoadedUtil to maintain local state
 	function handleComponentLoaded(component: string) {
-		loadedComponents.add(component);
-		componentsLoaded++;
-		dispatch('componentLoaded', { componentName: component });
+		// Call the utility function
+		handleComponentLoadedUtil(component, getLoadingManagerContext());
+
+		// Update local state
+		componentsLoaded = getLoadingManagerContext().componentsLoaded;
+
+		// Check if loading is complete
 		checkLoadingComplete();
 	}
 
+	// Wrapper for checkLoadingCompleteUtil to maintain local state
 	function checkLoadingComplete() {
-		const startCheck = performance.now();
-		const allLoaded = requiredComponents.every((component) => loadedComponents.has(component));
+		// Call the utility function
+		checkLoadingCompleteUtil(getLoadingManagerContext());
 
-		if (allLoaded) {
-			state = 'complete';
-			renderCount++;
-
-			const loadTime = performance.now() - startCheck;
-			logger.info(`Pictograph fully loaded`, {
-				duration: loadTime,
-				data: {
-					componentsLoaded,
-					totalComponentsToLoad,
-					renderCount,
-					letter: get(pictographDataStore)?.letter,
-					gridMode: get(pictographDataStore)?.gridMode,
-					loadedComponents: Array.from(loadedComponents)
-				}
-			});
-
-			dispatch('loaded', { complete: true });
-		}
+		// Update render count
+		renderCount++;
 	}
 
+	// Create component error handler context
+	function getComponentErrorContext(): ComponentErrorContext {
+		return {
+			loadedComponents,
+			componentsLoaded,
+			totalComponentsToLoad,
+			dispatch,
+			checkLoadingComplete
+		};
+	}
+
+	// Create fallback data context
+	function getFallbackDataContext(): FallbackDataContext {
+		return {
+			redPropData,
+			bluePropData,
+			redArrowData,
+			blueArrowData
+		};
+	}
+
+	// Handle component errors
 	function handleComponentError(component: string, error: any) {
-		logger.warn(`Component error (${component})`, {
-			error: error instanceof Error ? error : new Error(String(error)),
-			data: {
-				component,
-				letter: get(pictographDataStore)?.letter,
-				gridMode: get(pictographDataStore)?.gridMode,
-				applyingFallback: true
-			}
-		});
-
-		applyFallbackPositioning(component);
-
-		loadedComponents.add(component);
-		componentsLoaded++;
-
-		logger.debug(`Applied fallback positioning for ${component}`, {
-			data: {
-				component,
-				loadedComponents: Array.from(loadedComponents),
-				componentsLoaded,
-				totalComponentsToLoad
-			}
-		});
-
-		checkLoadingComplete();
+		handlePictographComponentError(
+			component,
+			error,
+			getComponentErrorContext(),
+			getFallbackDataContext()
+		);
 	}
 
-	function applyFallbackPositioning(component: string) {
-		const centerX = 475;
-		const centerY = 475;
-		const offset = 50;
-
-		switch (component) {
-			case 'redProp':
-				if (redPropData) {
-					redPropData.coords = { x: centerX - offset, y: centerY };
-					redPropData.rotAngle = 0;
+	// Create error handler context
+	function getErrorHandlerContext(): ErrorHandlerContext {
+		return {
+			pictographDataStore,
+			dispatch,
+			state: {
+				set: (value: string) => {
+					state = value;
 				}
-				break;
-			case 'blueProp':
-				if (bluePropData) {
-					bluePropData.coords = { x: centerX + offset, y: centerY };
-					bluePropData.rotAngle = 0;
+			},
+			errorMessage: {
+				set: (value: string | null) => {
+					errorMessage = value;
 				}
-				break;
-			case 'redArrow':
-				if (redArrowData) {
-					redArrowData.coords = { x: centerX, y: centerY - offset };
-					redArrowData.rotAngle = -90;
-				}
-				break;
-			case 'blueArrow':
-				if (blueArrowData) {
-					blueArrowData.coords = { x: centerX, y: centerY + offset };
-					blueArrowData.rotAngle = 90;
-				}
-				break;
-			default:
-				console.warn(`Unknown component: ${component}, using center position`);
-		}
+			},
+			componentsLoaded,
+			totalComponentsToLoad
+		};
 	}
 
+	// Handle general errors
 	function handleError(source: string, error: any) {
-		try {
-			// Create a safe error message that won't have circular references
-			const errorMsg =
-				error instanceof Error
-					? error.message
-					: typeof error === 'string'
-						? error
-						: 'Unknown error';
-
-			// Log using the new structured logging system
-			logger.pictograph(`Error in ${source}`, {
-				letter: get(pictographDataStore)?.letter
-					? String(get(pictographDataStore)?.letter)
-					: undefined,
-				gridMode: get(pictographDataStore)?.gridMode,
-				componentState: state,
-				renderMetrics: {
-					componentsLoaded: componentsLoaded,
-					totalComponents: totalComponentsToLoad,
-					renderTime: performance.now()
-				},
-				error: error instanceof Error ? error : new Error(errorMsg),
-				data: {
-					source,
-					errorSource: source,
-					isCritical: source === 'initialization'
-				}
-			});
-
-			// For backward compatibility, also log with the error service
-			const errorObj = errorService.createError(
-				`Pictograph:${source}`,
-				{ message: errorMsg },
-				source === 'initialization' ? ErrorSeverity.CRITICAL : ErrorSeverity.ERROR
-			);
-
-			errorObj.context = {
-				loadedCount: componentsLoaded,
-				totalCount: totalComponentsToLoad
-			};
-
-			errorService.log(errorObj);
-
-			// Set local error message
-			errorMessage = errorMsg;
-			state = 'error';
-
-			// Dispatch events
-			dispatch('error', { source, error: { message: errorMsg }, message: errorMsg });
-			dispatch('loaded', { complete: false, error: true, message: errorMsg });
-		} catch (errorHandlingError) {
-			// If error handling itself fails, use a simpler approach
-			logger.error('Error in Pictograph error handler', {
-				error:
-					errorHandlingError instanceof Error
-						? errorHandlingError
-						: new Error(String(errorHandlingError)),
-				data: { originalSource: source }
-			});
-
-			errorMessage = 'Error in Pictograph component';
-			state = 'error';
-			dispatch('error', { source, error: null, message: 'Error in Pictograph component' });
-			dispatch('loaded', {
-				complete: false,
-				error: true,
-				message: 'Error in Pictograph component'
-			});
-		}
+		handlePictographError(source, error, getErrorHandlerContext());
 	}
 
-	function getPictographAriaLabel(): string {
-		if (state === 'error') return `Pictograph error: ${errorMessage}`;
-		const letterPart = get(pictographDataStore)?.letter
-			? `for letter ${get(pictographDataStore)?.letter}`
-			: '';
-		const statePart = state === 'complete' ? 'complete' : 'loading';
-		return `Pictograph visualization ${letterPart} - ${statePart}`;
-	}
-
-	function hasRequiredMotionData(data: PictographData): boolean {
-		return Boolean(data?.redMotionData || data?.blueMotionData);
-	}
+	// Using imported utility functions
 </script>
 
-{#if useNewStateManagement}
-	<svelte:component
-		this={PictographSvelte5}
-		{pictographData}
-		{onClick}
-		{debug}
-		{animationDuration}
-		{showLoadingIndicator}
-		{beatNumber}
-		{isStartPosition}
-		onComponentLoaded={(e: { componentName: string }) => dispatch('componentLoaded', e)}
-		onLoaded={(e: { complete: boolean; error?: boolean; message?: string }) =>
-			dispatch('loaded', e)}
-		onError={(e: { source: string; error: any; message: string }) => dispatch('error', e)}
-		onDataUpdated={(e: { type: string }) => dispatch('dataUpdated', e)}
-		{...$$restProps}
-	/>
+{#if false}
+	<!-- Svelte 5 implementation removed -->
 {:else}
 	<!-- Use a button if onClick is provided, otherwise use a div -->
 	<svelte:element
-		this={onClick ? 'button' : 'div'}
+		this={getPictographElement(onClick)}
 		class="pictograph-wrapper"
 		on:click={onClick ? () => onClick() : undefined}
 		aria-label={onClick
 			? `Pictograph for letter ${get(pictographDataStore)?.letter || 'unknown'}`
 			: undefined}
-		role={onClick ? 'button' : 'img'}
+		role={getPictographRole(onClick)}
 		data-state={state}
 		data-letter={get(pictographDataStore)?.letter || 'none'}
-		type={onClick ? 'button' : undefined}
+		{...onClick ? { type: 'button' } : {}}
 	>
 		<svg
 			class="pictograph"
 			viewBox="0 0 950 950"
 			xmlns="http://www.w3.org/2000/svg"
 			role="img"
-			aria-label={getPictographAriaLabel()}
+			aria-label={getPictographAriaLabel(state, errorMessage, get(pictographDataStore))}
 		>
 			{#if state === 'initializing'}
-				{#if showLoadingIndicator}
+				{#if shouldShowLoadingIndicator(state, showLoadingIndicator)}
 					<InitializingSpinner {animationDuration} />
 				{/if}
 			{:else if state === 'error'}
@@ -587,15 +375,15 @@
 					{debug}
 				/>
 
-				{#if beatNumber !== null}
+				{#if shouldShowBeatLabel(beatNumber, isStartPosition)}
 					<BeatLabel
-						text={isStartPosition ? 'Start' : beatNumber.toString()}
+						text={isStartPosition ? 'Start' : beatNumber?.toString() || ''}
 						position="top-left"
 						{animationDuration}
 					/>
 				{/if}
 
-				{#if state !== 'grid_only'}
+				{#if shouldShowMotionComponents(state)}
 					{#if get(pictographDataStore)?.letter}
 						<g transition:fade={{ duration: animationDuration, delay: 100 }}>
 							<TKAGlyph
@@ -638,11 +426,11 @@
 			{/if}
 		</svg>
 
-		{#if state === 'loading' && showLoadingIndicator}
+		{#if state === 'loading' && shouldShowLoadingIndicator(state, showLoadingIndicator)}
 			<LoadingProgress {loadProgress} showText={true} />
 		{/if}
 
-		{#if debug}
+		{#if shouldShowDebugInfo(debug)}
 			<PictographDebug
 				{state}
 				{componentsLoaded}
