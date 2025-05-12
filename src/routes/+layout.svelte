@@ -18,7 +18,6 @@
 	// Import SafeAreaVisualizer for development
 	import SafeAreaVisualizer from '$lib/components/dev/SafeAreaVisualizer.svelte';
 	// Import FixedCornerButtons for global positioning
-	import FixedCornerButtons from '$lib/components/FixedCornerButtons.svelte';
 
 	// This prop receives the data returned from your +layout.server.ts load function
 	export let data: LayoutData;
