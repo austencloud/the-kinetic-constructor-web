@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
-	import { uiState } from '../../store';
+	import { onDestroy } from 'svelte';
 	import type { SortMethod } from '../../config';
 	import { viewOptions } from './viewOptions';
 	import type { ViewModeDetail, ViewOption } from './types';
 	import ViewButton from './ViewButton.svelte';
 	import ViewDropdown from './ViewDropdown.svelte';
+	import { optionPickerContainer } from '$lib/state/stores/optionPicker/optionPickerContainer';
 
 	// --- Props ---
 	const props = $props<{
@@ -43,19 +43,17 @@
 
 	// --- Lifecycle ---
 	$effect(() => {
-		// Subscribe to UI state to keep the selected option in sync
-		const unsubscribe = uiState.subscribe((state) => {
-			if (state.sortMethod !== selectedViewOption.value && selectedViewOption.isSortMethod) {
-				selectedViewOption =
-					viewOptions.find((opt) => opt.value === state.sortMethod) || viewOptions[0];
-			}
-		});
+		// Keep the selected option in sync with the container state
+		const currentSortMethod = optionPickerContainer.state.sortMethod;
+		if (currentSortMethod !== selectedViewOption.value && selectedViewOption.isSortMethod) {
+			selectedViewOption =
+				viewOptions.find((opt) => opt.value === currentSortMethod) || viewOptions[0];
+		}
 
 		// Add click outside listener
 		document.addEventListener('click', handleClickOutside);
 
 		return () => {
-			unsubscribe();
 			document.removeEventListener('click', handleClickOutside);
 		};
 	});

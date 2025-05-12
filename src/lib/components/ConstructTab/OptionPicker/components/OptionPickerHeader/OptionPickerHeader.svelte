@@ -4,17 +4,13 @@
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../../layoutContext';
 	import ViewControl from '../ViewControl';
 	import TabsContainer from './TabsContainer.svelte';
-	// import HeaderStyles from './HeaderStyles.svelte'; // Removed unused import
-	import { useResponsiveLayout } from './useResponsiveLayout'; // Changed import path
+	import { useResponsiveLayout } from './useResponsiveLayout';
 	// --- Props using Svelte 5 runes ---
-	const props = $props();
-
-	// Default values for optional props
-	$effect(() => {
-		if (props.selectedTab === undefined) props.selectedTab = null;
-		if (props.categoryKeys === undefined) props.categoryKeys = [];
-		if (props.showTabs === undefined) props.showTabs = false;
-	});
+	const props = $props<{
+		selectedTab: string | null;
+		categoryKeys: string[];
+		showTabs: boolean;
+	}>();
 
 	// --- Context ---
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);

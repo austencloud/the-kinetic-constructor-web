@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore';
-	import { optionPickerStore } from '../store';
+	import { optionPickerContainer } from '$lib/state/stores/optionPicker/optionPickerContainer';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/StyledBorderOverlay.svelte';
@@ -22,7 +21,9 @@
 	// Reactive state using Svelte 5 runes
 	const isMobileDevice = $derived($layoutContext.isMobile);
 	const scaleFactor = $derived($layoutContext.layoutConfig.scaleFactor);
-	const isSelected = $derived($selectedPictograph === props.pictographData);
+	const isSelected = $derived(
+		optionPickerContainer.state.selectedPictograph === props.pictographData
+	);
 	const ariaLabel = $derived(`Select option ${props.pictographData.letter || 'Unnamed'}`);
 
 	// We'll use a key to force re-render when pictograph data changes
@@ -34,7 +35,7 @@
 	let showBorder = $state(false);
 
 	function handleSelect() {
-		optionPickerStore.selectOption(props.pictographData);
+		optionPickerContainer.selectOption(props.pictographData);
 	}
 
 	function handleMouseEnter() {
@@ -63,11 +64,7 @@
 	<div class="pictograph-container" style="transform: scale({scaleFactor})">
 		{#key pictographKey}
 			<div class="pictograph-wrapper">
-				<Pictograph
-					pictographData={props.pictographData}
-					showLoadingIndicator={false}
-					useNewStateManagement={false}
-				/>
+				<Pictograph pictographData={props.pictographData} />
 				<StyledBorderOverlay
 					pictographData={props.pictographData}
 					isEnabled={showBorder || isSelected}

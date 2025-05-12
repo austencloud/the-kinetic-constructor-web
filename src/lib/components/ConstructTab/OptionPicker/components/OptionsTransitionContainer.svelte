@@ -15,25 +15,39 @@
 	let isTransitioning = writable(false);
 	let transitionKey = writable(0);
 	let transitionTimeout: ReturnType<typeof setTimeout> | null = null;
-	
+
 	// Add option set tracking to prevent excessive transitions
 	let lastOptionIds = '';
 	let initialized = false;
 
 	// Shallow comparison function for option arrays
 	function getOptionsSignature(opts: PictographData[]): string {
-		return opts.map(opt => 
-			`${opt.letter || ''}${opt.startPos || ''}${opt.endPos || ''}`
-		).join('|');
+		return opts
+			.map((opt) => `${opt.letter || ''}${opt.startPos || ''}${opt.endPos || ''}`)
+			.join('|');
 	}
 
 	// Clone options for each transition to ensure safe separation
 	function cloneOption(option: PictographData): PictographData {
+		// With object pooling, we need to ensure we're not creating circular references
+		// or other issues that might cause problems with structuredClone
 		return {
 			...option,
+			letter: option.letter,
+			startPos: option.startPos,
+			endPos: option.endPos,
+			timing: option.timing,
+			direction: option.direction,
+			gridMode: option.gridMode,
 			blueMotionData: option.blueMotionData ? { ...option.blueMotionData } : null,
 			redMotionData: option.redMotionData ? { ...option.redMotionData } : null,
-			// Clone other nested objects as needed
+			redPropData: option.redPropData ? { ...option.redPropData } : null,
+			bluePropData: option.bluePropData ? { ...option.bluePropData } : null,
+			redArrowData: option.redArrowData ? { ...option.redArrowData } : null,
+			blueArrowData: option.blueArrowData ? { ...option.blueArrowData } : null,
+			gridData: option.gridData ? { ...option.gridData } : null,
+			grid: option.grid,
+			isStartPosition: option.isStartPosition
 		};
 	}
 
@@ -64,7 +78,7 @@
 				isTransitioning.set(true);
 
 				// Increment transition key to force re-render
-				transitionKey.update(key => key + 1);
+				transitionKey.update((key) => key + 1);
 
 				// Set timeout to end transition
 				const actualDuration = $prefersReducedMotion ? 50 : transitionDuration;
@@ -75,7 +89,7 @@
 				}, actualDuration + 50); // Add a small buffer
 			} else {
 				// If there were no current options (e.g., initial empty state), don't set transitioning
-				isTransitioning.set(false); 
+				isTransitioning.set(false);
 			}
 
 			// Update current options with the new options
@@ -93,37 +107,35 @@
 	});
 
 	// Simple fade out only - no scaling/sliding that could cause layout issues
-	function cleanFadeOut(node: HTMLElement, { 
-		duration = transitionDuration
-	} = {}) {
+	function cleanFadeOut(node: HTMLElement, { duration = transitionDuration } = {}) {
 		const actualDuration = $prefersReducedMotion ? 50 : duration;
+
+		// Apply initial styles immediately to prevent layout shifts
+		node.style.position = 'absolute';
+		node.style.top = '0';
+		node.style.left = '0';
+		node.style.width = '100%';
+		node.style.height = '100%';
+		node.style.pointerEvents = 'none';
+		node.style.zIndex = '1';
+
 		return {
 			duration: actualDuration,
-			css: (t: number) => `
-				opacity: ${Math.min(0.3, t * 0.3)}; 
-				position: absolute;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				pointer-events: none;
-				z-index: 1;
-			`
+			css: (t: number) => `opacity: ${Math.min(0.3, t * 0.3)};`
 		};
 	}
 
 	// Simple fade in only - clean and straightforward
-	function cleanFadeIn(node: HTMLElement, { 
-		duration = transitionDuration
-	} = {}) {
+	function cleanFadeIn(node: HTMLElement, { duration = transitionDuration } = {}) {
 		const actualDuration = $prefersReducedMotion ? 50 : duration;
+
+		// Apply initial styles immediately to prevent layout shifts
+		node.style.position = 'relative';
+		node.style.zIndex = '2';
+
 		return {
 			duration: actualDuration,
-			css: (t: number) => `
-				opacity: ${t};
-				position: relative;
-				z-index: 2;
-			`
+			css: (t: number) => `opacity: ${t};`
 		};
 	}
 </script>
@@ -137,7 +149,10 @@
 	{/if}
 
 	<!-- Current options (entering) -->
-	<div class="transition-panel incoming" in:cleanFadeIn|local={{ duration: $isTransitioning ? 200 : 0 }}>
+	<div
+		class="transition-panel incoming"
+		in:cleanFadeIn|local={{ duration: $isTransitioning ? 200 : 0 }}
+	>
 		<slot name="panel" options={$currentOptions} key={`current-${$transitionKey}`} />
 	</div>
 </div>
@@ -158,6 +173,4 @@
 	.incoming {
 		position: relative;
 	}
-
-
 </style>

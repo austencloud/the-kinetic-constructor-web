@@ -73,14 +73,7 @@
 <svelte:window on:keydown={handleKeydown} />
 
 {#if isOpen}
-	<!-- Debug info -->
-	<div
-		style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 10px; z-index: 9999; font-size: 12px;"
-	>
-		<p>Modal is open</p>
-		<p>Button rect: {buttonRect ? 'Available' : 'Not available'}</p>
-		<p>Style: {popupStyle}</p>
-	</div>
+
 
 	<div
 		class="popup-backdrop"

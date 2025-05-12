@@ -87,7 +87,6 @@
 		/* Add some bottom margin for spacing between groups */
 		/* margin-bottom: 1rem; */
 		position: relative; /* For stacking context */
-		min-height: calc(var(--option-size, 100px) + var(--grid-gap, 16px)); /* Ensure minimum height */
 		transition: height 0.3s ease-out; /* Smooth height transitions */
 		will-change: transform; /* Optimize for animations */
 		transform: translateZ(0); /* Force GPU acceleration */
@@ -135,23 +134,10 @@
 	}
 
 	/* Force minimum spacing between items with desktop square aspect */
-	@media (min-width: 768px) {
-		.options-grid {
-			grid-gap: var(--grid-gap, 16px); /* Enforce minimum gap */
-		}
-	}
+
 
 	/* Smaller grid items on small screens */
-	@media (max-width: 640px) {
-		.grid-item-wrapper {
-			width: calc(var(--option-size, 100px) * 0.9);
-			height: calc(var(--option-size, 100px) * 0.9);
-		}
 
-		.mobile-grid {
-			grid-gap: 4px;
-		}
-	}
 
 	/* Even smaller for very small screens */
 	@media (max-width: 380px) {
