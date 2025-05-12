@@ -3,7 +3,7 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import LoadingMessage from './messages/LoadingMessage.svelte';
 	import EmptyMessage from './messages/EmptyMessage.svelte';
-	import OptionsPanel from './OptionsPanel.svelte';
+	import OptionsPanel from './OptionsPanel/OptionsPanel.svelte';
 	// Removed any transition containers or imports
 
 	// Props using Svelte 5 runes
