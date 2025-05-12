@@ -1,20 +1,242 @@
 <script lang="ts">
-	import BeatFrame from '../BeatFrame/BeatFrame.svelte';
+	import { onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	import type { PictographData } from '$lib/types/PictographData';
+	import { autoAdjustLayout } from '../BeatFrame/beatFrameHelpers';
 
 	// Props
 	const { title = $bindable('') } = $props<{
 		title?: string;
 	}>();
+
+	// Local state
+	let gridRef: HTMLDivElement;
+	let viewportWidth = $state(window.innerWidth);
+	let viewportHeight = $state(window.innerHeight);
+	let startPosition = $state<PictographData | null>(null);
+	let rows = $state(1);
+	let cols = $state(1);
+	let cellSize = $state(120);
+	let gridScale = $state(1);
+	let rotationMessage = $state<string | null>(null);
+	let showRotationIndicator = $state(false);
+
+	// Get the beats from the sequence container
+	const beats = $derived(sequenceContainer.state.beats);
+	const beatCount = $derived(beats.length);
+
+	// Initialize viewport dimensions and start position
+	onMount(() => {
+		// Initialize viewport dimensions
+		viewportWidth = window.innerWidth;
+		viewportHeight = window.innerHeight;
+
+		// Get the start position from the store
+		const unsubscribe = selectedStartPos.subscribe((newStartPos) => {
+			if (newStartPos) {
+				startPosition = JSON.parse(JSON.stringify(newStartPos));
+			}
+		});
+
+		// Immediately unsubscribe to prevent further updates
+		unsubscribe();
+
+		// Add window resize and orientation change listeners
+		const handleResize = () => {
+			viewportWidth = window.innerWidth;
+			viewportHeight = window.innerHeight;
+			updateLayout();
+		};
+
+		// Listen for screen orientation changes (mobile-specific)
+		let orientationChangeHandler: EventListener | null = null;
+		if (typeof window !== 'undefined' && window.screen && window.screen.orientation) {
+			orientationChangeHandler = () => {
+				viewportWidth = window.innerWidth;
+				viewportHeight = window.innerHeight;
+				updateLayout();
+			};
+			window.screen.orientation.addEventListener('change', orientationChangeHandler);
+		}
+
+		window.addEventListener('resize', handleResize);
+		window.addEventListener('orientationchange', handleResize);
+
+		// Initial layout calculation
+		updateLayout();
+
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			window.removeEventListener('orientationchange', handleResize);
+
+			if (orientationChangeHandler && window.screen && window.screen.orientation) {
+				window.screen.orientation.removeEventListener('change', orientationChangeHandler);
+			}
+		};
+	});
+
+	// Calculate optimal layout based on sequence data and viewport dimensions
+	function updateLayout() {
+		// Determine if we have a start position
+		const hasStartPosition = !!startPosition;
+
+		// Calculate rows and columns based on beat count
+		const [baseRows, baseCols] = autoAdjustLayout(beatCount);
+
+		// Adjust layout for start position if needed
+		if (hasStartPosition) {
+			// Add one column for the start position
+			cols = baseCols + 1;
+
+			// Calculate how many rows we need when beats are arranged in columns 2 and onwards
+			const beatsPerRow = baseCols;
+			rows = Math.ceil(beatCount / beatsPerRow);
+		} else {
+			rows = baseRows;
+			cols = baseCols;
+		}
+
+		// Determine device orientation
+		let deviceOrientation: 'landscape' | 'portrait' = 'landscape';
+
+		// Check for screen orientation API first (more reliable on mobile)
+		if (typeof window !== 'undefined' && window.screen && window.screen.orientation) {
+			const orientation = window.screen.orientation.type;
+			if (orientation.includes('portrait')) {
+				deviceOrientation = 'portrait';
+			} else if (orientation.includes('landscape')) {
+				deviceOrientation = 'landscape';
+			}
+		} else {
+			// Fallback to comparing dimensions
+			deviceOrientation = viewportWidth > viewportHeight ? 'landscape' : 'portrait';
+		}
+
+		// Calculate available space (95% of viewport width, 90% of viewport height)
+		const availableWidth = viewportWidth * 0.95;
+		const availableHeight = viewportHeight * 0.9; // Leave room for header/footer
+
+		// Calculate optimal cell size
+		const maxCellWidth = availableWidth / cols;
+		const maxCellHeight = availableHeight / rows;
+		cellSize = Math.min(maxCellWidth, maxCellHeight);
+
+		// Calculate grid dimensions
+		const gridWidth = cellSize * cols;
+		const gridHeight = cellSize * rows;
+
+		// No rotation - natural orientation is maintained
+
+		// Calculate scale factor to ensure content fits within viewport
+		// No rotation, use original dimensions
+		// Ensure dimensions don't exceed viewport
+		if (gridWidth > availableWidth || gridHeight > availableHeight) {
+			const scaleX = availableWidth / gridWidth;
+			const scaleY = availableHeight / gridHeight;
+			gridScale = Math.min(scaleX, scaleY) * 0.98; // Add small safety margin
+		} else {
+			gridScale = 1;
+		}
+
+		// Check for mobile devices with unusual aspect ratios
+		const isMobile =
+			typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+		const isNarrowScreen =
+			typeof window !== 'undefined' && viewportWidth < 500 && viewportHeight > 700;
+
+		// Still provide rotation guidance for better viewing experience
+		// but don't actually rotate the content
+		const isLandscapeContent = cols > rows;
+		const isPortraitDevice = deviceOrientation === 'portrait';
+
+		// Show rotation indicator when content orientation doesn't match device orientation
+		if (isLandscapeContent && isPortraitDevice) {
+			rotationMessage = 'Rotate to landscape for optimal view';
+			showRotationIndicator = true;
+		} else if (!isLandscapeContent && !isPortraitDevice) {
+			rotationMessage = 'Rotate to portrait for optimal view';
+			showRotationIndicator = true;
+		} else {
+			rotationMessage = null;
+			showRotationIndicator = false;
+		}
+
+		// Force rotation indicator on narrow mobile screens when content is landscape
+		if (isMobile && isNarrowScreen && isLandscapeContent && isPortraitDevice) {
+			rotationMessage = 'Rotate to landscape for optimal view';
+			showRotationIndicator = true;
+		}
+
+		// Apply the layout to the grid
+		if (gridRef) {
+			// Set grid template
+			gridRef.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
+			gridRef.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+
+			// Set transform for scaling only, no rotation
+			gridRef.style.transform = `translate(-50%, -50%) scale(${gridScale})`;
+
+			// Set CSS variables for use in styles
+			gridRef.style.setProperty('--cell-size', `${cellSize}px`);
+			gridRef.style.setProperty('--rows', `${rows}`);
+			gridRef.style.setProperty('--cols', `${cols}`);
+		}
+	}
+
+	// Get the position of a beat in the grid
+	function getBeatPosition(index: number): { row: number; col: number } {
+		const hasStartPosition = !!startPosition;
+
+		if (hasStartPosition) {
+			// When there's a start position, we need to adjust the layout
+			// Beats should be arranged in columns 2 and onwards
+			const beatsPerRow = cols - 1; // One less column for beats since column 1 is reserved
+			const row = Math.floor(index / beatsPerRow);
+			const col = (index % beatsPerRow) + 2; // +2 because column 1 is reserved for start position
+			return { row, col };
+		} else {
+			// Standard layout without start position - use all columns
+			const row = Math.floor(index / cols);
+			const col = (index % cols) + 1; // +1 for 1-based column index
+			return { row, col };
+		}
+	}
 </script>
 
-<div class="fullscreen-beat-container" data-beat-count={sequenceContainer.state.beats.length}>
-	<!-- Use a special layout mode for fullscreen display -->
-	<div class="overlay-grid-container">
-		<!-- Regular beats only (no start position) -->
-		{#each sequenceContainer.state.beats as beat, index}
-			<div class="overlay-grid-item">
+<div class="fullscreen-overlay-container fullscreen-beat-container" data-beat-count={beatCount}>
+	<!-- Rotation indicator -->
+	{#if showRotationIndicator}
+		<div class="rotation-indicator" transition:fade={{ duration: 300 }}>
+			<div class="rotation-message">
+				<svg class="rotation-icon" viewBox="0 0 24 24" width="20" height="20">
+					<path
+						d="M7.11 8.53L5.7 7.11C4.8 8.27 4.24 9.61 4.07 11h2.02c.14-.87.49-1.72 1.02-2.47zM6.09 13H4.07c.17 1.39.72 2.73 1.62 3.89l1.41-1.42c-.52-.75-.87-1.59-1.01-2.47zm1.01 5.32c1.16.9 2.51 1.44 3.9 1.61V17.9c-.87-.15-1.71-.49-2.46-1.03L7.1 18.32zM13 4.07V1L8.45 5.55 13 10V6.09c2.84.48 5 2.94 5 5.91s-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93s-3.05-7.44-7-7.93z"
+					/>
+				</svg>
+				<span>{rotationMessage}</span>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Sequence grid -->
+	<div class="sequence-grid" bind:this={gridRef}>
+		<!-- Start position (if available) -->
+		{#if startPosition}
+			<div class="grid-item start-position">
+				<div class="pictograph-container">
+					<Pictograph pictographData={startPosition} isStartPosition={true} />
+				</div>
+			</div>
+		{/if}
+
+		<!-- Regular beats -->
+		{#each beats as beat, index}
+			{@const position = getBeatPosition(index)}
+			<div class="grid-item" style="grid-column: {position.col}; grid-row: {position.row + 1};">
 				<div class="pictograph-container">
 					<Pictograph
 						pictographData={{
@@ -36,293 +258,138 @@
 			</div>
 		{/each}
 	</div>
-
-	<!-- Keep the original BeatFrame for data, but make it invisible -->
-	<div class="hidden-beat-frame">
-		<BeatFrame isScrollable={false} fullScreenMode={true} />
-	</div>
 </div>
 
 <style>
-	/* Full screen beat container styles */
-	.fullscreen-beat-container {
-		width: 100%;
-		height: 100%;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		padding: 0; /* Remove padding to maximize space */
-		box-sizing: border-box;
-		/* Ensure content is centered and as large as possible */
-		position: relative;
-		overflow: hidden; /* Prevent scrolling within the container */
-		/* Default CSS variables for grid layout */
-		--overlay-grid-columns: 4; /* Default number of columns */
-		--overlay-cell-size: 120px; /* Default cell size */
-		--overlay-grid-gap: 4px; /* Default gap between cells */
-		/* Ensure the container takes up all available space */
-		max-width: 100vw;
-		max-height: 100vh;
-		flex: 1;
-	}
+	/* Fullscreen overlay container */
 
-	/* New overlay grid container styles */
-	.overlay-grid-container {
+
+	/* Sequence grid */
+	.sequence-grid {
 		display: grid;
-		grid-template-columns: repeat(var(--overlay-grid-columns), var(--overlay-cell-size));
-		grid-auto-rows: var(--overlay-cell-size);
-		gap: var(--overlay-grid-gap);
-		padding: 8px;
-		width: auto;
-		height: auto;
-		max-width: 95vw;
-		max-height: 85vh;
-		justify-content: center;
-		align-items: center;
-		overflow: auto;
+		gap: 0;
+		position: absolute;
+		transform-origin: center center;
+		box-sizing: border-box;
 	}
 
-	.overlay-grid-item {
+	/* Grid items */
+	.grid-item {
 		position: relative;
 		width: 100%;
 		height: 100%;
 		display: flex;
-		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		background-color: rgba(255, 255, 255, 0.05);
-		border-radius: 8px;
 		overflow: hidden;
 	}
 
+	/* Special styling for start position - only in top-left cell */
+	.grid-item.start-position {
+		grid-column: 1;
+		grid-row: 1;
+		width: var(--cell-size, 100%);
+		height: var(--cell-size, 100%);
+	}
+
+	/* Pictograph container */
 	.pictograph-container {
 		width: 100%;
 		height: 100%;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		padding: 5px;
+		padding: 0;
 		box-sizing: border-box;
 	}
 
-	/* Style for pictograph components in the overlay */
+	/* Style for pictograph components */
 	:global(.pictograph-container .pictograph) {
 		width: 100%;
 		height: 100%;
 		max-width: 100%;
 		max-height: 100%;
+		border: none;
 	}
 
-	.hidden-beat-frame {
+	/* Rotation indicator */
+	.rotation-indicator {
 		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		opacity: 0;
-		pointer-events: none;
-	}
-
-	/* Adjust grid layout based on number of pictographs */
-	.fullscreen-beat-container[data-beat-count='1'] .overlay-grid-container {
-		--overlay-grid-columns: 1; /* 1 pictograph: 1 column */
-		--overlay-cell-size: min(200px, 40vw); /* Larger cells for fewer pictographs */
-	}
-
-	.fullscreen-beat-container[data-beat-count='2'] .overlay-grid-container {
-		--overlay-grid-columns: 2; /* 2 pictographs: 2 columns */
-		--overlay-cell-size: min(180px, 35vw);
-	}
-
-	.fullscreen-beat-container[data-beat-count='3'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='4'] .overlay-grid-container {
-		--overlay-grid-columns: 2; /* 3-4 pictographs: 2 columns */
-		--overlay-cell-size: min(160px, 30vw);
-	}
-
-	.fullscreen-beat-container[data-beat-count='5'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='6'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='7'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='8'] .overlay-grid-container {
-		--overlay-grid-columns: 4; /* 5-8 pictographs: 4 columns (4x2 grid) */
-		--overlay-cell-size: min(140px, 22vw);
-	}
-
-	.fullscreen-beat-container[data-beat-count='9'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='10'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='11'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='12'] .overlay-grid-container {
-		--overlay-grid-columns: 4; /* 9-12 pictographs: 4 columns (4x3 grid) */
-		--overlay-cell-size: min(130px, 20vw);
-	}
-
-	.fullscreen-beat-container[data-beat-count='13'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='14'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='15'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='16'] .overlay-grid-container {
-		--overlay-grid-columns: 4; /* 13-16 pictographs: 4 columns (4x4 grid) */
-		--overlay-cell-size: min(120px, 18vw);
-	}
-
-	.fullscreen-beat-container[data-beat-count='17'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='18'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='19'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='20'] .overlay-grid-container {
-		--overlay-grid-columns: 5; /* 17-20 pictographs: 5 columns */
-		--overlay-cell-size: min(110px, 16vw);
-	}
-
-	.fullscreen-beat-container[data-beat-count='21'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='22'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='23'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='24'] .overlay-grid-container {
-		--overlay-grid-columns: 6; /* 21-24 pictographs: 6 columns */
-		--overlay-cell-size: min(100px, 14vw);
-	}
-
-	.fullscreen-beat-container[data-beat-count='25'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='26'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='27'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='28'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='29'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='30'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='31'] .overlay-grid-container,
-	.fullscreen-beat-container[data-beat-count='32'] .overlay-grid-container {
-		--overlay-grid-columns: 8; /* 25-32 pictographs: 8 columns */
-		--overlay-cell-size: min(90px, 12vw);
-	}
-
-	/* Handle landscape orientation specifically */
-	@media (orientation: landscape) {
-		.overlay-grid-container {
-			max-height: 80vh; /* Further reduce height in landscape */
-			/* Increase columns in landscape mode */
-			--overlay-grid-columns: calc(var(--overlay-grid-columns) + 2);
-			/* Reduce gap in landscape to fit more pictographs */
-			--overlay-grid-gap: 2px;
-		}
-
-		/* Adjust cell sizes in landscape for different beat counts */
-		.fullscreen-beat-container[data-beat-count='1'] .overlay-grid-container {
-			--overlay-grid-columns: 1; /* Keep 1 column for single pictograph */
-			--overlay-cell-size: min(180px, 30vw); /* Slightly smaller in landscape */
-		}
-
-		.fullscreen-beat-container[data-beat-count='2'] .overlay-grid-container {
-			--overlay-grid-columns: 2; /* Keep 2 columns for 2 pictographs */
-			--overlay-cell-size: min(160px, 25vw);
-		}
-
-		.fullscreen-beat-container[data-beat-count='3'] .overlay-grid-container,
-		.fullscreen-beat-container[data-beat-count='4'] .overlay-grid-container {
-			--overlay-grid-columns: 4; /* Use 4 columns in landscape for 3-4 pictographs */
-			--overlay-cell-size: min(140px, 22vw);
-		}
-
-		.fullscreen-beat-container[data-beat-count='5'] .overlay-grid-container,
-		.fullscreen-beat-container[data-beat-count='6'] .overlay-grid-container,
-		.fullscreen-beat-container[data-beat-count='7'] .overlay-grid-container,
-		.fullscreen-beat-container[data-beat-count='8'] .overlay-grid-container {
-			--overlay-grid-columns: 4; /* Keep 4 columns for 5-8 pictographs */
-			--overlay-cell-size: min(130px, 20vw);
-		}
-
-		.fullscreen-beat-container[data-beat-count='9'] .overlay-grid-container,
-		.fullscreen-beat-container[data-beat-count='10'] .overlay-grid-container,
-		.fullscreen-beat-container[data-beat-count='11'] .overlay-grid-container,
-		.fullscreen-beat-container[data-beat-count='12'] .overlay-grid-container,
-		.fullscreen-beat-container[data-beat-count='13'] .overlay-grid-container,
-		.fullscreen-beat-container[data-beat-count='14'] .overlay-grid-container,
-		.fullscreen-beat-container[data-beat-count='15'] .overlay-grid-container,
-		.fullscreen-beat-container[data-beat-count='16'] .overlay-grid-container {
-			--overlay-grid-columns: 8; /* Use 8 columns for 9-16 pictographs in landscape */
-			--overlay-cell-size: min(110px, 16vw);
-		}
-	}
-
-	/* Handle small height screens in landscape */
-	@media (orientation: landscape) and (max-height: 600px) {
-		.overlay-grid-container {
-			max-height: 75vh; /* Even smaller on very small screens */
-			max-width: 95vw; /* Also reduce width slightly */
-			/* Further reduce padding on small screens */
-			padding: 4px;
-			/* Reduce cell size on small screens */
-			--overlay-cell-size: min(var(--overlay-cell-size), 18vw);
-		}
-	}
-
-	:global(.fullscreen-beat-container .beat-frame-container) {
-		width: 100%;
-		height: 100%;
+		bottom: 16px;
+		left: 0;
+		right: 0;
+		z-index: 10;
 		display: flex;
 		justify-content: center;
+		pointer-events: none;
+		transition: opacity 0.3s ease-out;
+	}
+
+	.rotation-message {
+		background-color: rgba(0, 0, 0, 0.5);
+		color: white;
+		padding: 8px 12px;
+		border-radius: 16px;
+		display: flex;
 		align-items: center;
-		/* Remove padding to maximize space */
-		padding: 0;
-		box-sizing: border-box;
-		/* Ensure container takes up full width */
-		min-width: 100%;
-		/* Add overflow handling to prevent layout issues */
-		overflow: hidden;
+		gap: 6px;
+		font-size: 12px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+		animation: pulse 3s infinite;
+		backdrop-filter: blur(2px);
+		max-width: 90%;
 	}
 
-	/* Ensure pictographs in fullscreen mode are properly sized */
-	:global(.fullscreen-beat-container .pictograph) {
-		width: 100%;
-		height: 100%;
-		/* Ensure the pictograph scales properly */
-		transform-origin: center center;
-		/* Prevent pictographs from overflowing their cells */
-		overflow: hidden;
-		/* Add a subtle transition for smoother resizing */
-		transition: transform 0.2s ease-out;
+	.rotation-icon {
+		fill: white;
+		animation: rotate 3s infinite;
+		opacity: 0.9;
 	}
 
-	/* Responsive adjustments for different screen sizes */
-	@media (max-width: 768px) {
-		.overlay-grid-container {
-			/* Reduce gap on mobile to fit more pictographs */
-			--overlay-grid-gap: 2px;
-			/* Reduce padding on mobile */
-			padding: 4px;
-			/* Adjust cell size for mobile */
-			--overlay-cell-size: min(var(--overlay-cell-size), 20vw);
+	@keyframes pulse {
+		0% {
+			opacity: 0.7;
 		}
-
-		.overlay-grid-item {
-			border-radius: 4px;
+		50% {
+			opacity: 0.9;
+		}
+		100% {
+			opacity: 0.7;
 		}
 	}
 
-	/* Handle very small screens */
+	@keyframes rotate {
+		0% {
+			transform: rotate(0deg);
+		}
+		20% {
+			transform: rotate(45deg);
+		}
+		40% {
+			transform: rotate(45deg);
+		}
+		60% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(0deg);
+		}
+	}
+
+	/* Mobile-specific styles */
 	@media (max-width: 480px) {
-		.overlay-grid-container {
-			/* Minimal gap on very small screens */
-			--overlay-grid-gap: 1px;
-			/* Minimal padding on very small screens */
-			padding: 2px;
-			/* Further reduce cell size on very small screens */
-			--overlay-cell-size: min(var(--overlay-cell-size), 18vw);
-		}
-
-		.overlay-grid-item {
-			border-radius: 2px;
+		.rotation-message {
+			font-size: 10px;
+			padding: 6px 10px;
+			border-radius: 12px;
 		}
 	}
 
-	/* Handle landscape orientation on mobile devices */
-	@media (orientation: landscape) and (max-height: 500px) {
-		.overlay-grid-container {
-			/* No padding on very short screens */
-			padding: 0;
-			/* No gap on very short screens */
-			--overlay-grid-gap: 0;
-			/* Smallest cell size on very short screens */
-			--overlay-cell-size: min(var(--overlay-cell-size), 16vw);
-		}
-
-		.overlay-grid-item {
-			border-radius: 0;
+	/* Special handling for tall/narrow screens like Z Fold */
+	@media (max-width: 400px) and (min-height: 800px) {
+		.rotation-indicator {
+			display: flex !important;
+			opacity: 1 !important;
 		}
 	}
 </style>

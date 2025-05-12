@@ -153,8 +153,8 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
-		max-width: 98vw; /* Increased from 95vw to use more space */
-		max-height: 95vh;
+		max-width: 100vw; /* Increased from 95vw to use more space */
+		max-height: 100vh;
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
@@ -168,7 +168,7 @@
 	@media (orientation: landscape) and (max-height: 600px) {
 		.sequence-content {
 			max-height: 100vh;
-			max-width: 95vw; /* Increased from 90vw to use more space */
+			max-width: 100vw; /* Increased from 90vw to use more space */
 		}
 	}
 
@@ -204,20 +204,7 @@
 	}
 
 	/* Wrapper for the slot content */
-	.content-wrapper {
-		width: 100%;
-		height: 100%;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		/* Ensure the content wrapper takes up all available space */
-		flex: 1;
-		/* Prevent content from overflowing */
-		overflow: hidden;
-		/* Add padding to prevent content from touching the edges */
-		padding: 4px;
-		box-sizing: border-box;
-	}
+
 
 	@media (orientation: landscape) and (max-height: 600px) {
 		.sequence-header {
