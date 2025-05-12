@@ -29,6 +29,7 @@
 	});
 
 	// Helper function to safely copy pictograph data without circular references
+	// Also ensures the data is valid for a start position (start and end locations must be the same)
 	function safeCopyPictographData(data: PictographData): PictographData {
 		// Create a new object with only the properties we need
 		const safeCopy: PictographData = {
@@ -39,23 +40,24 @@
 			direction: data.direction,
 			gridMode: data.gridMode,
 			grid: data.grid,
+			isStartPosition: true, // Mark this as a start position
 
-			// Copy motion data safely
+			// Copy motion data safely and ensure start/end locations are the same
 			redMotionData: data.redMotionData
 				? {
 						id: data.redMotionData.id,
 						handRotDir: data.redMotionData.handRotDir,
 						color: data.redMotionData.color,
 						leadState: data.redMotionData.leadState,
-						motionType: data.redMotionData.motionType,
+						motionType: 'static', // Force static for start position
 						startLoc: data.redMotionData.startLoc,
-						endLoc: data.redMotionData.endLoc,
+						endLoc: data.redMotionData.startLoc, // Force end location to match start location
 						startOri: data.redMotionData.startOri,
-						endOri: data.redMotionData.endOri,
+						endOri: data.redMotionData.startOri, // Force end orientation to match start orientation
 						propRotDir: data.redMotionData.propRotDir,
-						turns: data.redMotionData.turns,
-						prefloatMotionType: data.redMotionData.prefloatMotionType,
-						prefloatPropRotDir: data.redMotionData.prefloatPropRotDir
+						turns: 0, // Force no turns for start position
+						prefloatMotionType: null,
+						prefloatPropRotDir: null
 					}
 				: null,
 
@@ -65,15 +67,15 @@
 						handRotDir: data.blueMotionData.handRotDir,
 						color: data.blueMotionData.color,
 						leadState: data.blueMotionData.leadState,
-						motionType: data.blueMotionData.motionType,
+						motionType: 'static', // Force static for start position
 						startLoc: data.blueMotionData.startLoc,
-						endLoc: data.blueMotionData.endLoc,
+						endLoc: data.blueMotionData.startLoc, // Force end location to match start location
 						startOri: data.blueMotionData.startOri,
-						endOri: data.blueMotionData.endOri,
+						endOri: data.blueMotionData.startOri, // Force end orientation to match start orientation
 						propRotDir: data.blueMotionData.propRotDir,
-						turns: data.blueMotionData.turns,
-						prefloatMotionType: data.blueMotionData.prefloatMotionType,
-						prefloatPropRotDir: data.blueMotionData.prefloatPropRotDir
+						turns: 0, // Force no turns for start position
+						prefloatMotionType: null,
+						prefloatPropRotDir: null
 					}
 				: null,
 
@@ -90,6 +92,9 @@
 			blueMotion: null,
 			props: []
 		};
+
+		// Log that we're creating a start position
+		console.log('Creating start position data with static motion and matching start/end locations');
 
 		return safeCopy;
 	}
@@ -120,6 +125,14 @@
 
 					// Also update the pictographContainer
 					pictographContainer.setData(pictographData);
+
+					// Save to localStorage directly to ensure it's available during hot reloads
+					try {
+						localStorage.setItem('start_position', JSON.stringify(pictographData));
+						console.log('StartPosBeat: Saved start position to localStorage from subscription');
+					} catch (error) {
+						console.error('Failed to save start position to localStorage:', error);
+					}
 
 					// Update the beat data
 					beatData = {
@@ -166,6 +179,14 @@
 
 					// Also update the pictographContainer
 					pictographContainer.setData(pictographData);
+
+					// Save to localStorage directly to ensure it's available during hot reloads
+					try {
+						localStorage.setItem('start_position', JSON.stringify(pictographData));
+						console.log('StartPosBeat: Saved start position to localStorage');
+					} catch (error) {
+						console.error('Failed to save start position to localStorage:', error);
+					}
 
 					// Update the beat data
 					beatData = {

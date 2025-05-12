@@ -31,8 +31,11 @@
 	import EmptyStartPosLabel from './EmptyStartPosLabel.svelte';
 	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 
-	// Create event dispatcher for natural height changes
-	const dispatch = createEventDispatcher<{ naturalheightchange: { height: number } }>();
+	// Create event dispatcher for natural height changes and beat selection
+	const dispatch = createEventDispatcher<{
+		naturalheightchange: { height: number };
+		beatselected: { beatId: string };
+	}>();
 
 	// Use Svelte 5 runes for reactive state
 	const { size: sizeStore, resizeObserver } = useResizeObserver({
@@ -462,7 +465,19 @@
 			});
 
 			if (beatId) {
+				// Select the beat in the container
 				sequenceContainer.selectBeat(beatId);
+
+				// Dispatch a custom event for the beat selection
+				// This will be used by the deletion mode
+				dispatch('beatselected', { beatId });
+
+				// Also dispatch a global event for components that aren't direct parents
+				const event = new CustomEvent('beat-selected', {
+					bubbles: true,
+					detail: { beatId }
+				});
+				document.dispatchEvent(event);
 			}
 		}
 	}

@@ -361,8 +361,8 @@ function createSequenceContainer() {
 					});
 				}
 
-				// Store a reference to the first beat for start position restoration
-				const firstBeat = parsed.beats && parsed.beats.length > 0 ? parsed.beats[0] : null;
+				// We'll handle start position separately - don't use the first beat for this
+				// This prevents confusion between start position and regular beats
 
 				update((state) => {
 					Object.assign(state, parsed);
@@ -403,71 +403,68 @@ function createSequenceContainer() {
 					}
 				});
 
-				// Restore the start position if we have a first beat
-				if (firstBeat) {
-					try {
-						// Import the necessary modules
-						Promise.all([
-							import('$lib/stores/sequence/selectionStore'),
-							import('$lib/state/stores/pictograph/pictographContainer')
-						]).then(([{ selectedStartPos }, { pictographContainer }]) => {
-							// Try to get pictographData from the first beat
-							let startPosData = null;
+				// Restore the start position from localStorage directly, not from the first beat
+				// This ensures proper separation between start position and regular beats
+				try {
+					// Import the necessary modules
+					Promise.all([
+						import('$lib/stores/sequence/selectionStore'),
+						import('$lib/state/stores/pictograph/pictographContainer')
+					]).then(([{ selectedStartPos }, { pictographContainer }]) => {
+						// Try to get the start position from localStorage
+						const savedStartPos = localStorage.getItem('start_position');
+						let startPosData = null;
 
-							if (firstBeat.pictographData) {
-								startPosData = firstBeat.pictographData;
-							} else if (firstBeat.metadata?.pictographData) {
-								startPosData = firstBeat.metadata.pictographData;
-							} else {
-								// Try to reconstruct pictographData from beat properties
-								startPosData = {
-									letter: firstBeat.letter || firstBeat.metadata?.letter || null,
-									startPos: firstBeat.position || firstBeat.metadata?.startPos || null,
-									endPos: firstBeat.metadata?.endPos || null,
-									gridMode: firstBeat.metadata?.gridMode || 'diamond',
-									redPropData: firstBeat.redPropData || null,
-									bluePropData: firstBeat.bluePropData || null,
-									redMotionData: firstBeat.redMotionData || null,
-									blueMotionData: firstBeat.blueMotionData || null,
-									redArrowData: firstBeat.redArrowData || null,
-									blueArrowData: firstBeat.blueArrowData || null,
-									grid: firstBeat.metadata?.grid || '',
-									timing: null,
-									direction: null,
-									gridData: null,
-									motions: [],
-									redMotion: null,
-									blueMotion: null,
-									props: []
-								};
+						if (savedStartPos) {
+							try {
+								startPosData = JSON.parse(savedStartPos);
+								console.log('Found start position in localStorage');
+							} catch (parseError) {
+								console.error('Failed to parse start position from localStorage:', parseError);
+							}
+						}
+
+						// If we don't have a valid start position, don't try to use the first beat
+						// This prevents confusion between start position and regular beats
+						if (startPosData) {
+							// Validate the start position data
+							// For a start position, start and end locations must be the same
+							if (startPosData.redMotionData) {
+								startPosData.redMotionData.endLoc = startPosData.redMotionData.startLoc;
+							}
+							if (startPosData.blueMotionData) {
+								startPosData.blueMotionData.endLoc = startPosData.blueMotionData.startLoc;
 							}
 
-							if (startPosData) {
-								// Create a deep copy to avoid reference issues
-								const startPosCopy = JSON.parse(JSON.stringify(startPosData));
+							// Add a special flag to mark this as a start position
+							startPosData.isStartPosition = true;
 
-								// Update the selectedStartPos store
-								selectedStartPos.set(startPosCopy);
+							// Create a deep copy to avoid reference issues
+							const startPosCopy = JSON.parse(JSON.stringify(startPosData));
 
-								// Also update the pictographContainer
-								pictographContainer.setData(startPosCopy);
+							// Update the selectedStartPos store
+							selectedStartPos.set(startPosCopy);
 
-								console.log('Restored start position from first beat:', startPosCopy);
+							// Also update the pictographContainer
+							pictographContainer.setData(startPosCopy);
 
-								// Dispatch a custom event to notify components
-								if (typeof document !== 'undefined') {
-									const event = new CustomEvent('start-position-selected', {
-										detail: { startPosition: startPosCopy },
-										bubbles: true
-									});
-									document.dispatchEvent(event);
-									console.log('Dispatched start-position-selected event');
-								}
+							console.log('Restored start position from localStorage:', startPosCopy);
+
+							// Dispatch a custom event to notify components
+							if (typeof document !== 'undefined') {
+								const event = new CustomEvent('start-position-selected', {
+									detail: { startPosition: startPosCopy },
+									bubbles: true
+								});
+								document.dispatchEvent(event);
+								console.log('Dispatched start-position-selected event');
 							}
-						});
-					} catch (startPosError) {
-						console.error('Failed to restore start position:', startPosError);
-					}
+						} else {
+							console.log('No valid start position found in localStorage');
+						}
+					});
+				} catch (startPosError) {
+					console.error('Failed to restore start position:', startPosError);
 				}
 
 				return true;

@@ -20,5 +20,6 @@ export const defaultPictographData: PictographData = {
 	gridData: null,
 	redArrowData: null,
 	blueArrowData: null,
-	grid: ''
+	grid: '',
+	isStartPosition: false
 };

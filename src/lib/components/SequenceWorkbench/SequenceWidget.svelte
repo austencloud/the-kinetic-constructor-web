@@ -19,8 +19,8 @@
 	import SequenceContent from './content/SequenceContent.svelte';
 	import SequenceOverlay from './components/SequenceOverlay.svelte';
 	import SequenceOverlayContent from './overlay/SequenceOverlayContent.svelte';
-	import ClearSequenceButton from './ClearSequenceButton.svelte';
-	import RemoveBeatButton from './RemoveBeatButton.svelte';
+	import DeleteButton from './DeleteButton.svelte';
+	import DeleteModal from './DeleteModal.svelte';
 	import SequenceOverlayButton from './SequenceOverlayButton.svelte';
 	import ShareButton from './ShareButton.svelte';
 	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte';
@@ -30,6 +30,10 @@
 
 	let activeMode = $state<'construct' | 'generate'>('construct');
 	let beatFrameElement = $state<HTMLElement | null>(null);
+	let isDeleteModalOpen = $state(false);
+	let isInDeletionMode = $state(false);
+	let deletionModeTooltip = $state<HTMLElement | null>(null);
+	let deleteButtonRect = $state<DOMRect | null>(null);
 
 	// Emit the full sequence widget dimensions whenever they change
 	$effect(() => {
@@ -62,6 +66,9 @@
 		return unsubscribe;
 	});
 
+	// Check if there's a selected beat
+	const hasSelectedBeat = $derived(sequenceContainer.state.selectedBeatIds.length > 0);
+
 	function handleButtonActionWrapper(event: CustomEvent<ActionEventDetail>) {
 		handleButtonAction({
 			id: event.detail.id,
@@ -93,6 +100,136 @@
 		appActions.openSettings();
 	}
 
+	function handleDeleteButtonClick(event: CustomEvent<{ buttonRect: DOMRect }>) {
+		// Get the button rect directly from the event
+		if (event.detail && event.detail.buttonRect) {
+			deleteButtonRect = event.detail.buttonRect;
+
+			// Log the button rect for debugging
+			console.log('Delete button rect:', deleteButtonRect);
+		}
+		isDeleteModalOpen = true;
+	}
+
+	function handleCloseModal() {
+		isDeleteModalOpen = false;
+	}
+
+	function enterDeletionMode() {
+		isInDeletionMode = true;
+
+		// Close the modal
+		isDeleteModalOpen = false;
+
+		// Change cursor to indicate deletion mode with an improved X cursor
+		if (beatFrameElement) {
+			beatFrameElement.style.cursor =
+				"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ff5555' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10' fill='rgba(255,85,85,0.2)'/%3E%3Cline x1='15' y1='9' x2='9' y2='15'%3E%3C/line%3E%3Cline x1='9' y1='9' x2='15' y2='15'%3E%3C/line%3E%3C/svg%3E\") 12 12, no-drop";
+		}
+
+		// Show tooltip
+		showDeletionModeTooltip();
+
+		// Add event listener to exit deletion mode when clicking outside the beat frame
+		document.addEventListener('click', handleDocumentClick);
+		document.addEventListener('keydown', handleEscapeKey);
+	}
+
+	function exitDeletionMode() {
+		isInDeletionMode = false;
+
+		// Reset cursor
+		if (beatFrameElement) {
+			beatFrameElement.style.cursor = '';
+		}
+
+		// Hide tooltip
+		hideDeletionModeTooltip();
+
+		// Remove event listeners
+		document.removeEventListener('click', handleDocumentClick);
+		document.removeEventListener('keydown', handleEscapeKey);
+	}
+
+	function showDeletionModeTooltip() {
+		// Create tooltip element if it doesn't exist
+		if (!deletionModeTooltip) {
+			deletionModeTooltip = document.createElement('div');
+			deletionModeTooltip.className = 'deletion-mode-tooltip';
+			deletionModeTooltip.textContent = 'Click a beat to delete';
+
+			// Position the tooltip relative to the BeatFrame
+			if (beatFrameElement) {
+				// Append to the BeatFrame container instead of body for proper positioning
+				beatFrameElement.appendChild(deletionModeTooltip);
+			} else {
+				// Fallback to body if BeatFrame element is not available
+				document.body.appendChild(deletionModeTooltip);
+			}
+		}
+
+		// Show tooltip
+		if (deletionModeTooltip) {
+			deletionModeTooltip.style.display = 'flex';
+
+			// Update position on window resize
+			window.addEventListener('resize', updateTooltipPosition);
+			// Initial position update
+			updateTooltipPosition();
+		}
+	}
+
+	function updateTooltipPosition() {
+		if (deletionModeTooltip && beatFrameElement) {
+			// If the tooltip is appended to the body, we need to calculate absolute position
+			if (deletionModeTooltip.parentElement === document.body) {
+				const beatFrameRect = beatFrameElement.getBoundingClientRect();
+				deletionModeTooltip.style.position = 'fixed';
+				deletionModeTooltip.style.top = `${beatFrameRect.top - 8}px`;
+				deletionModeTooltip.style.left = `${beatFrameRect.left + beatFrameRect.width / 2}px`;
+				deletionModeTooltip.style.transform = 'translate(-50%, -100%)';
+			}
+			// Otherwise, it's already positioned correctly with CSS
+		}
+	}
+
+	function hideDeletionModeTooltip() {
+		if (deletionModeTooltip) {
+			deletionModeTooltip.style.display = 'none';
+			// Remove resize event listener
+			window.removeEventListener('resize', updateTooltipPosition);
+		}
+	}
+
+	function handleDocumentClick(event: MouseEvent) {
+		// Exit deletion mode if clicking outside the beat frame
+		if (beatFrameElement && !beatFrameElement.contains(event.target as Node)) {
+			exitDeletionMode();
+		}
+	}
+
+	function handleEscapeKey(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			exitDeletionMode();
+		}
+	}
+
+	// Handle beat selection during deletion mode
+	function handleBeatSelected(event: CustomEvent<{ beatId: string }>) {
+		if (isInDeletionMode) {
+			// Get the selected beat ID
+			const beatId = event.detail.beatId;
+			if (beatId) {
+				// Remove the beat
+				const removeEvent = { type: 'REMOVE_BEAT_AND_FOLLOWING', beatId };
+				sequenceActions.removeBeatAndFollowing({ event: removeEvent });
+
+				// Exit deletion mode
+				exitDeletionMode();
+			}
+		}
+	}
+
 	let buttonActionListener: (event: CustomEvent) => void;
 
 	onMount(() => {
@@ -102,11 +239,22 @@
 			}
 		};
 		document.addEventListener('action', buttonActionListener as EventListener);
+		document.addEventListener('beat-selected', handleBeatSelected as EventListener);
 	});
 
 	onDestroy(() => {
 		if (buttonActionListener) {
 			document.removeEventListener('action', buttonActionListener as EventListener);
+		}
+		document.removeEventListener('beat-selected', handleBeatSelected as EventListener);
+		document.removeEventListener('click', handleDocumentClick);
+		document.removeEventListener('keydown', handleEscapeKey);
+		window.removeEventListener('resize', updateTooltipPosition);
+
+		// Clean up tooltip
+		if (deletionModeTooltip && deletionModeTooltip.parentNode) {
+			deletionModeTooltip.parentNode.removeChild(deletionModeTooltip);
+			deletionModeTooltip = null;
 		}
 	});
 </script>
@@ -125,12 +273,12 @@
 					containerHeight={$size.height}
 					containerWidth={$dimensions.width}
 					{beatFrameElement}
+					on:beatselected={handleBeatSelected}
 				/>
 			</div>
 
 			<SettingsButton on:click={handleSettingsClick} />
-			<ClearSequenceButton on:clearSequence={handleClearSequence} />
-			<RemoveBeatButton on:removeBeat={handleRemoveBeat} />
+			<DeleteButton on:click={handleDeleteButtonClick} />
 			<SequenceOverlayButton />
 			<ShareButton {beatFrameElement} />
 		</div>
@@ -138,6 +286,20 @@
 		<SequenceOverlay title={sequenceName}>
 			<SequenceOverlayContent title={sequenceName} />
 		</SequenceOverlay>
+
+		<DeleteModal
+			isOpen={isDeleteModalOpen}
+			{hasSelectedBeat}
+			buttonRect={deleteButtonRect}
+			on:clearSequence={handleClearSequence}
+			on:removeBeat={handleRemoveBeat}
+			on:enterDeletionMode={enterDeletionMode}
+			on:close={handleCloseModal}
+		/>
+
+		{#if isInDeletionMode}
+			<div class="deletion-mode-overlay" aria-hidden="true"></div>
+		{/if}
 	</div>
 {/key}
 
@@ -177,5 +339,81 @@
 
 	.main-layout {
 		transition: flex-direction 0.3s ease-out;
+	}
+
+	/* Deletion mode styles */
+	.deletion-mode-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		pointer-events: none;
+		border: 2px solid rgba(255, 85, 85, 0.7);
+		border-radius: 8px;
+		box-shadow: 0 0 10px rgba(255, 85, 85, 0.3);
+		animation: pulse 2s infinite;
+		z-index: 30;
+	}
+
+	@keyframes pulse {
+		0% {
+			box-shadow: 0 0 0 0 rgba(255, 85, 85, 0.4);
+			border-color: rgba(255, 85, 85, 0.7);
+		}
+		50% {
+			box-shadow: 0 0 8px 0 rgba(255, 85, 85, 0.5);
+			border-color: rgba(255, 85, 85, 0.9);
+		}
+		100% {
+			box-shadow: 0 0 0 0 rgba(255, 85, 85, 0.4);
+			border-color: rgba(255, 85, 85, 0.7);
+		}
+	}
+
+	:global(.deletion-mode-tooltip) {
+		position: absolute;
+		top: 0;
+		left: 50%;
+		transform: translate(-50%, -100%) translateY(-8px);
+		background-color: rgba(255, 85, 85, 0.7);
+		color: white;
+		padding: 4px 8px;
+		border-radius: 4px;
+		font-size: 12px;
+		font-weight: 400;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+		z-index: 90; /* Lower than popup menu (100) but higher than most UI elements */
+		pointer-events: none;
+		white-space: nowrap;
+		border: 1px solid rgba(255, 60, 60, 0.8);
+		height: 24px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		animation: tooltipFadeIn 0.25s ease-out;
+	}
+
+	/* Add a small arrow pointing down */
+	:global(.deletion-mode-tooltip::after) {
+		content: '';
+		position: absolute;
+		top: 100%;
+		left: 50%;
+		margin-left: -5px;
+		border-width: 5px;
+		border-style: solid;
+		border-color: rgba(255, 85, 85, 0.7) transparent transparent transparent;
+	}
+
+	@keyframes tooltipFadeIn {
+		from {
+			opacity: 0;
+			transform: translate(-50%, -100%) translateY(-16px);
+		}
+		to {
+			opacity: 1;
+			transform: translate(-50%, -100%) translateY(-8px);
+		}
 	}
 </style>

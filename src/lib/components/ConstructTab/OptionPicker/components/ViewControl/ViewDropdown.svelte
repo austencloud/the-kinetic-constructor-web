@@ -44,7 +44,7 @@
 	.dropdown {
 		position: absolute;
 		top: calc(100% + 10px);
-		left: 0;
+		right: 0; /* Changed from left: 0; */
 		background-color: rgba(15, 23, 42, 0.95); /* Very dark blue with transparency */
 		border-radius: 12px;
 		border: 1px solid rgba(71, 85, 105, 0.6);
@@ -58,7 +58,7 @@
 		overflow: hidden;
 		backdrop-filter: blur(12px);
 		-webkit-backdrop-filter: blur(12px);
-		transform-origin: top left;
+		transform-origin: top right; /* Changed from top left */
 		transition: box-shadow 0.2s ease;
 	}
 

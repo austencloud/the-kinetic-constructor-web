@@ -13,6 +13,20 @@ import { isSequenceEmpty } from './persistence';
 import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
+import type { Readable } from 'svelte/store';
+
+/**
+ * Helper function to get the current value from a Svelte store
+ * This is needed because we can't use the $ syntax in regular TypeScript files
+ */
+function getStoreValue<T>(store: Readable<T>): T {
+	let value: T;
+	const unsubscribe = store.subscribe((currentValue) => {
+		value = currentValue;
+	});
+	unsubscribe();
+	return value!;
+}
 
 /**
  * Update the word name in the sequence metadata based on the current beats
@@ -146,9 +160,49 @@ export function addBeat({ event }: { event: any }) {
 
 /**
  * Remove a beat from the sequence
+ *
+ * This function has been improved to:
+ * 1. Preserve the start position when removing beats
+ * 2. Ensure the OptionPicker refreshes with valid options
+ * 3. Validate that the start position data is correct (static motion, matching start/end locations)
  */
 export function removeBeat({ event }: { event: any }) {
 	const removeEvent = event as { type: 'REMOVE_BEAT'; beatId: string };
+
+	// Store the current start position before removing the beat
+	// This ensures we can restore it if needed
+	let currentStartPos = null;
+	try {
+		// Use our helper function to get the current value from the store
+		currentStartPos = getStoreValue(selectedStartPos);
+
+		// Validate and fix the start position data if needed
+		if (currentStartPos) {
+			// Mark this as a start position
+			currentStartPos.isStartPosition = true;
+
+			// Ensure start and end locations match for a start position
+			if (currentStartPos.redMotionData) {
+				currentStartPos.redMotionData.motionType = 'static';
+				currentStartPos.redMotionData.endLoc = currentStartPos.redMotionData.startLoc;
+				currentStartPos.redMotionData.endOri = currentStartPos.redMotionData.startOri;
+				currentStartPos.redMotionData.turns = 0;
+			}
+
+			if (currentStartPos.blueMotionData) {
+				currentStartPos.blueMotionData.motionType = 'static';
+				currentStartPos.blueMotionData.endLoc = currentStartPos.blueMotionData.startLoc;
+				currentStartPos.blueMotionData.endOri = currentStartPos.blueMotionData.startOri;
+				currentStartPos.blueMotionData.turns = 0;
+			}
+
+			// Create a deep copy to avoid reference issues
+			currentStartPos = JSON.parse(JSON.stringify(currentStartPos));
+		}
+	} catch (error) {
+		console.error('Failed to get current start position:', error);
+	}
+
 	sequenceContainer.removeBeat(removeEvent.beatId);
 
 	// Update the sequence word
@@ -162,6 +216,34 @@ export function removeBeat({ event }: { event: any }) {
 		});
 		document.dispatchEvent(beatEvent);
 
+		// If we have a start position, ensure it's still active
+		if (currentStartPos) {
+			// Ensure the start position is preserved by dispatching the event again
+			const startPosEvent = new CustomEvent('start-position-selected', {
+				detail: { startPosition: currentStartPos },
+				bubbles: true
+			});
+			document.dispatchEvent(startPosEvent);
+
+			// Also dispatch an event to refresh the OptionPicker with valid options
+			// based on the start position
+			const refreshOptionsEvent = new CustomEvent('refresh-options', {
+				detail: { startPosition: currentStartPos },
+				bubbles: true
+			});
+			document.dispatchEvent(refreshOptionsEvent);
+
+			// Save the start position to localStorage
+			try {
+				localStorage.setItem('start_position', JSON.stringify(currentStartPos));
+				console.log('Saved start position to localStorage after beat removal');
+			} catch (error) {
+				console.error('Failed to save start position to localStorage:', error);
+			}
+
+			console.log('Preserved start position after beat removal');
+		}
+
 		// Update dev tools
 		updateDevTools();
 	}
@@ -169,6 +251,10 @@ export function removeBeat({ event }: { event: any }) {
 
 /**
  * Remove a beat and all following beats from the sequence
+ *
+ * This function has been improved to:
+ * 1. Preserve the start position when removing beats
+ * 2. Ensure the OptionPicker refreshes with valid options
  */
 export function removeBeatAndFollowing({ event }: { event: any }) {
 	const removeEvent = event as { type: 'REMOVE_BEAT_AND_FOLLOWING'; beatId: string };
@@ -182,6 +268,25 @@ export function removeBeatAndFollowing({ event }: { event: any }) {
 		// Get all beats that should be removed (the selected beat and all following beats)
 		const beatsToRemove = sequenceContainer.state.beats.slice(beatIndex).map((beat) => beat.id);
 
+		// Store the current start position before removing beats
+		// This ensures we can restore it if needed
+		let currentStartPos = null;
+		try {
+			// Use our helper function to get the current value from the store
+			currentStartPos = getStoreValue(selectedStartPos);
+
+			// Validate and fix the start position data if needed
+			if (currentStartPos) {
+				// Mark this as a start position
+				currentStartPos.isStartPosition = true;
+
+
+
+			}
+		} catch (error) {
+			console.error('Failed to get current start position:', error);
+		}
+
 		// Remove each beat
 		beatsToRemove.forEach((id) => {
 			sequenceContainer.removeBeat(id);
@@ -192,11 +297,41 @@ export function removeBeatAndFollowing({ event }: { event: any }) {
 
 		// Dispatch a custom event
 		if (typeof document !== 'undefined') {
+			// First, dispatch the sequence-updated event
 			const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
 				detail: { type: 'beats-removed', fromIndex: beatIndex },
 				bubbles: true
 			});
 			document.dispatchEvent(sequenceUpdatedEvent);
+
+			// If we have a start position, ensure it's still active
+			// This is especially important when removing the first beat
+			if (currentStartPos) {
+				// Ensure the start position is preserved by dispatching the event again
+				const startPosEvent = new CustomEvent('start-position-selected', {
+					detail: { startPosition: currentStartPos },
+					bubbles: true
+				});
+				document.dispatchEvent(startPosEvent);
+
+				// Also dispatch an event to refresh the OptionPicker with valid options
+				// based on the start position
+				const refreshOptionsEvent = new CustomEvent('refresh-options', {
+					detail: { startPosition: currentStartPos },
+					bubbles: true
+				});
+				document.dispatchEvent(refreshOptionsEvent);
+
+				// Save the start position to localStorage
+				try {
+					localStorage.setItem('start_position', JSON.stringify(currentStartPos));
+					console.log('Saved start position to localStorage after beat removal');
+				} catch (error) {
+					console.error('Failed to save start position to localStorage:', error);
+				}
+
+				console.log('Preserved start position after beat removal');
+			}
 
 			// Update dev tools
 			updateDevTools();

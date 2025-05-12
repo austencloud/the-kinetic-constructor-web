@@ -7,7 +7,6 @@
 	import { getResponsiveLayout, getEnhancedDeviceType } from './utils/layoutUtils';
 	import { getContainerAspect, BREAKPOINTS } from './config';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContextValue } from './layoutContext';
-	import OptionPickerHeader from './components/OptionPickerHeader.svelte';
 	import OptionDisplayArea from './components/OptionDisplayArea.svelte';
 	import { resize } from './actions/resize';
 	import type { ViewModeDetail } from './components/ViewControl/types';
@@ -26,6 +25,7 @@
 		VTGTiming,
 		VTGDir
 	} from '$lib/types/Types';
+	import OptionPickerHeader from './components/OptionPickerHeader';
 
 	// --- State Stores ---
 	// Use sensible defaults for window dimensions
@@ -229,6 +229,7 @@
 				isPortrait: isPortrait,
 				containerWidth: $containerWidth,
 				containerHeight: $containerHeight,
+				ht: $containerHeight, // Add missing 'ht' property
 				containerAspect: currentContainerAspect,
 				layoutConfig: currentLayoutConfig,
 				foldableInfo: foldableInfo // IMPORTANT: Pass the full foldable info object
@@ -448,7 +449,20 @@
 			loadOptionsFromSequence();
 		};
 
+		// Listen for refresh-options events (used when preserving start position after beat removal)
+		const handleRefreshOptions = (event: CustomEvent) => {
+			console.log('OptionPicker received refresh-options event:', event.detail);
+			if (event.detail?.startPosition) {
+				// Load options based on the provided start position
+				actions.loadOptions([event.detail.startPosition]);
+			} else {
+				// Fallback to loading from sequence data
+				loadOptionsFromSequence();
+			}
+		};
+
 		document.addEventListener('sequence-updated', handleSequenceUpdate);
+		document.addEventListener('refresh-options', handleRefreshOptions as EventListener);
 
 		// Subscribe to the sequenceStore for updates
 		const unsubscribeSequence = sequenceStore.subscribe((state) => {
@@ -474,6 +488,7 @@
 		return () => {
 			window.removeEventListener('resize', updateWindowSize);
 			document.removeEventListener('sequence-updated', handleSequenceUpdate);
+			document.removeEventListener('refresh-options', handleRefreshOptions as EventListener);
 			unsubscribeSequence();
 
 			// Remove custom event listeners
@@ -521,16 +536,13 @@
 		flex-direction: column;
 		width: 100%;
 		height: 100%;
-		padding: clamp(10px, 2vw, 15px);
 		box-sizing: border-box;
 		overflow: hidden;
 		position: relative;
 		background-color: transparent; /* Or your desired background */
 		justify-content: center; /* Center content vertically */
 	}
-	.option-picker.mobile {
-		padding: clamp(8px, 1.5vw, 12px);
-	}
+
 	.options-container {
 		flex: 1; /* Takes remaining vertical space */
 		display: flex; /* Needed for children */

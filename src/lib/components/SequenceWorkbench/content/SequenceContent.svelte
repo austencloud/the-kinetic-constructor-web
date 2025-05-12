@@ -3,6 +3,12 @@
 	import CurrentWordLabel from '../Labels/CurrentWordLabel.svelte';
 	import BeatFrame from '../BeatFrame/BeatFrame.svelte';
 	import { calculateBeatFrameShouldScroll } from '../utils/SequenceLayoutCalculator';
+	import { createEventDispatcher } from 'svelte';
+
+	// Event dispatcher
+	const dispatch = createEventDispatcher<{
+		beatselected: { beatId: string };
+	}>();
 
 	// Props
 	const {
@@ -63,6 +69,12 @@
 			console.log('SequenceContent - Beat frame natural height changed:', beatFrameNaturalHeight);
 		}
 	}
+
+	// Handle beat selected event
+	function handleBeatSelected(event: CustomEvent<{ beatId: string }>) {
+		// Forward the event to the parent component
+		dispatch('beatselected', { beatId: event.detail.beatId });
+	}
 </script>
 
 <div
@@ -83,6 +95,7 @@
 				<!-- Pass the scrollable state to BeatFrame to let it handle scrolling -->
 				<BeatFrame
 					on:naturalheightchange={handleBeatFrameHeightChange}
+					on:beatselected={handleBeatSelected}
 					isScrollable={beatFrameShouldScroll}
 					elementReceiver={function (el: HTMLElement | null) {
 						// Use a function to update the bindable prop

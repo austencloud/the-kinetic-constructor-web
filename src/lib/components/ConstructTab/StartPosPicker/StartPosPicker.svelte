@@ -10,7 +10,7 @@
 	import startPositionService from '$lib/services/StartPositionService';
 	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 	import { browser } from '$app/environment'; // Import browser check
-	import sequenceDataService from '$lib/services/SequenceDataService';
+	// Import sequenceDataService is not needed here as it's used by startPositionService internally
 
 	let gridMode = 'diamond'; // TODO: Make this dynamic if necessary
 	let startPositionPictographs: PictographData[] = []; // Store the processed data directly
@@ -174,7 +174,29 @@
 
 			// Create a safe copy of the pictograph data to avoid circular references
 			const startPosCopy = safeCopyPictographData(startPosPictograph);
-			console.log('StartPosPicker.handleSelect: Created safe copy:', startPosCopy);
+
+			// Mark this as a start position
+			startPosCopy.isStartPosition = true;
+
+			// Ensure start and end locations match for a start position
+			if (startPosCopy.redMotionData) {
+				startPosCopy.redMotionData.motionType = 'static';
+				startPosCopy.redMotionData.endLoc = startPosCopy.redMotionData.startLoc;
+				startPosCopy.redMotionData.endOri = startPosCopy.redMotionData.startOri;
+				startPosCopy.redMotionData.turns = 0;
+			}
+
+			if (startPosCopy.blueMotionData) {
+				startPosCopy.blueMotionData.motionType = 'static';
+				startPosCopy.blueMotionData.endLoc = startPosCopy.blueMotionData.startLoc;
+				startPosCopy.blueMotionData.endOri = startPosCopy.blueMotionData.startOri;
+				startPosCopy.blueMotionData.turns = 0;
+			}
+
+			console.log(
+				'StartPosPicker.handleSelect: Created safe copy with isStartPosition flag:',
+				startPosCopy
+			);
 
 			// Update the selected start position in the old store (for backward compatibility)
 			console.log('StartPosPicker.handleSelect: Updating selectedStartPos store');
@@ -187,6 +209,14 @@
 			// Update sequence state to not empty
 			console.log('StartPosPicker.handleSelect: Setting isSequenceEmpty to false');
 			isSequenceEmpty.set(false);
+
+			// Save to localStorage directly to ensure it's available during hot reloads
+			try {
+				localStorage.setItem('start_position', JSON.stringify(startPosCopy));
+				console.log('StartPosPicker.handleSelect: Saved start position to localStorage');
+			} catch (error) {
+				console.error('Failed to save start position to localStorage:', error);
+			}
 
 			// Dispatch a custom event for components that might be listening (browser only)
 			if (browser) {
@@ -255,12 +285,7 @@
 						}
 					}}
 				>
-					<Pictograph
-						pictographData={pictograph}
-						showLoadingIndicator={false}
-						debug={true}
-						useNewStateManagement={false}
-					/>
+					<Pictograph pictographData={pictograph} showLoadingIndicator={false} debug={true} />
 				</div>
 			{/each}
 		</div>

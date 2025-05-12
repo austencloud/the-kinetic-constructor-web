@@ -98,7 +98,7 @@
 			/>
 		{:else}
 			<!-- Message shown when tabs are hidden (e.g., showing all) -->
-			<div class="helper-message">⬅️ Showing all - filter to see sections</div>
+			<div class="helper-message">Showing all - filter to see sections</div>
 		{/if}
 
 		<!-- ViewControl now comes second, will be on the right -->
@@ -131,6 +131,7 @@
 		justify-content: space-between; /* Changed: Puts ViewControl on right, Tabs/Helper on left */
 		align-items: center;
 		flex-wrap: nowrap;
+		padding-right: 20px; /* Added padding for right side of ViewControl, need twice the amount of the items in the sequence widget for some reason */
 	}
 
 	/* Add this rule to ensure .tabs can grow */

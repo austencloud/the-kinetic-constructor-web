@@ -45,155 +45,89 @@
 </button>
 
 <style>
+	/* Base variables for sizing, mirroring other Sequence Widget buttons */
+	:root {
+		--view-button-base-size: 45px;
+		--view-button-icon-size: 19px;
+		/* Define a specific icon color for the view button, defaulting to a vibrant blue */
+		--tkc-icon-color-view: var(--tkc-icon-color-fullscreen, #4cc9f0);
+	}
+
 	.view-button {
+		/* Sizing and Shape */
+		width: var(--view-button-base-size, 45px);
+		height: var(--view-button-base-size, 45px);
+		min-width: 38px; /* Consistent minimum */
+		min-height: 38px;
+		border-radius: 50%; /* Round */
+		padding: 0; /* No padding for icon buttons */
+
+		/* Display and Alignment */
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		background-color: rgba(30, 41, 59, 0.8); /* Dark blue-gray with transparency */
-		border: 1px solid rgba(71, 85, 105, 0.5); /* Subtle border */
-		border-radius: 10px;
-		padding: 10px 14px;
-		font-size: 0.95rem;
-		font-weight: 500;
-		color: #e2e8f0; /* Light gray text */
-		cursor: pointer;
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
+		justify-content: center;
+
+		/* Appearance */
+		background-color: var(--tkc-button-panel-background, #2a2a2e);
+		color: var(--tkc-icon-color-view); /* Use the defined icon color */
+		border: none;
 		box-shadow:
-			0 4px 6px rgba(0, 0, 0, 0.1),
-			0 1px 3px rgba(0, 0, 0, 0.08),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1); /* Inner highlight */
-		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-		white-space: nowrap;
-		user-select: none;
-		position: relative;
+			0 3px 6px rgba(0, 0, 0, 0.16),
+			0 3px 6px rgba(0, 0, 0, 0.23);
+		cursor: pointer;
 		overflow: hidden;
-	}
+		user-select: none;
+		position: relative; /* Kept from original, might be useful for future pseudo-elements if any */
 
-	/* Add subtle glow effect on hover */
-	.view-button::after {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: radial-gradient(circle at center, rgba(59, 130, 246, 0.15), transparent 70%);
-		opacity: 0;
-		transition: opacity 0.3s ease;
-		pointer-events: none;
-	}
-
-	.view-button:hover::after {
-		opacity: 1;
-	}
-
-	/* Label styling */
-	.view-label {
-		font-weight: 500;
-		letter-spacing: 0.01em;
-		margin-right: 4px;
+		/* Transitions for effects */
+		transition:
+			transform 0.2s ease-out,
+			background-color 0.2s ease-out,
+			box-shadow 0.2s ease-out,
+			color 0.2s ease-out;
 	}
 
 	.view-button:hover {
-		background-color: rgba(51, 65, 85, 0.9);
-		border-color: rgba(100, 116, 139, 0.6);
+		background-color: var(--tkc-button-panel-background-hover, #3c3c41);
+		transform: translateY(-2px) scale(1.05);
 		box-shadow:
-			0 6px 12px rgba(0, 0, 0, 0.15),
-			0 2px 4px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.15);
-		transform: translateY(-1px);
+			0 6px 12px rgba(0, 0, 0, 0.2),
+			0 4px 8px rgba(0, 0, 0, 0.26);
+		/* Optionally change icon color on hover if desired, otherwise it inherits */
+		/* color: var(--tkc-icon-color-view-hover, var(--tkc-icon-color-view)); */
 	}
 
 	.view-button:active {
-		transform: translateY(1px);
+		transform: translateY(0px) scale(1);
+		background-color: var(--tkc-button-panel-background-active, #1e1e21);
 		box-shadow:
-			0 2px 4px rgba(0, 0, 0, 0.1),
-			inset 0 1px 2px rgba(0, 0, 0, 0.2);
+			0 1px 3px rgba(0, 0, 0, 0.12),
+			0 1px 2px rgba(0, 0, 0, 0.24);
 	}
 
 	.view-button:focus-visible {
 		outline: none;
 		box-shadow:
-			0 0 0 3px rgba(59, 130, 246, 0.5),
-			0 4px 6px rgba(0, 0, 0, 0.1);
-		border-color: #3b82f6;
+			0 0 0 2px var(--tkc-focus-ring-color, rgba(108, 156, 233, 0.6)),
+			0 3px 6px rgba(0, 0, 0, 0.16),
+			0 3px 6px rgba(0, 0, 0, 0.23);
 	}
 
 	.view-icon {
-		font-size: 1.3em;
-		line-height: 1;
-		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-		transform-origin: center;
-		transition: transform 0.2s ease;
+		font-size: var(--view-button-icon-size, 19px);
+		line-height: 1; /* Ensure consistent icon alignment */
+		/* Removed previous specific icon styles like filter, transform, custom transitions */
 	}
 
-	.view-button:hover .view-icon {
-		transform: scale(1.1);
-	}
-
+	/* Hide label and dropdown arrow to make it an icon-only button */
+	.view-label,
 	.dropdown-arrow {
-		font-size: 0.7em;
-		opacity: 0.8;
-		margin-left: 4px;
-		transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy transition */
+		display: none;
 	}
 
-	.view-button:hover .dropdown-arrow {
-		opacity: 1;
-	}
-
-	/* Rotate arrow when dropdown is open */
-	.view-button[aria-expanded='true'] .dropdown-arrow {
-		transform: rotate(180deg);
-	}
-
-	/* Responsive adjustments */
-	@media (max-width: 640px) {
-		.view-button {
-			padding: 6px 8px;
-			font-size: 0.85rem;
-			gap: 4px;
-			min-width: 70px;
-			max-width: 90px;
-			height: 36px; /* Fixed height to match tab buttons */
-			display: flex;
-			align-items: center;
-		}
-
-		.view-label {
-			max-width: 60px;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-
-		.dropdown-arrow {
-			font-size: 0.8rem;
-		}
-	}
-
-	/* Compact mode styles */
-	.view-button.compact {
-		min-width: 36px;
-		max-width: 36px;
-		padding: 6px;
-		justify-content: center;
-		aspect-ratio: 1;
-	}
-
-	/* For very small screens, show only the icon */
-	@media (max-width: 380px) {
-		.view-button {
-			min-width: 36px;
-			max-width: 36px;
-			padding: 6px;
-			justify-content: center;
-		}
-
-		.view-label,
-		.dropdown-arrow {
-			display: none;
-		}
-	}
+	/* 
+		The ::after pseudo-element for glow is removed as it's not typical for SequenceWidget buttons.
+		The .view-button.compact class styles are removed as the base style now dictates the compact, round look.
+		Responsive media queries (@media) that previously handled compactness are removed for the same reason.
+	*/
 </style>
