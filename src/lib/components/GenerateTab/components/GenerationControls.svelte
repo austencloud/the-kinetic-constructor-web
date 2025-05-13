@@ -138,7 +138,10 @@
 		{#if currentScreenSize === 'mobile'}
 			<section class="control-section generator-specific-options-mobile">
 				{#if generatorType === 'circular'}
-					<CircularSequencer bind:selectedCapType={capType} />
+					<CircularSequencer
+						selectedCapType={capType}
+						onCapTypeChange={(newCapType) => (capType = newCapType)}
+					/>
 				{:else}
 					<FreeformSequencer />
 				{/if}
@@ -150,7 +153,7 @@
 				isLoading={mockSequenceSelectors.isGenerating()}
 				hasError={mockSequenceSelectors.hasError()}
 				statusMessage={mockSequenceSelectors.message()}
-				on:click={handleGenerateClick}
+				onClick={handleGenerateClick}
 			/>
 		</section>
 	</div>
@@ -159,7 +162,10 @@
 		<div class="secondary-options-area">
 			<section class="control-section generator-specific-options-desktop">
 				{#if generatorType === 'circular'}
-					<CircularSequencer bind:selectedCapType={capType} />
+					<CircularSequencer
+						selectedCapType={capType}
+						onCapTypeChange={(newCapType) => (capType = newCapType)}
+					/>
 				{:else}
 					<FreeformSequencer />
 				{/if}

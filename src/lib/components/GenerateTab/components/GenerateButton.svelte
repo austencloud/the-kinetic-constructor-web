@@ -1,23 +1,26 @@
-<!-- src/lib/components/GenerateTab/ui/GenerateButton.svelte -->
+<!-- src/lib/components/GenerateTab/components/GenerateButton.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { slide } from 'svelte/transition';
 
-	// Props
-	export let isLoading = false;
-	export let hasError = false;
-	export let statusMessage = '';
-	export let text = 'Generate Sequence';
-
-	// Create dispatcher for click events
-	const dispatch = createEventDispatcher<{
-		click: void;
+	// Use Svelte 5 props rune instead of export let
+	const props = $props<{
+		isLoading?: boolean;
+		hasError?: boolean;
+		statusMessage?: string;
+		text?: string;
+		onClick?: () => void;
 	}>();
+
+	// Default values with derived values
+	const isLoading = $derived(props.isLoading ?? false);
+	const hasError = $derived(props.hasError ?? false);
+	const statusMessage = $derived(props.statusMessage ?? '');
+	const text = $derived(props.text ?? 'Generate Sequence');
 
 	// Handle click
 	function handleClick() {
-		if (!isLoading) {
-			dispatch('click');
+		if (!isLoading && props.onClick) {
+			props.onClick();
 		}
 	}
 </script>
@@ -27,7 +30,7 @@
 		class="generate-button"
 		class:loading={isLoading}
 		class:error={hasError}
-		on:click={handleClick}
+		onclick={handleClick}
 		disabled={isLoading}
 	>
 		<div class="button-content">

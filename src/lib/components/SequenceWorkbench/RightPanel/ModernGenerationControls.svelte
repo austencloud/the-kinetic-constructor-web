@@ -47,7 +47,7 @@
 		numBeats = settings.numBeats;
 		turnIntensity = settings.turnIntensity;
 		propContinuity = settings.propContinuity;
-		capType = settings.capType;  // No need to cast since types match
+		capType = settings.capType; // No need to cast since types match
 		level = settings.level;
 	});
 
@@ -279,7 +279,7 @@
 
 	<!-- Generate Button -->
 	<div class="generate-button-container">
-		<GenerateButton isLoading={isGenerating} {hasError} {statusMessage} on:click={handleGenerate} />
+		<GenerateButton isLoading={isGenerating} {hasError} {statusMessage} onClick={handleGenerate} />
 	</div>
 </div>
 
@@ -584,8 +584,6 @@
 		.controls-grid {
 			grid-template-columns: 1fr;
 		}
-
-
 	}
 
 	/* Touch device optimizations */

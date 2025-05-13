@@ -1,29 +1,30 @@
-<!-- src/lib/components/GenerateTab/circular/CAPPicker/CAPButton.svelte -->
+<!-- src/lib/components/GenerateTab/components/CAPButton.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-
-	// Props with type definition
-	export let capType: {
-		id: string;
-		label: string;
-		description: string;
-	};
-	export let selected = false;
-
-	// Event dispatcher for selection
-	const dispatch = createEventDispatcher<{
-		select: void;
+	// Use Svelte 5 props rune
+	const props = $props<{
+		capType: {
+			id: string;
+			label: string;
+			description: string;
+		};
+		selected?: boolean;
+		onClick?: () => void;
 	}>();
+
+	// Default values with derived values
+	const selected = $derived(props.selected ?? false);
 
 	// Handle button click
 	function handleClick() {
-		dispatch('select');
+		if (props.onClick) {
+			props.onClick();
+		}
 	}
 </script>
 
-<button class="cap-button" class:selected on:click={handleClick} title={capType.description}>
+<button class="cap-button" class:selected onclick={handleClick} title={props.capType.description}>
 	<div class="cap-button-content">
-		<span class="cap-label">{capType.label}</span>
+		<span class="cap-label">{props.capType.label}</span>
 		{#if selected}
 			<span class="selected-indicator">✓</span>
 		{/if}

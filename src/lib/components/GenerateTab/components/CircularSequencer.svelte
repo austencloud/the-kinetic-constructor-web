@@ -1,10 +1,23 @@
 <script lang="ts">
-	// Assume CAPPicker is available
-	import CAPPicker from './CAPPicker.svelte'; // Refactored version below
+	// Import components and types
+	import CAPPicker from './CAPPicker.svelte';
 	import type { CAPType } from '$lib/state/machines/sequenceMachine/types';
 
-	// Export the selectedCapType property for binding
-	export let selectedCapType: CAPType = 'mirrored';
+	// Use Svelte 5 props rune
+	const props = $props<{
+		selectedCapType?: CAPType;
+		onCapTypeChange?: (capType: CAPType) => void;
+	}>();
+
+	// Default values with derived values
+	let selectedCapType = $state<CAPType>(props.selectedCapType ?? 'mirrored');
+
+	// Sync with props
+	$effect(() => {
+		if (props.selectedCapType) {
+			selectedCapType = props.selectedCapType;
+		}
+	});
 
 	// Example CAP types (replace with your actual data)
 	const capTypesData = [
@@ -35,14 +48,18 @@
 		{ id: 'strict_rotated', label: 'Strict Rotated', description: 'Strictly rotated sequence.' }
 	];
 
-	function handleCapTypeSelect(event: CustomEvent<string>) {
+	function handleCapTypeSelect(capId: string) {
 		// Validate that the selected type is a valid CAPType
-		const newType = event.detail;
-		// Check if the selected type is one of the valid CAP types
-		const isValidCapType = capTypesData.some((capType) => capType.id === newType);
+		const isValidCapType = capTypesData.some((capType) => capType.id === capId);
 
 		if (isValidCapType) {
-			selectedCapType = newType as CAPType;
+			const newCapType = capId as CAPType;
+			selectedCapType = newCapType;
+
+			// Call the callback if provided
+			if (props.onCapTypeChange) {
+				props.onCapTypeChange(newCapType);
+			}
 		}
 	}
 </script>
@@ -53,7 +70,7 @@
 		<CAPPicker
 			capTypes={capTypesData}
 			selectedCapId={selectedCapType}
-			on:select={handleCapTypeSelect}
+			onSelect={handleCapTypeSelect}
 		/>
 	</div>
 </div>
