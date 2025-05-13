@@ -147,13 +147,37 @@ export async function renderSvgToImage(options: SVGRenderOptions): Promise<SVGRe
 
 		// Create a promise to handle the image loading
 		const imageLoadPromise = new Promise<SVGRenderResult>((resolve, reject) => {
+			// Set up a timeout to catch hanging loads
+			const timeout = setTimeout(() => {
+				console.error('SVGRenderer: Image load timeout');
+				reject(new Error('Image load timed out after 5 seconds'));
+			}, 5000);
+
+			// Set up onload handler
 			img.onload = () => {
+				clearTimeout(timeout);
+				console.log('SVGRenderer: Image loaded successfully', {
+					width: img.width,
+					height: img.height,
+					naturalWidth: img.naturalWidth,
+					naturalHeight: img.naturalHeight
+				});
+
 				// Draw the image on the canvas
 				ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
 				// Convert canvas to data URL
 				const format = mergedOptions.format === 'jpeg' ? 'image/jpeg' : 'image/png';
 				const dataUrl = canvas.toDataURL(format, mergedOptions.quality);
+
+				// Validate the data URL
+				if (!dataUrl || dataUrl === 'data:,') {
+					console.error('SVGRenderer: Generated invalid data URL');
+					reject(new Error('Failed to generate valid data URL'));
+					return;
+				}
+
+				console.log('SVGRenderer: Generated data URL of length', dataUrl.length);
 
 				// Return the result
 				resolve({
@@ -164,15 +188,34 @@ export async function renderSvgToImage(options: SVGRenderOptions): Promise<SVGRe
 				});
 			};
 
+			// Set up error handler
 			img.onerror = (error) => {
+				clearTimeout(timeout);
+				console.error('SVGRenderer: Image load error:', error);
 				reject(new Error(`Failed to load SVG image: ${error}`));
 			};
 		});
 
 		// Set the image source to the SVG data URL
-		const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
-		const url = URL.createObjectURL(svgBlob);
-		img.src = url;
+		// Use a more reliable method to create the SVG data URL
+		try {
+			// First try using Blob and URL.createObjectURL
+			const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+			const url = URL.createObjectURL(svgBlob);
+			console.log('SVGRenderer: Created object URL for SVG');
+			img.src = url;
+		} catch (blobError) {
+			console.warn('SVGRenderer: Blob approach failed, falling back to data URL', blobError);
+			// Fall back to data URL approach
+			try {
+				const dataUrl = svgToBase64DataUrl(svgString);
+				console.log('SVGRenderer: Created data URL for SVG');
+				img.src = dataUrl;
+			} catch (dataUrlError) {
+				console.error('SVGRenderer: Data URL approach failed', dataUrlError);
+				throw new Error('Failed to create SVG source URL');
+			}
+		}
 
 		// Wait for the image to load
 		const result = await imageLoadPromise;

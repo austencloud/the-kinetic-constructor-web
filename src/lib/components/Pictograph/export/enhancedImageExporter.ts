@@ -240,21 +240,41 @@ function calculateDimensions(options: EnhancedExportOptions): CanvasDimensions {
 	// This returns [rows, cols]
 	const [rows, cols] = autoAdjustLayout(beatCount);
 
-	// IMPORTANT: For a 4x4 grid with start position, we need 5 columns total
-	// Use provided columns if specified and not zero, otherwise use the calculated columns
-	// This is the number of columns for regular beats (excluding start position column)
-	const columnsForBeats = options.columns && options.columns > 0 ? options.columns : cols;
+	// Modify the grid layout to be responsive to the actual number of pictographs
+	// When displaying fewer than 4 pictographs, eliminate empty columns on the right
+	// Ensure the layout automatically adjusts to 1, 2, or 3 columns based on the actual content
+
+	// Determine optimal number of columns based on beat count
+	// For small sequences, use fewer columns to avoid empty space
+	let columnsForBeats;
+	if (options.columns && options.columns > 0) {
+		// Use provided columns if specified
+		columnsForBeats = options.columns;
+	} else {
+		// Automatically adjust columns based on beat count
+		if (beatCount <= 1) {
+			columnsForBeats = 1; // Use 1 column for 1 beat
+		} else if (beatCount <= 2) {
+			columnsForBeats = 2; // Use 2 columns for 2 beats
+		} else if (beatCount <= 3) {
+			columnsForBeats = 3; // Use 3 columns for 3 beats
+		} else {
+			columnsForBeats = cols; // Use calculated columns for 4+ beats
+		}
+	}
 
 	// Calculate the total number of columns needed
 	// If we have a start position, we need one column for it plus columns for the beats
 	// If we don't have a start position, we just need columns for the beats
 	const totalColumns = hasStartPosition ? columnsForBeats + 1 : columnsForBeats;
 
-	// Force 5 columns for a 4x4 grid with start position
-	// This ensures we have exactly 5 columns: 1 for start position + 4 for beats
-	if (hasStartPosition && columnsForBeats === 4) {
-		console.log('EnhancedExporter: Forcing 5 columns for 4x4 grid with start position');
-	}
+	console.log('EnhancedExporter: Dynamic column calculation', {
+		beatCount,
+		calculatedCols: cols,
+		adjustedColumnsForBeats: columnsForBeats,
+		totalColumns,
+		hasStartPosition
+	});
 
 	console.log('EnhancedExporter: Column calculation', {
 		beatCount,
@@ -281,10 +301,21 @@ function calculateDimensions(options: EnhancedExportOptions): CanvasDimensions {
 	// Height is determined by the maximum number of rows needed
 	const height = rows * beatSize;
 
-	// Calculate margins
-	const topMargin = options.addWord ? Math.min(beatSize * 0.7, 150) : 0;
-	// Increase bottom margin to create more space between pictographs and notes
-	const bottomMargin = options.addUserInfo ? Math.min(beatSize * 0.5, 120) : 0;
+	// Calculate margins with improved sizing for better readability
+	// Reserve exactly 15% of image height for title and 10% for notes
+	// Ensure a minimum size for text areas regardless of image dimensions
+	const MIN_TOP_MARGIN = 100; // Minimum 100px for title area
+	const MIN_BOTTOM_MARGIN = 80; // Minimum 80px for notes area
+
+	// Calculate margins with minimums
+	const calculatedTopMargin = options.addWord ? Math.round(height * 0.15) : 0;
+	const calculatedBottomMargin = options.addUserInfo ? Math.round(height * 0.1) : 0;
+
+	// Use the larger of the calculated or minimum values
+	const topMargin = options.addWord ? Math.max(calculatedTopMargin, MIN_TOP_MARGIN) : 0;
+	const bottomMargin = options.addUserInfo
+		? Math.max(calculatedBottomMargin, MIN_BOTTOM_MARGIN)
+		: 0;
 
 	console.log('EnhancedExporter: Layout calculated', {
 		beatCount,
@@ -532,7 +563,7 @@ async function renderSvgElements(
 }
 
 /**
- * Draws the title on the canvas
+ * Draws the title on the canvas with responsive sizing
  */
 function drawTitle(
 	ctx: CanvasRenderingContext2D,
@@ -543,46 +574,58 @@ function drawTitle(
 
 	const { width, topMargin } = dimensions;
 
-	// Start with a proportional font size
-	let fontSize = Math.min(width * 0.08, topMargin * 0.6);
+	// Calculate padding (5% of container width)
+	const padding = Math.round(width * 0.05);
+
+	// Calculate font size using the formula: fontSize = containerWidth * 0.05
+	// Enforce min/max constraints
+	const MIN_FONT_SIZE = 14;
+	const MAX_FONT_SIZE = 32;
+	let fontSize = Math.round(width * 0.05);
+	fontSize = Math.max(MIN_FONT_SIZE, Math.min(fontSize, MAX_FONT_SIZE));
 
 	// Set initial font to measure text
-	ctx.font = `bold ${Math.round(fontSize)}px Georgia`;
+	ctx.font = `bold ${fontSize}px Arial, sans-serif`;
 	let textWidth = ctx.measureText(title).width;
 
-	// Adaptive font sizing - keep reducing until it fits
-	while (textWidth > width * 0.8 && fontSize > 20) {
-		fontSize -= 4;
-		ctx.font = `bold ${Math.round(fontSize)}px Georgia`;
+	// Adaptive font sizing - keep reducing until it fits within available space
+	// Available space is container width minus double padding
+	const availableWidth = width - padding * 2;
+	while (textWidth > availableWidth && fontSize > MIN_FONT_SIZE) {
+		fontSize -= 1;
+		ctx.font = `bold ${fontSize}px Arial, sans-serif`;
 		textWidth = ctx.measureText(title).width;
 	}
 
 	// Save context for restoration
 	ctx.save();
 
-	// Draw text shadow for depth
-	ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+	// Create high-contrast text with shadow for legibility
+	// Apply text shadow (2px blur, 50% opacity)
+	ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+	ctx.shadowBlur = 2;
+	ctx.shadowOffsetX = 1;
+	ctx.shadowOffsetY = 1;
+
+	// Center-align text horizontally
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
 
+	// Position text in the center of the allocated space
 	const centerX = width / 2;
 	const centerY = topMargin / 2;
 
-	// Draw shadow slightly offset
-	ctx.fillText(title, centerX + 2, centerY + 2);
-
-	// Draw main text
+	// Draw main text directly on white background for better contrast
+	// No background rectangle, just black text on white
 	ctx.fillStyle = '#000000';
 	ctx.fillText(title, centerX, centerY);
-
-	// Removed decorative underline as requested
 
 	// Restore context
 	ctx.restore();
 }
 
 /**
- * Draws user info at the bottom of the canvas
+ * Draws user info at the bottom of the canvas with responsive sizing
  */
 function drawUserInfo(
 	ctx: CanvasRenderingContext2D,
@@ -593,60 +636,54 @@ function drawUserInfo(
 
 	// Get user info text
 	const userName = options.userName || 'User';
-	const notes = options.notes || 'Created using The Kinetic Constructor';
+	const notes = options.notes || 'Created using The Kinetic Alphabet';
 	const exportDate = options.exportDate || new Date().toLocaleDateString();
 
-	// Calculate font size relative to overall image dimensions
-	// This ensures text scales proportionally with the image size
-	const fontSize = Math.min(
-		width * 0.015, // Scale with width
-		height * 0.02, // Scale with height
-		bottomMargin * 0.5 // Don't exceed half the bottom margin
-	);
+	// Calculate padding (5% of container width)
+	const padding = Math.round(width * 0.05);
 
-	// Calculate margin proportional to image dimensions
-	const margin = Math.max(
-		width * 0.02, // Proportional to width
-		bottomMargin * 0.2, // Proportional to bottom margin
-		10 // Minimum margin
-	);
+	// Calculate font size using the formula: fontSize = containerWidth * 0.03
+	// Enforce min/max constraints
+	const MIN_FONT_SIZE = 14;
+	const MAX_FONT_SIZE = 24; // Max size for notes is smaller than title
+	let fontSize = Math.round(width * 0.03); // 60% of title font size
+	fontSize = Math.max(MIN_FONT_SIZE, Math.min(fontSize, MAX_FONT_SIZE));
 
-	// Position calculation - add padding between separator line and text
-	// The separator is at height + topMargin + 15
-	// Add additional 15px padding below the separator line
-	const baseY = height + topMargin + 15 + 15 + (bottomMargin - 30) / 2;
+	// Calculate base Y position for text - center in the bottom margin
+	const baseY = height + topMargin + bottomMargin / 2;
 
 	// Save context for restoration
 	ctx.save();
 
-	// Draw a clear horizontal separator line
-	// Position it with adequate spacing from the pictographs
-	const separatorY = height + topMargin + 15; // 15px padding from the bottom of pictographs
+	// Apply subtle text shadow for better legibility
+	ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+	ctx.shadowBlur = 2;
+	ctx.shadowOffsetX = 1;
+	ctx.shadowOffsetY = 1;
 
-	ctx.beginPath();
-	ctx.moveTo(margin, separatorY);
-	ctx.lineTo(width - margin, separatorY);
-	ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'; // Slightly darker for better visibility
-	ctx.lineWidth = 1;
-	ctx.stroke();
+	// Center the notes text
+	ctx.font = `${fontSize}px Arial, sans-serif`;
+	const notesWidth = ctx.measureText(notes).width;
 
-	// Draw username (left)
-	ctx.font = `bold ${fontSize}px Georgia`;
-	ctx.fillStyle = '#000000';
-	ctx.textAlign = 'left';
-	ctx.textBaseline = 'bottom';
-	ctx.fillText(userName, margin, baseY);
-
-	// Draw notes (center)
-	ctx.font = `italic ${fontSize}px Georgia`;
-	ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+	// Draw notes text (center)
 	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.fillStyle = '#000000';
 	ctx.fillText(notes, width / 2, baseY);
 
-	// Draw export date (right)
+	// Optional: Draw username and date in smaller font
+	const smallerFontSize = Math.max(MIN_FONT_SIZE, fontSize * 0.9);
+	ctx.font = `${smallerFontSize}px Arial, sans-serif`;
+
+	// Draw username text (left)
+	ctx.textAlign = 'left';
+	ctx.fillStyle = '#000000';
+	ctx.fillText(userName, padding, baseY);
+
+	// Draw export date text (right)
 	ctx.textAlign = 'right';
-	ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-	ctx.fillText(exportDate, width - margin, baseY);
+	ctx.fillStyle = '#000000';
+	ctx.fillText(exportDate, width - padding, baseY);
 
 	// Restore context
 	ctx.restore();

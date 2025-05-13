@@ -5,7 +5,7 @@
   It uses the enhanced image exporter for reliable rendering.
 -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount } from '$lib/utils/svelte-lifecycle';
 	import { browser } from '$app/environment';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
@@ -26,8 +26,18 @@
 	let isRendering = $state(false);
 	let lastResult: any = $state(null);
 
+	// Props
+	const { beatFrameElement = null } = $props<{ beatFrameElement?: HTMLElement | null }>();
+
 	// Track element references
-	let beatFrameElement: HTMLElement | null = $state(null);
+	let beatFrameElementState = $state<HTMLElement | null>(beatFrameElement);
+
+	// Update state when prop changes
+	$effect(() => {
+		if (beatFrameElement) {
+			beatFrameElementState = beatFrameElement;
+		}
+	});
 
 	// Use the sequence container
 	const sequence = useContainer(sequenceContainer);
@@ -45,7 +55,7 @@
 			const contextElement = beatFrameContext.getElement();
 			if (contextElement) {
 				console.log('ShareButton: Got element from context');
-				beatFrameElement = contextElement;
+				beatFrameElementState = contextElement;
 			}
 		}
 	});
@@ -55,7 +65,7 @@
 		const handleElementAvailable = (event: CustomEvent) => {
 			if (event.detail?.element) {
 				console.log('ShareButton: Got element from event');
-				beatFrameElement = event.detail.element;
+				beatFrameElementState = event.detail.element;
 			}
 		};
 
@@ -199,6 +209,8 @@
 			// Set rendering state
 			isRendering = true;
 
+			console.log('ShareButton: Starting download process');
+
 			// Render the sequence
 			const result = await renderSequence();
 
@@ -208,17 +220,67 @@
 				return;
 			}
 
-			// Generate filename
+			// Generate filename with better formatting
 			const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-			const filename = `kinetic-sequence-${sequenceName.replace(/[^a-z0-9]/gi, '-').toLowerCase() || timestamp}.png`;
+			const safeSequenceName = sequenceName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+			const filename = `kinetic-sequence-${safeSequenceName || timestamp}.png`;
 
-			// Download the image
-			await downloadImage({
-				dataUrl: result.dataUrl,
-				filename
-			});
+			console.log('ShareButton: Downloading image with filename:', filename);
+			console.log('ShareButton: Data URL length:', result.dataUrl.length);
 
-			showSuccess('Image download started');
+			try {
+				// Download the image with improved error handling
+				const success = await downloadImage({
+					dataUrl: result.dataUrl,
+					filename
+				});
+
+				if (success) {
+					showSuccess('Image download started');
+					console.log('ShareButton: Download initiated successfully');
+				} else {
+					throw new Error('Download function returned false');
+				}
+			} catch (downloadError) {
+				console.error('ShareButton: Download error:', downloadError);
+
+				// Try alternative download approach
+				try {
+					console.log('ShareButton: Trying alternative download approach');
+
+					// Create a new window with the image
+					const newWindow = window.open();
+					if (!newWindow) {
+						throw new Error('Failed to open new window. Popup might be blocked.');
+					}
+
+					// Write the image to the new window with download instructions
+					newWindow.document.write(`
+						<html>
+							<head>
+								<title>${filename}</title>
+								<style>
+									body { margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; background: #f0f0f0; font-family: Arial, sans-serif; }
+									img { max-width: 90%; max-height: 80vh; border: 1px solid #ccc; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+									.instructions { margin: 20px; padding: 15px; background: #2a2a2e; color: white; border-radius: 8px; text-align: center; max-width: 500px; }
+								</style>
+							</head>
+							<body>
+								<div class="instructions">
+									<h3>Right-click on the image and select "Save Image As..." to download</h3>
+									<p>If that doesn't work, try taking a screenshot of the image.</p>
+								</div>
+								<img src="${result.dataUrl}" alt="${filename}">
+							</body>
+						</html>
+					`);
+
+					showSuccess('Image opened in new window');
+				} catch (alternativeError) {
+					console.error('ShareButton: Alternative download approach failed:', alternativeError);
+					showError('Failed to download sequence. Please try again.');
+				}
+			}
 		} catch (error) {
 			showError('Failed to download sequence');
 			console.error('Download error:', error);
@@ -229,18 +291,23 @@
 
 	// Render the sequence
 	async function renderSequence(): Promise<any> {
-		if (!browser || !beatFrameElement) {
+		if (!browser || !beatFrameElementState) {
 			console.error('Cannot render: not in browser environment or no beat frame element');
 			return null;
 		}
 
 		try {
+			console.log('ShareButton: Starting sequence rendering');
+			console.log('ShareButton: Beat frame element:', beatFrameElementState);
+
 			// Get export settings
 			let settings: any = {};
-			const unsubscribe = imageExportSettings.subscribe((value) => {
+			const unsubscribe = imageExportSettings.subscribe((value: any) => {
 				settings = value;
 			});
 			unsubscribe();
+
+			console.log('ShareButton: Export settings:', settings);
 
 			// Find the start position beat
 			let startPosition = null;
@@ -252,30 +319,50 @@
 			}
 
 			console.log('ShareButton: Start position found:', !!startPosition);
+			console.log('ShareButton: Sequence beats count:', sequenceBeats.length);
 
-			// Export the sequence
-			const result = await exportEnhancedImage(beatFrameElement, {
+			// Ensure the beat frame element is fully rendered
+			// Add a small delay to ensure all SVGs are fully rendered
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Export the sequence with improved settings
+			const result = await exportEnhancedImage(beatFrameElementState, {
 				beats: sequenceBeats as any,
 				startPosition: startPosition as any,
-				backgroundColor: settings.backgroundColor || '#FFFFFF',
-				scale: 2,
-				quality: settings.quality || 0.92,
-				format: 'png',
+				backgroundColor: '#FFFFFF', // Always use white for better contrast
+				scale: 2, // Higher scale for better quality
+				quality: 1.0, // Maximum quality
+				format: 'png', // PNG format for lossless quality
 				columns: 4,
 				spacing: 0,
 				// Always include start position if it exists
 				includeStartPosition: true,
 				// Enable all enhancement features by default, but respect user preferences if explicitly set
-				addWord: settings.addWord !== false,
-				addUserInfo: settings.addUserInfo !== false,
-				addDifficultyLevel: settings.addDifficultyLevel !== false,
-				addBeatNumbers: settings.addBeatNumbers !== false,
-				addReversalSymbols: settings.addReversalSymbols !== false,
+				// Use more robust checks that handle undefined values correctly
+				addWord: settings.addWord === undefined ? true : !!settings.addWord,
+				addUserInfo: settings.addUserInfo === undefined ? true : !!settings.addUserInfo,
+				addDifficultyLevel:
+					settings.addDifficultyLevel === undefined ? true : !!settings.addDifficultyLevel,
+				addBeatNumbers: settings.addBeatNumbers === undefined ? true : !!settings.addBeatNumbers,
+				addReversalSymbols:
+					settings.addReversalSymbols === undefined ? true : !!settings.addReversalSymbols,
 				title: sequenceName,
 				userName: 'User',
 				notes: 'Created using The Kinetic Constructor',
 				difficultyLevel: sequence.metadata?.difficulty || 1
 			});
+
+			console.log('ShareButton: Rendering completed successfully', {
+				dataUrlLength: result?.dataUrl?.length || 0,
+				width: result?.width || 0,
+				height: result?.height || 0
+			});
+
+			// Validate the result
+			if (!result || !result.dataUrl || result.dataUrl.length < 1000) {
+				console.error('ShareButton: Invalid rendering result', result);
+				throw new Error('Failed to generate a valid image');
+			}
 
 			// Cache the result
 			lastResult = result;

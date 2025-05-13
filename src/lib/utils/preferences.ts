@@ -21,7 +21,6 @@ export function saveBackgroundPreference(background: BackgroundType): void {
 	if (!browser) return;
 
 	try {
-		console.log('Saving background preference:', background);
 		localStorage.setItem(KEYS.BACKGROUND, background);
 	} catch (error) {
 		console.error('Error saving background preference:', error);
@@ -36,7 +35,6 @@ export function loadBackgroundPreference(): BackgroundType {
 
 	try {
 		const savedBackground = localStorage.getItem(KEYS.BACKGROUND);
-		console.log('Loading background preference:', savedBackground);
 
 		if (savedBackground) {
 			const validBackgrounds: BackgroundType[] = ['snowfall', 'nightSky'];
@@ -58,7 +56,6 @@ export function saveActiveTabPreference(tabIndex: number): void {
 	if (!browser) return;
 
 	try {
-		console.log('Saving active tab preference:', tabIndex);
 		localStorage.setItem(KEYS.ACTIVE_TAB, tabIndex.toString());
 	} catch (error) {
 		console.error('Error saving active tab preference:', error);
@@ -73,7 +70,6 @@ export function loadActiveTabPreference(): number {
 
 	try {
 		const savedTab = localStorage.getItem(KEYS.ACTIVE_TAB);
-		console.log('Loading active tab preference:', savedTab);
 
 		if (savedTab !== null) {
 			const tabIndex = parseInt(savedTab, 10);

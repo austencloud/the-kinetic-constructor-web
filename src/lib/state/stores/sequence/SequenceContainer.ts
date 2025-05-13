@@ -1,17 +1,7 @@
-/**
- * Modern Sequence Container
- *
- * This module provides a modern implementation of the sequence state using
- * the new container-based approach.
- */
-
 import { createContainer } from '$lib/state/core/container';
 import { createDerived } from '$lib/state/core/container';
 import { browser } from '$app/environment';
 
-/**
- * Interface for a single beat in a sequence
- */
 export interface BeatData {
 	id: string;
 	number: number;
@@ -28,9 +18,6 @@ export interface BeatData {
 	metadata?: Record<string, unknown>;
 }
 
-/**
- * Interface for sequence state
- */
 export interface SequenceState {
 	beats: BeatData[];
 	selectedBeatIds: string[];
@@ -45,31 +32,22 @@ export interface SequenceState {
 	};
 }
 
-/**
- * Initial sequence state
- */
 const initialState: SequenceState = {
 	beats: [],
 	selectedBeatIds: [],
 	currentBeatIndex: 0,
 	isModified: false,
 	metadata: {
-		name: '', // Empty string instead of 'Untitled Sequence'
-		difficulty: 0, // Start with 0 (no difficulty shown)
+		name: '',
+		difficulty: 0,
 		tags: [],
 		createdAt: new Date(),
 		lastModified: new Date()
 	}
 };
 
-/**
- * Creates the sequence container
- */
 function createSequenceContainer() {
 	return createContainer(initialState, (state, update) => ({
-		/**
-		 * Add a new beat to the sequence
-		 */
 		addBeat: (beat: BeatData) => {
 			update((state) => {
 				state.beats.push(beat);
@@ -78,9 +56,6 @@ function createSequenceContainer() {
 			});
 		},
 
-		/**
-		 * Add multiple beats to the sequence
-		 */
 		addBeats: (beats: BeatData[]) => {
 			update((state) => {
 				state.beats.push(...beats);
@@ -89,9 +64,6 @@ function createSequenceContainer() {
 			});
 		},
 
-		/**
-		 * Set the entire sequence
-		 */
 		setSequence: (beats: BeatData[]) => {
 			update((state) => {
 				state.beats = beats;
@@ -102,9 +74,6 @@ function createSequenceContainer() {
 			});
 		},
 
-		/**
-		 * Remove a beat from the sequence
-		 */
 		removeBeat: (beatId: string) => {
 			update((state) => {
 				state.beats = state.beats.filter((beat) => beat.id !== beatId);
@@ -114,9 +83,6 @@ function createSequenceContainer() {
 			});
 		},
 
-		/**
-		 * Update a beat in the sequence
-		 */
 		updateBeat: (beatId: string, updates: Partial<BeatData>) => {
 			update((state) => {
 				const beatIndex = state.beats.findIndex((beat) => beat.id === beatId);
@@ -128,9 +94,6 @@ function createSequenceContainer() {
 			});
 		},
 
-		/**
-		 * Select a beat
-		 */
 		selectBeat: (beatId: string, multiSelect = false) => {
 			update((state) => {
 				if (!multiSelect) {
@@ -141,36 +104,24 @@ function createSequenceContainer() {
 			});
 		},
 
-		/**
-		 * Deselect a beat
-		 */
 		deselectBeat: (beatId: string) => {
 			update((state) => {
 				state.selectedBeatIds = state.selectedBeatIds.filter((id) => id !== beatId);
 			});
 		},
 
-		/**
-		 * Clear the selection
-		 */
 		clearSelection: () => {
 			update((state) => {
 				state.selectedBeatIds = [];
 			});
 		},
 
-		/**
-		 * Set the current beat index
-		 */
 		setCurrentBeatIndex: (index: number) => {
 			update((state) => {
 				state.currentBeatIndex = index;
 			});
 		},
 
-		/**
-		 * Update sequence metadata
-		 */
 		updateMetadata: (metadata: Partial<SequenceState['metadata']>) => {
 			update((state) => {
 				state.metadata = {
@@ -182,9 +133,6 @@ function createSequenceContainer() {
 			});
 		},
 
-		/**
-		 * Mark the sequence as saved (not modified)
-		 */
 		markAsSaved: () => {
 			update((state) => {
 				state.isModified = false;
@@ -192,31 +140,22 @@ function createSequenceContainer() {
 		},
 
 		/**
-		 * Save the sequence to localStorage
-		 *
-		 * This method has been improved to:
-		 * 1. Better handle edge cases and errors
-		 * 2. Ensure proper saving of sequence data
+		 * Save the sequence to localStorage.
+		 * Handles edge cases, errors and ensures proper saving of sequence data.
 		 */
 		saveToLocalStorage: () => {
 			if (!browser) return;
 
 			try {
-				// Import the pictographUtils module
 				import('$lib/utils/pictographUtils')
 					.then(({ createSafeBeatCopy }) => {
 						try {
-							// Update the sequence word before saving
 							const beats = state.beats;
 
-							// Create safe copies of beats to handle circular references
 							const safeBeats = beats.map((beat) => {
-								// Create a safe copy of the beat
 								const safeBeat = createSafeBeatCopy(beat);
 
-								// Ensure pictographData is properly preserved
 								if (!safeBeat.pictographData && beat.metadata) {
-									// Try to reconstruct pictographData from metadata and other properties
 									safeBeat.pictographData = {
 										letter: beat.letter || beat.metadata.letter || null,
 										startPos: beat.position || beat.metadata.startPos || null,
@@ -242,10 +181,8 @@ function createSequenceContainer() {
 								return safeBeat;
 							});
 
-							// Extract letters from beats and combine into a word
 							const letters = beats
 								.map((beat) => {
-									// Look for letter data according to the BeatData interface
 									return (
 										beat.letter ||
 										(beat.metadata && typeof beat.metadata.letter === 'string'
@@ -255,28 +192,18 @@ function createSequenceContainer() {
 								})
 								.filter((letter): letter is string => letter !== null);
 
-							// Build the word from letters
 							const word = letters.join('');
 
-							// Update metadata with word
 							update((state) => {
 								state.metadata.name = word;
 							});
 
-							// Create a safe copy of the state with the safe beats
 							const safeState = {
 								...state,
 								beats: safeBeats
 							};
 
-							// Now save to localStorage
 							localStorage.setItem('sequence', JSON.stringify(safeState));
-							console.log(
-								'Saved sequence to localStorage with word:',
-								word,
-								'and beats:',
-								safeBeats.length
-							);
 						} catch (innerError) {
 							console.error('Error in saveToLocalStorage inner function:', innerError);
 						}
@@ -290,12 +217,8 @@ function createSequenceContainer() {
 		},
 
 		/**
-		 * Load the sequence from localStorage
-		 *
-		 * This method has been improved to:
-		 * 1. Better handle edge cases and errors
-		 * 2. Restore the start position when loading a sequence
-		 * 3. Provide more detailed logging
+		 * Load the sequence from localStorage.
+		 * Handles edge cases, errors and restores the start position when loading a sequence.
 		 */
 		loadFromLocalStorage: () => {
 			if (!browser) return false;
@@ -303,22 +226,14 @@ function createSequenceContainer() {
 			try {
 				const savedSequence = localStorage.getItem('sequence');
 				if (!savedSequence) {
-					console.log('No saved sequence found in localStorage');
 					return false;
 				}
 
 				const parsed = JSON.parse(savedSequence);
-				console.log('Found saved sequence in localStorage:', {
-					beatsCount: parsed.beats?.length || 0,
-					hasMetadata: !!parsed.metadata
-				});
 
-				// Process the beats to ensure pictographData is properly restored
 				if (parsed.beats && Array.isArray(parsed.beats)) {
 					parsed.beats = parsed.beats.map((beat: any) => {
-						// Ensure the beat has a valid pictographData property
 						if (!beat.pictographData && beat.metadata) {
-							// Try to reconstruct pictographData from metadata and other properties
 							beat.pictographData = {
 								letter: beat.letter || beat.metadata.letter || null,
 								startPos: beat.position || beat.metadata.startPos || null,
@@ -341,7 +256,6 @@ function createSequenceContainer() {
 							};
 						}
 
-						// Ensure the beat has all required properties
 						return {
 							id: beat.id || `beat-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
 							number: beat.number || 0,
@@ -361,21 +275,14 @@ function createSequenceContainer() {
 					});
 				}
 
-				// We'll handle start position separately - don't use the first beat for this
-				// This prevents confusion between start position and regular beats
-
 				update((state) => {
 					Object.assign(state, parsed);
-					// Ensure dates are properly converted from strings
 					state.metadata.createdAt = new Date(state.metadata.createdAt);
 					state.metadata.lastModified = new Date(state.metadata.lastModified);
 
-					// Recalculate the word from beats to ensure consistency
 					if (state.beats && state.beats.length > 0) {
-						// Extract letters from beats and combine into a word
 						const letters = state.beats
 							.map((beat) => {
-								// Look for letter data according to the BeatData interface
 								return (
 									beat.letter ||
 									(beat.metadata && typeof beat.metadata.letter === 'string'
@@ -385,50 +292,31 @@ function createSequenceContainer() {
 							})
 							.filter((letter): letter is string => letter !== null);
 
-						// Build the word from letters
 						const word = letters.join('');
 
-						// Update metadata with word
 						state.metadata.name = word;
-						console.log(
-							'Loaded sequence with recalculated word:',
-							word,
-							'and beats:',
-							state.beats.length
-						);
 					} else {
-						// Reset the word if there are no beats
 						state.metadata.name = '';
-						console.log('Loaded empty sequence, reset word to empty string');
 					}
 				});
 
-				// Restore the start position from localStorage directly, not from the first beat
-				// This ensures proper separation between start position and regular beats
 				try {
-					// Import the necessary modules
 					Promise.all([
 						import('$lib/stores/sequence/selectionStore'),
 						import('$lib/state/stores/pictograph/pictographContainer')
 					]).then(([{ selectedStartPos }, { pictographContainer }]) => {
-						// Try to get the start position from localStorage
 						const savedStartPos = localStorage.getItem('start_position');
 						let startPosData = null;
 
 						if (savedStartPos) {
 							try {
 								startPosData = JSON.parse(savedStartPos);
-								console.log('Found start position in localStorage');
 							} catch (parseError) {
 								console.error('Failed to parse start position from localStorage:', parseError);
 							}
 						}
 
-						// If we don't have a valid start position, don't try to use the first beat
-						// This prevents confusion between start position and regular beats
 						if (startPosData) {
-							// Validate the start position data
-							// For a start position, start and end locations must be the same
 							if (startPosData.redMotionData) {
 								startPosData.redMotionData.endLoc = startPosData.redMotionData.startLoc;
 							}
@@ -436,21 +324,14 @@ function createSequenceContainer() {
 								startPosData.blueMotionData.endLoc = startPosData.blueMotionData.startLoc;
 							}
 
-							// Add a special flag to mark this as a start position
 							startPosData.isStartPosition = true;
 
-							// Create a deep copy to avoid reference issues
 							const startPosCopy = JSON.parse(JSON.stringify(startPosData));
 
-							// Update the selectedStartPos store
 							selectedStartPos.set(startPosCopy);
 
-							// Also update the pictographContainer
 							pictographContainer.setData(startPosCopy);
 
-							console.log('Restored start position from localStorage:', startPosCopy);
-
-							// Dispatch a custom event to notify components
 							if (typeof document !== 'undefined') {
 								const event = new CustomEvent('start-position-selected', {
 									detail: { startPosition: startPosCopy },
@@ -458,8 +339,6 @@ function createSequenceContainer() {
 								});
 								document.dispatchEvent(event);
 							}
-						} else {
-							console.log('No valid start position found in localStorage');
 						}
 					});
 				} catch (startPosError) {
@@ -475,10 +354,8 @@ function createSequenceContainer() {
 	}));
 }
 
-// Create the sequence container instance
 export const sequenceContainer = createSequenceContainer();
 
-// Create derived values
 export const selectedBeats = createDerived(() =>
 	sequenceContainer.state.beats.filter((beat) =>
 		sequenceContainer.state.selectedBeatIds.includes(beat.id)
@@ -493,9 +370,7 @@ export const beatCount = createDerived(() => sequenceContainer.state.beats.lengt
 
 export const sequenceDifficulty = createDerived(() => sequenceContainer.state.metadata.difficulty);
 
-// Set up automatic persistence
 if (browser) {
-	// Create a debounced save function to avoid saving too frequently
 	let saveTimeoutId: ReturnType<typeof setTimeout> | null = null;
 	let lastSavedState = JSON.stringify({
 		beats: sequenceContainer.state.beats.length,
@@ -507,38 +382,31 @@ if (browser) {
 			clearTimeout(saveTimeoutId);
 		}
 		saveTimeoutId = setTimeout(() => {
-			// Create a simple representation of the current state for comparison
 			const currentState = JSON.stringify({
 				beats: sequenceContainer.state.beats.length,
 				metadata: sequenceContainer.state.metadata.name
 			});
 
-			// Only save if the state has actually changed
 			if (currentState !== lastSavedState) {
-				console.log('State changed, saving to localStorage');
 				sequenceContainer.saveToLocalStorage();
 				lastSavedState = currentState;
 			}
 
 			saveTimeoutId = null;
-		}, 0); // 1000ms debounce time (increased to reduce frequency)
+		}, 0);
 	};
 
-	// Subscribe to changes in the sequence container
 	sequenceContainer.subscribe((state) => {
-		// Only save if there are changes and the state is marked as modified
 		if (state.isModified) {
 			debouncedSave();
 		}
 	});
 
-	// Also save when the window is about to unload, but only if needed
 	window.addEventListener('beforeunload', () => {
 		if (saveTimeoutId) {
 			clearTimeout(saveTimeoutId);
 			saveTimeoutId = null;
 
-			// Check if we need to save before unloading
 			const currentState = JSON.stringify({
 				beats: sequenceContainer.state.beats.length,
 				metadata: sequenceContainer.state.metadata.name

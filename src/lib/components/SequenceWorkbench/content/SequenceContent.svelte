@@ -32,7 +32,6 @@
 		getElement: () => beatFrameElement,
 		setElement: (el: HTMLElement | null) => {
 			if (el) {
-				console.log('SequenceContent: Setting beatFrameElement via context');
 				beatFrameElement = el;
 
 				// Also store in global variables for maximum compatibility
@@ -83,10 +82,7 @@
 	function handleBeatFrameHeightChange(event: CustomEvent<{ height: number }>) {
 		beatFrameNaturalHeight = event.detail.height;
 
-		// Log for debugging
-		if (import.meta.env.DEV) {
-			console.log('SequenceContent - Beat frame natural height changed:', beatFrameNaturalHeight);
-		}
+
 	}
 
 	// Handle beat selected event
@@ -118,7 +114,6 @@
 					isScrollable={beatFrameShouldScroll}
 					elementReceiver={function (el: HTMLElement | null) {
 						// Use a function to update the element reference
-						console.log('SequenceContent: BeatFrame element received:', el);
 
 						if (el) {
 							// Update our local state
@@ -137,10 +132,7 @@
 							});
 							document.dispatchEvent(event);
 
-							console.log('SequenceContent: Updated beatFrameElement and dispatched event');
-						} else {
-							console.warn('SequenceContent: Received null element from BeatFrame');
-						}
+						} 
 					}}
 				/>
 			</div>

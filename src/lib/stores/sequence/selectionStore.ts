@@ -18,9 +18,7 @@ function createSelectedStartPosStore() {
 			const savedValue = localStorage.getItem(START_POSITION_STORAGE_KEY);
 			if (savedValue) {
 				initialValue = JSON.parse(savedValue);
-				if (import.meta.env.DEV) {
-					console.log('Loaded start position from localStorage:', initialValue);
-				}
+
 			}
 		} catch (error) {
 			console.error('Error loading start position from localStorage:', error);
@@ -36,11 +34,9 @@ function createSelectedStartPosStore() {
 				if (value) {
 					localStorage.setItem(START_POSITION_STORAGE_KEY, JSON.stringify(value));
 					if (import.meta.env.DEV) {
-						console.log('Saved start position to localStorage:', value);
 					}
 				} else {
 					localStorage.removeItem(START_POSITION_STORAGE_KEY);
-					console.log('Removed start position from localStorage');
 				}
 			} catch (error) {
 				console.error('Error saving start position to localStorage:', error);
@@ -62,14 +58,10 @@ function createSelectedStartPosStore() {
 					try {
 						if (newValue) {
 							localStorage.setItem(START_POSITION_STORAGE_KEY, JSON.stringify(newValue));
-							if (import.meta.env.DEV) {
-								console.log('Saved updated start position to localStorage:', newValue);
-							}
+
 						} else {
 							localStorage.removeItem(START_POSITION_STORAGE_KEY);
-							if (import.meta.env.DEV) {
-								console.log('Removed start position from localStorage');
-							}
+
 						}
 					} catch (error) {
 						console.error('Error saving start position to localStorage:', error);

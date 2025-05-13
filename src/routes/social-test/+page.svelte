@@ -1,6 +1,6 @@
 <!-- src/routes/social-test/+page.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount } from '$lib/utils/svelte-lifecycle';
 	import { isAuthenticated } from '$lib/services/auth';
 	import {
 		postToFacebook,
@@ -24,7 +24,7 @@
 			'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
 		width: 100,
 		height: 100,
-		aspectRatio: 1
+		mimeType: 'image/png'
 	};
 
 	// Mock sequence data

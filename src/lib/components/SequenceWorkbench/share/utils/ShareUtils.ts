@@ -624,12 +624,7 @@ export function isWebShareSupported(): boolean {
 			navigator.userAgent
 		);
 
-		// Log detailed information for debugging
-		console.log('shareUtils: Web Share API check:', {
-			hasShareAPI,
-			isMobile,
-			userAgent: navigator.userAgent
-		});
+
 
 		return hasShareAPI;
 	} catch (error) {
@@ -664,11 +659,6 @@ export function isFileShareSupported(): boolean {
 		// Check if the browser can share files
 		const canShareFiles = navigator.canShare({ files: [dummyFile] });
 
-		// Log result for debugging
-		console.log('shareUtils: File sharing support check:', {
-			canShareFiles,
-			userAgent: navigator.userAgent
-		});
 
 		return canShareFiles;
 	} catch (error) {
@@ -892,14 +882,7 @@ const MIN_SHARE_API_INTERVAL_MS = 1000; // Minimum 1 second between Web Share AP
  * @param {SequenceRenderResult} imageResult - The rendered image result
  * @param {string} sequenceName - The name of the sequence
  * @param {string} shareUrl - The shareable URL
- * @returns {Promise<boolean>} True if sharing was successful
- */
-export async function shareSequenceWithImage(
-	imageResult: SequenceRenderResult,
-	sequenceName: string,
-	shareUrl: string
-): Promise<boolean> {
-	console.log('shareUtils: shareSequenceWithImage called with:', { sequenceName, shareUrl });
+ * @returns {Promise<boolean>} Trhi	if (!browser) {n		console.log('shareUtils: Not in browser environment, returning false');q		return false;s	}r:	// First check if Web Share API is supported at allcalled with:', { sequenceName, shareUrl });
 
 	if (!browser) {
 		console.log('shareUtils: Not in browser environment, returning false');

@@ -178,13 +178,7 @@
 
 				if (fits !== contentIsShort) {
 					contentIsShort = fits;
-					if (import.meta.env.DEV) {
-						console.debug('OptionsPanel content fits:', fits, {
-							contentHeight,
-							containerHeight,
-							buffer
-						});
-					}
+
 				}
 				timeoutId = null;
 			}, 100);

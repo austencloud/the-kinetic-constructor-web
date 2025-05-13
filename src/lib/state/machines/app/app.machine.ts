@@ -251,7 +251,6 @@ export const appService = createAppMachine('app', appMachine, {
 
 // Subscribe to state changes to ensure persistence
 if (browser) {
-	console.log('App service created with initial state:', appService.getSnapshot());
 
 	// Subscribe to state changes to ensure direct persistence
 	appService.subscribe((state) => {
@@ -262,13 +261,11 @@ if (browser) {
 				const background = state.context.background;
 				if (background) {
 					saveBackgroundPreference(background);
-					console.log('Background preference saved directly:', background);
 				}
 
 				// Save tab preference directly
 				const currentTab = state.context.currentTab;
 				saveActiveTabPreference(currentTab);
-				console.log('Tab preference saved directly:', currentTab);
 			} catch (error) {
 				console.error('Error saving preferences to localStorage:', error);
 			}

@@ -93,7 +93,6 @@
 		};
 
 		// Log that we're creating a start position
-		console.log('Creating start position data with static motion and matching start/end locations');
 
 		return safeCopy;
 	}
@@ -128,7 +127,6 @@
 					// Save to localStorage directly to ensure it's available during hot reloads
 					try {
 						localStorage.setItem('start_position', JSON.stringify(pictographData));
-						console.log('StartPosBeat: Saved start position to localStorage from subscription');
 					} catch (error) {
 						console.error('Failed to save start position to localStorage:', error);
 					}
@@ -182,7 +180,6 @@
 					// Save to localStorage directly to ensure it's available during hot reloads
 					try {
 						localStorage.setItem('start_position', JSON.stringify(pictographData));
-						console.log('StartPosBeat: Saved start position to localStorage');
 					} catch (error) {
 						console.error('Failed to save start position to localStorage:', error);
 					}

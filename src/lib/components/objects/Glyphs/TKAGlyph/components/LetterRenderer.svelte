@@ -21,7 +21,6 @@
 	let isFetchFailed = $state(false);
 	let hasDispatchedLetterLoaded = $state(false);
 
-
 	// Load SVG with proper caching strategy
 	// This function is async, so it's called within an $effect
 	async function loadLetterSVG(currentLetter: Letter) {
@@ -46,7 +45,7 @@
 			dimensions = fetchedDimensions; // Update state
 
 			// Update cache
-			assetCache.update((cache) => {
+			assetCache.update((cache: any) => {
 				cache.letterSVGs.set(cacheKey, {
 					svg: path, // svgPath is already set
 					dimensions: fetchedDimensions
@@ -61,7 +60,7 @@
 		}
 	}
 
-    // Effect to react to letter changes
+	// Effect to react to letter changes
 	$effect(() => {
 		if (letter) {
 			isLoaded = false; // Reset loading state
@@ -69,14 +68,13 @@
 			hasDispatchedLetterLoaded = false; // Reset dispatch state
 			loadLetterSVG(letter);
 		} else {
-            // Reset if letter becomes null
-            svgPath = '';
-            dimensions = { width: 0, height: 0 };
-            isLoaded = false;
-            isFetchFailed = false;
-        }
+			// Reset if letter becomes null
+			svgPath = '';
+			dimensions = { width: 0, height: 0 };
+			isLoaded = false;
+			isFetchFailed = false;
+		}
 	});
-
 
 	// Handle image loaded with proper layout calculation
 	function handleImageLoad() {

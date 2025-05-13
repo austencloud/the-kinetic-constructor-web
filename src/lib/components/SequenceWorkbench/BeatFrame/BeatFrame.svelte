@@ -143,7 +143,6 @@
 				// Create a deep copy to avoid reference issues
 				startPosition = JSON.parse(JSON.stringify(newStartPos));
 				// Log using our safe logging helper (only in dev mode)
-				safeLog('BeatFrame: Initialized startPosition with:', startPosition);
 			}
 		});
 
@@ -159,7 +158,6 @@
 		// Check if the layout has changed
 		if (beatRows !== prevRows || beatCols !== prevCols) {
 			// Log layout changes
-			safeLog(`Layout changed`, { from: `${prevRows}x${prevCols}`, to: `${beatRows}x${beatCols}` });
 
 			// Update the layout store
 			layoutStore.updateLayout(beatRows, beatCols, beatCount);
@@ -186,43 +184,6 @@
 		}
 	});
 
-	// Calculate the total height needed for labels and other UI elements
-	// Based on the padding and margins in SequenceWidget.svelte
-	const calculateLabelsTotalHeight = () => {
-		// From SequenceWidget.svelte:
-		// - sequence-container has padding: 10px 0 (top and bottom)
-		// - sequence-widget-labels has padding-bottom: 10px
-		// - difficulty-label-container has margin-top: 10px
-		// - beat-frame-wrapper has padding: 0 10px (horizontal only)
-		// - Mobile adjustments reduce these values
-
-		// Container padding
-		const containerPaddingTop = 10;
-		const containerPaddingBottom = 10;
-
-		// Label spacing
-		const labelsPaddingBottom = 10;
-		const difficultyMarginTop = 10;
-
-		// Actual label heights (more accurate estimates)
-		const currentWordLabelHeight = 36; // Increased for better accuracy
-		const difficultyLabelHeight = 36; // Increased for better accuracy
-
-		// Additional padding for the beat frame
-		const beatFramePaddingBottom = 20; // From .beat-frame padding-bottom in CSS
-
-		// Calculate total height needed for non-pictograph elements
-		return (
-			containerPaddingTop +
-			containerPaddingBottom +
-			labelsPaddingBottom +
-			difficultyMarginTop +
-			currentWordLabelHeight +
-			difficultyLabelHeight +
-			beatFramePaddingBottom
-		);
-	};
-
 	// Track the full sequence widget dimensions
 	let sequenceWidgetWidth = $state(0);
 	let sequenceWidgetHeight = $state(0);
@@ -238,25 +199,9 @@
 		const gridElement = beatFrameContainerRef?.querySelector('.beat-frame');
 		if (gridElement) {
 			naturalGridHeight = gridElement.scrollHeight; // Use scrollHeight for the most accurate content height
-
-			// Log natural height in dev mode
-			safeLog('Natural grid height calculated', {
-				naturalGridHeight,
-				beatRows,
-				cellSize,
-				element: 'scrollHeight'
-			});
 		} else {
 			// Fallback calculation if element not ready
 			naturalGridHeight = beatRows * cellSize + 20; // Add padding-bottom (20px) of the .beat-frame
-
-			// Log fallback calculation in dev mode
-			safeLog('Natural grid height calculated (fallback)', {
-				naturalGridHeight,
-				beatRows,
-				cellSize,
-				element: 'fallback calculation'
-			});
 		}
 	});
 
@@ -267,7 +212,6 @@
 			dispatch('naturalheightchange', { height: naturalGridHeight });
 
 			// Log event dispatch in dev mode
-
 		}
 	});
 
@@ -278,8 +222,6 @@
 	// whenever the container element or the elementReceiver function changes
 	$effect(() => {
 		if (beatFrameContainerRef) {
-			console.log('BeatFrame: Container element available');
-
 			// Update our reactive state
 			beatFrameElementState = beatFrameContainerRef;
 
@@ -293,7 +235,6 @@
 				// Store in both variables for maximum compatibility
 				(window as any).__beatFrameElementRef = beatFrameContainerRef;
 				(window as any).__pendingBeatFrameElement = beatFrameContainerRef;
-				console.log('BeatFrame: Element stored in global fallback variables');
 			}
 
 			// Make sure elementReceiver is a function before calling it
@@ -301,7 +242,6 @@
 				try {
 					// Call the receiver function
 					elementReceiver(beatFrameContainerRef);
-					console.log('BeatFrame: Element passed to receiver:', beatFrameContainerRef);
 				} catch (error) {
 					console.error('BeatFrame: Error calling elementReceiver:', error);
 				}
@@ -318,7 +258,6 @@
 				document.dispatchEvent(event);
 			}
 		} else {
-			console.log('BeatFrame: Container element not yet available');
 			beatFrameElementState = null;
 		}
 	});
@@ -329,7 +268,6 @@
 			// Set up a MutationObserver to detect when the element is added to the DOM
 			const observer = new MutationObserver((_mutations) => {
 				if (beatFrameContainerRef) {
-					console.log('BeatFrame: DOM mutation detected, re-sending element reference');
 
 					// Update our reactive state
 					beatFrameElementState = beatFrameContainerRef;
@@ -343,7 +281,6 @@
 						try {
 							// Call the receiver function
 							elementReceiver(beatFrameContainerRef);
-							console.log('BeatFrame: Element re-sent to receiver after DOM mutation');
 						} catch (error) {
 							console.error('BeatFrame: Error calling elementReceiver after DOM mutation:', error);
 						}
@@ -399,7 +336,6 @@
 	$effect(() => {
 		// Only calculate if we have valid dimensions
 		if (sequenceWidgetWidth > 0 && sequenceWidgetHeight > 0) {
-
 			// Use the full sequence widget height instead of the beat frame's height
 			cellSize = calculateCellSize(
 				beatCount,
@@ -448,20 +384,16 @@
 		// Calculate overflow - check both height and width
 		const heightOverflow = contentHeight > containerHeight + buffer;
 		const widthOverflow = contentWidth > containerWidth + buffer;
-
-
 	}
 
 	// Initialize dev tools and set up event listeners
 	onMount(() => {
 		// Initialize dev tools updater
 
-
 		// Listen for the custom event when a start position is selected
 		const handleStartPosSelected = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
 				// Log the received start position (only in dev mode)
-
 
 				// Create a deep copy to avoid reference issues
 				const newStartPos = JSON.parse(JSON.stringify(event.detail.startPosition));
@@ -487,8 +419,7 @@
 		window.addEventListener('resize', handleResize);
 
 		// Set up an interval to periodically update dev tools
-		const intervalId = setInterval(() => {
-		}, 1000);
+		const intervalId = setInterval(() => {}, 1000);
 
 		return () => {
 			document.removeEventListener(
@@ -520,8 +451,6 @@
 		if (beatIndex >= 0 && beatIndex < beats.length) {
 			const beat = beats[beatIndex];
 			const beatId = beat.id;
-
-
 
 			if (beatId) {
 				// Select the beat in the container

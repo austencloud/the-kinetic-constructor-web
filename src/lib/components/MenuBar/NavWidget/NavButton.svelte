@@ -1,49 +1,56 @@
 <script lang="ts">
 	import MetallicButton from '../../common/MetallicButton.svelte';
-	import { createEventDispatcher } from 'svelte';
 	import TabRipple from './TabRipple.svelte';
-
-	const dispatch = createEventDispatcher();
 
 	// --- Define allowed variant types explicitly ---
 	type NavButtonVariant = 'blue' | 'ghost';
 
-	// --- Props ---
-	export let isActive: boolean = false;
-	export let onClick: () => void;
-	export let index: number = 0;
-	export let previousIndex: number = 0;
-	export let showText: boolean = true; // Prop to control text visibility
+	// --- Props using Svelte 5 $props() ---
+	const {
+		isActive = false,
+		onClick,
+		index = 0,
+		previousIndex = 0,
+		showText = true // Prop to control text visibility
+	} = $props<{
+		isActive?: boolean;
+		onClick: () => void;
+		index?: number;
+		previousIndex?: number;
+		showText?: boolean;
+	}>();
 
 	// --- State ---
-	enum ButtonState {
-		NORMAL = 'normal',
-		ACTIVE = 'active',
-		DISABLED = 'disabled'
-	}
+	// Button state constants
+	const BUTTON_STATE = {
+		NORMAL: 'normal' as const,
+		ACTIVE: 'active' as const,
+		DISABLED: 'disabled' as const
+	};
+
 	let wasActive = false;
 
-	// FIXED: Declare variant variable explicitly
-	let variant: NavButtonVariant;
-
 	// Determine button state based on isActive prop
-	$: state = isActive ? ButtonState.ACTIVE : ButtonState.NORMAL;
+	const state = $derived(isActive ? BUTTON_STATE.ACTIVE : BUTTON_STATE.NORMAL);
 
-	// FIXED: Removed type annotation from reactive assignment
 	// Determine button variant based on isActive prop
-	$: variant = isActive ? 'blue' : 'ghost';
+	const variant = $derived<NavButtonVariant>(isActive ? 'blue' : 'ghost');
 
 	// --- Lifecycle & Logic ---
 	// Track active state changes for dispatching 'activated' event
-	$: if (isActive !== wasActive) {
-		wasActive = isActive;
-		if (isActive) {
-			// Button became active
-			setTimeout(() => {
-				dispatch('activated');
-			}, 50);
+	$effect(() => {
+		if (isActive !== wasActive) {
+			wasActive = isActive;
+			if (isActive) {
+				// Button became active
+				setTimeout(() => {
+					// Use custom event instead of dispatch
+					const event = new CustomEvent('activated');
+					document.dispatchEvent(event);
+				}, 50);
+			}
 		}
-	}
+	});
 
 	// Click handler
 	function handleClick() {
@@ -52,17 +59,14 @@
 </script>
 
 <div class="nav-button-wrapper" class:active={isActive} class:text-hidden={!showText}>
-	<MetallicButton
-		on:click={handleClick}
-		{state}
-		{variant}
-		size={'medium'}
-		customClass="nav-button {isActive ? 'active-button' : ''} {showText
+	<button
+		class="nav-button {variant} {state} {isActive ? 'active-button' : ''} {showText
 			? 'with-text'
 			: 'icon-only'}"
+		onclick={handleClick}
 	>
 		<slot />
-	</MetallicButton>
+	</button>
 
 	<TabRipple active={isActive} {index} {previousIndex} />
 

@@ -5,7 +5,7 @@
 	import { appActions } from '$lib/state/machines/app/app.actions';
 	import * as sequenceActions from '$lib/state/machines/sequenceMachine/actions';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy } from '$lib/utils/svelte-lifecycle';
 
 	// Components
 	import ClearSequenceButton from '../ClearSequenceButton.svelte';
@@ -15,7 +15,7 @@
 	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte';
 
 	// Props
-	const { 
+	const {
 		beatFrameElement = $bindable<HTMLElement | null>(null),
 		buttonSizeFactor = $bindable(1)
 	} = $props<{
@@ -86,7 +86,7 @@
 	<ClearSequenceButton on:clearSequence={handleClearSequence} />
 	<button onclick={handleRemoveBeat}>Remove Beat</button>
 	<SequenceOverlayButton />
-	<ShareButton beatFrameElement={$beatFrameElement} />
+	<ShareButton {beatFrameElement} />
 </div>
 
 <style>

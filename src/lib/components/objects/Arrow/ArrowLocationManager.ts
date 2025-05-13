@@ -270,14 +270,11 @@ export function calculateDashLocation(
 
 	// For Type 3 letters with dash motion, calculate based on shift
 	if (letterType === LetterType.Type3 && motion.turns === 0 && getShiftMotion) {
-		console.log(
-			`Calculating Type 3 dash location for letter: ${letter}, gridMode: ${motion.gridMode}`
-		);
+
 		const dashLocation = calculateDashLocationBasedOnShift(motion, getShiftMotion, getOtherMotion);
 
 		// If we couldn't calculate a location based on shift, fall back to the motion's end location
 		if (dashLocation) {
-			console.log(`Successfully calculated Type 3 dash location: ${dashLocation}`);
 			return dashLocation;
 		}
 
@@ -385,10 +382,6 @@ function calculateDashLocationBasedOnShift(
 		return null;
 	}
 
-	// Debug info
-	console.log(
-		`Type 3 dash calculation - gridMode: ${gridMode}, dashStartLoc: ${dashStartLoc}, shiftLocation: ${shiftLocation}`
-	);
 
 	// Lookup in grid-specific maps
 	if (gridMode === DIAMOND) {

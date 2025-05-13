@@ -1,40 +1,56 @@
-
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	// Button state as string literal type instead of enum
+	type ButtonStateType = 'normal' | 'active' | 'disabled' | 'loading';
 
-	// Button state enum
-	enum ButtonState {
-		NORMAL = 'normal',
-		ACTIVE = 'active',
-		DISABLED = 'disabled',
-		LOADING = 'loading'
-	}
+	// Button state constants
+	const BUTTON_STATE = {
+		NORMAL: 'normal' as const,
+		ACTIVE: 'active' as const,
+		DISABLED: 'disabled' as const,
+		LOADING: 'loading' as const
+	};
 
-	// Props with defaults
-	export let label: string = '';
-	export let icon: string | null = null;
-	export let iconPosition: 'left' | 'right' | 'only' = 'left';
-	export let state: ButtonState = ButtonState.NORMAL;
-	export let disabled: boolean = false;
-	export let loading: boolean = false;
-	export let customClass: string = '';
-	export let variant: 'blue' | 'dark' | 'ghost' | 'success' | 'danger' = 'blue';
-	export let size: 'small' | 'medium' | 'large' = 'medium';
-	export let title: string | null = null;
-	export let fullWidth: boolean = false;
-	export let type: 'button' | 'submit' | 'reset' = 'button';
-	export let pressed: boolean | null = null; // For toggle buttons
-	export let form: string | null = null;
-
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		click: MouseEvent;
-		focus: FocusEvent;
-		blur: FocusEvent;
+	// Props with defaults using $props() from Svelte 5
+	const {
+		label = '',
+		icon = null,
+		iconPosition = 'left',
+		state = BUTTON_STATE.NORMAL,
+		disabled = false,
+		loading = false,
+		customClass = '',
+		variant = 'blue',
+		size = 'medium',
+		title = null,
+		fullWidth = false,
+		type = 'button',
+		pressed = null,
+		form = null
+	} = $props<{
+		label?: string;
+		icon?: string | null;
+		iconPosition?: 'left' | 'right' | 'only';
+		state?: ButtonStateType;
+		disabled?: boolean;
+		loading?: boolean;
+		customClass?: string;
+		variant?: 'blue' | 'dark' | 'ghost' | 'success' | 'danger';
+		size?: 'small' | 'medium' | 'large';
+		title?: string | null;
+		fullWidth?: boolean;
+		type?: 'button' | 'submit' | 'reset';
+		pressed?: boolean | null;
+		form?: string | null;
 	}>();
 
+	// Event handling with Svelte 5 approach
+	const dispatch = (name: string, detail?: any) => {
+		const event = new CustomEvent(name, { detail });
+		dispatchEvent(event);
+	};
+
 	// Internal state
-	let spinnerVisible = false;
+	let spinnerVisible = $state(false);
 
 	// Handle opacity for gradients
 	const OPACITY = 0.9;
@@ -43,135 +59,135 @@
 	const gradients = {
 		blue: {
 			normal: `
-        background: linear-gradient(
-          135deg,
-          #1e3c72 0%,
-          #6c9ce9 30%,
-          #4a77d4 60%,
-          #2a52be 100%
-        );
-      `,
+				background: linear-gradient(
+					135deg,
+					#1e3c72 0%,
+					#6c9ce9 30%,
+					#4a77d4 60%,
+					#2a52be 100%
+				);
+			`,
 			hover: `
-        background: linear-gradient(
-          135deg,
-          #264f94 0%,
-          #7baafb 30%,
-          #5584e1 60%,
-          #3563cf 100%
-        );
-      `,
+				background: linear-gradient(
+					135deg,
+					#264f94 0%,
+					#7baafb 30%,
+					#5584e1 60%,
+					#3563cf 100%
+				);
+			`,
 			active: `
-        background: linear-gradient(
-          135deg,
-          #16295a 0%,
-          #517bbd 30%,
-          #3a62ab 60%,
-          #1d3b8c 100%
-        );
-      `
+				background: linear-gradient(
+					135deg,
+					#16295a 0%,
+					#517bbd 30%,
+					#3a62ab 60%,
+					#1d3b8c 100%
+				);
+			`
 		},
 		dark: {
 			normal: `
-        background: linear-gradient(
-          135deg,
-          rgba(40, 40, 40, ${OPACITY}) 0%,
-          rgba(55, 55, 55, ${OPACITY}) 50%,
-          rgba(70, 70, 70, ${OPACITY}) 100%
-        );
-      `,
+				background: linear-gradient(
+					135deg,
+					rgba(40, 40, 40, ${OPACITY}) 0%,
+					rgba(55, 55, 55, ${OPACITY}) 50%,
+					rgba(70, 70, 70, ${OPACITY}) 100%
+				);
+			`,
 			hover: `
-        background: linear-gradient(
-          135deg,
-          rgba(80, 80, 80, ${OPACITY}) 0%,
-          rgba(160, 160, 160, ${OPACITY}) 30%,
-          rgba(120, 120, 120, ${OPACITY}) 60%,
-          rgba(40, 40, 40, ${OPACITY}) 100%
-        );
-      `,
+				background: linear-gradient(
+					135deg,
+					rgba(80, 80, 80, ${OPACITY}) 0%,
+					rgba(160, 160, 160, ${OPACITY}) 30%,
+					rgba(120, 120, 120, ${OPACITY}) 60%,
+					rgba(40, 40, 40, ${OPACITY}) 100%
+				);
+			`,
 			active: `
-        background: linear-gradient(
-          135deg,
-          #1e3c72 0%,
-          #6c9ce9 30%,
-          #4a77d4 60%, 
-          #2a52be 100%
-        );
-      `
+				background: linear-gradient(
+					135deg,
+					#1e3c72 0%,
+					#6c9ce9 30%,
+					#4a77d4 60%,
+					#2a52be 100%
+				);
+			`
 		},
 		ghost: {
 			normal: `
-        background: rgba(70, 70, 70, 0.7);
-      `,
+				background: rgba(70, 70, 70, 0.7);
+			`,
 			hover: `
-        background: rgba(100, 100, 100, 0.8);
-      `,
+				background: rgba(100, 100, 100, 0.8);
+			`,
 			active: `
-        background: linear-gradient(
-          135deg,
-          #1e3c72 0%,
-          #6c9ce9 30%,
-          #4a77d4 60%,
-          #2a52be 100%
-        );
-      `
+				background: linear-gradient(
+					135deg,
+					#1e3c72 0%,
+					#6c9ce9 30%,
+					#4a77d4 60%,
+					#2a52be 100%
+				);
+			`
 		},
 		success: {
 			normal: `
-        background: linear-gradient(
-          135deg,
-          #0b4d26 0%,
-          #2e8c50 30%,
-          #1f7a3d 60%,
-          #0d5e2f 100%
-        );
-      `,
+				background: linear-gradient(
+					135deg,
+					#0b4d26 0%,
+					#2e8c50 30%,
+					#1f7a3d 60%,
+					#0d5e2f 100%
+				);
+			`,
 			hover: `
-        background: linear-gradient(
-          135deg,
-          #0d5e2f 0%,
-          #34a05c 30%,
-          #24904a 60%,
-          #0f6f35 100%
-        );
-      `,
+				background: linear-gradient(
+					135deg,
+					#0d5e2f 0%,
+					#34a05c 30%,
+					#24904a 60%,
+					#0f6f35 100%
+				);
+			`,
 			active: `
-        background: linear-gradient(
-          135deg,
-          #07341a 0%,
-          #206d3c 30%,
-          #155c2a 60%,
-          #093d20 100%
-        );
-      `
+				background: linear-gradient(
+					135deg,
+					#07341a 0%,
+					#206d3c 30%,
+					#155c2a 60%,
+					#093d20 100%
+				);
+			`
 		},
 		danger: {
 			normal: `
-        background: linear-gradient(
-          135deg,
-          #8b0000 0%,
-          #d32f2f 30%,
-          #b71c1c 60%,
-          #7f0000 100%
-        );
-      `,
+				background: linear-gradient(
+					135deg,
+					#8b0000 0%,
+					#d32f2f 30%,
+					#b71c1c 60%,
+					#7f0000 100%
+				);
+			`,
 			hover: `
-        background: linear-gradient(
-          135deg,
-          #a50000 0%,
-          #ef5350 30%,
-          #d32f2f 60%,
-          #9a0000 100%
-        );
-      `,
+				background: linear-gradient(
+					135deg,
+					#a50000 0%,
+					#ef5350 30%,
+					#d32f2f 60%,
+					#9a0000 100%
+				);
+			`,
 			active: `
-        background: linear-gradient(
-          135deg,
-          #6d0000 0%,
-          #b71c1c 30%,
-          #8b0000 60%,
-          #5d0000 100%
-        );
-      `
+				background: linear-gradient(
+					135deg,
+					#6d0000 0%,
+					#b71c1c 30%,
+					#8b0000 60%,
+					#5d0000 100%
+				);
+			`
 		}
 	};
 
@@ -243,36 +259,16 @@
 		}
 	};
 
-	// Size mappings
-	const sizes = {
-		small: {
-			padding: '8px 16px',
-			fontSize: '1rem',
-			iconSize: '1.1rem'
-		},
-		medium: {
-			padding: '12px 20px',
-			fontSize: '1.2rem',
-			iconSize: '1.3rem'
-		},
-		large: {
-			padding: '14px 28px',
-			fontSize: '1.4rem',
-			iconSize: '1.6rem'
-		}
-	};
-
 	// Handle icon spacing based on label presence and position
-	$: iconSpacing = icon && label && iconPosition !== 'only' ? '0.5rem' : '0';
+	const iconSpacing = $derived(icon && label && iconPosition !== 'only' ? '0.5rem' : '0');
 
 	// Compute actual state based on disabled and loading props
-	$: actualState = disabled ? ButtonState.DISABLED : loading ? ButtonState.LOADING : state;
-
-	// Get current style based on variant, state, disabled and fullWidth
-	$: buttonStyles = computeButtonStyles(variant, actualState, fullWidth);
+	const actualState = $derived(
+		disabled ? BUTTON_STATE.DISABLED : loading ? BUTTON_STATE.LOADING : state
+	);
 
 	// Update spinner visibility with slight delay to avoid flashing
-	$: {
+	$effect(() => {
 		if (loading) {
 			setTimeout(() => {
 				spinnerVisible = loading;
@@ -280,14 +276,14 @@
 		} else {
 			spinnerVisible = false;
 		}
-	}
+	});
 
 	// Function to compute appropriate styles (memoized for performance)
 	const styleCache = new Map();
 
 	function computeButtonStyles(
 		variant: 'blue' | 'dark' | 'ghost' | 'success' | 'danger',
-		state: ButtonState,
+		state: ButtonStateType,
 		isFullWidth: boolean
 	): string {
 		const cacheKey = `${variant}-${state}-${isFullWidth}`;
@@ -299,56 +295,56 @@
 		let result = '';
 
 		// For disabled state
-		if (state === ButtonState.DISABLED) {
+		if (state === BUTTON_STATE.DISABLED) {
 			if (variant === 'blue') {
 				result = `
-          background: linear-gradient(
-            135deg,
-            rgba(30, 60, 114, 0.5) 0%,
-            rgba(108, 156, 233, 0.5) 30%,
-            rgba(74, 119, 212, 0.5) 60%,
-            rgba(42, 82, 190, 0.5) 100%
-          );
-          color: ${colors[variant].disabled};
-          border-color: ${borders[variant].disabled};
-          pointer-events: none;
-        `;
+					background: linear-gradient(
+						135deg,
+						rgba(30, 60, 114, 0.5) 0%,
+						rgba(108, 156, 233, 0.5) 30%,
+						rgba(74, 119, 212, 0.5) 60%,
+						rgba(42, 82, 190, 0.5) 100%
+					);
+					color: ${colors[variant].disabled};
+					border-color: ${borders[variant].disabled};
+					pointer-events: none;
+				`;
 			} else {
 				result = `
-          opacity: 0.6;
-          color: ${colors[variant].disabled};
-          border-color: ${borders[variant].disabled};
-          ${gradients[variant].normal}
-          pointer-events: none;
-        `;
+					opacity: 0.6;
+					color: ${colors[variant].disabled};
+					border-color: ${borders[variant].disabled};
+					${gradients[variant].normal}
+					pointer-events: none;
+				`;
 			}
 		}
 		// For loading state
-		else if (state === ButtonState.LOADING) {
+		else if (state === BUTTON_STATE.LOADING) {
 			result = `
-        ${gradients[variant].normal}
-        color: ${colors[variant].normal};
-        border-color: ${borders[variant].normal};
-        position: relative;
-        pointer-events: none;
-      `;
+				${gradients[variant].normal}
+				color: ${colors[variant].normal};
+				border-color: ${borders[variant].normal};
+				position: relative;
+				pointer-events: none;
+			`;
 		}
 		// For active state
-		else if (state === ButtonState.ACTIVE) {
+		else if (state === BUTTON_STATE.ACTIVE) {
 			result = `
-        ${gradients[variant].normal}
-        color: ${colors[variant].active};
-        border-color: ${borders[variant].active};
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-      `;
+				${gradients[variant].normal}
+				color: ${colors[variant].active};
+				border-color: ${borders[variant].active};
+				box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+			`;
 		}
 		// Normal state
 		else {
 			result = `
-        ${gradients[variant].normal}
-        color: ${colors[variant].normal};
-        border-color: ${borders[variant].normal};
-      `;
+				${gradients[variant].normal}
+				color: ${colors[variant].normal};
+				border-color: ${borders[variant].normal};
+			`;
 		}
 
 		// Add full width if needed
@@ -359,6 +355,9 @@
 		styleCache.set(cacheKey, result);
 		return result;
 	}
+
+	// Get current style based on variant, state, disabled and fullWidth
+	const buttonStyles = $derived(computeButtonStyles(variant, actualState, fullWidth));
 
 	// Click handler
 	function handleClick(event: MouseEvent) {
@@ -387,11 +386,9 @@
 	aria-disabled={disabled || loading}
 	aria-busy={loading}
 	aria-pressed={pressed}
-	on:click={handleClick}
-	on:focus={handleFocus}
-	on:blur={handleBlur}
-	on:mouseenter
-	on:mouseleave
+	onclick={handleClick}
+	onfocus={handleFocus}
+	onblur={handleBlur}
 >
 	{#if loading && spinnerVisible}
 		<div class="spinner">
@@ -427,7 +424,8 @@
 			</div>
 		{/if}
 
-		<slot></slot>
+		<!-- Content from parent component -->
+		<span class="slot-content"></span>
 	{/if}
 </button>
 

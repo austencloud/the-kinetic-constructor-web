@@ -135,7 +135,6 @@ export class PictographService {
 
 		// Ensure the gridMode is set
 		if (motion && !motion.gridMode && this.data.gridMode) {
-			console.log(`Setting gridMode for motion to ${this.data.gridMode}`);
 			motion.gridMode = this.data.gridMode;
 		}
 
@@ -145,10 +144,7 @@ export class PictographService {
 			// For Type 3 motions with dash, calculate the location based on the shift motion
 			const locationManager = new ArrowLocationManager(this);
 
-			// Log the motion state for debugging
-			console.log(
-				`Type 3 dash motion - gridMode: ${motion.gridMode}, startLoc: ${motion.startLoc}, endLoc: ${motion.endLoc}`
-			);
+
 
 			arrowLoc =
 				locationManager.getArrowLocation(
@@ -158,7 +154,6 @@ export class PictographService {
 					this.data.letter
 				) || motionData.endLoc;
 
-			console.log(`Type 3 dash arrow location: ${arrowLoc}`);
 		} else {
 			// For other motions, use the standard calculation
 			arrowLoc = motion
@@ -256,7 +251,6 @@ export class PictographService {
 					);
 
 					if (arrowLoc) {
-						console.log(`Type 3 red dash arrow location recalculated: ${arrowLoc}`);
 						redArrow.loc = arrowLoc;
 					} else {
 						console.warn(
@@ -285,7 +279,6 @@ export class PictographService {
 					);
 
 					if (arrowLoc) {
-						console.log(`Type 3 blue dash arrow location recalculated: ${arrowLoc}`);
 						blueArrow.loc = arrowLoc;
 					} else {
 						console.warn(
@@ -371,7 +364,6 @@ export class PictographService {
 
 		// Ensure the gridMode is set on the shift motion
 		if (shiftMotion && !shiftMotion.gridMode && this.data.gridMode) {
-			console.log(`Setting gridMode for shift motion to ${this.data.gridMode}`);
 			shiftMotion.gridMode = this.data.gridMode;
 		}
 
@@ -386,7 +378,6 @@ export class PictographService {
 
 		// Ensure the gridMode is set on the other motion
 		if (otherMotion && !otherMotion.gridMode && this.data.gridMode) {
-			console.log(`Setting gridMode for other motion to ${this.data.gridMode}`);
 			otherMotion.gridMode = this.data.gridMode;
 		}
 
@@ -422,9 +413,7 @@ export class PictographService {
 			const shouldForceReset = isLayoutShift || isGridChanged;
 
 			if (shouldForceReset) {
-				console.log(
-					`PictographService.updateData - Layout shift detected (${isLayoutShift ? 'beat' : 'grid'} change), NOT preserving motion types`
-				);
+
 
 				// For layout shifts, we need to ensure the arrows are completely recreated
 				// This is the key to fixing the issue
@@ -437,15 +426,12 @@ export class PictographService {
 							newData.redArrowData.loc,
 							newData.redArrowData.svgMirrored
 						);
-						console.log(`Recalculated red arrow rotation angle: ${newData.redArrowData.rotAngle}`);
 					}
 
 					// Ensure the motion type is correct
 					if (newData.redMotion && newData.redMotionData) {
 						if (newData.redArrowData.motionType !== newData.redMotionData.motionType) {
-							console.log(
-								`Correcting red arrow motion type from ${newData.redArrowData.motionType} to ${newData.redMotionData.motionType}`
-							);
+
 							newData.redArrowData.motionType = newData.redMotionData.motionType;
 						}
 					}
@@ -460,17 +446,13 @@ export class PictographService {
 							newData.blueArrowData.loc,
 							newData.blueArrowData.svgMirrored
 						);
-						console.log(
-							`Recalculated blue arrow rotation angle: ${newData.blueArrowData.rotAngle}`
-						);
+
 					}
 
 					// Ensure the motion type is correct
 					if (newData.blueMotion && newData.blueMotionData) {
 						if (newData.blueArrowData.motionType !== newData.blueMotionData.motionType) {
-							console.log(
-								`Correcting blue arrow motion type from ${newData.blueArrowData.motionType} to ${newData.blueMotionData.motionType}`
-							);
+
 							newData.blueArrowData.motionType = newData.blueMotionData.motionType;
 						}
 					}
