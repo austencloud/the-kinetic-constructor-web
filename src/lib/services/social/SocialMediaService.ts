@@ -7,7 +7,7 @@ import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
 import { getToken, TOKEN_STORAGE_KEYS, isAuthenticated, initiateOAuthLogin } from '../auth';
 import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
-import type { SequenceRenderResult } from '$lib/components/SequenceWorkbench/share/utils/sequenceImageRenderer';
+import type { SequenceRenderResult } from '$lib/components/SequenceWorkbench/share/imageExport/sequenceImageRenderer';
 
 // Facebook Group ID for "The Kinetic Encyclopedia"
 export const FACEBOOK_GROUP_ID = '1480491022409736';

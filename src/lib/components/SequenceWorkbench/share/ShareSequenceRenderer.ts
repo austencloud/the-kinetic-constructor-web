@@ -1,15 +1,17 @@
 /**
  * Utility for rendering a sequence to an image
  * This is used by the ShareButton component to generate images for sharing and downloading
+ *
+ * This implementation uses a two-pass approach for more reliable rendering:
+ * 1. First pass: Measure the actual rendered elements
+ * 2. Second pass: Create the canvas with appropriate dimensions
  */
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
-import {
-	renderSequenceToImage,
-	type SequenceRenderResult
-} from '$lib/components/SequenceWorkbench/share/utils/sequenceImageRenderer';
+import { renderSequenceToImage } from '$lib/components/SequenceWorkbench/share/imageExport/sequenceImageRenderer';
 import { imageExportSettings, type ImageExportSettings } from '$lib/state/image-export-settings';
 import { findBeatFrameElement, findRenderElement } from './utils/ShareElementFinder';
+import type { SequenceRenderResult } from './imageExport/types';
 
 // Cache for the last render result
 let lastRenderResult: SequenceRenderResult | null = null;
@@ -27,6 +29,9 @@ export async function renderSequence(
 		currentWord?: string;
 	} = {}
 ): Promise<SequenceRenderResult | null> {
+	// Start timing for performance analysis
+	const startTime = performance.now();
+
 	console.log('ShareSequenceRenderer: renderSequence called with options:', options);
 
 	if (!browser) {
@@ -39,7 +44,8 @@ export async function renderSequence(
 	let renderElement: HTMLElement | null = null;
 
 	try {
-		// Find the BeatFrame element
+		// Find the BeatFrame element with retry logic
+		console.log('ShareSequenceRenderer: Finding BeatFrame element');
 		const beatFrameElement = await findBeatFrameElement(
 			options.beatFrameElement || null,
 			options.contextElement || null
@@ -51,68 +57,24 @@ export async function renderSequence(
 		}
 
 		// Find the actual element to render
-		const renderElement = findRenderElement(beatFrameElement);
-		console.log('ShareSequenceRenderer: Using render element:', renderElement);
+		console.log('ShareSequenceRenderer: Finding render element');
+		renderElement = findRenderElement(beatFrameElement);
 
-		// Check if this is our fallback element
-		if (renderElement && renderElement.classList.contains('export-fallback-element')) {
-			createdFallbackElement = true;
-		}
-
-		// Validate the render element
 		if (!renderElement) {
 			console.error('ShareSequenceRenderer: No render element found');
 			return null;
 		}
 
-		// Check if the element has valid dimensions
-		const elementWidth = renderElement.offsetWidth;
-		const elementHeight = renderElement.offsetHeight;
+		console.log('ShareSequenceRenderer: Using render element:', renderElement);
 
-		console.log('ShareSequenceRenderer: Render element dimensions:', {
-			width: elementWidth,
-			height: elementHeight,
-			clientWidth: renderElement.clientWidth,
-			clientHeight: renderElement.clientHeight,
-			scrollWidth: renderElement.scrollWidth,
-			scrollHeight: renderElement.scrollHeight
-		});
-
-		// If the element has zero dimensions, try to fix it
-		if (elementWidth <= 0 || elementHeight <= 0) {
-			console.warn(
-				'ShareSequenceRenderer: Render element has invalid dimensions, attempting to fix'
-			);
-
-			// Try to ensure the element is visible
-			const originalDisplay = renderElement.style.display;
-			const originalVisibility = renderElement.style.visibility;
-			const originalPosition = renderElement.style.position;
-
-			// Force the element to be visible with dimensions
-			renderElement.style.display = 'block';
-			renderElement.style.visibility = 'visible';
-			renderElement.style.position = 'relative';
-			renderElement.style.minWidth = '200px';
-			renderElement.style.minHeight = '200px';
-
-			// Log the updated dimensions
-			console.log('ShareSequenceRenderer: Updated render element dimensions:', {
-				width: renderElement.offsetWidth,
-				height: renderElement.offsetHeight
-			});
-
-			// Clean up function to restore original styles
-			setTimeout(() => {
-				renderElement.style.display = originalDisplay;
-				renderElement.style.visibility = originalVisibility;
-				renderElement.style.position = originalPosition;
-				renderElement.style.minWidth = '';
-				renderElement.style.minHeight = '';
-			}, 1000);
+		// Check if this is our fallback element
+		if (renderElement.classList.contains('export-fallback-element')) {
+			createdFallbackElement = true;
+			console.log('ShareSequenceRenderer: Using fallback element');
 		}
 
 		// Get the image export settings from the store
+		console.log('ShareSequenceRenderer: Getting export settings');
 		let exportSettings: ImageExportSettings = {
 			includeStartPosition: true,
 			addUserInfo: true,
@@ -124,53 +86,6 @@ export async function renderSequence(
 			backgroundColor: '#2a2a2e',
 			quality: 0.92
 		};
-
-		// Additional settings not in the ImageExportSettings type
-		const title = options.currentWord || options.sequenceName || 'Sequence';
-		let userName = 'User';
-		let notes = 'Created using The Kinetic Constructor';
-		let cols = 4;
-		let maxWidth: number | undefined = undefined;
-		let maxHeight: number | undefined = undefined;
-
-		// Get actual beat element size from DOM if available
-		let scale = 1;
-		try {
-			if (renderElement) {
-				// Try to find a beat element to measure
-				const beatElement =
-					renderElement.querySelector('.beat-frame') ||
-					renderElement.querySelector('.pictograph-wrapper') ||
-					renderElement.querySelector('.tka-glyph');
-
-				if (beatElement) {
-					const actualSize = Math.max(
-						(beatElement as HTMLElement).clientWidth,
-						(beatElement as HTMLElement).clientHeight
-					);
-					// Use a reasonable base size divisor (200 is a good starting point)
-					scale = Math.max(0.5, Math.min(3, actualSize / 200));
-					console.log(
-						'ShareSequenceRenderer: Determined beat scale factor:',
-						scale,
-						'from element size:',
-						actualSize
-					);
-				} else {
-					// If we can't find a specific element, use the render element's size as a hint
-					const containerSize = Math.max(renderElement.clientWidth, renderElement.clientHeight);
-					scale = Math.max(0.5, Math.min(2, containerSize / 800));
-					console.log(
-						'ShareSequenceRenderer: Using container size for scale:',
-						scale,
-						'from size:',
-						containerSize
-					);
-				}
-			}
-		} catch (err) {
-			console.warn('ShareSequenceRenderer: Could not determine beat element size:', err);
-		}
 
 		// Try to get current settings from the store
 		try {
@@ -188,42 +103,41 @@ export async function renderSequence(
 			);
 		}
 
-		console.log('ShareSequenceRenderer: Using export settings:', exportSettings);
-
 		// Prepare render options
-		const renderOptions: any = {
-			// Get the sequence beats from the DOM
+		console.log('ShareSequenceRenderer: Preparing render options');
+		const renderOptions = {
+			// Core data
 			beats: [], // This will be populated by the renderer based on the DOM
 
 			// Layout options
-			cols: cols,
+			cols: 4,
 			includeStartPosition: exportSettings.includeStartPosition !== false,
 
 			// Content options
 			addWord: exportSettings.addWord !== false,
-			title: title,
+			title: options.currentWord || options.sequenceName || 'Sequence',
 			addBeatNumbers: exportSettings.addBeatNumbers !== false,
 			addReversalSymbols: exportSettings.addReversalSymbols !== false,
 
 			// User info options
 			addUserInfo: exportSettings.addUserInfo !== false,
-			userName: userName,
-			notes: notes,
+			userName: 'User',
+			notes: 'Created using The Kinetic Constructor',
 			exportDate: new Date().toLocaleDateString(),
 
 			// Visual options
 			backgroundColor: exportSettings.backgroundColor || '#ffffff',
 			quality: exportSettings.quality || 0.9,
 
-			// Advanced options
-			maxWidth: maxWidth,
-			maxHeight: maxHeight,
-			scale: scale
+			// Scale is determined automatically in the two-pass renderer
+			// but we can provide a hint based on the UI
+			scale: 1
 		};
 
 		console.log('ShareSequenceRenderer: Rendering sequence with options:', renderOptions);
 
-		// Render the sequence
+		// Render the sequence using the two-pass renderer
+		console.log('ShareSequenceRenderer: Starting rendering process');
 		const result = await renderSequenceToImage(renderElement, renderOptions);
 
 		if (!result) {
@@ -231,7 +145,11 @@ export async function renderSequence(
 			return null;
 		}
 
-		console.log('ShareSequenceRenderer: Sequence rendered successfully:', {
+		// Calculate and log performance metrics
+		const endTime = performance.now();
+		const renderTime = Math.round(endTime - startTime);
+
+		console.log(`ShareSequenceRenderer: Sequence rendered successfully in ${renderTime}ms:`, {
 			width: result.width,
 			height: result.height,
 			dataUrlLength: result.dataUrl.length
@@ -239,18 +157,6 @@ export async function renderSequence(
 
 		// Cache the result
 		lastRenderResult = result;
-
-		// Clean up fallback element if we created one
-		if (createdFallbackElement && renderElement && document.body.contains(renderElement)) {
-			console.log('ShareSequenceRenderer: Cleaning up fallback element');
-			setTimeout(() => {
-				try {
-					document.body.removeChild(renderElement);
-				} catch (cleanupError) {
-					console.warn('ShareSequenceRenderer: Error cleaning up fallback element:', cleanupError);
-				}
-			}, 1000); // Delay cleanup to ensure rendering is complete
-		}
 
 		return result;
 	} catch (error) {
@@ -260,9 +166,9 @@ export async function renderSequence(
 		});
 		return null;
 	} finally {
-		// Additional cleanup in case of errors
+		// Clean up fallback element if we created one
 		if (createdFallbackElement && renderElement && document.body.contains(renderElement)) {
-			console.log('ShareSequenceRenderer: Cleaning up fallback element in finally block');
+			console.log('ShareSequenceRenderer: Cleaning up fallback element');
 			try {
 				document.body.removeChild(renderElement);
 			} catch (cleanupError) {

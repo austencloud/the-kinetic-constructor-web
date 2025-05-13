@@ -14,8 +14,8 @@
 	import { logger } from '$lib/core/logging';
 	import { imageExportSettings, type ImageExportSettings } from '$lib/state/image-export-settings';
 	import { setupElementListeners } from './utils/ShareElementFinder';
-	import type { SequenceRenderResult } from '$lib/components/SequenceWorkbench/share/utils/sequenceImageRenderer';
 	import { renderSequence as renderSequenceToImage } from './ShareSequenceRenderer';
+	import type { SequenceRenderResult } from './imageExport/types';
 
 	// Props using Svelte 5 runes
 	const props = $props<{

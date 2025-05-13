@@ -8,7 +8,7 @@ import type { MotionType, Loc, PropRotDir, TKATurns, Orientation } from '$lib/ty
 import { browser } from '$app/environment';
 import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
 import { logger } from '$lib/core/logging';
-import type { SequenceRenderResult } from './sequenceImageRenderer';
+import type { SequenceRenderResult } from '../imageExport/types';
 
 // Import LZString for compression if available
 let LZString: any = null;

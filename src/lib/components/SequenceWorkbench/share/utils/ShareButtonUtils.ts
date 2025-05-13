@@ -9,10 +9,9 @@ import {
 	shareSequence,
 	shareSequenceWithImage,
 	isWebShareSupported,
-	isFileShareSupported,
 	type ShareData
 } from '$lib/components/SequenceWorkbench/share/utils/ShareUtils';
-import type { SequenceRenderResult } from '$lib/components/SequenceWorkbench/share/utils/sequenceImageRenderer';
+import type { SequenceRenderResult } from '../imageExport/types';
 
 // Track the last time a share API call was made
 let lastShareApiCallTime = 0;
@@ -66,7 +65,7 @@ export async function downloadSequenceImage(
 
 		// Import the improved downloadDataUrl function
 		const { downloadDataUrl } = await import(
-			'$lib/components/SequenceWorkbench/share/utils/sequenceImageRenderer'
+			'$lib/components/SequenceWorkbench/share/imageExport/sequenceImageRenderer'
 		);
 
 		try {
