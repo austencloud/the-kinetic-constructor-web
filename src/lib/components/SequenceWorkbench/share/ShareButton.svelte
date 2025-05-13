@@ -242,19 +242,30 @@
 			});
 			unsubscribe();
 
+			// Find the start position beat
+			let startPosition = null;
+			for (const beat of sequenceBeats) {
+				if (beat.metadata?.isStartPosition) {
+					startPosition = beat;
+					break;
+				}
+			}
+
+			console.log('ShareButton: Start position found:', !!startPosition);
+
 			// Export the sequence
 			const result = await exportEnhancedImage(beatFrameElement, {
 				beats: sequenceBeats as any,
-				startPosition: (sequenceBeats[0]?.metadata?.isStartPosition
-					? sequenceBeats[0]
-					: null) as any,
+				startPosition: startPosition as any,
 				backgroundColor: settings.backgroundColor || '#FFFFFF',
 				scale: 2,
 				quality: settings.quality || 0.92,
 				format: 'png',
 				columns: 4,
 				spacing: 0,
-				includeStartPosition: settings.includeStartPosition !== false,
+				// Always include start position if it exists
+				includeStartPosition: true,
+				// Enable all enhancement features by default, but respect user preferences if explicitly set
 				addWord: settings.addWord !== false,
 				addUserInfo: settings.addUserInfo !== false,
 				addDifficultyLevel: settings.addDifficultyLevel !== false,
@@ -295,24 +306,26 @@
 	}
 </script>
 
-<div class="share-button-container">
-	<button
-		class="share-button"
-		onclick={toggleDropdown}
-		aria-label="Share sequence"
-		class:loading={isRendering}
-	>
+<button
+	class="share-button"
+	onclick={toggleDropdown}
+	aria-label="Share sequence"
+	class:loading={isRendering}
+>
+	<div class="icon-wrapper">
 		{#if isRendering}
 			<i class="fa-solid fa-spinner fa-spin"></i>
 		{:else}
 			<i class="fa-solid fa-share-alt"></i>
 		{/if}
-	</button>
+	</div>
+</button>
 
-	{#if isDropdownOpen}
+{#if isDropdownOpen}
+	<div class="dropdown-container">
 		<ShareDropdown onShare={handleShare} onDownload={handleDownload} onClose={closeDropdown} />
-	{/if}
-</div>
+	</div>
+{/if}
 
 <style>
 	/* Global styles to ensure consistent sizing with settings button */
@@ -342,27 +355,26 @@
 		); /* Exact same icon size as settings button */
 	}
 
-	/* Position the dropdown container relative to the button */
+	/* Position the dropdown container absolutely to prevent layout shifts */
 	:global(.sequence-widget > .main-layout > .dropdown-container) {
-		position: absolute;
-		top: calc(var(--button-size-factor, 1) * 10px + var(--button-size-factor, 1) * 45px + 5px);
-		right: calc(var(--button-size-factor, 1) * 10px);
-		z-index: 41; /* Slightly higher than the button */
+		position: absolute !important;
+		top: calc(
+			var(--button-size-factor, 1) * 10px + var(--button-size-factor, 1) * 45px + 5px
+		) !important;
+		right: calc(var(--button-size-factor, 1) * 10px) !important;
+		z-index: 41 !important; /* Slightly higher than the button */
 	}
 
 	.share-button {
 		background-color: var(--tkc-button-panel-background, #2a2a2e);
-		color: var(--tkc-button-text, #a03db7);
+		color: var(--tkc-icon-color-share, #00bcd4); /* Teal icon color, or a theme variable */
 		border: none;
-		border-radius: 50%;
-		width: 40px;
-		height: 40px;
+		border-radius: 50%; /* Perfectly round */
+		width: 100%;
+		height: 100%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background-color: var(--tkc-button-panel-background, #2a2a2e);
-		color: var(--tkc-icon-color-share, #00bcd4); /* Teal icon color, or a theme variable */
-		border-radius: 50%; /* Perfectly round */
 		cursor: pointer;
 		transition:
 			transform 0.2s ease-out,
@@ -372,7 +384,6 @@
 		box-shadow:
 			0 3px 6px rgba(0, 0, 0, 0.16),
 			0 3px 6px rgba(0, 0, 0, 0.23);
-		border: none;
 		padding: 0;
 		pointer-events: auto;
 		position: relative;
@@ -401,13 +412,7 @@
 			0 1px 2px rgba(0, 0, 0, 0.24);
 	}
 
-	.share-button.active {
-		background-color: var(--tkc-button-active-background, #00bcd4);
-		color: var(--tkc-button-active-color, #ffffff);
-		transform: scale(1.05);
-		box-shadow: 0 0 12px rgba(0, 188, 212, 0.4);
-	}
-
+	/* Add icon wrapper styles */
 	.icon-wrapper {
 		background: transparent;
 		display: flex;
@@ -419,34 +424,20 @@
 	}
 
 	.icon-wrapper i {
-		/* Font size is now controlled by the global selector */
+		/* Font size is controlled by the global selector */
 		line-height: 1;
 		display: block;
 		transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 	}
 
-	/* Optional: Add a subtle rotation effect on hover, different from settings gear rotation */
+	/* Add a subtle scale effect on hover, similar to settings button */
 	.share-button:hover .icon-wrapper i {
-		transform: scale(1.1); /* Subtle scale effect instead of rotation */
+		transform: scale(1.1); /* Subtle scale effect */
 	}
 
 	/* Style for the dropdown container */
 	.dropdown-container {
-		position: relative;
+		position: absolute;
 		z-index: 41;
-	}
-
-	/* Additional styles for the share button with the specific class */
-	:global(.tkc-share-button) {
-		position: absolute !important;
-		top: 10px !important;
-		right: 10px !important;
-		width: 45px !important;
-		height: 45px !important;
-		z-index: 40 !important;
-		display: flex !important;
-		visibility: visible !important;
-		opacity: 1 !important;
-		pointer-events: auto !important;
 	}
 </style>

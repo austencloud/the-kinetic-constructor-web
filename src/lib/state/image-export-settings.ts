@@ -14,16 +14,16 @@ export interface ImageExportSettings {
 	quality: number;
 }
 
-// Default settings - these match the Python implementation
+// Default settings - enable all enhancement features by default
 export const defaultImageExportSettings: ImageExportSettings = {
 	includeStartPosition: true,
 	addUserInfo: true,
 	addWord: true,
-	addDifficultyLevel: false,
+	addDifficultyLevel: true, // Enable difficulty level indicator by default
 	addBeatNumbers: true,
 	addReversalSymbols: true,
 	combinedGrids: false,
-	backgroundColor: '#2a2a2e',
+	backgroundColor: '#FFFFFF', // Use white background for better visibility
 	quality: 0.92
 };
 

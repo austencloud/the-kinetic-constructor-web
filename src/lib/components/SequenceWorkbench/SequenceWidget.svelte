@@ -80,7 +80,6 @@
 		if (browser) {
 			// Check if we have a global fallback reference
 			if ((window as any).__beatFrameElementRef) {
-				console.log('SequenceWidget: Found global fallback reference');
 				fallbackElement = (window as any).__beatFrameElementRef;
 
 				// If we don't have a primary element yet, use the fallback
@@ -91,10 +90,8 @@
 
 			// Listen for the custom event
 			const handleBeatFrameElementAvailable = (event: CustomEvent) => {
-				console.log('SequenceWidget: Received beatframe-element-available event');
 				if (event.detail && event.detail.element) {
 					fallbackElement = event.detail.element;
-					console.log('SequenceWidget: Updated fallback element from event');
 
 					// If we don't have a primary element yet, use the fallback
 					if (!beatFrameElement) {
@@ -114,7 +111,6 @@
 					// Try to find the BeatFrame element in the DOM
 					const beatFrameElements = document.querySelectorAll('.beat-frame-container');
 					if (beatFrameElements.length > 0) {
-						console.log('SequenceWidget: Found BeatFrame element via MutationObserver');
 						fallbackElement = beatFrameElements[0] as HTMLElement;
 
 						// If we don't have a primary element yet, use the fallback
@@ -217,7 +213,6 @@
 			deleteButtonRect = event.detail.buttonRect;
 
 			// Log the button rect for debugging
-			console.log('Delete button rect:', deleteButtonRect);
 		}
 		isDeleteModalOpen = true;
 	}
@@ -391,7 +386,7 @@
 			<DeleteButton on:click={handleDeleteButtonClick} />
 			<SequenceOverlayButton />
 			<!-- Ensure ShareButton is rendered with proper props -->
-			<ShareButton beatFrameElement={beatFrameElement || fallbackElement} />
+			<ShareButton />
 		</div>
 
 		<SequenceOverlay title={sequenceName}>

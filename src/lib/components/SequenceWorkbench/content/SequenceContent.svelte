@@ -76,15 +76,7 @@
 			labelHeight
 		);
 
-		// Log for debugging
-		if (import.meta.env.DEV) {
-			console.log('SequenceContent - Scroll calculation:', {
-				beatFrameNaturalHeight,
-				containerHeight,
-				labelHeight,
-				shouldScroll: beatFrameShouldScroll
-			});
-		}
+
 	});
 
 	// Handle beat frame height change event

@@ -239,7 +239,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 				bubbles: true
 			});
 			document.dispatchEvent(event);
-			console.log('Dispatched start-position-selected event');
 		}
 	}
 

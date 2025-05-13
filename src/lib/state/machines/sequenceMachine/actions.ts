@@ -444,6 +444,5 @@ export function clearSequence() {
 		document.dispatchEvent(resetOptionPickerEvent);
 
 
-		console.log('Dispatched events for sequence clearing');
 	}
 }

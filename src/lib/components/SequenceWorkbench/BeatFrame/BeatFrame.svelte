@@ -267,9 +267,7 @@
 			dispatch('naturalheightchange', { height: naturalGridHeight });
 
 			// Log event dispatch in dev mode
-			safeLog('Dispatched naturalheightchange event', {
-				height: naturalGridHeight
-			});
+
 		}
 	});
 
@@ -318,7 +316,6 @@
 					detail: { element: beatFrameContainerRef }
 				});
 				document.dispatchEvent(event);
-				console.log('BeatFrame: Dispatched beatframe-element-available event');
 			}
 		} else {
 			console.log('BeatFrame: Container element not yet available');
@@ -358,7 +355,6 @@
 						detail: { element: beatFrameContainerRef }
 					});
 					document.dispatchEvent(event);
-					console.log('BeatFrame: Dispatched beatframe-element-available event after DOM mutation');
 				}
 			});
 
@@ -403,7 +399,6 @@
 	$effect(() => {
 		// Only calculate if we have valid dimensions
 		if (sequenceWidgetWidth > 0 && sequenceWidgetHeight > 0) {
-			const labelsTotalHeight = calculateLabelsTotalHeight();
 
 			// Use the full sequence widget height instead of the beat frame's height
 			cellSize = calculateCellSize(
@@ -416,7 +411,6 @@
 			);
 		} else {
 			// Fallback to using the beat frame's dimensions if sequence widget dimensions aren't available
-			const labelsTotalHeight = calculateLabelsTotalHeight();
 
 			cellSize = calculateCellSize(
 				beatCount,
@@ -455,19 +449,7 @@
 		const heightOverflow = contentHeight > containerHeight + buffer;
 		const widthOverflow = contentWidth > containerWidth + buffer;
 
-		// Log overflow state in dev mode
-		safeLog('Overflow check', {
-			containerHeight,
-			contentHeight,
-			containerWidth,
-			contentWidth,
-			heightOverflow,
-			widthOverflow,
-			isScrollable: isScrollable, // Corrected: Use destructured prop
-			beatRows,
-			beatCols,
-			beatCount
-		});
+
 	}
 
 	// Initialize dev tools and set up event listeners
@@ -479,10 +461,7 @@
 		const handleStartPosSelected = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
 				// Log the received start position (only in dev mode)
-				safeLog(
-					'BeatFrame: Received start-position-selected event with data:',
-					event.detail.startPosition
-				);
+
 
 				// Create a deep copy to avoid reference issues
 				const newStartPos = JSON.parse(JSON.stringify(event.detail.startPosition));
@@ -542,21 +521,7 @@
 			const beat = beats[beatIndex];
 			const beatId = beat.id;
 
-			// Log detailed information about the beat being selected
-			safeLog('Selecting beat', {
-				index: beatIndex,
-				beatNumber: beat.beatNumber,
-				id: beatId,
-				gridLayout: `${beatRows}x${beatCols}`,
-				position: {
-					row: Math.floor(beatIndex / beatCols) + 1,
-					col: (beatIndex % beatCols) + 1
-				},
-				motionTypes: {
-					red: beat.pictographData?.redMotionData?.motionType || 'none',
-					blue: beat.pictographData?.blueMotionData?.motionType || 'none'
-				}
-			});
+
 
 			if (beatId) {
 				// Select the beat in the container

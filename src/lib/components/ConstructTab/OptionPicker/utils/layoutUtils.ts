@@ -274,7 +274,8 @@ function getGridGap(params: {
 		gapSize = Math.max(2, gapSize - 2);
 	}
 
-	return `${gapSize}px`;
+	// Enforce a minimum gap size of 6px regardless of screen width to prevent options sticking together
+	return `${Math.max(6, gapSize)}px`;
 }
 
 function getGridClasses(

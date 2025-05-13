@@ -273,6 +273,14 @@ export const GRID_GAP_OVERRIDES: GridGapOverride[] = [
 		}
 	},
 	{
+		description: 'Wide desktop screens = 12px minimum gap',
+		gap: '12px',
+		when: {
+			aspect: 'wide',
+			extraCheck: (w, h, params) => w > 1400 && params?.device === 'desktop'
+		}
+	},
+	{
 		description: 'Example: 16 items in wide landscape = 10px gap',
 		gap: '10px',
 		when: { count: 16, aspect: 'wide', orientation: 'landscape' }

@@ -457,7 +457,6 @@ function createSequenceContainer() {
 									bubbles: true
 								});
 								document.dispatchEvent(event);
-								console.log('Dispatched start-position-selected event');
 							}
 						} else {
 							console.log('No valid start position found in localStorage');
