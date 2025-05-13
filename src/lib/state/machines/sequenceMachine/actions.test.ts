@@ -5,8 +5,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { removeBeat, removeBeatAndFollowing } from './actions';
 import { sequenceContainer } from '../../stores/sequence/SequenceContainer';
-import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
-import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 
 // Mock the document object
 const mockDispatchEvent = vi.fn();
@@ -47,10 +45,6 @@ vi.mock('../../stores/sequence/SequenceContainer', () => ({
 	}
 }));
 
-// Mock the updateDevTools function
-vi.mock('$lib/utils/devToolsUpdater', () => ({
-	updateDevTools: vi.fn()
-}));
 
 describe('Sequence Machine Actions', () => {
 	beforeEach(() => {

@@ -11,7 +11,8 @@ export interface LayoutContextValue {
 	isTablet: boolean;
 	isPortrait: boolean;
 	containerWidth: number;
-	ht: number;
+	containerHeight: number; // Renamed from ht for clarity
+	ht: number; // Keep for backward compatibility
 	containerAspect: ContainerAspect;
 	layoutConfig: ResponsiveLayoutConfig;
 	foldableInfo?: ReturnType<typeof detectFoldableDevice>;

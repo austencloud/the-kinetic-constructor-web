@@ -1,7 +1,10 @@
 <!-- src/lib/components/GenerateTab/ui/LevelSelector/LevelSelector.svelte -->
 <script lang="ts">
-	import { settingsStore, level } from '../store/settings';
+	import { settingsStore } from '../store/settings';
 	import LevelButton from './LevelButton.svelte';
+
+	// Export the value property for binding
+	export let value: number = 3;
 
 	// Constants
 	const MIN_LEVEL = 1;
@@ -17,11 +20,12 @@
 	];
 
 	// Current description
-	$: currentDescription = levelDescriptions[$level - 1] || levelDescriptions[0];
+	$: currentDescription = levelDescriptions[value - 1] || levelDescriptions[0];
 
 	// Set level
 	function setLevel(newLevel: number) {
 		if (newLevel >= MIN_LEVEL && newLevel <= MAX_LEVEL) {
+			value = newLevel;
 			settingsStore.setLevel(newLevel);
 		}
 	}
@@ -37,7 +41,7 @@
 			{@const levelNum = i + 1}
 			<LevelButton
 				level={levelNum}
-				selected={$level === levelNum}
+				selected={value === levelNum}
 				on:click={() => setLevel(levelNum)}
 			/>
 		{/each}

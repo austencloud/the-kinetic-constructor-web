@@ -14,21 +14,17 @@ export function debounce<T extends (...args: any[]) => any>(
 ): T & { cancel: () => void } {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-    // Create the debounced function
+    // Create the debounced function with cancel property
     const debounced = function(this: any, ...args: Parameters<T>) {
-        // Clear any existing timeout
         if (timeoutId !== null) {
             clearTimeout(timeoutId);
         }
-
-        // Set a new timeout
         timeoutId = setTimeout(() => {
             func.apply(this, args);
             timeoutId = null;
         }, wait);
-    } as T;
+    } as T & { cancel: () => void };
 
-    // Method to cancel any pending timeout
     debounced.cancel = () => {
         if (timeoutId !== null) {
             clearTimeout(timeoutId);
@@ -36,5 +32,5 @@ export function debounce<T extends (...args: any[]) => any>(
         }
     };
 
-    return debounced as T & { cancel: () => void };
+    return debounced;
 }

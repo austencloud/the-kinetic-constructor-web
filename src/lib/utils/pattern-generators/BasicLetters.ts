@@ -1,5 +1,6 @@
-import { generatePatternRow, PatternRow } from './PatternGenerator';
+import { generatePatternRow } from './PatternGenerator';
 import { positionCycles } from './PatternGenerator';
+import type { PatternRow } from './PatternGenerator';
 
 // Generate patterns for Letter A (alpha system, clockwise and counterclockwise)
 export function generateLetterA(): PatternRow[] {

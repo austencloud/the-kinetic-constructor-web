@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import type { BeatData } from './BeatData';
-	import { updateDevTools } from '$lib/utils/devToolsUpdater';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/StyledBorderOverlay.svelte';
 
@@ -27,7 +26,6 @@
 	function handleClick(event: MouseEvent) {
 		event.stopPropagation();
 		props.onClick();
-		updateDevTools();
 	}
 
 	function handleMouseEnter() {

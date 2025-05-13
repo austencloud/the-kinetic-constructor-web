@@ -52,7 +52,7 @@
 
 <div class="shared-workbench">
 	<div class="sequenceWorkbenchContainer">
-		<SequenceWidget toolsPanelOpen={$workbenchStore.toolsPanelOpen} />
+		<SequenceWidget />
 	</div>
 	<div class="optionPickerContainer" class:tools-panel-active={$workbenchStore.toolsPanelOpen}>
 		{#if $workbenchStore.toolsPanelOpen}

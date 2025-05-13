@@ -8,7 +8,6 @@
 import { sequenceContainer } from '../../stores/sequence/SequenceContainer';
 import type { BeatData } from '../../stores/sequence/SequenceContainer';
 import { convertToStoreBeatData } from './types';
-import { updateDevTools } from '$lib/utils/devToolsUpdater';
 import { isSequenceEmpty } from './persistence';
 import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
@@ -58,7 +57,6 @@ function updateSequenceWord() {
 		difficulty: difficulty
 	});
 
-	updateDevTools();
 }
 
 /**
@@ -79,7 +77,6 @@ export function updateSequence({ event }: { event: any }) {
 		updateSequenceWord();
 
 		// Update dev tools with the new sequence state
-		updateDevTools();
 	}
 }
 
@@ -99,7 +96,6 @@ export function selectBeat({ event }: { event: any }) {
 		document.dispatchEvent(selectionEvent);
 
 		// Update dev tools
-		updateDevTools();
 	}
 }
 
@@ -119,7 +115,6 @@ export function deselectBeat({ event }: { event: any }) {
 		document.dispatchEvent(selectionEvent);
 
 		// Update dev tools
-		updateDevTools();
 	}
 }
 
@@ -154,7 +149,6 @@ export function addBeat({ event }: { event: any }) {
 		document.dispatchEvent(beatEvent);
 
 		// Update dev tools
-		updateDevTools();
 	}
 }
 
@@ -245,7 +239,6 @@ export function removeBeat({ event }: { event: any }) {
 		}
 
 		// Update dev tools
-		updateDevTools();
 	}
 }
 
@@ -334,7 +327,6 @@ export function removeBeatAndFollowing({ event }: { event: any }) {
 			}
 
 			// Update dev tools
-			updateDevTools();
 		}
 	}
 }
@@ -362,7 +354,6 @@ export function updateBeat({ event }: { event: any }) {
 		document.dispatchEvent(beatEvent);
 
 		// Update dev tools
-		updateDevTools();
 	}
 }
 
@@ -452,8 +443,6 @@ export function clearSequence() {
 		});
 		document.dispatchEvent(resetOptionPickerEvent);
 
-		// Update dev tools
-		updateDevTools();
 
 		console.log('Dispatched events for sequence clearing');
 	}

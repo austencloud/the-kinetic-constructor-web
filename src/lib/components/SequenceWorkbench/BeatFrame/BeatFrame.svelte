@@ -7,7 +7,6 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { BeatData as LegacyBeatData } from './BeatData';
 	import { browser } from '$app/environment';
-	import { initDevToolsUpdater, updateDevTools } from '$lib/utils/devToolsUpdater';
 	import { layoutStore } from '$lib/stores/layout/layoutStore';
 	import { createEventDispatcher, setContext } from 'svelte';
 
@@ -474,9 +473,7 @@
 	// Initialize dev tools and set up event listeners
 	onMount(() => {
 		// Initialize dev tools updater
-		if (browser) {
-			initDevToolsUpdater();
-		}
+
 
 		// Listen for the custom event when a start position is selected
 		const handleStartPosSelected = (event: CustomEvent) => {
@@ -512,7 +509,6 @@
 
 		// Set up an interval to periodically update dev tools
 		const intervalId = setInterval(() => {
-			updateDevTools();
 		}, 1000);
 
 		return () => {

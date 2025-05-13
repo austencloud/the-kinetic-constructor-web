@@ -1,6 +1,9 @@
 <!-- src/lib/components/GenerateTab/ui/TurnIntensity.svelte -->
 <script lang="ts">
-	import { settingsStore, turnIntensity } from '../store/settings';
+	import { settingsStore } from '../store/settings';
+
+	// Export the value property for binding
+	export let value: number = 3;
 
 	// Constants
 	const MIN_INTENSITY = 1;
@@ -10,11 +13,12 @@
 	const intensityLabels = ['Minimal', 'Light', 'Moderate', 'Heavy', 'Extreme'];
 
 	// Get current label
-	$: currentLabel = intensityLabels[$turnIntensity - 1] || 'Moderate';
+	$: currentLabel = intensityLabels[value - 1] || 'Moderate';
 
 	// Update intensity
 	function setIntensity(level: number) {
 		if (level >= MIN_INTENSITY && level <= MAX_INTENSITY) {
+			value = level;
 			settingsStore.setTurnIntensity(level);
 		}
 	}
@@ -31,10 +35,10 @@
 			{@const level = i + 1}
 			<button
 				class="intensity-button"
-				class:active={$turnIntensity === level}
+				class:active={value === level}
 				on:click={() => setIntensity(level)}
 				aria-label="Set turn intensity to {intensityLabels[i]}"
-				aria-pressed={$turnIntensity === level}
+				aria-pressed={value === level}
 			>
 				<div class="button-content">
 					<div class="level-indicator">

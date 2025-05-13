@@ -1,17 +1,20 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 
+	// Import the CAPType from the settings store
+	import type { CAPType } from '$lib/state/machines/sequenceMachine/types';
+
 	// Assume these child components are available and styled appropriately
 	// You would import them from their respective file paths
 	// For this example, their basic structure might be included below or assumed
 	import GeneratorToggle from './GeneratorToggle.svelte'; // Placeholder, use your actual component
 	import LengthSelector from './LengthSelector.svelte'; // Assumed existing
-	import TurnIntensity from './TurnIntensity.svelte';   // Assumed existing
+	import TurnIntensity from './TurnIntensity.svelte'; // Assumed existing
 	import PropContinuity from './PropContinuity.svelte'; // Assumed existing
-	import LevelSelector from './LevelSelector.svelte';   // Assumed existing
+	import LevelSelector from './LevelSelector.svelte'; // Assumed existing
 	import CircularSequencer from './CircularSequencer.svelte'; // Refactored version below
 	import FreeformSequencer from './FreeformSequencer.svelte'; // Refactored version below
-	import GenerateButton from './GenerateButton.svelte';     // Assumed existing
+	import GenerateButton from './GenerateButton.svelte'; // Assumed existing
 
 	// --- Svelte 5 State ---
 	let currentScreenSize = $state<'mobile' | 'tablet' | 'desktop'>('desktop');
@@ -21,10 +24,10 @@
 	// Example: import { sequenceSelectors, sequenceActions } from '$lib/state/machines/sequenceMachine';
 	// Mocked for this example
 	const mockSequenceSelectors = {
-		generationType: () => $state(generatorType),
-		isGenerating: () => $state(isGenerating),
-		hasError: () => $state(hasError),
-		message: () => $state(statusMessage),
+		generationType: () => generatorType,
+		isGenerating: () => isGenerating,
+		hasError: () => hasError,
+		message: () => statusMessage
 	};
 	const mockSequenceActions = {
 		generate: (settings: any, type: string) => {
@@ -39,16 +42,15 @@
 	};
 
 	let generatorType = $state<'circular' | 'freeform'>('circular');
-	let numBeats = $state(8);
-	let turnIntensity = $state(3);
+	let numBeats = $state<number>(8);
+	let turnIntensity = $state<number>(3);
 	let propContinuity = $state<'continuous' | 'random'>('continuous');
-	let capType = $state<'mirrored' | 'rotated'>('mirrored'); // Simplified for example
-	let level = $state(3);
+	let capType = $state<CAPType>('mirrored'); // Using the full CAPType
+	let level = $state<number>(3);
 
 	let isGenerating = $state(false);
 	let hasError = $state(false);
 	let statusMessage = $state('Ready');
-
 
 	// --- Responsive Layout Logic ---
 	function updateScreenSize() {
@@ -76,10 +78,13 @@
 	});
 
 	// --- Event Handlers ---
-	function handleGeneratorTypeChange(newType: 'circular' | 'freeform') {
-		generatorType = newType;
-		// Potentially send to XState machine if it manages this part of settings
-		// settingsStore.setGeneratorType(newType);
+	function handleGeneratorTypeChange(newType: string) {
+		// Validate that the type is one of the allowed values
+		if (newType === 'circular' || newType === 'freeform') {
+			generatorType = newType;
+			// Potentially send to XState machine if it manages this part of settings
+			// settingsStore.setGeneratorType(newType);
+		}
 	}
 
 	function handleGenerateClick() {
@@ -88,7 +93,7 @@
 			turnIntensity,
 			propContinuity,
 			capType, // This would be more complex depending on circular/freeform
-			level,
+			level
 			// Include generator-specific settings from CircularSequencer/FreeformSequencer if needed
 		};
 		// Use your actual XState actions
@@ -99,7 +104,6 @@
 		{ id: 'circular', label: 'Circular', icon: '⭕' },
 		{ id: 'freeform', label: 'Freeform', icon: '🔀' }
 	];
-
 </script>
 
 <div class="smart-generator-controls layout-{currentScreenSize}">
@@ -112,7 +116,11 @@
 			/>
 		</section>
 
-		<section class="control-section common-parameters {currentScreenSize === 'desktop' ? 'desktop-grid' : ''}">
+		<section
+			class="control-section common-parameters {currentScreenSize === 'desktop'
+				? 'desktop-grid'
+				: ''}"
+		>
 			<div class="parameter-item">
 				<LengthSelector bind:value={numBeats} />
 			</div>
@@ -209,10 +217,9 @@
 		overflow-y: auto; /* This column can scroll if its content is too long */
 		padding-right: calc(var(--spacing-md) / 2); /* Gutter between columns */
 	}
-    .layout-desktop .primary-controls-area {
-        flex-basis: 40%; /* More space for options on wide screens */
-    }
-
+	.layout-desktop .primary-controls-area {
+		flex-basis: 40%; /* More space for options on wide screens */
+	}
 
 	.secondary-options-area {
 		display: flex;
@@ -229,10 +236,9 @@
 		flex-basis: 50%; /* Adjust basis */
 		padding-left: calc(var(--spacing-md) / 2);
 	}
-    .layout-desktop .secondary-options-area {
-        flex-basis: 60%;
-    }
-
+	.layout-desktop .secondary-options-area {
+		flex-basis: 60%;
+	}
 
 	/* Styling for individual control sections */
 	.control-section {
@@ -240,7 +246,7 @@
 		border-radius: var(--border-radius-md);
 		padding: var(--spacing-md);
 		border: 1px solid var(--color-border);
-		box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 
 	.generator-type-selector {
@@ -260,12 +266,12 @@
 		grid-template-columns: repeat(2, 1fr); /* 2x2 grid on desktop */
 		gap: var(--spacing-md);
 	}
-    .layout-tablet .common-parameters.desktop-grid { /* Also apply grid to tablet */
-        display: grid;
+	.layout-tablet .common-parameters.desktop-grid {
+		/* Also apply grid to tablet */
+		display: grid;
 		grid-template-columns: repeat(2, 1fr);
 		gap: var(--spacing-md);
-    }
-
+	}
 
 	.parameter-item {
 		/* Styling for individual parameter controls if needed */
@@ -279,11 +285,10 @@
 		gap: var(--spacing-md);
 		height: 100%; /* Allow child (sequencer) to fill space */
 	}
-    .generator-specific-options-desktop {
-         /* Ensure it can grow if primary controls are shorter */
-        flex-grow: 1;
-    }
-
+	.generator-specific-options-desktop {
+		/* Ensure it can grow if primary controls are shorter */
+		flex-grow: 1;
+	}
 
 	.generate-action-area {
 		/* Ensure button is prominent */
@@ -294,7 +299,6 @@
 	.layout-desktop .generate-action-area {
 		margin-top: var(--spacing-md); /* Regular spacing in multi-column */
 	}
-
 
 	/* Minimalist Scrollbar for columns */
 	.primary-controls-area::-webkit-scrollbar,
@@ -314,9 +318,10 @@
 		background-color: var(--color-accent);
 		border-radius: 3px;
 	}
-	.primary-controls-area, .secondary-options-area, .smart-generator-controls {
+	.primary-controls-area,
+	.secondary-options-area,
+	.smart-generator-controls {
 		scrollbar-width: thin;
 		scrollbar-color: var(--color-accent) transparent;
 	}
-
 </style>

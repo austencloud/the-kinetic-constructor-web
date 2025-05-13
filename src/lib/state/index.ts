@@ -16,8 +16,8 @@ import { appActions } from './machines/app/app.actions';
 import * as appSelectors from './machines/app/app.selectors';
 import { sequenceActor, sequenceActions, sequenceSelectors } from './machines/sequenceMachine';
 
-// Export state machines
-export * from './machines';
+// Export state machines (excluding sequenceContainer to avoid ambiguity)
+export { appMachine } from './machines';
 
 // Export stores
 export * from './stores/sequenceStore';

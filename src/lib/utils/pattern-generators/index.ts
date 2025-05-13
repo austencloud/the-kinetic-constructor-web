@@ -1,4 +1,5 @@
-import { PatternRow, formatPatternCSV, formatPatternDisplay } from './PatternGenerator';
+import { formatPatternCSV, formatPatternDisplay } from './PatternGenerator';
+import type { PatternRow } from './PatternGenerator';
 
 // Import letter generators from all modules
 import { generateLetterA, generateLetterB, generateLetterC } from './BasicLetters';

@@ -1,24 +1,49 @@
 <script lang="ts">
 	// Assume CAPPicker is available
 	import CAPPicker from './CAPPicker.svelte'; // Refactored version below
+	import type { CAPType } from '$lib/state/machines/sequenceMachine/types';
 
-	let selectedCapType: string = 'mirrored';
+	// Export the selectedCapType property for binding
+	export let selectedCapType: CAPType = 'mirrored';
 
 	// Example CAP types (replace with your actual data)
 	const capTypesData = [
 		{ id: 'mirrored', label: 'Mirrored', description: 'Second half mirrors the first.' },
 		{ id: 'rotated', label: 'Rotated', description: 'Second half rotates the first.' },
-		{ id: 'mirrored_complementary', label: 'Mirrored Complementary', description: 'Mirrored with complementary motion.' },
+		{
+			id: 'mirrored_complementary',
+			label: 'Mirrored Complementary',
+			description: 'Mirrored with complementary motion.'
+		},
 		// Add all your CAP types here
-        { id: 'rotated_complementary', label: 'Rotated Complementary', description: 'Rotated with complementary motion.' },
-		{ id: 'mirrored_swapped', label: 'Mirrored Swapped', description: 'Mirrored with swapped prop colors.' },
-		{ id: 'rotated_swapped', label: 'Rotated Swapped', description: 'Rotated with swapped prop colors.' },
+		{
+			id: 'rotated_complementary',
+			label: 'Rotated Complementary',
+			description: 'Rotated with complementary motion.'
+		},
+		{
+			id: 'mirrored_swapped',
+			label: 'Mirrored Swapped',
+			description: 'Mirrored with swapped prop colors.'
+		},
+		{
+			id: 'rotated_swapped',
+			label: 'Rotated Swapped',
+			description: 'Rotated with swapped prop colors.'
+		},
 		{ id: 'strict_mirrored', label: 'Strict Mirrored', description: 'Strictly mirrored sequence.' },
-		{ id: 'strict_rotated', label: 'Strict Rotated', description: 'Strictly rotated sequence.' },
+		{ id: 'strict_rotated', label: 'Strict Rotated', description: 'Strictly rotated sequence.' }
 	];
 
 	function handleCapTypeSelect(event: CustomEvent<string>) {
-		selectedCapType = event.detail;
+		// Validate that the selected type is a valid CAPType
+		const newType = event.detail;
+		// Check if the selected type is one of the valid CAP types
+		const isValidCapType = capTypesData.some((capType) => capType.id === newType);
+
+		if (isValidCapType) {
+			selectedCapType = newType as CAPType;
+		}
 	}
 </script>
 
@@ -30,7 +55,7 @@
 			selectedCapId={selectedCapType}
 			on:select={handleCapTypeSelect}
 		/>
-		</div>
+	</div>
 </div>
 
 <style>
@@ -40,7 +65,10 @@
 		gap: 0.75rem;
 		height: 100%; /* Allow it to fill space in parent */
 		min-height: 0; /* For flex child, ensures it doesn't overflow its container unnecessarily */
-		background-color: var(--color-surface-700, rgba(30,40,60,0.4)); /* Slightly different bg for distinction */
+		background-color: var(
+			--color-surface-700,
+			rgba(30, 40, 60, 0.4)
+		); /* Slightly different bg for distinction */
 		padding: var(--spacing-md, 1rem);
 		border-radius: var(--border-radius-md, 0.5rem);
 	}
@@ -50,7 +78,7 @@
 		color: var(--color-text-primary, white);
 		margin: 0 0 0.5rem 0;
 		padding-bottom: 0.5rem;
-		border-bottom: 1px solid var(--color-border, rgba(255,255,255,0.1));
+		border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
 	}
 	.options-content {
 		flex-grow: 1; /* Allows CAPPicker to use available space */
@@ -72,5 +100,4 @@
 		background-color: var(--color-accent, #3a7bd5);
 		border-radius: 3px;
 	}
-
 </style>

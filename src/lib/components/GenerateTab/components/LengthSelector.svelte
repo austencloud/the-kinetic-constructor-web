@@ -1,30 +1,35 @@
 <!-- src/lib/components/GenerateTab/ui/LengthSelector.svelte -->
 <script lang="ts">
-	import { settingsStore, numBeats } from '../store/settings';
+	import { settingsStore } from '../store/settings';
+
+	// Export the value property for binding
+	export let value: number = 8;
 
 	// Constants
 	const MIN_BEATS = 1;
 	const MAX_BEATS = 32;
 
 	// Local state for input validation
-	let inputValue = $numBeats.toString();
+	let inputValue = value.toString();
 
-	// Update the input value when the store changes
+	// Update the input value when the value prop changes
 	$: {
-		inputValue = $numBeats.toString();
+		inputValue = value.toString();
 	}
 
 	// Handle increment
 	function increment() {
-		if ($numBeats < MAX_BEATS) {
-			settingsStore.setNumBeats($numBeats + 1);
+		if (value < MAX_BEATS) {
+			value = value + 1;
+			settingsStore.setNumBeats(value);
 		}
 	}
 
 	// Handle decrement
 	function decrement() {
-		if ($numBeats > MIN_BEATS) {
-			settingsStore.setNumBeats($numBeats - 1);
+		if (value > MIN_BEATS) {
+			value = value - 1;
+			settingsStore.setNumBeats(value);
 		}
 	}
 
@@ -40,12 +45,13 @@
 
 		if (isNaN(parsed)) {
 			// Reset to current value if invalid
-			inputValue = $numBeats.toString();
+			inputValue = value.toString();
 			return;
 		}
 
 		// Clamp within range
 		const clamped = Math.max(MIN_BEATS, Math.min(MAX_BEATS, parsed));
+		value = clamped;
 		settingsStore.setNumBeats(clamped);
 	}
 
@@ -65,7 +71,7 @@
 		<button
 			class="control-button decrement"
 			on:click={decrement}
-			disabled={$numBeats <= MIN_BEATS}
+			disabled={value <= MIN_BEATS}
 			aria-label="Decrease beats"
 		>
 			-
@@ -87,7 +93,7 @@
 		<button
 			class="control-button increment"
 			on:click={increment}
-			disabled={$numBeats >= MAX_BEATS}
+			disabled={value >= MAX_BEATS}
 			aria-label="Increase beats"
 		>
 			+
@@ -96,13 +102,7 @@
 
 	<div class="range">
 		<span class="min">{MIN_BEATS}</span>
-		<input
-			type="range"
-			min={MIN_BEATS}
-			max={MAX_BEATS}
-			bind:value={$numBeats}
-			class="range-input"
-		/>
+		<input type="range" min={MIN_BEATS} max={MAX_BEATS} bind:value class="range-input" />
 		<span class="max">{MAX_BEATS}</span>
 	</div>
 </div>

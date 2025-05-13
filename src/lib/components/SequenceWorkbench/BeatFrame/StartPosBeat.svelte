@@ -7,7 +7,6 @@
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { updateDevTools } from '$lib/utils/devToolsUpdater';
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/StyledBorderOverlay.svelte';
 
 	// Props using Svelte 5 runes
@@ -224,7 +223,6 @@
 			props.onClick();
 
 			// Update dev tools after click
-			updateDevTools();
 		}
 	}
 

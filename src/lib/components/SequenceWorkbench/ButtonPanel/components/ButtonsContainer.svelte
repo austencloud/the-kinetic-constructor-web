@@ -17,8 +17,8 @@
 	const dispatch = createEventDispatcher<{ action: ActionEventDetail }>();
 
 	// Forward the click event
-	function handleButtonClick(event: CustomEvent<ActionEventDetail>) {
-		dispatch('action', event.detail);
+	function handleButtonClick(detail: ActionEventDetail) {
+		dispatch('action', detail);
 	}
 
 	// Calculate total animation time for the wrapper fade-out/in
@@ -42,7 +42,7 @@
 				index={i}
 				{isAnimatingOut}
 				{layout}
-				on:click={handleButtonClick}
+				onClick={handleButtonClick}
 			/>
 		{/each}
 	{/if}

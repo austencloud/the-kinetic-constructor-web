@@ -11,8 +11,6 @@
 	// Import ServiceProvider for DI
 	import ServiceProvider from '$lib/providers/ServiceProvider.svelte';
 	// Import dev tools initializers
-	import { initDevTools as initCoreDevTools } from '$lib/utils/initDevTools';
-	import { initDevTools as initSequenceDevTools } from '$lib/utils/devTools';
 	// Import safe area CSS
 	import '$lib/styles/safe-area.css';
 	// Import SafeAreaVisualizer for development
@@ -29,12 +27,7 @@
 		if (initialized || !browser) return; // Ensure runs only once in browser
 
 		// Initialize dev tools in development mode
-		if (import.meta.env.DEV) {
-			// Initialize core dev tools
-			initCoreDevTools();
-			// Initialize sequence dev tools
-			initSequenceDevTools();
-		}
+
 
 		// Check if the load function returned data successfully
 		if (data?.csvData && !data.error) {

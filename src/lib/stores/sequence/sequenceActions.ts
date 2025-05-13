@@ -25,5 +25,5 @@ export const sequenceActions = {
 	updateBeat: (beatId: string, updates: Partial<LegacyBeatData>) =>
 		sequenceStore.updateBeat(beatId, updates as any),
 	clearSequence: () => sequenceStore.setSequence([]),
-	generate: (options: any, type: string) => modernSequenceActions.generate(type)
+	generate: (options: any, type: string) => modernSequenceActions.generate(type as any, options)
 };

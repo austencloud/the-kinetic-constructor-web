@@ -1,5 +1,6 @@
-import { generatePatternRow, PatternRow } from './PatternGenerator';
+import { generatePatternRow } from './PatternGenerator';
 import { positionCycles } from './PatternGenerator';
+import type { PatternRow } from './PatternGenerator';
 
 // Generate patterns for Greek Alpha (triangle shape)
 export function generateGreekAlpha(): PatternRow[] {

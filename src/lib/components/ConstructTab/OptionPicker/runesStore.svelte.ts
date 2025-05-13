@@ -27,7 +27,8 @@ export const uiState = createPersistentObjectState('optionPickerUIState', {
 	sortMethod: 'type' as SortMethod,
 	isLoading: false,
 	error: null as string | null,
-	lastSelectedTab: { type: 'all' } as LastSelectedTabState
+	lastSelectedTab: { type: 'all' } as LastSelectedTabState,
+	reversalFilter: 'all' as ReversalFilter
 });
 
 // ===== Derived State =====
@@ -41,7 +42,8 @@ export const filteredOptions = $derived(() => {
 // Grouped options - groups the filtered/sorted options based on the current sortMethod
 export const groupedOptions = $derived(() => {
 	const groups: Record<string, PictographData[]> = {};
-	filteredOptions.forEach((option) => {
+	const options = filteredOptions();
+	options.forEach((option) => {
 		const groupKey = determineGroupKey(option, uiState.sortMethod, sequenceData);
 		if (!groups[groupKey]) groups[groupKey] = [];
 		groups[groupKey].push(option);

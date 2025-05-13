@@ -70,6 +70,13 @@ export class ErrorHandlingService {
 	}
 
 	/**
+	 * Report an error (alias for log for backward compatibility)
+	 */
+	public reportError(error: Omit<AppError, 'id' | 'timestamp'>): void {
+		this.log(error);
+	}
+
+	/**
 	 * Get all current errors
 	 */
 	public getErrors(): AppError[] {

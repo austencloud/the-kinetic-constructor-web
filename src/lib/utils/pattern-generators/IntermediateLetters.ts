@@ -1,5 +1,6 @@
-import { generatePatternRow, PatternRow } from './PatternGenerator';
+import { generatePatternRow } from './PatternGenerator';
 import { positionCycles } from './PatternGenerator';
+import type { PatternRow } from './PatternGenerator';
 
 // Generate patterns for Letter D (beta to alpha transitions with alternating timing)
 export function generateLetterD(): PatternRow[] {

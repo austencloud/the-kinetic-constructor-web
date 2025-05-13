@@ -4,88 +4,6 @@ import { LetterConditions } from '../components/Pictograph/constants/LetterCondi
 
 export class LetterUtils {
 	private static conditionMappings: Record<LetterConditions, Letter[]> = {
-		[LetterConditions.PRO]: [
-			Letter.A,
-			Letter.C,
-			Letter.D,
-			Letter.F,
-			Letter.G,
-			Letter.I,
-			Letter.J,
-			Letter.L,
-			Letter.M,
-			Letter.O,
-			Letter.P,
-			Letter.R,
-			Letter.S,
-			Letter.U,
-			Letter.V,
-			Letter.W,
-			Letter.Y,
-			Letter.Σ,
-			Letter.θ,
-			Letter.W_DASH,
-			Letter.Y_DASH,
-			Letter.Σ_DASH,
-			Letter.θ_DASH
-		],
-		[LetterConditions.ANTI]: [
-			Letter.B,
-			Letter.C,
-			Letter.E,
-			Letter.F,
-			Letter.H,
-			Letter.I,
-			Letter.K,
-			Letter.L,
-			Letter.N,
-			Letter.O,
-			Letter.Q,
-			Letter.R,
-			Letter.T,
-			Letter.U,
-			Letter.V,
-			Letter.X,
-			Letter.Z,
-			Letter.Δ,
-			Letter.Ω,
-			Letter.X_DASH,
-			Letter.Z_DASH,
-			Letter.Δ_DASH,
-			Letter.Ω_DASH
-		],
-		[LetterConditions.DASH]: [
-			Letter.W_DASH,
-			Letter.X_DASH,
-			Letter.Y_DASH,
-			Letter.Z_DASH,
-			Letter.Σ_DASH,
-			Letter.Δ_DASH,
-			Letter.θ_DASH,
-			Letter.Ω_DASH,
-			Letter.Φ,
-			Letter.Ψ,
-			Letter.Λ,
-			Letter.Φ_DASH,
-			Letter.Ψ_DASH,
-			Letter.Λ_DASH
-		],
-		[LetterConditions.HAS_STATIC]: [
-			Letter.W,
-			Letter.X,
-			Letter.Y,
-			Letter.Z,
-			Letter.Σ,
-			Letter.Δ,
-			Letter.θ,
-			Letter.Ω,
-			Letter.Φ,
-			Letter.Ψ,
-			Letter.Λ,
-			Letter.α,
-			Letter.β,
-			Letter.Γ
-		],
 		[LetterConditions.ALPHA_ENDING]: [
 			Letter.A,
 			Letter.B,
@@ -139,112 +57,6 @@ export class LetterUtils {
 			Letter.Λ_DASH,
 			Letter.Γ
 		],
-		[LetterConditions.ALPHA_STARTING]: [
-			Letter.A,
-			Letter.B,
-			Letter.C,
-			Letter.J,
-			Letter.K,
-			Letter.L,
-			Letter.Σ,
-			Letter.Δ,
-			Letter.θ_DASH,
-			Letter.Ω_DASH,
-			Letter.Ψ,
-			Letter.Φ_DASH,
-			Letter.α
-		],
-		[LetterConditions.BETA_STARTING]: [
-			Letter.G,
-			Letter.H,
-			Letter.I,
-			Letter.D,
-			Letter.E,
-			Letter.F,
-			Letter.Σ_DASH,
-			Letter.Δ_DASH,
-			Letter.θ,
-			Letter.Ω,
-			Letter.Φ,
-			Letter.Ψ_DASH,
-			Letter.β
-		],
-		[LetterConditions.GAMMA_STARTING]: [
-			Letter.M,
-			Letter.N,
-			Letter.O,
-			Letter.P,
-			Letter.Q,
-			Letter.R,
-			Letter.S,
-			Letter.T,
-			Letter.U,
-			Letter.V,
-			Letter.W,
-			Letter.X,
-			Letter.Y,
-			Letter.Z,
-			Letter.W_DASH,
-			Letter.X_DASH,
-			Letter.Y_DASH,
-			Letter.Z_DASH,
-			Letter.Λ,
-			Letter.Λ_DASH,
-			Letter.Γ
-		],
-		[LetterConditions.FOUR_VARIATIONS]: [
-			Letter.Φ,
-			Letter.Ψ,
-			Letter.Λ,
-			Letter.Φ_DASH,
-			Letter.Ψ_DASH,
-			Letter.Λ_DASH,
-			Letter.α,
-			Letter.β,
-			Letter.Γ
-		],
-		[LetterConditions.EIGHT_VARIATIONS]: [
-			Letter.A,
-			Letter.B,
-			Letter.D,
-			Letter.E,
-			Letter.G,
-			Letter.H,
-			Letter.J,
-			Letter.K,
-			Letter.M,
-			Letter.N,
-			Letter.P,
-			Letter.Q
-		],
-		[LetterConditions.SIXTEEN_VARIATIONS]: [
-			Letter.C,
-			Letter.F,
-			Letter.I,
-			Letter.L,
-			Letter.O,
-			Letter.R,
-			Letter.U,
-			Letter.V,
-			Letter.S,
-			Letter.T,
-			Letter.W,
-			Letter.X,
-			Letter.Y,
-			Letter.Z,
-			Letter.W_DASH,
-			Letter.X_DASH,
-			Letter.Y_DASH,
-			Letter.Z_DASH,
-			Letter.Σ,
-			Letter.Δ,
-			Letter.θ,
-			Letter.Ω,
-			Letter.Σ_DASH,
-			Letter.Δ_DASH,
-			Letter.θ_DASH,
-			Letter.Ω_DASH
-		],
 		[LetterConditions.HYBRID]: [
 			Letter.C,
 			Letter.F,
@@ -295,80 +107,7 @@ export class LetterUtils {
 			Letter.α,
 			Letter.β,
 			Letter.Γ
-		],
-		[LetterConditions.TYPE1_HYBRID]: [
-			Letter.C,
-			Letter.F,
-			Letter.I,
-			Letter.L,
-			Letter.O,
-			Letter.R,
-			Letter.U,
-			Letter.V
-		],
-		[LetterConditions.TYPE1_NON_HYBRID]: [
-			Letter.A,
-			Letter.B,
-			Letter.D,
-			Letter.E,
-			Letter.G,
-			Letter.H,
-			Letter.J,
-			Letter.K,
-			Letter.M,
-			Letter.N,
-			Letter.P,
-			Letter.Q,
-			Letter.S,
-			Letter.T
-		],
-		[LetterConditions.TYPE1]: [
-			Letter.A,
-			Letter.B,
-			Letter.D,
-			Letter.E,
-			Letter.G,
-			Letter.H,
-			Letter.J,
-			Letter.K,
-			Letter.M,
-			Letter.N,
-			Letter.P,
-			Letter.Q,
-			Letter.S,
-			Letter.T,
-			Letter.C,
-			Letter.F,
-			Letter.I,
-			Letter.L,
-			Letter.O,
-			Letter.R,
-			Letter.U,
-			Letter.V
-		],
-		[LetterConditions.TYPE2]: [
-			Letter.W,
-			Letter.X,
-			Letter.Y,
-			Letter.Z,
-			Letter.Σ,
-			Letter.Δ,
-			Letter.θ,
-			Letter.Ω
-		],
-		[LetterConditions.TYPE3]: [
-			Letter.W_DASH,
-			Letter.X_DASH,
-			Letter.Y_DASH,
-			Letter.Z_DASH,
-			Letter.Σ_DASH,
-			Letter.Δ_DASH,
-			Letter.θ_DASH,
-			Letter.Ω_DASH
-		],
-		[LetterConditions.TYPE4]: [Letter.Φ, Letter.Ψ, Letter.Λ],
-		[LetterConditions.TYPE5]: [Letter.Φ_DASH, Letter.Ψ_DASH, Letter.Λ_DASH],
-		[LetterConditions.TYPE6]: [Letter.α, Letter.β, Letter.Γ]
+		]
 	};
 
 	static getLettersByCondition(condition: LetterConditions): Letter[] {
@@ -455,14 +194,9 @@ export class LetterUtils {
 		}
 	}
 
-	// Optional: Add methods to help with debugging
-	static listAllLetters(): string[] {
-		return Object.keys(Letter);
-	}
+
 
 	static getLetter(letterStr: string): Letter {
 		return this.fromString(letterStr);
 	}
-
-
 }
