@@ -111,7 +111,7 @@ export async function exportEnhancedImage(
 			addReversalSymbols: true, // Add reversal symbols
 			title: '',
 			userName: 'User',
-			notes: 'Created using The Kinetic Constructor',
+			notes: 'Created using The Kinetic Alphabet',
 			exportDate: new Date().toLocaleDateString(),
 			difficultyLevel: 1
 		};

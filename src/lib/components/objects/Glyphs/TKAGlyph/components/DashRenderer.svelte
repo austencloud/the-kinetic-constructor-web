@@ -1,21 +1,23 @@
-<!-- src/lib/components/objects/Glyphs/TKAGlyph/components/DashRenderer.svelte -->
 <script lang="ts">
 	import { assetCache, type Rect } from '$lib/stores/glyphStore';
 	import type { Letter } from '$lib/types/Letter';
 
-	export let letter: Letter | null = null;
-	export let letterRect: Rect;
+	// Props
+	let { letter = null, letterRect } = $props<{
+		letter: Letter | null;
+		letterRect: Rect;
+	}>();
 
 	// Reactive constant for positioning
 	const PADDING = 5;
 
-	// Derived values
-	$: isDashVisible = letter?.toString().includes('-') ?? false;
-	$: dashDimensions = $assetCache.dashSVG?.dimensions ?? { width: 0, height: 0 };
-	$: dashAvailable = $assetCache.dashSVG !== null;
+	// Derived values using Svelte 5 Runes
+	const isDashVisible = $derived(letter?.toString().includes('-') ?? false);
+	const dashDimensions = $derived($assetCache.dashSVG?.dimensions ?? { width: 0, height: 0 });
+	const dashAvailable = $derived($assetCache.dashSVG !== null);
 
 	// Position calculation with pure function pattern
-	$: dashPosition = calculateDashPosition(letterRect, dashDimensions, PADDING);
+	const dashPosition = $derived(calculateDashPosition(letterRect, dashDimensions, PADDING));
 
 	// Pure function for calculating position
 	function calculateDashPosition(

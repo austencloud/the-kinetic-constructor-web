@@ -121,6 +121,9 @@ export async function renderSvgToImage(options: SVGRenderOptions): Promise<SVGRe
 			await ensureGridVisibility(svgClone);
 		}
 
+		// Ensure TKAGlyph components are fully rendered
+		await ensureTKAGlyphVisibility(svgClone);
+
 		// Convert SVG to string
 		const svgString = new XMLSerializer().serializeToString(svgClone);
 
@@ -249,6 +252,52 @@ function createFallbackGridDataUrl(): string {
 
 	// Convert to data URL
 	return svgToBase64DataUrl(gridSvg);
+}
+
+/**
+ * Ensures that TKAGlyph components are fully rendered in the SVG
+ * This is a workaround for issues with TKAGlyph visibility in exported images
+ *
+ * @param svgElement The SVG element to process
+ */
+async function ensureTKAGlyphVisibility(svgElement: SVGElement): Promise<void> {
+	try {
+		// Find all TKAGlyph elements
+		const tkaGlyphElements = svgElement.querySelectorAll('.tka-glyph');
+
+		if (tkaGlyphElements.length > 0) {
+			console.log(`SVGRenderer: Found ${tkaGlyphElements.length} TKAGlyph elements`);
+
+			// Process each TKAGlyph element
+			for (const glyphElement of Array.from(tkaGlyphElements)) {
+				// Find letter elements within the glyph
+				const letterElements = glyphElement.querySelectorAll('.tka-letter image');
+
+				// Make sure all letter images are visible
+				for (const letterElement of Array.from(letterElements)) {
+					letterElement.setAttribute('opacity', '1');
+					letterElement.setAttribute('visibility', 'visible');
+
+					// Ensure the href attribute is properly set
+					const href = letterElement.getAttribute('href');
+					if (href && href.startsWith('/')) {
+						// Convert relative URL to absolute for external references
+						const fullUrl = window.location.origin + href;
+						try {
+							// Fetch the SVG and convert to data URL
+							const dataUrl = await fetchSvgAsDataUrl(fullUrl);
+							letterElement.setAttribute('href', dataUrl);
+							console.log('SVGRenderer: Updated TKAGlyph letter image with data URL');
+						} catch (fetchError) {
+							console.error('SVGRenderer: Failed to fetch TKAGlyph letter SVG:', fetchError);
+						}
+					}
+				}
+			}
+		}
+	} catch (error) {
+		console.error('SVGRenderer: Error ensuring TKAGlyph visibility:', error);
+	}
 }
 
 /**

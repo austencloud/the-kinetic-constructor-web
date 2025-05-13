@@ -1,6 +1,6 @@
 <!-- src/lib/components/objects/Glyphs/TKAGlyph/TKAGlyph.svelte -->
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import { parseTurnsTupleString } from './utils/parseTurnsTuple';
 	import { preloadCommonAssets, assetCache, type Rect } from '$lib/stores/glyphStore';
 	import type { Letter } from '$lib/types/Letter';
@@ -11,19 +11,11 @@
 	import TurnsRenderer from './components/TurnsRenderer.svelte';
 
 	// Props with TypeScript interface
-	interface TKAGlyphProps {
-		letter: Letter | null;
-		turnsTuple: string;
-		x: number;
-		y: number;
-		scale?: number;
-	}
-
-	export let letter: TKAGlyphProps['letter'] = null;
-	export let turnsTuple: TKAGlyphProps['turnsTuple'] = '';
-	export let x: TKAGlyphProps['x'] = 0;
-	export let y: TKAGlyphProps['y'] = 0;
-	export let scale: TKAGlyphProps['scale'] = 1;
+	export let letter: Letter | null = null;
+	export let turnsTuple: string = '';
+	export let x: number = 0;
+	export let y: number = 0;
+	export let scale: number = 1;
 
 	// Local state
 	let letterRect: Rect | null = null;
@@ -55,6 +47,7 @@
 		return { direction: dir, top, bottom };
 	}
 
+	// Handle letter loaded event
 	function handleLetterLoaded(event: CustomEvent<Rect>) {
 		letterRect = event.detail;
 		letterLoaded = true;
