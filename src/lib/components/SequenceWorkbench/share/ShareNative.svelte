@@ -4,8 +4,8 @@
   import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
   import { logger } from '$lib/core/logging';
   import { renderSequence, dataURLtoBlob, generateFilename, getLastRenderResult } from './ShareSequenceRenderer';
-  import { isWebShareSupported, isFileShareSupported } from '$lib/utils/shareUtils';
-  import type { ShareData } from '$lib/utils/shareUtils';
+  import { isWebShareSupported, isFileShareSupported } from '$lib/components/SequenceWorkbench/share/utils/shareUtils';
+  import type { ShareData } from '$lib/components/SequenceWorkbench/share/utils/shareUtils';
 
   // Props
   export let sequenceName: string = '';

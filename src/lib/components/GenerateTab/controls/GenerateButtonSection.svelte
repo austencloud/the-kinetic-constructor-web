@@ -4,16 +4,19 @@
 	import { isGenerating, hasError, statusMessage } from '../store/generator';
 	import GenerateButton from '../components/GenerateButton.svelte';
 
-	// Use both old and new state management during migration
-	export let useNewStateManagement = true;
+	// Use Svelte 5 props rune
+	const props = $props<{
+		useNewStateManagement?: boolean;
+		onGenerateClick: () => void;
+	}>();
 
-	// Get state from sequence machine
-	$: newIsGenerating = sequenceSelectors.isGenerating();
-	$: newHasError = sequenceSelectors.hasError();
-	$: newStatusMessage = sequenceSelectors.message();
+	// Default values with derived values
+	const useNewStateManagement = $derived(props.useNewStateManagement ?? true);
 
-	// Event dispatcher for generate click
-	export let onGenerateClick: () => void;
+	// Get state from sequence machine using $derived rune
+	const newIsGenerating = $derived(sequenceSelectors.isGenerating());
+	const newHasError = $derived(sequenceSelectors.hasError());
+	const newStatusMessage = $derived(sequenceSelectors.message());
 </script>
 
 <div class="generate-button-container">
@@ -21,7 +24,7 @@
 		isLoading={useNewStateManagement ? newIsGenerating : $isGenerating}
 		hasError={useNewStateManagement ? newHasError : $hasError}
 		statusMessage={useNewStateManagement ? newStatusMessage : $statusMessage}
-		onClick={onGenerateClick}
+		onClick={props.onGenerateClick}
 	/>
 </div>
 

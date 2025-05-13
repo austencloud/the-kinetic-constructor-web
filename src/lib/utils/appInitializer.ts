@@ -1,12 +1,12 @@
 // src/lib/utils/appInitializer.ts
 import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-import { checkForSequenceInUrl } from '$lib/utils/shareUtils';
+import { checkForSequenceInUrl } from '$lib/components/SequenceWorkbench/share/utils/shareUtils';
 import { logger } from '$lib/core/logging';
 
 /**
  * Initialize the application, reporting progress via callback for XState
  * @param progressCallback Callback function provided by the XState actor for progress updates
- */ 
+ */
 export async function initializeApplication(
 	progressCallback?: (progress: number, message: string) => void
 ): Promise<boolean> {
@@ -22,7 +22,7 @@ export async function initializeApplication(
 
 		// Phase 1: SVG Preloading (Browser only)
 		if (isBrowser) {
-			reportProgress(10, 'Preloading SVG resources...'); 
+			reportProgress(10, 'Preloading SVG resources...');
 			const { initSvgPreloading } = await import('./SvgPreloader');
 			preloadingPromise = initSvgPreloading();
 		} else {
@@ -33,7 +33,7 @@ export async function initializeApplication(
 		if (isBrowser) {
 			reportProgress(30, 'Checking for shared sequence...');
 			const foundSequenceInUrl = checkForSequenceInUrl(sequenceContainer);
-			
+
 			// If we didn't find a sequence in URL, load from localStorage
 			if (!foundSequenceInUrl) {
 				reportProgress(40, 'Loading saved sequence...');

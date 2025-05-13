@@ -9,7 +9,7 @@ import {
 	isWebShareSupported,
 	isFileShareSupported,
 	copyToClipboard
-} from '$lib/utils/shareUtils';
+} from '$lib/components/SequenceWorkbench/share/utils/shareUtils';
 
 // Mock browser environment
 vi.mock('$app/environment', () => ({

@@ -21,6 +21,7 @@ export interface SequenceRenderOptions {
 	format?: 'png' | 'jpeg';
 	maxWidth?: number;
 	maxHeight?: number;
+	scale?: number; // Scale factor for beat size calculation
 
 	// Image export settings
 	includeStartPosition?: boolean;
@@ -127,7 +128,9 @@ export async function renderSequenceToImage(
 						}
 
 						// Draw the sequence content
-						ctx.drawImage(canvas, 0, topMargin);
+						// Draw the sequence content centered horizontally if canvas is wider
+						const contentX = Math.max(0, Math.floor((width - canvas.width) / 2));
+						ctx.drawImage(canvas, contentX, topMargin);
 
 						// Draw user info if enabled (in bottom margin like Python version)
 						if (options.addUserInfo) {
@@ -203,6 +206,7 @@ export function createRenderOptionsFromSettings(
 		title: sequenceName,
 		format: 'png',
 		quality: settings.quality || 0.92,
+		scale: 1, // Default scale factor, will be overridden if provided in additionalOptions
 
 		// Apply settings
 		includeStartPosition: settings.includeStartPosition ?? true,
@@ -265,24 +269,32 @@ function restoreOriginalStyles(element: HTMLElement) {
 
 /**
  * Calculate dimensions for the image
- */
-function calculateDimensions(options: SequenceRenderOptions) {
+ */ function calculateDimensions(options: SequenceRenderOptions) {
 	// Base dimensions from beats and layout
 	const actualRows = Math.ceil(options.beats.length / options.cols);
 	const usedRows = options.includeStartPosition ? actualRows + 1 : actualRows;
 
+	// Get a reasonable base beat size (try to match Python's approach)
+	// Default to 200px if we can't determine from options
+	let baseBeatSize = 200;
+
+	// If we have a scale option, use it (this should be set elsewhere based on actual DOM element size)
+	if (options.scale && typeof options.scale === 'number') {
+		baseBeatSize = Math.round(baseBeatSize * options.scale);
+	}
+
 	// Calculate optimal pictograph size based on sequence length
 	// Smaller sequences get larger pictographs for better visibility
-	let beatSize = 950; // Default base pictograph size
+	let beatSize = baseBeatSize;
 
-	// Adjust size based on sequence length for better readability
+	// Adjust size based on sequence length for better readability, but keep it proportional
 	const beatCount = options.beats.length;
 	if (beatCount > 8) {
 		// For longer sequences, make pictographs smaller to fit better
-		beatSize = 850;
+		beatSize = Math.round(baseBeatSize * 0.9);
 	} else if (beatCount <= 4) {
 		// For very short sequences, make pictographs larger
-		beatSize = 1050;
+		beatSize = Math.round(baseBeatSize * 1.1);
 	}
 
 	// Apply max width/height constraints if provided
@@ -294,26 +306,27 @@ function calculateDimensions(options: SequenceRenderOptions) {
 	const width = options.cols * beatSize;
 	const height = usedRows * beatSize;
 
-	// Calculate margins with improved spacing
+	// Calculate margins proportional to beat size
 	let topMargin = 0;
 	let bottomMargin = 0;
 
-	// Improved margin calculation for better visual balance
+	if (options.addWord) {
+		// Make top margin proportional to beat size for title/word
+		topMargin = Math.min(beatSize * 0.8, 200);
+	}
+
+	if (options.addUserInfo) {
+		// Make bottom margin proportional to beat size for user info
+		bottomMargin = Math.min(beatSize * 0.3, 100);
+	}
+
+	// Adjust margins based on sequence length for better balance
 	if (beatCount === 0) {
-		topMargin = 0;
-		bottomMargin = options.addUserInfo ? 60 : 0;
+		bottomMargin = options.addUserInfo ? Math.min(beatSize * 0.3, 60) : 0;
 	} else if (beatCount === 1) {
-		topMargin = options.addWord ? 160 : 0;
-		bottomMargin = options.addUserInfo ? 60 : 0;
+		topMargin = options.addWord ? Math.min(beatSize * 0.8, 120) : 0;
 	} else if (beatCount === 2) {
-		topMargin = options.addWord ? 200 : 0;
-		bottomMargin = options.addUserInfo ? 80 : 0;
-	} else if (beatCount <= 4) {
-		topMargin = options.addWord ? 250 : 0;
-		bottomMargin = options.addUserInfo ? 100 : 0;
-	} else {
-		topMargin = options.addWord ? 300 : 0;
-		bottomMargin = options.addUserInfo ? 150 : 0;
+		topMargin = options.addWord ? Math.min(beatSize * 0.8, 150) : 0;
 	}
 
 	return { width, height, topMargin, bottomMargin, beatSize };
@@ -321,25 +334,30 @@ function calculateDimensions(options: SequenceRenderOptions) {
 
 /**
  * Draw title text (word) with improved styling
- */
-function drawTitle(ctx: CanvasRenderingContext2D, title: string, width: number, topMargin: number) {
-	// Calculate optimal font size based on title length and available space
-	const titleLength = title.length;
-	let fontSize = Math.min(width * 0.1, topMargin * 0.6);
+ */ function drawTitle(
+	ctx: CanvasRenderingContext2D,
+	title: string,
+	width: number,
+	topMargin: number
+) {
+	// Start with a reasonable base font size proportional to margin
+	let fontSize = Math.min(width * 0.08, topMargin * 0.6);
 
-	// Adjust font size for longer titles
-	if (titleLength > 10) {
-		fontSize = Math.min(fontSize, width * 0.08);
-	}
-	if (titleLength > 15) {
-		fontSize = Math.min(fontSize, width * 0.06);
+	// Set initial font to measure text
+	ctx.font = `bold ${fontSize}px Georgia`;
+	let textWidth = ctx.measureText(title).width;
+
+	// Reduce font size until it fits within 80% of canvas width
+	while (textWidth > width * 0.8 && fontSize > 16) {
+		fontSize -= 2;
+		ctx.font = `bold ${fontSize}px Georgia`;
+		textWidth = ctx.measureText(title).width;
 	}
 
 	// Draw title with subtle shadow for better readability
 	ctx.save();
 
 	// Draw shadow
-	ctx.font = `bold ${fontSize}px Georgia`;
 	ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
@@ -349,8 +367,8 @@ function drawTitle(ctx: CanvasRenderingContext2D, title: string, width: number, 
 	ctx.fillStyle = '#000000';
 	ctx.fillText(title, width / 2, topMargin / 2);
 
-	// Optional: Add a subtle underline
-	const textWidth = ctx.measureText(title).width;
+	// Add a subtle underline
+	textWidth = ctx.measureText(title).width; // Re-measure after font changes
 	const lineY = topMargin / 2 + fontSize * 0.6;
 	const lineWidth = textWidth * 0.8;
 

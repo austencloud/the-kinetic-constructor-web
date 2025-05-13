@@ -4,7 +4,10 @@
  */
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
-import { renderSequenceToImage, type SequenceRenderResult } from '$lib/utils/sequenceImageRenderer';
+import {
+	renderSequenceToImage,
+	type SequenceRenderResult
+} from '$lib/components/SequenceWorkbench/share/utils/sequenceImageRenderer';
 import { imageExportSettings, type ImageExportSettings } from '$lib/state/image-export-settings';
 import { findBeatFrameElement, findRenderElement } from './utils/ShareElementFinder';
 
@@ -61,13 +64,51 @@ export async function renderSequence(
 		};
 
 		// Additional settings not in the ImageExportSettings type
-		let wordText = options.currentWord || options.sequenceName || 'Sequence';
+		const title = options.currentWord || options.sequenceName || 'Sequence';
 		let userName = 'User';
 		let notes = 'Created using The Kinetic Constructor';
 		let cols = 4;
 		let maxWidth: number | undefined = undefined;
 		let maxHeight: number | undefined = undefined;
+
+		// Get actual beat element size from DOM if available
 		let scale = 1;
+		try {
+			if (renderElement) {
+				// Try to find a beat element to measure
+				const beatElement =
+					renderElement.querySelector('.beat-frame') ||
+					renderElement.querySelector('.pictograph-wrapper') ||
+					renderElement.querySelector('.tka-glyph');
+
+				if (beatElement) {
+					const actualSize = Math.max(
+						(beatElement as HTMLElement).clientWidth,
+						(beatElement as HTMLElement).clientHeight
+					);
+					// Use a reasonable base size divisor (200 is a good starting point)
+					scale = Math.max(0.5, Math.min(3, actualSize / 200));
+					console.log(
+						'ShareSequenceRenderer: Determined beat scale factor:',
+						scale,
+						'from element size:',
+						actualSize
+					);
+				} else {
+					// If we can't find a specific element, use the render element's size as a hint
+					const containerSize = Math.max(renderElement.clientWidth, renderElement.clientHeight);
+					scale = Math.max(0.5, Math.min(2, containerSize / 800));
+					console.log(
+						'ShareSequenceRenderer: Using container size for scale:',
+						scale,
+						'from size:',
+						containerSize
+					);
+				}
+			}
+		} catch (err) {
+			console.warn('ShareSequenceRenderer: Could not determine beat element size:', err);
+		}
 
 		// Try to get current settings from the store
 		try {
@@ -98,7 +139,7 @@ export async function renderSequence(
 
 			// Content options
 			addWord: exportSettings.addWord !== false,
-			wordText: options.currentWord || options.sequenceName || 'Sequence',
+			title: title,
 			addBeatNumbers: exportSettings.addBeatNumbers !== false,
 			addReversalSymbols: exportSettings.addReversalSymbols !== false,
 
