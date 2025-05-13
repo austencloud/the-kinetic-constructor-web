@@ -3,7 +3,7 @@
   import { browser } from '$app/environment';
   import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
   import { logger } from '$lib/core/logging';
-  import { renderSequence, generateFilename, getLastRenderResult } from './utils/ShareSequenceRenderer';
+	import { generateFilename, getLastRenderResult, renderSequence } from './ShareSequenceRenderer';
 
   // Props
   export let sequenceName: string = '';

@@ -89,6 +89,7 @@
 		"@xstate/svelte": "^4.0.3",
 		"html2canvas": "^1.4.1",
 		"lodash": "^4.17.21",
+		"lodash-es": "^4.17.21",
 		"lucide-svelte": "^0.486.0",
 		"lz-string": "^1.5.0",
 		"polished": "^4.3.1",

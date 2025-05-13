@@ -24,8 +24,12 @@
 	import DeleteButton from './DeleteButton.svelte';
 	import DeleteModal from './DeleteModal.svelte';
 	import SequenceOverlayButton from './SequenceOverlayButton.svelte';
-	import ShareButton from './ShareButton.svelte';
+	// Explicitly import ShareButton with a console log to verify it's being imported
+	import ShareButton from './share/ShareButton.svelte';
 	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte';
+
+	// Log to verify ShareButton is imported
+	console.log('SequenceWidget: ShareButton imported:', ShareButton);
 
 	const { size, resizeObserver } = useResizeObserver();
 	const { dimensions } = useResponsiveLayout();
@@ -386,6 +390,7 @@
 			<SettingsButton on:click={handleSettingsClick} />
 			<DeleteButton on:click={handleDeleteButtonClick} />
 			<SequenceOverlayButton />
+			<!-- Ensure ShareButton is rendered with proper props -->
 			<ShareButton beatFrameElement={beatFrameElement || fallbackElement} />
 		</div>
 

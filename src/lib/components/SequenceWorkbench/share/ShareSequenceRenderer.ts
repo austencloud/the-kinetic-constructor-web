@@ -5,8 +5,8 @@
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
 import { renderSequenceToImage, type SequenceRenderResult } from '$lib/utils/sequenceImageRenderer';
-import { findBeatFrameElement, findRenderElement } from './ShareElementFinder';
 import { imageExportSettings, type ImageExportSettings } from '$lib/state/image-export-settings';
+import { findBeatFrameElement, findRenderElement } from './utils/ShareElementFinder';
 
 // Cache for the last render result
 let lastRenderResult: SequenceRenderResult | null = null;

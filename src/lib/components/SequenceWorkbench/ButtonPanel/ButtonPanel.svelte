@@ -11,7 +11,7 @@
 	import ClearSequenceButton from '../ClearSequenceButton.svelte';
 	import RemoveBeatButton from '../RemoveBeatButton.svelte';
 	import SequenceOverlayButton from '../SequenceOverlayButton.svelte';
-	import ShareButton from '../ShareButton.svelte';
+	import ShareButton from '../share/ShareButton.svelte';
 	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte';
 
 	// Props
@@ -84,7 +84,7 @@
 <div class="button-panel" style="--button-size-factor: {buttonSizeFactor};">
 	<SettingsButton on:click={handleSettingsClick} />
 	<ClearSequenceButton on:clearSequence={handleClearSequence} />
-	<RemoveBeatButton on:removeBeat={handleRemoveBeat} />
+	<button onclick={handleRemoveBeat}>Remove Beat</button>
 	<SequenceOverlayButton />
 	<ShareButton beatFrameElement={$beatFrameElement} />
 </div>

@@ -31,15 +31,104 @@
 	onMount(() => {
 		console.log('ShareButton: onMount called');
 
+		// Log to help debug visibility issues
+		console.log('ShareButton: beatFrameElement prop:', props.beatFrameElement);
+
+		// Add a small delay and then check if the button is visible in the DOM
+		setTimeout(() => {
+			if (browser) {
+				const shareButtons = document.querySelectorAll('.share-button');
+				console.log('ShareButton: Found share buttons in DOM:', shareButtons.length);
+
+				// Check computed styles and visibility
+				let isButtonVisible = false;
+				let computedStyle: CSSStyleDeclaration | null = null;
+
+				if (shareButtons.length > 0) {
+					computedStyle = window.getComputedStyle(shareButtons[0]);
+					console.log('ShareButton: Computed style:', {
+						display: computedStyle.display,
+						visibility: computedStyle.visibility,
+						opacity: computedStyle.opacity,
+						position: computedStyle.position,
+						top: computedStyle.top,
+						right: computedStyle.right,
+						zIndex: computedStyle.zIndex
+					});
+
+					// Check if the button is visible
+					isButtonVisible =
+						computedStyle.display !== 'none' &&
+						computedStyle.visibility !== 'hidden' &&
+						computedStyle.opacity !== '0';
+				}
+
+				// If no share buttons are found or they're not visible, create a fallback button
+				if (shareButtons.length === 0 || !isButtonVisible) {
+					console.log('ShareButton: Creating fallback button');
+					createFallbackButton();
+				}
+			}
+		}, 1000);
+
 		// Set up test utilities for debugging
 		if (browser) {
 			setupTestUtilities();
 		}
 	});
 
+	// Create a fallback button directly in the DOM
+	function createFallbackButton() {
+		if (!browser) return;
+
+		// Create a button element
+		const button = document.createElement('button');
+		button.className = 'fallback-share-button';
+		button.innerHTML = '<i class="fa-solid fa-share-alt"></i>';
+		button.style.cssText = `
+			position: fixed;
+			top: 10px;
+			right: 10px;
+			width: 45px;
+			height: 45px;
+			border-radius: 50%;
+			background-color: #2a2a2e;
+			color: #00bcd4;
+			border: none;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			z-index: 9999;
+			cursor: pointer;
+			box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+		`;
+
+		// Add click event listener
+		button.addEventListener('click', () => {
+			console.log('Fallback share button clicked');
+			handleClick();
+		});
+
+		// Append to body
+		document.body.appendChild(button);
+
+		// Store reference for cleanup
+		fallbackButton = button;
+	}
+
+	// Store reference to fallback button for cleanup
+	let fallbackButton: HTMLElement | null = null;
+
 	// Clean up on destroy
 	onDestroy(() => {
 		console.log('ShareButton: onDestroy called');
+
+		// Clean up fallback button if it exists
+		if (fallbackButton && browser && document.body.contains(fallbackButton)) {
+			console.log('ShareButton: Removing fallback button');
+			document.body.removeChild(fallbackButton);
+			fallbackButton = null;
+		}
 	});
 
 	// Generate share URL when sequence changes
@@ -100,7 +189,7 @@
 
 				// Render the sequence in the background
 				shareRenderer
-					.renderSequence()
+					.renderSequence(props.beatFrameElement)
 					.then((result) => {
 						if (result) {
 							console.log('ShareButton: Pre-rendered sequence successfully');
@@ -155,7 +244,7 @@
 
 			// Render the sequence
 			console.log('ShareButton: Rendering sequence');
-			const result = await shareRenderer.renderSequence();
+			const result = await shareRenderer.renderSequence(props.beatFrameElement);
 			if (!result) {
 				console.log('ShareButton: Failed to render sequence image');
 				showError('Failed to render sequence image');
@@ -210,7 +299,7 @@
 		try {
 			// Render the sequence
 			console.log('ShareButton: Rendering sequence for download');
-			const result = await shareRenderer.renderSequence();
+			const result = await shareRenderer.renderSequence(props.beatFrameElement);
 			if (!result) {
 				console.log('ShareButton: Failed to render sequence image for download');
 				showError('Failed to generate image for download');
@@ -296,7 +385,7 @@
 
 <!-- Share button -->
 <button
-	class="share-button ripple"
+	class="share-button ripple tkc-share-button"
 	onclick={handleClick}
 	aria-label="Share sequence"
 	data-mdb-ripple="true"
@@ -304,6 +393,7 @@
 	in:fly={{ x: 20, duration: 300, delay: 200 }}
 	class:sharing={isSharing}
 	class:active={isDropdownOpen}
+	style="position: absolute; top: 10px; right: 10px; width: 45px; height: 45px; z-index: 40; display: flex; visibility: visible; opacity: 1;"
 >
 	<div class="icon-wrapper">
 		<i
@@ -326,13 +416,22 @@
 <style>
 	/* Global styles to ensure consistent sizing with settings button */
 	:global(.sequence-widget > .main-layout > .share-button) {
-		position: absolute;
-		top: calc(var(--button-size-factor, 1) * 10px); /* Exactly match settings button */
-		right: calc(var(--button-size-factor, 1) * 10px); /* Mirror of settings button's left */
-		width: calc(var(--button-size-factor, 1) * 45px); /* Exact same size as settings button */
-		height: calc(var(--button-size-factor, 1) * 45px); /* Exact same size as settings button */
-		z-index: 40; /* Consistent with other FABs */
+		position: absolute !important;
+		top: calc(var(--button-size-factor, 1) * 10px) !important; /* Exactly match settings button */
+		right: calc(
+			var(--button-size-factor, 1) * 10px
+		) !important; /* Mirror of settings button's left */
+		width: calc(
+			var(--button-size-factor, 1) * 45px
+		) !important; /* Exact same size as settings button */
+		height: calc(
+			var(--button-size-factor, 1) * 45px
+		) !important; /* Exact same size as settings button */
+		z-index: 40 !important; /* Consistent with other FABs */
 		margin: 0 !important; /* Override any default margin */
+		display: flex !important; /* Ensure it's displayed */
+		visibility: visible !important; /* Ensure it's visible */
+		opacity: 1 !important; /* Ensure it's fully opaque */
 	}
 
 	/* Ensure the icon inside scales correctly */
@@ -433,5 +532,19 @@
 	.dropdown-container {
 		position: relative;
 		z-index: 41;
+	}
+
+	/* Additional styles for the share button with the specific class */
+	:global(.tkc-share-button) {
+		position: absolute !important;
+		top: 10px !important;
+		right: 10px !important;
+		width: 45px !important;
+		height: 45px !important;
+		z-index: 40 !important;
+		display: flex !important;
+		visibility: visible !important;
+		opacity: 1 !important;
+		pointer-events: auto !important;
 	}
 </style>
