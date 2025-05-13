@@ -34,6 +34,10 @@ export async function renderSequence(
 		return null;
 	}
 
+	// Track if we created a fallback element that needs cleanup
+	let createdFallbackElement = false;
+	let renderElement: HTMLElement | null = null;
+
 	try {
 		// Find the BeatFrame element
 		const beatFrameElement = await findBeatFrameElement(
@@ -49,6 +53,64 @@ export async function renderSequence(
 		// Find the actual element to render
 		const renderElement = findRenderElement(beatFrameElement);
 		console.log('ShareSequenceRenderer: Using render element:', renderElement);
+
+		// Check if this is our fallback element
+		if (renderElement && renderElement.classList.contains('export-fallback-element')) {
+			createdFallbackElement = true;
+		}
+
+		// Validate the render element
+		if (!renderElement) {
+			console.error('ShareSequenceRenderer: No render element found');
+			return null;
+		}
+
+		// Check if the element has valid dimensions
+		const elementWidth = renderElement.offsetWidth;
+		const elementHeight = renderElement.offsetHeight;
+
+		console.log('ShareSequenceRenderer: Render element dimensions:', {
+			width: elementWidth,
+			height: elementHeight,
+			clientWidth: renderElement.clientWidth,
+			clientHeight: renderElement.clientHeight,
+			scrollWidth: renderElement.scrollWidth,
+			scrollHeight: renderElement.scrollHeight
+		});
+
+		// If the element has zero dimensions, try to fix it
+		if (elementWidth <= 0 || elementHeight <= 0) {
+			console.warn(
+				'ShareSequenceRenderer: Render element has invalid dimensions, attempting to fix'
+			);
+
+			// Try to ensure the element is visible
+			const originalDisplay = renderElement.style.display;
+			const originalVisibility = renderElement.style.visibility;
+			const originalPosition = renderElement.style.position;
+
+			// Force the element to be visible with dimensions
+			renderElement.style.display = 'block';
+			renderElement.style.visibility = 'visible';
+			renderElement.style.position = 'relative';
+			renderElement.style.minWidth = '200px';
+			renderElement.style.minHeight = '200px';
+
+			// Log the updated dimensions
+			console.log('ShareSequenceRenderer: Updated render element dimensions:', {
+				width: renderElement.offsetWidth,
+				height: renderElement.offsetHeight
+			});
+
+			// Clean up function to restore original styles
+			setTimeout(() => {
+				renderElement.style.display = originalDisplay;
+				renderElement.style.visibility = originalVisibility;
+				renderElement.style.position = originalPosition;
+				renderElement.style.minWidth = '';
+				renderElement.style.minHeight = '';
+			}, 1000);
+		}
 
 		// Get the image export settings from the store
 		let exportSettings: ImageExportSettings = {
@@ -178,6 +240,18 @@ export async function renderSequence(
 		// Cache the result
 		lastRenderResult = result;
 
+		// Clean up fallback element if we created one
+		if (createdFallbackElement && renderElement && document.body.contains(renderElement)) {
+			console.log('ShareSequenceRenderer: Cleaning up fallback element');
+			setTimeout(() => {
+				try {
+					document.body.removeChild(renderElement);
+				} catch (cleanupError) {
+					console.warn('ShareSequenceRenderer: Error cleaning up fallback element:', cleanupError);
+				}
+			}, 1000); // Delay cleanup to ensure rendering is complete
+		}
+
 		return result;
 	} catch (error) {
 		console.error('ShareSequenceRenderer: Error rendering sequence:', error);
@@ -185,6 +259,16 @@ export async function renderSequence(
 			error: error instanceof Error ? error : new Error(String(error))
 		});
 		return null;
+	} finally {
+		// Additional cleanup in case of errors
+		if (createdFallbackElement && renderElement && document.body.contains(renderElement)) {
+			console.log('ShareSequenceRenderer: Cleaning up fallback element in finally block');
+			try {
+				document.body.removeChild(renderElement);
+			} catch (cleanupError) {
+				console.warn('ShareSequenceRenderer: Error cleaning up fallback element:', cleanupError);
+			}
+		}
 	}
 }
 

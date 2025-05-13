@@ -1,6 +1,6 @@
 // src/lib/utils/appInitializer.ts
 import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-import { checkForSequenceInUrl } from '$lib/components/SequenceWorkbench/share/utils/shareUtils';
+import { checkForSequenceInUrl } from '$lib/components/SequenceWorkbench/share/utils/ShareUtils';
 import { logger } from '$lib/core/logging';
 
 /**

@@ -5,7 +5,10 @@
 	import { browser } from '$app/environment';
 	import { logger } from '$lib/core/logging';
 	import { showError } from '$lib/components/shared/ToastManager.svelte';
-	import { isWebShareSupported, generateShareableUrl } from '$lib/components/SequenceWorkbench/share/utils/shareUtils';
+	import {
+		isWebShareSupported,
+		generateShareableUrl
+	} from '$lib/components/SequenceWorkbench/share/utils/ShareUtils';
 	import { shareWithImage, downloadSequenceImage } from './utils/ShareButtonUtils';
 	import ShareDropdown from './ShareDropdown.svelte';
 	import ShareRenderer from './ShareRenderer.svelte';

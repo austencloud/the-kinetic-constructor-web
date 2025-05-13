@@ -11,7 +11,7 @@ import {
 	isWebShareSupported,
 	isFileShareSupported,
 	type ShareData
-} from '$lib/components/SequenceWorkbench/share/utils/shareUtils';
+} from '$lib/components/SequenceWorkbench/share/utils/ShareUtils';
 import type { SequenceRenderResult } from '$lib/components/SequenceWorkbench/share/utils/sequenceImageRenderer';
 
 // Track the last time a share API call was made
@@ -49,41 +49,84 @@ export async function downloadSequenceImage(
 	lastDownloadAttemptTime = now;
 
 	try {
+		// Validate the result
+		if (!result || !result.dataUrl) {
+			console.error('ShareUtils: Invalid render result or missing dataUrl');
+			showError('Failed to generate image for download');
+			return false;
+		}
+
 		// Generate a filename
 		const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
 		const filename = `kinetic-sequence-${sequenceName ? sequenceName.replace(/[^a-z0-9]/gi, '-').toLowerCase() : timestamp}.png`;
 
-		console.log(`ShareUtils: Downloading image as "${filename}"`);
+		console.log(
+			`ShareUtils: Downloading image as "${filename}" (data URL length: ${result.dataUrl.length})`
+		);
 
-		// Create a download link
-		const downloadLink = document.createElement('a');
-		downloadLink.href = result.dataUrl;
-		downloadLink.download = filename;
-		downloadLink.style.display = 'none';
-
-		// Add to DOM, click, and remove
-		document.body.appendChild(downloadLink);
-
-		// Use a small timeout to ensure the browser has time to process
-		await new Promise((resolve) => setTimeout(resolve, 100));
+		// Import the improved downloadDataUrl function
+		const { downloadDataUrl } = await import(
+			'$lib/components/SequenceWorkbench/share/utils/sequenceImageRenderer'
+		);
 
 		try {
-			downloadLink.click();
-			console.log('ShareUtils: Download initiated');
+			// Use the improved download function
+			await downloadDataUrl(result.dataUrl, filename);
+			console.log('ShareUtils: Download initiated successfully');
 			showSuccess('Image download started');
-
-			// Remove the download link after a delay
-			setTimeout(() => {
-				if (document.body.contains(downloadLink)) {
-					document.body.removeChild(downloadLink);
-				}
-			}, 1000);
-
 			return true;
-		} catch (clickError) {
-			console.error('ShareUtils: Error clicking download link:', clickError);
-			showError('Download failed. Please try again.');
-			return false;
+		} catch (downloadError) {
+			console.error('ShareUtils: Error downloading image:', downloadError);
+
+			// Try alternative download method as fallback
+			try {
+				console.log('ShareUtils: Trying alternative download method');
+
+				// Convert data URL to Blob
+				const parts = result.dataUrl.split(',');
+				const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png';
+				const binary = atob(parts[1]);
+				const array = new Uint8Array(binary.length);
+
+				for (let i = 0; i < binary.length; i++) {
+					array[i] = binary.charCodeAt(i);
+				}
+
+				// Create Blob and Object URL
+				const blob = new Blob([array], { type: mime });
+				const objectUrl = URL.createObjectURL(blob);
+
+				// Create download link
+				const downloadLink = document.createElement('a');
+				downloadLink.href = objectUrl;
+				downloadLink.download = filename;
+				downloadLink.style.display = 'none';
+
+				// Add to DOM
+				document.body.appendChild(downloadLink);
+
+				// Small delay to ensure browser is ready
+				await new Promise((resolve) => setTimeout(resolve, 100));
+
+				// Trigger download
+				downloadLink.click();
+				console.log('ShareUtils: Alternative download method initiated');
+				showSuccess('Image download started');
+
+				// Clean up
+				setTimeout(() => {
+					if (document.body.contains(downloadLink)) {
+						document.body.removeChild(downloadLink);
+					}
+					URL.revokeObjectURL(objectUrl);
+				}, 1000);
+
+				return true;
+			} catch (fallbackError) {
+				console.error('ShareUtils: Fallback download method failed:', fallbackError);
+				showError('Download failed. Please try again.');
+				return false;
+			}
 		}
 	} catch (error) {
 		console.error('ShareUtils: Error in downloadSequenceImage:', error);

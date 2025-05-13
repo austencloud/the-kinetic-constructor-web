@@ -2,7 +2,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { clickOutside } from '$lib/utils/clickOutside';
-	import { isWebShareSupported } from '$lib/components/SequenceWorkbench/share/utils/shareUtils';
+	import { isWebShareSupported } from '$lib/components/SequenceWorkbench/share/utils/ShareUtils';
 
 	// Props
 	export let onShare: () => void;

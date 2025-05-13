@@ -27,8 +27,16 @@ export default defineConfig({
 		chunkSizeWarningLimit: 1000,
 		rollupOptions: {
 			output: {
-				manualChunks: {
-					html2canvas: ['html2canvas']
+				// Remove manual chunks for html2canvas as it's causing build issues
+				manualChunks: (id) => {
+					// Group xstate related modules
+					if (id.includes('xstate')) {
+						return 'xstate-vendor';
+					}
+					// Group other vendor modules if needed
+					if (id.includes('node_modules')) {
+						return 'vendor';
+					}
 				}
 			}
 		}

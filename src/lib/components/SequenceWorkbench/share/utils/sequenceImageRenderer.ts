@@ -107,10 +107,38 @@ export async function renderSequenceToImage(
 						// Render the element to a canvas
 						const canvas = await html2canvas(element, canvasOptions);
 
+						// Validate dimensions before creating canvas
+						if (width <= 0 || height <= 0) {
+							console.error('Invalid dimensions for canvas creation:', {
+								width,
+								height,
+								topMargin,
+								bottomMargin
+							});
+							reject(new Error(`Invalid dimensions for canvas: width=${width}, height=${height}`));
+							return;
+						}
+
 						// Create output canvas with proper size including margins
 						const outputCanvas = document.createElement('canvas');
-						outputCanvas.width = width;
-						outputCanvas.height = height + topMargin + bottomMargin;
+
+						// Ensure we have valid dimensions with minimum values
+						const canvasWidth = Math.max(width, 100);
+						const canvasHeight = Math.max(height + topMargin + bottomMargin, 100);
+
+						// Log canvas creation
+						console.log('Creating canvas with dimensions:', {
+							canvasWidth,
+							canvasHeight,
+							originalWidth: width,
+							originalHeight: height,
+							topMargin,
+							bottomMargin
+						});
+
+						// Set canvas dimensions
+						outputCanvas.width = canvasWidth;
+						outputCanvas.height = canvasHeight;
 
 						const ctx = outputCanvas.getContext('2d');
 						if (!ctx) {
@@ -137,21 +165,67 @@ export async function renderSequenceToImage(
 							drawUserInfo(ctx, options, width, height, topMargin, bottomMargin);
 						}
 
-						// Convert to data URL
-						const format = options.format || 'png';
-						const quality = options.quality || 0.92;
-						const dataUrl = outputCanvas.toDataURL(`image/${format}`, quality);
+						// Convert to data URL with improved error handling
+						try {
+							// Validate canvas size
+							if (outputCanvas.width <= 0 || outputCanvas.height <= 0) {
+								throw new Error(
+									`Invalid canvas dimensions: ${outputCanvas.width}x${outputCanvas.height}`
+								);
+							}
 
-						// Restore original styles
-						restoreOriginalStyles(element);
+							// Ensure format is valid
+							const format =
+								options.format === 'jpeg' || options.format === 'png' ? options.format : 'png';
 
-						// Return result
-						resolve({
-							dataUrl,
-							width: outputCanvas.width,
-							height: outputCanvas.height,
-							aspectRatio: outputCanvas.width / outputCanvas.height
-						});
+							// Ensure quality is within valid range (0-1)
+							const quality =
+								options.quality !== undefined ? Math.max(0, Math.min(1, options.quality)) : 0.92;
+
+							// Log the exact parameters we're using
+							console.log('Generating data URL with params:', {
+								format,
+								quality,
+								canvasSize: `${outputCanvas.width}x${outputCanvas.height}`
+							});
+
+							// Add a small delay to ensure canvas is fully rendered
+							await new Promise((resolve) => setTimeout(resolve, 50));
+
+							// Generate data URL
+							const dataUrl = outputCanvas.toDataURL(`image/${format}`, quality);
+
+							// Validate data URL
+							if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+								throw new Error(
+									`Invalid data URL generated: ${dataUrl ? dataUrl.substring(0, 30) + '...' : 'empty'}`
+								);
+							}
+
+							// Log success
+							console.log(`Data URL generated successfully (length: ${dataUrl.length})`);
+
+							// Restore original styles
+							restoreOriginalStyles(element);
+
+							// Return result
+							resolve({
+								dataUrl,
+								width: outputCanvas.width,
+								height: outputCanvas.height,
+								aspectRatio: outputCanvas.width / outputCanvas.height
+							});
+						} catch (dataUrlError) {
+							logger.error('Error generating data URL', {
+								error:
+									dataUrlError instanceof Error ? dataUrlError : new Error(String(dataUrlError))
+							});
+							reject(
+								new Error(
+									`Failed to generate image data URL: ${dataUrlError instanceof Error ? dataUrlError.message : String(dataUrlError)}`
+								)
+							);
+						}
 					} catch (renderError) {
 						logger.error('Error in html2canvas rendering', {
 							error: renderError instanceof Error ? renderError : new Error(String(renderError))
@@ -302,9 +376,36 @@ function restoreOriginalStyles(element: HTMLElement) {
 		beatSize = Math.floor(options.maxWidth / options.cols);
 	}
 
-	// Calculate dimensions
-	const width = options.cols * beatSize;
-	const height = usedRows * beatSize;
+	// Calculate dimensions with safeguards
+	const width = Math.max(options.cols * beatSize, 100); // Ensure minimum width
+
+	// Ensure we have at least 1 row even if there are no beats
+	const effectiveRows = Math.max(usedRows, 1);
+	const height = effectiveRows * beatSize;
+
+	// Log the dimension calculation for debugging
+	console.log('Dimension calculation:', {
+		beatCount,
+		usedRows,
+		effectiveRows,
+		beatSize,
+		calculatedWidth: width,
+		calculatedHeight: height
+	});
+
+	// Validate dimensions - ensure we never have zero width or height
+	if (width <= 0 || height <= 0) {
+		console.warn('Invalid dimensions calculated, using fallback values', { width, height });
+		// Use fallback values if calculations resulted in invalid dimensions
+		const fallbackSize = 200;
+		return {
+			width: Math.max(width, fallbackSize),
+			height: Math.max(height, fallbackSize),
+			topMargin: 100,
+			bottomMargin: 50,
+			beatSize: fallbackSize
+		};
+	}
 
 	// Calculate margins proportional to beat size
 	let topMargin = 0;
@@ -322,7 +423,9 @@ function restoreOriginalStyles(element: HTMLElement) {
 
 	// Adjust margins based on sequence length for better balance
 	if (beatCount === 0) {
-		bottomMargin = options.addUserInfo ? Math.min(beatSize * 0.3, 60) : 0;
+		// For empty sequences, ensure we still have reasonable margins
+		topMargin = options.addWord ? Math.min(beatSize * 0.8, 150) : 100;
+		bottomMargin = options.addUserInfo ? Math.min(beatSize * 0.3, 60) : 50;
 	} else if (beatCount === 1) {
 		topMargin = options.addWord ? Math.min(beatSize * 0.8, 120) : 0;
 	} else if (beatCount === 2) {
@@ -436,13 +539,97 @@ function drawUserInfo(
 }
 
 /**
- * Downloads a data URL as a file
+ * Downloads a data URL as a file with improved error handling
+ * @returns Promise that resolves when download is initiated or rejects on error
  */
-export function downloadDataUrl(dataUrl: string, filename: string): void {
-	const link = document.createElement('a');
-	link.href = dataUrl;
-	link.download = filename;
-	document.body.appendChild(link);
-	link.click();
-	document.body.removeChild(link);
+export async function downloadDataUrl(dataUrl: string, filename: string): Promise<boolean> {
+	try {
+		// Validate data URL
+		if (!dataUrl || typeof dataUrl !== 'string') {
+			throw new Error('Invalid data URL: empty or not a string');
+		}
+
+		if (!dataUrl.startsWith('data:image/')) {
+			throw new Error(`Invalid data URL format: ${dataUrl.substring(0, 30)}...`);
+		}
+
+		// Validate filename
+		if (!filename || typeof filename !== 'string') {
+			filename = `image-${Date.now()}.png`;
+			console.warn('Invalid filename provided, using default:', filename);
+		}
+
+		// Try using Blob and object URL approach first (more reliable)
+		try {
+			// Convert data URL to Blob
+			const parts = dataUrl.split(',');
+			const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png';
+			const binary = atob(parts[1]);
+			const array = new Uint8Array(binary.length);
+
+			for (let i = 0; i < binary.length; i++) {
+				array[i] = binary.charCodeAt(i);
+			}
+
+			// Create Blob and Object URL
+			const blob = new Blob([array], { type: mime });
+			const objectUrl = URL.createObjectURL(blob);
+
+			// Create download link
+			const link = document.createElement('a');
+			link.href = objectUrl;
+			link.download = filename;
+			link.style.display = 'none';
+
+			// Add to DOM
+			document.body.appendChild(link);
+
+			// Small delay to ensure browser is ready
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Trigger download
+			link.click();
+
+			// Clean up
+			setTimeout(() => {
+				if (document.body.contains(link)) {
+					document.body.removeChild(link);
+				}
+				URL.revokeObjectURL(objectUrl);
+			}, 1000);
+
+			return true;
+		} catch (blobError) {
+			console.warn('Blob download approach failed, falling back to direct data URL:', blobError);
+
+			// Fallback to direct data URL approach
+			const link = document.createElement('a');
+			link.href = dataUrl;
+			link.download = filename;
+			link.style.display = 'none';
+
+			// Add to DOM
+			document.body.appendChild(link);
+
+			// Small delay to ensure browser is ready
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Trigger download
+			link.click();
+
+			// Clean up
+			setTimeout(() => {
+				if (document.body.contains(link)) {
+					document.body.removeChild(link);
+				}
+			}, 1000);
+
+			return true;
+		}
+	} catch (error) {
+		logger.error('Error downloading data URL', {
+			error: error instanceof Error ? error : new Error(String(error))
+		});
+		throw error;
+	}
 }
