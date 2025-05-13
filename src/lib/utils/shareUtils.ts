@@ -606,14 +606,31 @@ function inferLetter(blueMotion: MotionData | null, redMotion: MotionData | null
  * @returns {boolean} True if Web Share API is supported
  */
 export function isWebShareSupported(): boolean {
-	console.log('shareUtils: Checking if Web Share API is supported');
-	console.log('shareUtils: browser:', browser);
-	console.log('shareUtils: share in navigator:', 'share' in navigator);
-	console.log('shareUtils: typeof navigator.share:', typeof navigator.share);
+	if (!browser) {
+		return false;
+	}
 
-	const isSupported = browser && 'share' in navigator && typeof navigator.share === 'function';
-	console.log('shareUtils: Web Share API supported:', isSupported);
-	return isSupported;
+	try {
+		// Basic check for Web Share API support
+		const hasShareAPI = 'share' in navigator && typeof navigator.share === 'function';
+
+		// Additional check for mobile devices where sharing is most commonly supported
+		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+			navigator.userAgent
+		);
+
+		// Log detailed information for debugging
+		console.log('shareUtils: Web Share API check:', {
+			hasShareAPI,
+			isMobile,
+			userAgent: navigator.userAgent
+		});
+
+		return hasShareAPI;
+	} catch (error) {
+		console.warn('shareUtils: Error checking Web Share API support:', error);
+		return false;
+	}
 }
 
 /**
@@ -621,34 +638,33 @@ export function isWebShareSupported(): boolean {
  * @returns {boolean} True if Web Share API with files is supported
  */
 export function isFileShareSupported(): boolean {
-	console.log('shareUtils: Checking if File Share API is supported');
-
 	if (!browser) {
-		console.log('shareUtils: Not in browser environment');
 		return false;
 	}
 
 	try {
 		// First check if basic Web Share API is supported
-		const webShareSupported = isWebShareSupported();
-		console.log(
-			'shareUtils: Web Share API supported (from isFileShareSupported):',
-			webShareSupported
-		);
-		if (!webShareSupported) return false;
+		if (!isWebShareSupported()) {
+			return false;
+		}
 
 		// Then check if canShare method exists
-		const canShareExists = 'canShare' in navigator && typeof navigator.canShare === 'function';
-		console.log('shareUtils: canShare method exists:', canShareExists);
-		if (!canShareExists) return false;
+		if (!('canShare' in navigator && typeof navigator.canShare === 'function')) {
+			return false;
+		}
 
 		// Create a dummy file for testing
-		console.log('shareUtils: Creating dummy file for testing');
 		const dummyFile = new File(['test'], 'test.png', { type: 'image/png' });
 
 		// Check if the browser can share files
 		const canShareFiles = navigator.canShare({ files: [dummyFile] });
-		console.log('shareUtils: Browser can share files:', canShareFiles);
+
+		// Log result for debugging
+		console.log('shareUtils: File sharing support check:', {
+			canShareFiles,
+			userAgent: navigator.userAgent
+		});
+
 		return canShareFiles;
 	} catch (error) {
 		// If any error occurs, assume file sharing is not supported
@@ -669,10 +685,10 @@ export function isMobileDevice(): boolean {
 /**
  * Generate a compact shareable URL for a sequence
  * @param {BeatData[]} beats - The sequence beats
- * @param {string} sequenceName - The name of the sequence
+ * @param {string} _sequenceName - The name of the sequence (unused, kept for API compatibility)
  * @returns {string} The shareable URL
  */
-export function generateShareableUrl(beats: BeatData[], sequenceName: string): string {
+export function generateShareableUrl(beats: BeatData[], _sequenceName: string): string {
 	if (!browser) return '';
 
 	try {
@@ -720,23 +736,37 @@ export function checkForSequenceInUrl(sequenceContainer: any): boolean {
 
 	if (seqParam) {
 		try {
+			logger.info(`Found sequence parameter in URL (length: ${seqParam.length})`);
 			let sequenceData: string;
 
 			// Try to decompress with LZString if available
 			if (LZString) {
 				try {
+					logger.debug('Attempting to decompress sequence data with LZString');
 					sequenceData = LZString.decompressFromEncodedURIComponent(seqParam);
 					if (!sequenceData) {
 						// If decompression returns null, it might not be compressed
+						logger.debug('LZString decompression returned null, using raw parameter');
 						sequenceData = seqParam;
+					} else {
+						logger.debug(
+							`Successfully decompressed sequence data (${seqParam.length} → ${sequenceData.length})`
+						);
 					}
 				} catch (e) {
 					// If decompression fails, use raw parameter
+					logger.warn('LZString decompression failed, using raw parameter');
 					sequenceData = seqParam;
 				}
 			} else {
 				// No LZString, assume it's not compressed
+				logger.debug('LZString not available, using raw parameter');
 				sequenceData = seqParam;
+			}
+
+			// Validate the sequence data format before decoding
+			if (!validateSequenceFormat(sequenceData)) {
+				throw new Error('Invalid sequence format');
 			}
 
 			// Decode the sequence
@@ -746,30 +776,86 @@ export function checkForSequenceInUrl(sequenceContainer: any): boolean {
 				throw new Error('No beats found in sequence data');
 			}
 
+			// Log detailed information about the reconstructed sequence
+			const hasStartPos = reconstructedBeats[0]?.metadata?.isStartPosition === true;
+			const seqVersion = sequenceData.split('|')[0];
+			logger.info(
+				`Successfully decoded sequence from URL: ${reconstructedBeats.length} beats, version ${seqVersion}, ${hasStartPos ? 'has' : 'no'} start position`
+			);
+
 			// Load the sequence into the app
 			sequenceContainer.setSequence(reconstructedBeats);
 
 			// Show success message
-			showSuccess(`Loaded sequence with ${reconstructedBeats.length - 1} moves`);
+			const moveCount = reconstructedBeats.length - 1; // Subtract start position
+			showSuccess(`Loaded sequence with ${moveCount} move${moveCount !== 1 ? 's' : ''}`);
 
 			// Remove the parameter from URL (optional)
 			const url = new URL(window.location.href);
 			url.searchParams.delete('seq');
 			window.history.replaceState({}, '', url);
 
-			logger.info('Reconstructed sequence from URL', {
-				beatCount: reconstructedBeats.length
-			} as any);
-
 			return true;
 		} catch (error) {
-			logger.error('Failed to reconstruct sequence from URL', {
-				error: error instanceof Error ? error : new Error(String(error))
-			});
+			const errorMsg = error instanceof Error ? error.message : String(error);
+			const preview = seqParam.substring(0, 50) + (seqParam.length > 50 ? '...' : '');
+			logger.error(
+				`Failed to reconstruct sequence from URL: ${errorMsg} (length: ${seqParam.length}, preview: ${preview})`
+			);
 			showError('Failed to load sequence from URL');
 		}
 	}
 	return false;
+}
+
+/**
+ * Validate the sequence data format before attempting to decode
+ * @param sequenceData The sequence data string to validate
+ * @returns True if the format appears valid
+ */
+function validateSequenceFormat(sequenceData: string): boolean {
+	if (!sequenceData) return false;
+
+	// Check for basic format: VERSION|START_POS_DATA|BEAT1|BEAT2|...
+	const parts = sequenceData.split('|');
+
+	// Must have at least version and start position
+	if (parts.length < 2) {
+		logger.warn(`Sequence data has too few parts: ${parts.length}`);
+		return false;
+	}
+
+	// Version must be a number
+	const version = parts[0];
+	if (version !== '2' && version !== '3') {
+		logger.warn(`Unsupported sequence version: ${version}`);
+		return false;
+	}
+
+	// For version 3, validate start position format
+	if (version === '3') {
+		const startPosData = parts[1];
+		const startPosParts = startPosData.split(',');
+
+		// Start position should have at least 4 parts: BLUE_LOC,RED_LOC,BLUE_ORI,RED_ORI
+		if (startPosParts.length < 4) {
+			logger.warn(
+				`Invalid start position format: ${startPosData} (parts: ${startPosParts.length})`
+			);
+			return false;
+		}
+	}
+
+	// For each beat, check basic format: BLUE:RED
+	for (let i = version === '3' ? 2 : 1; i < parts.length; i++) {
+		const beatData = parts[i];
+		if (!beatData.includes(':')) {
+			logger.warn(`Invalid beat format at index ${i}: ${beatData}`);
+			return false;
+		}
+	}
+
+	return true;
 }
 
 /**
@@ -791,8 +877,13 @@ function dataURLtoBlob(dataUrl: string): Blob {
 	return new Blob([u8arr], { type: mime });
 }
 
+// Track the last time a share was attempted to prevent issues with multiple rapid calls
+let lastShareApiCallTime = 0;
+const MIN_SHARE_API_INTERVAL_MS = 1000; // Minimum 1 second between Web Share API calls
+
 /**
  * Share a sequence image with a reconstruction URL
+ * This is the primary sharing function that handles both image and URL sharing
  * @param {SequenceRenderResult} imageResult - The rendered image result
  * @param {string} sequenceName - The name of the sequence
  * @param {string} shareUrl - The shareable URL
@@ -804,70 +895,124 @@ export async function shareSequenceWithImage(
 	shareUrl: string
 ): Promise<boolean> {
 	console.log('shareUtils: shareSequenceWithImage called with:', { sequenceName, shareUrl });
-	console.log('shareUtils: imageResult:', imageResult);
 
-	// Double-check file sharing support
-	const fileShareSupported = isFileShareSupported();
-	console.log('shareUtils: File sharing supported (double-check):', fileShareSupported);
-
-	if (!browser || !fileShareSupported) {
-		console.log('shareUtils: File sharing not supported, returning false');
-		logger.warn('File sharing not supported on this device');
+	if (!browser) {
+		console.log('shareUtils: Not in browser environment, returning false');
 		return false;
 	}
 
+	// First check if Web Share API is supported at all
+	if (!isWebShareSupported()) {
+		console.log('shareUtils: Web Share API not supported, returning false');
+		showError("Your device doesn't support sharing");
+		return false;
+	}
+
+	// Check if we've attempted to share too recently
+	const now = Date.now();
+	const timeSinceLastAttempt = now - lastShareApiCallTime;
+	if (timeSinceLastAttempt < MIN_SHARE_API_INTERVAL_MS) {
+		console.log(
+			`shareUtils: Share API called too soon (${timeSinceLastAttempt}ms since last attempt)`
+		);
+		showError('Please wait a moment before sharing again');
+		return false;
+	}
+
+	// Update the last attempt time
+	lastShareApiCallTime = now;
+
 	try {
-		// Convert the data URL to a Blob
-		console.log('shareUtils: Converting data URL to Blob');
-		const blob = dataURLtoBlob(imageResult.dataUrl);
-		console.log('shareUtils: Blob created:', blob);
+		// Prepare the share text
+		const shareTitle = 'Kinetic Constructor Sequence';
+		const shareText = `Check out this sequence${sequenceName ? ': ' + sequenceName : ''}\n\nOpen this link to reconstruct: ${shareUrl}`;
 
-		// Create a File from the Blob
-		console.log('shareUtils: Creating File from Blob');
-		const file = new File([blob], `${sequenceName || 'sequence'}.png`, { type: 'image/png' });
-		console.log('shareUtils: File created:', file);
+		// First try to share with image if file sharing is supported
+		const fileShareSupported = isFileShareSupported();
+		console.log('shareUtils: File sharing supported:', fileShareSupported);
 
-		// Create share data with the image file
-		const shareData: ShareData = {
-			title: 'Kinetic Constructor Sequence',
-			text: `Check out this sequence${sequenceName ? ': ' + sequenceName : ''}\n\nOpen this link to reconstruct: ${shareUrl}`,
-			url: shareUrl,
-			files: [file]
-		};
-		console.log('shareUtils: Share data created:', shareData);
+		if (fileShareSupported && imageResult && imageResult.dataUrl) {
+			try {
+				// Convert the data URL to a Blob
+				console.log('shareUtils: Converting data URL to Blob');
+				const blob = dataURLtoBlob(imageResult.dataUrl);
 
-		// Check if the device can share this content
-		const canShareContent = navigator.canShare && navigator.canShare(shareData);
-		console.log('shareUtils: Device can share this content:', canShareContent);
+				// Create a File from the Blob
+				console.log('shareUtils: Creating File from Blob');
+				const fileName = `${sequenceName || 'kinetic-sequence'}.png`;
+				const file = new File([blob], fileName, { type: 'image/png' });
 
-		if (!canShareContent) {
-			console.log('shareUtils: Device cannot share this content, returning false');
-			logger.warn('Device cannot share this content');
-			showError("Your device doesn't support sharing this type of content");
-			return false;
+				// Create share data with the image file
+				const shareData: ShareData = {
+					title: shareTitle,
+					text: shareText,
+					url: shareUrl,
+					files: [file]
+				};
+
+				// Check if the device can share this content with files
+				if (navigator.canShare && navigator.canShare(shareData)) {
+					console.log('shareUtils: Device can share with files, calling navigator.share');
+
+					// Use a small timeout to ensure the browser is ready
+					await new Promise((resolve) => setTimeout(resolve, 100));
+
+					await navigator.share(shareData);
+					console.log('shareUtils: Share with files completed successfully');
+					showSuccess('Sequence shared successfully');
+					return true;
+				} else {
+					console.log('shareUtils: Device cannot share with files, falling back to text+URL only');
+					// Fall through to text+URL sharing
+				}
+			} catch (fileError) {
+				// If there's an error with file sharing, log it and fall back to text+URL sharing
+				if (fileError instanceof Error && fileError.name === 'AbortError') {
+					console.log('shareUtils: User cancelled file sharing');
+					return false;
+				}
+
+				console.warn(
+					'shareUtils: Error sharing with file, falling back to text+URL only:',
+					fileError
+				);
+				// Fall through to text+URL sharing
+			}
 		}
 
-		// Share the content
-		console.log('shareUtils: Calling navigator.share with shareData');
-		await navigator.share(shareData);
-		console.log('shareUtils: navigator.share completed successfully');
-		logger.info('Sequence shared successfully with image');
-		showSuccess('Sequence shared successfully with image');
+		// Fallback to sharing just the text and URL
+		console.log('shareUtils: Attempting to share with text and URL only');
+		const textOnlyShareData: ShareData = {
+			title: shareTitle,
+			text: shareText,
+			url: shareUrl
+		};
+
+		// Use a small timeout to ensure the browser is ready
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
+		await navigator.share(textOnlyShareData);
+		console.log('shareUtils: Text+URL share completed successfully');
+		showSuccess('Sequence shared successfully');
 		return true;
 	} catch (error) {
 		// Don't show error for user cancellation
 		if (error instanceof Error && error.name === 'AbortError') {
 			console.log('shareUtils: User cancelled sharing');
-			logger.info('User cancelled sharing');
 			return false;
 		}
 
 		console.error('shareUtils: Error in shareSequenceWithImage:', error);
-		logger.error('Error sharing sequence with image', {
+		logger.error('Error sharing sequence', {
 			error: error instanceof Error ? error : new Error(String(error))
 		});
-		showError('Failed to share sequence with image');
+
+		// Only show error if it's not a user cancellation
+		showError('Unable to share sequence. Please try again.');
 		return false;
+	} finally {
+		// Ensure we update the last share time even if there was an error
+		lastShareApiCallTime = Date.now();
 	}
 }
 
@@ -877,28 +1022,57 @@ export async function shareSequenceWithImage(
  * @returns {Promise<boolean>} True if sharing was successful
  */
 export async function shareSequence(shareData: ShareData): Promise<boolean> {
-	if (!isWebShareSupported()) {
-		logger.warn('Web Share API not supported');
+	if (!browser) {
+		console.log('shareUtils: Not in browser environment, returning false');
 		return false;
 	}
 
+	if (!isWebShareSupported()) {
+		console.log('shareUtils: Web Share API not supported, returning false');
+		showError("Your device doesn't support sharing");
+		return false;
+	}
+
+	// Check if we've attempted to share too recently
+	const now = Date.now();
+	const timeSinceLastAttempt = now - lastShareApiCallTime;
+	if (timeSinceLastAttempt < MIN_SHARE_API_INTERVAL_MS) {
+		console.log(
+			`shareUtils: Share API called too soon (${timeSinceLastAttempt}ms since last attempt)`
+		);
+		showError('Please wait a moment before sharing again');
+		return false;
+	}
+
+	// Update the last attempt time
+	lastShareApiCallTime = now;
+
 	try {
+		// Use a small timeout to ensure the browser is ready
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
 		await navigator.share(shareData);
+		console.log('shareUtils: Share completed successfully');
 		logger.info('Sequence shared successfully');
 		showSuccess('Sequence shared successfully');
 		return true;
 	} catch (error) {
 		// Don't show error for user cancellation
 		if (error instanceof Error && error.name === 'AbortError') {
+			console.log('shareUtils: User cancelled sharing');
 			logger.info('User cancelled sharing');
 			return false;
 		}
 
+		console.error('shareUtils: Error in shareSequence:', error);
 		logger.error('Error sharing sequence', {
 			error: error instanceof Error ? error : new Error(String(error))
 		});
 		showError('Failed to share sequence');
 		return false;
+	} finally {
+		// Ensure we update the last share time even if there was an error
+		lastShareApiCallTime = Date.now();
 	}
 }
 
@@ -928,13 +1102,75 @@ export async function copyToClipboard(url: string): Promise<boolean> {
  * @param {string} sequenceName - The name of the sequence
  * @param {string} url - The shareable URL
  */
-export function shareViaEmail(sequenceName: string, url: string): void {
-	if (!browser) return;
+/**
+ * Test utility for verifying URL parameter encoding/decoding
+ * This function is exposed for testing purposes only
+ * @param beats The sequence beats to test
+ * @returns Test results with encoded URL and decoded beats
+ */
+export function testSequenceUrlEncoding(beats: BeatData[]): {
+	success: boolean;
+	originalBeats: BeatData[];
+	encodedUrl: string;
+	decodedBeats: BeatData[];
+	encodedLength: number;
+	compressedLength: number;
+	compressionRatio: number;
+} {
+	try {
+		// Generate a shareable URL
+		const url = generateShareableUrl(beats, 'Test Sequence');
 
-	const subject = encodeURIComponent(`Kinetic Constructor Sequence: ${sequenceName}`);
-	const body = encodeURIComponent(
-		`Check out this Kinetic Constructor sequence: ${sequenceName}\n\n${url}`
-	);
+		// Extract the sequence parameter
+		const urlObj = new URL(url);
+		const seqParam = urlObj.searchParams.get('seq') || '';
 
-	window.location.href = `mailto:?subject=${subject}&body=${body}`;
+		// Get the raw encoded sequence (before compression)
+		const rawEncoded = encodeSequenceCompact(beats);
+
+		// Decode the sequence parameter
+		let sequenceData: string;
+		if (LZString) {
+			try {
+				sequenceData = LZString.decompressFromEncodedURIComponent(seqParam);
+				if (!sequenceData) {
+					sequenceData = seqParam;
+				}
+			} catch (e) {
+				sequenceData = seqParam;
+			}
+		} else {
+			sequenceData = seqParam;
+		}
+
+		// Decode the sequence
+		const decodedBeats = decodeSequenceCompact(sequenceData);
+
+		// Calculate compression ratio
+		const compressionRatio = rawEncoded.length > 0 ? seqParam.length / rawEncoded.length : 1;
+
+		return {
+			success: decodedBeats.length > 0,
+			originalBeats: beats,
+			encodedUrl: url,
+			decodedBeats,
+			encodedLength: rawEncoded.length,
+			compressedLength: seqParam.length,
+			compressionRatio
+		};
+	} catch (error) {
+		logger.error('Error in testSequenceUrlEncoding', {
+			error: error instanceof Error ? error : new Error(String(error))
+		});
+
+		return {
+			success: false,
+			originalBeats: beats,
+			encodedUrl: '',
+			decodedBeats: [],
+			encodedLength: 0,
+			compressedLength: 0,
+			compressionRatio: 0
+		};
+	}
 }

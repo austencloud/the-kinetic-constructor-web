@@ -3,22 +3,21 @@
 	import CurrentWordLabel from '../Labels/CurrentWordLabel.svelte';
 	import BeatFrame from '../BeatFrame/BeatFrame.svelte';
 	import { calculateBeatFrameShouldScroll } from '../utils/SequenceLayoutCalculator';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, setContext } from 'svelte';
+	import { browser } from '$app/environment';
+	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from '../context/ElementContext';
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher<{
 		beatselected: { beatId: string };
 	}>();
 
+	// We're using the shared context key from ElementContext.ts
+
 	// Props
-	const {
-		containerHeight = $bindable(0),
-		containerWidth = $bindable(0),
-		beatFrameElement = $bindable<HTMLElement | null>(null)
-	} = $props<{
+	const { containerHeight = $bindable(0), containerWidth = $bindable(0) } = $props<{
 		containerHeight?: number;
 		containerWidth?: number;
-		beatFrameElement?: HTMLElement | null;
 	}>();
 
 	// State
@@ -26,6 +25,34 @@
 	let beatFrameShouldScroll = $state(false);
 	let currentWordLabelElement = $state<HTMLElement | null>(null);
 	let sequenceName = $state('');
+	let beatFrameElement = $state<HTMLElement | null>(null);
+
+	// Create a context for the beat frame element that can be accessed by child components
+	setContext<ElementContext>(BEAT_FRAME_CONTEXT_KEY, {
+		getElement: () => beatFrameElement,
+		setElement: (el: HTMLElement | null) => {
+			if (el) {
+				console.log('SequenceContent: Setting beatFrameElement via context');
+				beatFrameElement = el;
+
+				// Also store in global variables for maximum compatibility
+				if (browser) {
+					(window as any).__beatFrameElementRef = el;
+					(window as any).__pendingBeatFrameElement = el;
+				}
+
+				// Dispatch a custom event for components that don't use context
+				const event = new CustomEvent('beatframe-element-available', {
+					bubbles: true,
+					detail: { element: el }
+				});
+				document.dispatchEvent(event);
+
+				return true;
+			}
+			return false;
+		}
+	});
 
 	// Update metadata from the sequence store
 	$effect(() => {
@@ -98,41 +125,29 @@
 					on:beatselected={handleBeatSelected}
 					isScrollable={beatFrameShouldScroll}
 					elementReceiver={function (el: HTMLElement | null) {
-						// Use a function to update the bindable prop
+						// Use a function to update the element reference
 						console.log('SequenceContent: BeatFrame element received:', el);
 
-						try {
-							// Add null check to prevent "Cannot read properties of null" error
-							if (beatFrameElement) {
-								beatFrameElement.set(el);
-								console.log('SequenceContent: Updated beatFrameElement prop');
-							} else {
-								console.error('SequenceContent: beatFrameElement is null, cannot set element');
+						if (el) {
+							// Update our local state
+							beatFrameElement = el;
 
-								// Try to dispatch a custom event as a fallback mechanism
-								if (el) {
-									console.log('SequenceContent: Dispatching beatframe-element-available event');
-									const event = new CustomEvent('beatframe-element-available', {
-										bubbles: true,
-										detail: { element: el }
-									});
-									document.dispatchEvent(event);
-								}
+							// Store in global variables for maximum compatibility
+							if (browser) {
+								(window as any).__beatFrameElementRef = el;
+								(window as any).__pendingBeatFrameElement = el;
 							}
-						} catch (error) {
-							console.error('SequenceContent: Error updating beatFrameElement:', error);
 
-							// Always try to dispatch the event even if there was an error
-							if (el) {
-								console.log(
-									'SequenceContent: Dispatching beatframe-element-available event (after error)'
-								);
-								const event = new CustomEvent('beatframe-element-available', {
-									bubbles: true,
-									detail: { element: el }
-								});
-								document.dispatchEvent(event);
-							}
+							// Dispatch a custom event for components that don't use context
+							const event = new CustomEvent('beatframe-element-available', {
+								bubbles: true,
+								detail: { element: el }
+							});
+							document.dispatchEvent(event);
+
+							console.log('SequenceContent: Updated beatFrameElement and dispatched event');
+						} else {
+							console.warn('SequenceContent: Received null element from BeatFrame');
 						}
 					}}
 				/>

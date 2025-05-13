@@ -1,6 +1,6 @@
 // src/lib/components/Pictograph/utils/errorHandling.ts
 import type { PictographData } from '$lib/types/PictographData';
-import { get } from 'svelte/store';
+import { get, type Writable } from 'svelte/store';
 import { logger } from '$lib/core/logging';
 import { errorService, ErrorSeverity } from '../../../services/ErrorHandlingService';
 import type { PropData } from '../../objects/Prop/PropData';
@@ -13,8 +13,8 @@ import type { ArrowData } from '../../objects/Arrow/ArrowData';
 export interface ErrorHandlerContext {
   pictographDataStore: { subscribe: (callback: (value: PictographData) => void) => () => void };
   dispatch: (event: string, detail?: any) => void;
-  state: { set: (value: string) => void };
-  errorMessage: { set: (value: string | null) => void };
+  state: Writable<string>;
+  errorMessage: Writable<string | null>;
   componentsLoaded: number;
   totalComponentsToLoad: number;
 }
@@ -48,13 +48,16 @@ export function handleError(
     });
     unsubscribe();
 
+    // Get current state value
+    const currentState = get(context.state);
+
     // Log using the structured logging system
     logger.pictograph(`Error in ${source}`, {
       letter: pictographData?.letter
         ? String(pictographData?.letter)
         : undefined,
       gridMode: pictographData?.gridMode,
-      componentState: context.state,
+      componentState: currentState,
       renderMetrics: {
         componentsLoaded: context.componentsLoaded,
         totalComponents: context.totalComponentsToLoad,

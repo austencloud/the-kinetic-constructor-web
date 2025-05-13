@@ -1,15 +1,11 @@
 <!-- src/lib/components/SequenceWorkbench/DeleteModal.svelte -->
 <script lang="ts">
-	import { fade } from 'svelte/transition';
+	import { fade, scale } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 	import { createEventDispatcher } from 'svelte';
 
 	// Props
-	export let isOpen: boolean = false;
-	export let hasSelectedBeat: boolean = false;
-
-	// Get the DeleteButton position for animation origin
-	// These will be set by the parent component
-	export let buttonRect: DOMRect | null = null;
+	const { isOpen = false, hasSelectedBeat = false, buttonRect = null } = $props();
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher<{
@@ -19,77 +15,129 @@
 		close: void;
 	}>();
 
-	// Handle clear sequence
 	function handleClearSequence() {
 		dispatch('clearSequence');
 		close();
 	}
 
-	// Handle remove beat
 	function handleRemoveBeat() {
 		if (hasSelectedBeat) {
 			dispatch('removeBeat');
 			close();
 		} else {
-			// Enter deletion mode
 			dispatch('enterDeletionMode');
 			close();
 		}
 	}
 
-	// Close the modal
 	function close() {
 		dispatch('close');
 	}
 
-	// Handle backdrop click
 	function handleBackdropClick(event: MouseEvent) {
-		console.log('Backdrop clicked', event.target, event.currentTarget);
 		if (event.target === event.currentTarget) {
-			console.log('Closing modal from backdrop click');
 			close();
 		}
 	}
 
-	// Handle keydown
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape') {
 			close();
 		}
 	}
 
-	// Calculate popup position based on button position
-	$: popupStyle = buttonRect
-		? `--origin-left: ${buttonRect.left + buttonRect.width / 2}px; --origin-bottom: ${buttonRect.bottom}px;`
-		: `--origin-left: 50px; --origin-bottom: calc(100vh - 50px);`; // Fallback position
+	// Calculate popup position and properties
+	let popupPosition = $state({
+		left: 0,
+		position: '',
+		arrowOffset: 0,
+		positionAbove: true
+	});
 
-	// Log the popup style for debugging
-	$: if (isOpen) {
-		console.log('Popup style:', popupStyle);
-		console.log('Button rect:', buttonRect);
-	}
+	// Update popup position when buttonRect changes
+	$effect(() => {
+		if (!buttonRect) return;
+
+		// Get viewport dimensions
+		const viewportHeight = window.innerHeight;
+		const viewportWidth = window.innerWidth;
+
+		// Modal dimensions (approximate)
+		const modalWidth = 280;
+		const modalHeight = 220; // Approximate height
+
+		// Calculate the center point of the button
+		const buttonCenterX = buttonRect.left + buttonRect.width / 2;
+		const buttonTop = buttonRect.top;
+
+		// Determine if there's enough space above the button
+		const positionAbove = buttonTop > modalHeight + 20;
+
+		// Calculate left position, ensuring the modal stays within viewport
+		let left = Math.max(
+			modalWidth / 2 + 10, // Left edge + padding
+			Math.min(
+				buttonCenterX,
+				viewportWidth - modalWidth / 2 - 10 // Right edge - half modal width - padding
+			)
+		);
+
+		// Calculate top or bottom position based on whether we're showing above or below
+		let position = positionAbove
+			? `bottom: ${viewportHeight - buttonTop + 12}px;` // Position above with gap
+			: `top: ${buttonTop + buttonRect.height + 12}px;`; // Position below with gap
+
+		// Calculate the arrow position (relative to the modal center)
+		const arrowOffset = buttonCenterX - left;
+
+		// Update the state
+		popupPosition = {
+			left,
+			position,
+			arrowOffset,
+			positionAbove
+		};
+	});
+
+	// Compute the style string
+	const popupStyle = $derived(
+		buttonRect
+			? `left: ${popupPosition.left}px; ${popupPosition.position} --arrow-offset: ${popupPosition.arrowOffset}px; --position-above: ${popupPosition.positionAbove ? '1' : '0'};`
+			: ''
+	);
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if isOpen}
-
-
 	<div
 		class="popup-backdrop"
-		on:click={handleBackdropClick}
-		on:keydown={handleKeydown}
+		onclick={handleBackdropClick}
+		onkeydown={handleKeydown}
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="delete-popup-title"
 		tabindex="-1"
-		transition:fade={{ duration: 300 }}
+		transition:fade={{ duration: 200 }}
 	>
-		<!-- Fixed position popup that doesn't rely on CSS variables -->
-		<div class="popup-container" style={popupStyle} data-testid="delete-popup-container">
+		<!-- Positioned popup that animates from the delete button -->
+		<div
+			class="popup-container"
+			style={popupStyle}
+			data-testid="delete-popup-container"
+			in:scale={{
+				duration: 300,
+				delay: 50,
+				opacity: 0,
+				start: 0.8,
+				easing: quintOut
+			}}
+			style:transform="translateX(-50%)"
+			style:transform-origin={`calc(50% + var(--arrow-offset)) ${popupPosition.positionAbove ? '100%' : '0%'}`}
+		>
 			<div class="popup-content">
 				<div class="option-buttons">
-					<button class="option-button remove-beat" on:click={handleRemoveBeat}>
+					<button class="option-button remove-beat" onclick={handleRemoveBeat}>
 						<div class="option-icon">
 							<i class="fa-solid fa-trash"></i>
 						</div>
@@ -103,7 +151,7 @@
 						</div>
 					</button>
 
-					<button class="option-button clear-sequence" on:click={handleClearSequence}>
+					<button class="option-button clear-sequence" onclick={handleClearSequence}>
 						<div class="option-icon">
 							<i class="fa-solid fa-eraser"></i>
 						</div>
@@ -115,7 +163,7 @@
 				</div>
 
 				<div class="popup-footer">
-					<button class="cancel-button" on:click={close}>Cancel</button>
+					<button class="cancel-button" onclick={close}>Cancel</button>
 				</div>
 			</div>
 		</div>
@@ -134,25 +182,24 @@
 		justify-content: center;
 		align-items: center;
 		z-index: 100;
-		pointer-events: all; /* Changed from auto to all to ensure clicks are captured */
+		pointer-events: all;
 		cursor: default;
 	}
 
 	.popup-container {
-		position: fixed; /* Changed from absolute to fixed for more reliable positioning */
-		left: 50px; /* Fixed position for debugging */
-		bottom: 100px; /* Fixed position for debugging */
+		position: fixed;
+		transform: translateX(-50%); /* Center horizontally relative to button */
 		background-color: var(--tkc-button-panel-background, #2a2a2e);
 		border-radius: 8px;
 		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-		width: 260px;
+		width: 280px;
 		max-width: 90vw;
 		max-height: calc(100vh - 100px);
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-		z-index: 101; /* Ensure it's above the backdrop */
-		border: 2px solid #ff5555; /* Make it more visible for debugging */
+		z-index: 101;
+		margin-bottom: 12px; /* Space between button and popup */
 	}
 
 	.popup-content {
@@ -260,16 +307,46 @@
 		transform: translateY(-1px);
 	}
 
-	/* Add a small arrow pointing down from the popup */
+	/* Add a small arrow pointing to the button */
 	.popup-container::after {
 		content: '';
 		position: absolute;
-		bottom: -8px;
-		left: 50%;
+		left: calc(50% + var(--arrow-offset, 0px));
 		transform: translateX(-50%);
-		border-width: 8px 8px 0;
-		border-style: solid;
-		border-color: var(--tkc-button-panel-background, #2a2a2e) transparent transparent transparent;
+		width: 16px;
+		height: 16px;
+		background-color: var(--tkc-button-panel-background, #2a2a2e);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		transform: translateX(-50%) rotate(45deg);
+		z-index: -1;
+
+		/* Position based on whether the modal is above or below the button */
+		bottom: calc(var(--position-above, 1) * -8px);
+		top: calc((1 - var(--position-above, 1)) * -8px);
+
+		/* Set the correct border sides based on position */
+		border-top: calc((1 - var(--position-above, 1)) * 1px) solid rgba(255, 255, 255, 0.1);
+		border-left: calc((1 - var(--position-above, 1)) * 1px) solid rgba(255, 255, 255, 0.1);
+		border-bottom: calc(var(--position-above, 1) * 1px) solid rgba(255, 255, 255, 0.1);
+		border-right: calc(var(--position-above, 1) * 1px) solid rgba(255, 255, 255, 0.1);
+	}
+
+	/* Add a subtle glow effect to connect the button and modal */
+	.popup-container::before {
+		content: '';
+		position: absolute;
+		left: calc(50% + var(--arrow-offset, 0px));
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		background: radial-gradient(circle, rgba(108, 156, 233, 0.2) 0%, rgba(108, 156, 233, 0) 70%);
+		transform: translateX(-50%);
+
+		/* Position based on whether the modal is above or below the button */
+		bottom: calc(var(--position-above, 1) * -15px);
+		top: calc((1 - var(--position-above, 1)) * -15px);
+		z-index: -2;
+		pointer-events: none;
 	}
 
 	/* Responsive adjustments */

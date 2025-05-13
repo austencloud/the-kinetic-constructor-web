@@ -1,121 +1,9 @@
-// src/lib/utils/sequenceImageRenderer.ts
+// Updated src/lib/utils/sequenceImageRenderer.ts
+
 import type { BeatData } from '$lib/components/SequenceWorkbench/BeatFrame/BeatData';
-import type { ImageExportSettings } from '$lib/state/image-export-settings';
 import { browser } from '$app/environment';
-
-// Define the html2canvas type for TypeScript
-type Html2CanvasType = (element: HTMLElement, options?: any) => Promise<HTMLCanvasElement>;
-
-// Initialize with a placeholder that will be replaced with the actual implementation
-let html2canvasImpl: Html2CanvasType | null = null;
-
-// Flag to track if we're currently loading html2canvas
-let isLoadingHtml2Canvas = false;
-
-// Promise that resolves when html2canvas is loaded
-let html2canvasLoadPromise: Promise<Html2CanvasType> | null = null;
-
-/**
- * Load html2canvas from the bundled package
- * This is the primary method that should work in most cases
- */
-async function loadBundledHtml2Canvas(): Promise<Html2CanvasType> {
-	try {
-		console.log('Loading bundled html2canvas...');
-		// Use a direct import instead of a dynamic import to avoid Vite optimization issues
-		const html2canvas = (await import('html2canvas')).default;
-		console.log('Bundled html2canvas loaded successfully');
-		return html2canvas;
-	} catch (error) {
-		console.warn('Failed to load bundled html2canvas:', error);
-		throw error;
-	}
-}
-
-/**
- * Load html2canvas from CDN as a fallback
- */
-async function loadCdnHtml2Canvas(): Promise<Html2CanvasType> {
-	return new Promise((resolve, reject) => {
-		console.log('Loading html2canvas from CDN...');
-
-		// Check if it's already in the window object (might have been loaded by another instance)
-		if (typeof window !== 'undefined' && (window as any).html2canvas) {
-			console.log('html2canvas already available in window object');
-			return resolve((window as any).html2canvas);
-		}
-
-		// Create script element to load from CDN
-		const script = document.createElement('script');
-		script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-		script.async = true;
-
-		script.onload = () => {
-			console.log('html2canvas loaded from CDN successfully');
-			if (typeof window !== 'undefined' && (window as any).html2canvas) {
-				resolve((window as any).html2canvas);
-			} else {
-				reject(new Error('html2canvas loaded from CDN but not found in window object'));
-			}
-		};
-
-		script.onerror = () => {
-			reject(new Error('Failed to load html2canvas from CDN'));
-		};
-
-		document.head.appendChild(script);
-	});
-}
-
-/**
- * Get the html2canvas implementation, loading it if necessary
- * This ensures we only try to load html2canvas once
- */
-async function getHtml2Canvas(): Promise<Html2CanvasType> {
-	// If we already have an implementation, return it
-	if (html2canvasImpl) {
-		return html2canvasImpl;
-	}
-
-	// If we're already loading, return the existing promise
-	if (html2canvasLoadPromise) {
-		return html2canvasLoadPromise;
-	}
-
-	// Start loading html2canvas
-	isLoadingHtml2Canvas = true;
-
-	// Create a promise that will resolve when html2canvas is loaded
-	html2canvasLoadPromise = (async () => {
-		try {
-			// First try to load the bundled version
-			return await loadBundledHtml2Canvas();
-		} catch (bundleError) {
-			console.warn('Falling back to CDN for html2canvas');
-			try {
-				// If that fails, try to load from CDN
-				return await loadCdnHtml2Canvas();
-			} catch (error) {
-				const cdnError = error instanceof Error ? error : new Error(String(error));
-				console.error('All html2canvas loading methods failed:', cdnError);
-				throw new Error('Failed to load html2canvas: ' + cdnError.message);
-			}
-		}
-	})();
-
-	try {
-		// Wait for the loading to complete
-		const implementation = await html2canvasLoadPromise;
-		html2canvasImpl = implementation;
-		isLoadingHtml2Canvas = false;
-		return implementation;
-	} catch (error) {
-		// Reset state on error
-		html2canvasLoadPromise = null;
-		isLoadingHtml2Canvas = false;
-		throw error;
-	}
-}
+import { logger } from '$lib/core/logging';
+import type { ImageExportSettings } from '$lib/state/image-export-settings';
 
 /**
  * Options for rendering a sequence to an image
@@ -134,7 +22,7 @@ export interface SequenceRenderOptions {
 	maxWidth?: number;
 	maxHeight?: number;
 
-	// New options based on ImageExportSettings
+	// Image export settings
 	includeStartPosition?: boolean;
 	addUserInfo?: boolean;
 	addWord?: boolean;
@@ -160,135 +48,128 @@ export interface SequenceRenderResult {
 
 /**
  * Renders a sequence to an image
- * @param element The DOM element to render (the beat frame)
- * @param options Rendering options
- * @returns Promise that resolves to the render result
  */
 export async function renderSequenceToImage(
 	element: HTMLElement,
 	options: SequenceRenderOptions
 ): Promise<SequenceRenderResult> {
-	try {
-		// Ensure we're in a browser environment
-		if (!browser) {
-			throw new Error('Cannot render sequence to image in a non-browser environment');
-		}
-
-		// Calculate the actual rows needed based on beat count
-		const actualRows = Math.ceil(options.beats.length / options.cols);
-		const usedRows = options.startPosition ? actualRows + 1 : actualRows;
-
-		// Calculate the aspect ratio based on the actual used rows and columns
-		const aspectRatio = options.cols / usedRows;
-
-		// Set up canvas options
-		const canvasOptions = {
-			backgroundColor: options.backgroundColor || 'transparent',
-			scale: 2, // Higher scale for better quality
-			logging: false,
-			useCORS: true,
-			allowTaint: true
-		};
-
-		// Load html2canvas if not already loaded
-		if (!html2canvasImpl) {
-			console.log('html2canvas not loaded yet, loading now...');
-			try {
-				html2canvasImpl = await getHtml2Canvas();
-			} catch (error) {
-				console.error('Failed to load html2canvas:', error);
-				throw new Error('Failed to load html2canvas for image rendering');
+	return new Promise((resolve, reject) => {
+		try {
+			if (!browser) {
+				reject(new Error('Cannot render in non-browser environment'));
+				return;
 			}
+
+			// Load html2canvas dynamically
+			import('html2canvas')
+				.then(async (html2canvasModule) => {
+					const html2canvas = html2canvasModule.default;
+
+					// Pre-processing - ensure all elements are visible and properly styled
+					applyPreRenderStyles(element, options);
+
+					// Calculate layout dimensions
+					const { width, height, topMargin, bottomMargin, beatSize } = calculateDimensions(options);
+
+					// Log dimensions for debugging
+					console.log('Rendering sequence image with dimensions:', {
+						width,
+						height,
+						topMargin,
+						bottomMargin,
+						beatSize,
+						totalWidth: width,
+						totalHeight: height + topMargin + bottomMargin,
+						beatCount: options.beats.length
+					});
+
+					// Canvas options - ALWAYS use white background like Python version
+					const canvasOptions = {
+						backgroundColor: '#FFFFFF',
+						scale: 2, // Higher scale for better quality
+						logging: false,
+						useCORS: true,
+						allowTaint: true,
+						// Capture SVG elements properly
+						svgRendering: true,
+						ignoreElements: (el: Element) => {
+							// Don't ignore any SVG elements
+							if (el.tagName.toLowerCase() === 'svg' || el.closest('svg')) {
+								return false;
+							}
+							// Ignore elements with these classes
+							return el.classList.contains('ignore-export');
+						}
+					};
+
+					try {
+						// Render the element to a canvas
+						const canvas = await html2canvas(element, canvasOptions);
+
+						// Create output canvas with proper size including margins
+						const outputCanvas = document.createElement('canvas');
+						outputCanvas.width = width;
+						outputCanvas.height = height + topMargin + bottomMargin;
+
+						const ctx = outputCanvas.getContext('2d');
+						if (!ctx) {
+							reject(new Error('Could not get canvas context'));
+							return;
+						}
+
+						// Fill the entire canvas with white (like Python version)
+						ctx.fillStyle = '#FFFFFF';
+						ctx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+
+						// Draw the word/title if enabled (in top margin like Python version)
+						if (options.addWord && options.title) {
+							drawTitle(ctx, options.title, width, topMargin);
+						}
+
+						// Draw the sequence content
+						ctx.drawImage(canvas, 0, topMargin);
+
+						// Draw user info if enabled (in bottom margin like Python version)
+						if (options.addUserInfo) {
+							drawUserInfo(ctx, options, width, height, topMargin, bottomMargin);
+						}
+
+						// Convert to data URL
+						const format = options.format || 'png';
+						const quality = options.quality || 0.92;
+						const dataUrl = outputCanvas.toDataURL(`image/${format}`, quality);
+
+						// Restore original styles
+						restoreOriginalStyles(element);
+
+						// Return result
+						resolve({
+							dataUrl,
+							width: outputCanvas.width,
+							height: outputCanvas.height,
+							aspectRatio: outputCanvas.width / outputCanvas.height
+						});
+					} catch (renderError) {
+						logger.error('Error in html2canvas rendering', {
+							error: renderError instanceof Error ? renderError : new Error(String(renderError))
+						});
+						reject(renderError);
+					}
+				})
+				.catch((error) => {
+					reject(new Error(`Failed to load html2canvas: ${error.message}`));
+				});
+		} catch (error) {
+			reject(error);
 		}
-
-		// Render the element to a canvas
-		if (!html2canvasImpl) {
-			throw new Error('html2canvas implementation is not available');
-		}
-
-		console.log('Rendering sequence to image with html2canvas...');
-		const canvas = await html2canvasImpl(element, canvasOptions);
-		console.log('Sequence rendered successfully');
-
-		// Get the original dimensions
-		let width = canvas.width;
-		let height = canvas.height;
-
-		// Apply max dimensions if specified
-		if (options.maxWidth && width > options.maxWidth) {
-			height = (options.maxWidth / width) * height;
-			width = options.maxWidth;
-		}
-
-		if (options.maxHeight && height > options.maxHeight) {
-			width = (options.maxHeight / height) * width;
-			height = options.maxHeight;
-		}
-
-		// Create a new canvas with the desired dimensions
-		const outputCanvas = document.createElement('canvas');
-		outputCanvas.width = width;
-		outputCanvas.height = height;
-
-		// Draw the original canvas onto the output canvas
-		const ctx = outputCanvas.getContext('2d');
-		if (!ctx) {
-			throw new Error('Could not get canvas context');
-		}
-
-		// Draw background if specified
-		if (options.backgroundColor) {
-			ctx.fillStyle = options.backgroundColor;
-			ctx.fillRect(0, 0, width, height);
-		}
-
-		// Draw the sequence
-		ctx.drawImage(canvas, 0, 0, width, height);
-
-		// Add title if requested
-		if (options.includeTitle && options.title) {
-			ctx.font = `bold ${Math.round(width * 0.05)}px Arial`;
-			ctx.fillStyle = 'white';
-			ctx.textAlign = 'center';
-			ctx.fillText(options.title, width / 2, height * 0.08);
-		}
-
-		// Convert to data URL
-		const format = options.format || 'png';
-		const quality = options.quality || 1.0;
-		const dataUrl = outputCanvas.toDataURL(`image/${format}`, quality);
-
-		// Return the result
-		return {
-			dataUrl,
-			width,
-			height,
-			aspectRatio
-		};
-	} catch (error) {
-		console.error('Error rendering sequence to image:', error);
-		throw new Error(
-			`Failed to render sequence to image: ${error instanceof Error ? error.message : String(error)}`
-		);
-	}
+	});
 }
-
-/**
- * Downloads a data URL as a file
- * @param dataUrl The data URL to download
- * @param filename The filename to use
- */
-export function downloadDataUrl(dataUrl: string, filename: string): void {
-	const link = document.createElement('a');
-	link.href = dataUrl;
-	link.download = filename;
-	document.body.appendChild(link);
-	link.click();
-	document.body.removeChild(link);
-}
-
 /**
  * Creates rendering options based on image export settings
+ * @param beats The beats to render
+ * @param settings Image export settings
+ * @param additionalOptions Additional options to override settings
+ * @returns Sequence render options
  */
 export function createRenderOptionsFromSettings(
 	beats: BeatData[],
@@ -301,7 +182,10 @@ export function createRenderOptionsFromSettings(
 
 	// Extract sequence name if available
 	const letters = beats
-		.map((beat) => (beat.pictographData.letter as string) || '')
+		.map((beat) => {
+			// Look for letter in different possible locations
+			return beat.pictographData?.letter as string;
+		})
 		.filter((letter) => letter.trim() !== '')
 		.join('');
 
@@ -314,7 +198,7 @@ export function createRenderOptionsFromSettings(
 		rows: renderRows,
 		cols: renderCols,
 		padding: 10,
-		backgroundColor: settings.backgroundColor || '#2a2a2e',
+		backgroundColor: settings.backgroundColor || '#FFFFFF',
 		includeTitle: settings.addWord ?? true,
 		title: sequenceName,
 		format: 'png',
@@ -332,4 +216,215 @@ export function createRenderOptionsFromSettings(
 		// Override with any additional options
 		...additionalOptions
 	};
+}
+/**
+ * Apply pre-render styles to ensure everything is properly captured
+ */
+function applyPreRenderStyles(element: HTMLElement, options: SequenceRenderOptions) {
+	// Make sure all grid elements are visible
+	const grids = element.querySelectorAll('image[href*="grid"]');
+	grids.forEach((grid) => {
+		(grid as HTMLElement).style.visibility = 'visible';
+		(grid as HTMLElement).style.opacity = '1';
+	});
+
+	// Make sure all letter glyphs are visible
+	const letters = element.querySelectorAll('.tka-glyph');
+	letters.forEach((letter) => {
+		(letter as HTMLElement).style.visibility = 'visible';
+		(letter as HTMLElement).style.opacity = '1';
+	});
+
+	// Configure beat numbers visibility based on options
+	const beatNumbers = element.querySelectorAll('.beat-number');
+	beatNumbers.forEach((number) => {
+		(number as HTMLElement).style.visibility = options.addBeatNumbers ? 'visible' : 'hidden';
+		(number as HTMLElement).style.opacity = options.addBeatNumbers ? '1' : '0';
+	});
+
+	// Configure reversal glyphs visibility based on options
+	const reversalGlyphs = element.querySelectorAll('.reversal-glyph');
+	reversalGlyphs.forEach((glyph) => {
+		(glyph as HTMLElement).style.visibility = options.addReversalSymbols ? 'visible' : 'hidden';
+		(glyph as HTMLElement).style.opacity = options.addReversalSymbols ? '1' : '0';
+	});
+}
+
+/**
+ * Restore original styles after rendering
+ */
+function restoreOriginalStyles(element: HTMLElement) {
+	// Reset any temporary styling
+	const temporaryStyled = element.querySelectorAll('[data-temp-styled]');
+	temporaryStyled.forEach((el) => {
+		(el as HTMLElement).style.cssText = (el as HTMLElement).dataset.originalStyle || '';
+		delete (el as HTMLElement).dataset.tempStyled;
+		delete (el as HTMLElement).dataset.originalStyle;
+	});
+}
+
+/**
+ * Calculate dimensions for the image
+ */
+function calculateDimensions(options: SequenceRenderOptions) {
+	// Base dimensions from beats and layout
+	const actualRows = Math.ceil(options.beats.length / options.cols);
+	const usedRows = options.includeStartPosition ? actualRows + 1 : actualRows;
+
+	// Calculate optimal pictograph size based on sequence length
+	// Smaller sequences get larger pictographs for better visibility
+	let beatSize = 950; // Default base pictograph size
+
+	// Adjust size based on sequence length for better readability
+	const beatCount = options.beats.length;
+	if (beatCount > 8) {
+		// For longer sequences, make pictographs smaller to fit better
+		beatSize = 850;
+	} else if (beatCount <= 4) {
+		// For very short sequences, make pictographs larger
+		beatSize = 1050;
+	}
+
+	// Apply max width/height constraints if provided
+	if (options.maxWidth && options.cols * beatSize > options.maxWidth) {
+		beatSize = Math.floor(options.maxWidth / options.cols);
+	}
+
+	// Calculate dimensions
+	const width = options.cols * beatSize;
+	const height = usedRows * beatSize;
+
+	// Calculate margins with improved spacing
+	let topMargin = 0;
+	let bottomMargin = 0;
+
+	// Improved margin calculation for better visual balance
+	if (beatCount === 0) {
+		topMargin = 0;
+		bottomMargin = options.addUserInfo ? 60 : 0;
+	} else if (beatCount === 1) {
+		topMargin = options.addWord ? 160 : 0;
+		bottomMargin = options.addUserInfo ? 60 : 0;
+	} else if (beatCount === 2) {
+		topMargin = options.addWord ? 200 : 0;
+		bottomMargin = options.addUserInfo ? 80 : 0;
+	} else if (beatCount <= 4) {
+		topMargin = options.addWord ? 250 : 0;
+		bottomMargin = options.addUserInfo ? 100 : 0;
+	} else {
+		topMargin = options.addWord ? 300 : 0;
+		bottomMargin = options.addUserInfo ? 150 : 0;
+	}
+
+	return { width, height, topMargin, bottomMargin, beatSize };
+}
+
+/**
+ * Draw title text (word) with improved styling
+ */
+function drawTitle(ctx: CanvasRenderingContext2D, title: string, width: number, topMargin: number) {
+	// Calculate optimal font size based on title length and available space
+	const titleLength = title.length;
+	let fontSize = Math.min(width * 0.1, topMargin * 0.6);
+
+	// Adjust font size for longer titles
+	if (titleLength > 10) {
+		fontSize = Math.min(fontSize, width * 0.08);
+	}
+	if (titleLength > 15) {
+		fontSize = Math.min(fontSize, width * 0.06);
+	}
+
+	// Draw title with subtle shadow for better readability
+	ctx.save();
+
+	// Draw shadow
+	ctx.font = `bold ${fontSize}px Georgia`;
+	ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.fillText(title, width / 2 + 2, topMargin / 2 + 2);
+
+	// Draw main text
+	ctx.fillStyle = '#000000';
+	ctx.fillText(title, width / 2, topMargin / 2);
+
+	// Optional: Add a subtle underline
+	const textWidth = ctx.measureText(title).width;
+	const lineY = topMargin / 2 + fontSize * 0.6;
+	const lineWidth = textWidth * 0.8;
+
+	ctx.beginPath();
+	ctx.moveTo(width / 2 - lineWidth / 2, lineY);
+	ctx.lineTo(width / 2 + lineWidth / 2, lineY);
+	ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+	ctx.lineWidth = 1;
+	ctx.stroke();
+
+	ctx.restore();
+}
+
+/**
+ * Draw user info with improved styling
+ */
+function drawUserInfo(
+	ctx: CanvasRenderingContext2D,
+	options: SequenceRenderOptions,
+	width: number,
+	height: number,
+	topMargin: number,
+	bottomMargin: number
+) {
+	const userName = options.userName || 'User';
+	const notes = options.notes || 'Created using The Kinetic Constructor';
+	const exportDate = options.exportDate || new Date().toLocaleDateString();
+
+	// Calculate optimal font size based on available space
+	const fontSize = Math.min(width * 0.02, bottomMargin * 0.4);
+	const margin = bottomMargin * 0.2;
+
+	// Position calculation
+	const baseY = height + topMargin + bottomMargin - margin;
+
+	ctx.save();
+
+	// Draw a subtle separator line
+	ctx.beginPath();
+	ctx.moveTo(margin, height + topMargin + margin / 2);
+	ctx.lineTo(width - margin, height + topMargin + margin / 2);
+	ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+	ctx.lineWidth = 1;
+	ctx.stroke();
+
+	// User name (bottom left) with subtle styling
+	ctx.font = `bold ${fontSize}px Georgia`;
+	ctx.fillStyle = '#000000';
+	ctx.textAlign = 'left';
+	ctx.textBaseline = 'bottom';
+	ctx.fillText(userName, margin, baseY);
+
+	// Notes (bottom center) with subtle styling
+	ctx.font = `italic ${fontSize}px Georgia`;
+	ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+	ctx.textAlign = 'center';
+	ctx.fillText(notes, width / 2, baseY);
+
+	// Export date (bottom right)
+	ctx.textAlign = 'right';
+	ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+	ctx.fillText(exportDate, width - margin, baseY);
+
+	ctx.restore();
+}
+
+/**
+ * Downloads a data URL as a file
+ */
+export function downloadDataUrl(dataUrl: string, filename: string): void {
+	const link = document.createElement('a');
+	link.href = dataUrl;
+	link.download = filename;
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
 }

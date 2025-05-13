@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, getContext } from 'svelte';
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
 	import { browser } from '$app/environment';
+	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from './context/ElementContext';
 
 	import { handleButtonAction } from './ButtonPanel/ButtonPanelLogic';
 	import {
@@ -30,8 +31,26 @@
 	const { dimensions } = useResponsiveLayout();
 
 	let activeMode = $state<'construct' | 'generate'>('construct');
+
+	// We're using the shared context key from ElementContext.ts
+
+	// Create a reactive state for the beat frame element
 	let beatFrameElement = $state<HTMLElement | null>(null);
-	let beatFrameElementFallback = $state<HTMLElement | null>(null);
+	let fallbackElement = $state<HTMLElement | null>(null);
+
+	// Try to get the element from context
+	const beatFrameContext = getContext<ElementContext>(BEAT_FRAME_CONTEXT_KEY);
+
+	// Set up an effect to update our local reference from context if available
+	$effect(() => {
+		if (beatFrameContext) {
+			const contextElement = beatFrameContext.getElement();
+			if (contextElement) {
+				console.log('SequenceWidget: Got element from context');
+				beatFrameElement = contextElement;
+			}
+		}
+	});
 
 	// Log when beatFrameElement changes
 	$effect(() => {
@@ -42,6 +61,10 @@
 			try {
 				// We can't store the element directly, but we can mark that we have it
 				localStorage.setItem('beatFrameElementAvailable', 'true');
+
+				// Also store in global variables for maximum compatibility
+				(window as any).__beatFrameElementRef = beatFrameElement;
+				(window as any).__pendingBeatFrameElement = beatFrameElement;
 			} catch (error) {
 				console.error('SequenceWidget: Error storing beatFrameElement availability:', error);
 			}
@@ -54,15 +77,25 @@
 			// Check if we have a global fallback reference
 			if ((window as any).__beatFrameElementRef) {
 				console.log('SequenceWidget: Found global fallback reference');
-				beatFrameElementFallback = (window as any).__beatFrameElementRef;
+				fallbackElement = (window as any).__beatFrameElementRef;
+
+				// If we don't have a primary element yet, use the fallback
+				if (!beatFrameElement) {
+					beatFrameElement = fallbackElement;
+				}
 			}
 
 			// Listen for the custom event
 			const handleBeatFrameElementAvailable = (event: CustomEvent) => {
 				console.log('SequenceWidget: Received beatframe-element-available event');
 				if (event.detail && event.detail.element) {
-					beatFrameElementFallback = event.detail.element;
-					console.log('SequenceWidget: Updated beatFrameElementFallback from event');
+					fallbackElement = event.detail.element;
+					console.log('SequenceWidget: Updated fallback element from event');
+
+					// If we don't have a primary element yet, use the fallback
+					if (!beatFrameElement) {
+						beatFrameElement = fallbackElement;
+					}
 				}
 			};
 
@@ -78,7 +111,12 @@
 					const beatFrameElements = document.querySelectorAll('.beat-frame-container');
 					if (beatFrameElements.length > 0) {
 						console.log('SequenceWidget: Found BeatFrame element via MutationObserver');
-						beatFrameElementFallback = beatFrameElements[0] as HTMLElement;
+						fallbackElement = beatFrameElements[0] as HTMLElement;
+
+						// If we don't have a primary element yet, use the fallback
+						if (!beatFrameElement) {
+							beatFrameElement = fallbackElement;
+						}
 					}
 				}
 			});
@@ -341,7 +379,6 @@
 				<SequenceContent
 					containerHeight={$size.height}
 					containerWidth={$dimensions.width}
-					{beatFrameElement}
 					on:beatselected={handleBeatSelected}
 				/>
 			</div>
@@ -349,7 +386,7 @@
 			<SettingsButton on:click={handleSettingsClick} />
 			<DeleteButton on:click={handleDeleteButtonClick} />
 			<SequenceOverlayButton />
-			<ShareButton beatFrameElement={beatFrameElement || beatFrameElementFallback} />
+			<ShareButton beatFrameElement={beatFrameElement || fallbackElement} />
 		</div>
 
 		<SequenceOverlay title={sequenceName}>

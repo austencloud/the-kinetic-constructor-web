@@ -1,6 +1,6 @@
 // src/lib/state/image-export-settings.ts
 import { browser } from '$app/environment';
-import { writable, type Writable } from 'svelte/store';
+import { writable, type Writable, get } from 'svelte/store';
 
 export interface ImageExportSettings {
 	includeStartPosition: boolean;
@@ -55,11 +55,7 @@ export function saveImageExportSettings(): void {
 		if (!browser) return;
 
 		// Get the current value from the store
-		let currentSettings: ImageExportSettings;
-		const unsubscribe = imageExportSettings.subscribe((value) => {
-			currentSettings = value;
-		});
-		unsubscribe();
+		const currentSettings = get(imageExportSettings);
 
 		localStorage.setItem('image-export-settings', JSON.stringify(currentSettings));
 	} catch (error) {

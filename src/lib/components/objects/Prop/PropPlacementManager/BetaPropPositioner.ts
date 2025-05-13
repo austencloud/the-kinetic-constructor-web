@@ -28,7 +28,7 @@ export class BetaPropPositioner {
 		// Handle different letter types
 		if (letterType === LetterType.Type2 || letterType === LetterType.Type3) {
 			// Type3: Cross-Shift letters
-			this.repositionType23(props);
+			this.repositionTowardShift(props);
 			return;
 		} else if (letterStr === 'G' || letterStr === 'H') {
 			// Special case for G and H
@@ -82,7 +82,7 @@ export class BetaPropPositioner {
 		);
 	}
 
-	private repositionType23(props: PropData[]): void {
+	private repositionTowardShift(props: PropData[]): void {
 		const redMotion = this.pictographData.redMotionData;
 		const blueMotion = this.pictographData.blueMotionData;
 

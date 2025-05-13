@@ -9,12 +9,13 @@
 	import { browser } from '$app/environment';
 	import { initDevToolsUpdater, updateDevTools } from '$lib/utils/devToolsUpdater';
 	import { layoutStore } from '$lib/stores/layout/layoutStore';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, setContext } from 'svelte';
 
 	// Import the sequence container and integration utilities
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 	import type { BeatFrameLayoutOptions } from '$lib/types/BeatFrameLayoutOptions'; // Added import
+	import { BEAT_FRAME_CONTEXT_KEY } from '../context/ElementContext';
 
 	// Helper function for safe logging of reactive state
 	function safeLog(message: string, data: any) {
@@ -64,6 +65,8 @@
 		elementReceiver?: (element: HTMLElement | null) => void;
 		fullScreenMode?: boolean; // Add to type definition
 	}>();
+
+	// We're using the shared context key from ElementContext.ts
 
 	// Local state
 	let startPosition = $state<PictographData | null>(null);
@@ -271,37 +274,56 @@
 		}
 	});
 
+	// Create a reactive state for the element reference
+	let beatFrameElementState = $state<HTMLElement | null>(null);
+
 	// This effect ensures the element reference is passed to the parent component
 	// whenever the container element or the elementReceiver function changes
 	$effect(() => {
 		if (beatFrameContainerRef) {
-			console.log('BeatFrame: Container element available, calling elementReceiver');
+			console.log('BeatFrame: Container element available');
+
+			// Update our reactive state
+			beatFrameElementState = beatFrameContainerRef;
+
+			// Set the context for other components to access
+			setContext(BEAT_FRAME_CONTEXT_KEY, {
+				getElement: () => beatFrameElementState
+			});
+
+			// Store the element in global variables for fallback mechanisms
+			if (browser) {
+				// Store in both variables for maximum compatibility
+				(window as any).__beatFrameElementRef = beatFrameContainerRef;
+				(window as any).__pendingBeatFrameElement = beatFrameContainerRef;
+				console.log('BeatFrame: Element stored in global fallback variables');
+			}
 
 			// Make sure elementReceiver is a function before calling it
 			if (typeof elementReceiver === 'function') {
 				try {
+					// Call the receiver function
 					elementReceiver(beatFrameContainerRef);
 					console.log('BeatFrame: Element passed to receiver:', beatFrameContainerRef);
-
-					// Store the element in a global variable as a fallback mechanism
-					if (browser) {
-						(window as any).__beatFrameElementRef = beatFrameContainerRef;
-						console.log('BeatFrame: Element stored in global fallback variable');
-					}
 				} catch (error) {
 					console.error('BeatFrame: Error calling elementReceiver:', error);
 				}
 			} else {
 				console.error('BeatFrame: elementReceiver is not a function:', elementReceiver);
+			}
 
-				// Even if the receiver isn't working, still store the element as a fallback
-				if (browser) {
-					(window as any).__beatFrameElementRef = beatFrameContainerRef;
-					console.log('BeatFrame: Element stored in global fallback variable (receiver error)');
-				}
+			// Dispatch a custom event as a reliable fallback mechanism
+			if (browser) {
+				const event = new CustomEvent('beatframe-element-available', {
+					bubbles: true,
+					detail: { element: beatFrameContainerRef }
+				});
+				document.dispatchEvent(event);
+				console.log('BeatFrame: Dispatched beatframe-element-available event');
 			}
 		} else {
 			console.log('BeatFrame: Container element not yet available');
+			beatFrameElementState = null;
 		}
 	});
 
@@ -309,11 +331,35 @@
 	onMount(() => {
 		if (browser) {
 			// Set up a MutationObserver to detect when the element is added to the DOM
-			const observer = new MutationObserver((mutations) => {
-				if (beatFrameContainerRef && typeof elementReceiver === 'function') {
+			const observer = new MutationObserver((_mutations) => {
+				if (beatFrameContainerRef) {
 					console.log('BeatFrame: DOM mutation detected, re-sending element reference');
-					elementReceiver(beatFrameContainerRef);
+
+					// Update our reactive state
+					beatFrameElementState = beatFrameContainerRef;
+
+					// Store in global variables for maximum compatibility
 					(window as any).__beatFrameElementRef = beatFrameContainerRef;
+					(window as any).__pendingBeatFrameElement = beatFrameContainerRef;
+
+					// Make sure elementReceiver is a function before calling it
+					if (typeof elementReceiver === 'function') {
+						try {
+							// Call the receiver function
+							elementReceiver(beatFrameContainerRef);
+							console.log('BeatFrame: Element re-sent to receiver after DOM mutation');
+						} catch (error) {
+							console.error('BeatFrame: Error calling elementReceiver after DOM mutation:', error);
+						}
+					}
+
+					// Dispatch a custom event as a reliable fallback mechanism
+					const event = new CustomEvent('beatframe-element-available', {
+						bubbles: true,
+						detail: { element: beatFrameContainerRef }
+					});
+					document.dispatchEvent(event);
+					console.log('BeatFrame: Dispatched beatframe-element-available event after DOM mutation');
 				}
 			});
 
