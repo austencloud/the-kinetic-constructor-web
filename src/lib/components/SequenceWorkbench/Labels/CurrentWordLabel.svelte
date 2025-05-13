@@ -1,7 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import DifficultyCircle from './DifficultyCircle.svelte';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 
 	const { currentWord = 'Word', width = 100 } = $props();
+
+	// Use the sequence container to get difficulty level
+	const sequence = useContainer(sequenceContainer);
+	const difficultyLevel = $derived(sequence.metadata?.difficulty || 1);
 
 	let wordDisplay: HTMLSpanElement;
 	let fontSize = Math.max(width / 40, 30);
@@ -47,6 +54,9 @@
 </script>
 
 <div class="current-word-label">
+	<div class="difficulty-container">
+		<DifficultyCircle {difficultyLevel} size={30} />
+	</div>
 	<span bind:this={wordDisplay} class="word-display">
 		{displayWord}
 	</span>
@@ -68,6 +78,17 @@
 		align-items: center;
 	}
 
+	.difficulty-container {
+		position: absolute;
+		left: calc(10px + var(--safe-inset-left, 0px));
+		top: 50%;
+		transform: translateY(-50%);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1;
+	}
+
 	.word-display {
 		display: inline-block;
 		padding: 2px 8px;
@@ -76,5 +97,8 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		/* Ensure the word remains centered in the container */
+		position: relative;
+		z-index: 0;
 	}
 </style>

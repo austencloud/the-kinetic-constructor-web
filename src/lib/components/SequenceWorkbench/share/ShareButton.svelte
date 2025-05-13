@@ -1,214 +1,93 @@
-<!-- src/lib/components/SequenceWorkbench/ShareButton.svelte -->
+<!--
+  ShareButton Component
+
+  This component provides a button for sharing and downloading sequence images.
+  It uses the enhanced image exporter for reliable rendering.
+-->
 <script lang="ts">
-	import { fly } from 'svelte/transition';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from '../context/ElementContext';
+	import { getContext } from 'svelte';
 	import { logger } from '$lib/core/logging';
-	import { showError } from '$lib/components/shared/ToastManager.svelte';
-	import {
-		isWebShareSupported,
-		generateShareableUrl
-	} from '$lib/components/SequenceWorkbench/share/utils/ShareUtils';
-	import { shareWithImage, downloadSequenceImage } from './utils/ShareButtonUtils';
+	import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
+	import { isWebShareSupported, generateShareableUrl } from './utils/ShareUtils';
+	import { imageExportSettings } from '$lib/state/image-export-settings';
+	import { exportEnhancedImage } from '$lib/components/Pictograph/export/enhancedImageExporter';
+	import { downloadImage } from '$lib/components/Pictograph/export/downloadUtils';
 	import ShareDropdown from './ShareDropdown.svelte';
-	import ShareRenderer from './ShareRenderer.svelte';
 
-	// Props using Svelte 5 runes
-	const props = $props<{
-		beatFrameElement: HTMLElement | null;
-		onShare?: () => void; // Optional callback
-	}>();
-
-	// Local state
+	// Track dropdown state
 	let isDropdownOpen = $state(false);
-	let isSharing = $state(false);
-	let shareUrl = $state('');
-	let lastShareAttemptTime = 0;
-	const MIN_SHARE_INTERVAL_MS = 1000; // Minimum 1 second between share attempts
-	let isDownloading = $state(false);
 
-	// Component references
-	let shareRenderer: ShareRenderer;
+	// Track rendering state
+	let isRendering = $state(false);
+	let lastResult: any = $state(null);
 
-	// Set up event listeners
-	onMount(() => {
-		console.log('ShareButton: onMount called');
+	// Track element references
+	let beatFrameElement: HTMLElement | null = $state(null);
 
-		// Log to help debug visibility issues
-		console.log('ShareButton: beatFrameElement prop:', props.beatFrameElement);
+	// Use the sequence container
+	const sequence = useContainer(sequenceContainer);
 
-		// Add a small delay and then check if the button is visible in the DOM
-		setTimeout(() => {
-			if (browser) {
-				const shareButtons = document.querySelectorAll('.share-button');
-				console.log('ShareButton: Found share buttons in DOM:', shareButtons.length);
+	// Get the current sequence data
+	const sequenceBeats = $derived(sequence.beats || []);
+	const sequenceName = $derived(generateSequenceName(sequenceBeats));
 
-				// Check computed styles and visibility
-				let isButtonVisible = false;
-				let computedStyle: CSSStyleDeclaration | null = null;
+	// Try to get the element from context
+	const beatFrameContext = getContext<ElementContext>(BEAT_FRAME_CONTEXT_KEY);
 
-				if (shareButtons.length > 0) {
-					computedStyle = window.getComputedStyle(shareButtons[0]);
-					console.log('ShareButton: Computed style:', {
-						display: computedStyle.display,
-						visibility: computedStyle.visibility,
-						opacity: computedStyle.opacity,
-						position: computedStyle.position,
-						top: computedStyle.top,
-						right: computedStyle.right,
-						zIndex: computedStyle.zIndex
-					});
-
-					// Check if the button is visible
-					isButtonVisible =
-						computedStyle.display !== 'none' &&
-						computedStyle.visibility !== 'hidden' &&
-						computedStyle.opacity !== '0';
-				}
-
-				// If no share buttons are found or they're not visible, create a fallback button
-				if (shareButtons.length === 0 || !isButtonVisible) {
-					console.log('ShareButton: Creating fallback button');
-					createFallbackButton();
-				}
+	// Set up an effect to update our local reference from context if available
+	$effect(() => {
+		if (beatFrameContext) {
+			const contextElement = beatFrameContext.getElement();
+			if (contextElement) {
+				console.log('ShareButton: Got element from context');
+				beatFrameElement = contextElement;
 			}
-		}, 1000);
-
-		// Set up test utilities for debugging
-		if (browser) {
-			setupTestUtilities();
 		}
 	});
 
-	// Create a fallback button directly in the DOM
-	function createFallbackButton() {
-		if (!browser) return;
+	// Set up event listener for beatframe-element-available
+	onMount(() => {
+		const handleElementAvailable = (event: CustomEvent) => {
+			if (event.detail?.element) {
+				console.log('ShareButton: Got element from event');
+				beatFrameElement = event.detail.element;
+			}
+		};
 
-		// Create a button element
-		const button = document.createElement('button');
-		button.className = 'fallback-share-button';
-		button.innerHTML = '<i class="fa-solid fa-share-alt"></i>';
-		button.style.cssText = `
-			position: fixed;
-			top: 10px;
-			right: 10px;
-			width: 45px;
-			height: 45px;
-			border-radius: 50%;
-			background-color: #2a2a2e;
-			color: #00bcd4;
-			border: none;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			z-index: 9999;
-			cursor: pointer;
-			box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-		`;
+		document.addEventListener(
+			'beatframe-element-available',
+			handleElementAvailable as EventListener
+		);
 
-		// Add click event listener
-		button.addEventListener('click', () => {
-			console.log('Fallback share button clicked');
-			handleClick();
-		});
+		return () => {
+			document.removeEventListener(
+				'beatframe-element-available',
+				handleElementAvailable as EventListener
+			);
+		};
+	});
 
-		// Append to body
-		document.body.appendChild(button);
+	// Generate a sequence name from the beats
+	function generateSequenceName(beats: any[]): string {
+		if (!beats || beats.length === 0) return 'Sequence';
 
-		// Store reference for cleanup
-		fallbackButton = button;
+		// Extract letters from beats
+		const letters = beats
+			.map((beat) => ((beat.letter || beat.metadata?.letter) as string) || '')
+			.filter((letter) => letter.trim() !== '')
+			.join('');
+
+		return letters || 'Sequence';
 	}
 
-	// Store reference to fallback button for cleanup
-	let fallbackButton: HTMLElement | null = null;
-
-	// Clean up on destroy
-	onDestroy(() => {
-		console.log('ShareButton: onDestroy called');
-
-		// Clean up fallback button if it exists
-		if (fallbackButton && browser && document.body.contains(fallbackButton)) {
-			console.log('ShareButton: Removing fallback button');
-			document.body.removeChild(fallbackButton);
-			fallbackButton = null;
-		}
-	});
-
-	// Generate share URL when sequence changes
-	$effect(() => {
-		if (shareRenderer && shareRenderer.sequenceName) {
-			// Generate shareable URL based on the sequence
-			try {
-				const sequenceContainer = (window as any).__sequenceContainer;
-				if (sequenceContainer && sequenceContainer.beats && sequenceContainer.beats.length > 0) {
-					shareUrl = generateShareableUrl(sequenceContainer.beats, shareRenderer.sequenceName);
-					console.log('ShareButton: Generated shareable URL:', shareUrl);
-				} else {
-					// Fallback to current URL if no sequence data available
-					shareUrl = browser ? window.location.href : '';
-					console.log('ShareButton: Using current URL as fallback:', shareUrl);
-				}
-			} catch (error) {
-				console.error('ShareButton: Error generating shareable URL:', error);
-				// Fallback to current URL
-				shareUrl = browser ? window.location.href : '';
-			}
-		}
-	});
-
-	// Handle share button click
-	async function handleClick() {
-		console.log('ShareButton: handleClick called');
-
-		// Call the original onShare callback if provided
-		if (props.onShare) {
-			console.log('ShareButton: Calling onShare callback');
-			props.onShare();
-		}
-
-		// Check if already sharing to prevent multiple clicks
-		if (isSharing) {
-			console.log('ShareButton: Already sharing, ignoring click');
-			return;
-		}
-
-		// Simply toggle the dropdown menu
+	// Toggle dropdown
+	function toggleDropdown() {
 		isDropdownOpen = !isDropdownOpen;
-		console.log('ShareButton: Toggled dropdown menu, isDropdownOpen =', isDropdownOpen);
-
-		// Pre-render the sequence image if we're opening the dropdown
-		if (isDropdownOpen) {
-			try {
-				console.log('ShareButton: Pre-rendering sequence for dropdown options');
-				isSharing = true;
-
-				// Verify sequence data is available
-				if (!shareRenderer) {
-					console.error('ShareButton: ShareRenderer component not available');
-					showError('Cannot share: Renderer not available. Please try again in a moment.');
-					isSharing = false;
-					return;
-				}
-
-				// Render the sequence in the background
-				shareRenderer
-					.renderSequence(props.beatFrameElement)
-					.then((result) => {
-						if (result) {
-							console.log('ShareButton: Pre-rendered sequence successfully');
-						}
-					})
-					.catch((error) => {
-						console.error('ShareButton: Error pre-rendering sequence:', error);
-					})
-					.finally(() => {
-						isSharing = false;
-					});
-			} catch (error) {
-				console.error('ShareButton: Error in pre-rendering:', error);
-				isSharing = false;
-			}
-		}
 	}
 
 	// Close dropdown
@@ -216,205 +95,224 @@
 		isDropdownOpen = false;
 	}
 
-	// Handle share action
+	// Handle share button click
 	async function handleShare() {
-		console.log('ShareButton: handleShare called');
-
-		// Check if we're already in the process of sharing
-		if (isSharing) {
-			console.log('ShareButton: Already sharing, returning early');
-			showError('Sharing already in progress, please wait');
-			return;
-		}
-
-		// Check if we've attempted to share too recently
-		const now = Date.now();
-		const timeSinceLastAttempt = now - lastShareAttemptTime;
-		if (timeSinceLastAttempt < MIN_SHARE_INTERVAL_MS) {
-			console.log(
-				`ShareButton: Share attempted too soon (${timeSinceLastAttempt}ms since last attempt)`
-			);
-			showError('Please wait a moment before sharing again');
-			return;
-		}
-
-		// Update the last attempt time
-		lastShareAttemptTime = now;
+		if (!browser) return;
 
 		try {
-			console.log('ShareButton: Setting isSharing to true');
-			isSharing = true;
+			// Close dropdown
+			closeDropdown();
 
-			// Render the sequence
-			console.log('ShareButton: Rendering sequence');
-			const result = await shareRenderer.renderSequence(props.beatFrameElement);
-			if (!result) {
-				console.log('ShareButton: Failed to render sequence image');
-				showError('Failed to render sequence image');
-				isSharing = false;
+			// Check if sequence is empty
+			if (!sequenceBeats || sequenceBeats.length === 0) {
+				showError('No sequence to share');
 				return;
 			}
 
-			// Reset sharing state before calling the share function
-			// This is critical for desktop browsers where the share dialog might not appear
-			isSharing = false;
+			// Check if Web Share API is supported
+			if (!isWebShareSupported()) {
+				showError("Your device doesn't support sharing");
+				return;
+			}
 
-			// Use the ShareUtils to share with image
-			console.log('ShareButton: Calling shareWithImage from ShareUtils');
-			const success = await shareWithImage(result, shareRenderer.sequenceName, shareUrl);
+			// Set rendering state
+			isRendering = true;
 
-			if (success) {
-				console.log('ShareButton: Share successful');
-				// Close dropdown after successful sharing
-				if (isDropdownOpen) {
-					console.log('ShareButton: Closing dropdown after successful share');
-					closeDropdown();
+			// Render the sequence
+			const result = await renderSequence();
+
+			if (!result) {
+				showError('Failed to generate image for sharing');
+				isRendering = false;
+				return;
+			}
+
+			// Generate shareable URL
+			const shareUrl = generateShareableUrl(sequenceBeats, sequenceName);
+
+			// Create share data
+			const shareData: any = {
+				title: 'Kinetic Constructor Sequence',
+				text: `Check out this sequence: ${sequenceName}\n\nOpen this link to reconstruct: ${shareUrl}`,
+				url: shareUrl
+			};
+
+			// Try to share with image if supported
+			try {
+				// Convert data URL to blob
+				const blob = dataURLtoBlob(result.dataUrl);
+
+				// Create file from blob
+				const file = new File([blob], `${sequenceName}.png`, { type: 'image/png' });
+
+				// Add file to share data
+				shareData.files = [file];
+
+				// Check if device can share with files
+				if (navigator.canShare && navigator.canShare(shareData)) {
+					await navigator.share(shareData);
+					showSuccess('Sequence shared successfully');
+					return;
 				}
-			} else {
-				console.log('ShareButton: Share failed or was cancelled');
+			} catch (error) {
+				console.warn('Failed to share with image, falling back to text-only share', error);
+			}
+
+			// Fall back to text-only share
+			try {
+				// Remove files property
+				delete shareData.files;
+
+				// Share without image
+				await navigator.share(shareData);
+				showSuccess('Sequence shared successfully');
+			} catch (error) {
+				if (error instanceof Error && error.name === 'AbortError') {
+					console.log('User cancelled sharing');
+				} else {
+					showError('Failed to share sequence');
+					console.error('Share error:', error);
+				}
 			}
 		} catch (error) {
-			console.error('ShareButton: Error in handleShare:', error);
-			logger.error('Error sharing sequence', {
-				error: error instanceof Error ? error : new Error(String(error))
-			});
-			showError('Failed to share sequence. Please try again.');
+			showError('Failed to share sequence');
+			console.error('Share error:', error);
 		} finally {
-			// Ensure sharing state is reset
-			console.log('ShareButton: Setting isSharing to false in finally block');
-			isSharing = false;
+			isRendering = false;
 		}
 	}
 
-	// Handle download action
+	// Handle download button click
 	async function handleDownload() {
-		console.log('ShareButton: handleDownload called');
-
-		// Check if we're already in the process of downloading
-		if (isDownloading) {
-			console.log('ShareButton: Already downloading, returning early');
-			showError('Download already in progress, please wait');
-			return;
-		}
-
-		isDownloading = true;
+		if (!browser) return;
 
 		try {
-			// Render the sequence
-			console.log('ShareButton: Rendering sequence for download');
-			const result = await shareRenderer.renderSequence(props.beatFrameElement);
-			if (!result) {
-				console.log('ShareButton: Failed to render sequence image for download');
-				showError('Failed to generate image for download');
+			// Close dropdown
+			closeDropdown();
+
+			// Check if sequence is empty
+			if (!sequenceBeats || sequenceBeats.length === 0) {
+				showError('No sequence to download');
 				return;
 			}
 
-			// Use the ShareUtils to download the image
-			console.log('ShareButton: Calling downloadSequenceImage from ShareUtils');
-			await downloadSequenceImage(result, shareRenderer.sequenceName);
-		} catch (error) {
-			console.error('ShareButton: Error in handleDownload:', error);
-			logger.error('Error downloading sequence image', {
-				error: error instanceof Error ? error : new Error(String(error))
+			// Set rendering state
+			isRendering = true;
+
+			// Render the sequence
+			const result = await renderSequence();
+
+			if (!result) {
+				showError('Failed to generate image for download');
+				isRendering = false;
+				return;
+			}
+
+			// Generate filename
+			const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+			const filename = `kinetic-sequence-${sequenceName.replace(/[^a-z0-9]/gi, '-').toLowerCase() || timestamp}.png`;
+
+			// Download the image
+			await downloadImage({
+				dataUrl: result.dataUrl,
+				filename
 			});
-			showError('Failed to download image. Please try again.');
+
+			showSuccess('Image download started');
+		} catch (error) {
+			showError('Failed to download sequence');
+			console.error('Download error:', error);
 		} finally {
-			// Reset the downloading state after a delay
-			setTimeout(() => {
-				isDownloading = false;
-			}, 1000);
+			isRendering = false;
 		}
 	}
 
-	// Set up test utilities for debugging
-	function setupTestUtilities() {
-		// Expose test functions to the global window object
-		(window as any).shareButtonTest = {
-			// Test the click handler directly
-			testClickHandler: async () => {
-				console.log('Test: Calling handleClick directly');
-				try {
-					await handleClick();
-					return true;
-				} catch (error) {
-					console.error('Test: Error in handleClick:', error);
-					return false;
-				}
-			},
+	// Render the sequence
+	async function renderSequence(): Promise<any> {
+		if (!browser || !beatFrameElement) {
+			console.error('Cannot render: not in browser environment or no beat frame element');
+			return null;
+		}
 
-			// Test sharing
-			testShare: async () => {
-				console.log('Test: Testing share functionality');
-				try {
-					await handleShare();
-					return true;
-				} catch (error) {
-					console.error('Test: Error in handleShare:', error);
-					return false;
-				}
-			},
+		try {
+			// Get export settings
+			let settings: any = {};
+			const unsubscribe = imageExportSettings.subscribe((value) => {
+				settings = value;
+			});
+			unsubscribe();
 
-			// Test downloading
-			testDownload: async () => {
-				console.log('Test: Testing download functionality');
-				try {
-					await handleDownload();
-					return true;
-				} catch (error) {
-					console.error('Test: Error in handleDownload:', error);
-					return false;
-				}
-			},
+			// Export the sequence
+			const result = await exportEnhancedImage(beatFrameElement, {
+				beats: sequenceBeats as any,
+				startPosition: (sequenceBeats[0]?.metadata?.isStartPosition
+					? sequenceBeats[0]
+					: null) as any,
+				backgroundColor: settings.backgroundColor || '#FFFFFF',
+				scale: 2,
+				quality: settings.quality || 0.92,
+				format: 'png',
+				columns: 4,
+				spacing: 0,
+				includeStartPosition: settings.includeStartPosition !== false,
+				addWord: settings.addWord !== false,
+				addUserInfo: settings.addUserInfo !== false,
+				addDifficultyLevel: settings.addDifficultyLevel !== false,
+				addBeatNumbers: settings.addBeatNumbers !== false,
+				addReversalSymbols: settings.addReversalSymbols !== false,
+				title: sequenceName,
+				userName: 'User',
+				notes: 'Created using The Kinetic Constructor',
+				difficultyLevel: sequence.metadata?.difficulty || 1
+			});
 
-			// Get current state
-			getState: () => {
-				return {
-					isSharing,
-					isDropdownOpen,
-					shareUrl,
-					hasShareRenderer: !!shareRenderer
-				};
-			}
-		};
+			// Cache the result
+			lastResult = result;
 
-		console.log(
-			'ShareButton: Test utilities initialized. Access via window.shareButtonTest in the console.'
-		);
+			return result;
+		} catch (error) {
+			console.error('Error rendering sequence:', error);
+			logger.error('Error rendering sequence', {
+				error: error instanceof Error ? error : new Error(String(error))
+			});
+			return null;
+		}
+	}
+
+	// Convert data URL to blob
+	function dataURLtoBlob(dataUrl: string): Blob {
+		const arr = dataUrl.split(',');
+		const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+		const bstr = atob(arr[1]);
+		let n = bstr.length;
+		const u8arr = new Uint8Array(n);
+
+		while (n--) {
+			u8arr[n] = bstr.charCodeAt(n);
+		}
+
+		return new Blob([u8arr], { type: mime });
 	}
 </script>
 
-<!-- Hidden ShareRenderer component -->
-<ShareRenderer bind:this={shareRenderer} beatFrameElement={props.beatFrameElement} />
+<div class="share-button-container">
+	<button
+		class="share-button"
+		onclick={toggleDropdown}
+		aria-label="Share sequence"
+		class:loading={isRendering}
+	>
+		{#if isRendering}
+			<i class="fa-solid fa-spinner fa-spin"></i>
+		{:else}
+			<i class="fa-solid fa-share-alt"></i>
+		{/if}
+	</button>
 
-<!-- Share button -->
-<button
-	class="share-button ripple tkc-share-button"
-	onclick={handleClick}
-	aria-label="Share sequence"
-	data-mdb-ripple="true"
-	data-mdb-ripple-color="light"
-	in:fly={{ x: 20, duration: 300, delay: 200 }}
-	class:sharing={isSharing}
-	class:active={isDropdownOpen}
-	style="position: absolute; top: 10px; right: 10px; width: 45px; height: 45px; z-index: 40; display: flex; visibility: visible; opacity: 1;"
->
-	<div class="icon-wrapper">
-		<i
-			class="fa-solid {isSharing
-				? 'fa-spinner fa-spin'
-				: isWebShareSupported()
-					? 'fa-share-alt'
-					: 'fa-share-nodes'}"
-		></i>
-	</div>
-</button>
-
-<!-- Dropdown menu -->
-{#if isDropdownOpen}
-	<div class="dropdown-container">
+	{#if isDropdownOpen}
 		<ShareDropdown onShare={handleShare} onDownload={handleDownload} onClose={closeDropdown} />
-	</div>
-{/if}
+	{/if}
+</div>
 
 <style>
 	/* Global styles to ensure consistent sizing with settings button */
@@ -453,11 +351,12 @@
 	}
 
 	.share-button {
-		/* Base sizes for dynamic scaling */
-		--base-size: 45px; /* Base size of the button */
-		--base-icon-size: 19px; /* Base size of the icon */
-		--base-margin: 10px; /* Base margin from corner */
-
+		background-color: var(--tkc-button-panel-background, #2a2a2e);
+		color: var(--tkc-button-text, #a03db7);
+		border: none;
+		border-radius: 50%;
+		width: 40px;
+		height: 40px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
