@@ -3,28 +3,40 @@ import { browser } from '$app/environment';
 import { writable, type Writable, get } from 'svelte/store';
 
 export interface ImageExportSettings {
+	// Export content options
 	includeStartPosition: boolean;
 	addUserInfo: boolean;
 	addWord: boolean;
 	addDifficultyLevel: boolean;
 	addBeatNumbers: boolean;
 	addReversalSymbols: boolean;
-	combinedGrids: boolean;
-	backgroundColor: string;
-	quality: number;
+
+	// User information
+	userName: string;
+	customNote: string;
+
+	// Directory preferences
+	rememberLastSaveDirectory: boolean;
+	lastSaveDirectory: string;
 }
 
 // Default settings - enable all enhancement features by default
 export const defaultImageExportSettings: ImageExportSettings = {
+	// Export content options
 	includeStartPosition: true,
 	addUserInfo: true,
 	addWord: true,
 	addDifficultyLevel: true, // Enable difficulty level indicator by default
 	addBeatNumbers: true,
 	addReversalSymbols: true,
-	combinedGrids: false,
-	backgroundColor: '#FFFFFF', // Use white background for better visibility
-	quality: 0.92
+
+	// User information
+	userName: 'User', // Default user name
+	customNote: 'Created with The Kinetic Constructor', // Default note
+
+	// Directory preferences
+	rememberLastSaveDirectory: true,
+	lastSaveDirectory: ''
 };
 
 // Create a writable store with the default settings
@@ -80,28 +92,29 @@ export function loadImageExportSettings(): void {
 						? parsed.addReversalSymbols
 						: defaultImageExportSettings.addReversalSymbols;
 
-				validatedSettings.combinedGrids =
-					typeof parsed.combinedGrids === 'boolean'
-						? parsed.combinedGrids
-						: defaultImageExportSettings.combinedGrids;
+				// Note: combinedGrids has been removed from the settings
 
-				// Include other properties with type checking and validation
-				if (
-					typeof parsed.backgroundColor === 'string' &&
-					parsed.backgroundColor.match(/^#[0-9A-Fa-f]{6}$/)
-				) {
-					validatedSettings.backgroundColor = parsed.backgroundColor;
-				} else {
-					validatedSettings.backgroundColor = defaultImageExportSettings.backgroundColor;
-					validationErrors++;
-				}
+				// Validate user information
+				validatedSettings.userName =
+					typeof parsed.userName === 'string' && parsed.userName.trim() !== ''
+						? parsed.userName
+						: defaultImageExportSettings.userName;
 
-				if (typeof parsed.quality === 'number' && parsed.quality > 0 && parsed.quality <= 1) {
-					validatedSettings.quality = parsed.quality;
-				} else {
-					validatedSettings.quality = defaultImageExportSettings.quality;
-					validationErrors++;
-				}
+				validatedSettings.customNote =
+					typeof parsed.customNote === 'string'
+						? parsed.customNote
+						: defaultImageExportSettings.customNote;
+
+				// Validate directory preferences
+				validatedSettings.rememberLastSaveDirectory =
+					typeof parsed.rememberLastSaveDirectory === 'boolean'
+						? parsed.rememberLastSaveDirectory
+						: defaultImageExportSettings.rememberLastSaveDirectory;
+
+				validatedSettings.lastSaveDirectory =
+					typeof parsed.lastSaveDirectory === 'string'
+						? parsed.lastSaveDirectory
+						: defaultImageExportSettings.lastSaveDirectory;
 
 				// Log validation results
 				if (validationErrors > 0) {
@@ -146,23 +159,21 @@ export function saveImageExportSettings(): void {
 
 		// Create a clean copy with only the expected properties
 		const cleanSettings: ImageExportSettings = {
+			// Export content options
 			includeStartPosition: !!currentSettings.includeStartPosition,
 			addUserInfo: !!currentSettings.addUserInfo,
 			addWord: !!currentSettings.addWord,
 			addDifficultyLevel: !!currentSettings.addDifficultyLevel,
 			addBeatNumbers: !!currentSettings.addBeatNumbers,
 			addReversalSymbols: !!currentSettings.addReversalSymbols,
-			combinedGrids: !!currentSettings.combinedGrids,
-			backgroundColor:
-				typeof currentSettings.backgroundColor === 'string'
-					? currentSettings.backgroundColor
-					: defaultImageExportSettings.backgroundColor,
-			quality:
-				typeof currentSettings.quality === 'number' &&
-				currentSettings.quality > 0 &&
-				currentSettings.quality <= 1
-					? currentSettings.quality
-					: defaultImageExportSettings.quality
+
+			// User information
+			userName: currentSettings.userName || defaultImageExportSettings.userName,
+			customNote: currentSettings.customNote || defaultImageExportSettings.customNote,
+
+			// Directory preferences
+			rememberLastSaveDirectory: !!currentSettings.rememberLastSaveDirectory,
+			lastSaveDirectory: currentSettings.lastSaveDirectory || ''
 		};
 
 		localStorage.setItem('image-export-settings', JSON.stringify(cleanSettings));

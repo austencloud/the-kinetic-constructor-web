@@ -228,10 +228,10 @@ function calculateDimensions(options: EnhancedExportOptions): CanvasDimensions {
 	const beatSize = 950;
 
 	// Determine if we have a start position
-	// We need to be more aggressive in detecting start positions
-	// If includeStartPosition is true, we'll assume there is a start position
-	// This ensures we always have the correct layout
-	const hasStartPosition = options.includeStartPosition;
+	// Only include the start position if:
+	// 1. The includeStartPosition option is true
+	// 2. There is actually a start position provided
+	const hasStartPosition = options.includeStartPosition && !!options.startPosition;
 
 	// Get the beat count (excluding start position)
 	const beatCount = options.beats.length;
@@ -304,8 +304,8 @@ function calculateDimensions(options: EnhancedExportOptions): CanvasDimensions {
 	// Calculate margins with improved sizing for better readability
 	// Reserve exactly 15% of image height for title and 10% for notes
 	// Ensure a minimum size for text areas regardless of image dimensions
-	const MIN_TOP_MARGIN = 100; // Minimum 100px for title area
-	const MIN_BOTTOM_MARGIN = 80; // Minimum 80px for notes area
+	const MIN_TOP_MARGIN = 120; // Increased from 100px for better readability
+	const MIN_BOTTOM_MARGIN = 100; // Increased from 80px for better readability
 
 	// Calculate margins with minimums
 	const calculatedTopMargin = options.addWord ? Math.round(height * 0.15) : 0;
@@ -361,8 +361,10 @@ async function renderSvgElements(
 	// Try to find the start position element directly from the container
 	const startPositionContainer = containerElement.querySelector('.start-position');
 
-	// Force hasStartPosition to true if we found a start position container in the DOM
-	// This ensures we always have the correct layout even if options.startPosition is null
+	// Only include the start position if:
+	// 1. The includeStartPosition option is true
+	// 2. There is actually a start position provided or found in the DOM
+	// This ensures we respect the user's choice to exclude the start position
 	let hasStartPosition =
 		options.includeStartPosition && (!!options.startPosition || !!startPositionContainer);
 
@@ -577,11 +579,12 @@ function drawTitle(
 	// Calculate padding (5% of container width)
 	const padding = Math.round(width * 0.05);
 
-	// Calculate font size using the formula: fontSize = containerWidth * 0.05
+	// Calculate font size using the formula: fontSize = containerWidth * 0.06
+	// Increased from 0.05 to 0.06 for better readability
 	// Enforce min/max constraints
-	const MIN_FONT_SIZE = 14;
-	const MAX_FONT_SIZE = 32;
-	let fontSize = Math.round(width * 0.05);
+	const MIN_FONT_SIZE = 18; // Increased from 14 for better readability
+	const MAX_FONT_SIZE = 42; // Increased from 32 for better readability
+	let fontSize = Math.round(width * 0.06);
 	fontSize = Math.max(MIN_FONT_SIZE, Math.min(fontSize, MAX_FONT_SIZE));
 
 	// Set initial font to measure text
@@ -642,11 +645,12 @@ function drawUserInfo(
 	// Calculate padding (5% of container width)
 	const padding = Math.round(width * 0.05);
 
-	// Calculate font size using the formula: fontSize = containerWidth * 0.03
+	// Calculate font size using the formula: fontSize = containerWidth * 0.04
+	// Increased from 0.03 to 0.04 for better readability
 	// Enforce min/max constraints
-	const MIN_FONT_SIZE = 14;
-	const MAX_FONT_SIZE = 24; // Max size for notes is smaller than title
-	let fontSize = Math.round(width * 0.03); // 60% of title font size
+	const MIN_FONT_SIZE = 16; // Increased from 14 for better readability
+	const MAX_FONT_SIZE = 32; // Increased from 24 for better readability
+	let fontSize = Math.round(width * 0.04); // Increased from 0.03 for better readability
 	fontSize = Math.max(MIN_FONT_SIZE, Math.min(fontSize, MAX_FONT_SIZE));
 
 	// Calculate base Y position for text - center in the bottom margin
@@ -661,9 +665,8 @@ function drawUserInfo(
 	ctx.shadowOffsetX = 1;
 	ctx.shadowOffsetY = 1;
 
-	// Center the notes text
+	// Set the font for notes text
 	ctx.font = `${fontSize}px Arial, sans-serif`;
-	const notesWidth = ctx.measureText(notes).width;
 
 	// Draw notes text (center)
 	ctx.textAlign = 'center';

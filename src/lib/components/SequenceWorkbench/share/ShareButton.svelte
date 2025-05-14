@@ -18,6 +18,7 @@
 	import { exportEnhancedImage } from '$lib/components/Pictograph/export/enhancedImageExporter';
 	import { downloadImage } from '$lib/components/Pictograph/export/downloadUtils';
 	import ShareDropdown from './ShareDropdown.svelte';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 	// Track dropdown state
 	let isDropdownOpen = $state(false);
@@ -146,6 +147,11 @@
 
 	// Toggle dropdown
 	function toggleDropdown() {
+		// Provide haptic feedback
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
 		isDropdownOpen = !isDropdownOpen;
 	}
 
@@ -157,6 +163,11 @@
 	// Handle share button click
 	async function handleShare() {
 		if (!browser) return;
+
+		// Provide haptic feedback
+		if (hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('success');
+		}
 
 		try {
 			// Close dropdown
@@ -244,6 +255,11 @@
 	// Handle download button click
 	async function handleDownload() {
 		if (!browser) return;
+
+		// Provide haptic feedback
+		if (hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('success');
+		}
 
 		try {
 			// Close dropdown
@@ -432,7 +448,7 @@
 				startPosition: startPosition as any,
 				backgroundColor: '#FFFFFF', // Always use white for better contrast
 				scale: 2, // Higher scale for better quality
-				quality: 1.0, // Maximum quality
+				quality: 1.0, // Always use maximum quality
 				format: 'png', // PNG format for lossless quality
 				columns: 4,
 				spacing: 0,

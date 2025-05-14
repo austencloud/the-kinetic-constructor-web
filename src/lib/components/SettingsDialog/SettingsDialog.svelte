@@ -55,7 +55,7 @@
 <div class="content">
 	{#if $isSettingsDialogOpen}
 		<div class="settingsContent">
-			<SettingsContent onClose={() => actions.closeSettings()} />
+			<SettingsContent onClose={actions.closeSettings} />
 		</div>
 	{/if}
 </div>
@@ -66,18 +66,26 @@
 		flex-direction: column;
 		flex: 1;
 		min-height: 0;
-		z-index: 1;
+		z-index: 100; /* Higher z-index to ensure it appears above other content */
 		width: 100%;
 	}
-	/* Removed unused mainContent style */
+
 	.settingsContent {
 		flex: 0 0 auto;
 		width: 100%;
-		background: rgba(30, 40, 60, 0.8);
+		background: rgba(30, 40, 60, 0.9);
 		backdrop-filter: blur(10px);
 		border-top: 1px solid rgba(108, 156, 233, 0.2);
-		max-height: 50vh;
-		overflow: auto;
+		max-height: 80vh; /* Increased height for better mobile experience */
+		overflow: hidden; /* Let the inner content handle scrolling */
+		border-radius: 12px 12px 0 0; /* Rounded corners on top */
+		box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3); /* Add shadow for depth */
 	}
-	/* Removed unused menuBar style */
+
+	/* Mobile styles */
+	@media (max-width: 480px) {
+		.settingsContent {
+			max-height: 90vh; /* Even more height on mobile */
+		}
+	}
 </style>

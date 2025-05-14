@@ -75,6 +75,7 @@
 	let prevCols = $state(1);
 	let cellSize = $state(100);
 	let naturalGridHeight = $state(0);
+	let contentOverflows = $state(false); // Track if content overflows container
 
 	// Derived values
 	const beats = $derived(convertContainerBeatsToLegacyFormat(sequence.beats));
@@ -203,6 +204,10 @@
 			// Fallback calculation if element not ready
 			naturalGridHeight = beatRows * cellSize + 20; // Add padding-bottom (20px) of the .beat-frame
 		}
+
+		// Check for overflow after natural height is calculated
+		// This needs to be delayed to ensure DOM is updated
+		setTimeout(checkForOverflow, 50);
 	});
 
 	// Dispatch natural height change event
@@ -268,7 +273,6 @@
 			// Set up a MutationObserver to detect when the element is added to the DOM
 			const observer = new MutationObserver((_mutations) => {
 				if (beatFrameContainerRef) {
-
 					// Update our reactive state
 					beatFrameElementState = beatFrameContainerRef;
 
@@ -360,10 +364,37 @@
 
 		// Check for overflow after cell size is calculated
 		// This needs to be delayed to ensure DOM is updated
-		setTimeout(checkForOverflow, 50);
+		setTimeout(checkForOverflow, 100);
 	});
 
-	// Function to check if content overflows container - for debugging only
+	// Add an effect to check for overflow when beat count changes
+	$effect(() => {
+		// Just reference beatCount to make the effect depend on it
+		if (beatCount >= 0) {
+			// Delay the check to ensure DOM is updated
+			setTimeout(checkForOverflow, 150);
+		}
+	});
+
+	// Add an effect to check for overflow when layout changes
+	$effect(() => {
+		// Just reference these values to make the effect depend on them
+		if (beatRows > 0 && beatCols > 0) {
+			// Delay the check to ensure DOM is updated
+			setTimeout(checkForOverflow, 150);
+		}
+	});
+
+	// Add an effect to check for overflow when size changes
+	$effect(() => {
+		// Just reference size to make the effect depend on it
+		if (size.width > 0 && size.height > 0) {
+			// Delay the check to ensure DOM is updated
+			setTimeout(checkForOverflow, 150);
+		}
+	});
+
+	// Function to check if content overflows container and update state
 	function checkForOverflow() {
 		if (!beatFrameContainerRef) return;
 
@@ -384,6 +415,27 @@
 		// Calculate overflow - check both height and width
 		const heightOverflow = contentHeight > containerHeight + buffer;
 		const widthOverflow = contentWidth > containerWidth + buffer;
+
+		// Update the overflow state
+		const newOverflowState = heightOverflow || widthOverflow;
+
+		// Only update if the state has changed to avoid unnecessary re-renders
+		if (contentOverflows !== newOverflowState) {
+			contentOverflows = newOverflowState;
+
+			// Log overflow state change in dev mode
+			if (import.meta.env.DEV) {
+				console.log('BeatFrame: Content overflow state changed:', {
+					contentOverflows,
+					heightOverflow,
+					widthOverflow,
+					contentHeight,
+					containerHeight,
+					contentWidth,
+					containerWidth
+				});
+			}
+		}
 	}
 
 	// Initialize dev tools and set up event listeners
@@ -551,7 +603,7 @@
 <div
 	use:resizeObserver
 	class="beat-frame-container"
-	class:scrollable-active={isScrollable}
+	class:scrollable-active={isScrollable || contentOverflows}
 	class:fullscreen-mode={fullScreenMode}
 	bind:this={beatFrameContainerRef}
 >

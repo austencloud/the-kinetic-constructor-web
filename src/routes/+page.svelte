@@ -8,6 +8,7 @@
 	import LoadingOverlay from '$lib/components/MainWidget/loading/LoadingOverlay.svelte';
 	import BackgroundCanvas from '$lib/components/Backgrounds/BackgroundCanvas.svelte';
 	import BackgroundProvider from '$lib/components/Backgrounds/BackgroundProvider.svelte';
+	import FirstTimeSetupDialog from '$lib/components/FirstTimeSetup/FirstTimeSetupDialog.svelte';
 
 	// State Management
 	import { appActions } from '$lib/state/machines/app/app.actions';
@@ -131,6 +132,9 @@
 			<div class="main-layout-wrapper" transition:fade={{ duration: 500, delay: 100 }}>
 				<MainLayout on:changeBackground={handleBackgroundChange} on:tabChange={handleTabChange} />
 			</div>
+
+			<!-- First-time setup dialog -->
+			<FirstTimeSetupDialog />
 		{/if}
 	</FullScreen>
 </div>
