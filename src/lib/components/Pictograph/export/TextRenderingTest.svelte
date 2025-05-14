@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte/internal';
 	import { exportEnhancedImage } from './enhancedImageExporter';
 	import type { Beat } from '$lib/types/Beat';
 	import { Letter } from '$lib/types/Letter';
+	import { onMount } from 'svelte';
 
 	// Test parameters
 	let testSizes = [

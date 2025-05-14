@@ -1,5 +1,9 @@
 <script lang="ts">
-	import { imageExportSettings, saveImageExportSettings } from '$lib/state/image-export-settings';
+	import {
+		imageExportSettings,
+		saveImageExportSettings,
+		defaultImageExportSettings
+	} from '$lib/state/image-export-settings';
 	import { onMount, onDestroy } from 'svelte';
 	import type { ImageExportSettings } from '$lib/state/image-export-settings';
 
@@ -40,7 +44,23 @@
 	// Toggle setting handler
 	function toggleSetting(setting: keyof ImageExportSettings): void {
 		// Create a new settings object with the toggled value
-		const newSettings = { ...settings };
+		const newSettings = { ...settings } as ImageExportSettings;
+
+		// Handle each setting type appropriately
+		switch (setting) {
+			case 'includeStartPosition':
+			case 'addUserInfo':
+			case 'addWord':
+			case 'addDifficultyLevel':
+			case 'addBeatNumbers':
+			case 'addReversalSymbols':
+			case 'combinedGrids':
+				// Toggle boolean settings
+				newSettings[setting] = !newSettings[setting];
+				break;
+			// Other setting types can be handled here if needed
+		}
+
 		settings = newSettings;
 		updateStore();
 	}
@@ -49,6 +69,20 @@
 	function updateStore(): void {
 		imageExportSettings.set(settings);
 		saveImageExportSettings();
+	}
+
+	// Reset settings to defaults
+	function resetToDefaults(): void {
+		// Reset settings to defaults
+		settings = { ...defaultImageExportSettings };
+
+		// Update the store
+		updateStore();
+
+		// Clear localStorage
+		if (typeof localStorage !== 'undefined') {
+			localStorage.removeItem('image-export-settings');
+		}
 	}
 </script>
 
@@ -119,7 +153,7 @@
 			type="color"
 			id="bg-color"
 			bind:value={settings.backgroundColor}
-			onchange={updateStore}
+			onchange={() => updateStore()}
 		/>
 	</div>
 
@@ -132,8 +166,15 @@
 			max="1"
 			step="0.01"
 			bind:value={settings.quality}
-			onchange={updateStore}
+			onchange={() => updateStore()}
 		/>
+	</div>
+
+	<div class="reset-container">
+		<button class="reset-button" onclick={resetToDefaults}>
+			<i class="fa-solid fa-arrows-rotate"></i>
+			Reset to Defaults
+		</button>
 	</div>
 </div>
 
@@ -149,9 +190,12 @@
 
 	.settings-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 		gap: 1rem;
 		margin-bottom: 2rem;
+		max-height: 50vh;
+		overflow-y: auto;
+		padding-right: 0.5rem;
 	}
 
 	.setting-toggle-button {
@@ -162,6 +206,8 @@
 		border: 2px solid var(--tkc-border-color, #3c3c41);
 		transition: all 0.2s ease;
 		font-weight: bold;
+		position: relative;
+		overflow: hidden;
 	}
 
 	.setting-toggle-button:hover {
@@ -172,6 +218,27 @@
 	.setting-toggle-button.active {
 		background: linear-gradient(135deg, #167bf4, #329bff);
 		border-color: #167bf4;
+		box-shadow: 0 0 10px rgba(22, 123, 244, 0.5);
+	}
+
+	.setting-toggle-button.active::before {
+		content: '✓';
+		position: absolute;
+		top: 0.25rem;
+		right: 0.5rem;
+		font-size: 0.75rem;
+		color: white;
+		opacity: 0.8;
+	}
+
+	.setting-toggle-button:not(.active)::before {
+		content: '✕';
+		position: absolute;
+		top: 0.25rem;
+		right: 0.5rem;
+		font-size: 0.75rem;
+		color: rgba(255, 255, 255, 0.5);
+		opacity: 0.5;
 	}
 
 	.color-picker,
@@ -195,5 +262,36 @@
 		height: 40px;
 		border-radius: 4px;
 		border: 2px solid var(--tkc-border-color, #3c3c41);
+	}
+
+	.reset-container {
+		margin-top: 2rem;
+		display: flex;
+		justify-content: center;
+	}
+
+	.reset-button {
+		background-color: var(--tkc-button-panel-background, #2a2a2e);
+		color: var(--color-text-primary, white);
+		border: 2px solid var(--tkc-border-color, #3c3c41);
+		border-radius: 0.5rem;
+		padding: 0.75rem 1.5rem;
+		font-weight: bold;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		transition: all 0.2s ease;
+		cursor: pointer;
+	}
+
+	.reset-button:hover {
+		background-color: var(--tkc-button-panel-background-hover, #3c3c41);
+		transform: translateY(-2px);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+	}
+
+	.reset-button:active {
+		transform: translateY(0);
+		box-shadow: none;
 	}
 </style>

@@ -42,37 +42,81 @@ export function loadImageExportSettings(): void {
 			try {
 				const parsed = JSON.parse(savedSettings);
 
+				// Check if parsed is an object
+				if (!parsed || typeof parsed !== 'object') {
+					throw new Error('Parsed settings is not an object');
+				}
+
 				// Validate the parsed settings to ensure they're valid
 				const validatedSettings: Partial<ImageExportSettings> = {};
+				let validationErrors = 0;
 
-				// Only include valid boolean properties
-				if (typeof parsed.includeStartPosition === 'boolean')
-					validatedSettings.includeStartPosition = parsed.includeStartPosition;
-				if (typeof parsed.addUserInfo === 'boolean')
-					validatedSettings.addUserInfo = parsed.addUserInfo;
-				if (typeof parsed.addWord === 'boolean') validatedSettings.addWord = parsed.addWord;
-				if (typeof parsed.addDifficultyLevel === 'boolean')
-					validatedSettings.addDifficultyLevel = parsed.addDifficultyLevel;
-				if (typeof parsed.addBeatNumbers === 'boolean')
-					validatedSettings.addBeatNumbers = parsed.addBeatNumbers;
-				if (typeof parsed.addReversalSymbols === 'boolean')
-					validatedSettings.addReversalSymbols = parsed.addReversalSymbols;
-				if (typeof parsed.combinedGrids === 'boolean')
-					validatedSettings.combinedGrids = parsed.combinedGrids;
+				// Only include valid boolean properties with fallbacks
+				validatedSettings.includeStartPosition =
+					typeof parsed.includeStartPosition === 'boolean'
+						? parsed.includeStartPosition
+						: defaultImageExportSettings.includeStartPosition;
 
-				// Include other properties with type checking
-				if (typeof parsed.backgroundColor === 'string')
+				validatedSettings.addUserInfo =
+					typeof parsed.addUserInfo === 'boolean'
+						? parsed.addUserInfo
+						: defaultImageExportSettings.addUserInfo;
+
+				validatedSettings.addWord =
+					typeof parsed.addWord === 'boolean' ? parsed.addWord : defaultImageExportSettings.addWord;
+
+				validatedSettings.addDifficultyLevel =
+					typeof parsed.addDifficultyLevel === 'boolean'
+						? parsed.addDifficultyLevel
+						: defaultImageExportSettings.addDifficultyLevel;
+
+				validatedSettings.addBeatNumbers =
+					typeof parsed.addBeatNumbers === 'boolean'
+						? parsed.addBeatNumbers
+						: defaultImageExportSettings.addBeatNumbers;
+
+				validatedSettings.addReversalSymbols =
+					typeof parsed.addReversalSymbols === 'boolean'
+						? parsed.addReversalSymbols
+						: defaultImageExportSettings.addReversalSymbols;
+
+				validatedSettings.combinedGrids =
+					typeof parsed.combinedGrids === 'boolean'
+						? parsed.combinedGrids
+						: defaultImageExportSettings.combinedGrids;
+
+				// Include other properties with type checking and validation
+				if (
+					typeof parsed.backgroundColor === 'string' &&
+					parsed.backgroundColor.match(/^#[0-9A-Fa-f]{6}$/)
+				) {
 					validatedSettings.backgroundColor = parsed.backgroundColor;
-				if (typeof parsed.quality === 'number' && parsed.quality > 0 && parsed.quality <= 1)
+				} else {
+					validatedSettings.backgroundColor = defaultImageExportSettings.backgroundColor;
+					validationErrors++;
+				}
+
+				if (typeof parsed.quality === 'number' && parsed.quality > 0 && parsed.quality <= 1) {
 					validatedSettings.quality = parsed.quality;
+				} else {
+					validatedSettings.quality = defaultImageExportSettings.quality;
+					validationErrors++;
+				}
+
+				// Log validation results
+				if (validationErrors > 0) {
+					console.warn(
+						`Image export settings loaded with ${validationErrors} validation errors, using fallbacks`
+					);
+				} else {
+					console.log('Image export settings loaded successfully', validatedSettings);
+				}
 
 				// Update the store with validated settings
 				imageExportSettings.update((settings) => ({
 					...settings,
 					...validatedSettings
 				}));
-
-				console.log('Image export settings loaded successfully', validatedSettings);
 			} catch (parseError) {
 				console.error('Failed to parse image export settings, using defaults', parseError);
 				// Reset to defaults if parsing fails

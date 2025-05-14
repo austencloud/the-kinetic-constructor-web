@@ -24,7 +24,6 @@
 
 	// Track rendering state
 	let isRendering = $state(false);
-	let lastResult: any = $state(null);
 
 	// Props
 	const { beatFrameElement = null } = $props<{ beatFrameElement?: HTMLElement | null }>();
@@ -63,7 +62,7 @@
 	// Function to actively search for the BeatFrame element in DOM
 	function findBeatFrameElement(): HTMLElement | null {
 		console.log('ShareButton: Actively searching for BeatFrame element in DOM');
-		
+
 		// First try from context (most reliable)
 		if (beatFrameContext) {
 			const contextElement = beatFrameContext.getElement();
@@ -72,28 +71,32 @@
 				return contextElement;
 			}
 		}
-		
-		// Try to find the element by class or ID 
+
+		// Try to find the element by class or ID
 		const byClass = document.querySelector('.beat-frame') as HTMLElement | null;
 		if (byClass) {
 			console.log('ShareButton: Found element by class .beat-frame');
 			return byClass;
 		}
-		
+
 		// Try by specific container selectors
-		const byContainer = document.querySelector('.sequence-container .beat-frame-container') as HTMLElement | null;
+		const byContainer = document.querySelector(
+			'.sequence-container .beat-frame-container'
+		) as HTMLElement | null;
 		if (byContainer) {
 			console.log('ShareButton: Found element by container selector');
 			return byContainer;
 		}
-		
+
 		// Try to find element with SVGs inside (more generic approach)
-		const svgContainers = Array.from(document.querySelectorAll('.sequence-widget svg')).map(svg => svg.closest('.sequence-widget > div'));
+		const svgContainers = Array.from(document.querySelectorAll('.sequence-widget svg')).map((svg) =>
+			svg.closest('.sequence-widget > div')
+		);
 		if (svgContainers.length > 0 && svgContainers[0] instanceof HTMLElement) {
 			console.log('ShareButton: Found container with SVGs');
 			return svgContainers[0] as HTMLElement;
 		}
-		
+
 		console.log('ShareButton: Could not find BeatFrame element in DOM');
 		return null;
 	}
@@ -107,7 +110,7 @@
 				beatFrameElementState = element;
 			}
 		}
-		
+
 		const handleElementAvailable = (event: CustomEvent) => {
 			if (event.detail?.element) {
 				console.log('ShareButton: Got element from event');
@@ -260,7 +263,7 @@
 			// Make one last attempt to find the element if it's not available
 			if (!beatFrameElementState) {
 				beatFrameElementState = findBeatFrameElement();
-				
+
 				if (!beatFrameElementState) {
 					showError('Cannot find sequence display. Please try again.');
 					isRendering = false;
@@ -352,15 +355,16 @@
 		if (!beatFrameElementState) {
 			beatFrameElementState = findBeatFrameElement();
 		}
-		
+
 		if (!browser || !beatFrameElementState) {
 			console.error('Cannot render: not in browser environment or no beat frame element');
-			
+
 			// Try to find the element one more time using more aggressive selectors
-			const alternativeElement = document.querySelector('.sequence-widget') || 
+			const alternativeElement =
+				document.querySelector('.sequence-widget') ||
 				document.querySelector('.sequence-container') ||
 				document.querySelector('.sequence');
-				
+
 			if (alternativeElement instanceof HTMLElement) {
 				console.log('ShareButton: Found alternative element for rendering:', alternativeElement);
 				beatFrameElementState = alternativeElement;
@@ -375,10 +379,34 @@
 
 			// Get export settings
 			let settings: any = {};
-			const unsubscribe = imageExportSettings.subscribe((value: any) => {
-				settings = value;
-			});
-			unsubscribe();
+			try {
+				// Get settings from localStorage first
+				const savedSettings = localStorage.getItem('image-export-settings');
+				if (savedSettings) {
+					try {
+						const parsed = JSON.parse(savedSettings);
+						if (parsed && typeof parsed === 'object') {
+							settings = parsed;
+							console.log('ShareButton: Using settings from localStorage', settings);
+						}
+					} catch (parseError) {
+						console.error('ShareButton: Failed to parse settings from localStorage', parseError);
+					}
+				}
+
+				// If localStorage failed, get from store
+				if (!settings || Object.keys(settings).length === 0) {
+					const unsubscribe = imageExportSettings.subscribe((value: any) => {
+						settings = value;
+					});
+					unsubscribe();
+					console.log('ShareButton: Using settings from store', settings);
+				}
+			} catch (error) {
+				console.error('ShareButton: Error getting export settings', error);
+				// Use empty object, which will fall back to defaults
+				settings = {};
+			}
 
 			console.log('ShareButton: Export settings:', settings);
 
@@ -436,9 +464,6 @@
 				console.error('ShareButton: Invalid rendering result', result);
 				throw new Error('Failed to generate a valid image');
 			}
-
-			// Cache the result
-			lastResult = result;
 
 			return result;
 		} catch (error) {
