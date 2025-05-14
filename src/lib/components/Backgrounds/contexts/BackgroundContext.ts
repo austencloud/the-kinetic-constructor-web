@@ -1,4 +1,14 @@
 // src/lib/components/Backgrounds/contexts/BackgroundContext.ts
+/**
+ * Background Context Module
+ *
+ * This module provides a context-based API for managing background animations.
+ * It uses Svelte stores for state management and provides methods for
+ * initializing, animating, and cleaning up background animations.
+ *
+ * For Svelte 5 runes-based state management, see BackgroundContext.svelte.ts
+ */
+
 import { getContext, setContext } from 'svelte';
 import { writable, derived, type Readable, type Writable, get } from 'svelte/store';
 import type {
@@ -11,6 +21,8 @@ import type {
 import { BackgroundFactory } from '../core/BackgroundFactory';
 import { PerformanceTracker } from '../core/PerformanceTracker';
 import { detectAppropriateQuality } from '../config';
+import { browser } from '$app/environment';
+import { getRunesBackgroundContext } from './BackgroundContext.svelte';
 
 // The context key
 const BACKGROUND_CONTEXT_KEY = 'background-context';
@@ -28,7 +40,7 @@ export interface BackgroundState {
 
 // Define the context interface
 export interface BackgroundContext {
-	// State stores
+	// State stores (keeping for backward compatibility)
 	dimensions: Writable<Dimensions>;
 	performanceMetrics: Writable<PerformanceMetrics>;
 	isActive: Writable<boolean>;
@@ -37,7 +49,7 @@ export interface BackgroundContext {
 	backgroundType: Writable<BackgroundType>;
 	isInitialized: Writable<boolean>;
 
-	// Derived stores
+	// Derived stores (keeping for backward compatibility)
 	shouldRender: Readable<boolean>;
 	backgroundSystem: Readable<BackgroundSystem>;
 
@@ -56,13 +68,17 @@ export interface BackgroundContext {
 
 // Create the context with default values
 function createBackgroundContext(): BackgroundContext {
+	// Make sure we're in a browser environment
+	if (!browser) {
+		// Return a mock context for SSR
+		return createMockBackgroundContext();
+	}
+
 	// Initialize state stores
 	const dimensions = writable<Dimensions>({ width: 0, height: 0 });
 	const performanceMetrics = writable<PerformanceMetrics>({ fps: 60, warnings: [] });
 	const isActive = writable<boolean>(true);
-	const qualityLevel = writable<QualityLevel>(
-		typeof window !== 'undefined' ? detectAppropriateQuality() : 'medium'
-	);
+	const qualityLevel = writable<QualityLevel>(detectAppropriateQuality());
 	const isLoading = writable<boolean>(false);
 	const backgroundType = writable<BackgroundType>('snowfall');
 	const isInitialized = writable<boolean>(false);
@@ -100,24 +116,22 @@ function createBackgroundContext(): BackgroundContext {
 			return;
 		}
 
-		const isBrowser = typeof window !== 'undefined';
-		const initialWidth = isBrowser ? window.innerWidth : 1280;
-		const initialHeight = isBrowser ? window.innerHeight : 720;
+		const initialWidth = browser ? window.innerWidth : 1280;
+		const initialHeight = browser ? window.innerHeight : 720;
 
-		dimensions.set({
-			width: initialWidth,
-			height: initialHeight
-		});
+		// Use direct assignment instead of .set() for better Svelte 5 compatibility
+		dimensions.update(() => ({ width: initialWidth, height: initialHeight }));
 
 		canvas.width = initialWidth;
 		canvas.height = initialHeight;
 
-		if (isBrowser) {
+		if (browser) {
 			window.addEventListener('resize', handleResize);
 			document.addEventListener('visibilitychange', handleVisibilityChange);
 		}
 
-		isInitialized.set(true);
+		// Use direct assignment instead of .set()
+		isInitialized.update(() => true);
 
 		if (onReady) {
 			onReady();
@@ -145,10 +159,11 @@ function createBackgroundContext(): BackgroundContext {
 			performanceTracker.update();
 
 			const perfStatus = performanceTracker.getPerformanceStatus();
-			performanceMetrics.set({
+			// Use update instead of set for better Svelte 5 compatibility
+			performanceMetrics.update(() => ({
 				fps: perfStatus.fps,
 				warnings: perfStatus.warnings
-			});
+			}));
 
 			if (reportCallback) {
 				reportCallback(get(performanceMetrics));
@@ -165,13 +180,13 @@ function createBackgroundContext(): BackgroundContext {
 			animationFrameId = requestAnimationFrame(animate);
 		};
 
-		if (typeof window !== 'undefined') {
+		if (browser) {
 			animationFrameId = requestAnimationFrame(animate);
 		}
 	}
 
 	function stopAnimation(): void {
-		if (animationFrameId && typeof window !== 'undefined') {
+		if (animationFrameId && browser) {
 			cancelAnimationFrame(animationFrameId);
 			animationFrameId = null;
 		}
@@ -180,7 +195,7 @@ function createBackgroundContext(): BackgroundContext {
 	function cleanup(): void {
 		stopAnimation();
 
-		if (typeof window !== 'undefined') {
+		if (browser) {
 			window.removeEventListener('resize', handleResize);
 			document.removeEventListener('visibilitychange', handleVisibilityChange);
 		}
@@ -190,21 +205,24 @@ function createBackgroundContext(): BackgroundContext {
 	}
 
 	function setQuality(quality: QualityLevel): void {
-		qualityLevel.set(quality);
+		// Use update instead of set for better Svelte 5 compatibility
+		qualityLevel.update(() => quality);
 	}
 
 	function setLoading(loading: boolean): void {
-		isLoading.set(loading);
+		// Use update instead of set for better Svelte 5 compatibility
+		isLoading.update(() => loading);
 	}
 
 	function setBackgroundType(type: BackgroundType): void {
-		backgroundType.set(type);
+		// Use update instead of set for better Svelte 5 compatibility
+		backgroundType.update(() => type);
 	}
 
 	// Internal handlers
 	function handleResize(): void {
 		if (!canvas) return;
-		if (typeof window === 'undefined') return;
+		if (!browser) return;
 
 		const newWidth = window.innerWidth;
 		const newHeight = window.innerHeight;
@@ -212,20 +230,23 @@ function createBackgroundContext(): BackgroundContext {
 		canvas.width = newWidth;
 		canvas.height = newHeight;
 
-		dimensions.set({ width: newWidth, height: newHeight });
+		// Use update instead of set for better Svelte 5 compatibility
+		dimensions.update(() => ({ width: newWidth, height: newHeight }));
 
 		// Temporarily reduce quality during resize for better performance
 		const currentQuality = get(qualityLevel);
-		qualityLevel.set('low');
+		qualityLevel.update(() => 'low');
 
 		setTimeout(() => {
-			qualityLevel.set(currentQuality);
+			qualityLevel.update(() => currentQuality);
 		}, 500);
 	}
 
 	function handleVisibilityChange(): void {
+		if (!browser) return;
 		const isVisible = document.visibilityState === 'visible';
-		isActive.set(isVisible);
+		// Use update instead of set for better Svelte 5 compatibility
+		isActive.update(() => isVisible);
 	}
 
 	return {
@@ -253,6 +274,52 @@ function createBackgroundContext(): BackgroundContext {
 	};
 }
 
+// Create a mock background context for SSR
+function createMockBackgroundContext(): BackgroundContext {
+	// Create empty writable stores
+	const dimensions = writable<Dimensions>({ width: 0, height: 0 });
+	const performanceMetrics = writable<PerformanceMetrics>({ fps: 60, warnings: [] });
+	const isActive = writable<boolean>(true);
+	const qualityLevel = writable<QualityLevel>('medium');
+	const isLoading = writable<boolean>(false);
+	const backgroundType = writable<BackgroundType>('snowfall');
+	const isInitialized = writable<boolean>(false);
+
+	// Create derived stores with mock values
+	const shouldRender = derived([isActive], ([$isActive]) => $isActive);
+
+	// Create a mock background system
+	const mockSystem = {
+		initialize: () => {},
+		update: () => {},
+		draw: () => {},
+		setQuality: () => {},
+		cleanup: () => {}
+	} as BackgroundSystem;
+
+	const backgroundSystem = writable<BackgroundSystem>(mockSystem);
+
+	// Return a mock context with no-op functions
+	return {
+		dimensions,
+		performanceMetrics,
+		isActive,
+		qualityLevel,
+		isLoading,
+		backgroundType,
+		isInitialized,
+		shouldRender,
+		backgroundSystem,
+		initializeCanvas: () => {},
+		startAnimation: () => {},
+		stopAnimation: () => {},
+		setQuality: () => {},
+		setLoading: () => {},
+		setBackgroundType: () => {},
+		cleanup: () => {}
+	};
+}
+
 // Set the context
 export function setBackgroundContext(): BackgroundContext {
 	const context = createBackgroundContext();
@@ -262,7 +329,81 @@ export function setBackgroundContext(): BackgroundContext {
 
 // Get the context
 export function getBackgroundContext(): BackgroundContext {
-	return getContext<BackgroundContext>(BACKGROUND_CONTEXT_KEY);
+	// First try to get the store-based context
+	const storeContext = getContext<BackgroundContext>(BACKGROUND_CONTEXT_KEY);
+
+	if (storeContext) {
+		return storeContext;
+	}
+
+	// If no store-based context is found, try to get the runes-based context
+	// and create a store-based wrapper around it
+	const runesContext = getRunesBackgroundContext();
+
+	if (runesContext) {
+		// Create store wrappers around the runes-based context
+		const dimensions = writable<Dimensions>(runesContext.dimensions);
+		const performanceMetrics = writable<PerformanceMetrics>(runesContext.performanceMetrics);
+		const isActive = writable<boolean>(runesContext.isActive);
+		const qualityLevel = writable<QualityLevel>(runesContext.qualityLevel);
+		const isLoading = writable<boolean>(runesContext.isLoading);
+		const backgroundType = writable<BackgroundType>(runesContext.backgroundType);
+		const isInitialized = writable<boolean>(runesContext.isInitialized);
+
+		// Create derived stores
+		const shouldRender = derived(
+			[performanceMetrics, isActive],
+			([$metrics, $isActive]) => $isActive && $metrics.fps > 30
+		);
+
+		const backgroundSystem = writable<BackgroundSystem>(
+			runesContext.backgroundSystem ||
+				({
+					initialize: () => {},
+					update: () => {},
+					draw: () => {},
+					setQuality: () => {},
+					cleanup: () => {}
+				} as BackgroundSystem)
+		);
+
+		// Return a store-based context that delegates to the runes-based context
+		return {
+			// Expose stores
+			dimensions,
+			performanceMetrics,
+			isActive,
+			qualityLevel,
+			isLoading,
+			backgroundType,
+			isInitialized,
+
+			// Expose derived stores
+			shouldRender,
+			backgroundSystem,
+
+			// Delegate actions to the runes-based context
+			initializeCanvas: runesContext.initializeCanvas,
+			startAnimation: runesContext.startAnimation,
+			stopAnimation: runesContext.stopAnimation,
+			setQuality: (quality: QualityLevel) => {
+				runesContext.setQuality(quality);
+				qualityLevel.update(() => quality);
+			},
+			setLoading: (loading: boolean) => {
+				runesContext.setLoading(loading);
+				isLoading.update(() => loading);
+			},
+			setBackgroundType: (type: BackgroundType) => {
+				runesContext.setBackgroundType(type);
+				backgroundType.update(() => type);
+			},
+			cleanup: runesContext.cleanup
+		};
+	}
+
+	// If no context is found, throw an error
+	throw new Error('No background context found. Make sure to use BackgroundProvider.');
 }
 
 // Create a background context without setting it

@@ -20,7 +20,7 @@
 <svelte:element
   this={getPictographElement(onClick)}
   class="pictograph-wrapper"
-  on:click={handleClick(onClick)}
+  on:click={() => handleClick(onClick)}
   aria-label={onClick
     ? `Pictograph for letter ${get(pictographDataStore)?.letter || 'unknown'}`
     : undefined}

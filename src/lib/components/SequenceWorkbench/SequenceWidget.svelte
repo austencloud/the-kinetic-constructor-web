@@ -58,7 +58,6 @@
 
 	// Log when beatFrameElement changes
 	$effect(() => {
-		console.log('SequenceWidget: beatFrameElement changed:', beatFrameElement);
 
 		// If we have a valid element, store it in localStorage for persistence across hot reloads
 		if (beatFrameElement && browser) {

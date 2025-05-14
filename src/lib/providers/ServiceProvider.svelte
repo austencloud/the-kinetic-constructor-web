@@ -37,7 +37,6 @@
 			// Explicitly try to load sequence from localStorage
 			try {
 				const loaded = sequenceContainer.loadFromLocalStorage();
-				console.log('ServiceProvider: Loaded sequence from localStorage:', loaded);
 			} catch (error) {
 				console.error('ServiceProvider: Error loading sequence from localStorage:', error);
 			}

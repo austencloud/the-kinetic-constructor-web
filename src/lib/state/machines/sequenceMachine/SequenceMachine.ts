@@ -168,13 +168,7 @@ export const modernSequenceMachine = createModernMachine<
  * Create the modern sequence machine container
  */
 export const modernSequenceContainer = createMachineContainer(modernSequenceMachine, {
-	inspect: import.meta.env.DEV
-		? (event) => {
-				if (event.type === '@xstate.snapshot') {
-					console.log('Sequence Machine State:', event.snapshot);
-				}
-			}
-		: undefined
+	inspect: import.meta.env.DEV ? undefined : undefined
 });
 
 /**

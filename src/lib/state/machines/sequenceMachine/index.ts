@@ -36,8 +36,6 @@ export const sequenceActor = stateRegistry.registerMachine('sequence', modernSeq
 	description: 'Manages sequence generation and related operations'
 });
 
-// Log that the sequence actor has been registered
-console.log('Sequence actor registered with persist:', true);
 
 // Initialize persistence
 if (typeof window !== 'undefined') {

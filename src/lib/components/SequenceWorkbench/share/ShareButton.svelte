@@ -60,8 +60,54 @@
 		}
 	});
 
+	// Function to actively search for the BeatFrame element in DOM
+	function findBeatFrameElement(): HTMLElement | null {
+		console.log('ShareButton: Actively searching for BeatFrame element in DOM');
+		
+		// First try from context (most reliable)
+		if (beatFrameContext) {
+			const contextElement = beatFrameContext.getElement();
+			if (contextElement) {
+				console.log('ShareButton: Found element from context');
+				return contextElement;
+			}
+		}
+		
+		// Try to find the element by class or ID 
+		const byClass = document.querySelector('.beat-frame') as HTMLElement | null;
+		if (byClass) {
+			console.log('ShareButton: Found element by class .beat-frame');
+			return byClass;
+		}
+		
+		// Try by specific container selectors
+		const byContainer = document.querySelector('.sequence-container .beat-frame-container') as HTMLElement | null;
+		if (byContainer) {
+			console.log('ShareButton: Found element by container selector');
+			return byContainer;
+		}
+		
+		// Try to find element with SVGs inside (more generic approach)
+		const svgContainers = Array.from(document.querySelectorAll('.sequence-widget svg')).map(svg => svg.closest('.sequence-widget > div'));
+		if (svgContainers.length > 0 && svgContainers[0] instanceof HTMLElement) {
+			console.log('ShareButton: Found container with SVGs');
+			return svgContainers[0] as HTMLElement;
+		}
+		
+		console.log('ShareButton: Could not find BeatFrame element in DOM');
+		return null;
+	}
+
 	// Set up event listener for beatframe-element-available
 	onMount(() => {
+		// Try to find the element immediately on mount
+		if (!beatFrameElementState) {
+			const element = findBeatFrameElement();
+			if (element) {
+				beatFrameElementState = element;
+			}
+		}
+		
 		const handleElementAvailable = (event: CustomEvent) => {
 			if (event.detail?.element) {
 				console.log('ShareButton: Got element from event');
@@ -211,6 +257,17 @@
 
 			console.log('ShareButton: Starting download process');
 
+			// Make one last attempt to find the element if it's not available
+			if (!beatFrameElementState) {
+				beatFrameElementState = findBeatFrameElement();
+				
+				if (!beatFrameElementState) {
+					showError('Cannot find sequence display. Please try again.');
+					isRendering = false;
+					return;
+				}
+			}
+
 			// Render the sequence
 			const result = await renderSequence();
 
@@ -291,9 +348,25 @@
 
 	// Render the sequence
 	async function renderSequence(): Promise<any> {
+		// Try one last time to find the beat frame element
+		if (!beatFrameElementState) {
+			beatFrameElementState = findBeatFrameElement();
+		}
+		
 		if (!browser || !beatFrameElementState) {
 			console.error('Cannot render: not in browser environment or no beat frame element');
-			return null;
+			
+			// Try to find the element one more time using more aggressive selectors
+			const alternativeElement = document.querySelector('.sequence-widget') || 
+				document.querySelector('.sequence-container') ||
+				document.querySelector('.sequence');
+				
+			if (alternativeElement instanceof HTMLElement) {
+				console.log('ShareButton: Found alternative element for rendering:', alternativeElement);
+				beatFrameElementState = alternativeElement;
+			} else {
+				return null;
+			}
 		}
 
 		try {
@@ -323,7 +396,7 @@
 
 			// Ensure the beat frame element is fully rendered
 			// Add a small delay to ensure all SVGs are fully rendered
-			await new Promise((resolve) => setTimeout(resolve, 100));
+			await new Promise((resolve) => setTimeout(resolve, 250));
 
 			// Export the sequence with improved settings
 			const result = await exportEnhancedImage(beatFrameElementState, {

@@ -101,36 +101,7 @@
 				}
 			});
 
-			// Original logic for logging (kept for consistency with your version)
-			if (wouldOverflow) {
-				const lastItem = groupItems[groupItems.length - 1];
-				// The class is now added in the loop above, this part of the original logic
-				// was slightly different, but the effect of adding to the last item is preserved.
-				// if (lastItem) {
-				// 	lastItem.classList.add('force-new-row');
-				// }
-				if (import.meta.env.DEV) {
-					console.debug(
-						'Multi-group row would overflow, potentially forcing last item to new row',
-						{
-							containerWidth,
-							totalMinWidth,
-							itemCount: groupItems.length
-						}
-					);
-				}
-			} else {
-				// groupItems.forEach((item) => { // Already handled in the loop above
-				// 	item.classList.remove('force-new-row');
-				// });
-				if (import.meta.env.DEV && groupItems.length > 1) {
-					console.debug('Multi-group row fits without overflow', {
-						containerWidth,
-						totalMinWidth,
-						itemCount: groupItems.length
-					});
-				}
-			}
+
 		}
 
 		// Debounce the checkOverflow function for window resize

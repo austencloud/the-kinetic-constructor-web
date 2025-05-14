@@ -291,7 +291,6 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 			b.x = Math.random() * dim.width;
 		}
 	}
-
 	private drawCelestialBody(ctx: CanvasRenderingContext2D) {
 		const b = this.celestialBody;
 		if (!b || !b.illumination) return;
@@ -317,30 +316,25 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 				: this.cfg.background.gradientStops[0]?.color || '#0A0E2C';
 			ctx.fillStyle = shadowColor;
 
-			// Calculate the X coordinate of the center of the shadow-casting circle.
-			// phaseValue is SunCalc's phase: 0 (new) -> 0.5 (full) -> 1.0 (new)
-			// We convert this to an angle that represents the sun's position relative to the earth-moon line.
-			// angle: -PI at new moon (shadow comes from left, moon mostly dark)
-			//         0 at full moon (shadow is behind moon, moon fully lit)
-			//         PI at new moon (shadow comes from right)
 			const phaseAngleForShadow = (phaseValue - 0.5) * 2 * Math.PI;
-
-			// The X coordinate of the center of the dark, obscuring circle.
-			// When phaseValue = 0 (new moon), phaseAngleForShadow = -PI, cos = -1. shadowDiscCenterX = x - R*(-1) = x + R.
-			//   (Dark disc centered to the right, obscuring the lit disc from the right, leaving left crescent - this means lit disc is drawn first)
-			// When phaseValue = 0.25 (first quarter), phaseAngleForShadow = -PI/2, cos = 0. shadowDiscCenterX = x.
-			//   (Dark disc centered on moon, obscuring left half)
-			// When phaseValue = 0.5 (full moon), phaseAngleForShadow = 0, cos = 1. shadowDiscCenterX = x - R.
-			//   (Dark disc centered to the left, leaving moon fully visible)
 			const shadowDiscCenterX = x - R * Math.cos(phaseAngleForShadow);
 
+			// Create a clipping path that restricts drawing to only the moon's circle
+			ctx.save();
+			ctx.beginPath();
+			ctx.arc(x, y, R, 0, 2 * Math.PI);
+			ctx.clip();
+
+			// Draw the shadow circle - now it will only be visible where it overlaps the moon
 			ctx.beginPath();
 			ctx.arc(shadowDiscCenterX, y, R, 0, 2 * Math.PI);
 			ctx.fill();
+
+			ctx.restore(); // Restore context to remove the clipping
 		}
 
 		// Optional: Add a very faint outline for the new moon if it's not high contrast mode
-		// and it's not nearly full (to avoid outline on full moon).
+		// and it's nearly new but not full
 		if (fraction < 0.03 && !this.a11y.highContrast && fraction < 0.98) {
 			ctx.strokeStyle = 'rgba(100, 100, 120, 0.3)'; // A very subtle grey
 			ctx.lineWidth = Math.max(0.5, R * 0.02); // Make outline proportional but not too thick
@@ -351,7 +345,6 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 
 		ctx.restore();
 	}
-
 	// ---- spaceship ----
 	private updateSpaceship(dim: Dimensions) {
 		if (!this.cfg.spaceship.enabledOnQuality.includes(this.quality)) {

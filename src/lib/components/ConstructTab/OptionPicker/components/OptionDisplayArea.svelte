@@ -38,12 +38,7 @@
 		// Update hasOptions
 		hasOptions = props.optionsToDisplay && props.optionsToDisplay.length > 0;
 
-		console.log('Display state calculation:', {
-			isLoading: props.isLoading,
-			hasOptions,
-			selectedTab: props.selectedTab,
-			optionsCount: props.optionsToDisplay?.length || 0
-		});
+
 
 		// Determine display state
 		if (props.isLoading) {

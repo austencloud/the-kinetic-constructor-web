@@ -1,155 +1,196 @@
 <script lang="ts">
-	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { get } from 'svelte/store';
 	import { getBackgroundContext } from './contexts/BackgroundContext';
+	import { useBackgroundContext } from './contexts/BackgroundContext.svelte';
 	import { BackgroundFactory } from './core/BackgroundFactory';
-	import type { BackgroundType, PerformanceMetrics, QualityLevel } from './types/types';
+	import type { BackgroundType, PerformanceMetrics, QualityLevel, BackgroundSystem } from './types/types';
+	import { browser } from '$app/environment';
 
-	const dispatch = createEventDispatcher<{
-		ready: void;
-		performanceReport: PerformanceMetrics;
+	// Define props with Svelte 5 runes
+	const props = $props<{
+		backgroundType?: BackgroundType;
+		appIsLoading?: boolean;
+		onReady?: () => void;
+		onPerformanceReport?: (metrics: PerformanceMetrics) => void;
 	}>();
 
-	// Props (maintaining the same API)
-	export let backgroundType: BackgroundType = 'nightSky';
-	export let appIsLoading = true;
+	// Create mutable state variables from props with defaults
+	let backgroundType = $state(props.backgroundType || 'nightSky');
+	let appIsLoading = $state(props.appIsLoading !== undefined ? props.appIsLoading : true);
 
-	// Get the context (if it exists)
-	const context = getBackgroundContext();
+	// Update state when props change
+	$effect(() => {
+		if (props.backgroundType !== undefined && props.backgroundType !== backgroundType) {
+			backgroundType = props.backgroundType;
+		}
+		if (props.appIsLoading !== undefined && props.appIsLoading !== appIsLoading) {
+			appIsLoading = props.appIsLoading;
+		}
+	});
 
-	// Set the background type in the context when it changes
-	$: if (context && backgroundType) {
-		context.setBackgroundType(backgroundType);
-	}
+	// Get the context only once - don't recreate it on each render
+	let activeContext = browser ? useBackgroundContext() : null;
+	// Track the current background system
+	let currentBackgroundSystem: BackgroundSystem | null = null;
+	
+	// Flag to prevent changes during initialization
+	let isInitialized = $state(false);
 
-	// Handle loading state changes
-	$: if (context && appIsLoading !== undefined) {
-		const quality: QualityLevel = appIsLoading ? 'medium' : 'high';
-		context.setQuality(quality);
-		context.setLoading(appIsLoading);
-	}
+	// Use let for the canvas element
+	let canvas: HTMLCanvasElement | undefined;
 
-	// Use the background system from the context
-	$: backgroundSystem = context
-		? get(context.backgroundSystem)
-		: BackgroundFactory.createBackgroundSystem(backgroundType);
+	onMount(() => {
+		if (!browser) {
+			return;
+		}
 
-	let canvas: HTMLCanvasElement;
+		if (!canvas) {
+			console.error('Canvas element not found!');
+			return;
+		}
 
-	// Listen for background change events
+		// Add event listener for background changes
+		window.addEventListener('changeBackground', handleBackgroundChange as EventListener);
+
+		if (activeContext) {
+			// Set initial values from props to context once on mount
+			if (backgroundType && backgroundType !== activeContext.backgroundType) {
+				activeContext.setBackgroundType(backgroundType);
+			}
+			
+			if (appIsLoading !== undefined && appIsLoading !== activeContext.isLoading) {
+				activeContext.setLoading(appIsLoading);
+				
+				const quality: QualityLevel = appIsLoading ? 'medium' : 'high';
+				if (quality !== activeContext.qualityLevel) {
+					activeContext.setQuality(quality);
+				}
+			}
+
+			// Get the background system if it exists
+			if ('backgroundSystem' in activeContext) {
+				currentBackgroundSystem = (activeContext as any).backgroundSystem;
+			}
+
+			// Use the active context for initialization and animation
+			activeContext.initializeCanvas(canvas, () => {
+				// Get updated background system after initialization
+				if ('backgroundSystem' in activeContext) {
+					currentBackgroundSystem = (activeContext as any).backgroundSystem;
+				}
+				
+				// Call the onReady callback if provided
+				if (props.onReady) {
+					props.onReady();
+				}
+				isInitialized = true;
+			});
+
+			activeContext.startAnimation(
+				(ctx, dimensions) => {
+					// Always get latest background system for animation frame
+					if ('backgroundSystem' in activeContext) {
+						currentBackgroundSystem = (activeContext as any).backgroundSystem;
+					}
+					
+					if (currentBackgroundSystem) {
+						currentBackgroundSystem.update(dimensions);
+						currentBackgroundSystem.draw(ctx, dimensions);
+					} else {
+						console.warn('No background system available for animation frame');
+					}
+				},
+				(metrics) => {
+					// Call the onPerformanceReport callback if provided
+					if (props.onPerformanceReport) {
+						props.onPerformanceReport(metrics);
+					}
+				}
+			);
+		} else if (browser) {
+			// Fallback to direct instantiation for backward compatibility
+			const manager = createBackgroundManagerFallback();
+
+			manager.initializeCanvas(canvas, () => {
+				// Call the onReady callback if provided
+				if (props.onReady) {
+					props.onReady();
+				}
+				isInitialized = true;
+			});
+
+			manager.startAnimation(
+				(ctx, dimensions) => {
+					// For the legacy manager, create a background system if needed
+					if (!currentBackgroundSystem) {
+						currentBackgroundSystem = BackgroundFactory.createBackgroundSystem({
+							type: backgroundType,
+							initialQuality: 'medium'
+						});
+						currentBackgroundSystem.initialize(dimensions, 'medium');
+					}
+					
+					if (currentBackgroundSystem) {
+						currentBackgroundSystem.update(dimensions);
+						currentBackgroundSystem.draw(ctx, dimensions);
+					}
+				},
+				(metrics) => {
+					// Call the onPerformanceReport callback if provided
+					if (props.onPerformanceReport) {
+						props.onPerformanceReport(metrics);
+					}
+				}
+			);
+		}
+	});
+	
+	// Listen for background change events - only in browser
 	function handleBackgroundChange(event: CustomEvent) {
+		if (!browser || !isInitialized) return;
+
 		if (event.detail && typeof event.detail === 'string') {
-			console.log('BackgroundCanvas received background change event:', event.detail);
 			const newBackgroundType = event.detail as BackgroundType;
 
 			// Only update if the background type has changed
 			if (backgroundType !== newBackgroundType) {
-				console.log('Updating background type from event:', newBackgroundType);
 				backgroundType = newBackgroundType;
-
-				// Update the background system if it exists
-				if (backgroundSystem) {
-					const dimensions = context
-						? get(context.dimensions)
-						: { width: window.innerWidth, height: window.innerHeight };
-					const quality = context ? get(context.qualityLevel) : 'high';
-
-					// Create a new background system with the new type
-					const newSystem = BackgroundFactory.createBackgroundSystem({
-						type: newBackgroundType,
-						initialQuality: quality
-					});
-
-					// Initialize the new system
-					newSystem.initialize(dimensions, quality);
-
-					// Clean up the old system
-					if (backgroundSystem) {
-						backgroundSystem.cleanup();
-					}
-
-					// Replace the old system with the new one
-					backgroundSystem = newSystem;
+				
+				// Update context directly
+				if (activeContext) {
+					activeContext.setBackgroundType(newBackgroundType);
 				}
 			}
 		}
 	}
 
-	onMount(() => {
-		if (!canvas) return;
-
-		// Add event listener for background changes
-		// Only add event listener in browser environment
-		if (typeof window !== 'undefined') {
-			window.addEventListener('changeBackground', handleBackgroundChange as EventListener);
-		}
-
-		if (context) {
-			// Use the context for initialization and animation
-			context.initializeCanvas(canvas, () => {
-				const dimensions = get(context.dimensions);
-				const quality = get(context.qualityLevel);
-				backgroundSystem.initialize(dimensions, quality);
-				dispatch('ready');
-			});
-
-			context.startAnimation(
-				(ctx, dimensions) => {
-					backgroundSystem.update(dimensions);
-					backgroundSystem.draw(ctx, dimensions);
-				},
-				(metrics) => {
-					dispatch('performanceReport', metrics);
-				}
-			);
-		} else {
-			// Fallback to direct instantiation for backward compatibility
-			const manager = createBackgroundManagerFallback();
-
-			manager.initializeCanvas(canvas, () => {
-				const dimensions = get(manager.dimensions);
-				const quality = get(manager.qualityMode);
-				backgroundSystem.initialize(dimensions, quality);
-				dispatch('ready');
-			});
-
-			manager.startAnimation(
-				(ctx, dimensions) => {
-					backgroundSystem.update(dimensions);
-					backgroundSystem.draw(ctx, dimensions);
-				},
-				(metrics) => {
-					dispatch('performanceReport', metrics);
-				}
-			);
-		}
-	});
-
 	onDestroy(() => {
+		if (!browser) return;
+
 		// Remove event listener
-		if (typeof window !== 'undefined') {
-			window.removeEventListener('changeBackground', handleBackgroundChange as EventListener);
-		}
+		window.removeEventListener('changeBackground', handleBackgroundChange as EventListener);
 
-		if (backgroundSystem) {
-			backgroundSystem.cleanup();
+		// Use active context cleanup if available
+		if (activeContext) {
+			activeContext.stopAnimation();
 		}
-
-		// Use context cleanup if available, otherwise do nothing
-		// (the manager has its own cleanup in the other branch)
-		if (context) {
-			context.cleanup();
+		
+		// Clean up background system if needed
+		if (currentBackgroundSystem) {
+			currentBackgroundSystem.cleanup();
+			currentBackgroundSystem = null;
 		}
 	});
 
-	// Maintain the same public API
+	// Maintain the same public API - only in browser
 	export function setQuality(quality: QualityLevel) {
-		if (context) {
-			context.setQuality(quality);
-		}
+		if (!browser || !isInitialized) return;
 
-		if (backgroundSystem) {
-			backgroundSystem.setQuality(quality);
+		if (activeContext) {
+			activeContext.setQuality(quality);
+		} else if (currentBackgroundSystem) {
+			currentBackgroundSystem.setQuality(quality);
 		}
 	}
 
@@ -164,9 +205,25 @@
 	}
 </script>
 
-<canvas
-	bind:this={canvas}
-	style="
+<div class="background-canvas-container">
+	<canvas
+		bind:this={canvas}
+		class="background-canvas"
+		style="
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			width: 100%;
+			height: 100%;
+			z-index: -1;
+		"
+	></canvas>
+</div>
+
+<style>
+	.background-canvas-container {
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -174,6 +231,11 @@
 		bottom: 0;
 		width: 100%;
 		height: 100%;
-		object-fit: contain;
-	"
-></canvas>
+		z-index: -1;
+		overflow: hidden;
+	}
+
+	.background-canvas {
+		display: block;
+	}
+</style>

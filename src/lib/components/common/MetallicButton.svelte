@@ -15,7 +15,7 @@
 		label = '',
 		icon = null,
 		iconPosition = 'left',
-		state = BUTTON_STATE.NORMAL,
+		buttonState = BUTTON_STATE.NORMAL,
 		disabled = false,
 		loading = false,
 		customClass = '',
@@ -30,7 +30,7 @@
 		label?: string;
 		icon?: string | null;
 		iconPosition?: 'left' | 'right' | 'only';
-		state?: ButtonStateType;
+		buttonState?: ButtonStateType;
 		disabled?: boolean;
 		loading?: boolean;
 		customClass?: string;
@@ -264,7 +264,7 @@
 
 	// Compute actual state based on disabled and loading props
 	const actualState = $derived(
-		disabled ? BUTTON_STATE.DISABLED : loading ? BUTTON_STATE.LOADING : state
+		disabled ? BUTTON_STATE.DISABLED : loading ? BUTTON_STATE.LOADING : buttonState
 	);
 
 	// Update spinner visibility with slight delay to avoid flashing

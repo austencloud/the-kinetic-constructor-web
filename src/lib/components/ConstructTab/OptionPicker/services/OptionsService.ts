@@ -18,27 +18,20 @@ import { MotionOriCalculator } from '$lib/components/objects/Motion/MotionOriCal
  * Returns an empty array for an empty sequence (initial state).
  */
 export function getNextOptions(sequence: PictographData[]): PictographData[] {
-	console.log('getNextOptions called with sequence length:', sequence.length);
 
 	const lastPictograph = sequence.at(-1);
 
 	// If sequence is empty, return initial options (currently none defined)
 	if (!lastPictograph) {
-		console.log('No last pictograph found, returning empty options');
 		return [];
 	}
 
-	console.log('Last pictograph:', {
-		letter: lastPictograph.letter,
-		startPos: lastPictograph.startPos,
-		endPos: lastPictograph.endPos
-	});
+
 
 	// Calculate the actual end orientations using MotionOriCalculator
 	const blueEndOri = calculateActualEndOrientation(lastPictograph.blueMotionData);
 	const redEndOri = calculateActualEndOrientation(lastPictograph.redMotionData);
 
-	console.log('Calculated end orientations:', { blueEndOri, redEndOri });
 
 	// Find options where start position matches end position of last pictograph
 	// AND start orientations match calculated end orientations of the last pictograph
@@ -48,7 +41,6 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 		redEndOri
 	);
 
-	console.log('Found matching options:', options.length);
 
 	return options;
 }
@@ -81,11 +73,7 @@ export function findOptionsWithMatchingPositionAndOrientation(
 	blueEndOri?: Orientation,
 	redEndOri?: Orientation
 ): PictographData[] {
-	console.log('Finding options with matching position and orientation:', {
-		targetStartPos,
-		blueEndOri,
-		redEndOri
-	});
+
 
 	if (!targetStartPos) {
 		console.warn('Cannot find next options: Last pictograph has no end position.');
@@ -94,7 +82,6 @@ export function findOptionsWithMatchingPositionAndOrientation(
 
 	const allPictographs = get(pictographDataStore); // Use get() as this is outside a Svelte component/store context
 
-	console.log('Total pictographs in store:', allPictographs?.length || 0);
 
 	if (!Array.isArray(allPictographs) || !allPictographs.length) {
 		console.warn('No pictographs available in the global store.');
@@ -106,7 +93,6 @@ export function findOptionsWithMatchingPositionAndOrientation(
 		(pictograph) => pictograph?.startPos === targetStartPos
 	);
 
-	console.log('Position matches found:', positionMatches.length);
 
 	// If no orientation constraints, return all position matches
 	if (!blueEndOri && !redEndOri) {

@@ -72,6 +72,9 @@ export async function renderSvgToImage(options: SVGRenderOptions): Promise<SVGRe
 		return Promise.reject(new Error('Cannot render: no element provided'));
 	}
 
+	// Store URL for cleanup
+	let svgUrl: string | null = null;
+
 	try {
 		console.log('SVGRenderer: Starting rendering process');
 
@@ -201,9 +204,9 @@ export async function renderSvgToImage(options: SVGRenderOptions): Promise<SVGRe
 		try {
 			// First try using Blob and URL.createObjectURL
 			const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
-			const url = URL.createObjectURL(svgBlob);
+			svgUrl = URL.createObjectURL(svgBlob);
 			console.log('SVGRenderer: Created object URL for SVG');
-			img.src = url;
+			img.src = svgUrl;
 		} catch (blobError) {
 			console.warn('SVGRenderer: Blob approach failed, falling back to data URL', blobError);
 			// Fall back to data URL approach
@@ -220,8 +223,10 @@ export async function renderSvgToImage(options: SVGRenderOptions): Promise<SVGRe
 		// Wait for the image to load
 		const result = await imageLoadPromise;
 
-		// Clean up
-		URL.revokeObjectURL(url);
+		// Clean up URL only if it was created
+		if (svgUrl) {
+			URL.revokeObjectURL(svgUrl);
+		}
 
 		console.log('SVGRenderer: Rendering completed successfully', {
 			width: result.width,
@@ -231,6 +236,11 @@ export async function renderSvgToImage(options: SVGRenderOptions): Promise<SVGRe
 
 		return result;
 	} catch (error) {
+		// Clean up URL if it was created, even in case of error
+		if (svgUrl) {
+			URL.revokeObjectURL(svgUrl);
+		}
+
 		// Log detailed error information
 		logger.error('Error rendering SVG image', {
 			error: error instanceof Error ? error : new Error(String(error))
@@ -322,7 +332,7 @@ async function ensureTKAGlyphVisibility(svgElement: SVGElement): Promise<void> {
 					letterElement.setAttribute('visibility', 'visible');
 
 					// Ensure the href attribute is properly set
-					const href = letterElement.getAttribute('href');
+					const href = letterElement.getAttribute('href') || letterElement.getAttribute('xlink:href');
 					if (href && href.startsWith('/')) {
 						// Convert relative URL to absolute for external references
 						const fullUrl = window.location.origin + href;
@@ -330,6 +340,8 @@ async function ensureTKAGlyphVisibility(svgElement: SVGElement): Promise<void> {
 							// Fetch the SVG and convert to data URL
 							const dataUrl = await fetchSvgAsDataUrl(fullUrl);
 							letterElement.setAttribute('href', dataUrl);
+							// Also set xlink:href for compatibility
+							letterElement.setAttribute('xlink:href', dataUrl);
 							console.log('SVGRenderer: Updated TKAGlyph letter image with data URL');
 						} catch (fetchError) {
 							console.error('SVGRenderer: Failed to fetch TKAGlyph letter SVG:', fetchError);
@@ -356,10 +368,14 @@ async function ensureGridVisibility(svgElement: SVGElement): Promise<void> {
 
 		// Process each image element
 		for (const imageElement of Array.from(imageElements)) {
-			const href = imageElement.getAttribute('href');
+			// Check both href and xlink:href attributes
+			let href = imageElement.getAttribute('href');
+			if (!href) {
+				href = imageElement.getAttribute('xlink:href');
+			}
 
 			// Handle grid images
-			if (href?.includes('grid')) {
+			if (href && href.includes('grid')) {
 				console.log('SVGRenderer: Found grid image with href:', href);
 
 				// Make sure the image is visible
@@ -388,8 +404,9 @@ async function ensureGridVisibility(svgElement: SVGElement): Promise<void> {
 					// Fetch the SVG and convert to data URL
 					const dataUrl = await fetchSvgAsDataUrl(fullUrl);
 
-					// Update the href attribute
+					// Update both href attributes for compatibility
 					imageElement.setAttribute('href', dataUrl);
+					imageElement.setAttribute('xlink:href', dataUrl);
 					console.log('SVGRenderer: Updated grid image with data URL');
 				} catch (fetchError) {
 					console.error('SVGRenderer: Failed to fetch grid SVG:', fetchError);

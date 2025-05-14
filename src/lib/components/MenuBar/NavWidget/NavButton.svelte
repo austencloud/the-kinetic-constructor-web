@@ -11,13 +11,15 @@
 		onClick,
 		index = 0,
 		previousIndex = 0,
-		showText = true // Prop to control text visibility
+		showText = true,
+		children
 	} = $props<{
 		isActive?: boolean;
 		onClick: () => void;
 		index?: number;
 		previousIndex?: number;
 		showText?: boolean;
+		children?: any;
 	}>();
 
 	// --- State ---
@@ -65,7 +67,7 @@
 			: 'icon-only'}"
 		onclick={handleClick}
 	>
-		<slot />
+		{@render children?.()}
 	</button>
 
 	<TabRipple active={isActive} {index} {previousIndex} />

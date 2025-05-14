@@ -1,29 +1,21 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import { circleCoordinates } from './circleCoordinates';
 	import type { GridData } from './GridData';
 	import { settingsStore } from '$lib/state/stores/settings/settings.store';
 	import type { GridMode } from './types';
-	import type { GridEvents, GridErrorEventDetail } from './GridEvents';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
 		gridMode?: GridMode;
 		onPointsReady: (gridData: GridData) => void;
 		debug?: boolean;
+		onError?: (message: string) => void;
 	}>();
 
 	// State variables
 	let gridError = $state(false);
 	let gridErrorMessage = $state('');
-
-	// Create event dispatcher
-	const dispatch = createEventDispatcher();
-
-	// Create custom event functions
-	function dispatchError(message: string) {
-		dispatch('error', { message });
-	}
 
 	// Get values from settings store with fallbacks using derived values
 	const effectiveGridMode = $derived(props.gridMode ?? $settingsStore.defaultGridMode);
@@ -147,14 +139,6 @@
 				throw new Error('Grid data validation failed');
 			}
 
-			// Log a subset of points for debugging
-			if (effectiveDebug) {
-				console.debug(
-					'Grid points sample:',
-					Object.entries(gridData.allHandPointsNormal).slice(0, 3)
-				);
-			}
-
 			// Use setTimeout to break potential reactive cycles
 			setTimeout(() => {
 				props.onPointsReady(gridData);
@@ -165,7 +149,7 @@
 			gridErrorMessage = error instanceof Error ? error.message : 'Unknown grid error';
 
 			// Dispatch error event
-			dispatchError(gridErrorMessage);
+			props.onError?.(gridErrorMessage);
 
 			// Create and return fallback grid data
 			const fallbackData = createFallbackGridData();
@@ -186,7 +170,7 @@
 		console.error('Failed to load grid SVG image');
 		gridError = true;
 		gridErrorMessage = 'Failed to load grid image';
-		dispatchError(gridErrorMessage);
+		props.onError?.(gridErrorMessage);
 	}
 </script>
 

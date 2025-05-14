@@ -1,63 +1,188 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { setBackgroundContext } from './contexts/BackgroundContext';
+	import { setRunesBackgroundContext } from './contexts/BackgroundContext.svelte';
 	import type { BackgroundType, QualityLevel } from './types/types';
+	import { browser } from '$app/environment';
 
-	// Define props with defaults
-	export let backgroundType: BackgroundType = 'snowfall';
-	export let initialQuality: QualityLevel | undefined = undefined;
-	export let isLoading: boolean = false;
+	const props = $props<{
+		backgroundType?: BackgroundType;
+		initialQuality?: QualityLevel | undefined;
+		isLoading?: boolean;
+		children?: any;
+	}>();
 
-	// Set up the context
-	const backgroundContext = setBackgroundContext();
+	let backgroundType = $state(props.backgroundType || 'snowfall');
+	let initialQuality = $state(props.initialQuality);
+	let isLoading = $state(props.isLoading || false);
+	let isMounted = $state(false);
 
-	// Initialize background type and handle changes
-	$: if (backgroundType) {
-		console.log('BackgroundProvider: Setting background type to', backgroundType);
-		backgroundContext.setBackgroundType(backgroundType);
+	$effect(() => {
+		if (props.backgroundType !== undefined) {
+			backgroundType = props.backgroundType;
+		}
+		if (props.initialQuality !== undefined) {
+			initialQuality = props.initialQuality;
+		}
+		if (props.isLoading !== undefined) {
+			isLoading = props.isLoading;
+		}
+	});
+
+	let backgroundContext = $state<ReturnType<typeof setBackgroundContext> | null>(null);
+	let runesContext = $state<ReturnType<typeof setRunesBackgroundContext> | null>(null);
+	let contextsInitialized = $state(false);
+
+	// Initialize contexts only once using onMount to ensure it runs after component initialization
+	onMount(() => {
+		if (browser && !contextsInitialized) {
+			console.log('Setting up background contexts');
+			// Set up the runes context first
+			const runesCtx = setRunesBackgroundContext();
+			runesContext = runesCtx; // Store for potential future use
+			// Then set up the store-based context (which will use the runes context)
+			backgroundContext = setBackgroundContext();
+			contextsInitialized = true;
+
+			// Export the runes context for debugging
+			if (typeof window !== 'undefined') {
+				(window as any).__runesBackgroundContext = runesCtx;
+			}
+		}
+	});
+
+	// Use a flag to prevent circular updates
+	let isUpdatingFromContext = $state(false);
+
+	// Helper function to create a string key for comparison
+	function getBackgroundTypeKey(type: BackgroundType | null): string {
+		return type || 'none';
 	}
 
-	// Listen for background change events
+	// Track current values as string keys
+	let currentBackgroundTypeKey = $state<string>('');
+	let currentIsLoadingKey = $state<string>('');
+
+	$effect(() => {
+		if (!browser) return;
+		if (!backgroundContext) return;
+		if (isUpdatingFromContext) return; // Skip if we're updating from the context
+
+		// Create a key for the current background type
+		const newKey = getBackgroundTypeKey(backgroundType);
+
+		// Skip if the background type hasn't changed
+		if (newKey === currentBackgroundTypeKey) return;
+
+		// Update the current key
+		currentBackgroundTypeKey = newKey;
+
+		console.log(`Provider setting background type: ${backgroundType}`);
+
+		if (backgroundType) {
+			// Set the flag to prevent circular updates
+			isUpdatingFromContext = true;
+			try {
+				backgroundContext.setBackgroundType(backgroundType);
+			} finally {
+				// Reset the flag immediately - no timeout needed
+				isUpdatingFromContext = false;
+			}
+		}
+	});
+
+	$effect(() => {
+		if (!browser) return;
+		if (!backgroundContext) return;
+		if (isUpdatingFromContext) return; // Skip if we're updating from the context
+
+		// Create a key for the current loading state
+		const newKey = String(isLoading);
+
+		// Skip if the loading state hasn't changed
+		if (newKey === currentIsLoadingKey) return;
+
+		// Update the current key
+		currentIsLoadingKey = newKey;
+
+		console.log(`Provider setting loading: ${isLoading}`);
+
+		// Set the flag to prevent circular updates
+		isUpdatingFromContext = true;
+		try {
+			backgroundContext.setLoading(isLoading);
+		} finally {
+			// Reset the flag immediately - no timeout needed
+			isUpdatingFromContext = false;
+		}
+	});
+
 	function handleBackgroundChange(event: CustomEvent) {
+		if (!browser || !backgroundContext) return;
+
 		if (event.detail && typeof event.detail === 'string') {
-			console.log('BackgroundProvider received background change event:', event.detail);
 			const newBackgroundType = event.detail as BackgroundType;
 
-			// Only update if the background type has changed
 			if (backgroundType !== newBackgroundType) {
-				console.log('BackgroundProvider: Updating background type from event:', newBackgroundType);
 				backgroundType = newBackgroundType;
 				backgroundContext.setBackgroundType(newBackgroundType);
 			}
 		}
 	}
 
-	// Initialize quality if provided
 	onMount(() => {
+		isMounted = true;
+
+		if (!browser) {
+			return;
+		}
+
+		if (!backgroundContext) {
+			console.error('No background context available!');
+			return;
+		}
+
 		if (initialQuality) {
 			backgroundContext.setQuality(initialQuality);
 		}
 
-		backgroundContext.setLoading(isLoading);
-
-		// Add event listener for background changes
-		if (typeof window !== 'undefined') {
-			window.addEventListener('changeBackground', handleBackgroundChange as EventListener);
-		}
+		window.addEventListener('changeBackground', handleBackgroundChange as EventListener);
 	});
 
-	// Update loading state when it changes
-	$: backgroundContext.setLoading(isLoading);
-
-	// Clean up on destroy
 	onDestroy(() => {
-		// Remove event listener
-		if (typeof window !== 'undefined') {
-			window.removeEventListener('changeBackground', handleBackgroundChange as EventListener);
-		}
+		if (!browser || !backgroundContext) return;
 
+		window.removeEventListener('changeBackground', handleBackgroundChange as EventListener);
 		backgroundContext.cleanup();
 	});
+
+	const derivedType = $derived(backgroundType);
+	const derivedIsLoading = $derived(isLoading);
+
+	export const background = {
+		get type() {
+			return derivedType;
+		},
+		get isLoading() {
+			return derivedIsLoading;
+		},
+		setType: (type: BackgroundType) => {
+			if (!browser || !backgroundContext) return;
+			backgroundType = type;
+			backgroundContext.setBackgroundType(type);
+		},
+		setLoading: (loading: boolean) => {
+			if (!browser || !backgroundContext) return;
+			isLoading = loading;
+			backgroundContext.setLoading(loading);
+		},
+		setQuality: (quality: QualityLevel) => {
+			if (!browser || !backgroundContext) return;
+			backgroundContext.setQuality(quality);
+		}
+	};
 </script>
 
-<slot />
+{#if browser && isMounted}
+	{@render props.children?.()}
+{/if}

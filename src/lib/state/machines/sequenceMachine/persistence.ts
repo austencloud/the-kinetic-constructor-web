@@ -29,10 +29,8 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 		// First try to load from the modern 'sequence' storage
 		let sequenceLoaded = false;
 		try {
-			console.log('Attempting to load sequence from modern storage');
 			sequenceLoaded = sequenceContainer.loadFromLocalStorage();
 			if (sequenceLoaded) {
-				console.log('Successfully loaded sequence from modern storage');
 
 				// Update isSequenceEmpty based on the loaded sequence
 				const hasBeats = sequenceContainer.state.beats.length > 0;
@@ -88,11 +86,9 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 				const backupData = localStorage.getItem('sequence_backup');
 				if (backupData) {
 					const backup = JSON.parse(backupData);
-					console.log('Found sequence backup with beats:', backup.beats?.length);
 
 					// Restore the beats to the sequence store
 					if (backup.beats && Array.isArray(backup.beats) && backup.beats.length > 0) {
-						console.log('Restoring beats from backup');
 
 						// Process the beats to ensure pictographData is properly preserved
 						const processedBeats = backup.beats.map((beat: any) => {
@@ -135,7 +131,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 
 						// If the backup has a word, update the metadata
 						if (backup.word) {
-							console.log('Restoring word from backup:', backup.word);
 							sequenceContainer.updateMetadata({
 								name: backup.word
 							});
@@ -157,7 +152,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 							const word = letters.join('');
 
 							// Update metadata with word
-							console.log('Calculated word from backup beats:', word);
 							sequenceContainer.updateMetadata({
 								name: word
 							});
@@ -219,7 +213,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 	 * Helper function to restore the start position
 	 */
 	function restoreStartPosition(pictographData: any) {
-		console.log('Restoring start position');
 
 		// Create a deep copy to avoid reference issues
 		const startPosCopy = JSON.parse(JSON.stringify(pictographData));
@@ -230,7 +223,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 		// Also update the pictographStore
 		pictographStore.setData(startPosCopy);
 
-		console.log('Start position restored:', startPosCopy);
 
 		// Dispatch a custom event to notify components
 		if (typeof document !== 'undefined') {
@@ -244,7 +236,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 
 	// Subscribe to state changes to save backup
 	sequenceActor.subscribe((state) => {
-		console.log('Sequence actor state changed:', state.context);
 
 		// Import the sequenceContainer and pictograph utilities to ensure they're available
 		Promise.all([

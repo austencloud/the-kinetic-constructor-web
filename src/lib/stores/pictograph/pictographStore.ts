@@ -45,7 +45,6 @@ export const initializePictographData = (csvData: {
 	diamondData: string;
 	boxData: string;
 }): PictographData[] | null => {
-	console.log('Initializing pictograph data store');
 
 	try {
 		if (!csvData.diamondData && !csvData.boxData) {
@@ -53,22 +52,13 @@ export const initializePictographData = (csvData: {
 			return null;
 		}
 
-		console.log('CSV data available:', {
-			diamondDataLength: csvData.diamondData?.length || 0,
-			boxDataLength: csvData.boxData?.length || 0
-		});
-
 		const diamondPictographs = parseCsvToJson(csvData.diamondData || '', 'diamond');
 		const boxPictographs = parseCsvToJson(csvData.boxData || '', 'box');
-		console.log('Parsed pictographs:', {
-			diamondCount: diamondPictographs.length,
-			boxCount: boxPictographs.length
-		});
+
 
 		const combinedData = [...diamondPictographs, ...boxPictographs];
 		const allPictographData = groupPictographsByLetter(combinedData);
 
-		console.log('Final pictograph data count:', allPictographData.length);
 
 		pictographDataStore.set(allPictographData);
 		return allPictographData; // Return the data if needed
