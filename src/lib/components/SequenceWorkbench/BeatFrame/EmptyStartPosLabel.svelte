@@ -13,6 +13,23 @@
 	// Animation state
 	let isVisible = $state(false);
 	let isHovered = $state(false);
+	let isSelected = $state(false);
+
+	// Import the sequence container to check if this beat is selected
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+
+	// Update isSelected when the selection changes
+	$effect(() => {
+		// Create a subscription to the sequenceContainer state
+		const unsubscribe = sequenceContainer.subscribe((state) => {
+			// Update the selection state immediately when it changes
+			isSelected = state.selectedBeatIds.includes('start-position');
+			console.log('Empty start position selection state updated:', isSelected);
+		});
+
+		// Clean up the subscription when the component is destroyed or the effect is re-run
+		return unsubscribe;
+	});
 
 	// Accessibility
 	let uniqueId = $state(`start-pos-label-${Math.random().toString(36).substring(2, 9)}`);
@@ -29,6 +46,7 @@
 	class="empty-start-pos-label"
 	class:visible={isVisible}
 	class:hovered={isHovered}
+	class:selected={isSelected}
 	onclick={props.onClick}
 	onmouseenter={() => (isHovered = true)}
 	onmouseleave={() => (isHovered = false)}
@@ -87,6 +105,17 @@
 	.empty-start-pos-label.hovered {
 		background-color: var(--color-surface-600, rgba(40, 50, 70, 0.7));
 		box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+	}
+
+	/* Style for selected state - match the gold color used for regular beats */
+	.empty-start-pos-label.selected {
+		background-color: rgba(255, 204, 0, 0.1);
+		box-shadow:
+			0 0 0 2px rgba(255, 204, 0, 0.7),
+			0 0 10px 2px rgba(255, 204, 0, 0.3); /* Primary border and outer glow */
+		transform: scale(1.02);
+		transition: all 0.2s ease-out;
+		z-index: 2; /* Ensure it appears above other elements */
 	}
 
 	.empty-start-pos-label:focus-visible {

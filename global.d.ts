@@ -19,6 +19,10 @@ declare namespace svelteHTML {
 		'on:mouseenter'?: (e: MouseEvent) => void;
 		'on:mouseleave'?: (e: MouseEvent) => void;
 
+		// Custom events for BeatFrame component
+		'on:naturalheightchange'?: (e: CustomEvent<{ height: number }>) => void;
+		'on:beatselected'?: (e: CustomEvent<{ beatId: string }>) => void;
+
 		// Add class directives
 		'class:loading'?: boolean;
 	}

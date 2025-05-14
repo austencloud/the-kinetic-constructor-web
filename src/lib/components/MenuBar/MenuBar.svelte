@@ -4,61 +4,55 @@
 	import InstallPWA from '../common/InstallPWA.svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicInOut, quintOut } from 'svelte/easing';
-	import { tweened } from 'svelte/motion';
-	import { writable } from 'svelte/store';
 	import { appActions } from '$lib/state/machines/app/app.actions';
-	import { createEventDispatcher } from 'svelte';
 	import { uiStore } from '$lib/state/stores/uiStore';
 
-	// Use a simple writable store for nav visibility
-	const isNavVisible = writable(true);
-
-	// Create a tweened store for the menu height to animate content below
-	const menuHeight = tweened(60, {
-		duration: 400,
-		easing: cubicInOut
-	});
-
-	// Create event dispatcher for component events
-	const dispatch = createEventDispatcher<{
-		changeBackground: string;
-		openSettings: void;
+	// Props using Svelte 5 runes
+	const { onChangeBackground = () => {}, onOpenSettings = () => {} } = $props<{
+		onChangeBackground?: (background: string) => void;
+		onOpenSettings?: () => void;
 	}>();
 
+	// Use state rune for nav visibility
+	let isNavVisible = $state(true);
+
+	// Use state for menu height with animation handled in CSS
+	let menuHeight = $state(60);
+
 	// Get device information from the UI store
-	$: isMobileDevice = $uiStore.isMobile;
-	$: isPortraitMode = !$uiStore.isDesktop && $uiStore.windowHeight > $uiStore.windowWidth;
+	const isMobileDevice = $derived($uiStore.isMobile);
+	const isPortraitMode = $derived(
+		!$uiStore.isDesktop && $uiStore.windowHeight > $uiStore.windowWidth
+	);
 
 	function handleSettingsClick() {
 		appActions.openSettings();
-		dispatch('openSettings');
+		onOpenSettings();
 	}
 
-	function handleBackgroundChange(event: CustomEvent<string>) {
-		dispatch('changeBackground', event.detail);
+	function handleBackgroundChange(background: string) {
+		onChangeBackground(background);
 	}
 
 	function toggleNav() {
-		isNavVisible.update((v) => {
-			// Update the menu height based on visibility
-			menuHeight.set(v ? 0 : isMobileDevice ? 50 : 60);
-			return !v;
-		});
+		// Update the menu height based on visibility
+		menuHeight = isNavVisible ? 0 : isMobileDevice ? 50 : 60;
+		isNavVisible = !isNavVisible;
 	}
 </script>
 
-<div class="menu-wrapper" style="--menu-height: {$menuHeight}px;">
+<div class="menu-wrapper" style="--menu-height: {menuHeight}px;">
 	<!-- Fixed Navigation Controls - Always visible -->
 	<div class="fixed-nav-controls">
 		<!-- Hamburger button on the left -->
-		<button class="hamburger-button" on:click={toggleNav} aria-label="Menu">
+		<button class="hamburger-button" onclick={toggleNav} aria-label="Menu">
 			<i class="fa-solid fa-bars"></i>
 		</button>
 	</div>
 
 	<header class="menu-bar-container">
 		<!-- Menu Bar Content -->
-		{#if $isNavVisible}
+		{#if isNavVisible}
 			<div class="menu-bar-backdrop" transition:fade={{ duration: 400, easing: cubicInOut }}></div>
 			<div
 				class="menu-bar"
@@ -75,8 +69,8 @@
 				<div class="menu-section center-section">
 					<div class="nav-widget-wrapper">
 						<NavWidget
-							on:changeBackground={handleBackgroundChange}
-							on:settingsClick={handleSettingsClick}
+							onChangeBackground={handleBackgroundChange}
+							onSettingsClick={handleSettingsClick}
 						/>
 					</div>
 				</div>
@@ -85,7 +79,7 @@
 				<div class="menu-section right-section">
 					<div class="menu-buttons-container">
 						<div class="settings-button-container">
-							<SettingsButton on:click={handleSettingsClick} />
+							<SettingsButton onClick={handleSettingsClick} />
 						</div>
 						<div class="pwa-install-container" in:fade={{ duration: 400, delay: 300 }}>
 							<InstallPWA

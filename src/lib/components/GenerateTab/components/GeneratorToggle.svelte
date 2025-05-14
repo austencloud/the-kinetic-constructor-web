@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
 	export interface ToggleOption {
 		id: string;
 		label: string;
@@ -7,19 +7,21 @@
 </script>
 
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-	export let options: ToggleOption[];
-	export let value: string; // The current selected option id
-	// export let onchange: (newVal: string) => void = () => {}; // Svelte 5 runes make this less common for parent->child updates
-	// Parent can directly modify 'value' if it's $state
-	// For child->parent, dispatch event
-
-	const dispatch = createEventDispatcher<{ change: string }>();
+	// Use Svelte 5 props rune
+	const {
+		options = [],
+		value = '',
+		onChange = (newValue: string) => {}
+	} = $props<{
+		options: ToggleOption[];
+		value: string;
+		onChange?: (newValue: string) => void;
+	}>();
 
 	function selectOption(id: string) {
 		if (id !== value) {
-			// Parent will update 'value' prop which is reactive due to $state or $props
-			dispatch('change', id);
+			// Call the onChange callback
+			onChange(id);
 		}
 	}
 </script>
@@ -29,7 +31,7 @@
 		<button
 			class="toggle-button"
 			class:active={option.id === value}
-			on:click={() => selectOption(option.id)}
+			onclick={() => selectOption(option.id)}
 			aria-pressed={option.id === value}
 			title={option.label}
 		>

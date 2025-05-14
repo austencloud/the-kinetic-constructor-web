@@ -3,6 +3,7 @@
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
 	import type { BeatData as LegacyBeatData } from './BeatData';
 	import type { BeatFrameLayoutOptions } from '$lib/types/BeatFrameLayoutOptions';
+	import { createEventDispatcher } from 'svelte';
 
 	// Import manager components
 	import BeatFrameLayoutManager from './managers/BeatFrameLayoutManager.svelte';
@@ -15,6 +16,12 @@
 	// Import sequence container
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+
+	// Create event dispatcher for custom events
+	const dispatch = createEventDispatcher<{
+		naturalheightchange: { height: number };
+		beatselected: { beatId: string };
+	}>();
 
 	// Use the sequence container with Svelte 5 runes
 	const sequence = useContainer(sequenceContainer);
@@ -49,27 +56,20 @@
 
 		// Listen for naturalheightchange events
 		const handleNaturalHeightChange = (event: CustomEvent) => {
-			// Forward the event to parent components
-			const customEvent = new CustomEvent('naturalheightchange', {
-				detail: event.detail,
-				bubbles: true
-			});
-			beatFrameContainerRef?.dispatchEvent(customEvent);
+			// Only forward events that didn't originate from this component
+			// This prevents infinite recursion
+			if (event.target !== beatFrameContainerRef) {
+				// Forward the event to parent components using the dispatcher
+				dispatch('naturalheightchange', event.detail);
+			}
 		};
 
-		// Listen for beatselected events
-		const handleBeatSelected = (event: CustomEvent) => {
-			// Forward the event to parent components
-			const customEvent = new CustomEvent('beatselected', {
-				detail: event.detail,
-				bubbles: true
-			});
-			beatFrameContainerRef?.dispatchEvent(customEvent);
-		};
+		// We don't need to listen for beatselected events on the document
+		// The BeatFrameStateManager already dispatches these events
+		// and they bubble up naturally through the DOM
 
-		// Add event listeners
+		// Add event listeners - only for naturalheightchange
 		document.addEventListener('naturalheightchange', handleNaturalHeightChange as EventListener);
-		document.addEventListener('beatselected', handleBeatSelected as EventListener);
 
 		// Clean up event listeners
 		return () => {
@@ -77,7 +77,6 @@
 				'naturalheightchange',
 				handleNaturalHeightChange as EventListener
 			);
-			document.removeEventListener('beatselected', handleBeatSelected as EventListener);
 		};
 	});
 

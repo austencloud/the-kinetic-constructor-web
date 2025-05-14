@@ -1,19 +1,18 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-
-	// Create event dispatcher
-	const dispatch = createEventDispatcher<{ click: void }>();
+	// Use Svelte 5 props rune
+	const { onClick = () => {} } = $props<{
+		onClick?: () => void;
+	}>();
 
 	// Function to handle settings button click
 	function handleClick() {
-		// Dispatch the click event
-		dispatch('click');
+		onClick();
 	}
 </script>
 
 <button
 	class="settings-button ripple"
-	on:click={handleClick}
+	onclick={handleClick}
 	aria-label="Settings"
 	data-mdb-ripple="true"
 	data-mdb-ripple-color="light"

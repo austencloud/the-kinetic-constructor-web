@@ -27,12 +27,15 @@
 	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 
 	// We'll use custom events instead of Svelte's event dispatcher
+	// This function creates a custom event that will bubble up through the DOM
+	// without being dispatched directly on the document to avoid infinite recursion
 	const dispatchBeatSelectedEvent = (beatId: string) => {
-		const event = new CustomEvent('beatselected', {
+		// Create a custom event that will bubble up through the DOM
+		// We'll dispatch this on a DOM element, not directly on document
+		return new CustomEvent('beatselected', {
 			detail: { beatId },
 			bubbles: true
 		});
-		document.dispatchEvent(event);
 	};
 
 	// Use the sequence container with Svelte 5 runes
@@ -136,15 +139,31 @@
 
 	// Event handlers
 	export function handleStartPosBeatClick() {
-		// Dispatch a custom event to trigger the start position selector
+		// Make the start position selectable like a regular beat
+		// First, select the start position in the container
+		sequenceContainer.selectBeat('start-position');
+
+		// Then dispatch a custom event for the start position selection
 		// Create a deep copy of startPosition to avoid reference issues
 		const startPosCopy = startPosition ? JSON.parse(JSON.stringify(startPosition)) : null;
 
-		const event = new CustomEvent('select-start-pos', {
+		// Dispatch the event for the start position selector
+		const selectStartPosEvent = new CustomEvent('select-start-pos', {
 			bubbles: true,
 			detail: { currentStartPos: startPosCopy }
 		});
-		document.dispatchEvent(event);
+		document.dispatchEvent(selectStartPosEvent);
+
+		// Also dispatch a beat selected event for the deletion mode
+		const beatSelectedEvent = dispatchBeatSelectedEvent('start-position');
+		document.querySelector('.beat-frame-state-manager')?.dispatchEvent(beatSelectedEvent);
+
+		// Also dispatch a global event for components that aren't direct parents
+		const globalEvent = new CustomEvent('beat-selected', {
+			bubbles: true,
+			detail: { beatId: 'start-position' }
+		});
+		document.dispatchEvent(globalEvent);
 	}
 
 	export function handleBeatClick(beatIndex: number) {
@@ -157,11 +176,18 @@
 				// Select the beat in the container
 				sequenceContainer.selectBeat(beatId);
 
-				// Dispatch a custom event for the beat selection
+				// Create a custom event for the beat selection
 				// This will be used by the deletion mode
-				dispatchBeatSelectedEvent(beatId);
+				const beatSelectedEvent = dispatchBeatSelectedEvent(beatId);
+
+				// Dispatch the event on the current element, not on document
+				// This allows it to bubble up naturally through the DOM
+				// without causing infinite recursion
+				document.querySelector('.beat-frame-state-manager')?.dispatchEvent(beatSelectedEvent);
 
 				// Also dispatch a global event for components that aren't direct parents
+				// This is a different event type ('beat-selected' vs 'beatselected')
+				// so it won't cause recursion
 				const event = new CustomEvent('beat-selected', {
 					bubbles: true,
 					detail: { beatId }
@@ -266,7 +292,7 @@
 </script>
 
 <!-- This is an invisible component that just manages state -->
-<div style="display: none;" aria-hidden="true">
+<div class="beat-frame-state-manager" style="display: none;" aria-hidden="true">
 	<!-- Status for debugging -->
 	{#if beats.length >= 0}
 		<!-- State manager initialized -->

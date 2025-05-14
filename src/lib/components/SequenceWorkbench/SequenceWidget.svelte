@@ -14,8 +14,8 @@
 	import { openSequenceOverlay } from '$lib/state/sequenceOverlay/sequenceOverlayState';
 
 	import type { ActionEventDetail } from './ButtonPanel/types';
+	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
 	import { appActions } from '$lib/state/machines/app/app.actions';
-	import * as sequenceActions from '$lib/state/machines/sequenceMachine/actions';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 
 	import SequenceContent from './content/SequenceContent.svelte';
@@ -24,6 +24,7 @@
 	import DeleteButton from './DeleteButton.svelte';
 	import DeleteModal from './DeleteModal.svelte';
 	import SequenceOverlayButton from './SequenceOverlayButton.svelte';
+	import RemoveBeatButton from './RemoveBeatButton.svelte';
 	// Explicitly import ShareButton with a console log to verify it's being imported
 	import ShareButton from './share/ShareButton.svelte';
 	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte';
@@ -59,7 +60,6 @@
 
 	// Log when beatFrameElement changes
 	$effect(() => {
-
 		// If we have a valid element, store it in localStorage for persistence across hot reloads
 		if (beatFrameElement && browser) {
 			try {
@@ -174,7 +174,22 @@
 	});
 
 	// Check if there's a selected beat
-	const hasSelectedBeat = $derived(sequenceContainer.state.selectedBeatIds.length > 0);
+	// Use $state and a direct subscription for immediate reactivity
+	let hasSelectedBeat = $state(false);
+
+	// Create a more reactive subscription to the selection state
+	// This ensures immediate UI updates when selection changes
+	$effect(() => {
+		// Create a direct subscription to the sequenceContainer
+		const unsubscribe = sequenceContainer.subscribe((state) => {
+			// Update the hasSelectedBeat state immediately when selection changes
+			hasSelectedBeat = state.selectedBeatIds.length > 0;
+			console.log('Selection state updated (reactive):', hasSelectedBeat, state.selectedBeatIds);
+		});
+
+		// Clean up the subscription when the component is destroyed or the effect is re-run
+		return unsubscribe;
+	});
 
 	function handleButtonActionWrapper(event: CustomEvent<ActionEventDetail>) {
 		handleButtonAction({
@@ -190,9 +205,40 @@
 	// Remove selected beat and following beats
 	function handleRemoveBeat() {
 		const selectedBeatIds = sequenceContainer.state.selectedBeatIds;
-		if (selectedBeatIds.length > 0) {
-			const event = { type: 'REMOVE_BEAT_AND_FOLLOWING', beatId: selectedBeatIds[0] };
-			sequenceActions.removeBeatAndFollowing({ event });
+
+		// Check if the start position is selected
+		const isStartPositionSelected = selectedBeatIds.includes('start-position');
+
+		if (isStartPositionSelected) {
+			// If start position is selected, clear the entire sequence
+			console.log('Start position selected, clearing entire sequence');
+
+			// Trigger haptic feedback for deletion
+			if (browser) {
+				hapticFeedbackService.trigger('error');
+			}
+
+			// Clear the entire sequence including start position
+			handleClearSequence();
+
+			// Ensure the selection is cleared
+			sequenceContainer.clearSelection();
+		} else if (selectedBeatIds.length > 0) {
+			// Pass the beatId directly to the action
+			sequenceActions.removeBeatAndFollowing(selectedBeatIds[0]);
+
+			// Log for debugging
+			console.log('Removing beat with ID:', selectedBeatIds[0]);
+
+			// Trigger haptic feedback for deletion
+			if (browser) {
+				hapticFeedbackService.trigger('warning');
+			}
+
+			// Clear the selection after removing the beat
+			sequenceContainer.clearSelection();
+		} else {
+			console.warn('No beat selected to remove');
 		}
 	}
 
@@ -328,9 +374,11 @@
 			// Get the selected beat ID
 			const beatId = event.detail.beatId;
 			if (beatId) {
-				// Remove the beat
-				const removeEvent = { type: 'REMOVE_BEAT_AND_FOLLOWING', beatId };
-				sequenceActions.removeBeatAndFollowing({ event: removeEvent });
+				// Pass the beatId directly to the action
+				sequenceActions.removeBeatAndFollowing(beatId);
+
+				// Log for debugging
+				console.log('Removing beat in deletion mode with ID:', beatId);
 
 				// Exit deletion mode
 				exitDeletionMode();
@@ -380,15 +428,24 @@
 				<SequenceContent
 					containerHeight={$size.height}
 					containerWidth={$dimensions.width}
-					on:beatselected={handleBeatSelected}
+					onBeatSelected={(beatId) => {
+						// Create a custom event to match the expected format
+						const customEvent = new CustomEvent<{ beatId: string }>('beatselected', {
+							detail: { beatId }
+						});
+						handleBeatSelected(customEvent);
+					}}
 				/>
 			</div>
 
-			<SettingsButton on:click={handleSettingsClick} />
-			<DeleteButton on:click={handleDeleteButtonClick} />
+			<SettingsButton onClick={handleSettingsClick} />
 			<SequenceOverlayButton />
 			<!-- Ensure ShareButton is rendered with proper props -->
 			<ShareButton />
+
+			{#if hasSelectedBeat}
+				<RemoveBeatButton onRemoveBeat={handleRemoveBeat} />
+			{/if}
 		</div>
 
 		<SequenceOverlay title={sequenceName}>
@@ -399,10 +456,10 @@
 			isOpen={isDeleteModalOpen}
 			{hasSelectedBeat}
 			buttonRect={deleteButtonRect}
-			on:clearSequence={handleClearSequence}
-			on:removeBeat={handleRemoveBeat}
-			on:enterDeletionMode={enterDeletionMode}
-			on:close={handleCloseModal}
+			on:clearSequence={() => handleClearSequence()}
+			on:removeBeat={() => handleRemoveBeat()}
+			on:enterDeletionMode={() => enterDeletionMode()}
+			on:close={() => handleCloseModal()}
 		/>
 
 		{#if isInDeletionMode}

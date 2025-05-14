@@ -3,22 +3,22 @@
 	import CurrentWordLabel from '../Labels/CurrentWordLabel.svelte';
 	import BeatFrame from '../BeatFrame/BeatFrame.svelte';
 	import { calculateBeatFrameShouldScroll } from '../utils/SequenceLayoutCalculator';
-	import { createEventDispatcher, setContext } from 'svelte';
+	import { setContext } from 'svelte';
 	import { browser } from '$app/environment';
 	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from '../context/ElementContext';
 
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		beatselected: { beatId: string };
+	// Props with callback for beat selection
+	const {
+		containerHeight = $bindable(0),
+		containerWidth = $bindable(0),
+		onBeatSelected = (beatId: string) => {}
+	} = $props<{
+		containerHeight?: number;
+		containerWidth?: number;
+		onBeatSelected?: (beatId: string) => void;
 	}>();
 
 	// We're using the shared context key from ElementContext.ts
-
-	// Props
-	const { containerHeight = $bindable(0), containerWidth = $bindable(0) } = $props<{
-		containerHeight?: number;
-		containerWidth?: number;
-	}>();
 
 	// State
 	let beatFrameNaturalHeight = $state(0);
@@ -74,22 +74,22 @@
 			containerHeight,
 			labelHeight
 		);
-
-
 	});
 
 	// Handle beat frame height change event
 	function handleBeatFrameHeightChange(event: CustomEvent<{ height: number }>) {
 		beatFrameNaturalHeight = event.detail.height;
-
-
 	}
 
 	// Handle beat selected event
 	function handleBeatSelected(event: CustomEvent<{ beatId: string }>) {
-		// Forward the event to the parent component
-		dispatch('beatselected', { beatId: event.detail.beatId });
+		// Forward the event to the parent component using the callback prop
+		onBeatSelected(event.detail.beatId);
 	}
+
+	// Define the component's custom events for TypeScript
+	// This is used to declare the events that BeatFrame can emit
+	// The actual event handling is done through the svelte-html.d.ts file
 </script>
 
 <div
@@ -131,8 +131,7 @@
 								detail: { element: el }
 							});
 							document.dispatchEvent(event);
-
-						} 
+						}
 					}}
 				/>
 			</div>

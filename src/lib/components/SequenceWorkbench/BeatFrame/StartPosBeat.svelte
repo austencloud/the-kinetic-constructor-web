@@ -8,6 +8,7 @@
 	import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 	import type { PictographData } from '$lib/types/PictographData';
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/StyledBorderOverlay.svelte';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
@@ -19,6 +20,21 @@
 	let beatData = $state(props.beatData);
 	let showBorder = $state(false);
 	let pictographData = $state<PictographData>(defaultPictographData);
+	let isSelected = $state(false);
+
+	// Update isSelected when the selection changes
+	// Use a more reactive approach with a manual subscription for immediate updates
+	$effect(() => {
+		// Create a subscription to the sequenceContainer state
+		const unsubscribe = sequenceContainer.subscribe((state) => {
+			// Update the selection state immediately when it changes
+			isSelected = state.selectedBeatIds.includes('start-position');
+			console.log('Start position selection state updated:', isSelected);
+		});
+
+		// Clean up the subscription when the component is destroyed or the effect is re-run
+		return unsubscribe;
+	});
 
 	// Initialize pictographData from props
 	$effect(() => {
@@ -234,6 +250,7 @@
 
 <button
 	class="start-pos-beat"
+	class:selected={isSelected}
 	onclick={handleContainerClick}
 	onmouseenter={handleMouseEnter}
 	onmouseleave={handleMouseLeave}
@@ -241,7 +258,7 @@
 >
 	<div class="pictograph-wrapper">
 		<Beat beat={beatData} onClick={props.onClick} isStartPosition={true} />
-		<StyledBorderOverlay {pictographData} isEnabled={showBorder} />
+		<StyledBorderOverlay {pictographData} isEnabled={showBorder || isSelected} />
 	</div>
 </button>
 
@@ -259,7 +276,17 @@
 		padding: 0; /* Remove default button padding */
 		margin: 0; /* Remove any margin */
 		box-sizing: border-box; /* Ensure padding is included in width/height */
-		transition: transform 0.1s ease;
+		transition: all 0.2s ease;
+	}
+
+	/* Style for selected state */
+	.start-pos-beat.selected {
+		background-color: rgba(255, 204, 0, 0.1); /* Match the gold color used for regular beats */
+		box-shadow:
+			0 0 0 2px rgba(255, 204, 0, 0.7),
+			0 0 10px 2px rgba(255, 204, 0, 0.3); /* Primary border and outer glow */
+		transform: scale(1.02);
+		transition: all 0.2s ease-out; /* Ensure smooth transition */
 	}
 
 	.pictograph-wrapper {

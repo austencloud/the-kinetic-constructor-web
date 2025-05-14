@@ -32,6 +32,17 @@ declare namespace svelteHTML {
 		// Custom events for TKAGlyph components
 		'on:letterLoaded'?: (event: CustomEvent<any>) => any;
 
+		// Custom events for BeatFrame component
+		'on:naturalheightchange'?: (event: CustomEvent<{ height: number }>) => any;
+		'on:beatselected'?: (event: CustomEvent<{ beatId: string }>) => any;
+
+		// Custom events for Grid component
+		'on:error'?: (event: CustomEvent<{ message: string }>) => any;
+		onError?: (message: string) => any;
+
+		// Custom events for Prop and Arrow components
+		'on:loaded'?: (event: CustomEvent<any>) => any;
+
 		// Svelte class directives
 		'class:active'?: boolean;
 		'class:selected'?: boolean;

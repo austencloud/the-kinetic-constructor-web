@@ -1,6 +1,7 @@
 <!-- src/lib/components/SequenceWorkbench/RemoveBeatButton.svelte -->
 <script lang="ts">
-	import { fly } from 'svelte/transition';
+	import { fly, fade } from 'svelte/transition';
+	import { elasticOut } from 'svelte/easing';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 
@@ -22,110 +23,129 @@
 	}
 </script>
 
-<button
-	class="remove-beat-button ripple"
-	onclick={handleClick}
-	aria-label="Remove beat"
-	data-mdb-ripple="true"
-	data-mdb-ripple-color="light"
-	in:fly={{ x: -20, duration: 300, delay: 200 }}
->
-	<div class="icon-wrapper">
-		<i class="fa-solid fa-trash"></i>
-	</div>
-</button>
+<div in:fly={{ y: 20, duration: 350, delay: 0, easing: elasticOut }} out:fade={{ duration: 200 }}>
+	<button
+		class="remove-beat-button ripple"
+		onclick={handleClick}
+		aria-label="Remove selected beat"
+		data-mdb-ripple="true"
+		data-mdb-ripple-color="light"
+	>
+		<div class="icon-wrapper">
+			<i class="fa-solid fa-trash"></i>
+		</div>
+		<span class="button-label">Remove Selected Beat</span>
+	</button>
+</div>
 
 <style>
 	.remove-beat-button {
-		/* Define base sizes for dynamic scaling - exactly match ClearSequenceButton */
+		/* Define base sizes for dynamic scaling */
 		--base-size: 45px; /* Base size of the button */
 		--base-icon-size: 19px; /* Base size of the icon */
 		--base-margin: 10px; /* Define base margin to match other buttons */
+		--button-height: 40px; /* Height of the button */
 
 		position: absolute;
-		/* Bottom inset is important as it affects the entire bottom edge */
+		/* Position above the clear button with proper spacing, respecting safe area inset */
 		bottom: max(
-			calc(var(--button-size-factor, 1) * (var(--base-size) + var(--base-margin) * 1.5)),
-			calc(var(--safe-inset-bottom, 0px) + calc(var(--button-size-factor, 1) * var(--base-size)))
-		); /* Position above clear button, respecting safe area inset */
-		/* Left inset is rarely needed for corner buttons */
-		left: calc(var(--button-size-factor, 1) * var(--base-margin));
+			calc(var(--button-size-factor, 1) * (var(--base-size) + var(--base-margin) * 2)),
+			calc(
+				var(--safe-inset-bottom, 0px) +
+					calc(var(--button-size-factor, 1) * (var(--base-size) + var(--base-margin)))
+			)
+		);
+		left: max(calc(var(--button-size-factor, 1) * var(--base-margin)), var(--safe-inset-left, 0px));
 
-		width: calc(var(--button-size-factor, 1) * var(--base-size)); /* Dynamic width */
-		height: calc(var(--button-size-factor, 1) * var(--base-size)); /* Dynamic height */
-		min-width: 38px; /* Minimum width */
-		min-height: 38px; /* Minimum height */
+		/* Set dimensions for a pill-shaped button */
+		height: var(--button-height);
+		min-height: 38px;
+		padding: 0 16px;
 
-		background-color: var(
-			--tkc-button-panel-background,
-			#2a2a2e
-		); /* Dark background, consistent with Clear button */
-		border-radius: 50%; /* Perfectly round */
+		background-color: var(--tkc-button-panel-background, #2a2a2e);
+		border-radius: 20px; /* Rounded corners for pill shape */
 		display: flex;
 		align-items: center;
-		justify-content: center;
+		justify-content: flex-start;
+		gap: 8px; /* Space between icon and text */
 		cursor: pointer;
 		transition:
 			transform 0.2s ease-out,
 			background-color 0.2s ease-out,
 			box-shadow 0.2s ease-out;
-		z-index: 40; /* Ensure it's above most content but potentially below modals/side panels */
+		z-index: 41; /* One level higher than the clear button to ensure proper stacking */
 		box-shadow:
 			0 3px 6px rgba(0, 0, 0, 0.16),
 			0 3px 6px rgba(0, 0, 0, 0.23);
-		border: none; /* Remove any default button border */
-		padding: 0; /* Remove padding, icon centered by flex */
-		color: var(--tkc-icon-color-delete, #ff9e00); /* Orange/amber icon color */
-		pointer-events: auto; /* Ensure it's clickable */
+		border: none;
+		color: var(--tkc-icon-color-delete, #ff9e00); /* Orange/amber color */
+		pointer-events: auto;
+		white-space: nowrap; /* Prevent text wrapping */
 	}
 
 	.remove-beat-button:hover {
-		background-color: var(
-			--tkc-button-panel-background-hover,
-			#3c3c41
-		); /* Slightly lighter on hover */
-		transform: translateY(-2px) scale(1.05);
+		background-color: var(--tkc-button-panel-background-hover, #3c3c41);
+		transform: translateY(-2px) scale(1.02);
 		box-shadow:
 			0 6px 12px rgba(0, 0, 0, 0.2),
 			0 4px 8px rgba(0, 0, 0, 0.26);
 	}
 
 	.remove-beat-button:active {
-		transform: translateY(0px) scale(1); /* Click down effect */
-		background-color: var(--tkc-button-panel-background-active, #1e1e21); /* Darker when pressed */
+		transform: translateY(0px) scale(0.98);
+		background-color: var(--tkc-button-panel-background-active, #1e1e21);
 		box-shadow:
 			0 1px 3px rgba(0, 0, 0, 0.12),
 			0 1px 2px rgba(0, 0, 0, 0.24);
 	}
 
 	.icon-wrapper {
-		background: transparent; /* Ensure wrapper doesn't obscure button background */
+		background: transparent;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		width: auto;
 		height: auto;
-		color: inherit; /* Inherit color from .remove-beat-button */
+		color: inherit;
 	}
 
 	.icon-wrapper i.fa-trash {
-		font-size: calc(var(--button-size-factor, 1) * var(--base-icon-size)); /* Dynamic icon size */
-		/* Color is inherited from .remove-beat-button via .icon-wrapper */
+		font-size: calc(var(--button-size-factor, 1) * var(--base-icon-size));
+	}
+
+	.button-label {
+		font-size: 14px;
+		font-weight: 500;
+		color: white;
 	}
 
 	/* Responsive adjustments */
 	@media (max-width: 768px) {
 		.remove-beat-button {
 			--button-size-factor: 0.9;
-			bottom: calc(
-				var(--button-size-factor, 1) * (var(--base-size) + var(--base-margin) * 3)
-			); /* Position above clear button */
+			bottom: max(
+				calc(var(--button-size-factor, 1) * (var(--base-size) + var(--base-margin) * 3)),
+				calc(
+					var(--safe-inset-bottom, 0px) +
+						calc(var(--button-size-factor, 1) * (var(--base-size) + var(--base-margin) * 1.5))
+				)
+			);
+			padding: 0 12px;
+		}
+
+		.button-label {
+			font-size: 13px;
 		}
 	}
 
 	@media (max-width: 480px) {
 		.remove-beat-button {
 			--button-size-factor: 0.8;
+			padding: 0 10px;
+		}
+
+		.button-label {
+			font-size: 12px;
 		}
 	}
 </style>

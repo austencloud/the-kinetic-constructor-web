@@ -6,7 +6,6 @@
 	import type { PropData } from '../objects/Prop/PropData';
 	import type { ArrowData } from '../objects/Arrow/ArrowData';
 	import type { GridData } from '../objects/Grid/GridData';
-	import type { MotionData } from '../objects/Motion/MotionData';
 	import Grid from '../objects/Grid/Grid.svelte';
 	import Prop from '../objects/Prop/Prop.svelte';
 	import Arrow from '../objects/Arrow/Arrow.svelte';
@@ -29,6 +28,7 @@
 		type ComponentErrorContext,
 		type FallbackDataContext
 	} from './handlers/PictographErrorHandler';
+
 	import { createAndPositionComponents as createAndPositionComponentsUtil } from './utils/componentPositioning';
 	import {
 		shouldShowBeatLabel,
@@ -97,9 +97,26 @@
 	let service: PictographService | null = null;
 	let lastDataSnapshot: PictographDataSnapshot | null = null;
 
-	// Event dispatcher
-	// @ts-ignore - Ignoring deprecated warning
-	const dispatch = createEventDispatcher();
+	// Define the PictographEvents interface for proper typing
+	interface PictographEvents {
+		loaded: { error?: boolean };
+		error: { message: string; component?: string };
+		dataUpdated: { data: PictographData };
+	}
+
+	// Event dispatcher with proper typing
+	const dispatch = createEventDispatcher<PictographEvents>();
+
+	// Create a wrapper function for dispatch to use in contexts that expect a simpler function signature
+	function dispatchWrapper(event: string, detail?: any): void {
+		if (event === 'error' && detail?.message) {
+			dispatch('error', { message: detail.message, component: detail.component });
+		} else if (event === 'loaded') {
+			dispatch('loaded', detail || {});
+		} else if (event === 'dataUpdated' && detail?.data) {
+			dispatch('dataUpdated', { data: detail.data });
+		}
+	}
 
 	onMount(() => {
 		// Make sure we have data to work with
@@ -178,7 +195,7 @@
 			service,
 			lastDataSnapshot,
 			updateComponentsFromData,
-			dispatch,
+			dispatchWrapper,
 			debug,
 			checkForDataChangesUtil
 		);
@@ -222,7 +239,7 @@
 			requiredComponents,
 			componentsLoaded,
 			totalComponentsToLoad,
-			dispatch,
+			dispatch: dispatchWrapper,
 			pictographData: get(pictographDataStore)
 		};
 	}
@@ -301,7 +318,7 @@
 			loadedComponents,
 			componentsLoaded,
 			totalComponentsToLoad,
-			dispatch,
+			dispatch: dispatchWrapper,
 			checkLoadingComplete
 		};
 	}
@@ -330,7 +347,7 @@
 	function getErrorHandlerContext(): ErrorHandlerContext {
 		return {
 			pictographDataStore,
-			dispatch,
+			dispatch: dispatchWrapper,
 			state: {
 				set: (value: string) => {
 					state = value;
@@ -366,7 +383,7 @@
 			<Grid
 				gridMode={get(pictographDataStore)?.gridMode}
 				onPointsReady={handleGridLoaded}
-				on:error={(e) => handleComponentError('grid', e.detail.message)}
+				onError={(message) => handleComponentError('grid', message)}
 				{debug}
 			/>
 

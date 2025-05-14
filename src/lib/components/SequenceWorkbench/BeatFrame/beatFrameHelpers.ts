@@ -47,7 +47,7 @@ export function calculateCellSize(
 ): number {
 	// Ensure we have valid dimensions
 	if (containerWidth <= 0 || containerHeight <= 0 || totalRows <= 0 || totalCols <= 0) {
-		return 80; // Default fallback size
+		return 70; // Default fallback size - reduced from 80
 	}
 
 	// Calculate total space needed for gaps
@@ -55,18 +55,25 @@ export function calculateCellSize(
 	const totalGapHeight = gap * (totalRows - 1);
 
 	// Calculate available space after accounting for gaps and padding
-	const padding = beatCount === 0 ? containerWidth * 0.1 : 16; // Larger padding when only start position
+	// Increase padding to ensure pictographs don't overflow
+	const padding = beatCount === 0 ? containerWidth * 0.1 : 24; // Increased padding from 16 to 24
 	const availableWidth = Math.max(0, containerWidth - totalGapWidth - padding * 2);
 	const availableHeight = Math.max(0, containerHeight - totalGapHeight - padding * 2);
 
 	// Calculate cell size based on available space in both dimensions
 	const cellWidthByContainer = Math.floor(availableWidth / totalCols);
+	const cellHeightByContainer = Math.floor(availableHeight / totalRows);
 
 	// Use the smaller dimension to maintain square cells and prevent overflow
-	const baseSize = cellWidthByContainer;
+	const baseSize = Math.min(cellWidthByContainer, cellHeightByContainer);
+
+	// Apply a scaling factor to ensure pictographs fit within cells
+	// This scaling factor ensures pictographs are slightly smaller than their containers
+	const scalingFactor = 0.85; // Reduce size by 15%
+	const scaledBaseSize = Math.floor(baseSize * scalingFactor);
 
 	// For start position only, make it proportionally larger
-	const cellSize = beatCount === 0 ? baseSize * 1.2 : baseSize;
+	const cellSize = beatCount === 0 ? scaledBaseSize * 1.1 : scaledBaseSize;
 
 	// Detect if we're in fullscreen mode by checking container dimensions
 	// Fullscreen containers are typically much larger
@@ -76,10 +83,10 @@ export function calculateCellSize(
 	if (isLikelyFullscreen) {
 		// In fullscreen, allow larger cells but ensure they're not too large
 		// This helps ensure pictographs are displayed side by side correctly
-		return Math.min(Math.max(cellSize, 80), 250); // Min 80px, Max 250px for fullscreen
+		return Math.min(Math.max(cellSize, 70), 180); // Min 70px, Max 180px for fullscreen (reduced from 250)
 	} else {
 		// In normal mode, use more conservative constraints
-		return Math.min(Math.max(cellSize, 60), 200); // Min 60px, Max 200px for normal view
+		return Math.min(Math.max(cellSize, 50), 140); // Min 50px, Max 140px for normal view (reduced from 200)
 	}
 }
 

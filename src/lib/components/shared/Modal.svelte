@@ -1,15 +1,25 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
-	import { createEventDispatcher } from 'svelte';
 
-	export let title: string = '';
-	export let isOpen: boolean = false;
-	export let showCloseButton: boolean = true;
-
-	const dispatch = createEventDispatcher();
+	// Use Svelte 5 props rune instead of export let
+	const {
+		title = '',
+		isOpen = false,
+		showCloseButton = true,
+		onClose = () => {},
+		children = () => null,
+		footer = () => null
+	} = $props<{
+		title?: string;
+		isOpen?: boolean;
+		showCloseButton?: boolean;
+		onClose?: () => void;
+		children?: () => any;
+		footer?: () => any;
+	}>();
 
 	function close() {
-		dispatch('close');
+		onClose();
 	}
 
 	function handleBackdropClick(event: MouseEvent) {
@@ -31,8 +41,8 @@
 {#if isOpen}
 	<div
 		class="modal-backdrop"
-		on:click={handleBackdropClick}
-		on:keydown={handleKeydown}
+		onclick={handleBackdropClick}
+		onkeydown={handleKeydown}
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby={title ? 'modal-title' : undefined}
@@ -46,7 +56,7 @@
 				{/if}
 
 				{#if showCloseButton}
-					<button class="close-button" on:click={close} aria-label="Close modal">
+					<button class="close-button" onclick={close} aria-label="Close modal">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							width="20"
@@ -66,11 +76,11 @@
 			</div>
 
 			<div class="modal-content">
-				<slot></slot>
+				{@render children()}
 			</div>
 
 			<div class="modal-footer">
-				<slot name="footer"></slot>
+				{@render footer()}
 			</div>
 		</div>
 	</div>

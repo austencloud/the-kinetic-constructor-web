@@ -7,18 +7,28 @@
 	import { appService } from '$lib/state/machines/app/app.machine';
 	import { uiStore } from '$lib/state/stores/uiStore';
 
+	// Props using Svelte 5 runes
+	const { onChangeBackground = () => {}, onSettingsClick = () => {} } = $props<{
+		onChangeBackground?: (background: string) => void;
+		onSettingsClick?: () => void;
+	}>();
+
 	// Get state from the app state machine
 	const currentTabStore = useSelector(appService, (state) => state.context.currentTab);
 	const previousTabStore = useSelector(appService, (state) => state.context.previousTab);
 
-	$: activeTab = $currentTabStore as number;
-	$: previousTab = $previousTabStore as number;
+	// Use $derived instead of $: reactive declarations
+	const activeTab = $derived($currentTabStore as number);
+	const previousTab = $derived($previousTabStore as number);
 
 	// Get device information from the UI store
-	$: isMobileDevice = $uiStore.isMobile;
-	$: isPortraitMode = !$uiStore.isDesktop && $uiStore.windowHeight > $uiStore.windowWidth;
+	const isMobileDevice = $derived($uiStore.isMobile);
+	const isPortraitMode = $derived(
+		!$uiStore.isDesktop && $uiStore.windowHeight > $uiStore.windowWidth
+	);
 
-	let lastClickTime = 0;
+	// State with runes
+	let lastClickTime = $state(0);
 
 	const tabNames = ['Construct', 'Generate', 'Browse', 'Learn', 'Write'];
 	// Replace emojis with Font Awesome icons for a more professional look
@@ -31,7 +41,7 @@
 	];
 
 	// Determine if text should be shown based on device/orientation
-	$: showButtonText = !isMobileDevice && !isPortraitMode;
+	const showButtonText = $derived(!isMobileDevice && !isPortraitMode);
 
 	function handleTabClick(index: number) {
 		if (index === activeTab) return;

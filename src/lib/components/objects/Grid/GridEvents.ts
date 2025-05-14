@@ -6,12 +6,12 @@
  * Interface for the error event detail
  */
 export interface GridErrorEventDetail {
-  message: string;
+	message: string;
 }
 
 /**
  * Type for the Grid component's custom events
  */
 export interface GridEvents {
-  error: CustomEvent<GridErrorEventDetail>;
+	error: { message: string };
 }
