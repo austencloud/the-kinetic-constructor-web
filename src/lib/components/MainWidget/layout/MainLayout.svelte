@@ -24,6 +24,31 @@
 		if (typeof window !== 'undefined') {
 			buttonSize = Math.max(30, Math.min(50, window.innerWidth / 12));
 			iconSize = buttonSize * 0.75;
+
+			// Ensure settings dialog is closed on page load
+			if (isSettingsDialogOpen) {
+				console.log('Closing settings dialog on page load');
+				appActions.closeSettings();
+			}
+
+			// Also check localStorage directly to ensure settings dialog state is reset
+			try {
+				const storageKey = 'xstate-app';
+				const storedData = localStorage.getItem(storageKey);
+
+				if (storedData) {
+					const parsedData = JSON.parse(storedData);
+
+					// If the stored data includes isSettingsOpen, ensure it's set to false
+					if (parsedData && parsedData.context && parsedData.context.isSettingsOpen === true) {
+						console.log('Resetting persisted settings dialog state on page load');
+						parsedData.context.isSettingsOpen = false;
+						localStorage.setItem(storageKey, JSON.stringify(parsedData));
+					}
+				}
+			} catch (error) {
+				console.error('Error resetting settings dialog state:', error);
+			}
 		}
 		appActions.changeTab(0);
 	});

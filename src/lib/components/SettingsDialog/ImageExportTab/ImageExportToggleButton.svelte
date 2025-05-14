@@ -1,7 +1,9 @@
+<!-- src/lib/components/SettingsDialog/ImageExportTab/ImageExportToggleButton.svelte -->
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import type { ImageExportSettings } from '$lib/state/image-export-settings';
+	import type { ImageExportSettings } from '$lib/state/image-export-settings.svelte';
+	import { saveImageExportSettings } from '$lib/state/image-export-settings.svelte';
 	
 	// Props
 	const { 
@@ -25,8 +27,19 @@
 			hapticFeedbackService.trigger('selection');
 		}
 		
+		// Log toggle action for debugging
+		console.log(`Toggle button clicked for ${settingKey}:`, {
+			currentValue: isActive,
+			newValue: !isActive
+		});
+		
 		// Call the toggle handler
 		onToggle(settingKey);
+		
+		// Force save after toggle
+		setTimeout(() => {
+			saveImageExportSettings();
+		}, 50);
 	}
 </script>
 

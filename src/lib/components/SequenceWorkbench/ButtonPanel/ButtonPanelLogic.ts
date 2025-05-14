@@ -1,9 +1,9 @@
 import type { ButtonDefinition, ActionEventDetail } from './types';
 import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
+import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 /**
  * Defines the button panel buttons used in the sequence widget
- * @returns Array of button definitions
  */
 export function getButtonPanelButtons(): ButtonDefinition[] {
     return [
@@ -44,9 +44,6 @@ export function getButtonPanelButtons(): ButtonDefinition[] {
     ];
 }
 
-/**
- * Interface for the button action handler parameters
- */
 export interface ButtonActionHandlerParams {
     id: string;
     activeMode: 'construct' | 'generate';
@@ -55,18 +52,13 @@ export interface ButtonActionHandlerParams {
     openFullScreen?: () => void;
 }
 
-/**
- * Handles button actions for the sequence widget
- * @param params Button action handler parameters
- */
 export function handleButtonAction(params: ButtonActionHandlerParams): void {
     const { id, activeMode, setActiveMode, closeToolsPanel, openFullScreen } = params;
     
     switch (id) {
         case 'constructMode':
-            // Switch to construct mode
+            hapticFeedbackService.trigger('navigation');
             setActiveMode('construct');
-            // Dispatch an event to notify parent components
             const constructEvent = new CustomEvent('switch-mode', {
                 detail: { mode: 'construct' },
                 bubbles: true
@@ -74,9 +66,8 @@ export function handleButtonAction(params: ButtonActionHandlerParams): void {
             document.dispatchEvent(constructEvent);
             break;
         case 'generateMode':
-            // Switch to generate mode
+            hapticFeedbackService.trigger('navigation');
             setActiveMode('generate');
-            // Dispatch an event to notify parent components
             const generateEvent = new CustomEvent('switch-mode', {
                 detail: { mode: 'generate' },
                 bubbles: true
@@ -84,38 +75,44 @@ export function handleButtonAction(params: ButtonActionHandlerParams): void {
             document.dispatchEvent(generateEvent);
             break;
         case 'addToDictionary':
+            hapticFeedbackService.trigger('success');
             // Handle add to dictionary action
             break;
         case 'saveImage':
+            hapticFeedbackService.trigger('success');
             // Handle save image action
             break;
         case 'viewFullScreen':
+            hapticFeedbackService.trigger('navigation');
             if (openFullScreen) {
                 openFullScreen();
             }
             break;
         case 'mirrorSequence':
+            hapticFeedbackService.trigger('selection');
             // Handle mirror sequence action
             break;
         case 'swapColors':
+            hapticFeedbackService.trigger('selection');
             // Handle swap colors action
             break;
         case 'rotateSequence':
+            hapticFeedbackService.trigger('selection');
             // Handle rotate sequence action
             break;
         case 'deleteBeat':
+            hapticFeedbackService.trigger('warning');
             const selectedBeatIds = sequenceSelectors.selectedBeatIds();
             if (selectedBeatIds.length > 0) {
                 sequenceActions.removeBeatAndFollowing(selectedBeatIds[0]);
             }
             break;
         case 'clearSequence':
+            hapticFeedbackService.trigger('error');
             sequenceActions.clearSequence();
-            // The clearSequence action now handles resetting the start position
             break;
     }
     
-    // Close tools panel if it's open
     if (closeToolsPanel) {
         closeToolsPanel();
     }

@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { createEventDispatcher } from 'svelte';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher<{
@@ -14,6 +15,8 @@
 		// Get the button's position and dimensions
 		const buttonRect = buttonElement.getBoundingClientRect();
 		// Pass the rect directly instead of the element
+		hapticFeedbackService.trigger('warning');
+
 		dispatch('click', { buttonRect });
 	}
 </script>

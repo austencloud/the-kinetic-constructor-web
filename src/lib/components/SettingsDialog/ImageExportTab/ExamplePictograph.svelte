@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
-	import type { ImageExportSettings } from '$lib/state/image-export-settings';
+	import type { ImageExportSettings } from '$lib/state/image-export-settings.svelte';
 
 	// Props
 	const { settings } = $props<{

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount } from '$lib/utils/svelte-lifecycle';
 	import { fade } from 'svelte/transition';
 
 	// Components
@@ -16,48 +16,44 @@
 	import { appService } from '$lib/state/machines/app/app.machine';
 	import { uiStore } from '$lib/state/stores/uiStore';
 	import type { BackgroundType } from '$lib/components/Backgrounds/types/types';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
-	// Get window dimensions from UI store
-	$: windowHeight = $uiStore ? $uiStore.windowHeight + 'px' : '100vh';
+	// Performance metrics type is defined in the handler directly
 
-	// Types
-	interface PerformanceReportEvent {
-		fps: number;
-		memory?: { used: number; total: number };
-	}
+	// Get window dimensions from UI store using $derived
+	const windowHeight = $derived($uiStore ? $uiStore.windowHeight + 'px' : '100vh');
 
-	// No need for event dispatching in the main page
-
-	// --- Get State directly from the app service ---
+	// --- Get State directly from the app service using $derived ---
 	const isInitializingAppStore = useSelector(appService, (state) =>
 		state.matches('initializingApp')
 	);
-	$: isInitializingApp = $isInitializingAppStore;
+	const isInitializingApp = $derived($isInitializingAppStore);
 
 	const hasFailedStore = useSelector(appService, (state) => state.matches('initializationFailed'));
-	$: hasFailed = $hasFailedStore;
+	const hasFailed = $derived($hasFailedStore);
 
 	const isReadyStore = useSelector(appService, (state) => state.matches('ready'));
-	$: isReady = $isReadyStore;
+	const isReady = $derived($isReadyStore);
 
 	const currentBackgroundStore = useSelector(appService, (state) => state.context.background);
-	$: currentBackground = $currentBackgroundStore as BackgroundType;
+	const currentBackground = $derived($currentBackgroundStore as BackgroundType);
 
 	const initializationErrorMsgStore = useSelector(
 		appService,
 		(state) => state.context.initializationError
 	);
-	$: initializationErrorMsg = $initializationErrorMsgStore as string;
+	const initializationErrorMsg = $derived($initializationErrorMsgStore as string);
 
 	const loadingProgressStore = useSelector(appService, (state) => state.context.loadingProgress);
-	$: loadingProgress = $loadingProgressStore as number;
+	const loadingProgress = $derived($loadingProgressStore as number);
 
 	const loadingMessageStore = useSelector(appService, (state) => state.context.loadingMessage);
-	$: loadingMessage = $loadingMessageStore as string;
+	const loadingMessage = $derived($loadingMessageStore as string);
 
 	// --- Event Handlers ---
 	function handleFullScreenToggle(event: CustomEvent<boolean>) {
 		appActions.setFullScreen(event.detail);
+		hapticFeedbackService.trigger('success');
 	}
 
 	function handleBackgroundChange(event: CustomEvent<string>) {
@@ -73,12 +69,13 @@
 		appActions.backgroundReady();
 	}
 
-	function handlePerformanceReport(event: CustomEvent<PerformanceReportEvent>) {
-		// Log performance metrics
-		const { fps, memory } = event.detail;
-		// console.log('Performance metrics:', { fps, memory });
-		// Note: updatePerformanceMetrics action doesn't exist in appActions
-		// We would need to add it if we want to store these metrics
+	function handlePerformanceReport(_metrics: {
+		fps: number;
+		memory?: { used: number; total: number };
+	}) {
+		// We're not using the metrics currently, but we need to provide the handler
+		// If we want to use them in the future, we can add an action to appActions
+		// Example: appActions.updatePerformanceMetrics(_metrics);
 	}
 
 	function handleTabChange(event: CustomEvent<number>) {
@@ -91,8 +88,6 @@
 
 	// --- Lifecycle ---
 	onMount(() => {
-		// Log the current state for debugging
-
 		// Force the state machine to transition
 		setTimeout(() => {
 			appActions.backgroundReady();
@@ -110,8 +105,8 @@
 			>
 				<BackgroundCanvas
 					appIsLoading={isInitializingApp || hasFailed}
-					on:ready={handleBackgroundReady}
-					on:performanceReport={handlePerformanceReport}
+					onReady={handleBackgroundReady}
+					onPerformanceReport={handlePerformanceReport}
 				/>
 			</BackgroundProvider>
 		</div>

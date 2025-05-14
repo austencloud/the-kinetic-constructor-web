@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { exportEnhancedImage } from './enhancedImageExporter';
+	import { exportSequenceImage } from './SequenceImageExporter';
 	import type { Beat } from '$lib/types/Beat';
 	import { Letter } from '$lib/types/Letter';
 	import { onMount } from 'svelte';
@@ -130,7 +130,7 @@
 			const beats: Beat[] = Array.from({ length: sequence.beats }, (_, i) => createDummyBeat(i));
 
 			// Export image
-			const result = await exportEnhancedImage(container, {
+			const result = await exportSequenceImage(container, {
 				beats,
 				startPosition: sequence.beats > 0 ? createDummyBeat(0) : null,
 				includeStartPosition: true,

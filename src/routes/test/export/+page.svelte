@@ -4,7 +4,7 @@
   This page provides a UI for testing the pictograph export functionality.
 -->
 <script lang="ts">
-	import EnhancedExportTester from '$lib/components/Pictograph/export/EnhancedExportTester.svelte';
+	import EnhancedExportTester from '$lib/components/Pictograph/export/SequenceImageExportTester.svelte';
 
 	let activeTab: 'single-beat' | 'sequence' | 'enhanced' = 'single-beat';
 

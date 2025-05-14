@@ -34,7 +34,7 @@ export const appMachine = createMachine(
 			previousTab: 0,
 			background: loadBackgroundPreference(),
 			isFullScreen: false,
-			isSettingsOpen: false,
+			isSettingsOpen: false, // Always initialize as closed
 			initializationError: null,
 			loadingProgress: 0,
 			loadingMessage: 'Initializing...',
@@ -251,7 +251,6 @@ export const appService = createAppMachine('app', appMachine, {
 
 // Subscribe to state changes to ensure persistence
 if (browser) {
-
 	// Subscribe to state changes to ensure direct persistence
 	appService.subscribe((state) => {
 		// Only save when in the ready state to avoid saving during initialization
@@ -266,6 +265,25 @@ if (browser) {
 				// Save tab preference directly
 				const currentTab = state.context.currentTab;
 				saveActiveTabPreference(currentTab);
+
+				// Explicitly reset isSettingsOpen in localStorage to prevent auto-opening on reload
+				try {
+					const storageKey = 'xstate-app';
+					const storedData = localStorage.getItem(storageKey);
+
+					if (storedData) {
+						const parsedData = JSON.parse(storedData);
+
+						// If the stored data includes isSettingsOpen, ensure it's set to false
+						if (parsedData && parsedData.context && 'isSettingsOpen' in parsedData.context) {
+							console.log('Ensuring settings dialog is closed in persisted state');
+							parsedData.context.isSettingsOpen = false;
+							localStorage.setItem(storageKey, JSON.stringify(parsedData));
+						}
+					}
+				} catch (storageError) {
+					console.error('Error modifying persisted settings state:', storageError);
+				}
 			} catch (error) {
 				console.error('Error saving preferences to localStorage:', error);
 			}

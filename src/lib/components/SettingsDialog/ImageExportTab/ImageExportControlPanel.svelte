@@ -1,10 +1,13 @@
+<!-- src/lib/components/SettingsDialog/ImageExportTab/ImageExportControlPanel.svelte -->
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import type { ImageExportSettings } from '$lib/state/image-export-settings';
+	import { saveImageExportSettings } from '$lib/state/image-export-settings.svelte';
+	import type { ImageExportSettings } from '$lib/state/image-export-settings.svelte';
 	import { userContainer } from '$lib/state/stores/user/UserContainer';
 	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import { isMobileDevice as checkMobileDevice } from '$lib/utils/fileSystemUtils';
 	import ImageExportToggleButton from './ImageExportToggleButton.svelte';
 
 	// Props
@@ -16,7 +19,6 @@
 	// Local state
 	let isExportingPictographs = $state(false);
 	let isMobileDevice = $state(false);
-	let selectedDirectoryHandle = $state<FileSystemDirectoryHandle | null>(null);
 
 	// Use the user container with Svelte 5 runes
 	const user = useContainer(userContainer);
@@ -56,9 +58,7 @@
 		if (browser) {
 			try {
 				// Detect if we're on a mobile device
-				isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-					navigator.userAgent
-				);
+				isMobileDevice = checkMobileDevice();
 
 				console.log('Device detection:', { isMobileDevice });
 
@@ -69,58 +69,39 @@
 				if (currentUser && currentUser.trim() !== '') {
 					onSettingChange('userName', currentUser);
 				}
-
-				// Load saved directory handle if available and remember option is enabled
-				if (settings.rememberLastSaveDirectory) {
-					loadSavedDirectoryHandle();
-				}
 			} catch (error) {
 				console.error('Failed to initialize:', error);
 			}
 		}
 	});
 
-	// Load saved directory handle from localStorage
-	async function loadSavedDirectoryHandle() {
-		if (!browser || isMobileDevice) return;
-
-		try {
-			// Check if we have a saved directory handle
-			const savedHandle = localStorage.getItem('exportDirectoryHandle');
-			if (!savedHandle) return;
-
-			// Parse the saved handle
-			const handleData = JSON.parse(savedHandle);
-
-			// Request permission to use the directory
-			// This will prompt the user to grant permission again if needed
-			if ('showDirectoryPicker' in window) {
-				try {
-					// Try to recover the directory handle
-					// This is a simplified approach - in a real implementation,
-					// you would use the File System Access API's more advanced features
-					// to properly restore the handle
-
-					// For now, we'll just show a message that we're using the saved directory
-					console.log('Using saved directory:', handleData.name);
-					showSuccessMessage(`Using saved directory: ${handleData.name}`);
-				} catch (error) {
-					console.error('Failed to recover directory handle:', error);
-					// Clear the saved handle if we can't recover it
-					localStorage.removeItem('exportDirectoryHandle');
-				}
-			}
-		} catch (error) {
-			console.error('Failed to load saved directory handle:', error);
-		}
-	}
-
 	// Handle toggle button click
 	function handleToggle(key: keyof ImageExportSettings) {
-		onSettingChange(key, !settings[key]);
-	}
+		const newValue = !settings[key];
 
-	// Note: User selection has been removed in favor of using the current user directly
+		// Provide haptic feedback
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
+		console.log(`Toggle ${key}:`, {
+			currentValue: settings[key],
+			newValue: newValue,
+			type: typeof newValue
+		});
+
+		// For rememberLastSaveDirectory, ensure strict boolean conversion
+		if (key === 'rememberLastSaveDirectory') {
+			onSettingChange(key, newValue === true);
+		} else {
+			onSettingChange(key, newValue);
+		}
+
+		// Force save after toggle
+		setTimeout(() => {
+			saveImageExportSettings();
+		}, 50);
+	}
 
 	// Handle custom note change
 	function handleNoteChange(event: Event) {
@@ -131,160 +112,51 @@
 	// Handle remember directory change
 	function handleRememberDirectoryChange(event: Event) {
 		const checkbox = event.target as HTMLInputElement;
+		const isChecked = checkbox.checked;
 
 		// Provide haptic feedback
 		if (browser && hapticFeedbackService.isAvailable()) {
 			hapticFeedbackService.trigger('selection');
 		}
 
-		onSettingChange('rememberLastSaveDirectory', checkbox.checked);
-	}
+		// Log the change for debugging
+		console.log('Remember save location changed:', {
+			newValue: isChecked,
+			currentSettingValue: settings.rememberLastSaveDirectory,
+			valueType: typeof isChecked
+		});
 
-	// Handle export all pictographs button click
-	async function handleExportAllPictographs() {
-		if (!browser) return;
+		// Update the setting - using strict boolean conversion
+		onSettingChange('rememberLastSaveDirectory', isChecked === true);
 
-		// Provide haptic feedback
-		if (hapticFeedbackService.isAvailable()) {
-			hapticFeedbackService.trigger('success');
-		}
+		// Force save immediately
+		saveImageExportSettings();
 
-		try {
-			isExportingPictographs = true;
+		// Verify the change was applied right away
+		setTimeout(() => {
+			console.log('Remember save location after change:', {
+				settingValue: settings.rememberLastSaveDirectory,
+				checkboxValue: isChecked,
+				match: settings.rememberLastSaveDirectory === isChecked
+			});
 
-			// For mobile devices, use the browser's default download behavior
-			if (isMobileDevice) {
-				// Implement mobile download logic here
-				// For now we'll just simulate waiting
-				await new Promise((resolve) => setTimeout(resolve, 1500));
-				showSuccessMessage('Image downloaded successfully.');
-				return;
-			}
-
-			// For desktop devices, use the File System Access API
-			try {
-				// Type assertion for the File System Access API
-				// These types are not included in the standard TypeScript lib
-				type FileSystemPermissionMode = 'read' | 'readwrite';
-
-				interface FileSystemPermissionDescriptor {
-					mode?: FileSystemPermissionMode;
-				}
-
-				interface FileSystemDirectoryHandleWithPermissions extends FileSystemDirectoryHandle {
-					requestPermission(descriptor?: FileSystemPermissionDescriptor): Promise<PermissionState>;
-				}
-
-				interface WindowWithDirectoryPicker extends Window {
-					showDirectoryPicker(options?: {
-						id?: string;
-						startIn?: string;
-						mode?: FileSystemPermissionMode;
-					}): Promise<FileSystemDirectoryHandle>;
-				}
-
-				let directoryHandle: FileSystemDirectoryHandle;
-
-				// If we should remember the directory and we have a saved handle, use it
-				if (settings.rememberLastSaveDirectory && selectedDirectoryHandle) {
-					// Verify we still have permission to use the directory
-					try {
-						// This will prompt the user if permission has been revoked
-						await (
-							selectedDirectoryHandle as FileSystemDirectoryHandleWithPermissions
-						).requestPermission({
-							mode: 'readwrite'
-						});
-						directoryHandle = selectedDirectoryHandle;
-						console.log('Using saved directory handle');
-					} catch (err) {
-						const error = err as Error;
-						console.error(
-							'Permission denied for saved directory, prompting for new directory',
-							error
-						);
-						// If permission is denied, prompt for a new directory
-						directoryHandle = await (
-							window as unknown as WindowWithDirectoryPicker
-						).showDirectoryPicker({
-							id: 'pictographExports',
-							startIn: 'pictures',
-							mode: 'readwrite'
+			// Directly check localStorage
+			if (browser) {
+				try {
+					const savedSettings = localStorage.getItem('image-export-settings');
+					if (savedSettings) {
+						const parsed = JSON.parse(savedSettings);
+						console.log('LocalStorage after toggle:', {
+							rememberLastSaveDirectory: parsed.rememberLastSaveDirectory,
+							type: typeof parsed.rememberLastSaveDirectory,
+							expected: isChecked
 						});
 					}
-				} else {
-					// Otherwise, prompt for a directory
-					directoryHandle = await (
-						window as unknown as WindowWithDirectoryPicker
-					).showDirectoryPicker({
-						id: 'pictographExports',
-						startIn: 'pictures',
-						mode: 'readwrite'
-					});
-				}
-
-				if (directoryHandle) {
-					// Save the directory handle if we should remember it
-					if (settings.rememberLastSaveDirectory) {
-						selectedDirectoryHandle = directoryHandle;
-
-						// Save the directory handle to localStorage
-						// Note: We can't directly serialize the handle, so we save some metadata
-						localStorage.setItem(
-							'exportDirectoryHandle',
-							JSON.stringify({
-								name: directoryHandle.name,
-								kind: directoryHandle.kind,
-								timestamp: Date.now()
-							})
-						);
-					}
-
-					// Implement export logic here
-					// For now we'll just simulate waiting
-					await new Promise((resolve) => setTimeout(resolve, 1500));
-
-					// Show success message
-					showSuccessMessage('Successfully exported pictographs.');
-				}
-			} catch (err) {
-				const error = err as Error;
-				console.error('Failed to open directory picker:', error);
-
-				// Check if the error is because the user cancelled the picker
-				if (error.name === 'AbortError') {
-					// User cancelled, no need to show an error
-					console.log('User cancelled directory selection');
-				} else {
-					// Show error message for other errors
-					showErrorMessage('Failed to choose export directory.');
+				} catch (error) {
+					console.error('Error checking localStorage:', error);
 				}
 			}
-		} finally {
-			isExportingPictographs = false;
-		}
-	}
-
-	// Show success message
-	function showSuccessMessage(message: string) {
-		if (browser) {
-			const event = new CustomEvent('show-message', {
-				detail: { message, type: 'success' },
-				bubbles: true
-			});
-			document.dispatchEvent(event);
-		}
-	}
-
-	// Show error message
-	function showErrorMessage(message: string) {
-		if (browser) {
-			const event = new CustomEvent('show-message', {
-				detail: { message, type: 'error' },
-				bubbles: true
-			});
-			document.dispatchEvent(event);
-		}
+		}, 100);
 	}
 </script>
 
@@ -333,24 +205,6 @@
 				/>
 			{/each}
 		</div>
-	</div>
-
-	<div class="panel-section export-all-section">
-		<button
-			class="export-all-button"
-			class:loading={isExportingPictographs}
-			onclick={handleExportAllPictographs}
-			aria-label="Export all pictographs"
-			disabled={isExportingPictographs}
-		>
-			{#if isExportingPictographs}
-				<i class="fa-solid fa-spinner fa-spin"></i>
-				Exporting...
-			{:else}
-				<i class="fa-solid fa-file-export"></i>
-				Export All Pictographs
-			{/if}
-		</button>
 	</div>
 </div>
 
@@ -501,45 +355,6 @@
 		gap: 0.75rem;
 		align-content: start;
 		margin-top: 1rem;
-	}
-
-	.export-all-button {
-		width: 100%;
-		background: linear-gradient(to bottom, #167bf4, #1068d9);
-		color: white;
-		border: none;
-		border-radius: 6px;
-		padding: 0.85rem 1.5rem;
-		font-weight: bold;
-		font-size: 1rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.75rem;
-		transition: all 0.2s ease;
-		cursor: pointer;
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-	}
-
-	.export-all-button:hover:not(:disabled) {
-		background: linear-gradient(to bottom, #1d86ff, #1271ea);
-		transform: translateY(-2px);
-		box-shadow: 0 4px 10px rgba(22, 123, 244, 0.3);
-	}
-
-	.export-all-button:active:not(:disabled) {
-		transform: translateY(0);
-		background: linear-gradient(to bottom, #0f65d1, #0a54b3);
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-	}
-
-	.export-all-button:disabled {
-		opacity: 0.7;
-		cursor: not-allowed;
-	}
-
-	.export-all-button.loading {
-		background: linear-gradient(to bottom, #3a3a43, #2a2a2e);
 	}
 
 	/* Responsive styles */

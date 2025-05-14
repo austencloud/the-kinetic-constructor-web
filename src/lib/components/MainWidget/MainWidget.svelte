@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import ConstructTab from '$lib/components/ConstructTab/ConstructTab.svelte';
 	import GenerateTabContent from '$lib/components/GenerateTab/components/GenerateTabContent.svelte';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 	// State using Svelte 5 runes
 	let activeMode = $state<'construct' | 'generate'>('construct');
@@ -18,6 +19,8 @@
 			if (event.detail?.mode) {
 				console.log('Mode switch event received:', event.detail.mode);
 				activeMode = event.detail.mode;
+				hapticFeedbackService.trigger('navigation');
+
 			}
 		};
 

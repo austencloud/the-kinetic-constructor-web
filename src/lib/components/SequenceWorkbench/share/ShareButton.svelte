@@ -14,9 +14,10 @@
 	import { logger } from '$lib/core/logging';
 	import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
 	import { isWebShareSupported, generateShareableUrl } from './utils/ShareUtils';
-	import { imageExportSettings } from '$lib/state/image-export-settings';
-	import { exportEnhancedImage } from '$lib/components/Pictograph/export/enhancedImageExporter';
+	import { getImageExportSettings } from '$lib/state/image-export-settings.svelte';
+	import { exportSequenceImage } from '$lib/components/Pictograph/export/SequenceImageExporter';
 	import { downloadImage } from '$lib/components/Pictograph/export/downloadUtils';
+	import { fileSystemService } from '$lib/services/FileSystemService';
 	import ShareDropdown from './ShareDropdown.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
@@ -142,6 +143,8 @@
 			.filter((letter) => letter.trim() !== '')
 			.join('');
 
+		// Return the exact sequence word as displayed in the UI
+		// This preserves the original case and format
 		return letters || 'Sequence';
 	}
 
@@ -250,6 +253,7 @@
 		} finally {
 			isRendering = false;
 		}
+		hapticFeedbackService.trigger('success');
 	}
 
 	// Handle download button click
@@ -296,65 +300,112 @@
 				return;
 			}
 
-			// Generate filename with better formatting
-			const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-			const safeSequenceName = sequenceName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-			const filename = `kinetic-sequence-${safeSequenceName || timestamp}.png`;
-
-			console.log('ShareButton: Downloading image with filename:', filename);
-			console.log('ShareButton: Data URL length:', result.dataUrl.length);
-
+			// Get export settings
+			let settings: any = {};
 			try {
-				// Download the image with improved error handling
-				const success = await downloadImage({
-					dataUrl: result.dataUrl,
-					filename
-				});
+				// Get settings directly using new function
+				settings = getImageExportSettings();
+				console.log('ShareButton: Using settings from getImageExportSettings()', settings);
+			} catch (error) {
+				console.error('ShareButton: Error getting export settings from function', error);
 
-				if (success) {
-					showSuccess('Image download started');
-					console.log('ShareButton: Download initiated successfully');
-				} else {
-					throw new Error('Download function returned false');
-				}
-			} catch (downloadError) {
-				console.error('ShareButton: Download error:', downloadError);
-
-				// Try alternative download approach
+				// Fall back to localStorage if function fails
 				try {
-					console.log('ShareButton: Trying alternative download approach');
-
-					// Create a new window with the image
-					const newWindow = window.open();
-					if (!newWindow) {
-						throw new Error('Failed to open new window. Popup might be blocked.');
+					// Get settings from localStorage as fallback
+					const savedSettings = localStorage.getItem('image-export-settings');
+					if (savedSettings) {
+						try {
+							const parsed = JSON.parse(savedSettings);
+							if (parsed && typeof parsed === 'object') {
+								settings = parsed;
+								console.log('ShareButton: Using settings from localStorage', settings);
+							}
+						} catch (parseError) {
+							console.error('ShareButton: Failed to parse settings from localStorage', parseError);
+						}
 					}
+				} catch (localStorageError) {
+					console.error(
+						'ShareButton: Error getting export settings from localStorage',
+						localStorageError
+					);
+					// Use empty object, which will fall back to defaults
+					settings = {};
+				}
+			}
 
-					// Write the image to the new window with download instructions
-					newWindow.document.write(`
-						<html>
-							<head>
-								<title>${filename}</title>
-								<style>
-									body { margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; background: #f0f0f0; font-family: Arial, sans-serif; }
-									img { max-width: 90%; max-height: 80vh; border: 1px solid #ccc; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-									.instructions { margin: 20px; padding: 15px; background: #2a2a2e; color: white; border-radius: 8px; text-align: center; max-width: 500px; }
-								</style>
-							</head>
-							<body>
-								<div class="instructions">
-									<h3>Right-click on the image and select "Save Image As..." to download</h3>
-									<p>If that doesn't work, try taking a screenshot of the image.</p>
-								</div>
-								<img src="${result.dataUrl}" alt="${filename}">
-							</body>
-						</html>
-					`);
+			// Get the exact sequence word from the UI
+			const exactWordName = sequenceName || 'Sequence';
 
-					showSuccess('Image opened in new window');
-				} catch (alternativeError) {
-					console.error('ShareButton: Alternative download approach failed:', alternativeError);
-					showError('Failed to download sequence. Please try again.');
+			// Log the exact word being used
+			console.log('ShareButton: Using exact sequence word:', exactWordName);
+
+			// Create a safe version of the word for the filename
+			// This is only for the default filename, the word folder will use the exact word
+			const safeSequenceName = exactWordName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+
+			// Create a basic filename (will be replaced with versioned name if versioning is enabled)
+			const filename = `kinetic-sequence-${safeSequenceName}.png`;
+
+			// Get category from settings (metadata doesn't have category yet)
+			const category = settings.defaultCategory || 'Sequences';
+
+			console.log('ShareButton: Saving sequence:', {
+				wordName: exactWordName,
+				dataUrlLength: result.dataUrl.length,
+				category
+			});
+
+			// Use the FileSystemService to save the file with enhanced options
+			const saveResult = await fileSystemService.saveFile(result.dataUrl, {
+				fileName: filename,
+				fileType: 'image/png',
+				rememberDirectory:
+					settings.rememberLastSaveDirectory === undefined
+						? true
+						: !!settings.rememberLastSaveDirectory,
+				useCategories: settings.useCategories === undefined ? true : !!settings.useCategories,
+				category: category,
+				wordName: exactWordName,
+				useVersioning: true // Enable intelligent versioning
+			});
+
+			if (saveResult.success) {
+				// Show success message with the file path
+				const message = saveResult.filePath
+					? `Image saved to: ${saveResult.filePath}`
+					: 'Image saved successfully';
+
+				showSuccess(message);
+				console.log('ShareButton: File saved successfully:', saveResult);
+			} else {
+				// Only show error if it wasn't a user cancellation
+				if (saveResult.error && saveResult.error.message !== 'Operation cancelled by user') {
+					console.error('ShareButton: Save error:', saveResult.error);
+					showError(`Failed to save image: ${saveResult.error.message}`);
+
+					// Fall back to the old download method if the FileSystemService fails
+					try {
+						console.log('ShareButton: Falling back to old download method');
+
+						// Download the image with improved error handling
+						const success = await downloadImage({
+							dataUrl: result.dataUrl,
+							filename
+						});
+
+						if (success) {
+							showSuccess('Image download started');
+							console.log('ShareButton: Download initiated successfully');
+						} else {
+							throw new Error('Download function returned false');
+						}
+					} catch (downloadError) {
+						console.error('ShareButton: Download error:', downloadError);
+						showError('Failed to download sequence. Please try again.');
+					}
+				} else {
+					console.log('ShareButton: User cancelled save operation');
 				}
 			}
 		} catch (error) {
@@ -393,37 +444,8 @@
 			console.log('ShareButton: Starting sequence rendering');
 			console.log('ShareButton: Beat frame element:', beatFrameElementState);
 
-			// Get export settings
-			let settings: any = {};
-			try {
-				// Get settings from localStorage first
-				const savedSettings = localStorage.getItem('image-export-settings');
-				if (savedSettings) {
-					try {
-						const parsed = JSON.parse(savedSettings);
-						if (parsed && typeof parsed === 'object') {
-							settings = parsed;
-							console.log('ShareButton: Using settings from localStorage', settings);
-						}
-					} catch (parseError) {
-						console.error('ShareButton: Failed to parse settings from localStorage', parseError);
-					}
-				}
-
-				// If localStorage failed, get from store
-				if (!settings || Object.keys(settings).length === 0) {
-					const unsubscribe = imageExportSettings.subscribe((value: any) => {
-						settings = value;
-					});
-					unsubscribe();
-					console.log('ShareButton: Using settings from store', settings);
-				}
-			} catch (error) {
-				console.error('ShareButton: Error getting export settings', error);
-				// Use empty object, which will fall back to defaults
-				settings = {};
-			}
-
+			// Get export settings using new function
+			let settings = getImageExportSettings();
 			console.log('ShareButton: Export settings:', settings);
 
 			// Find the start position beat
@@ -443,7 +465,7 @@
 			await new Promise((resolve) => setTimeout(resolve, 250));
 
 			// Export the sequence with improved settings
-			const result = await exportEnhancedImage(beatFrameElementState, {
+			const result = await exportSequenceImage(beatFrameElementState, {
 				beats: sequenceBeats as any,
 				startPosition: startPosition as any,
 				backgroundColor: '#FFFFFF', // Always use white for better contrast

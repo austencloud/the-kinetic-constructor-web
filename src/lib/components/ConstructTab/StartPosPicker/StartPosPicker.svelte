@@ -10,6 +10,7 @@
 	import startPositionService from '$lib/services/StartPositionService';
 	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 	import { browser } from '$app/environment'; // Import browser check
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	// Import sequenceDataService is not needed here as it's used by startPositionService internally
 
 	let gridMode = 'diamond'; // TODO: Make this dynamic if necessary
@@ -68,6 +69,8 @@
 			dataInitializationChecked = false;
 			loadingError = false;
 		}
+		hapticFeedbackService.trigger('selection');
+
 	}
 
 	onMount(() => {

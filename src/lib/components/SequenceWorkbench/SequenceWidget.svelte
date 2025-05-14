@@ -27,6 +27,7 @@
 	// Explicitly import ShareButton with a console log to verify it's being imported
 	import ShareButton from './share/ShareButton.svelte';
 	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 	// Log to verify ShareButton is imported
 	console.log('SequenceWidget: ShareButton imported:', ShareButton);
@@ -199,6 +200,8 @@
 		const event = new CustomEvent<ActionEventDetail>('action', {
 			detail: { id: 'clearSequence' }
 		});
+		hapticFeedbackService.trigger('error');
+
 		handleButtonActionWrapper(event);
 	}
 

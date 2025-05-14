@@ -5,6 +5,7 @@
 	import { registerServices } from '$lib/core/di/registerServices';
 	import { initializeStateManagement } from '$lib/state';
 	import { browser } from '$app/environment';
+	import SettingsManager from '$lib/components/SettingsManager/SettingsManager.svelte';
 
 	// State tracking
 	let isStateInitialized = false;
@@ -36,7 +37,7 @@
 
 			// Explicitly try to load sequence from localStorage
 			try {
-				const loaded = sequenceContainer.loadFromLocalStorage();
+				sequenceContainer.loadFromLocalStorage();
 			} catch (error) {
 				console.error('ServiceProvider: Error loading sequence from localStorage:', error);
 			}
@@ -65,6 +66,8 @@
 </script>
 
 {#if isStateInitialized || !browser}
+	<!-- Include the SettingsManager component to handle settings lifecycle -->
+	<SettingsManager />
 	<slot></slot>
 {:else}
 	<div class="loading">Initializing application...</div>

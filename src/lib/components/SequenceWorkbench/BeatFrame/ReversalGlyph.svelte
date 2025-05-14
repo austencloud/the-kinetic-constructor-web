@@ -1,6 +1,9 @@
 <script lang="ts">
-	export let blueReversal: boolean = false;
-	export let redReversal: boolean = false;
+	// Props using Svelte 5 runes
+	const { blueReversal = false, redReversal = false } = $props<{
+		blueReversal?: boolean;
+		redReversal?: boolean;
+	}>();
 
 	const blueStyle = 'background-color: blue; border-radius: 50%; width: 20px; height: 20px;';
 	const redStyle = 'background-color: red; border-radius: 50%; width: 20px; height: 20px;';
