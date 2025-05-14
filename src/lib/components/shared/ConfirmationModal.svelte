@@ -2,19 +2,21 @@
 	import Modal from './Modal.svelte';
 	import { uiStore } from '../../components/WriteTab/stores/uiStore';
 
-	// Define props with the correct Svelte 5 rune syntax
-	// Each prop is defined individually
-	const isOpen = $props(false);
-	const title = $props('Confirm Action');
-	const message = $props('Are you sure you want to proceed?');
-	const confirmText = $props('Confirm');
-	const cancelText = $props('Cancel');
-	const confirmButtonClass = $props('danger');
-	const showDontAskOption = $props(true);
-	const onConfirm = $props<((event: { dontAskAgain: boolean }) => void) | undefined>(undefined);
-	const onClose = $props<(() => void) | undefined>(undefined);
+	// Define props using Svelte 5 syntax
+	const props = $props();
 
-	// Component state
+	// Calculate defaults
+	const isOpen = props.isOpen ?? false;
+	const title = props.title ?? 'Confirm Action';
+	const message = props.message ?? 'Are you sure you want to proceed?';
+	const confirmText = props.confirmText ?? 'Confirm';
+	const cancelText = props.cancelText ?? 'Cancel';
+	const confirmButtonClass = props.confirmButtonClass ?? 'danger';
+	const showDontAskOption = props.showDontAskOption ?? true;
+	const onConfirm = props.onConfirm;
+	const onClose = props.onClose;
+
+	// State variables
 	let dontAskAgain = $state(false);
 
 	function handleConfirm() {
@@ -23,7 +25,7 @@
 		}
 
 		// Call the onConfirm callback if provided
-		if (onConfirm) {
+		if (typeof onConfirm === 'function') {
 			onConfirm({ dontAskAgain });
 		}
 
@@ -35,14 +37,18 @@
 		dontAskAgain = false;
 
 		// Call the onClose callback if provided
-		if (onClose) {
+		if (typeof onClose === 'function') {
 			onClose();
 		}
 	}
 </script>
 
-<Modal {isOpen} {title} onClose={close}>
-	<!-- Use the default slot for content -->
+<Modal 
+	isOpen={isOpen} 
+	title={title} 
+	onClose={close}
+>
+	<!-- Content goes in the default slot -->
 	<div class="confirmation-content">
 		<p>{message}</p>
 
@@ -54,12 +60,12 @@
 		{/if}
 	</div>
 	
-	<!-- Use a named slot for the footer -->
+	<!-- Footer content goes in the named footer slot -->
 	<div class="modal-footer-buttons" slot="footer">
-		<button class="cancel-button" on:click={close}>
+		<button class="cancel-button" onclick={close}>
 			{cancelText}
 		</button>
-		<button class="confirm-button {confirmButtonClass}" on:click={handleConfirm}>
+		<button class="confirm-button {confirmButtonClass}" onclick={handleConfirm}>
 			{confirmText}
 		</button>
 	</div>

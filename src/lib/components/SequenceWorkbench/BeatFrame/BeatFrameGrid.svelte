@@ -6,13 +6,13 @@
 	import EmptyStartPosLabel from './EmptyStartPosLabel.svelte';
 
 	// Props
-	const { 
+	const {
 		beatRows,
 		beatCols,
 		cellSize,
 		beats,
 		selectedBeatIndex,
-		sequenceIsEmpty,
+		// sequenceIsEmpty is no longer used directly - we check startPosBeatData.filled instead
 		startPosBeatData,
 		beatCount,
 		onStartPosBeatClick,
@@ -23,7 +23,7 @@
 		cellSize: number;
 		beats: any[];
 		selectedBeatIndex: number;
-		sequenceIsEmpty: boolean;
+		sequenceIsEmpty: boolean; // Keep in the type definition for backward compatibility
 		startPosBeatData: any;
 		beatCount: number;
 		onStartPosBeatClick: () => void;
@@ -40,10 +40,12 @@
 	{#each Array(beatRows) as _, rowIndex}
 		{#if rowIndex === 0}
 			<div class="beat-container start-position" style="grid-row: 1; grid-column: 1;">
-				{#if sequenceIsEmpty}
-					<EmptyStartPosLabel onClick={onStartPosBeatClick} />
-				{:else}
+				{#if startPosBeatData && startPosBeatData.filled}
+					<!-- Show the start position if we have one, regardless of sequence empty state -->
 					<StartPosBeat beatData={startPosBeatData} onClick={onStartPosBeatClick} />
+				{:else}
+					<!-- Only show the empty label if we don't have a start position -->
+					<EmptyStartPosLabel onClick={onStartPosBeatClick} />
 				{/if}
 			</div>
 		{/if}

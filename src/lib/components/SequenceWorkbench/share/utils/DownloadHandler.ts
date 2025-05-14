@@ -82,7 +82,7 @@ export async function downloadSequenceImage(options: DownloadOptions): Promise<b
     const safeSequenceName = exactWordName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
 
     // Create a basic filename (will be replaced with versioned name if versioning is enabled)
-    const filename = `kinetic-sequence-${safeSequenceName}.png`;
+    const filename = `${exactWordName}.png`;
 
     // Get category from settings (metadata doesn't have category yet)
     const category = settings.defaultCategory || 'Sequences';

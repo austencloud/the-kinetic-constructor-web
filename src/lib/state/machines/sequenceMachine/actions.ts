@@ -56,7 +56,6 @@ function updateSequenceWord() {
 		name: word,
 		difficulty: difficulty
 	});
-
 }
 
 /**
@@ -159,9 +158,19 @@ export function addBeat({ event }: { event: any }) {
  * 1. Preserve the start position when removing beats
  * 2. Ensure the OptionPicker refreshes with valid options
  * 3. Validate that the start position data is correct (static motion, matching start/end locations)
+ * 4. Fix the issue with start position being lost when removing the first beat
  */
 export function removeBeat({ event }: { event: any }) {
 	const removeEvent = event as { type: 'REMOVE_BEAT'; beatId: string };
+
+	// Log the beat being removed for debugging
+	console.log('Removing beat with ID:', removeEvent.beatId);
+
+	// Check if this is the start position - if so, we shouldn't remove it
+	if (removeEvent.beatId === 'start-position') {
+		console.warn('Attempted to remove start position - this should not happen');
+		return;
+	}
 
 	// Store the current start position before removing the beat
 	// This ensures we can restore it if needed
@@ -169,6 +178,7 @@ export function removeBeat({ event }: { event: any }) {
 	try {
 		// Use our helper function to get the current value from the store
 		currentStartPos = getStoreValue(selectedStartPos);
+		console.log('Current start position before beat removal:', currentStartPos ? 'exists' : 'null');
 
 		// Validate and fix the start position data if needed
 		if (currentStartPos) {
@@ -197,6 +207,17 @@ export function removeBeat({ event }: { event: any }) {
 		console.error('Failed to get current start position:', error);
 	}
 
+	// Get the current sequence state before removal
+	const beatCount = sequenceContainer.state.beats.length;
+	const isFirstBeat = beatCount > 0 && sequenceContainer.state.beats[0].id === removeEvent.beatId;
+
+	console.log('Beat removal info:', {
+		beatCount,
+		isFirstBeat,
+		hasStartPosition: !!currentStartPos
+	});
+
+	// Remove the beat from the sequence
 	sequenceContainer.removeBeat(removeEvent.beatId);
 
 	// Update the sequence word
@@ -210,8 +231,14 @@ export function removeBeat({ event }: { event: any }) {
 		});
 		document.dispatchEvent(beatEvent);
 
-		// If we have a start position, ensure it's still active
+		// IMPORTANT: Always ensure the start position is preserved, especially when removing the first beat
 		if (currentStartPos) {
+			// First, update the selectedStartPos store directly
+			selectedStartPos.set(currentStartPos);
+
+			// Update the pictographContainer with the start position
+			pictographContainer.setData(currentStartPos);
+
 			// Ensure the start position is preserved by dispatching the event again
 			const startPosEvent = new CustomEvent('start-position-selected', {
 				detail: { startPosition: currentStartPos },
@@ -235,10 +262,35 @@ export function removeBeat({ event }: { event: any }) {
 				console.error('Failed to save start position to localStorage:', error);
 			}
 
+			// Dispatch an additional event to ensure the UI updates correctly
+			if (isFirstBeat) {
+				console.log(
+					'First beat removed - dispatching additional events to preserve start position'
+				);
+
+				// Dispatch a sequence-updated event to ensure the UI refreshes
+				const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
+					detail: {
+						type: 'beat-removed',
+						beatId: removeEvent.beatId,
+						preserveStartPosition: true
+					},
+					bubbles: true
+				});
+				document.dispatchEvent(sequenceUpdatedEvent);
+
+				// Force a refresh of the start position in the UI
+				setTimeout(() => {
+					const refreshEvent = new CustomEvent('start-position-refresh', {
+						detail: { startPosition: currentStartPos },
+						bubbles: true
+					});
+					document.dispatchEvent(refreshEvent);
+				}, 0);
+			}
+
 			console.log('Preserved start position after beat removal');
 		}
-
-		// Update dev tools
 	}
 }
 
@@ -272,9 +324,6 @@ export function removeBeatAndFollowing({ event }: { event: any }) {
 			if (currentStartPos) {
 				// Mark this as a start position
 				currentStartPos.isStartPosition = true;
-
-
-
 			}
 		} catch (error) {
 			console.error('Failed to get current start position:', error);
@@ -442,7 +491,5 @@ export function clearSequence() {
 			bubbles: true
 		});
 		document.dispatchEvent(resetOptionPickerEvent);
-
-
 	}
 }

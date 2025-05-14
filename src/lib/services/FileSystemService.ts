@@ -119,9 +119,13 @@ class FileSystemService {
 
 	/**
 	 * Check if the File System Access API is supported
+	 *
+	 * Note: We're now always returning false to force using the fallback download method
+	 * instead of asking for directory permissions
 	 */
 	public isSupported(): boolean {
-		return isFileSystemAccessSupported() && !isMobileDevice();
+		// Always return false to use the fallback download method
+		return false;
 	}
 
 	/**
@@ -581,15 +585,29 @@ class FileSystemService {
 			let fileName = options.fileName;
 
 			if (!fileName) {
-				// Generate a sequence name from the category or use a default
-				const sequenceName = options.category || 'Sequence';
+				// Use the word name if available, otherwise use category or default
+				let baseName = 'Sequence';
 
-				// Generate a timestamp for uniqueness
-				const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+				if (options.wordName && options.wordName.trim() !== '') {
+					// Use the word name as the primary identifier
+					baseName = options.wordName.trim();
+				} else if (options.category && options.category.trim() !== '') {
+					// Fall back to category if no word name
+					baseName = options.category.trim();
+				}
 
-				// Create a safe filename
-				const safeSequenceName = sequenceName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-				fileName = `kinetic-sequence-${safeSequenceName}-${timestamp}.${extension}`;
+				// Create a version number if versioning is enabled
+				let versionSuffix = '';
+				if (options.useVersioning) {
+					// Just use v1 for simplicity since we can't check the filesystem
+					versionSuffix = '_v1';
+				}
+
+				// Create a safe filename that preserves the original word as much as possible
+				// Replace invalid characters with hyphens
+				const safeBaseName = baseName.replace(/[<>:"/\\|?*]/g, '-');
+
+				fileName = `${safeBaseName}${versionSuffix}.${extension}`;
 			}
 
 			// Use the existing download functionality
@@ -615,11 +633,38 @@ class FileSystemService {
 			try {
 				logger.info('FileSystemService: Trying alternative download approach');
 
-				// Set the file name
+				// Set the file name - reuse the same filename generation logic as above
 				const fileType = options.fileType || 'image/png';
 				const extension = fileType.split('/')[1] || 'png';
-				const fileName =
-					options.fileName || createExportFileName('Sequence', options.category || '', extension);
+
+				// Generate a proper filename
+				let fileName = options.fileName;
+
+				if (!fileName) {
+					// Use the word name if available, otherwise use category or default
+					let baseName = 'Sequence';
+
+					if (options.wordName && options.wordName.trim() !== '') {
+						// Use the word name as the primary identifier
+						baseName = options.wordName.trim();
+					} else if (options.category && options.category.trim() !== '') {
+						// Fall back to category if no word name
+						baseName = options.category.trim();
+					}
+
+					// Create a version number if versioning is enabled
+					let versionSuffix = '';
+					if (options.useVersioning) {
+						// Just use v1 for simplicity since we can't check the filesystem
+						versionSuffix = '_v1';
+					}
+
+					// Create a safe filename that preserves the original word as much as possible
+					// Replace invalid characters with hyphens
+					const safeBaseName = baseName.replace(/[<>:"/\\|?*]/g, '-');
+
+					fileName = `${safeBaseName}${versionSuffix}.${extension}`;
+				}
 
 				// Create a download link
 				const link = document.createElement('a');

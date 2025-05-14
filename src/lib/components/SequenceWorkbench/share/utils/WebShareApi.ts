@@ -190,7 +190,7 @@ export async function shareSequenceWithImage(
 
                 // Create a File from the Blob
                 console.log('shareUtils: Creating File from Blob');
-                const fileName = `${sequenceName || 'kinetic-sequence'}.png`;
+                const fileName = `${sequenceName || 'TKA_sequence'}.png`;
                 const file = new File([blob], fileName, { type: 'image/png' });
 
                 // Create share data with the image file

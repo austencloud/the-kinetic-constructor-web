@@ -178,6 +178,7 @@
 
 	// Listen for the custom event as an alternative way to receive updates
 	onMount(() => {
+		// Handler for start position selected event
 		const handleStartPosSelectedEvent = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
 				// Set flag to prevent circular updates
@@ -206,6 +207,9 @@
 						pictographData: newStartPos,
 						filled: true
 					};
+
+					// Log for debugging
+					console.log('StartPosBeat: Updated start position from event');
 				} finally {
 					// Reset flag after updates are complete
 					isUpdatingFromStartPos = false;
@@ -213,17 +217,62 @@
 			}
 		};
 
-		// Add event listener
+		// Handler for start position refresh event (used when first beat is removed)
+		const handleStartPosRefreshEvent = (event: CustomEvent) => {
+			if (event.detail?.startPosition) {
+				// Set flag to prevent circular updates
+				isUpdatingFromStartPos = true;
+
+				try {
+					// Create a deep copy to avoid reference issues
+					const newStartPos = JSON.parse(JSON.stringify(event.detail.startPosition));
+
+					// Update the pictograph data
+					pictographData = safeCopyPictographData(newStartPos);
+
+					// Also update the pictographContainer
+					pictographContainer.setData(pictographData);
+
+					// Force the selectedStartPos store to update
+					selectedStartPos.set(newStartPos);
+
+					// Update the beat data
+					beatData = {
+						...beatData,
+						pictographData: newStartPos,
+						filled: true
+					};
+
+					// Log for debugging
+					console.log('StartPosBeat: Refreshed start position after first beat removal');
+				} finally {
+					// Reset flag after updates are complete
+					isUpdatingFromStartPos = false;
+				}
+			}
+		};
+
+		// Add event listeners
 		document.addEventListener(
 			'start-position-selected',
 			handleStartPosSelectedEvent as EventListener
 		);
 
+		document.addEventListener(
+			'start-position-refresh',
+			handleStartPosRefreshEvent as EventListener
+		);
+
 		return () => {
-			// Clean up event listener
+			// Clean up event listeners
 			document.removeEventListener(
 				'start-position-selected',
 				handleStartPosSelectedEvent as EventListener
+			);
+
+			document.removeEventListener(
+				'start-position-refresh',
+				handleStartPosRefreshEvent as EventListener
 			);
 		};
 	});

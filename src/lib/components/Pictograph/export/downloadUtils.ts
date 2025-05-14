@@ -45,6 +45,9 @@ export async function downloadImage(options: DownloadOptions): Promise<boolean> 
 
 		// Create a new approach that works more reliably across browsers
 		try {
+			// Log the filename for debugging
+			console.log(`DownloadUtils: Preparing to download file as "${options.filename}"`);
+
 			// Convert data URL to Blob using the dataURLtoBlob function
 			const blob = dataURLtoBlob(options.dataUrl);
 			console.log(`DownloadUtils: Created blob of size: ${blob.size} bytes`);
@@ -59,6 +62,10 @@ export async function downloadImage(options: DownloadOptions): Promise<boolean> 
 			link.download = options.filename;
 			link.style.display = 'none';
 
+			// Set additional attributes to encourage download behavior
+			link.setAttribute('type', 'application/octet-stream');
+			link.setAttribute('target', '_self');
+
 			// Add to DOM
 			document.body.appendChild(link);
 
@@ -70,7 +77,7 @@ export async function downloadImage(options: DownloadOptions): Promise<boolean> 
 
 			// Trigger click with a try/catch to handle any browser restrictions
 			try {
-				console.log(`DownloadUtils: Clicking download link`);
+				console.log(`DownloadUtils: Clicking download link for "${options.filename}"`);
 				link.click();
 				console.log(`DownloadUtils: Download link clicked`);
 			} catch (clickError) {
@@ -125,8 +132,14 @@ export async function downloadImage(options: DownloadOptions): Promise<boolean> 
 				const link = document.createElement('a');
 				link.href = options.dataUrl;
 				link.download = options.filename;
-				link.target = '_blank';
+				link.target = '_self'; // Use _self instead of _blank to encourage download
 				link.style.display = 'none';
+
+				// Set additional attributes to encourage download behavior
+				link.setAttribute('type', 'application/octet-stream');
+
+				// Log the attempt
+				console.log(`DownloadUtils: Last resort attempt to download "${options.filename}"`);
 
 				document.body.appendChild(link);
 				await new Promise((resolve) => setTimeout(resolve, 100));

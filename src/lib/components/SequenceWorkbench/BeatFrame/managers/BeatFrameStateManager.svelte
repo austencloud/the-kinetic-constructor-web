@@ -124,15 +124,40 @@
 
 				// Update the store (but don't subscribe to its changes to avoid loops)
 				selectedStartPos.set(newStartPos);
+
+				// Log for debugging
+				console.log('BeatFrameStateManager: Updated start position from event');
+			}
+		};
+
+		// Listen for the start position refresh event (used when first beat is removed)
+		const handleStartPosRefresh = (event: CustomEvent) => {
+			if (event.detail?.startPosition) {
+				// Create a deep copy to avoid reference issues
+				const newStartPos = JSON.parse(JSON.stringify(event.detail.startPosition));
+
+				// Update the local state
+				startPosition = newStartPos;
+
+				// Update the store (but don't subscribe to its changes to avoid loops)
+				selectedStartPos.set(newStartPos);
+
+				// Log for debugging
+				console.log('BeatFrameStateManager: Refreshed start position after first beat removal');
 			}
 		};
 
 		document.addEventListener('start-position-selected', handleStartPosSelected as EventListener);
+		document.addEventListener('start-position-refresh', handleStartPosRefresh as EventListener);
 
 		return () => {
 			document.removeEventListener(
 				'start-position-selected',
 				handleStartPosSelected as EventListener
+			);
+			document.removeEventListener(
+				'start-position-refresh',
+				handleStartPosRefresh as EventListener
 			);
 		};
 	});

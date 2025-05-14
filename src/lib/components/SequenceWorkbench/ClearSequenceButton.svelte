@@ -4,37 +4,19 @@
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
+	import { uiStore } from '$lib/components/WriteTab/stores/uiStore';
 
-	// User preference for confirmation dialogs
-	let showConfirmation = $state(true);
+	// State for confirmation modal
 	let isConfirmationModalOpen = $state(false);
 	let dontAskAgain = $state(false);
 
-	// Load user preference from localStorage
-	$effect(() => {
-		if (browser) {
-			try {
-				const savedPreference = localStorage.getItem('confirm_sequence_clear');
-				if (savedPreference !== null) {
-					showConfirmation = savedPreference === 'true';
-				}
-			} catch (error) {
-				console.error('Error loading confirmation preference:', error);
-			}
-		}
-	});
+	// Get confirmation preference from uiStore
+	let showConfirmation = $derived($uiStore.preferences.confirmDeletions);
 
-	// Save user preference to localStorage
-	function savePreference(value: boolean) {
-		if (browser) {
-			try {
-				localStorage.setItem('confirm_sequence_clear', value.toString());
-				showConfirmation = value;
-			} catch (error) {
-				console.error('Error saving confirmation preference:', error);
-			}
-		}
-	}
+	// Log the confirmation preference for debugging
+	$effect(() => {
+		console.log('ClearSequenceButton: Confirmation preference updated:', showConfirmation);
+	});
 
 	function handleClick() {
 		// Provide haptic feedback
@@ -61,9 +43,9 @@
 	}
 
 	function handleConfirm() {
-		// Save the user preference if "Don't ask again" is checked
+		// Update the uiStore preference if "Don't ask again" is checked
 		if (dontAskAgain) {
-			savePreference(false);
+			uiStore.toggleConfirmDeletions(false);
 		}
 
 		// Clear the sequence

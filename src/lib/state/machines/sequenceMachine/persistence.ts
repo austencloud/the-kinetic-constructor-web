@@ -12,9 +12,33 @@ export const isSequenceEmpty = writable(true);
 
 // Set up a subscription to update isSequenceEmpty whenever the sequence changes
 if (typeof window !== 'undefined') {
+	// We need to check both the sequence beats and the start position
+	// to determine if the sequence is truly empty
+	let hasStartPosition = false;
+
+	// Subscribe to the selectedStartPos store to track if we have a start position
+	selectedStartPos.subscribe((startPos) => {
+		hasStartPosition = !!startPos;
+
+		// We'll get the current sequence state in the sequenceStore subscription
+		// Just log that the start position changed
+		console.log('Start position updated:', hasStartPosition ? 'exists' : 'null');
+	});
+
+	// Also subscribe to sequence changes to update the empty state
 	sequenceStore.subscribe((state) => {
-		// Update isSequenceEmpty based on whether there are any beats
-		isSequenceEmpty.set(state.beats.length === 0);
+		// A sequence is only truly empty if it has no beats AND no start position
+		const isEmpty = state.beats.length === 0 && !hasStartPosition;
+
+		// Update the isSequenceEmpty store
+		isSequenceEmpty.set(isEmpty);
+
+		// Log for debugging
+		console.log('isSequenceEmpty updated from sequence change:', {
+			isEmpty,
+			beatCount: state.beats.length,
+			hasStartPosition
+		});
 	});
 }
 
@@ -31,7 +55,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 		try {
 			sequenceLoaded = sequenceContainer.loadFromLocalStorage();
 			if (sequenceLoaded) {
-
 				// Update isSequenceEmpty based on the loaded sequence
 				const hasBeats = sequenceContainer.state.beats.length > 0;
 				isSequenceEmpty.set(!hasBeats);
@@ -89,7 +112,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 
 					// Restore the beats to the sequence store
 					if (backup.beats && Array.isArray(backup.beats) && backup.beats.length > 0) {
-
 						// Process the beats to ensure pictographData is properly preserved
 						const processedBeats = backup.beats.map((beat: any) => {
 							// Create a processed beat with all required properties
@@ -213,7 +235,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 	 * Helper function to restore the start position
 	 */
 	function restoreStartPosition(pictographData: any) {
-
 		// Create a deep copy to avoid reference issues
 		const startPosCopy = JSON.parse(JSON.stringify(pictographData));
 
@@ -222,7 +243,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 
 		// Also update the pictographStore
 		pictographStore.setData(startPosCopy);
-
 
 		// Dispatch a custom event to notify components
 		if (typeof document !== 'undefined') {
@@ -236,7 +256,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 
 	// Subscribe to state changes to save backup
 	sequenceActor.subscribe((state) => {
-
 		// Import the sequenceContainer and pictograph utilities to ensure they're available
 		Promise.all([
 			import('$lib/state/stores/sequence/SequenceContainer'),

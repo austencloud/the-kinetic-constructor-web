@@ -1,24 +1,18 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
 
-	// Use Svelte 5 props rune
-	const props = $props<{
-		title?: string;
-		isOpen?: boolean;
-		showCloseButton?: boolean;
-		onClose?: () => void;
-		children?: any;
-		footer?: any;
-	}>();
+	// Svelte 5 props without type arguments
+	const props = $props();
 
 	// Set default values
-	const title = $derived(props.title ?? '');
-	const isOpen = $derived(props.isOpen ?? false);
-	const showCloseButton = $derived(props.showCloseButton ?? true);
+	const title = props.title ?? '';
+	const isOpen = props.isOpen ?? false;
+	const showCloseButton = props.showCloseButton ?? true;
+	const onClose = props.onClose;
 
 	function close() {
-		if (props.onClose) {
-			props.onClose();
+		if (typeof onClose === 'function') {
+			onClose();
 		}
 	}
 
@@ -35,7 +29,11 @@
 		}
 	}
 
-	// No need for default export in Svelte components
+	// Define slot types
+	type $$Slots = {
+		default: Record<string, never>;
+		footer: Record<string, never>;
+	};
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -78,15 +76,13 @@
 			</div>
 
 			<div class="modal-content">
-				{#if props.children}
-					{props.children}
-				{/if}
+				<!-- Use Svelte's slot system instead of props.children -->
+				<slot></slot>
 			</div>
 
 			<div class="modal-footer">
-				{#if props.footer}
-					{props.footer}
-				{/if}
+				<!-- Use a named slot for the footer -->
+				<slot name="footer"></slot>
 			</div>
 		</div>
 	</div>
