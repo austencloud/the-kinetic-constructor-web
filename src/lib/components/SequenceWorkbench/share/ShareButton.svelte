@@ -11,13 +11,15 @@
 	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from '../context/ElementContext';
 	import { getContext } from 'svelte';
-	import { logger } from '$lib/core/logging';
-	import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
-	import { isWebShareSupported, generateShareableUrl } from './utils/ShareUtils';
-	import { getImageExportSettings } from '$lib/state/image-export-settings.svelte';
-	import { exportSequenceImage } from '$lib/components/Pictograph/export/SequenceImageExporter';
-	import { downloadImage } from '$lib/components/Pictograph/export/downloadUtils';
-	import { fileSystemService } from '$lib/services/FileSystemService';
+	import { showError } from '$lib/components/shared/ToastManager.svelte';
+	import {
+		findBeatFrameElement,
+		listenForBeatFrameElement,
+		renderSequence,
+		shareSequence,
+		downloadSequenceImage,
+		isWebShareSupported
+	} from './utils/ShareUtils';
 	import ShareDropdown from './ShareDropdown.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
@@ -61,76 +63,22 @@
 		}
 	});
 
-	// Function to actively search for the BeatFrame element in DOM
-	function findBeatFrameElement(): HTMLElement | null {
-		console.log('ShareButton: Actively searching for BeatFrame element in DOM');
-
-		// First try from context (most reliable)
-		if (beatFrameContext) {
-			const contextElement = beatFrameContext.getElement();
-			if (contextElement) {
-				console.log('ShareButton: Found element from context');
-				return contextElement;
-			}
-		}
-
-		// Try to find the element by class or ID
-		const byClass = document.querySelector('.beat-frame') as HTMLElement | null;
-		if (byClass) {
-			console.log('ShareButton: Found element by class .beat-frame');
-			return byClass;
-		}
-
-		// Try by specific container selectors
-		const byContainer = document.querySelector(
-			'.sequence-container .beat-frame-container'
-		) as HTMLElement | null;
-		if (byContainer) {
-			console.log('ShareButton: Found element by container selector');
-			return byContainer;
-		}
-
-		// Try to find element with SVGs inside (more generic approach)
-		const svgContainers = Array.from(document.querySelectorAll('.sequence-widget svg')).map((svg) =>
-			svg.closest('.sequence-widget > div')
-		);
-		if (svgContainers.length > 0 && svgContainers[0] instanceof HTMLElement) {
-			console.log('ShareButton: Found container with SVGs');
-			return svgContainers[0] as HTMLElement;
-		}
-
-		console.log('ShareButton: Could not find BeatFrame element in DOM');
-		return null;
-	}
-
 	// Set up event listener for beatframe-element-available
 	onMount(() => {
 		// Try to find the element immediately on mount
 		if (!beatFrameElementState) {
-			const element = findBeatFrameElement();
+			const element = findBeatFrameElement(beatFrameContext);
 			if (element) {
 				beatFrameElementState = element;
 			}
 		}
 
-		const handleElementAvailable = (event: CustomEvent) => {
-			if (event.detail?.element) {
-				console.log('ShareButton: Got element from event');
-				beatFrameElementState = event.detail.element;
-			}
-		};
+		// Set up listener for element availability
+		const cleanup = listenForBeatFrameElement((element) => {
+			beatFrameElementState = element;
+		});
 
-		document.addEventListener(
-			'beatframe-element-available',
-			handleElementAvailable as EventListener
-		);
-
-		return () => {
-			document.removeEventListener(
-				'beatframe-element-available',
-				handleElementAvailable as EventListener
-			);
-		};
+		return cleanup;
 	});
 
 	// Generate a sequence name from the beats
@@ -192,7 +140,12 @@
 			isRendering = true;
 
 			// Render the sequence
-			const result = await renderSequence();
+			const result = await renderSequence({
+				sequenceName,
+				sequenceBeats,
+				difficultyLevel: sequence.metadata?.difficulty || 1,
+				beatFrameElement: beatFrameElementState
+			});
 
 			if (!result) {
 				showError('Failed to generate image for sharing');
@@ -200,53 +153,12 @@
 				return;
 			}
 
-			// Generate shareable URL
-			const shareUrl = generateShareableUrl(sequenceBeats, sequenceName);
-
-			// Create share data
-			const shareData: any = {
-				title: 'Kinetic Constructor Sequence',
-				text: `Check out this sequence: ${sequenceName}\n\nOpen this link to reconstruct: ${shareUrl}`,
-				url: shareUrl
-			};
-
-			// Try to share with image if supported
-			try {
-				// Convert data URL to blob
-				const blob = dataURLtoBlob(result.dataUrl);
-
-				// Create file from blob
-				const file = new File([blob], `${sequenceName}.png`, { type: 'image/png' });
-
-				// Add file to share data
-				shareData.files = [file];
-
-				// Check if device can share with files
-				if (navigator.canShare && navigator.canShare(shareData)) {
-					await navigator.share(shareData);
-					showSuccess('Sequence shared successfully');
-					return;
-				}
-			} catch (error) {
-				console.warn('Failed to share with image, falling back to text-only share', error);
-			}
-
-			// Fall back to text-only share
-			try {
-				// Remove files property
-				delete shareData.files;
-
-				// Share without image
-				await navigator.share(shareData);
-				showSuccess('Sequence shared successfully');
-			} catch (error) {
-				if (error instanceof Error && error.name === 'AbortError') {
-					console.log('User cancelled sharing');
-				} else {
-					showError('Failed to share sequence');
-					console.error('Share error:', error);
-				}
-			}
+			// Share the sequence
+			await shareSequence({
+				sequenceBeats,
+				sequenceName,
+				imageResult: result
+			});
 		} catch (error) {
 			showError('Failed to share sequence');
 			console.error('Share error:', error);
@@ -282,7 +194,7 @@
 
 			// Make one last attempt to find the element if it's not available
 			if (!beatFrameElementState) {
-				beatFrameElementState = findBeatFrameElement();
+				beatFrameElementState = findBeatFrameElement(beatFrameContext);
 
 				if (!beatFrameElementState) {
 					showError('Cannot find sequence display. Please try again.');
@@ -292,7 +204,12 @@
 			}
 
 			// Render the sequence
-			const result = await renderSequence();
+			const result = await renderSequence({
+				sequenceName,
+				sequenceBeats,
+				difficultyLevel: sequence.metadata?.difficulty || 1,
+				beatFrameElement: beatFrameElementState
+			});
 
 			if (!result) {
 				showError('Failed to generate image for download');
@@ -300,232 +217,17 @@
 				return;
 			}
 
-			// Get export settings
-			let settings: any = {};
-			try {
-				// Get settings directly using new function
-				settings = getImageExportSettings();
-				console.log('ShareButton: Using settings from getImageExportSettings()', settings);
-			} catch (error) {
-				console.error('ShareButton: Error getting export settings from function', error);
-
-				// Fall back to localStorage if function fails
-				try {
-					// Get settings from localStorage as fallback
-					const savedSettings = localStorage.getItem('image-export-settings');
-					if (savedSettings) {
-						try {
-							const parsed = JSON.parse(savedSettings);
-							if (parsed && typeof parsed === 'object') {
-								settings = parsed;
-								console.log('ShareButton: Using settings from localStorage', settings);
-							}
-						} catch (parseError) {
-							console.error('ShareButton: Failed to parse settings from localStorage', parseError);
-						}
-					}
-				} catch (localStorageError) {
-					console.error(
-						'ShareButton: Error getting export settings from localStorage',
-						localStorageError
-					);
-					// Use empty object, which will fall back to defaults
-					settings = {};
-				}
-			}
-
-			// Get the exact sequence word from the UI
-			const exactWordName = sequenceName || 'Sequence';
-
-			// Log the exact word being used
-			console.log('ShareButton: Using exact sequence word:', exactWordName);
-
-			// Create a safe version of the word for the filename
-			// This is only for the default filename, the word folder will use the exact word
-			const safeSequenceName = exactWordName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-
-			// Create a basic filename (will be replaced with versioned name if versioning is enabled)
-			const filename = `kinetic-sequence-${safeSequenceName}.png`;
-
-			// Get category from settings (metadata doesn't have category yet)
-			const category = settings.defaultCategory || 'Sequences';
-
-			console.log('ShareButton: Saving sequence:', {
-				wordName: exactWordName,
-				dataUrlLength: result.dataUrl.length,
-				category
+			// Download the sequence image
+			await downloadSequenceImage({
+				sequenceName,
+				imageResult: result
 			});
-
-			// Use the FileSystemService to save the file with enhanced options
-			const saveResult = await fileSystemService.saveFile(result.dataUrl, {
-				fileName: filename,
-				fileType: 'image/png',
-				rememberDirectory:
-					settings.rememberLastSaveDirectory === undefined
-						? true
-						: !!settings.rememberLastSaveDirectory,
-				useCategories: settings.useCategories === undefined ? true : !!settings.useCategories,
-				category: category,
-				wordName: exactWordName,
-				useVersioning: true // Enable intelligent versioning
-			});
-
-			if (saveResult.success) {
-				// Show success message with the file path
-				const message = saveResult.filePath
-					? `Image saved to: ${saveResult.filePath}`
-					: 'Image saved successfully';
-
-				showSuccess(message);
-				console.log('ShareButton: File saved successfully:', saveResult);
-			} else {
-				// Only show error if it wasn't a user cancellation
-				if (saveResult.error && saveResult.error.message !== 'Operation cancelled by user') {
-					console.error('ShareButton: Save error:', saveResult.error);
-					showError(`Failed to save image: ${saveResult.error.message}`);
-
-					// Fall back to the old download method if the FileSystemService fails
-					try {
-						console.log('ShareButton: Falling back to old download method');
-
-						// Download the image with improved error handling
-						const success = await downloadImage({
-							dataUrl: result.dataUrl,
-							filename
-						});
-
-						if (success) {
-							showSuccess('Image download started');
-							console.log('ShareButton: Download initiated successfully');
-						} else {
-							throw new Error('Download function returned false');
-						}
-					} catch (downloadError) {
-						console.error('ShareButton: Download error:', downloadError);
-						showError('Failed to download sequence. Please try again.');
-					}
-				} else {
-					console.log('ShareButton: User cancelled save operation');
-				}
-			}
 		} catch (error) {
 			showError('Failed to download sequence');
 			console.error('Download error:', error);
 		} finally {
 			isRendering = false;
 		}
-	}
-
-	// Render the sequence
-	async function renderSequence(): Promise<any> {
-		// Try one last time to find the beat frame element
-		if (!beatFrameElementState) {
-			beatFrameElementState = findBeatFrameElement();
-		}
-
-		if (!browser || !beatFrameElementState) {
-			console.error('Cannot render: not in browser environment or no beat frame element');
-
-			// Try to find the element one more time using more aggressive selectors
-			const alternativeElement =
-				document.querySelector('.sequence-widget') ||
-				document.querySelector('.sequence-container') ||
-				document.querySelector('.sequence');
-
-			if (alternativeElement instanceof HTMLElement) {
-				console.log('ShareButton: Found alternative element for rendering:', alternativeElement);
-				beatFrameElementState = alternativeElement;
-			} else {
-				return null;
-			}
-		}
-
-		try {
-			console.log('ShareButton: Starting sequence rendering');
-			console.log('ShareButton: Beat frame element:', beatFrameElementState);
-
-			// Get export settings using new function
-			let settings = getImageExportSettings();
-			console.log('ShareButton: Export settings:', settings);
-
-			// Find the start position beat
-			let startPosition = null;
-			for (const beat of sequenceBeats) {
-				if (beat.metadata?.isStartPosition) {
-					startPosition = beat;
-					break;
-				}
-			}
-
-			console.log('ShareButton: Start position found:', !!startPosition);
-			console.log('ShareButton: Sequence beats count:', sequenceBeats.length);
-
-			// Ensure the beat frame element is fully rendered
-			// Add a small delay to ensure all SVGs are fully rendered
-			await new Promise((resolve) => setTimeout(resolve, 250));
-
-			// Export the sequence with improved settings
-			const result = await exportSequenceImage(beatFrameElementState, {
-				beats: sequenceBeats as any,
-				startPosition: startPosition as any,
-				backgroundColor: '#FFFFFF', // Always use white for better contrast
-				scale: 2, // Higher scale for better quality
-				quality: 1.0, // Always use maximum quality
-				format: 'png', // PNG format for lossless quality
-				columns: 4,
-				spacing: 0,
-				// Always include start position if it exists
-				includeStartPosition: true,
-				// Enable all enhancement features by default, but respect user preferences if explicitly set
-				// Use more robust checks that handle undefined values correctly
-				addWord: settings.addWord === undefined ? true : !!settings.addWord,
-				addUserInfo: settings.addUserInfo === undefined ? true : !!settings.addUserInfo,
-				addDifficultyLevel:
-					settings.addDifficultyLevel === undefined ? true : !!settings.addDifficultyLevel,
-				addBeatNumbers: settings.addBeatNumbers === undefined ? true : !!settings.addBeatNumbers,
-				addReversalSymbols:
-					settings.addReversalSymbols === undefined ? true : !!settings.addReversalSymbols,
-				title: sequenceName,
-				userName: 'User',
-				notes: 'Created using The Kinetic Constructor',
-				difficultyLevel: sequence.metadata?.difficulty || 1
-			});
-
-			console.log('ShareButton: Rendering completed successfully', {
-				dataUrlLength: result?.dataUrl?.length || 0,
-				width: result?.width || 0,
-				height: result?.height || 0
-			});
-
-			// Validate the result
-			if (!result || !result.dataUrl || result.dataUrl.length < 1000) {
-				console.error('ShareButton: Invalid rendering result', result);
-				throw new Error('Failed to generate a valid image');
-			}
-
-			return result;
-		} catch (error) {
-			console.error('Error rendering sequence:', error);
-			logger.error('Error rendering sequence', {
-				error: error instanceof Error ? error : new Error(String(error))
-			});
-			return null;
-		}
-	}
-
-	// Convert data URL to blob
-	function dataURLtoBlob(dataUrl: string): Blob {
-		const arr = dataUrl.split(',');
-		const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
-		const bstr = atob(arr[1]);
-		let n = bstr.length;
-		const u8arr = new Uint8Array(n);
-
-		while (n--) {
-			u8arr[n] = bstr.charCodeAt(n);
-		}
-
-		return new Blob([u8arr], { type: mime });
 	}
 </script>
 
