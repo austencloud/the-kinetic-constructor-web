@@ -1,25 +1,25 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
 
-	// Use Svelte 5 props rune instead of export let
-	const {
-		title = '',
-		isOpen = false,
-		showCloseButton = true,
-		onClose = () => {},
-		children = () => null,
-		footer = () => null
-	} = $props<{
+	// Use Svelte 5 props rune
+	const props = $props<{
 		title?: string;
 		isOpen?: boolean;
 		showCloseButton?: boolean;
 		onClose?: () => void;
-		children?: () => any;
-		footer?: () => any;
+		children?: any;
+		footer?: any;
 	}>();
 
+	// Set default values
+	const title = $derived(props.title ?? '');
+	const isOpen = $derived(props.isOpen ?? false);
+	const showCloseButton = $derived(props.showCloseButton ?? true);
+
 	function close() {
-		onClose();
+		if (props.onClose) {
+			props.onClose();
+		}
 	}
 
 	function handleBackdropClick(event: MouseEvent) {
@@ -34,9 +34,11 @@
 			close();
 		}
 	}
+
+	// No need for default export in Svelte components
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if isOpen}
 	<div
@@ -76,11 +78,15 @@
 			</div>
 
 			<div class="modal-content">
-				{@render children()}
+				{#if props.children}
+					{props.children}
+				{/if}
 			</div>
 
 			<div class="modal-footer">
-				{@render footer()}
+				{#if props.footer}
+					{props.footer}
+				{/if}
 			</div>
 		</div>
 	</div>

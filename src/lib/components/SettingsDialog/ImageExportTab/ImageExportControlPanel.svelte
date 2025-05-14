@@ -17,7 +17,6 @@
 	}>();
 
 	// Local state
-	let isExportingPictographs = $state(false);
 	let isMobileDevice = $state(false);
 
 	// Use the user container with Svelte 5 runes
@@ -109,55 +108,7 @@
 		onSettingChange('customNote', input.value);
 	}
 
-	// Handle remember directory change
-	function handleRememberDirectoryChange(event: Event) {
-		const checkbox = event.target as HTMLInputElement;
-		const isChecked = checkbox.checked;
-
-		// Provide haptic feedback
-		if (browser && hapticFeedbackService.isAvailable()) {
-			hapticFeedbackService.trigger('selection');
-		}
-
-		// Log the change for debugging
-		console.log('Remember save location changed:', {
-			newValue: isChecked,
-			currentSettingValue: settings.rememberLastSaveDirectory,
-			valueType: typeof isChecked
-		});
-
-		// Update the setting - using strict boolean conversion
-		onSettingChange('rememberLastSaveDirectory', isChecked === true);
-
-		// Force save immediately
-		saveImageExportSettings();
-
-		// Verify the change was applied right away
-		setTimeout(() => {
-			console.log('Remember save location after change:', {
-				settingValue: settings.rememberLastSaveDirectory,
-				checkboxValue: isChecked,
-				match: settings.rememberLastSaveDirectory === isChecked
-			});
-
-			// Directly check localStorage
-			if (browser) {
-				try {
-					const savedSettings = localStorage.getItem('image-export-settings');
-					if (savedSettings) {
-						const parsed = JSON.parse(savedSettings);
-						console.log('LocalStorage after toggle:', {
-							rememberLastSaveDirectory: parsed.rememberLastSaveDirectory,
-							type: typeof parsed.rememberLastSaveDirectory,
-							expected: isChecked
-						});
-					}
-				} catch (error) {
-					console.error('Error checking localStorage:', error);
-				}
-			}
-		}, 100);
-	}
+	// Removed handleRememberDirectoryChange function as it's now in GeneralTab
 </script>
 
 <div class="control-panel">
@@ -175,18 +126,6 @@
 			></textarea>
 			<div class="note-info">
 				<span class="note-hint">This text will appear in exported images</span>
-				<div class="toggle-container">
-					<label class="toggle-switch">
-						<input
-							type="checkbox"
-							checked={settings.rememberLastSaveDirectory}
-							onchange={handleRememberDirectoryChange}
-							aria-label="Remember last save directory"
-						/>
-						<span class="toggle-slider"></span>
-					</label>
-					<span class="toggle-label">Remember save location</span>
-				</div>
 			</div>
 		</div>
 	</div>
@@ -260,6 +199,8 @@
 		resize: none;
 		min-height: 2.5rem;
 		font-family: inherit;
+		max-width: 100%; /* Ensure it doesn't extend beyond container */
+		box-sizing: border-box; /* Include padding and border in width calculation */
 	}
 
 	.text-area:focus {
@@ -282,63 +223,7 @@
 		font-style: italic;
 	}
 
-	.toggle-container {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.toggle-label {
-		font-size: 0.8rem;
-		color: rgba(255, 255, 255, 0.8);
-	}
-
-	/* Modern toggle switch */
-	.toggle-switch {
-		position: relative;
-		display: inline-block;
-		width: 36px;
-		height: 20px;
-	}
-
-	.toggle-switch input {
-		opacity: 0;
-		width: 0;
-		height: 0;
-	}
-
-	.toggle-slider {
-		position: absolute;
-		cursor: pointer;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(20, 20, 25, 0.6);
-		transition: 0.3s;
-		border-radius: 20px;
-		border: 1px solid rgba(108, 156, 233, 0.3);
-	}
-
-	.toggle-slider:before {
-		position: absolute;
-		content: '';
-		height: 14px;
-		width: 14px;
-		left: 3px;
-		bottom: 2px;
-		background-color: white;
-		transition: 0.3s;
-		border-radius: 50%;
-	}
-
-	input:checked + .toggle-slider {
-		background-color: #167bf4;
-	}
-
-	input:checked + .toggle-slider:before {
-		transform: translateX(16px);
-	}
+	/* Removed toggle switch styles as they're now only in GeneralTab */
 
 	.options-section h3 {
 		margin: 0 0 1rem 0;
@@ -373,11 +258,6 @@
 			align-items: flex-start;
 			gap: 0.5rem;
 		}
-
-		.toggle-container {
-			width: 100%;
-			justify-content: flex-end;
-		}
 	}
 
 	@media (max-width: 480px) {
@@ -387,6 +267,19 @@
 
 		.options-grid {
 			grid-template-columns: 1fr;
+		}
+
+		.text-area {
+			font-size: 0.9rem;
+			min-height: 2.2rem;
+		}
+
+		.note-hint {
+			font-size: 0.75rem;
+		}
+
+		.compact-label {
+			font-size: 0.8rem;
 		}
 	}
 </style>

@@ -13,7 +13,6 @@
 	// Import tab components
 	import SettingsTabs from './SettingsTabs.svelte';
 	import GeneralTab from './GeneralTab/GeneralTab.svelte';
-	import HapticTab from './HapticTab/HapticTab.svelte';
 	import ImageExportTab from './ImageExportTab/ImageExportTab.svelte';
 
 	// Constants for localStorage keys
@@ -25,10 +24,9 @@
 		onClose: () => void;
 	}>();
 
-	// Define tabs
+	// Define tabs - removed Haptic Feedback tab as requested
 	const tabs = [
 		{ id: 'general', label: 'General', icon: 'fa-sliders' },
-		{ id: 'haptic', label: 'Haptic Feedback', icon: 'fa-hand-pointer' },
 		{ id: 'export', label: 'Image Export', icon: 'fa-image' }
 	];
 
@@ -49,7 +47,7 @@
 
 	// Active tab state
 	let activeTab = $state(getLastActiveTab());
-	
+
 	// Track if we're currently saving (to show UI feedback)
 	let isSaving = $state(false);
 
@@ -98,12 +96,12 @@
 	// Save all settings
 	function saveAllSettings() {
 		console.log('saveAllSettings called');
-		
+
 		// Prevent multiple save operations
 		if (isSaving) return;
-		
+
 		isSaving = true;
-		
+
 		// Provide haptic feedback
 		if (browser) {
 			hapticFeedbackService.trigger('success');
@@ -165,7 +163,7 @@
 			isSaving = false;
 		}
 	}
-	
+
 	// Reset settings to defaults
 	function resetToDefaults(): void {
 		// Provide haptic feedback for reset action
@@ -176,7 +174,7 @@
 		try {
 			// Reset image export settings to defaults
 			updateImageExportSettings(structuredClone(defaultImageExportSettings));
-			
+
 			// Force save to ensure persistence
 			saveImageExportSettings();
 
@@ -237,7 +235,12 @@
 			<h2 id="settings-title">Settings</h2>
 		</div>
 
-		<button onclick={handleClose} class="close-button" aria-label="Close settings" disabled={isSaving}>
+		<button
+			onclick={handleClose}
+			class="close-button"
+			aria-label="Close settings"
+			disabled={isSaving}
+		>
 			<i class="fa-solid fa-xmark"></i>
 		</button>
 	</div>
@@ -247,19 +250,27 @@
 	<div class="settings-content" bind:this={contentContainer}>
 		{#if activeTab === 'general'}
 			<GeneralTab />
-		{:else if activeTab === 'haptic'}
-			<HapticTab />
 		{:else if activeTab === 'export'}
 			<ImageExportTab />
 		{/if}
 	</div>
 
 	<div class="settings-footer">
-		<button onclick={resetToDefaults} class="reset-button" aria-label="Reset settings to defaults" disabled={isSaving}>
+		<button
+			onclick={resetToDefaults}
+			class="reset-button"
+			aria-label="Reset settings to defaults"
+			disabled={isSaving}
+		>
 			<i class="fa-solid fa-arrows-rotate"></i>
 			Reset to Defaults
 		</button>
-		<button onclick={saveAllSettings} class="save-button" aria-label="Save settings" disabled={isSaving}>
+		<button
+			onclick={saveAllSettings}
+			class="save-button"
+			aria-label="Save settings"
+			disabled={isSaving}
+		>
 			<i class="fa-solid {isSaving ? 'fa-spinner fa-spin' : 'fa-save'}"></i>
 			{isSaving ? 'Saving...' : 'Save Settings'}
 		</button>

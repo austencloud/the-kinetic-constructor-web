@@ -4,41 +4,76 @@
 	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { uiStore } from '$lib/components/WriteTab/stores/uiStore';
+	import {
+		getImageExportSettings,
+		updateImageExportSettings
+	} from '$lib/state/image-export-settings.svelte';
 
+	// Get current settings
 	const settings = $derived(settingsStore.getSnapshot());
 	const user = useContainer(userContainer);
 	let username = $state(user.currentUser || 'User');
 
-	function toggleAnimations() {
-		if (browser) hapticFeedbackService.trigger('selection');
-		settingsStore.setEnableAnimations(!settings.enableAnimations);
-	}
+	// Get UI preferences
+	let confirmDeletions = $state(true);
+	let rememberLastSaveDirectory = $state(true);
 
-	function toggleTransitions() {
-		if (browser) hapticFeedbackService.trigger('selection');
-		settingsStore.setEnableTransitions(!settings.enableTransitions);
-	}
+	// Initialize state from stores
+	$effect(() => {
+		if (browser) {
+			// Get confirmation dialog preference
+			try {
+				const uiState = $uiStore;
+				confirmDeletions = uiState.preferences.confirmDeletions;
+			} catch (error) {
+				console.error('Failed to load confirmation dialog preference:', error);
+			}
 
-	function toggleAutoSave() {
-		if (browser) hapticFeedbackService.trigger('selection');
-		settingsStore.setAutoSave(!settings.autoSave);
-	}
+			// Get remember save location preference
+			try {
+				const exportSettings = getImageExportSettings();
+				rememberLastSaveDirectory = exportSettings.rememberLastSaveDirectory;
+			} catch (error) {
+				console.error('Failed to load remember save location preference:', error);
+			}
+		}
+	});
 
-	function toggleHighContrast() {
-		if (browser) hapticFeedbackService.trigger('selection');
-		settingsStore.setHighContrast(!settings.highContrast);
-	}
-
-	function toggleReducedMotion() {
-		if (browser) hapticFeedbackService.trigger('selection');
-		settingsStore.setReducedMotion(!settings.reducedMotion);
-	}
-
+	// Toggle haptic feedback
 	function toggleHapticFeedback() {
 		if (browser && settings.hapticFeedback) hapticFeedbackService.trigger('selection');
 		settingsStore.setHapticFeedback(!settings.hapticFeedback);
 	}
 
+	// Toggle confirmation dialogs
+	function toggleConfirmDeletions() {
+		if (browser) hapticFeedbackService.trigger('selection');
+
+		// Toggle the state
+		confirmDeletions = !confirmDeletions;
+
+		// Update the store
+		uiStore.toggleConfirmDeletions(confirmDeletions);
+	}
+
+	// Toggle remember save location
+	function toggleRememberSaveLocation() {
+		if (browser) hapticFeedbackService.trigger('selection');
+
+		// Toggle the state
+		rememberLastSaveDirectory = !rememberLastSaveDirectory;
+
+		// Update image export settings
+		const exportSettings = getImageExportSettings();
+		exportSettings.rememberLastSaveDirectory = rememberLastSaveDirectory;
+		updateImageExportSettings(exportSettings);
+
+		// Log for debugging
+		console.log('Remember save location toggled:', rememberLastSaveDirectory);
+	}
+
+	// Update username
 	function updateUsername(event: Event) {
 		const input = event.target as HTMLInputElement;
 		const newUsername = input.value.trim();
@@ -60,8 +95,9 @@
 
 <div class="general-tab">
 	<div class="settings-section">
+		<h3>User Settings</h3>
 		<div class="setting-item">
-			<div class="setting-info"></div>
+			<div class="setting-info">
 				<span class="setting-label">Username</span>
 				<span class="setting-description">Your name for exported sequences</span>
 			</div>
@@ -80,40 +116,67 @@
 		</div>
 	</div>
 
-	<div class="setting-item">
-		<div class="setting-info"></div>
-			<span class="setting-label">Auto-Save</span>
-			<span class="setting-description">Automatically save sequences as you work</span>
-		</div>
-		<div class="setting-control">
-			<label class="switch">
-				<input
-					type="checkbox"
-					checked={settings.autoSave}
-					onchange={toggleAutoSave}
-					aria-label="Toggle auto-save"
-				/>
-				<span class="slider round"></span>
-			</label>
+	<div class="settings-section">
+		<h3>Preferences</h3>
+
+		<div class="setting-item">
+			<div class="setting-info">
+				<span class="setting-label">Haptic Feedback</span>
+				<span class="setting-description">Vibration feedback for touch interactions</span>
+			</div>
+			<div class="setting-control">
+				<label class="switch">
+					<input
+						type="checkbox"
+						checked={settings.hapticFeedback}
+						onchange={toggleHapticFeedback}
+						aria-label="Toggle haptic feedback"
+						disabled={!hapticFeedbackService.isHapticFeedbackSupported()}
+					/>
+					<span class="slider round"></span>
+				</label>
+			</div>
 		</div>
 
-	<div class="setting-item">
-		<div class="setting-info"></div>
-			<span class="setting-label">Haptic Feedback</span>
-			<span class="setting-description">Vibration feedback for touch interactions</span>
+		<div class="setting-item">
+			<div class="setting-info">
+				<span class="setting-label">Confirmation Dialogs</span>
+				<span class="setting-description"
+					>Show confirmation when clearing sequences or deleting beats</span
+				>
+			</div>
+			<div class="setting-control">
+				<label class="switch">
+					<input
+						type="checkbox"
+						checked={confirmDeletions}
+						onchange={toggleConfirmDeletions}
+						aria-label="Toggle confirmation dialogs"
+					/>
+					<span class="slider round"></span>
+				</label>
+			</div>
 		</div>
-		<div class="setting-control">
-			<label class="switch">
-				<input
-					type="checkbox"
-					checked={settings.hapticFeedback}
-					onchange={toggleHapticFeedback}
-					aria-label="Toggle haptic feedback"
-					disabled={!hapticFeedbackService.isHapticFeedbackSupported()}
-				/>
-				<span class="slider round"></span>
-			</label>
+
+		<div class="setting-item">
+			<div class="setting-info">
+				<span class="setting-label">Remember Save Location</span>
+				<span class="setting-description">Remember last directory used for image exports</span>
+			</div>
+			<div class="setting-control">
+				<label class="switch">
+					<input
+						type="checkbox"
+						checked={rememberLastSaveDirectory}
+						onchange={toggleRememberSaveLocation}
+						aria-label="Toggle remember save location"
+					/>
+					<span class="slider round"></span>
+				</label>
+			</div>
 		</div>
+	</div>
+</div>
 
 <style>
 	.general-tab {
@@ -128,6 +191,14 @@
 		margin-bottom: 1.5rem;
 	}
 
+	.settings-section h3 {
+		margin: 0 0 1rem 0;
+		font-size: 1.1rem;
+		font-weight: 600;
+		color: var(--color-text-primary, white);
+		border-bottom: 1px solid rgba(108, 156, 233, 0.3);
+		padding-bottom: 0.5rem;
+	}
 
 	.setting-item {
 		display: flex;

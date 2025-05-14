@@ -25,6 +25,7 @@
 	import DeleteModal from './DeleteModal.svelte';
 	import SequenceOverlayButton from './SequenceOverlayButton.svelte';
 	import RemoveBeatButton from './RemoveBeatButton.svelte';
+	import ClearSequenceButton from './ClearSequenceButton.svelte';
 	// Explicitly import ShareButton with a console log to verify it's being imported
 	import ShareButton from './share/ShareButton.svelte';
 	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte';
@@ -255,13 +256,11 @@
 		appActions.openSettings();
 	}
 
-	function handleDeleteButtonClick(event: CustomEvent<{ buttonRect: DOMRect }>) {
-		// Get the button rect directly from the event
-		if (event.detail && event.detail.buttonRect) {
-			deleteButtonRect = event.detail.buttonRect;
+	function handleDeleteButtonClick(buttonRect: DOMRect) {
+		// Store the button rect
+		deleteButtonRect = buttonRect;
 
-			// Log the button rect for debugging
-		}
+		// Open the delete modal
 		isDeleteModalOpen = true;
 	}
 
@@ -439,6 +438,8 @@
 			</div>
 
 			<SettingsButton onClick={handleSettingsClick} />
+			<DeleteButton onClick={handleDeleteButtonClick} />
+			<ClearSequenceButton />
 			<SequenceOverlayButton />
 			<!-- Ensure ShareButton is rendered with proper props -->
 			<ShareButton />

@@ -23,20 +23,21 @@
 	}
 </script>
 
-<div in:fly={{ y: 20, duration: 350, delay: 0, easing: elasticOut }} out:fade={{ duration: 200 }}>
-	<button
-		class="remove-beat-button ripple"
-		onclick={handleClick}
-		aria-label="Remove selected beat"
-		data-mdb-ripple="true"
-		data-mdb-ripple-color="light"
-	>
-		<div class="icon-wrapper">
-			<i class="fa-solid fa-trash"></i>
-		</div>
-		<span class="button-label">Remove Selected Beat</span>
-	</button>
-</div>
+<!-- Apply transitions directly to the button for consistent behavior across all devices -->
+<button
+	class="remove-beat-button ripple"
+	onclick={handleClick}
+	aria-label="Remove selected beat"
+	data-mdb-ripple="true"
+	data-mdb-ripple-color="light"
+	in:fly={{ x: 20, duration: 350, delay: 0, easing: elasticOut }}
+	out:fade={{ duration: 200 }}
+>
+	<div class="icon-wrapper">
+		<i class="fa-solid fa-trash"></i>
+	</div>
+	<span class="button-label">Remove Selected Beat</span>
+</button>
 
 <style>
 	.remove-beat-button {
@@ -45,17 +46,21 @@
 		--base-icon-size: 19px; /* Base size of the icon */
 		--base-margin: 10px; /* Define base margin to match other buttons */
 		--button-height: 40px; /* Height of the button */
+		--clear-button-width: calc(
+			var(--button-size-factor, 1) * var(--base-size)
+		); /* Width of clear button */
 
 		position: absolute;
-		/* Position above the clear button with proper spacing, respecting safe area inset */
+		/* Position to the right of the clear button with proper spacing */
 		bottom: max(
-			calc(var(--button-size-factor, 1) * (var(--base-size) + var(--base-margin) * 2)),
-			calc(
-				var(--safe-inset-bottom, 0px) +
-					calc(var(--button-size-factor, 1) * (var(--base-size) + var(--base-margin)))
-			)
+			calc(var(--button-size-factor, 1) * var(--base-margin)),
+			var(--safe-inset-bottom, 0px)
 		);
-		left: max(calc(var(--button-size-factor, 1) * var(--base-margin)), var(--safe-inset-left, 0px));
+		/* Position to the right of the clear button (clear button width + margin + extra spacing) */
+		left: calc(
+			var(--clear-button-width) + (var(--button-size-factor, 1) * var(--base-margin) * 2) +
+				max(calc(var(--button-size-factor, 1) * var(--base-margin)), var(--safe-inset-left, 0px))
+		);
 
 		/* Set dimensions for a pill-shaped button */
 		height: var(--button-height);
@@ -123,13 +128,6 @@
 	@media (max-width: 768px) {
 		.remove-beat-button {
 			--button-size-factor: 0.9;
-			bottom: max(
-				calc(var(--button-size-factor, 1) * (var(--base-size) + var(--base-margin) * 3)),
-				calc(
-					var(--safe-inset-bottom, 0px) +
-						calc(var(--button-size-factor, 1) * (var(--base-size) + var(--base-margin) * 1.5))
-				)
-			);
 			padding: 0 12px;
 		}
 

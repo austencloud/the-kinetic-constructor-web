@@ -1,36 +1,48 @@
 <script lang="ts">
 	import Modal from './Modal.svelte';
-	import { createEventDispatcher } from 'svelte';
 	import { uiStore } from '../../components/WriteTab/stores/uiStore';
 
-	export let isOpen: boolean = false;
-	export let title: string = 'Confirm Action';
-	export let message: string = 'Are you sure you want to proceed?';
-	export let confirmText: string = 'Confirm';
-	export let cancelText: string = 'Cancel';
-	export let confirmButtonClass: string = 'danger'; // 'danger', 'primary', 'secondary'
-	export let showDontAskOption: boolean = true;
+	// Define props with the correct Svelte 5 rune syntax
+	// Each prop is defined individually
+	const isOpen = $props(false);
+	const title = $props('Confirm Action');
+	const message = $props('Are you sure you want to proceed?');
+	const confirmText = $props('Confirm');
+	const cancelText = $props('Cancel');
+	const confirmButtonClass = $props('danger');
+	const showDontAskOption = $props(true);
+	const onConfirm = $props<((event: { dontAskAgain: boolean }) => void) | undefined>(undefined);
+	const onClose = $props<(() => void) | undefined>(undefined);
 
-	let dontAskAgain = false;
-
-	const dispatch = createEventDispatcher();
+	// Component state
+	let dontAskAgain = $state(false);
 
 	function handleConfirm() {
 		if (dontAskAgain && showDontAskOption) {
 			uiStore.toggleConfirmDeletions(false);
 		}
-		dispatch('confirm');
+
+		// Call the onConfirm callback if provided
+		if (onConfirm) {
+			onConfirm({ dontAskAgain });
+		}
+
 		close();
 	}
 
 	function close() {
 		// Reset the checkbox when closing
 		dontAskAgain = false;
-		dispatch('close');
+
+		// Call the onClose callback if provided
+		if (onClose) {
+			onClose();
+		}
 	}
 </script>
 
-<Modal {isOpen} {title} on:close>
+<Modal {isOpen} {title} onClose={close}>
+	<!-- Use the default slot for content -->
 	<div class="confirmation-content">
 		<p>{message}</p>
 
@@ -41,15 +53,16 @@
 			</label>
 		{/if}
 	</div>
-
-	<svelte:fragment slot="footer">
+	
+	<!-- Use a named slot for the footer -->
+	<div class="modal-footer-buttons" slot="footer">
 		<button class="cancel-button" on:click={close}>
 			{cancelText}
 		</button>
 		<button class="confirm-button {confirmButtonClass}" on:click={handleConfirm}>
 			{confirmText}
 		</button>
-	</svelte:fragment>
+	</div>
 </Modal>
 
 <style>

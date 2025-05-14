@@ -1,12 +1,11 @@
 <!-- src/lib/components/SequenceWorkbench/DeleteButton.svelte -->
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { createEventDispatcher } from 'svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		click: { buttonRect: DOMRect };
+	// Use Svelte 5 props
+	const dispatch = $props<{
+		onClick?: (buttonRect: DOMRect) => void;
 	}>();
 
 	let buttonElement: HTMLButtonElement;
@@ -14,16 +13,19 @@
 	function handleClick() {
 		// Get the button's position and dimensions
 		const buttonRect = buttonElement.getBoundingClientRect();
-		// Pass the rect directly instead of the element
+		// Provide haptic feedback
 		hapticFeedbackService.trigger('warning');
 
-		dispatch('click', { buttonRect });
+		// Call the onClick handler if provided
+		if (dispatch.onClick) {
+			dispatch.onClick(buttonRect);
+		}
 	}
 </script>
 
 <button
 	class="delete-button ripple"
-	on:click={handleClick}
+	onclick={handleClick}
 	aria-label="Delete options"
 	data-mdb-ripple="true"
 	data-mdb-ripple-color="light"

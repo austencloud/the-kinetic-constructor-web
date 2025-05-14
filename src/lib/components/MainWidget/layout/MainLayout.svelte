@@ -1,7 +1,7 @@
 <script lang="ts">
 	import TabContent from '../tabs/TabContent.svelte';
 	import { onMount } from 'svelte';
-	import SettingsContent from '$lib/components/SettingsDialog/SettingsContent.svelte';
+	import SettingsContent from '$lib/components/SettingsDialog/SettingsDialog.svelte';
 	import { appActions } from '$lib/state/machines/app/app.actions';
 	import { useSelector } from '@xstate/svelte';
 	import { appService } from '$lib/state/machines/app/app.machine';
