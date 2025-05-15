@@ -48,7 +48,7 @@ export function calculateCellSize(
 	// Minimum cell size thresholds - pictographs won't shrink below these values
 	// Instead, scrollbars will appear when content would need to be smaller
 	const MIN_CELL_SIZE_FULLSCREEN = 100; // Minimum size in fullscreen mode
-	const MIN_CELL_SIZE_NORMAL = 80; // Minimum size in normal mode
+	const MIN_CELL_SIZE_NORMAL = 70; // Minimum size in normal mode
 
 	// Ensure we have valid dimensions
 	if (containerWidth <= 0 || containerHeight <= 0 || totalRows <= 0 || totalCols <= 0) {
