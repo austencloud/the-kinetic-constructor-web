@@ -9,6 +9,7 @@
 	import BackgroundCanvas from '$lib/components/Backgrounds/BackgroundCanvas.svelte';
 	import BackgroundProvider from '$lib/components/Backgrounds/BackgroundProvider.svelte';
 	import FirstTimeSetupDialog from '$lib/components/FirstTimeSetup/FirstTimeSetupDialog.svelte';
+	import FirstTimeSetupDebugButton from '$lib/components/FirstTimeSetup/FirstTimeSetupDebugButton.svelte';
 
 	// State Management
 	import { appActions } from '$lib/state/machines/app/app.actions';
@@ -86,6 +87,16 @@
 		appActions.retryInitialization();
 	}
 
+	// Reference to the first-time setup dialog component
+	let firstTimeSetupDialog = $state<{ showDebugDialog: () => void } | null>(null);
+
+	// Function to show the first-time setup dialog
+	function showFirstTimeSetupDialog() {
+		if (firstTimeSetupDialog) {
+			firstTimeSetupDialog.showDebugDialog();
+		}
+	}
+
 	// --- Lifecycle ---
 	onMount(() => {
 		// Force the state machine to transition
@@ -129,7 +140,12 @@
 			</div>
 
 			<!-- First-time setup dialog -->
-			<FirstTimeSetupDialog />
+			<FirstTimeSetupDialog bind:this={firstTimeSetupDialog} />
+
+			<!-- Debug button - only visible in development mode -->
+			{#if import.meta.env.DEV}
+				<FirstTimeSetupDebugButton showDialog={showFirstTimeSetupDialog} />
+			{/if}
 		{/if}
 	</FullScreen>
 </div>

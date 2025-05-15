@@ -2,7 +2,7 @@
 <script lang="ts">
 	import { workbenchStore } from '$lib/state/stores/workbenchStore';
 	import ModernGenerationControls from './ModernGenerationControls.svelte';
-	import OptionPicker from '$lib/components/ConstructTab/OptionPicker/OptionPicker.svelte';
+	import OptionPickerWithDebug from '$lib/components/ConstructTab/OptionPicker/OptionPickerWithDebug.svelte';
 	import StartPosPicker from '$lib/components/ConstructTab/StartPosPicker/StartPosPicker.svelte';
 	import TransitionWrapper from './TransitionWrapper.svelte';
 	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
@@ -30,11 +30,10 @@
 				<StartPosPicker />
 			</div>
 			<div slot="optionPicker" class="full-height-wrapper">
-				<OptionPicker />
+				<OptionPickerWithDebug />
 			</div>
 		</TransitionWrapper>
 	{/if}
-
 </div>
 
 <style>
