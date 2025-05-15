@@ -17,6 +17,12 @@
 	import { BEAT_FRAME_CONTEXT_KEY } from '../context/ElementContext';
 
 	// Helper function for safe logging of reactive state
+	function safeLog(message: string, data: any) {
+		if (import.meta.env.DEV) {
+			// Use $state.snapshot to avoid Svelte 5 proxy warnings
+			console.log(message, data instanceof Object ? $state.snapshot(data) : data);
+		}
+	}
 
 	// Components
 	import StartPosBeat from './StartPosBeat.svelte';
@@ -137,6 +143,7 @@
 				// Create a deep copy to avoid reference issues
 				startPosition = JSON.parse(JSON.stringify(newStartPos));
 				// Log using our safe logging helper (only in dev mode)
+				safeLog('BeatFrame: Initialized startPosition with:', startPosition);
 			}
 		});
 
@@ -152,6 +159,7 @@
 		// Check if the layout has changed
 		if (beatRows !== prevRows || beatCols !== prevCols) {
 			// Log layout changes
+			safeLog(`Layout changed`, { from: `${prevRows}x${prevCols}`, to: `${beatRows}x${beatCols}` });
 
 			// Update the layout store
 			layoutStore.updateLayout(beatRows, beatCols, beatCount);
@@ -178,43 +186,6 @@
 		}
 	});
 
-	// Calculate the total height needed for labels and other UI elements
-	// Based on the padding and margins in SequenceWidget.svelte
-	const calculateLabelsTotalHeight = () => {
-		// From SequenceWidget.svelte:
-		// - sequence-container has padding: 10px 0 (top and bottom)
-		// - sequence-widget-labels has padding-bottom: 10px
-		// - difficulty-label-container has margin-top: 10px
-		// - beat-frame-wrapper has padding: 0 10px (horizontal only)
-		// - Mobile adjustments reduce these values
-
-		// Container padding
-		const containerPaddingTop = 10;
-		const containerPaddingBottom = 10;
-
-		// Label spacing
-		const labelsPaddingBottom = 10;
-		const difficultyMarginTop = 10;
-
-		// Actual label heights (more accurate estimates)
-		const currentWordLabelHeight = 36; // Increased for better accuracy
-		const difficultyLabelHeight = 36; // Increased for better accuracy
-
-		// Additional padding for the beat frame
-		const beatFramePaddingBottom = 20; // From .beat-frame padding-bottom in CSS
-
-		// Calculate total height needed for non-pictograph elements
-		return (
-			containerPaddingTop +
-			containerPaddingBottom +
-			labelsPaddingBottom +
-			difficultyMarginTop +
-			currentWordLabelHeight +
-			difficultyLabelHeight +
-			beatFramePaddingBottom
-		);
-	};
-
 	// Track the full sequence widget dimensions
 	let sequenceWidgetWidth = $state(0);
 	let sequenceWidgetHeight = $state(0);
@@ -232,11 +203,23 @@
 			naturalGridHeight = gridElement.scrollHeight; // Use scrollHeight for the most accurate content height
 
 			// Log natural height in dev mode
+			safeLog('Natural grid height calculated', {
+				naturalGridHeight,
+				beatRows,
+				cellSize,
+				element: 'scrollHeight'
+			});
 		} else {
 			// Fallback calculation if element not ready
 			naturalGridHeight = beatRows * cellSize + 20; // Add padding-bottom (20px) of the .beat-frame
 
 			// Log fallback calculation in dev mode
+			safeLog('Natural grid height calculated (fallback)', {
+				naturalGridHeight,
+				beatRows,
+				cellSize,
+				element: 'fallback calculation'
+			});
 		}
 	});
 
@@ -247,6 +230,9 @@
 			dispatch('naturalheightchange', { height: naturalGridHeight });
 
 			// Log event dispatch in dev mode
+			safeLog('Dispatched naturalheightchange event', {
+				height: naturalGridHeight
+			});
 		}
 	});
 
@@ -306,52 +292,71 @@
 	// Add a MutationObserver to ensure the element is passed even after DOM changes
 	onMount(() => {
 		if (browser) {
-			// Flag to track if we've already dispatched the event
-			let hasDispatchedEvent = false;
+			// Track last update time to debounce frequent updates
+			let lastUpdateTime = 0;
+			const debounceInterval = 500; // Only update once every 500ms
+			let lastElementRef: HTMLElement | null = null;
 
 			// Set up a MutationObserver to detect when the element is added to the DOM
 			const observer = new MutationObserver((_mutations) => {
-				// Only proceed if we haven't dispatched the event yet and the element exists
-				if (!hasDispatchedEvent && beatFrameContainerRef) {
-					// Update our reactive state
-					beatFrameElementState = beatFrameContainerRef;
+				// Skip if container ref doesn't exist
+				if (!beatFrameContainerRef) return;
 
-					// Store in global variables for maximum compatibility
-					(window as any).__beatFrameElementRef = beatFrameContainerRef;
-					(window as any).__pendingBeatFrameElement = beatFrameContainerRef;
+				// Skip if element hasn't changed
+				if (lastElementRef === beatFrameContainerRef) return;
 
-					// Make sure elementReceiver is a function before calling it
-					if (typeof elementReceiver === 'function') {
-						try {
-							// Call the receiver function
-							elementReceiver(beatFrameContainerRef);
-						} catch (error) {
-							console.error('BeatFrame: Error calling elementReceiver after DOM mutation:', error);
-						}
-					}
+				// Implement debouncing to prevent rapid consecutive calls
+				const now = Date.now();
+				if (now - lastUpdateTime < debounceInterval) return;
 
-					// Dispatch a custom event as a reliable fallback mechanism
-					const event = new CustomEvent('beatframe-element-available', {
-						bubbles: true,
-						detail: { element: beatFrameContainerRef }
-					});
-					document.dispatchEvent(event);
+				// Update tracking variables
+				lastUpdateTime = now;
+				lastElementRef = beatFrameContainerRef;
 
-					// Set flag to prevent further dispatches
-					hasDispatchedEvent = true;
-
-					// Disconnect the observer since we've found what we're looking for
-					observer.disconnect();
+				// Only log in development mode
+				if (import.meta.env.DEV) {
+					safeLog('BeatFrame: DOM mutation detected, updating element reference', {});
 				}
+
+				// Update our reactive state
+				beatFrameElementState = beatFrameContainerRef;
+
+				// Store in global variables for maximum compatibility
+				(window as any).__beatFrameElementRef = beatFrameContainerRef;
+				(window as any).__pendingBeatFrameElement = beatFrameContainerRef;
+
+				// Make sure elementReceiver is a function before calling it
+				if (typeof elementReceiver === 'function') {
+					try {
+						// Call the receiver function
+						elementReceiver(beatFrameContainerRef);
+					} catch (error) {
+						console.error('BeatFrame: Error calling elementReceiver after DOM mutation:', error);
+					}
+				}
+
+				// Dispatch a custom event as a reliable fallback mechanism
+				const event = new CustomEvent('beatframe-element-available', {
+					bubbles: true,
+					detail: { element: beatFrameContainerRef }
+				});
+				document.dispatchEvent(event);
 			});
 
-			// Start observing the document body for DOM changes, but with a more targeted approach
-			// Only observe the parent container that will contain the beat frame
-			const parentContainer = document.querySelector('.sequence-widget') || document.body;
-			observer.observe(parentContainer, {
-				childList: true,
-				subtree: true
-			});
+			// Start observing only the parent container of the beat frame
+			// This is more targeted than observing the entire document body
+			if (beatFrameContainerRef && beatFrameContainerRef.parentElement) {
+				observer.observe(beatFrameContainerRef.parentElement, {
+					childList: true,
+					subtree: false // Only watch direct children
+				});
+			} else {
+				// Fallback to a more limited observation of document.body
+				observer.observe(document.body, {
+					childList: true,
+					subtree: false // Limit depth to reduce overhead
+				});
+			}
 
 			return () => {
 				// Clean up the observer when the component is destroyed
@@ -388,8 +393,6 @@
 	$effect(() => {
 		// Only calculate if we have valid dimensions
 		if (sequenceWidgetWidth > 0 && sequenceWidgetHeight > 0) {
-			const labelsTotalHeight = calculateLabelsTotalHeight();
-
 			// Use the full sequence widget height instead of the beat frame's height
 			cellSize = calculateCellSize(
 				beatCount,
@@ -401,8 +404,6 @@
 			);
 		} else {
 			// Fallback to using the beat frame's dimensions if sequence widget dimensions aren't available
-			const labelsTotalHeight = calculateLabelsTotalHeight();
-
 			cellSize = calculateCellSize(
 				beatCount,
 				size.width,
@@ -439,6 +440,20 @@
 		// Calculate overflow - check both height and width
 		const heightOverflow = contentHeight > containerHeight + buffer;
 		const widthOverflow = contentWidth > containerWidth + buffer;
+
+		// Log overflow state in dev mode
+		safeLog('Overflow check', {
+			containerHeight,
+			contentHeight,
+			containerWidth,
+			contentWidth,
+			heightOverflow,
+			widthOverflow,
+			isScrollable: isScrollable, // Corrected: Use destructured prop
+			beatRows,
+			beatCols,
+			beatCount
+		});
 	}
 
 	// Initialize dev tools and set up event listeners
@@ -449,6 +464,10 @@
 		const handleStartPosSelected = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
 				// Log the received start position (only in dev mode)
+				safeLog(
+					'BeatFrame: Received start-position-selected event with data:',
+					event.detail.startPosition
+				);
 
 				// Create a deep copy to avoid reference issues
 				const newStartPos = JSON.parse(JSON.stringify(event.detail.startPosition));
@@ -508,6 +527,20 @@
 			const beatId = beat.id;
 
 			// Log detailed information about the beat being selected
+			safeLog('Selecting beat', {
+				index: beatIndex,
+				beatNumber: beat.beatNumber,
+				id: beatId,
+				gridLayout: `${beatRows}x${beatCols}`,
+				position: {
+					row: Math.floor(beatIndex / beatCols) + 1,
+					col: (beatIndex % beatCols) + 1
+				},
+				motionTypes: {
+					red: beat.pictographData?.redMotionData?.motionType || 'none',
+					blue: beat.pictographData?.blueMotionData?.motionType || 'none'
+				}
+			});
 
 			if (beatId) {
 				// Select the beat in the container
