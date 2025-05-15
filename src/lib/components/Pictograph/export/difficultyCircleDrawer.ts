@@ -111,7 +111,8 @@ export function drawDifficultyCircle(
 	ctx.strokeStyle = 'black';
 	ctx.lineWidth = 1;
 	ctx.stroke();
-	const fontSize = Math.round(radius * 1.5);
+	// Increase the font size multiplier from 1.5 to 1.8 for better readability
+	const fontSize = Math.round(radius * 1.8);
 	ctx.font = `bold ${fontSize}px Georgia`;
 	ctx.fillStyle = level >= 4 ? 'white' : 'black';
 	ctx.textAlign = 'center';

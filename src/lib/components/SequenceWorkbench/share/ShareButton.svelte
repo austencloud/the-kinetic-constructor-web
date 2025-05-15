@@ -22,12 +22,18 @@
 	} from './utils/ShareUtils';
 	import ShareDropdown from './ShareDropdown.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { fade, scale } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 
 	// Track dropdown state
 	let isDropdownOpen = $state(false);
 
 	// Track rendering state
 	let isRendering = $state(false);
+
+	// Track success indicator state
+	let showSuccessIndicator = $state(false);
+	let successTimeout: number | null = $state(null);
 
 	// Props
 	const { beatFrameElement = null } = $props<{ beatFrameElement?: HTMLElement | null }>();
@@ -74,11 +80,20 @@
 		}
 
 		// Set up listener for element availability
-		const cleanup = listenForBeatFrameElement((element) => {
+		const cleanupListener = listenForBeatFrameElement((element) => {
 			beatFrameElementState = element;
 		});
 
-		return cleanup;
+		return () => {
+			// Clean up listener
+			cleanupListener();
+
+			// Clear any pending timeout
+			if (successTimeout !== null) {
+				clearTimeout(successTimeout);
+				successTimeout = null;
+			}
+		};
 	});
 
 	// Generate a sequence name from the beats
@@ -159,13 +174,29 @@
 				sequenceName,
 				imageResult: result
 			});
+
+			// Show success indicator
+			showSuccessIndicator = true;
+
+			// Clear any existing timeout
+			if (successTimeout !== null) {
+				clearTimeout(successTimeout);
+			}
+
+			// Hide success indicator after 2 seconds
+			successTimeout = window.setTimeout(() => {
+				showSuccessIndicator = false;
+				successTimeout = null;
+			}, 2000);
+
+			// Provide haptic feedback for successful share
+			hapticFeedbackService.trigger('success');
 		} catch (error) {
 			showError('Failed to share sequence');
 			console.error('Share error:', error);
 		} finally {
 			isRendering = false;
 		}
-		hapticFeedbackService.trigger('success');
 	}
 
 	// Handle download button click
@@ -217,14 +248,71 @@
 				return;
 			}
 
+			console.log('ShareButton: Starting download process');
+
 			// Download the sequence image
-			await downloadSequenceImage({
+			const downloadResult = await downloadSequenceImage({
 				sequenceName,
 				imageResult: result
 			});
+
+			console.log('ShareButton: Download result:', downloadResult);
+
+			// Only provide success feedback if the download was successful
+			// and not cancelled by the user
+			if (downloadResult) {
+				console.log('ShareButton: Download successful, providing feedback');
+
+				// Provide haptic feedback for successful download
+				if (hapticFeedbackService.isAvailable()) {
+					hapticFeedbackService.trigger('success');
+				}
+
+				// Show success indicator
+				showSuccessIndicator = true;
+
+				// Clear any existing timeout
+				if (successTimeout !== null) {
+					clearTimeout(successTimeout);
+				}
+
+				// Hide success indicator after 2 seconds
+				successTimeout = window.setTimeout(() => {
+					showSuccessIndicator = false;
+					successTimeout = null;
+				}, 2000);
+			} else {
+				console.log('ShareButton: Download was cancelled or failed without error');
+			}
 		} catch (error) {
-			showError('Failed to download sequence');
-			console.error('Download error:', error);
+			// Log the full error for debugging
+			console.error(
+				'ShareButton: Download error:',
+				error instanceof Error
+					? {
+							name: error.name,
+							message: error.message,
+							stack: error.stack
+						}
+					: error
+			);
+
+			// Check if this is a cancellation error
+			const isCancellation =
+				error instanceof Error &&
+				(error.message === 'USER_CANCELLED_OPERATION' ||
+					error.message.includes('cancelled') ||
+					error.message.includes('canceled') ||
+					error.message.includes('aborted') ||
+					error.name === 'AbortError');
+
+			if (!isCancellation) {
+				// Only show error for non-cancellation errors
+				showError('Failed to download sequence');
+				console.error('ShareButton: Non-cancellation download error:', error);
+			} else {
+				console.log('ShareButton: User cancelled the download operation');
+			}
 		} finally {
 			isRendering = false;
 		}
@@ -236,14 +324,21 @@
 	onclick={toggleDropdown}
 	aria-label="Share sequence"
 	class:loading={isRendering}
+	class:success={showSuccessIndicator}
 >
 	<div class="icon-wrapper">
 		{#if isRendering}
 			<i class="fa-solid fa-spinner fa-spin"></i>
+		{:else if showSuccessIndicator}
+			<i class="fa-solid fa-check" transition:scale={{ duration: 300, easing: quintOut }}></i>
 		{:else}
 			<i class="fa-solid fa-share-alt"></i>
 		{/if}
 	</div>
+
+	{#if showSuccessIndicator}
+		<div class="success-pulse" transition:fade={{ duration: 300 }}></div>
+	{/if}
 </button>
 
 {#if isDropdownOpen}
@@ -313,6 +408,41 @@
 		pointer-events: auto;
 		position: relative;
 		overflow: hidden; /* Match settings button */
+	}
+
+	/* Success state styling */
+	.share-button.success {
+		color: #4caf50; /* Green color for success */
+		animation: success-pulse 0.5s ease-out;
+	}
+
+	/* Success pulse animation */
+	@keyframes success-pulse {
+		0% {
+			transform: scale(1);
+			box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+		}
+		50% {
+			transform: scale(1.1);
+			box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+		}
+		100% {
+			transform: scale(1);
+			box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+		}
+	}
+
+	/* Success pulse overlay */
+	.success-pulse {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		border-radius: 50%;
+		background: radial-gradient(circle, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0) 70%);
+		pointer-events: none;
+		z-index: -1;
 	}
 
 	.share-button:hover {

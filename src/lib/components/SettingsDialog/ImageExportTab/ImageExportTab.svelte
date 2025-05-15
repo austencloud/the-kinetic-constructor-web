@@ -1,6 +1,6 @@
 <!-- src/lib/components/SettingsDialog/ImageExportTab/ImageExportTab.svelte -->
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import {
 		getImageExportSettings,
