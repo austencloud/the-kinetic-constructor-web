@@ -236,12 +236,7 @@ export function saveImageExportSettings(): void {
 		// Log the cleaned settings
 		console.log('Cleaned image export settings to save:', {
 			...cleanSettings,
-			rememberLastSaveDirectory: cleanSettings.rememberLastSaveDirectory,
-			openFolderAfterExport: {
-				value: cleanSettings.openFolderAfterExport,
-				type: typeof cleanSettings.openFolderAfterExport,
-				strictComparison: cleanSettings.openFolderAfterExport === true
-			}
+			rememberLastSaveDirectory: cleanSettings.rememberLastSaveDirectory
 		});
 
 		// Save to localStorage

@@ -95,36 +95,24 @@
 		// Guard against infinite loops - only proceed if the hash has actually changed
 		// or if we haven't processed this hash before
 		if (currentHash === previousEffectHash) {
-			console.log('🛑 Preventing infinite loop - hash unchanged:', currentHash);
 			return;
 		}
 
 		// Update the previous hash
 		previousEffectHash = currentHash;
 
-		console.log('🔄 Effect triggered with new hash:', {
-			currentHash,
-			lastSettingsHash,
-			isDifferent: currentHash !== lastSettingsHash
-		});
-
 		// Only update if something has changed
 		if (currentHash !== lastSettingsHash) {
-			console.log('✅ Effect triggering update: settings changed');
 			// Debounce updates to avoid excessive renders
 			debouncedUpdatePreview();
-		} else {
-			console.log('❌ Effect NOT triggering update: hash unchanged');
 		}
 	});
 
 	// Function to attempt initial preview with verification
 	function attemptInitialPreview() {
 		beatFrameVerificationAttempts++;
-		console.log(`🔄 Attempt #${beatFrameVerificationAttempts} to verify BeatFrame elements`);
 
 		if (verifyBeatFrameElements() || beatFrameVerificationAttempts >= MAX_VERIFICATION_ATTEMPTS) {
-			console.log('🚀 BeatFrame elements verified, generating initial preview');
 			initialUpdateTriggered = true;
 
 			// Set the initial hash to prevent immediate re-renders
@@ -137,7 +125,6 @@
 		} else {
 			// Try again with increasing delay
 			const delay = beatFrameVerificationAttempts * 100;
-			console.log(`⏱️ BeatFrame elements not ready, trying again in ${delay}ms`);
 			setTimeout(attemptInitialPreview, delay);
 		}
 	}
@@ -148,16 +135,11 @@
 
 		// Prevent multiple calls within a short time period (100ms)
 		if (now - lastDebounceRequestTime < 100) {
-			console.log('🔄 Debounce request too frequent, ignoring');
 			return;
 		}
 
 		// Update the last request time
 		lastDebounceRequestTime = now;
-
-		console.log('🕒 debouncedUpdatePreview called', {
-			timestamp: new Date().toISOString()
-		});
 
 		const currentHash = calculateSettingsHash(settingsSnapshot, sequenceSnapshot);
 
@@ -166,14 +148,11 @@
 
 		// Always use debouncing to prevent multiple rapid updates
 		if (updateTimer) {
-			console.log('⏱️ Clearing existing update timer');
 			clearTimeout(updateTimer);
 		}
 
-		console.log('⏱️ Setting new update timer (800ms)');
 		// Use a longer debounce time (800ms) to ensure stability
 		updateTimer = setTimeout(() => {
-			console.log('⏰ Timer fired, calling updatePreview()');
 			onUpdatePreview();
 			updateTimer = null;
 		}, 800);
@@ -189,14 +168,12 @@
 	// Initialize when component mounts
 	onMount(() => {
 		if (browser) {
-			console.log('🔄 PreviewStateManager mounted');
 			window.addEventListener('resize', handleResize);
 
 			// Use a longer initial delay to ensure the DOM is fully ready
 			setTimeout(() => {
 				// Only trigger the initial update once from here
 				if (!initialUpdateTriggered) {
-					console.log('🔍 Starting BeatFrame element verification');
 					attemptInitialPreview();
 				}
 			}, 500); // Increased initial delay
@@ -205,8 +182,6 @@
 
 	// Clean up when component is destroyed
 	onDestroy(() => {
-		console.log('🧹 PreviewStateManager cleanup');
-
 		if (browser) {
 			window.removeEventListener('resize', handleResize);
 		}

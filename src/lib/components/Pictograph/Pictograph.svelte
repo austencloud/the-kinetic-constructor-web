@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
-	import { fade } from 'svelte/transition';
 	import { get } from 'svelte/store';
+	import { popIn } from '$lib/transitions/popIn';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { PropData } from '../objects/Prop/PropData';
 	import type { ArrowData } from '../objects/Arrow/ArrowData';
@@ -10,6 +10,8 @@
 	import Prop from '../objects/Prop/Prop.svelte';
 	import Arrow from '../objects/Arrow/Arrow.svelte';
 	import TKAGlyph from '../objects/Glyphs/TKAGlyph/TKAGlyph.svelte';
+	import SvgManager from '../SvgManager/SvgManager';
+	import type { Color, MotionType, Orientation, TKATurns } from '$lib/types/Types';
 	import { PictographService } from './PictographService';
 	import PictographError from './components/PictographError.svelte';
 	import PictographDebug from './components/PictographDebug.svelte';
@@ -64,7 +66,7 @@
 	export let pictographData: PictographData | undefined = undefined;
 	export let onClick: (() => void) | undefined = undefined;
 	export let debug = false;
-	export let animationDuration = 300;
+	export let animationDuration = 200; // Animation duration for transitions
 	export let showLoadingIndicator = true;
 	export let beatNumber: number | null = null;
 	export let isStartPosition = false;
@@ -259,6 +261,66 @@
 		}
 	}
 
+	/**
+	 * Helper function to detect mobile devices
+	 */
+	function isMobile(): boolean {
+		return (
+			typeof window !== 'undefined' &&
+			(window.innerWidth <= 768 ||
+				/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
+		);
+	}
+
+	/**
+	 * Preload arrow SVGs in parallel for better performance
+	 */
+	async function preloadArrowSvgs() {
+		if (!service || !get(pictographDataStore)) return;
+
+		const data = get(pictographDataStore);
+		const arrowConfigs: Array<{
+			motionType: MotionType;
+			startOri: Orientation;
+			turns: TKATurns;
+			color: Color;
+		}> = [];
+
+		// Add red arrow config if exists
+		if (data.redArrowData) {
+			arrowConfigs.push({
+				motionType: data.redArrowData.motionType,
+				startOri: data.redArrowData.startOri,
+				turns: data.redArrowData.turns,
+				color: data.redArrowData.color
+			});
+		}
+
+		// Add blue arrow config if exists
+		if (data.blueArrowData) {
+			arrowConfigs.push({
+				motionType: data.blueArrowData.motionType,
+				startOri: data.blueArrowData.startOri,
+				turns: data.blueArrowData.turns,
+				color: data.blueArrowData.color
+			});
+		}
+
+		// Preload SVGs if we have any configs
+		if (arrowConfigs.length > 0 && service) {
+			try {
+				// Create a new SvgManager instance for preloading
+				const svgManager = new SvgManager();
+				await svgManager.preloadArrowSvgs(arrowConfigs);
+			} catch (error) {
+				// Silently handle preloading errors
+				if (import.meta.env.DEV) {
+					console.warn('Arrow SVG preloading error:', error);
+				}
+			}
+		}
+	}
+
 	// Wrapper for createAndPositionComponentsUtil to maintain local state
 	function createAndPositionComponents() {
 		try {
@@ -286,6 +348,9 @@
 			bluePropData = result.bluePropData;
 			redArrowData = result.redArrowData;
 			blueArrowData = result.blueArrowData;
+
+			// Preload arrow SVGs in parallel
+			preloadArrowSvgs();
 		} catch (error) {
 			handleError('component creation', error);
 		}
@@ -396,44 +461,46 @@
 			{/if}
 
 			{#if shouldShowMotionComponents(state)}
-				{#if get(pictographDataStore)?.letter}
-					<g transition:fade={{ duration: animationDuration, delay: 100 }}>
+				<!-- Wrap all motion components in a single animated container for unified animation -->
+				<g
+					in:popIn={{
+						duration: animationDuration,
+						start: 0.85, // More pronounced scale effect (from 0.85 to 1.0)
+						opacity: 0.2 // Start with slight visibility for smoother appearance
+					}}
+					style="transform-origin: center center;"
+				>
+					{#if get(pictographDataStore)?.letter}
 						<TKAGlyph
 							letter={get(pictographDataStore)?.letter}
 							turnsTuple="(s, 0, 0)"
 							x={50}
 							y={800}
 						/>
-					</g>
-				{/if}
+					{/if}
 
-				{#each [{ color: 'red', propData: redPropData, arrowData: redArrowData, delay: 150 }, { color: 'blue', propData: bluePropData, arrowData: blueArrowData, delay: 200 }] as { color, propData, arrowData, delay }}
-					{#if propData}
-						<g
-							transition:fade={{ duration: animationDuration, delay }}
-							style="transform-origin: center center;"
-						>
+					{#each [{ color: 'red', propData: redPropData, arrowData: redArrowData }, { color: 'blue', propData: bluePropData, arrowData: blueArrowData }] as { color, propData, arrowData } (color)}
+						{#if propData}
 							<Prop
 								{propData}
+								{animationDuration}
 								on:loaded={() => handleComponentLoaded(`${color}Prop`)}
 								on:error={(e) => handleComponentError(`${color}Prop`, e.detail.message)}
 							/>
-						</g>
-					{/if}
+						{/if}
 
-					{#if arrowData}
-						<g
-							transition:fade={{ duration: animationDuration, delay }}
-							style="transform-origin: center center;"
-						>
+						{#if arrowData}
 							<Arrow
 								{arrowData}
+								{animationDuration}
+								loadTimeoutMs={isMobile() ? 2000 : 1000}
+								pictographService={service}
 								on:loaded={() => handleComponentLoaded(`${color}Arrow`)}
 								on:error={(e) => handleComponentError(`${color}Arrow`, e.detail.message)}
 							/>
-						</g>
-					{/if}
-				{/each}
+						{/if}
+					{/each}
+				</g>
 			{/if}
 		{/if}
 	</PictographSVG>

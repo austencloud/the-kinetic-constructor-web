@@ -22,6 +22,7 @@
 	export let pictographData: PictographData | null = null;
 	export let pictographService: PictographService | null = null;
 	export let loadTimeoutMs = 1000; // Configurable timeout
+	export let animationDuration = 180; // Animation duration for transitions
 
 	// Get arrow data from the sequence store if beatId and color are provided
 	const arrowDataFromStore = derived(sequenceStore, ($sequenceStore) => {
@@ -78,6 +79,41 @@
 	}
 
 	/**
+	 * Helper function to detect mobile devices
+	 */
+	function isMobile(): boolean {
+		return (
+			typeof window !== 'undefined' &&
+			(window.innerWidth <= 768 ||
+				/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
+		);
+	}
+
+	/**
+	 * Simple in-memory component-level cache for SVG data
+	 */
+	const svgDataCache = new Map<string, ArrowSvgData>();
+
+	/**
+	 * Get cached SVG data if available
+	 */
+	function getCachedSvgData(key: string): ArrowSvgData | undefined {
+		return svgDataCache.get(key);
+	}
+
+	/**
+	 * Cache SVG data for future use
+	 */
+	function cacheSvgData(key: string, data: ArrowSvgData): void {
+		svgDataCache.set(key, data);
+		// Limit cache size to prevent memory issues
+		if (svgDataCache.size > 50) {
+			const firstKey = svgDataCache.keys().next().value;
+			svgDataCache.delete(firstKey);
+		}
+	}
+
+	/**
 	 * Loads the arrow SVG with error handling and timeout
 	 */
 	async function loadArrowSvg() {
@@ -87,18 +123,37 @@
 				throw new Error('No arrow data available');
 			}
 
+			// Adjust timeout for mobile devices
+			const timeoutDuration = isMobile() ? loadTimeoutMs * 2 : loadTimeoutMs;
+
 			// Set safety timeout
 			loadTimeout = setTimeout(() => {
 				if (!isLoaded) {
-					console.warn(`Arrow loading timed out after ${loadTimeoutMs}ms`);
+					// Use less verbose logging in production
+					if (import.meta.env.DEV) {
+						console.warn(`Arrow loading timed out after ${timeoutDuration}ms`);
+					}
 					isLoaded = true;
 					dispatch('loaded', { timeout: true });
 				}
-			}, loadTimeoutMs);
+			}, timeoutDuration);
 
 			// Update mirror state before loading SVG
 			if (mirrorManager) {
 				mirrorManager.updateMirror();
+			}
+
+			// Check component-level cache first
+			const cacheKey = `arrow-${effectiveArrowData.motionType}-${effectiveArrowData.startOri}-${effectiveArrowData.turns}-${effectiveArrowData.color}-${effectiveArrowData.svgMirrored}`;
+			const cachedData = getCachedSvgData(cacheKey);
+
+			if (cachedData) {
+				// Use cached data
+				svgData = cachedData;
+				clearTimeout(loadTimeout);
+				isLoaded = true;
+				dispatch('loaded');
+				return;
 			}
 
 			// Load the SVG with current configuration
@@ -112,6 +167,10 @@
 
 			// Update state and notify
 			svgData = result.svgData;
+
+			// Cache the result for future use
+			cacheSvgData(cacheKey, svgData);
+
 			clearTimeout(loadTimeout);
 			isLoaded = true;
 			dispatch('loaded');
@@ -124,7 +183,13 @@
 	 * Handles SVG loading errors with fallback
 	 */
 	function handleLoadError(error: unknown) {
-		console.error('Arrow load error:', error);
+		// Minimal logging in production
+		if (import.meta.env.DEV) {
+			console.error('Arrow load error:', error);
+		} else {
+			console.error('Arrow load error: ' + ((error as Error)?.message || 'Unknown error'));
+		}
+
 		hasErrored = true;
 		svgData = svgLoader.getFallbackSvgData();
 		clearTimeout(loadTimeout);
@@ -182,7 +247,6 @@
 		data-mirrored={effectiveArrowData.svgMirrored ? 'true' : 'false'}
 		data-loc={effectiveArrowData.loc}
 		data-rot-angle={rotationAngle}
-		in:fade={{ duration: 300 }}
 	>
 		<image
 			href={svgData.imageSrc}

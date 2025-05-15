@@ -46,12 +46,7 @@ export async function downloadSequenceImage(options: DownloadOptions): Promise<b
 			// Get settings directly using new function
 			settings = getImageExportSettings();
 			console.log('DownloadHandler: Using settings from getImageExportSettings()', {
-				...settings,
-				openFolderAfterExport: {
-					value: settings.openFolderAfterExport,
-					type: typeof settings.openFolderAfterExport,
-					strictComparison: settings.openFolderAfterExport === true
-				}
+				...settings
 			});
 		} catch (error) {
 			console.error('DownloadHandler: Error getting export settings from function', error);

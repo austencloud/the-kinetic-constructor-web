@@ -12,6 +12,7 @@
 	export let propData: PropData | undefined = undefined;
 	export let beatId: string | undefined = undefined;
 	export let color: 'red' | 'blue' | undefined = undefined;
+	export let animationDuration = 180; // Animation duration for transitions
 
 	// Component state
 	let svgData: PropSvgData | null = null;

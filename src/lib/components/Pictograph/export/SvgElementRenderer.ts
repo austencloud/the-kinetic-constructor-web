@@ -45,9 +45,17 @@ export async function renderSvgElements(
 		options.includeStartPosition && (!!options.startPosition || !!startPositionContainer);
 
 	if (startPositionContainer) {
-		console.log(
-			'EnhancedExporter: Found start position container in DOM, forcing hasStartPosition to true'
-		);
+		// Only update hasStartPosition if includeStartPosition is true
+		// This ensures we respect the user's choice to exclude the start position
+		if (options.includeStartPosition) {
+			console.log(
+				'EnhancedExporter: Found start position container in DOM, setting hasStartPosition based on includeStartPosition option'
+			);
+		} else {
+			console.log(
+				'EnhancedExporter: Found start position container in DOM, but includeStartPosition is false, so it will be excluded'
+			);
+		}
 
 		const startPositionSvg = startPositionContainer.querySelector('svg');
 		if (startPositionSvg) {
@@ -87,6 +95,14 @@ export async function renderSvgElements(
 
 	// Process each SVG element
 	for (let i = 0; i < svgElements.length; i++) {
+		// Skip rendering the start position element if hasStartPosition is false
+		if (!hasStartPosition && i === startPositionIndex) {
+			console.log(
+				'EnhancedExporter: Skipping start position element because hasStartPosition is false'
+			);
+			continue;
+		}
+
 		let x, y;
 
 		if (hasStartPosition && i === startPositionIndex) {

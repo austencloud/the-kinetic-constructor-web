@@ -33,59 +33,44 @@
 	let runesContext = $state<ReturnType<typeof setRunesBackgroundContext> | null>(null);
 	let contextsInitialized = $state(false);
 
-	// Initialize contexts only once using onMount to ensure it runs after component initialization
 	onMount(() => {
 		if (browser && !contextsInitialized) {
-			console.log('Setting up background contexts');
-			// Set up the runes context first
 			const runesCtx = setRunesBackgroundContext();
-			runesContext = runesCtx; // Store for potential future use
-			// Then set up the store-based context (which will use the runes context)
+			runesContext = runesCtx;
 			backgroundContext = setBackgroundContext();
 			contextsInitialized = true;
 
-			// Export the runes context for debugging
 			if (typeof window !== 'undefined') {
 				(window as any).__runesBackgroundContext = runesCtx;
 			}
 		}
 	});
 
-	// Use a flag to prevent circular updates
 	let isUpdatingFromContext = $state(false);
 
-	// Helper function to create a string key for comparison
 	function getBackgroundTypeKey(type: BackgroundType | null): string {
 		return type || 'none';
 	}
 
-	// Track current values as string keys
 	let currentBackgroundTypeKey = $state<string>('');
 	let currentIsLoadingKey = $state<string>('');
 
 	$effect(() => {
 		if (!browser) return;
 		if (!backgroundContext) return;
-		if (isUpdatingFromContext) return; // Skip if we're updating from the context
+		if (isUpdatingFromContext) return;
 
-		// Create a key for the current background type
 		const newKey = getBackgroundTypeKey(backgroundType);
 
-		// Skip if the background type hasn't changed
 		if (newKey === currentBackgroundTypeKey) return;
 
-		// Update the current key
 		currentBackgroundTypeKey = newKey;
 
-		console.log(`Provider setting background type: ${backgroundType}`);
-
 		if (backgroundType) {
-			// Set the flag to prevent circular updates
 			isUpdatingFromContext = true;
 			try {
 				backgroundContext.setBackgroundType(backgroundType);
 			} finally {
-				// Reset the flag immediately - no timeout needed
 				isUpdatingFromContext = false;
 			}
 		}
@@ -94,25 +79,18 @@
 	$effect(() => {
 		if (!browser) return;
 		if (!backgroundContext) return;
-		if (isUpdatingFromContext) return; // Skip if we're updating from the context
+		if (isUpdatingFromContext) return;
 
-		// Create a key for the current loading state
 		const newKey = String(isLoading);
 
-		// Skip if the loading state hasn't changed
 		if (newKey === currentIsLoadingKey) return;
 
-		// Update the current key
 		currentIsLoadingKey = newKey;
 
-		console.log(`Provider setting loading: ${isLoading}`);
-
-		// Set the flag to prevent circular updates
 		isUpdatingFromContext = true;
 		try {
 			backgroundContext.setLoading(isLoading);
 		} finally {
-			// Reset the flag immediately - no timeout needed
 			isUpdatingFromContext = false;
 		}
 	});

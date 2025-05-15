@@ -1,21 +1,21 @@
 <script lang="ts">
-	import { fade } from 'svelte/transition';
-	
+	import { popIn } from '$lib/transitions/popIn';
+
 	export let text: string;
 	export let position: 'top-left' | 'top-right' = 'top-left';
-	export let animationDuration = 300;
+	export let animationDuration = 200; // Animation duration for transitions
 	export let fontSize = 100; // Default font size, will be scaled relative to SVG viewBox
-	
+
 	// Calculate position based on the option
 	$: x = position === 'top-left' ? 50 : 900;
 	$: y = 50; // Always at the top
 	$: textAnchor = position === 'top-left' ? 'start' : 'end';
 </script>
 
-<g transition:fade={{ duration: animationDuration }}>
+<g in:popIn={{ duration: animationDuration, start: 0.85, opacity: 0.2 }}>
 	<text
-		x={x}
-		y={y}
+		{x}
+		{y}
 		dominant-baseline="hanging"
 		text-anchor={textAnchor}
 		font-size={fontSize}
@@ -28,8 +28,8 @@
 		{text}
 	</text>
 	<text
-		x={x}
-		y={y}
+		{x}
+		{y}
 		dominant-baseline="hanging"
 		text-anchor={textAnchor}
 		font-size={fontSize}

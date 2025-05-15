@@ -53,7 +53,6 @@
 		if (beatFrameContext) {
 			const contextElement = beatFrameContext.getElement();
 			if (contextElement) {
-				console.log('SequenceWidget: Got element from context');
 				beatFrameElement = contextElement;
 			}
 		}
@@ -185,7 +184,6 @@
 		const unsubscribe = sequenceContainer.subscribe((state) => {
 			// Update the hasSelectedBeat state immediately when selection changes
 			hasSelectedBeat = state.selectedBeatIds.length > 0;
-			console.log('Selection state updated (reactive):', hasSelectedBeat, state.selectedBeatIds);
 		});
 
 		// Clean up the subscription when the component is destroyed or the effect is re-run
@@ -212,8 +210,6 @@
 
 		if (isStartPositionSelected) {
 			// If start position is selected, clear the entire sequence
-			console.log('Start position selected, clearing entire sequence');
-
 			// Trigger haptic feedback for deletion
 			if (browser) {
 				hapticFeedbackService.trigger('error');
@@ -227,9 +223,6 @@
 		} else if (selectedBeatIds.length > 0) {
 			// Pass the beatId directly to the action
 			sequenceActions.removeBeatAndFollowing(selectedBeatIds[0]);
-
-			// Log for debugging
-			console.log('Removing beat with ID:', selectedBeatIds[0]);
 
 			// Trigger haptic feedback for deletion
 			if (browser) {
@@ -375,9 +368,6 @@
 			if (beatId) {
 				// Pass the beatId directly to the action
 				sequenceActions.removeBeatAndFollowing(beatId);
-
-				// Log for debugging
-				console.log('Removing beat in deletion mode with ID:', beatId);
 
 				// Exit deletion mode
 				exitDeletionMode();

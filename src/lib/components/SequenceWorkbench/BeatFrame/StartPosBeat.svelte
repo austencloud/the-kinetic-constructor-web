@@ -29,7 +29,6 @@
 		const unsubscribe = sequenceContainer.subscribe((state) => {
 			// Update the selection state immediately when it changes
 			isSelected = state.selectedBeatIds.includes('start-position');
-			console.log('Start position selection state updated:', isSelected);
 		});
 
 		// Clean up the subscription when the component is destroyed or the effect is re-run

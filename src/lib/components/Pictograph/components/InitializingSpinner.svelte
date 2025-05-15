@@ -1,11 +1,10 @@
-<!-- src/lib/components/Pictograph/components/InitializingSpinner.svelte -->
 <script lang="ts">
-	import { fade } from 'svelte/transition';
+	import { popIn } from '$lib/transitions/popIn';
 
-	export let animationDuration = 300;
+	export let animationDuration = 200; // Animation duration for transitions
 </script>
 
-<g transition:fade={{ duration: animationDuration }}>
+<g in:popIn={{ duration: animationDuration, start: 0.85, opacity: 0.2 }}>
 	<rect x="425" y="425" width="100" height="100" fill="transparent" />
 	<circle cx="475" cy="475" r="40" fill="none" stroke="#ccc" stroke-width="8" />
 	<path
