@@ -45,9 +45,14 @@ export function calculateCellSize(
 	totalCols: number,
 	gap: number
 ): number {
+	// Minimum cell size thresholds - pictographs won't shrink below these values
+	// Instead, scrollbars will appear when content would need to be smaller
+	const MIN_CELL_SIZE_FULLSCREEN = 100; // Minimum size in fullscreen mode
+	const MIN_CELL_SIZE_NORMAL = 80; // Minimum size in normal mode
+
 	// Ensure we have valid dimensions
 	if (containerWidth <= 0 || containerHeight <= 0 || totalRows <= 0 || totalCols <= 0) {
-		return 70; // Default fallback size - reduced from 80
+		return 80; // Default fallback size - increased for better readability
 	}
 
 	// Calculate total space needed for gaps
@@ -65,12 +70,11 @@ export function calculateCellSize(
 	const cellWidthByContainer = Math.floor(availableWidth / totalCols);
 	const cellHeightByContainer = Math.floor(availableHeight / totalRows);
 
-	// Use the smaller dimension to maintain square cells and prevent overflow
+	// Use the smaller dimension to maintain square cells and preserve aspect ratio
 	const baseSize = Math.min(cellWidthByContainer, cellHeightByContainer);
 
 	// Apply a scaling factor to ensure pictographs fit within cells
 	// This scaling factor ensures pictographs are slightly smaller than their containers
-	// Use a larger scaling factor to allow cells to use more space
 	const scalingFactor = 0.92; // Reduce size by only 8% (was 15%)
 	const scaledBaseSize = Math.floor(baseSize * scalingFactor);
 
@@ -85,10 +89,10 @@ export function calculateCellSize(
 	if (isLikelyFullscreen) {
 		// In fullscreen, allow larger cells but ensure they're not too large
 		// This helps ensure pictographs are displayed side by side correctly
-		return Math.min(Math.max(cellSize, 70), 200); // Min 70px, Max 200px for fullscreen (increased from 180)
+		return Math.min(Math.max(cellSize, MIN_CELL_SIZE_FULLSCREEN), 200); // Min 100px, Max 200px for fullscreen
 	} else {
 		// In normal mode, use more conservative constraints but allow larger cells
-		return Math.min(Math.max(cellSize, 50), 160); // Min 50px, Max 160px for normal view (increased from 140)
+		return Math.min(Math.max(cellSize, MIN_CELL_SIZE_NORMAL), 160); // Min 80px, Max 160px for normal view
 	}
 }
 

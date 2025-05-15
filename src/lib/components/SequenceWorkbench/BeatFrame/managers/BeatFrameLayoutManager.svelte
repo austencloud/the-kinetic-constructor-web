@@ -199,9 +199,9 @@
 
 		// Check if content is larger than container
 		const containerHeight = container.clientHeight;
-		const contentHeight = beatFrame.clientHeight;
+		const contentHeight = beatFrame.scrollHeight; // Use scrollHeight for more accurate measurement
 		const containerWidth = container.clientWidth;
-		const contentWidth = beatFrame.clientWidth;
+		const contentWidth = beatFrame.scrollWidth; // Use scrollWidth for more accurate measurement
 
 		// Add a small buffer to prevent flickering at the boundary
 		const buffer = 10; // 10px buffer
@@ -210,12 +210,47 @@
 		const heightOverflow = contentHeight > containerHeight + buffer;
 		const widthOverflow = contentWidth > containerWidth + buffer;
 
-		// Update the overflow state
-		const newOverflowState = heightOverflow || widthOverflow;
+		// Get the minimum cell size based on fullscreen mode
+		const isLikelyFullscreen = containerWidth > 800 && containerHeight > 600;
+		const minCellSize = isLikelyFullscreen ? 100 : 80; // Match values from beatFrameHelpers.ts
+
+		// Check if the current cell size is at or near the minimum threshold
+		// If so, we should enable scrolling to prevent further shrinking
+		const cellSizeNearMinimum = cellSize <= minCellSize * 1.1; // Add 10% buffer
+
+		// Update the overflow state - enable scrolling if:
+		// 1. Content physically overflows the container, OR
+		// 2. Cell size is at/near minimum and we have multiple rows
+		const newOverflowState =
+			heightOverflow || widthOverflow || (cellSizeNearMinimum && beatRows > 1);
+
+		// Log overflow information for debugging
+		if (import.meta.env.DEV && (heightOverflow || widthOverflow)) {
+			console.debug('BeatFrame overflow detected:', {
+				containerHeight,
+				contentHeight,
+				containerWidth,
+				contentWidth,
+				heightOverflow,
+				widthOverflow,
+				cellSize,
+				minCellSize,
+				cellSizeNearMinimum,
+				beatRows
+			});
+		}
 
 		// Only update if the state has changed to avoid unnecessary re-renders
 		if (contentOverflows !== newOverflowState) {
 			contentOverflows = newOverflowState;
+
+			// Force a layout recalculation after changing overflow state
+			setTimeout(() => {
+				if (beatFrame) {
+					// Update data-rows attribute to ensure CSS selectors work correctly
+					beatFrame.setAttribute('data-rows', String(beatRows));
+				}
+			}, 0);
 		}
 	}
 

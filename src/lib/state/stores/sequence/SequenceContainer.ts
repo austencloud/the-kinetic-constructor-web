@@ -96,10 +96,27 @@ function createSequenceContainer() {
 
 		selectBeat: (beatId: string, multiSelect = false) => {
 			update((state) => {
-				if (!multiSelect) {
+				// If multi-select is enabled, toggle the selection
+				if (multiSelect) {
+					// If already selected, deselect it
+					if (state.selectedBeatIds.includes(beatId)) {
+						state.selectedBeatIds = state.selectedBeatIds.filter((id) => id !== beatId);
+					} else {
+						// Otherwise add it to the selection
+						state.selectedBeatIds.push(beatId);
+					}
+				} else {
+					// If not multi-select, replace the selection with just this beat
 					state.selectedBeatIds = [beatId];
-				} else if (!state.selectedBeatIds.includes(beatId)) {
-					state.selectedBeatIds.push(beatId);
+				}
+
+				// Log selection state for debugging
+				if (typeof console !== 'undefined') {
+					console.debug('Beat selection updated:', {
+						beatId,
+						multiSelect,
+						selectedBeatIds: state.selectedBeatIds
+					});
 				}
 			});
 		},

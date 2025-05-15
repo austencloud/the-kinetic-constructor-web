@@ -159,9 +159,9 @@
 		height: auto;
 		display: flex;
 		justify-content: stretch; /* Stretch content to fill available space */
-		align-items: center; /* Default alignment */
+		align-items: center; /* Default alignment - center vertically when not scrolling */
 		position: relative;
-		transition: all 0.3s ease-out;
+		transition: all 0.2s ease-out; /* Faster transition for more responsive feel */
 		overflow: visible; /* Default */
 		/* Remove horizontal margin to use full width */
 		margin: auto 0;
@@ -172,8 +172,8 @@
 	/* Apply scrolling only when needed */
 	.beat-frame-container.scrollable-active {
 		height: 100%; /* Fill the constrained height from SequenceWidget */
-		overflow-y: auto !important;
-		overflow-x: hidden;
+		overflow-y: auto !important; /* Force vertical scrolling when needed */
+		overflow-x: hidden; /* Hide horizontal scrollbar */
 		scrollbar-width: thin; /* For Firefox */
 		scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* For Firefox */
 		align-items: flex-start !important; /* Pin to top when scrolling */
@@ -181,6 +181,8 @@
 		padding-left: 5px; /* Maintain left padding */
 		/* Remove auto margins in scroll mode */
 		margin: 0;
+		/* Ensure content is aligned to the top when scrolling */
+		justify-content: flex-start !important;
 	}
 
 	/* Webkit scrollbar styling */
@@ -198,11 +200,8 @@
 		border-radius: 4px;
 	}
 
-	/* Apply different alignment for scrollable containers */
+	/* Apply different padding for scrollable containers */
 	.beat-frame-container.scrollable-active {
-		/* Align to top when scrolling is needed */
-		align-items: flex-start;
-		justify-content: stretch; /* Stretch content to fill available width */
 		/* Add padding to ensure content isn't cut off */
 		padding: 10px 5px;
 	}
@@ -218,5 +217,13 @@
 		margin: 0;
 		padding: 20px;
 		box-sizing: border-box;
+	}
+
+	/* When in fullscreen mode and scrollable, adjust padding and alignment */
+	.beat-frame-container.fullscreen-mode.scrollable-active {
+		justify-content: flex-start !important;
+		align-items: flex-start !important;
+		padding: 20px;
+		overflow-y: auto;
 	}
 </style>
