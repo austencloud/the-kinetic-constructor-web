@@ -58,7 +58,7 @@
 		}
 	});
 
-	// Log when beatFrameElement changes
+	// Update when beatFrameElement changes
 	$effect(() => {
 		// If we have a valid element, store it in localStorage for persistence across hot reloads
 		if (beatFrameElement && browser) {

@@ -15,6 +15,12 @@
 	// Use the store with Svelte 5 runes
 	const isOpen = $derived($sequenceOverlayStore.isOpen);
 
+	// Truncate title to 8 characters if it's longer
+	const MAX_CHARS = 8;
+	const displayTitle = $derived(
+		title && title.length > MAX_CHARS ? title.substring(0, MAX_CHARS) + '...' : title
+	);
+
 	// Handle close action
 	function handleClose() {
 		closeSequenceOverlay();
@@ -80,7 +86,7 @@
 		>
 			{#if title}
 				<div class="sequence-header">
-					<h2 id="sequence-title">{title}</h2>
+					<h2 id="sequence-title">{displayTitle}</h2>
 				</div>
 			{/if}
 

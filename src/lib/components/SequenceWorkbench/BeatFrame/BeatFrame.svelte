@@ -17,12 +17,6 @@
 	import { BEAT_FRAME_CONTEXT_KEY } from '../context/ElementContext';
 
 	// Helper function for safe logging of reactive state
-	function safeLog(message: string, data: any) {
-		if (import.meta.env.DEV) {
-			// Use $state.snapshot to avoid Svelte 5 proxy warnings
-			console.log(message, data instanceof Object ? $state.snapshot(data) : data);
-		}
-	}
 
 	// Components
 	import StartPosBeat from './StartPosBeat.svelte';
@@ -143,7 +137,6 @@
 				// Create a deep copy to avoid reference issues
 				startPosition = JSON.parse(JSON.stringify(newStartPos));
 				// Log using our safe logging helper (only in dev mode)
-				safeLog('BeatFrame: Initialized startPosition with:', startPosition);
 			}
 		});
 
@@ -159,7 +152,6 @@
 		// Check if the layout has changed
 		if (beatRows !== prevRows || beatCols !== prevCols) {
 			// Log layout changes
-			safeLog(`Layout changed`, { from: `${prevRows}x${prevCols}`, to: `${beatRows}x${beatCols}` });
 
 			// Update the layout store
 			layoutStore.updateLayout(beatRows, beatCols, beatCount);
@@ -240,23 +232,11 @@
 			naturalGridHeight = gridElement.scrollHeight; // Use scrollHeight for the most accurate content height
 
 			// Log natural height in dev mode
-			safeLog('Natural grid height calculated', {
-				naturalGridHeight,
-				beatRows,
-				cellSize,
-				element: 'scrollHeight'
-			});
 		} else {
 			// Fallback calculation if element not ready
 			naturalGridHeight = beatRows * cellSize + 20; // Add padding-bottom (20px) of the .beat-frame
 
 			// Log fallback calculation in dev mode
-			safeLog('Natural grid height calculated (fallback)', {
-				naturalGridHeight,
-				beatRows,
-				cellSize,
-				element: 'fallback calculation'
-			});
 		}
 	});
 
@@ -267,9 +247,6 @@
 			dispatch('naturalheightchange', { height: naturalGridHeight });
 
 			// Log event dispatch in dev mode
-			safeLog('Dispatched naturalheightchange event', {
-				height: naturalGridHeight
-			});
 		}
 	});
 
@@ -329,11 +306,13 @@
 	// Add a MutationObserver to ensure the element is passed even after DOM changes
 	onMount(() => {
 		if (browser) {
+			// Flag to track if we've already dispatched the event
+			let hasDispatchedEvent = false;
+
 			// Set up a MutationObserver to detect when the element is added to the DOM
 			const observer = new MutationObserver((_mutations) => {
-				if (beatFrameContainerRef) {
-					console.log('BeatFrame: DOM mutation detected, re-sending element reference');
-
+				// Only proceed if we haven't dispatched the event yet and the element exists
+				if (!hasDispatchedEvent && beatFrameContainerRef) {
 					// Update our reactive state
 					beatFrameElementState = beatFrameContainerRef;
 
@@ -346,7 +325,6 @@
 						try {
 							// Call the receiver function
 							elementReceiver(beatFrameContainerRef);
-							console.log('BeatFrame: Element re-sent to receiver after DOM mutation');
 						} catch (error) {
 							console.error('BeatFrame: Error calling elementReceiver after DOM mutation:', error);
 						}
@@ -358,12 +336,19 @@
 						detail: { element: beatFrameContainerRef }
 					});
 					document.dispatchEvent(event);
-					console.log('BeatFrame: Dispatched beatframe-element-available event after DOM mutation');
+
+					// Set flag to prevent further dispatches
+					hasDispatchedEvent = true;
+
+					// Disconnect the observer since we've found what we're looking for
+					observer.disconnect();
 				}
 			});
 
-			// Start observing the document body for DOM changes
-			observer.observe(document.body, {
+			// Start observing the document body for DOM changes, but with a more targeted approach
+			// Only observe the parent container that will contain the beat frame
+			const parentContainer = document.querySelector('.sequence-widget') || document.body;
+			observer.observe(parentContainer, {
 				childList: true,
 				subtree: true
 			});
@@ -454,35 +439,16 @@
 		// Calculate overflow - check both height and width
 		const heightOverflow = contentHeight > containerHeight + buffer;
 		const widthOverflow = contentWidth > containerWidth + buffer;
-
-		// Log overflow state in dev mode
-		safeLog('Overflow check', {
-			containerHeight,
-			contentHeight,
-			containerWidth,
-			contentWidth,
-			heightOverflow,
-			widthOverflow,
-			isScrollable: isScrollable, // Corrected: Use destructured prop
-			beatRows,
-			beatCols,
-			beatCount
-		});
 	}
 
 	// Initialize dev tools and set up event listeners
 	onMount(() => {
 		// Initialize dev tools updater
 
-
 		// Listen for the custom event when a start position is selected
 		const handleStartPosSelected = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
 				// Log the received start position (only in dev mode)
-				safeLog(
-					'BeatFrame: Received start-position-selected event with data:',
-					event.detail.startPosition
-				);
 
 				// Create a deep copy to avoid reference issues
 				const newStartPos = JSON.parse(JSON.stringify(event.detail.startPosition));
@@ -508,8 +474,7 @@
 		window.addEventListener('resize', handleResize);
 
 		// Set up an interval to periodically update dev tools
-		const intervalId = setInterval(() => {
-		}, 1000);
+		const intervalId = setInterval(() => {}, 1000);
 
 		return () => {
 			document.removeEventListener(
@@ -543,20 +508,6 @@
 			const beatId = beat.id;
 
 			// Log detailed information about the beat being selected
-			safeLog('Selecting beat', {
-				index: beatIndex,
-				beatNumber: beat.beatNumber,
-				id: beatId,
-				gridLayout: `${beatRows}x${beatCols}`,
-				position: {
-					row: Math.floor(beatIndex / beatCols) + 1,
-					col: (beatIndex % beatCols) + 1
-				},
-				motionTypes: {
-					red: beat.pictographData?.redMotionData?.motionType || 'none',
-					blue: beat.pictographData?.blueMotionData?.motionType || 'none'
-				}
-			});
 
 			if (beatId) {
 				// Select the beat in the container

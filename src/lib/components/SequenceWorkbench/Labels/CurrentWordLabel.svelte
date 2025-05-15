@@ -14,7 +14,7 @@
 	let fontSize = Math.max(width / 40, 30);
 	let parentWidth: number;
 
-	const MAX_CHARS = 16;
+	const MAX_CHARS = 8;
 
 	// Truncate words longer than MAX_CHARS
 	const displayWord = $derived(
