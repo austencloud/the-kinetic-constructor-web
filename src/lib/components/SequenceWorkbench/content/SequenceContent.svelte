@@ -146,7 +146,7 @@
 		width: 100%;
 		height: 100%;
 		min-height: 0; /* Important for flex children */
-		overflow: hidden; /* Let children handle their own scrolling */
+		overflow: visible; /* Allow overflow to be visible */
 		/* Add padding that respects safe area insets */
 		padding: calc(10px + var(--safe-inset-top, 0px)) calc(0px + var(--safe-inset-right, 0px))
 			calc(10px + var(--safe-inset-bottom, 0px)) calc(0px + var(--safe-inset-left, 0px));
@@ -222,7 +222,7 @@
 		padding: 0 10px; /* Horizontal padding for the beat frame area */
 		box-sizing: border-box;
 		position: relative;
-		overflow: visible; /* IMPORTANT: This wrapper does NOT scroll. BeatFrame does. */
+		overflow: visible; /* Allow overflow to be visible by default */
 		/* Default: height determined by content (BeatFrame) */
 		transition: all 0.3s ease-out;
 		/* Remove vertical margin to hug the label */
@@ -237,6 +237,10 @@
 		/* The actual height constraint is implicitly set by flex-grow and parent's height */
 		/* Remove auto margins in scroll mode */
 		margin: 0;
+		/* Add a border to make scrollable area visible for debugging */
+		border: 1px solid rgba(255, 0, 255, 0.3);
+		/* DO NOT set overflow here - let the BeatFrame container handle it */
+		/* This wrapper should not interfere with the BeatFrame's scrolling */
 	}
 
 	/* Add global styles for the BeatFrame container */
@@ -249,5 +253,11 @@
 		position: relative;
 		transition: all 0.3s ease-out;
 		max-height: 100%; /* Prevent expanding beyond parent height */
+	}
+
+	/* Ensure scrollable containers can actually scroll */
+	:global(.beat-frame-container.scrollable-active) {
+		overflow-y: auto !important;
+		overflow-x: hidden;
 	}
 </style>

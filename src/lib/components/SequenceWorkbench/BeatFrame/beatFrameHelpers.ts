@@ -55,6 +55,13 @@ export function calculateCellSize(
 		return 80; // Default fallback size - increased for better readability
 	}
 
+	// Detect if we're in fullscreen mode by checking container dimensions
+	// Fullscreen containers are typically much larger
+	const isLikelyFullscreen = containerWidth > 800 && containerHeight > 600;
+
+	// Set the minimum cell size based on mode
+	const minCellSize = isLikelyFullscreen ? MIN_CELL_SIZE_FULLSCREEN : MIN_CELL_SIZE_NORMAL;
+
 	// Calculate total space needed for gaps
 	const totalGapWidth = gap * (totalCols - 1);
 	const totalGapHeight = gap * (totalRows - 1);
@@ -81,9 +88,25 @@ export function calculateCellSize(
 	// For start position only, make it proportionally larger
 	const cellSize = beatCount === 0 ? scaledBaseSize * 1.1 : scaledBaseSize;
 
-	// Detect if we're in fullscreen mode by checking container dimensions
-	// Fullscreen containers are typically much larger
-	const isLikelyFullscreen = containerWidth > 800 && containerHeight > 600;
+	// Check if the calculated cell size is below the minimum threshold
+	// If so, use the minimum size instead - this will cause overflow and enable scrollbars
+	if (cellSize < minCellSize) {
+		console.debug('Cell size below minimum threshold, using minimum size instead:', {
+			calculatedSize: cellSize,
+			minCellSize,
+			totalRows,
+			totalCols,
+			containerWidth,
+			containerHeight
+		});
+
+		// Apply different constraints based on mode
+		if (isLikelyFullscreen) {
+			return Math.min(Math.max(minCellSize, MIN_CELL_SIZE_FULLSCREEN), 200); // Min 100px, Max 200px for fullscreen
+		} else {
+			return Math.min(Math.max(minCellSize, MIN_CELL_SIZE_NORMAL), 160); // Min 80px, Max 160px for normal view
+		}
+	}
 
 	// Apply different constraints based on mode
 	if (isLikelyFullscreen) {

@@ -101,6 +101,8 @@
 		padding: 0 calc(var(--safe-inset-right, 0px)) calc(20px + var(--safe-inset-bottom, 0px))
 			calc(var(--safe-inset-left, 0px));
 		transform-origin: center center;
+		/* Ensure grid cells maintain their size */
+		min-height: calc(var(--total-rows) * var(--cell-size));
 	}
 
 	/* When there are multiple rows, align content to the top in scrollable mode */
@@ -113,6 +115,19 @@
 	:global(.scrollable-active) .beat-frame[data-rows='8'] {
 		align-content: start; /* Align to top when scrolling with multiple rows */
 		margin-top: 0; /* Remove top margin when aligned to top */
+	}
+
+	/* Use the data-scrollable attribute to control alignment */
+	:global(.scrollable-active) .beat-frame[data-scrollable='true'] {
+		align-content: start !important; /* Always align to top when scrollbars are enabled */
+		margin-top: 0; /* Remove top margin when aligned to top */
+		padding-top: 10px; /* Add some padding at the top for better spacing */
+		padding-bottom: 30px; /* Add padding at the bottom to ensure content isn't cut off */
+		/* Ensure grid cells maintain their size */
+		min-height: calc(var(--total-rows) * var(--cell-size) + 40px); /* Add padding to total height */
+		height: auto !important; /* Override any height constraints */
+		/* Add a border to make scrollable area visible for debugging */
+		border: 1px solid rgba(0, 255, 0, 0.3);
 	}
 
 	.beat-container {
