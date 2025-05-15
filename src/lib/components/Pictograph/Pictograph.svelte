@@ -483,7 +483,6 @@
 						{#if propData}
 							<Prop
 								{propData}
-								{animationDuration}
 								on:loaded={() => handleComponentLoaded(`${color}Prop`)}
 								on:error={(e) => handleComponentError(`${color}Prop`, e.detail.message)}
 							/>
@@ -492,7 +491,6 @@
 						{#if arrowData}
 							<Arrow
 								{arrowData}
-								{animationDuration}
 								loadTimeoutMs={isMobile() ? 2000 : 1000}
 								pictographService={service}
 								on:loaded={() => handleComponentLoaded(`${color}Arrow`)}

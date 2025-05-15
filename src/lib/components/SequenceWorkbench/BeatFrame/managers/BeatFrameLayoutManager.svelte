@@ -40,9 +40,9 @@
 	});
 
 	// Props
-	const { 
-		beatCount, 
-		containerRef, 
+	const {
+		beatCount,
+		containerRef,
 		isScrollable = $bindable(false),
 		layoutOverride = $bindable(null),
 		fullScreenMode = $bindable(false)
@@ -112,7 +112,7 @@
 	// Calculate natural grid height
 	$effect(() => {
 		if (!containerRef) return;
-		
+
 		const gridElement = containerRef.querySelector('.beat-frame');
 		if (gridElement) {
 			naturalGridHeight = gridElement.scrollHeight; // Use scrollHeight for the most accurate content height

@@ -14,8 +14,6 @@
 	onMount(() => {
 		if (!browser) return;
 
-		console.log('SettingsManager: Initializing settings');
-		
 		// Load settings from localStorage
 		loadImageExportSettings();
 		
@@ -24,15 +22,11 @@
 		
 		// Mark as initialized
 		initialized = true;
-		
-		console.log('SettingsManager: Settings initialized');
 	});
 
 	// Clean up event listeners when component is destroyed
 	onDestroy(() => {
 		if (!browser) return;
-		
-		console.log('SettingsManager: Cleaning up');
 		
 		// Remove event listener
 		window.removeEventListener('beforeunload', saveImageExportSettings);

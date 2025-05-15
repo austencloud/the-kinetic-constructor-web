@@ -6,7 +6,7 @@
 	import EmptyStartPosLabel from './EmptyStartPosLabel.svelte';
 
 	// Props
-	const { 
+	const {
 		beatRows,
 		beatCols,
 		cellSize,
@@ -83,16 +83,19 @@
 <style>
 	.beat-frame {
 		display: grid;
-		grid-template-columns: repeat(var(--total-cols), var(--cell-size));
+		grid-template-columns: repeat(var(--total-cols), minmax(var(--cell-size), 1fr));
 		grid-template-rows: repeat(var(--total-rows), var(--cell-size));
 		gap: 0; /* No gap between cells */
-		justify-content: center;
+		justify-content: stretch; /* Stretch to fill available space */
 		align-content: center; /* Center by default for short sequences */
-		width: fit-content;
+		width: 100%; /* Use full width instead of fit-content */
+		max-width: calc(
+			var(--total-cols) * (var(--cell-size) + 20px)
+		); /* Prevent excessive stretching */
 		height: fit-content; /* Default for non-scrolling */
-		margin: auto; /* Default for centering */
+		margin: 0 auto; /* Center horizontally with no vertical margin */
 		transition: all 0.3s ease-out;
-		/* Add padding that respects safe area insets */
+		/* Reduce horizontal padding to use more space */
 		padding: 0 calc(var(--safe-inset-right, 0px)) calc(20px + var(--safe-inset-bottom, 0px))
 			calc(var(--safe-inset-left, 0px));
 		transform-origin: center center;
@@ -100,7 +103,7 @@
 
 	.beat-container {
 		position: relative;
-		width: var(--adjusted-cell-size, var(--cell-size));
+		width: 100%; /* Use full width of the grid cell */
 		height: var(--adjusted-cell-size, var(--cell-size));
 		display: flex;
 		justify-content: center;

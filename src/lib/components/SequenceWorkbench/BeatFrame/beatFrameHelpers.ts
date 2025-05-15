@@ -55,10 +55,11 @@ export function calculateCellSize(
 	const totalGapHeight = gap * (totalRows - 1);
 
 	// Calculate available space after accounting for gaps and padding
-	// Increase padding to ensure pictographs don't overflow
-	const padding = beatCount === 0 ? containerWidth * 0.1 : 24; // Increased padding from 16 to 24
-	const availableWidth = Math.max(0, containerWidth - totalGapWidth - padding * 2);
-	const availableHeight = Math.max(0, containerHeight - totalGapHeight - padding * 2);
+	// Reduce horizontal padding to use more space, keep vertical padding for safety
+	const horizontalPadding = beatCount === 0 ? containerWidth * 0.05 : 10; // Reduced from 24 to 10px
+	const verticalPadding = 24; // Keep vertical padding to prevent overflow
+	const availableWidth = Math.max(0, containerWidth - totalGapWidth - horizontalPadding * 2);
+	const availableHeight = Math.max(0, containerHeight - totalGapHeight - verticalPadding * 2);
 
 	// Calculate cell size based on available space in both dimensions
 	const cellWidthByContainer = Math.floor(availableWidth / totalCols);
@@ -69,7 +70,8 @@ export function calculateCellSize(
 
 	// Apply a scaling factor to ensure pictographs fit within cells
 	// This scaling factor ensures pictographs are slightly smaller than their containers
-	const scalingFactor = 0.85; // Reduce size by 15%
+	// Use a larger scaling factor to allow cells to use more space
+	const scalingFactor = 0.92; // Reduce size by only 8% (was 15%)
 	const scaledBaseSize = Math.floor(baseSize * scalingFactor);
 
 	// For start position only, make it proportionally larger
@@ -83,10 +85,10 @@ export function calculateCellSize(
 	if (isLikelyFullscreen) {
 		// In fullscreen, allow larger cells but ensure they're not too large
 		// This helps ensure pictographs are displayed side by side correctly
-		return Math.min(Math.max(cellSize, 70), 180); // Min 70px, Max 180px for fullscreen (reduced from 250)
+		return Math.min(Math.max(cellSize, 70), 200); // Min 70px, Max 200px for fullscreen (increased from 180)
 	} else {
-		// In normal mode, use more conservative constraints
-		return Math.min(Math.max(cellSize, 50), 140); // Min 50px, Max 140px for normal view (reduced from 200)
+		// In normal mode, use more conservative constraints but allow larger cells
+		return Math.min(Math.max(cellSize, 50), 160); // Min 50px, Max 160px for normal view (increased from 140)
 	}
 }
 

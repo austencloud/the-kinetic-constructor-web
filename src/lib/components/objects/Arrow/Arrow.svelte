@@ -1,7 +1,6 @@
 <!-- src/lib/components/objects/Arrow/Arrow.svelte -->
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
-	import { fade } from 'svelte/transition';
 	import type { ArrowData } from './ArrowData';
 	import type { ArrowSvgData } from '../../SvgManager/ArrowSvgData';
 	import { ArrowSvgLoader } from './services/ArrowSvgLoader';
@@ -22,7 +21,8 @@
 	export let pictographData: PictographData | null = null;
 	export let pictographService: PictographService | null = null;
 	export let loadTimeoutMs = 1000; // Configurable timeout
-	export let animationDuration = 180; // Animation duration for transitions
+	// Animation duration is passed from parent but not used directly in this component
+	export const animationDuration = 200;
 
 	// Get arrow data from the sequence store if beatId and color are provided
 	const arrowDataFromStore = derived(sequenceStore, ($sequenceStore) => {
@@ -109,7 +109,9 @@
 		// Limit cache size to prevent memory issues
 		if (svgDataCache.size > 50) {
 			const firstKey = svgDataCache.keys().next().value;
-			svgDataCache.delete(firstKey);
+			if (firstKey) {
+				svgDataCache.delete(firstKey);
+			}
 		}
 	}
 

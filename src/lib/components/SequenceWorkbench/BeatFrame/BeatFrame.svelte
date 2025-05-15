@@ -158,13 +158,15 @@
 		/* height will be 'auto' by default, or '100%' when scrollable */
 		height: auto;
 		display: flex;
-		justify-content: center;
+		justify-content: stretch; /* Stretch content to fill available space */
 		align-items: center; /* Default alignment */
 		position: relative;
 		transition: all 0.3s ease-out;
 		overflow: visible; /* Default */
-		/* Add margin auto to help with vertical centering */
-		margin: auto;
+		/* Remove horizontal margin to use full width */
+		margin: auto 0;
+		/* Add padding to prevent content from touching edges */
+		padding: 0 5px;
 	}
 
 	/* Apply scrolling only when needed */
@@ -176,6 +178,7 @@
 		scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* For Firefox */
 		align-items: flex-start !important; /* Pin to top when scrolling */
 		padding-right: 8px; /* Space for scrollbar */
+		padding-left: 5px; /* Maintain left padding */
 		/* Remove auto margins in scroll mode */
 		margin: 0;
 	}
@@ -199,9 +202,9 @@
 	.beat-frame-container.scrollable-active {
 		/* Align to top when scrolling is needed */
 		align-items: flex-start;
-		justify-content: center;
+		justify-content: stretch; /* Stretch content to fill available width */
 		/* Add padding to ensure content isn't cut off */
-		padding: 10px 0;
+		padding: 10px 5px;
 	}
 
 	/* Fullscreen mode styles */
