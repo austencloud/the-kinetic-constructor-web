@@ -4,6 +4,8 @@
 		sequenceOverlayStore,
 		closeSequenceOverlay
 	} from '$lib/state/sequenceOverlay/sequenceOverlayState';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
 
 	// Props
 	const { title = null, children = $bindable() } = $props<{
@@ -23,6 +25,11 @@
 
 	// Handle close action
 	function handleClose() {
+		// Provide haptic feedback when closing the sequence overlay
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
 		closeSequenceOverlay();
 	}
 

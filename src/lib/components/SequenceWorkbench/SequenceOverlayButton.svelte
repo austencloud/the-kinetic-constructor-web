@@ -2,8 +2,15 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { openSequenceOverlay } from '$lib/state/sequenceOverlay/sequenceOverlayState';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
 
 	function handleClick() {
+		// Provide haptic feedback when opening the sequence overlay
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
 		openSequenceOverlay();
 	}
 </script>

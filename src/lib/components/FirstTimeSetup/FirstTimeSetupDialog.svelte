@@ -49,49 +49,44 @@
 </script>
 
 {#if isVisible}
-	<div class="overlay" transition:fade={{ duration: 300 }}>
-		<div class="dialog" transition:scale={{ duration: 300, start: 0.95 }}>
+	<div class="overlay" transition:fade={{ duration: 200 }}>
+		<div class="dialog" transition:scale={{ duration: 200, start: 0.95 }}>
 			<div class="dialog-header">
 				<h2>The Kinetic Constructor</h2>
 				<button class="close-button" onclick={handleClose} aria-label="Close dialog"> × </button>
 			</div>
 
 			<div class="dialog-content">
-				<p>Kinetic Fire 2025 software pre-release!</p>
+				<p class="welcome">Kinetic Fire 2025 software pre-release!</p>
 
-				<p>
-					Please enter your name to personalize your experience. This will be used when exporting
-					sequences.
-				</p>
-
-				<p>
-					<strong>Note:</strong> This is an early version of The Kinetic Constructor. If you
-					encounter any bugs or have feature requests, please email
-					<a href="mailto:austencloud@gmail.com" class="email-link">austencloud@gmail.com</a>.
-				</p>
-
-				<div class="donation-section">
+				<div class="compact-info">
 					<p>
-						<strong>Support Development:</strong> If you find this tool useful, please consider supporting
-						ongoing development with a donation:
+
+            <strong><br/>Note:</strong> This is an alpha version.<br />
+            For bugs or feature requests, email<br />
+            <a href="mailto:austencloud@gmail.com" class="email-link">austencloud@gmail.com</a>
 					</p>
-					<div class="donation-links">
-						<a
-							href="https://paypal.me/austencloud"
-							target="_blank"
-							rel="noopener noreferrer"
-							class="donation-link paypal"
-						>
-							PayPal
-						</a>
-						<a
-							href="https://venmo.com/austencloud"
-							target="_blank"
-							rel="noopener noreferrer"
-							class="donation-link venmo"
-						>
-							Venmo
-						</a>
+
+					<div class="donation-section">
+						<p><strong>Support:</strong> If you find this tool useful, consider a donation:</p>
+						<div class="donation-links">
+							<a
+								href="https://paypal.me/austencloud"
+								target="_blank"
+								rel="noopener noreferrer"
+								class="donation-link paypal"
+							>
+								PayPal
+							</a>
+							<a
+								href="https://venmo.com/austencloud"
+								target="_blank"
+								rel="noopener noreferrer"
+								class="donation-link venmo"
+							>
+								Venmo
+							</a>
+						</div>
 					</div>
 				</div>
 
@@ -107,10 +102,7 @@
 						maxlength="50"
 						autocomplete="name"
 					/>
-					<p class="input-help">
-						You can leave this field blank if you prefer. Your name is only used when exporting
-						sequences.
-					</p>
+					<p class="input-help">Used only when exporting sequences.</p>
 				</div>
 			</div>
 
@@ -142,36 +134,39 @@
 		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 		width: 90%;
 		max-width: 500px;
-		overflow: hidden;
+		max-height: 90vh; /* Limit height to prevent overflow */
+		overflow-y: auto; /* Add vertical scrolling if needed */
+		overflow-x: hidden; /* Prevent horizontal scrolling */
 		display: flex;
 		flex-direction: column;
 		border: 1px solid rgba(108, 156, 233, 0.3);
 	}
 
 	.dialog-header {
-		padding: 1.5rem;
+		padding: 1rem;
 		background: linear-gradient(to right, #167bf4, #329bff);
 		color: white;
 		position: relative;
+		flex-shrink: 0;
 	}
 
 	.dialog-header h2 {
 		margin: 0;
-		font-size: 1.5rem;
+		font-size: 1.3rem;
 		font-weight: 600;
 	}
 
 	.close-button {
 		position: absolute;
-		top: 1rem;
-		right: 1rem;
-		width: 32px;
-		height: 32px;
+		top: 0.75rem;
+		right: 0.75rem;
+		width: 28px;
+		height: 28px;
 		border-radius: 50%;
 		background: rgba(255, 255, 255, 0.2);
 		border: none;
 		color: white;
-		font-size: 1.5rem;
+		font-size: 1.25rem;
 		line-height: 1;
 		display: flex;
 		align-items: center;
@@ -191,35 +186,51 @@
 	}
 
 	.dialog-content {
-		padding: 1.5rem;
+		padding: 1rem;
 		color: var(--color-text-primary, white);
+		flex: 1;
+		overflow-y: auto;
+		overflow-x: hidden;
+		word-wrap: break-word;
+		word-break: break-word;
 	}
 
 	.dialog-content p {
-		margin: 0 0 1.5rem 0;
-		line-height: 1.5;
-		font-size: 1rem;
+		margin: 0 0 0.75rem 0;
+		line-height: 1.4;
+		font-size: 0.95rem;
+	}
+
+	.welcome {
+		font-size: 1.1rem;
+		font-weight: 500;
+		margin-bottom: 1rem !important;
+	}
+
+	.compact-info {
+		margin-bottom: 1rem;
 	}
 
 	.input-group {
-		margin-bottom: 1rem;
+		margin-bottom: 0.75rem;
 	}
 
 	.input-group label {
 		display: block;
-		margin-bottom: 0.5rem;
+		margin-bottom: 0.3rem;
 		font-weight: 500;
 		color: var(--color-text-primary, white);
+		font-size: 0.95rem;
 	}
 
 	.input-group input {
 		width: 100%;
-		padding: 0.75rem;
+		padding: 0.6rem;
 		border-radius: 6px;
 		background: linear-gradient(to bottom, #1f1f24, #2a2a30);
 		border: 1px solid rgba(108, 156, 233, 0.3);
 		color: var(--color-text-primary, white);
-		font-size: 1rem;
+		font-size: 0.95rem;
 		transition: all 0.2s ease;
 		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 	}
@@ -231,22 +242,23 @@
 	}
 
 	.input-help {
-		margin-top: 0.5rem;
-		font-size: 0.85rem;
+		margin-top: 0.3rem;
+		font-size: 0.8rem;
 		color: rgba(255, 255, 255, 0.7);
-		line-height: 1.4;
+		line-height: 1.3;
 	}
 
 	.dialog-footer {
-		padding: 1rem 1.5rem;
+		padding: 0.75rem;
 		display: flex;
 		justify-content: center;
 		gap: 1rem;
 		border-top: 1px solid rgba(255, 255, 255, 0.1);
+		flex-shrink: 0;
 	}
 
 	.close-button-large {
-		padding: 0.75rem 2rem;
+		padding: 0.6rem 1.5rem;
 		border-radius: 6px;
 		background: linear-gradient(to bottom, #167bf4, #1068d9);
 		color: white;
@@ -255,7 +267,8 @@
 		cursor: pointer;
 		transition: all 0.2s ease;
 		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-		min-width: 120px;
+		min-width: 100px;
+		font-size: 0.95rem;
 	}
 
 	.close-button-large:hover {
@@ -271,44 +284,48 @@
 	}
 
 	.donation-section {
-		margin-bottom: 1.5rem;
-		padding: 1rem;
+		margin-bottom: 1rem;
+		padding: 0.75rem;
 		background: rgba(22, 123, 244, 0.1);
 		border-radius: 8px;
 		border: 1px solid rgba(22, 123, 244, 0.2);
 	}
 
 	.donation-section p {
-		margin-bottom: 0.75rem !important;
+		margin-bottom: 0.5rem !important;
 	}
 
 	.donation-links {
 		display: flex;
-		gap: 1rem;
+		gap: 0.75rem;
 		flex-wrap: wrap;
 		width: 100%;
+		max-width: 100%;
 	}
 
 	.donation-link {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 0.75rem 1rem;
+		padding: 0.5rem 0.75rem;
 		border-radius: 6px;
 		text-decoration: none;
 		font-weight: 600;
 		transition: all 0.2s ease;
 		color: white;
 		flex: 1 1 0;
-		min-width: 120px;
+		min-width: 100px;
 		text-align: center;
 		letter-spacing: 0.5px;
+		font-size: 0.9rem;
 	}
 
 	.email-link {
 		color: #7dd3fc; /* Light blue color */
 		text-decoration: underline;
 		transition: color 0.2s ease;
+		word-wrap: break-word;
+		word-break: break-all;
 	}
 
 	.email-link:hover {
@@ -332,5 +349,53 @@
 	.donation-link:active {
 		transform: translateY(0);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+	}
+
+	/* Mobile optimizations */
+	@media (max-width: 480px) {
+		.dialog {
+			max-height: 85vh;
+			width: 95%;
+			min-width: 280px; /* Ensure minimum width for very small screens */
+		}
+
+		.dialog-header {
+			padding: 0.75rem;
+		}
+
+		.dialog-header h2 {
+			font-size: 1.1rem;
+		}
+
+		.dialog-content {
+			padding: 0.75rem;
+		}
+
+		.welcome {
+			font-size: 1rem;
+		}
+
+		.dialog-content p {
+			font-size: 0.9rem;
+			margin-bottom: 0.5rem;
+		}
+
+		.donation-section {
+			padding: 0.5rem;
+		}
+
+		.donation-links {
+			gap: 0.5rem;
+		}
+
+		.donation-link {
+			padding: 0.4rem 0.5rem;
+			font-size: 0.85rem;
+			min-width: 70px;
+		}
+
+		.input-group input {
+			padding: 0.5rem;
+		}
 	}
 </style>

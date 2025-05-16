@@ -3,7 +3,7 @@
 	// No need to import the type since we're using $props()
 	import { formatTabName, formatShortTabName } from './tabLabelFormatter';
 	import { fly } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 	// Props
 	const props = $props();
@@ -13,6 +13,11 @@
 
 	// Event handler
 	function handleClick() {
+		// Provide haptic feedback when selecting a category tab
+		if (typeof window !== 'undefined' && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('navigation');
+		}
+
 		// Create a custom event that will bubble up to the parent component
 		const customEvent = new CustomEvent('tabSelect', {
 			detail: props.categoryKey,
@@ -64,8 +69,6 @@
 				? formatShortTabName(props.categoryKey)
 				: formatTabName(props.categoryKey)}
 		</span>
-
-
 
 		<!-- Hover indicator that shows on non-active tabs -->
 		{#if isHovered && !props.isActive}
@@ -147,7 +150,6 @@
 	}
 
 	/* Active indicator - the dot at the bottom */
-
 
 	/* Hover indicator - subtle line at the bottom */
 	.hover-indicator {

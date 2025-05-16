@@ -86,8 +86,13 @@
 		// Calculate rows and columns based on beat count
 		const [baseRows, baseCols] = autoAdjustLayout(beatCount);
 
-		// Adjust layout for start position if needed
-		if (hasStartPosition) {
+		// Special case: If we have only a start position with no beats, use a 1x1 grid
+		if (hasStartPosition && beatCount === 0) {
+			rows = 1;
+			cols = 1;
+		}
+		// Adjust layout for start position if needed for sequences with beats
+		else if (hasStartPosition) {
 			// Add one column for the start position
 			cols = baseCols + 1;
 
@@ -205,7 +210,11 @@
 	function getBeatPosition(index: number): { row: number; col: number } {
 		const hasStartPosition = !!startPosition;
 
-		if (hasStartPosition) {
+		// Special case: If we have only a start position with no beats (1x1 grid)
+		if (hasStartPosition && beatCount === 0) {
+			// In this case, there are no beats to position, but we'll return a default
+			return { row: 0, col: 1 };
+		} else if (hasStartPosition) {
 			// When there's a start position, we need to adjust the layout
 			// Beats should be arranged in columns 2 and onwards
 			const beatsPerRow = cols - 1; // One less column for beats since column 1 is reserved
