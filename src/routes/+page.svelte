@@ -9,7 +9,7 @@
 	import BackgroundCanvas from '$lib/components/Backgrounds/BackgroundCanvas.svelte';
 	import BackgroundProvider from '$lib/components/Backgrounds/BackgroundProvider.svelte';
 	import FirstTimeSetupDialog from '$lib/components/FirstTimeSetup/FirstTimeSetupDialog.svelte';
-	import FirstTimeSetupDebugButton from '$lib/components/FirstTimeSetup/FirstTimeSetupDebugButton.svelte';
+	import FirstTimeSetupButton from '$lib/components/FirstTimeSetup/FirstTimeSetupButton.svelte';
 
 	// State Management
 	import { appActions } from '$lib/state/machines/app/app.actions';
@@ -88,12 +88,12 @@
 	}
 
 	// Reference to the first-time setup dialog component
-	let firstTimeSetupDialog = $state<{ showDebugDialog: () => void } | null>(null);
+	let firstTimeSetupDialog = $state<{ showDialog: () => void } | null>(null);
 
 	// Function to show the first-time setup dialog
 	function showFirstTimeSetupDialog() {
 		if (firstTimeSetupDialog) {
-			firstTimeSetupDialog.showDebugDialog();
+			firstTimeSetupDialog.showDialog();
 		}
 	}
 
@@ -142,10 +142,8 @@
 			<!-- First-time setup dialog -->
 			<FirstTimeSetupDialog bind:this={firstTimeSetupDialog} />
 
-			<!-- Debug button - only visible in development mode -->
-			{#if import.meta.env.DEV}
-				<FirstTimeSetupDebugButton showDialog={showFirstTimeSetupDialog} />
-			{/if}
+			<!-- Setup button - always visible -->
+			<FirstTimeSetupButton showDialog={showFirstTimeSetupDialog} />
 		{/if}
 	</FullScreen>
 </div>

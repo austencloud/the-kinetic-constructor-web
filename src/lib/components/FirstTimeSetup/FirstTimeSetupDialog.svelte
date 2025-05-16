@@ -11,11 +11,9 @@
 	// Local state
 	let username = $state(user.currentUser || '');
 	let isVisible = $state(userContainer.isFirstVisit());
-	let isDebugMode = $state(false);
 
-	// Function to show the dialog for debugging purposes
-	export function showDebugDialog() {
-		isDebugMode = true;
+	// Function to show the dialog
+	export function showDialog() {
 		isVisible = true;
 	}
 
@@ -27,15 +25,11 @@
 		}
 
 		// Save the entered username (even if empty)
-		if (!isDebugMode) {
-			// Use the entered username or empty string
-			userContainer.setUsername(username);
-			userContainer.completeSetup();
-		}
+		userContainer.setUsername(username);
+		userContainer.completeSetup();
 
 		// Hide the dialog
 		isVisible = false;
-		isDebugMode = false;
 	}
 
 	// Handle input change
@@ -60,9 +54,6 @@
 			<div class="dialog-header">
 				<h2>The Kinetic Constructor</h2>
 				<button class="close-button" onclick={handleClose} aria-label="Close dialog"> × </button>
-				{#if isDebugMode}
-					<div class="debug-badge" transition:fade={{ duration: 200 }}>Debug Mode</div>
-				{/if}
 			</div>
 
 			<div class="dialog-content">
@@ -276,21 +267,6 @@
 	.close-button-large:active {
 		transform: translateY(0);
 		background: linear-gradient(to bottom, #0f65d1, #0a54b3);
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-	}
-
-	.debug-badge {
-		position: absolute;
-		top: 10px;
-		right: 10px;
-		background-color: #ff5722;
-		color: white;
-		font-size: 0.7rem;
-		padding: 2px 6px;
-		border-radius: 4px;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 	}
 
