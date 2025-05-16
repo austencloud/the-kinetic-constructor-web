@@ -240,9 +240,14 @@ export const groupedOptions = createDerived(() => {
 
 export const optionsToDisplay = createDerived(() => {
 	const selectedTab = optionPickerContainer.state.selectedTab;
-	return selectedTab === 'all'
-		? filteredOptions.value
-		: (selectedTab && groupedOptions.value[selectedTab]) || [];
+
+	// When 'all' is selected, show all filtered options regardless of grouping
+	if (selectedTab === 'all') {
+		return filteredOptions.value;
+	}
+
+	// Otherwise, show the options for the selected category tab
+	return (selectedTab && groupedOptions.value[selectedTab]) || [];
 });
 
 export const categoryKeys = createDerived(() => {

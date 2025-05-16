@@ -47,11 +47,11 @@
 	$effect(() => {
 		// Keep the selected option in sync with the container state
 		const currentSortMethod = optionPickerContainer.state.sortMethod;
+		const selectedTab = optionPickerContainer.state.selectedTab;
 
-		// Always update the selectedViewOption to match the current sort method
-		// This ensures the UI always reflects the actual sorting state
-		if (currentSortMethod !== selectedViewOption.value) {
-			// If current sort method is not 'all' (which is the default), find the matching option
+		// Only update the view option if the sort method has changed
+		if (currentSortMethod !== selectedViewOption.value && selectedViewOption.value !== 'all') {
+			// If current sort method is valid, find the matching option
 			if (currentSortMethod) {
 				selectedViewOption =
 					viewOptions.find((opt) => opt.value === currentSortMethod) ||
@@ -66,13 +66,31 @@
 		// Add click outside listener
 		document.addEventListener('click', handleClickOutside);
 
+		// Add listener for update-view-control event
+		const handleUpdateViewControl = (event: Event) => {
+			if (event instanceof CustomEvent) {
+				const detail = event.detail;
+				if (detail.mode === 'all' && detail.forceUpdate) {
+					const allOption = viewOptions.find((opt) => opt.value === 'all');
+					if (allOption) {
+						console.log('Forcing update of view control to "All" from event');
+						selectedViewOption = allOption;
+					}
+				}
+			}
+		};
+
+		document.addEventListener('update-view-control', handleUpdateViewControl);
+
 		return () => {
 			document.removeEventListener('click', handleClickOutside);
+			document.removeEventListener('update-view-control', handleUpdateViewControl);
 		};
 	});
 
 	onDestroy(() => {
 		document.removeEventListener('click', handleClickOutside);
+		document.removeEventListener('update-view-control', () => {});
 	});
 
 	// --- Dropdown Management ---
@@ -101,7 +119,9 @@
 
 	// --- Option Selection ---
 	function handleViewSelect(option: ViewOption) {
+		// Set the selected view option first - this controls what icon is shown
 		selectedViewOption = option;
+		console.log('Selected view option:', option.label, option.value);
 
 		// Add haptic feedback on mobile devices
 		if ('vibrate' in window.navigator) {
@@ -120,8 +140,19 @@
 
 		// Update the optionPickerContainer state directly
 		// This ensures the container state is always in sync with the UI
-		if (option.value !== 'all') {
-			// Only update the sort method if it's a valid sort method
+		if (option.value === 'all') {
+			// When "Show All" is selected, we need to:
+			// 1. Set the selected tab to 'all'
+			optionPickerContainer.setSelectedTab('all');
+			// 2. Store 'all' as the last selected tab for the current sort method
+			optionPickerContainer.setLastSelectedTabForSort(
+				optionPickerContainer.state.sortMethod,
+				'all'
+			);
+			// Note: We don't need to set selectedViewOption again here
+			// as we already set it at the beginning of this function
+		} else {
+			// For other sort methods, update as before
 			optionPickerContainer.setSortMethod(option.value as SortMethod);
 		}
 

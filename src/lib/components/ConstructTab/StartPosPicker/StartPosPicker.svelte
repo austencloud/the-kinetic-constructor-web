@@ -10,6 +10,10 @@
 	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import LoadingOverlay from './LoadingOverlay.svelte';
+	import transitionLoading, {
+		transitionLoadingStore
+	} from '$lib/state/stores/ui/transitionLoadingStore';
 
 	let gridMode = 'diamond';
 	let startPositionPictographs: PictographData[] = [];
@@ -17,6 +21,16 @@
 	let dataInitializationChecked = false;
 	let isLoading = true;
 	let loadingError = false;
+	let isTransitioning = false; // Local state for the loading overlay
+
+	// Subscribe to the global loading state
+	$effect(() => {
+		const unsubscribe = transitionLoadingStore.subscribe((value) => {
+			isTransitioning = value;
+		});
+
+		return unsubscribe;
+	});
 
 	let initialDataTimeout: number | null = null;
 
@@ -142,6 +156,15 @@
 
 	const handleSelect = async (startPosPictograph: PictographData) => {
 		try {
+			// Immediately show loading state
+			isTransitioning = true;
+			transitionLoading.start();
+
+			// Provide haptic feedback when selecting a start position
+			if (browser) {
+				hapticFeedbackService.trigger('selection');
+			}
+
 			await startPositionService.addStartPosition(startPosPictograph);
 
 			const startPosCopy = safeCopyPictographData(startPosPictograph);
@@ -176,11 +199,21 @@
 
 			if (browser) {
 				const customEvent = new CustomEvent('start-position-selected', {
-					detail: { startPosition: startPosCopy },
+					detail: {
+						startPosition: startPosCopy,
+						isTransitioning: true
+					},
 					bubbles: true
 				});
 
 				document.dispatchEvent(customEvent);
+
+				// Provide success haptic feedback when the start position is successfully set
+				hapticFeedbackService.trigger('success');
+
+				// Note: We don't reset the loading state here because we want it to persist
+				// during the transition to the OptionPicker. The OptionPicker will reset it
+				// when it's done loading.
 			}
 		} catch (error) {
 			console.error('Error adding start position:', error);
@@ -229,6 +262,9 @@
 			{/each}
 		</div>
 	{/if}
+
+	<!-- Loading overlay that appears during transition -->
+	<LoadingOverlay visible={isTransitioning} message="Loading options..." transitionDuration={200} />
 </div>
 
 <style>
@@ -241,6 +277,7 @@
 		width: 100%;
 		min-height: 300px;
 		padding: 20px 0;
+		position: relative; /* Required for absolute positioning of the loading overlay */
 	}
 
 	.loading-container {
