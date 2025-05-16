@@ -9,7 +9,7 @@
 	const user = useContainer(userContainer);
 
 	// Local state
-	let username = $state(user.currentUser || 'User');
+	let username = $state(user.currentUser || '');
 	let isVisible = $state(userContainer.isFirstVisit());
 	let isDebugMode = $state(false);
 
@@ -19,33 +19,18 @@
 		isVisible = true;
 	}
 
-	// Handle continue button click
-	function handleContinue() {
+	// Handle close button click
+	function handleClose() {
 		// Provide haptic feedback
 		if (browser && hapticFeedbackService.isAvailable()) {
 			hapticFeedbackService.trigger('success');
 		}
 
+		// Save the entered username (even if empty)
 		if (!isDebugMode) {
-			// Complete setup with the entered username (only in normal mode)
-			userContainer.completeSetup(username);
-		}
-
-		// Hide the dialog
-		isVisible = false;
-		isDebugMode = false;
-	}
-
-	// Handle skip button click
-	function handleSkip() {
-		// Provide haptic feedback
-		if (browser && hapticFeedbackService.isAvailable()) {
-			hapticFeedbackService.trigger('selection');
-		}
-
-		if (!isDebugMode) {
-			// Complete setup with the default username (only in normal mode)
-			userContainer.completeSetup('User');
+			// Use the entered username or empty string
+			userContainer.setUsername(username);
+			userContainer.completeSetup();
 		}
 
 		// Hide the dialog
@@ -62,7 +47,9 @@
 	// Handle keydown event for Enter key
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.key === 'Enter') {
-			handleContinue();
+			handleClose();
+		} else if (event.key === 'Escape') {
+			handleClose();
 		}
 	}
 </script>
@@ -72,6 +59,7 @@
 		<div class="dialog" transition:scale={{ duration: 300, start: 0.95 }}>
 			<div class="dialog-header">
 				<h2>The Kinetic Constructor</h2>
+				<button class="close-button" onclick={handleClose} aria-label="Close dialog"> × </button>
 				{#if isDebugMode}
 					<div class="debug-badge" transition:fade={{ duration: 200 }}>Debug Mode</div>
 				{/if}
@@ -117,23 +105,26 @@
 				</div>
 
 				<div class="input-group">
-					<label for="username-input">Your Name</label>
+					<label for="username-input">Your Name (Optional)</label>
 					<input
 						type="text"
 						id="username-input"
 						value={username}
 						oninput={handleInputChange}
 						onkeydown={handleKeydown}
-						placeholder="Enter your name"
+						placeholder="Enter your name (or leave blank)"
 						maxlength="50"
 						autocomplete="name"
 					/>
+					<p class="input-help">
+						You can leave this field blank if you prefer. Your name is only used when exporting
+						sequences.
+					</p>
 				</div>
 			</div>
 
 			<div class="dialog-footer">
-				<button class="skip-button" onclick={handleSkip}> Skip </button>
-				<button class="continue-button" onclick={handleContinue}> Continue </button>
+				<button class="close-button-large" onclick={handleClose}>Close</button>
 			</div>
 		</div>
 	</div>
@@ -170,12 +161,42 @@
 		padding: 1.5rem;
 		background: linear-gradient(to right, #167bf4, #329bff);
 		color: white;
+		position: relative;
 	}
 
 	.dialog-header h2 {
 		margin: 0;
 		font-size: 1.5rem;
 		font-weight: 600;
+	}
+
+	.close-button {
+		position: absolute;
+		top: 1rem;
+		right: 1rem;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.2);
+		border: none;
+		color: white;
+		font-size: 1.5rem;
+		line-height: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.close-button:hover {
+		background: rgba(255, 255, 255, 0.3);
+		transform: scale(1.05);
+	}
+
+	.close-button:active {
+		background: rgba(255, 255, 255, 0.1);
+		transform: scale(0.95);
 	}
 
 	.dialog-content {
@@ -218,31 +239,23 @@
 		outline: none;
 	}
 
+	.input-help {
+		margin-top: 0.5rem;
+		font-size: 0.85rem;
+		color: rgba(255, 255, 255, 0.7);
+		line-height: 1.4;
+	}
+
 	.dialog-footer {
 		padding: 1rem 1.5rem;
 		display: flex;
-		justify-content: flex-end;
+		justify-content: center;
 		gap: 1rem;
 		border-top: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
-	.skip-button {
-		padding: 0.75rem 1.5rem;
-		border-radius: 6px;
-		background-color: transparent;
-		color: var(--color-text-primary, white);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		font-weight: 500;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-
-	.skip-button:hover {
-		background-color: rgba(255, 255, 255, 0.1);
-	}
-
-	.continue-button {
-		padding: 0.75rem 1.5rem;
+	.close-button-large {
+		padding: 0.75rem 2rem;
 		border-radius: 6px;
 		background: linear-gradient(to bottom, #167bf4, #1068d9);
 		color: white;
@@ -251,15 +264,16 @@
 		cursor: pointer;
 		transition: all 0.2s ease;
 		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+		min-width: 120px;
 	}
 
-	.continue-button:hover {
+	.close-button-large:hover {
 		background: linear-gradient(to bottom, #1d86ff, #1271ea);
 		transform: translateY(-2px);
 		box-shadow: 0 4px 10px rgba(22, 123, 244, 0.3);
 	}
 
-	.continue-button:active {
+	.close-button-large:active {
 		transform: translateY(0);
 		background: linear-gradient(to bottom, #0f65d1, #0a54b3);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);

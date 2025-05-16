@@ -138,9 +138,8 @@ export async function exportSequenceAsImage(
 		const columns = mergedOptions.columns;
 
 		// Calculate rows based on number of beats and columns
-		const totalBeats =
-			mergedOptions.beats.length +
-			(mergedOptions.includeStartPosition && mergedOptions.startPosition ? 1 : 0);
+		// Always include start position if it exists
+		const totalBeats = mergedOptions.beats.length + (mergedOptions.startPosition ? 1 : 0);
 		const rows = Math.ceil(totalBeats / columns);
 
 		// Calculate canvas dimensions

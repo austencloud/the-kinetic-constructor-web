@@ -151,32 +151,22 @@ export function drawUserInfo(
 
 	// The bottom of the last row of beats is at y = height + topMargin
 	// We want to position the text below this with consistent spacing
-	// First, calculate the position for the separator line
-	const separatorLineY = height + topMargin + margin;
 
-	// Then position the text below the separator line with appropriate spacing
-	// We'll use 1.5x the margin to create a balanced appearance
-	const textY = separatorLineY + Math.round(margin * 1.5);
+	// Position the text directly in the vertical center of the bottom margin area
+	// This ensures proper vertical centering without the separator line
+	const textY = height + topMargin + bottomMargin / 2;
 
 	// Log positioning information
 	console.log('UserInfoRenderer: Text positioning', {
 		margin,
 		spacing,
 		textY,
-		separatorLineY,
 		bottomMargin,
 		bottomOfBeats: height + topMargin,
 		canvasHeight: height + topMargin + bottomMargin
 	});
 
-	// Draw a subtle separator line above the user info text
-	// This enhances the visual hierarchy and separates the sequence from the footer content
-	ctx.beginPath();
-	ctx.moveTo(margin, separatorLineY);
-	ctx.lineTo(width - margin, separatorLineY);
-	ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'; // Subtle gray with partial opacity
-	ctx.lineWidth = Math.max(1, Math.round(width / 1000)); // Scale line width with image size (1-2px)
-	ctx.stroke();
+	// Separator line removed to prevent text overflow issues
 
 	// Draw notes text (center)
 	ctx.textAlign = 'center';

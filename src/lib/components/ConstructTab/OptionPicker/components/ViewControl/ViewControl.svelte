@@ -15,9 +15,11 @@
 
 	// --- State ---
 	let isOpen = $state(false);
-	// Always default to the "All" view option initially
+	// Initialize with the current sort method from the container
 	let selectedViewOption = $state<ViewOption>(
-		viewOptions.find((opt) => opt.value === 'all') || viewOptions[0]
+		viewOptions.find((opt) => opt.value === optionPickerContainer.state.sortMethod) ||
+			viewOptions.find((opt) => opt.value === 'all') ||
+			viewOptions[0]
 	);
 	let buttonElement = $state<HTMLButtonElement | null>(null);
 	let isCompact = $state(false);
@@ -45,9 +47,20 @@
 	$effect(() => {
 		// Keep the selected option in sync with the container state
 		const currentSortMethod = optionPickerContainer.state.sortMethod;
-		if (currentSortMethod !== selectedViewOption.value && selectedViewOption.isSortMethod) {
-			selectedViewOption =
-				viewOptions.find((opt) => opt.value === currentSortMethod) || viewOptions[0];
+
+		// Always update the selectedViewOption to match the current sort method
+		// This ensures the UI always reflects the actual sorting state
+		if (currentSortMethod !== selectedViewOption.value) {
+			// If current sort method is not 'all' (which is the default), find the matching option
+			if (currentSortMethod) {
+				selectedViewOption =
+					viewOptions.find((opt) => opt.value === currentSortMethod) ||
+					viewOptions.find((opt) => opt.value === 'all') ||
+					viewOptions[0];
+			} else {
+				// If no sort method is set (or it's null/undefined), default to 'all'
+				selectedViewOption = viewOptions.find((opt) => opt.value === 'all') || viewOptions[0];
+			}
 		}
 
 		// Add click outside listener
@@ -104,6 +117,13 @@
 			option.value === 'all'
 				? { mode: 'all' }
 				: { mode: 'group', method: option.value as SortMethod };
+
+		// Update the optionPickerContainer state directly
+		// This ensures the container state is always in sync with the UI
+		if (option.value !== 'all') {
+			// Only update the sort method if it's a valid sort method
+			optionPickerContainer.setSortMethod(option.value as SortMethod);
+		}
 
 		// Create a DOM event that will bubble up
 		const customEvent = new CustomEvent('viewChange', {

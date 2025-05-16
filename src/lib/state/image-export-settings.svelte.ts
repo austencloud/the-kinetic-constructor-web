@@ -3,7 +3,7 @@ import { browser } from '$app/environment';
 
 export interface ImageExportSettings {
 	// Export content options
-	includeStartPosition: boolean;
+	// includeStartPosition is now removed from user control - always true internally
 	addUserInfo: boolean;
 	addWord: boolean;
 	addDifficultyLevel: boolean;
@@ -26,7 +26,7 @@ export interface ImageExportSettings {
 // Default settings - enable all enhancement features by default
 export const defaultImageExportSettings: ImageExportSettings = {
 	// Export content options
-	includeStartPosition: true,
+	// Start position is now always included
 	addUserInfo: true,
 	addWord: true,
 	addDifficultyLevel: true,
@@ -52,7 +52,7 @@ let imageExportState = $state(structuredClone(defaultImageExportSettings));
 // Function to get the current settings
 export function getImageExportSettings(): ImageExportSettings {
 	return {
-		includeStartPosition: imageExportState.includeStartPosition === true,
+		// Start position is now always included
 		addUserInfo: imageExportState.addUserInfo === true,
 		addWord: imageExportState.addWord === true,
 		addDifficultyLevel: imageExportState.addDifficultyLevel === true,
@@ -75,7 +75,7 @@ export function updateImageExportSettings(newSettings: Partial<ImageExportSettin
 	};
 
 	cleanSettings.rememberLastSaveDirectory = cleanSettings.rememberLastSaveDirectory === true;
-	cleanSettings.includeStartPosition = cleanSettings.includeStartPosition === true;
+	// Start position is now always included
 	cleanSettings.addUserInfo = cleanSettings.addUserInfo === true;
 	cleanSettings.addWord = cleanSettings.addWord === true;
 	cleanSettings.addDifficultyLevel = cleanSettings.addDifficultyLevel === true;
@@ -104,7 +104,7 @@ export function loadImageExportSettings(): void {
 
 				const validatedSettings: Partial<ImageExportSettings> = {};
 
-				validatedSettings.includeStartPosition = parsed.includeStartPosition === true;
+				// Start position is now always included
 				validatedSettings.addUserInfo = parsed.addUserInfo === true;
 				validatedSettings.addWord = parsed.addWord === true;
 				validatedSettings.addDifficultyLevel = parsed.addDifficultyLevel === true;
@@ -156,7 +156,7 @@ export function saveImageExportSettings(): void {
 		}
 
 		const cleanSettings: ImageExportSettings = {
-			includeStartPosition: imageExportState.includeStartPosition === true,
+			// Start position is now always included
 			addUserInfo: imageExportState.addUserInfo === true,
 			addWord: imageExportState.addWord === true,
 			addDifficultyLevel: imageExportState.addDifficultyLevel === true,

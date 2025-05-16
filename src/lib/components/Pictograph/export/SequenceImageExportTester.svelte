@@ -34,13 +34,27 @@
 	let addUserInfo: boolean = $state(true);
 	let addDifficultyLevel: boolean = $state(true);
 	let showBeatNumbers: boolean = $state(true);
-	let includeStartPosition: boolean = $state(true);
+	// Start position is now always included
+	const includeStartPosition: boolean = true;
 
 	// Content values
 	let title: string = $state('Sample Sequence');
 	let userName: string = $state('Test User');
 	let notes: string = $state('Created using The Kinetic Constructor');
 	let difficultyLevel: number = $state(3);
+
+	// Predefined note lengths for testing
+	const noteOptions = [
+		{ label: 'Short', text: 'Created using The Kinetic Constructor' },
+		{
+			label: 'Medium',
+			text: 'Created using The Kinetic Constructor - A tool for visualizing poi sequences'
+		},
+		{
+			label: 'Long',
+			text: 'Created using The Kinetic Constructor - A tool for visualizing poi sequences and sharing them with the flow arts community'
+		}
+	];
 
 	// Sample data
 	let beats: Beat[] = $state([]);
@@ -344,6 +358,17 @@
 				{#if addUserInfo}
 					<input type="text" bind:value={userName} placeholder="User Name" />
 					<input type="text" bind:value={notes} placeholder="Notes" />
+
+					<div class="note-length-test">
+						<span>Test note lengths:</span>
+						<div class="note-buttons">
+							{#each noteOptions as option}
+								<button class="note-test-button" onclick={() => (notes = option.text)}>
+									{option.label}
+								</button>
+							{/each}
+						</div>
+					</div>
 				{/if}
 			</div>
 
@@ -366,10 +391,7 @@
 			</div>
 
 			<div class="option-group">
-				<label>
-					<input type="checkbox" bind:checked={includeStartPosition} />
-					Include Start Position
-				</label>
+				<div class="info-text">Start position is always included</div>
 			</div>
 
 			<div class="option-group">
@@ -488,6 +510,44 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+	}
+
+	.info-text {
+		font-style: italic;
+		color: #666;
+		padding: 0.5rem;
+		background-color: #f0f0f0;
+		border-radius: 4px;
+	}
+
+	.note-length-test {
+		margin-top: 0.75rem;
+	}
+
+	.note-length-test span {
+		display: block;
+		margin-bottom: 0.5rem;
+		font-size: 0.9rem;
+		font-style: italic;
+	}
+
+	.note-buttons {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.note-test-button {
+		padding: 0.25rem 0.5rem;
+		background-color: #4a90e2;
+		color: white;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 0.8rem;
+	}
+
+	.note-test-button:hover {
+		background-color: #3a7bc8;
 	}
 
 	.option-group input[type='text'] {

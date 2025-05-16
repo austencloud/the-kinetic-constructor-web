@@ -51,7 +51,7 @@
 
 	// Create a stable derived value for settings to prevent unnecessary re-renders
 	const settingsSnapshot = $derived({
-		includeStartPosition: settings.includeStartPosition,
+		// Start position is now always included
 		addUserInfo: settings.addUserInfo,
 		addWord: settings.addWord,
 		addDifficultyLevel: settings.addDifficultyLevel,

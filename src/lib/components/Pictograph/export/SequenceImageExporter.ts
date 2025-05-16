@@ -87,7 +87,9 @@ export async function exportSequenceImage(
 
 		// Log detailed information about the start position
 		console.log('EnhancedExporter: Start position details', {
-			hasStartPosition: mergedOptions.includeStartPosition && mergedOptions.startPosition,
+			// Start position is now always included if available
+			hasStartPosition:
+				mergedOptions.startPosition !== null && mergedOptions.startPosition !== undefined,
 			startPositionData: mergedOptions.startPosition,
 			firstBeatMetadata: mergedOptions.beats[0]?.metadata,
 			totalBeats: mergedOptions.beats.length

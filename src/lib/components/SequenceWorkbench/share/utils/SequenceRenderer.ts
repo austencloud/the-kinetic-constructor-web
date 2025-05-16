@@ -92,9 +92,8 @@ export async function renderSequence(
 			// This ensures the downloaded image matches what the user sees in the preview
 			columns: sequenceBeats.length <= 4 ? sequenceBeats.length : 4,
 			spacing: 0,
-			// Use settings from the image export settings
-			includeStartPosition:
-				settings.includeStartPosition === undefined ? true : !!settings.includeStartPosition,
+			// Always include start position
+			includeStartPosition: true, // Force to true regardless of settings
 			addWord: settings.addWord === undefined ? true : !!settings.addWord,
 			addUserInfo: settings.addUserInfo === undefined ? true : !!settings.addUserInfo,
 			addDifficultyLevel:
