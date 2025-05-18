@@ -49,17 +49,32 @@
 		const currentSortMethod = optionPickerContainer.state.sortMethod;
 		const selectedTab = optionPickerContainer.state.selectedTab;
 
-		// Only update the view option if the sort method has changed
-		if (currentSortMethod !== selectedViewOption.value && selectedViewOption.value !== 'all') {
-			// If current sort method is valid, find the matching option
-			if (currentSortMethod) {
-				selectedViewOption =
-					viewOptions.find((opt) => opt.value === currentSortMethod) ||
-					viewOptions.find((opt) => opt.value === 'all') ||
-					viewOptions[0];
+		// Check if we should show "All" based on the selected tab
+		if (selectedTab === 'all') {
+			// If the selected tab is 'all', always show the "All" view option
+			const allOption = viewOptions.find((opt) => opt.value === 'all');
+			if (allOption) {
+				selectedViewOption = allOption;
+			}
+		}
+		// Otherwise, sync with the current sort method
+		else if (currentSortMethod) {
+			// Find the matching option for the current sort method
+			const matchingOption = viewOptions.find((opt) => opt.value === currentSortMethod);
+			if (matchingOption) {
+				selectedViewOption = matchingOption;
 			} else {
-				// If no sort method is set (or it's null/undefined), default to 'all'
-				selectedViewOption = viewOptions.find((opt) => opt.value === 'all') || viewOptions[0];
+				// If no matching option is found, default to 'all'
+				const allOption = viewOptions.find((opt) => opt.value === 'all');
+				if (allOption) {
+					selectedViewOption = allOption;
+				}
+			}
+		} else {
+			// If no sort method is set (or it's null/undefined), default to 'all'
+			const allOption = viewOptions.find((opt) => opt.value === 'all');
+			if (allOption) {
+				selectedViewOption = allOption;
 			}
 		}
 
@@ -70,11 +85,16 @@
 		const handleUpdateViewControl = (event: Event) => {
 			if (event instanceof CustomEvent) {
 				const detail = event.detail;
-				if (detail.mode === 'all' && detail.forceUpdate) {
+				if (detail.mode === 'all') {
 					const allOption = viewOptions.find((opt) => opt.value === 'all');
 					if (allOption) {
-						console.log('Forcing update of view control to "All" from event');
 						selectedViewOption = allOption;
+					}
+				} else if (detail.mode === 'group' && detail.method) {
+					const methodOption = viewOptions.find((opt) => opt.value === detail.method);
+					if (methodOption) {
+						console.log(`Updating view control to "${methodOption.label}" from event`);
+						selectedViewOption = methodOption;
 					}
 				}
 			}
@@ -119,7 +139,7 @@
 
 	// --- Option Selection ---
 	function handleViewSelect(option: ViewOption) {
-		// Set the selected view option first - this controls what icon is shown
+		// Set the selected view option first
 		selectedViewOption = option;
 		console.log('Selected view option:', option.label, option.value);
 
@@ -149,11 +169,19 @@
 				optionPickerContainer.state.sortMethod,
 				'all'
 			);
-			// Note: We don't need to set selectedViewOption again here
-			// as we already set it at the beginning of this function
+			// 3. Make sure the view option is set to "All"
+			const allOption = viewOptions.find((opt) => opt.value === 'all');
+			if (allOption) {
+				selectedViewOption = allOption;
+			}
 		} else {
 			// For other sort methods, update as before
 			optionPickerContainer.setSortMethod(option.value as SortMethod);
+			// Ensure the selected view option matches the sort method
+			const matchingOption = viewOptions.find((opt) => opt.value === option.value);
+			if (matchingOption) {
+				selectedViewOption = matchingOption;
+			}
 		}
 
 		// Create a DOM event that will bubble up
