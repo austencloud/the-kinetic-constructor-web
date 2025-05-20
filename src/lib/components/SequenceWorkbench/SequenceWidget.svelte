@@ -215,18 +215,20 @@
 				hapticFeedbackService.trigger('error');
 			}
 
+			// Log for debugging
+			console.log('Start position selected - clearing entire sequence');
+
 			// Clear the entire sequence including start position
 			handleClearSequence();
 
 			// Ensure the selection is cleared
 			sequenceContainer.clearSelection();
 		} else if (selectedBeatIds.length > 0) {
-			// Use removeBeat instead of removeBeatAndFollowing to only remove the selected beat
-			// This preserves the start position and other beats
-			sequenceActions.removeBeat(selectedBeatIds[0]);
+			// Pass the beatId directly to the action
+			sequenceActions.removeBeatAndFollowing(selectedBeatIds[0]);
 
 			// Log for debugging
-			console.log('Removing only the selected beat with ID:', selectedBeatIds[0]);
+			console.log('Removing beat with ID:', selectedBeatIds[0]);
 
 			// Trigger haptic feedback for deletion
 			if (browser) {
@@ -306,7 +308,8 @@
 		if (!deletionModeTooltip) {
 			deletionModeTooltip = document.createElement('div');
 			deletionModeTooltip.className = 'deletion-mode-tooltip';
-			deletionModeTooltip.textContent = 'Click a beat to delete';
+			deletionModeTooltip.textContent =
+				'Click a beat to delete (selecting start position will clear all)';
 
 			// Position the tooltip relative to the BeatFrame
 			if (beatFrameElement) {
@@ -370,19 +373,25 @@
 			// Get the selected beat ID
 			const beatId = event.detail.beatId;
 			if (beatId) {
-				// Check if this is the start position
+				// Check if the start position is selected
 				if (beatId === 'start-position') {
 					// If start position is selected, clear the entire sequence
-					console.log('Start position selected in deletion mode, clearing entire sequence');
+					// Trigger haptic feedback for deletion
+					if (browser) {
+						hapticFeedbackService.trigger('error');
+					}
+
+					// Log for debugging
+					console.log('Start position selected in deletion mode - clearing entire sequence');
 
 					// Clear the entire sequence including start position
 					handleClearSequence();
 				} else {
-					// Use removeBeat instead of removeBeatAndFollowing to only remove the selected beat
-					sequenceActions.removeBeat(beatId);
+					// Pass the beatId directly to the action
+					sequenceActions.removeBeatAndFollowing(beatId);
 
 					// Log for debugging
-					console.log('Removing only the selected beat in deletion mode with ID:', beatId);
+					console.log('Removing beat in deletion mode with ID:', beatId);
 				}
 
 				// Exit deletion mode

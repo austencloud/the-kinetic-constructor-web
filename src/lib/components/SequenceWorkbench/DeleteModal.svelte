@@ -145,8 +145,8 @@
 							<span class="option-title">Remove Selected Beat</span>
 							<span class="option-description">
 								{hasSelectedBeat
-									? 'Delete the currently selected beat'
-									: 'Click a beat to delete it'}
+									? 'Delete the currently selected beat (selecting start position will clear all)'
+									: 'Click a beat to delete it (selecting start position will clear all)'}
 							</span>
 						</div>
 					</button>
@@ -282,6 +282,9 @@
 	.option-description {
 		font-size: 0.8rem;
 		color: rgba(255, 255, 255, 0.7);
+		line-height: 1.3;
+		max-width: 100%;
+		word-wrap: break-word;
 	}
 
 	.popup-footer {
