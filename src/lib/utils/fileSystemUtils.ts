@@ -38,7 +38,14 @@ export interface FileSystemDirectoryHandleWithPermissions extends FileSystemDire
 export interface WindowWithDirectoryPicker extends Window {
 	showDirectoryPicker(options?: {
 		id?: string;
-		startIn?: string;
+		startIn?:
+			| 'downloads'
+			| 'desktop'
+			| 'documents'
+			| 'music'
+			| 'pictures'
+			| 'videos'
+			| FileSystemHandle;
 		mode?: 'read' | 'readwrite';
 	}): Promise<FileSystemDirectoryHandle>;
 }
@@ -130,6 +137,13 @@ export function isFileSystemAccessSupported(): boolean {
 export function isMobileDevice(): boolean {
 	if (!browser) return false;
 	return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+/**
+ * Get the platform type (desktop or mobile)
+ */
+export function getPlatformType(): 'desktop' | 'mobile' {
+	return isMobileDevice() ? 'mobile' : 'desktop';
 }
 
 /**

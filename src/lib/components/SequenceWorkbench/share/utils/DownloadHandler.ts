@@ -1,160 +1,187 @@
 /**
  * Download Handler
- * 
+ *
  * This module provides functionality for downloading sequence images.
  */
 
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
-import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
-import { downloadImage } from '$lib/components/Pictograph/export/downloadUtils';
-import { fileSystemService } from '$lib/services/FileSystemService';
+import { showError, showSuccess, showInfo } from '$lib/components/shared/ToastManager.svelte';
+import {
+	downloadImage,
+	type DownloadResult
+} from '$lib/components/Pictograph/export/downloadUtils';
 import { getImageExportSettings } from '$lib/state/image-export-settings.svelte';
+import { isMobileDevice } from '$lib/utils/fileSystemUtils';
 import type { SequenceRenderResult } from './ImageUtils';
 
 /**
  * Options for downloading a sequence image
  */
 export interface DownloadOptions {
-  sequenceName: string;
-  imageResult: SequenceRenderResult;
+	sequenceName: string;
+	imageResult: SequenceRenderResult;
 }
 
 /**
  * Download a sequence image
- * 
+ *
  * @param options Download options
  * @returns Promise resolving to true if download was successful
  */
 export async function downloadSequenceImage(options: DownloadOptions): Promise<boolean> {
-  const { sequenceName, imageResult } = options;
+	const { sequenceName, imageResult } = options;
 
-  if (!browser) {
-    console.log('DownloadHandler: Not in browser environment, returning false');
-    return false;
-  }
+	if (!browser) {
+		console.log('DownloadHandler: Not in browser environment, returning false');
+		return false;
+	}
 
-  try {
-    console.log('DownloadHandler: Starting download process');
+	try {
+		console.log('DownloadHandler: Starting download process');
 
-    // Get export settings
-    let settings: any = {};
-    try {
-      // Get settings directly using new function
-      settings = getImageExportSettings();
-      console.log('DownloadHandler: Using settings from getImageExportSettings()', settings);
-    } catch (error) {
-      console.error('DownloadHandler: Error getting export settings from function', error);
+		// Get export settings
+		let settings: any = {};
+		try {
+			// Get settings directly using new function
+			settings = getImageExportSettings();
+			console.log('DownloadHandler: Using settings from getImageExportSettings()', {
+				...settings,
+				openFolderAfterExport: {
+					value: settings.openFolderAfterExport,
+					type: typeof settings.openFolderAfterExport,
+					strictComparison: settings.openFolderAfterExport === true
+				}
+			});
+		} catch (error) {
+			console.error('DownloadHandler: Error getting export settings from function', error);
 
-      // Fall back to localStorage if function fails
-      try {
-        // Get settings from localStorage as fallback
-        const savedSettings = localStorage.getItem('image-export-settings');
-        if (savedSettings) {
-          try {
-            const parsed = JSON.parse(savedSettings);
-            if (parsed && typeof parsed === 'object') {
-              settings = parsed;
-              console.log('DownloadHandler: Using settings from localStorage', settings);
-            }
-          } catch (parseError) {
-            console.error('DownloadHandler: Failed to parse settings from localStorage', parseError);
-          }
-        }
-      } catch (localStorageError) {
-        console.error(
-          'DownloadHandler: Error getting export settings from localStorage',
-          localStorageError
-        );
-        // Use empty object, which will fall back to defaults
-        settings = {};
-      }
-    }
+			// Fall back to localStorage if function fails
+			try {
+				// Get settings from localStorage as fallback
+				const savedSettings = localStorage.getItem('image-export-settings');
+				if (savedSettings) {
+					try {
+						const parsed = JSON.parse(savedSettings);
+						if (parsed && typeof parsed === 'object') {
+							settings = parsed;
+							console.log('DownloadHandler: Using settings from localStorage', settings);
+						}
+					} catch (parseError) {
+						console.error(
+							'DownloadHandler: Failed to parse settings from localStorage',
+							parseError
+						);
+					}
+				}
+			} catch (localStorageError) {
+				console.error(
+					'DownloadHandler: Error getting export settings from localStorage',
+					localStorageError
+				);
+				// Use empty object, which will fall back to defaults
+				settings = {};
+			}
+		}
 
-    // Get the exact sequence word from the UI
-    const exactWordName = sequenceName || 'Sequence';
+		// Get the exact sequence word from the UI
+		const exactWordName = sequenceName || 'Sequence';
 
-    // Log the exact word being used
-    console.log('DownloadHandler: Using exact sequence word:', exactWordName);
+		// Log the exact word being used
+		console.log('DownloadHandler: Using exact sequence word:', exactWordName);
 
-    // Create a safe version of the word for the filename
-    // This is only for the default filename, the word folder will use the exact word
-    const safeSequenceName = exactWordName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+		// Use the exact word for the filename (preserving case and format)
+		// This makes it more recognizable to users
+		const filename = `${exactWordName}.png`;
 
-    // Create a basic filename (will be replaced with versioned name if versioning is enabled)
-    const filename = `${exactWordName}.png`;
+		console.log('DownloadHandler: Downloading sequence:', {
+			wordName: exactWordName,
+			dataUrlLength: imageResult.dataUrl.length,
+			filename
+		});
 
-    // Get category from settings (metadata doesn't have category yet)
-    const category = settings.defaultCategory || 'Sequences';
+		// Use the direct download approach with the standard file save dialog
+		try {
+			console.log('DownloadHandler: Starting download with downloadImage function');
 
-    console.log('DownloadHandler: Saving sequence:', {
-      wordName: exactWordName,
-      dataUrlLength: imageResult.dataUrl.length,
-      category
-    });
+			// Download the image with improved error handling
+			const result = await downloadImage({
+				dataUrl: imageResult.dataUrl,
+				filename
+			});
 
-    // Use the FileSystemService to save the file with enhanced options
-    const saveResult = await fileSystemService.saveFile(imageResult.dataUrl, {
-      fileName: filename,
-      fileType: 'image/png',
-      rememberDirectory:
-        settings.rememberLastSaveDirectory === undefined
-          ? true
-          : !!settings.rememberLastSaveDirectory,
-      useCategories: settings.useCategories === undefined ? true : !!settings.useCategories,
-      category: category,
-      wordName: exactWordName,
-      useVersioning: true // Enable intelligent versioning
-    });
+			// Log the result for debugging
+			console.log('DownloadHandler: downloadImage returned:', result);
 
-    if (saveResult.success) {
-      // Show success message with the file path
-      const message = saveResult.filePath
-        ? `Image saved to: ${saveResult.filePath}`
-        : 'Image saved successfully';
+			if (result.success) {
+				// Determine if we're on a mobile device
+				const isMobile = isMobileDevice();
 
-      showSuccess(message);
-      console.log('DownloadHandler: File saved successfully:', saveResult);
-      return true;
-    } else {
-      // Only show error if it wasn't a user cancellation
-      if (saveResult.error && saveResult.error.message !== 'Operation cancelled by user') {
-        console.error('DownloadHandler: Save error:', saveResult.error);
-        showError(`Failed to save image: ${saveResult.error.message}`);
+				// Show appropriate success message based on platform
+				if (isMobile) {
+					// For mobile, show a simpler message
+					showSuccess("Image saved to your device's Downloads folder", { duration: 5000 });
+				} else if (result.folderPath !== 'Browser Tab' && result.fileName) {
+					// For desktop with known path, create a descriptive message
+					const folderToShow = result.folderPath || 'Downloads';
+					let message = `Image saved as "${result.fileName}"`;
+					message += ` to ${folderToShow}`;
 
-        // Fall back to the old download method if the FileSystemService fails
-        try {
-          console.log('DownloadHandler: Falling back to old download method');
+					// Show a detailed message with the file location
+					showInfo(message, {
+						duration: 7000 // Longer duration so user has time to read
+					});
+				} else if (result.folderPath === 'Browser Tab') {
+					// For browser tab exports
+					showSuccess('Image opened in a new browser tab', { duration: 5000 });
+				} else {
+					// Generic success message as fallback
+					showSuccess('Image saved successfully to Downloads folder', { duration: 5000 });
+				}
 
-          // Download the image with improved error handling
-          const success = await downloadImage({
-            dataUrl: imageResult.dataUrl,
-            filename
-          });
+				console.log('DownloadHandler: Download completed successfully');
+				return true;
+			} else {
+				console.warn('DownloadHandler: Download function returned false without throwing an error');
+				throw new Error('Download function returned false');
+			}
+		} catch (downloadError) {
+			// Log the full error for debugging
+			console.error(
+				'DownloadHandler: Download error:',
+				downloadError instanceof Error
+					? {
+							name: downloadError.name,
+							message: downloadError.message,
+							stack: downloadError.stack
+						}
+					: downloadError
+			);
 
-          if (success) {
-            showSuccess('Image download started');
-            console.log('DownloadHandler: Download initiated successfully');
-            return true;
-          } else {
-            throw new Error('Download function returned false');
-          }
-        } catch (downloadError) {
-          console.error('DownloadHandler: Download error:', downloadError);
-          showError('Failed to download sequence. Please try again.');
-          return false;
-        }
-      } else {
-        console.log('DownloadHandler: User cancelled save operation');
-        return false;
-      }
-    }
-  } catch (error) {
-    showError('Failed to download sequence');
-    console.error('DownloadHandler: Download error:', error);
-    logger.error('Error downloading sequence', {
-      error: error instanceof Error ? error : new Error(String(error))
-    });
-    return false;
-  }
+			// Check for user cancellation with standardized error message
+			if (
+				downloadError instanceof Error &&
+				(downloadError.message === 'USER_CANCELLED_OPERATION' ||
+					downloadError.message.includes('cancelled') ||
+					downloadError.message.includes('canceled') ||
+					downloadError.message.includes('aborted') ||
+					downloadError.name === 'AbortError')
+			) {
+				console.log('DownloadHandler: User cancelled save operation');
+				// Return false but don't show an error message for user cancellations
+				return false;
+			}
+
+			// Show error for actual errors (not cancellations)
+			showError('Failed to download sequence. Please try again.');
+			return false;
+		}
+	} catch (error) {
+		showError('Failed to download sequence');
+		console.error('DownloadHandler: Download error:', error);
+		logger.error('Error downloading sequence', {
+			error: error instanceof Error ? error : new Error(String(error))
+		});
+		return false;
+	}
 }

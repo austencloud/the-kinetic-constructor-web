@@ -127,14 +127,16 @@ export function loadImageExportSettings(): void {
 				validatedSettings.addBeatNumbers = parsed.addBeatNumbers === true;
 				validatedSettings.addReversalSymbols = parsed.addReversalSymbols === true;
 
-				// Very important: Strictly convert this to boolean
+				// Very important: Strictly convert to boolean
 				validatedSettings.rememberLastSaveDirectory = parsed.rememberLastSaveDirectory === true;
 
 				// Log the loaded value for debugging
-				console.log('Loaded rememberLastSaveDirectory value:', {
-					parsedValue: parsed.rememberLastSaveDirectory,
-					validatedValue: validatedSettings.rememberLastSaveDirectory,
-					type: typeof validatedSettings.rememberLastSaveDirectory
+				console.log('Loaded directory preference values:', {
+					rememberLastSaveDirectory: {
+						parsedValue: parsed.rememberLastSaveDirectory,
+						validatedValue: validatedSettings.rememberLastSaveDirectory,
+						type: typeof validatedSettings.rememberLastSaveDirectory
+					}
 				});
 
 				// String values with defaults
@@ -234,7 +236,12 @@ export function saveImageExportSettings(): void {
 		// Log the cleaned settings
 		console.log('Cleaned image export settings to save:', {
 			...cleanSettings,
-			rememberLastSaveDirectory: cleanSettings.rememberLastSaveDirectory
+			rememberLastSaveDirectory: cleanSettings.rememberLastSaveDirectory,
+			openFolderAfterExport: {
+				value: cleanSettings.openFolderAfterExport,
+				type: typeof cleanSettings.openFolderAfterExport,
+				strictComparison: cleanSettings.openFolderAfterExport === true
+			}
 		});
 
 		// Save to localStorage

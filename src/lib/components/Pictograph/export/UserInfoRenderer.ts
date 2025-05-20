@@ -8,69 +8,71 @@ import type { CanvasDimensions, EnhancedExportOptions } from './exportTypes';
 
 /**
  * Draws user info at the bottom of the canvas with responsive sizing
- * 
+ *
  * @param ctx The canvas rendering context
  * @param options Export options
  * @param dimensions Canvas dimensions
  */
 export function drawUserInfo(
-  ctx: CanvasRenderingContext2D,
-  options: EnhancedExportOptions,
-  dimensions: CanvasDimensions
+	ctx: CanvasRenderingContext2D,
+	options: EnhancedExportOptions,
+	dimensions: CanvasDimensions
 ): void {
-  const { width, height, topMargin, bottomMargin } = dimensions;
+	const { width, height, topMargin, bottomMargin } = dimensions;
 
-  // Get user info text
-  const userName = options.userName || 'User';
-  const notes = options.notes || 'Created using The Kinetic Alphabet';
-  const exportDate = options.exportDate || new Date().toLocaleDateString();
+	// Get user info text
+	const userName = options.userName || 'User';
+	const notes = options.notes || 'Created using The Kinetic Alphabet';
+	const exportDate = options.exportDate || new Date().toLocaleDateString();
 
-  // Calculate padding (5% of container width)
-  const padding = Math.round(width * 0.05);
+	// Calculate padding (5% of container width)
+	const padding = Math.round(width * 0.05);
 
-  // Calculate font size using the formula: fontSize = containerWidth * 0.04
-  // Increased from 0.03 to 0.04 for better readability
-  // Enforce min/max constraints
-  const MIN_FONT_SIZE = 16; // Increased from 14 for better readability
-  const MAX_FONT_SIZE = 32; // Increased from 24 for better readability
-  let fontSize = Math.round(width * 0.04); // Increased from 0.03 for better readability
-  fontSize = Math.max(MIN_FONT_SIZE, Math.min(fontSize, MAX_FONT_SIZE));
+	// Calculate font size using a more aggressive scaling formula for better readability
+	// Use a higher percentage of container width (7%) to make text significantly larger
+	// Enforce min/max constraints with higher values
+	const MIN_FONT_SIZE = 24; // Significantly increased for better readability
+	const MAX_FONT_SIZE = 48; // Significantly increased for better readability
 
-  // Calculate base Y position for text - center in the bottom margin
-  const baseY = height + topMargin + bottomMargin / 2;
+	// Use a more aggressive scaling factor (0.07 instead of 0.04)
+	let fontSize = Math.round(width * 0.07);
+	fontSize = Math.max(MIN_FONT_SIZE, Math.min(fontSize, MAX_FONT_SIZE));
 
-  // Save context for restoration
-  ctx.save();
+	// Calculate base Y position for text - center in the bottom margin
+	const baseY = height + topMargin + bottomMargin / 2;
 
-  // Apply subtle text shadow for better legibility
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-  ctx.shadowBlur = 2;
-  ctx.shadowOffsetX = 1;
-  ctx.shadowOffsetY = 1;
+	// Save context for restoration
+	ctx.save();
 
-  // Set the font for notes text
-  ctx.font = `${fontSize}px Arial, sans-serif`;
+	// Apply subtle text shadow for better legibility
+	ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+	ctx.shadowBlur = 2;
+	ctx.shadowOffsetX = 1;
+	ctx.shadowOffsetY = 1;
 
-  // Draw notes text (center)
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#000000';
-  ctx.fillText(notes, width / 2, baseY);
+	// Set the font for notes text
+	ctx.font = `${fontSize}px Arial, sans-serif`;
 
-  // Optional: Draw username and date in smaller font
-  const smallerFontSize = Math.max(MIN_FONT_SIZE, fontSize * 0.9);
-  ctx.font = `${smallerFontSize}px Arial, sans-serif`;
+	// Draw notes text (center)
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.fillStyle = '#000000';
+	ctx.fillText(notes, width / 2, baseY);
 
-  // Draw username text (left)
-  ctx.textAlign = 'left';
-  ctx.fillStyle = '#000000';
-  ctx.fillText(userName, padding, baseY);
+	// Optional: Draw username and date in smaller font
+	const smallerFontSize = Math.max(MIN_FONT_SIZE, fontSize * 0.9);
+	ctx.font = `${smallerFontSize}px Arial, sans-serif`;
 
-  // Draw export date text (right)
-  ctx.textAlign = 'right';
-  ctx.fillStyle = '#000000';
-  ctx.fillText(exportDate, width - padding, baseY);
+	// Draw username text (left)
+	ctx.textAlign = 'left';
+	ctx.fillStyle = '#000000';
+	ctx.fillText(userName, padding, baseY);
 
-  // Restore context
-  ctx.restore();
+	// Draw export date text (right)
+	ctx.textAlign = 'right';
+	ctx.fillStyle = '#000000';
+	ctx.fillText(exportDate, width - padding, baseY);
+
+	// Restore context
+	ctx.restore();
 }

@@ -17,12 +17,22 @@ export interface DownloadOptions {
 }
 
 /**
+ * Result of downloading an image
+ */
+export interface DownloadResult {
+	success: boolean;
+	filePath?: string;
+	fileName?: string;
+	folderPath?: string;
+}
+
+/**
  * Downloads an image from a data URL
  *
  * @param options Download options
- * @returns Promise resolving to true if successful
+ * @returns Promise resolving to a DownloadResult object
  */
-export async function downloadImage(options: DownloadOptions): Promise<boolean> {
+export async function downloadImage(options: DownloadOptions): Promise<DownloadResult> {
 	// Validate environment
 	if (!browser) {
 		return Promise.reject(new Error('Cannot download: not in browser environment'));
@@ -43,7 +53,186 @@ export async function downloadImage(options: DownloadOptions): Promise<boolean> 
 
 		console.log(`DownloadUtils: Using MIME type: ${mimeType}`);
 
-		// Create a new approach that works more reliably across browsers
+		// Try to use the File System Access API for a better download experience
+		if (window.showSaveFilePicker) {
+			try {
+				// Convert data URL to Blob
+				const blob = dataURLtoBlob(options.dataUrl);
+				console.log(`DownloadUtils: Created blob of size: ${blob.size} bytes`);
+
+				// Set up options for the save dialog - removed 'mode' property which was causing issues
+				const opts = {
+					suggestedName: options.filename,
+					types: [
+						{
+							description: 'Image Files',
+							accept: {
+								'image/png': ['.png'],
+								'image/jpeg': ['.jpg', '.jpeg']
+							}
+						}
+					],
+					// Try to default to Downloads folder
+					startIn: 'downloads' as
+						| 'desktop'
+						| 'documents'
+						| 'downloads'
+						| 'music'
+						| 'pictures'
+						| 'videos'
+				};
+
+				console.log(`DownloadUtils: Opening save dialog with options:`, opts);
+
+				try {
+					// Show the save file picker
+					const fileHandle = await window.showSaveFilePicker(opts);
+					console.log(`DownloadUtils: User selected file:`, fileHandle);
+
+					try {
+						// Create a writable stream
+						const writable = await fileHandle.createWritable();
+
+						try {
+							// Write the blob to the file
+							await writable.write(blob);
+
+							// Close the file
+							await writable.close();
+
+							// Get the folder path from the file handle
+							let folderPath = 'Downloads'; // Default to Downloads folder
+							let fileName = options.filename;
+
+							try {
+								// Try to get the file path if available
+								// @ts-ignore - This is a non-standard property that might be available in some browsers
+								if (fileHandle.name) {
+									fileName = fileHandle.name;
+								}
+
+								// Try to get the folder path using multiple approaches
+
+								// Approach 1: Try to get the directory handle name
+								// @ts-ignore - This is a non-standard property that might be available in some browsers
+								if (fileHandle.directoryHandle && fileHandle.directoryHandle.name) {
+									// @ts-ignore
+									folderPath = fileHandle.directoryHandle.name;
+									console.log(
+										'DownloadUtils: Got folder path from directoryHandle.name:',
+										folderPath
+									);
+								}
+
+								// Approach 2: Try to get the parent directory from the file path
+								// @ts-ignore - This is a non-standard property that might be available in some browsers
+								else if (fileHandle.path) {
+									// @ts-ignore
+									const path = fileHandle.path;
+									const lastSlashIndex = path.lastIndexOf('/');
+									if (lastSlashIndex > 0) {
+										folderPath = path.substring(0, lastSlashIndex);
+										console.log('DownloadUtils: Got folder path from fileHandle.path:', folderPath);
+									}
+								}
+
+								// Approach 3: Try to use the File System API to get the parent directory
+								// @ts-ignore - This is a non-standard property that might be available in some browsers
+								else if (fileHandle.getParentDirectory) {
+									try {
+										// @ts-ignore
+										const parentDir = await fileHandle.getParentDirectory();
+										if (parentDir && parentDir.name) {
+											folderPath = parentDir.name;
+											console.log(
+												'DownloadUtils: Got folder path from getParentDirectory():',
+												folderPath
+											);
+										}
+									} catch (parentDirError) {
+										console.warn('DownloadUtils: Error getting parent directory:', parentDirError);
+									}
+								}
+
+								// If we still don't have a folder path, use a default
+								if (!folderPath) {
+									folderPath = 'Downloads'; // Default to Downloads folder
+									console.log('DownloadUtils: Using default Downloads folder path');
+								}
+							} catch (pathError) {
+								console.warn('DownloadUtils: Could not get file path details:', pathError);
+								// Ensure we have a default folder path
+								folderPath = 'Downloads';
+							}
+
+							console.log(`DownloadUtils: File saved successfully to ${folderPath}/${fileName}`);
+							return {
+								success: true,
+								fileName,
+								folderPath,
+								filePath: folderPath ? `${folderPath}/${fileName}` : undefined
+							};
+						} catch (writeError) {
+							console.error('DownloadUtils: Error writing to file:', writeError);
+							throw writeError;
+						}
+					} catch (writableError) {
+						console.error('DownloadUtils: Error creating writable stream:', writableError);
+						throw writableError;
+					}
+				} catch (pickerError) {
+					// Check if this is a user cancellation
+					if (
+						pickerError instanceof Error &&
+						(pickerError.name === 'AbortError' ||
+							pickerError.message.includes('user aborted') ||
+							pickerError.message.includes('cancelled') ||
+							pickerError.message.includes('canceled'))
+					) {
+						console.log('DownloadUtils: User cancelled the save dialog');
+						throw new Error('USER_CANCELLED_OPERATION');
+					}
+
+					console.error('DownloadUtils: Error with save file picker:', pickerError);
+					throw pickerError;
+				}
+			} catch (fsaError) {
+				// Check if this is a user cancellation (AbortError)
+				if (
+					fsaError instanceof Error &&
+					(fsaError.name === 'AbortError' ||
+						fsaError.message.includes('user aborted') ||
+						fsaError.message.includes('cancelled') ||
+						fsaError.message.includes('canceled'))
+				) {
+					console.log('DownloadUtils: User cancelled the save dialog');
+					// Throw a standardized cancellation error that can be caught by the caller
+					throw new Error('USER_CANCELLED_OPERATION');
+				}
+
+				// Log the specific error for debugging
+				console.warn(
+					'DownloadUtils: File System Access API failed:',
+					fsaError instanceof Error ? fsaError.message : String(fsaError),
+					fsaError
+				);
+
+				// Add more detailed logging to help diagnose the issue
+				if (fsaError instanceof Error) {
+					console.warn('Error name:', fsaError.name);
+					console.warn('Error message:', fsaError.message);
+					console.warn('Error stack:', fsaError.stack);
+				}
+
+				// Fall through to traditional approach for other errors
+			}
+		} else {
+			console.log(
+				`DownloadUtils: File System Access API not supported, using traditional approach`
+			);
+		}
+
+		// Traditional download approach using a link element
 		try {
 			// Log the filename for debugging
 			console.log(`DownloadUtils: Preparing to download file as "${options.filename}"`);
@@ -94,9 +283,19 @@ export async function downloadImage(options: DownloadOptions): Promise<boolean> 
 				console.log(`DownloadUtils: Cleaned up resources`);
 			}, 500);
 
-			return true;
-		} catch (blobError) {
-			console.warn('DownloadUtils: Primary approach failed, trying alternative method', blobError);
+			// For traditional download, we can't get the exact path
+			// But we can provide the filename
+			return {
+				success: true,
+				fileName: options.filename,
+				// For browser downloads, typically goes to Downloads folder
+				folderPath: 'Downloads'
+			};
+		} catch (linkError) {
+			console.warn(
+				'DownloadUtils: Traditional approach failed, trying alternative method',
+				linkError
+			);
 
 			// Try an alternative approach using window.open
 			try {
@@ -106,25 +305,52 @@ export async function downloadImage(options: DownloadOptions): Promise<boolean> 
 					throw new Error('Failed to open new window. Popup might be blocked.');
 				}
 
-				// Write the image to the new window
-				newWindow.document.write(`
-					<html>
-						<head>
-							<title>${options.filename}</title>
-							<style>
-								body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f0f0; }
-								img { max-width: 100%; max-height: 100%; }
-								.download-instructions { position: fixed; top: 10px; left: 0; right: 0; text-align: center; background: rgba(0,0,0,0.7); color: white; padding: 10px; }
-							</style>
-						</head>
-						<body>
-							<div class="download-instructions">Right-click on the image and select "Save Image As..." to download</div>
-							<img src="${options.dataUrl}" alt="${options.filename}">
-						</body>
-					</html>
-				`);
+				// Add null check before accessing properties on newWindow
+				if (newWindow.document) {
+					// Create HTML content for the new window
+					const htmlContent = `
+						<html>
+							<head>
+								<title>${options.filename}</title>
+								<style>
+									body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f0f0; }
+									img { max-width: 100%; max-height: 100%; }
+									.download-instructions { position: fixed; top: 10px; left: 0; right: 0; text-align: center; background: rgba(0,0,0,0.7); color: white; padding: 10px; }
+								</style>
+							</head>
+							<body>
+								<div class="download-instructions">Right-click on the image and select "Save Image As..." to download</div>
+								<img src="${options.dataUrl}" alt="${options.filename}">
+							</body>
+						</html>
+					`;
 
-				return true;
+					// Use a modern approach to avoid the deprecated document.write
+					try {
+						// Open a new document and set its content type
+						newWindow.document.open('text/html', 'replace');
+
+						// Insert the HTML content
+						// @ts-ignore - TypeScript doesn't like this but it's the recommended way
+						newWindow.document.documentElement.innerHTML = htmlContent.trim();
+
+						// Close the document to finish loading
+						newWindow.document.close();
+					} catch (docError) {
+						// Fallback to the old method if the modern approach fails
+						console.warn('DownloadUtils: Modern document writing failed, using fallback', docError);
+						newWindow.document.open();
+						// @ts-ignore - Suppress the deprecation warning
+						newWindow.document.write(htmlContent);
+						newWindow.document.close();
+					}
+				}
+
+				return {
+					success: true,
+					fileName: options.filename,
+					folderPath: 'Browser Tab' // This is opened in a new tab
+				};
 			} catch (windowError) {
 				console.error('DownloadUtils: Alternative approach failed', windowError);
 
@@ -151,7 +377,11 @@ export async function downloadImage(options: DownloadOptions): Promise<boolean> 
 					}
 				}, 500);
 
-				return true;
+				return {
+					success: true,
+					fileName: options.filename,
+					folderPath: 'Downloads' // Last resort method typically saves to Downloads
+				};
 			}
 		}
 	} catch (error) {

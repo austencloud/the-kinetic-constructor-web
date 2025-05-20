@@ -80,7 +80,7 @@ export async function renderSequence(
 		// Add a small delay to ensure all SVGs are fully rendered
 		await new Promise((resolve) => setTimeout(resolve, 250));
 
-		// Export the sequence with improved settings
+		// Export the sequence using the same settings as the image export tab
 		const result = await exportSequenceImage(element, {
 			beats: sequenceBeats as any,
 			startPosition: startPosition as any,
@@ -88,12 +88,14 @@ export async function renderSequence(
 			scale: 2, // Higher scale for better quality
 			quality: 1.0, // Always use maximum quality
 			format: 'png', // PNG format for lossless quality
-			columns: 4,
+			// For 6-beat sequences with start position, we need to ensure we use 4 columns for beats
+			// For other cases, use dynamic columns based on sequence length for optimal layout
+			// Setting columns to 0 will let CanvasDimensionsCalculator determine the optimal layout
+			columns: 0, // Let CanvasDimensionsCalculator determine the optimal layout
 			spacing: 0,
-			// Always include start position if it exists
-			includeStartPosition: true,
-			// Enable all enhancement features by default, but respect user preferences if explicitly set
-			// Use more robust checks that handle undefined values correctly
+			// Use settings from the image export settings
+			includeStartPosition:
+				settings.includeStartPosition === undefined ? true : !!settings.includeStartPosition,
 			addWord: settings.addWord === undefined ? true : !!settings.addWord,
 			addUserInfo: settings.addUserInfo === undefined ? true : !!settings.addUserInfo,
 			addDifficultyLevel:
@@ -102,8 +104,8 @@ export async function renderSequence(
 			addReversalSymbols:
 				settings.addReversalSymbols === undefined ? true : !!settings.addReversalSymbols,
 			title: sequenceName,
-			userName: 'User',
-			notes: 'Created using The Kinetic Constructor',
+			userName: settings.userName || 'User',
+			notes: settings.customNote || 'Created using The Kinetic Constructor',
 			difficultyLevel: difficultyLevel
 		});
 
