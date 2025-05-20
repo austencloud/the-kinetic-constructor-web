@@ -16,14 +16,14 @@ const rootDir = path.resolve(__dirname, '..');
 
 // Colors for console output
 const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m'
+	reset: '\x1b[0m',
+	bright: '\x1b[1m',
+	dim: '\x1b[2m',
+	red: '\x1b[31m',
+	green: '\x1b[32m',
+	yellow: '\x1b[33m',
+	blue: '\x1b[34m',
+	cyan: '\x1b[36m'
 };
 
 // Path to the proxy layout file
@@ -44,18 +44,18 @@ export const load: LayoutServerLoad = async () => {
 
 // Check if the proxy layout file exists
 if (!fs.existsSync(proxyLayoutPath)) {
-  console.log(`${colors.yellow}Creating proxy layout file...${colors.reset}`);
-  
-  try {
-    // Create the file
-    fs.writeFileSync(proxyLayoutPath, proxyLayoutContent);
-    console.log(`${colors.green}✓ Successfully created proxy layout file${colors.reset}`);
-  } catch (error) {
-    console.error(`${colors.red}Error creating proxy layout file:${colors.reset}`, error);
-    process.exit(1);
-  }
+	console.log(`${colors.yellow}Creating proxy layout file...${colors.reset}`);
+
+	try {
+		// Create the file
+		fs.writeFileSync(proxyLayoutPath, proxyLayoutContent);
+		console.log(`${colors.green}✓ Successfully created proxy layout file${colors.reset}`);
+	} catch (error) {
+		console.error(`${colors.red}Error creating proxy layout file:${colors.reset}`, error);
+		process.exit(1);
+	}
 } else {
-  console.log(`${colors.dim}Proxy layout file already exists, skipping...${colors.reset}`);
+	console.log(`${colors.dim}Proxy layout file already exists, skipping...${colors.reset}`);
 }
 
 // Run svelte-kit sync to regenerate types
@@ -64,12 +64,12 @@ console.log(`${colors.yellow}Running svelte-kit sync...${colors.reset}`);
 // We're using ESM, so we can't use child_process.execSync directly
 // Instead, we'll use a dynamic import
 try {
-  const { execSync } = await import('child_process');
-  execSync('npx svelte-kit sync', { stdio: 'inherit' });
-  console.log(`${colors.green}✓ Successfully synced SvelteKit types${colors.reset}`);
+	const { execSync } = await import('child_process');
+	execSync('npx svelte-kit sync', { stdio: 'inherit' });
+	console.log(`${colors.green}✓ Successfully synced SvelteKit types${colors.reset}`);
 } catch (error) {
-  console.error(`${colors.red}Error syncing SvelteKit types:${colors.reset}`, error);
-  process.exit(1);
+	console.error(`${colors.red}Error syncing SvelteKit types:${colors.reset}`, error);
+	process.exit(1);
 }
 
 console.log(`${colors.bright}${colors.green}Proxy layout setup complete!${colors.reset}`);

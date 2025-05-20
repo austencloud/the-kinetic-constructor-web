@@ -24,12 +24,12 @@ Make sure your `tsconfig.json` has the following settings:
 
 ```json
 {
-  "compilerOptions": {
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "target": "ES2022",
-    "useDefineForClassFields": true
-  }
+	"compilerOptions": {
+		"verbatimModuleSyntax": true,
+		"isolatedModules": true,
+		"target": "ES2022",
+		"useDefineForClassFields": true
+	}
 }
 ```
 
@@ -53,7 +53,7 @@ const doubled = $derived(count * 2);
 
 // For effects
 $effect(() => {
-  console.log(`Count is now ${count}`);
+	console.log(`Count is now ${count}`);
 });
 ```
 

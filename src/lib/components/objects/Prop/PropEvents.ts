@@ -6,20 +6,20 @@
  * Interface for the error event detail
  */
 export interface PropErrorEventDetail {
-  message: string;
+	message: string;
 }
 
 /**
  * Interface for the loaded event detail
  */
 export interface PropLoadedEventDetail {
-  timeout?: boolean;
+	timeout?: boolean;
 }
 
 /**
  * Type for the Prop component's custom events
  */
 export interface PropEvents {
-  error: CustomEvent<PropErrorEventDetail>;
-  loaded: CustomEvent<PropLoadedEventDetail>;
+	error: CustomEvent<PropErrorEventDetail>;
+	loaded: CustomEvent<PropLoadedEventDetail>;
 }

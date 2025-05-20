@@ -31,13 +31,16 @@ describe('State Management Performance', () => {
 			states: { idle: {} }
 		});
 
-		bench('create supervised actor', wrapBenchWithBudget(function(this: BenchFunction, ctx: BenchContext) {
-			return ctx.task(() => {
-				createSupervisedMachine('bench-actor', testMachine, {
-					strategy: new RestartStrategy()
+		bench(
+			'create supervised actor',
+			wrapBenchWithBudget(function (this: BenchFunction, ctx: BenchContext) {
+				return ctx.task(() => {
+					createSupervisedMachine('bench-actor', testMachine, {
+						strategy: new RestartStrategy()
+					});
 				});
-			});
-		}));
+			})
+		);
 	});
 
 	describe('Actor Operations', () => {
@@ -53,34 +56,43 @@ describe('State Management Performance', () => {
 			})
 		);
 
-		bench('send event', wrapBenchWithBudget(function(this: BenchFunction, ctx: BenchContext) {
-			return ctx.task(() => {
-				actor.send({ type: 'NEXT' });
-				actor.send({ type: 'PREV' });
-			});
-		}, actorBudget));
+		bench(
+			'send event',
+			wrapBenchWithBudget(function (this: BenchFunction, ctx: BenchContext) {
+				return ctx.task(() => {
+					actor.send({ type: 'NEXT' });
+					actor.send({ type: 'PREV' });
+				});
+			}, actorBudget)
+		);
 
-		bench('get snapshot', wrapBenchWithBudget(function(this: BenchFunction, ctx: BenchContext) {
-			return ctx.task(() => {
-				actor.getSnapshot();
-			});
-		}, actorBudget));
+		bench(
+			'get snapshot',
+			wrapBenchWithBudget(function (this: BenchFunction, ctx: BenchContext) {
+				return ctx.task(() => {
+					actor.getSnapshot();
+				});
+			}, actorBudget)
+		);
 	});
 
 	describe('Registry Operations', () => {
-		bench('register and unregister', wrapBenchWithBudget(function(this: BenchFunction, ctx: BenchContext) {
-			return ctx.task(() => {
-				const actor = createSupervisedMachine(
-					'bench-reg',
-					createMachine({
-						id: 'reg',
-						initial: 'idle',
-						states: { idle: {} }
-					})
-				);
-				stateRegistry.unregister('bench-reg');
-			});
-		}));
+		bench(
+			'register and unregister',
+			wrapBenchWithBudget(function (this: BenchFunction, ctx: BenchContext) {
+				return ctx.task(() => {
+					const actor = createSupervisedMachine(
+						'bench-reg',
+						createMachine({
+							id: 'reg',
+							initial: 'idle',
+							states: { idle: {} }
+						})
+					);
+					stateRegistry.unregister('bench-reg');
+				});
+			})
+		);
 	});
 
 	describe('Error Handling', () => {
@@ -96,10 +108,13 @@ describe('State Management Performance', () => {
 			}
 		);
 
-		bench('error reporting', wrapBenchWithBudget(function(this: BenchFunction, ctx: BenchContext) {
-			return ctx.task(() => {
-				actor.reportError(new Error('Benchmark error'));
-			});
-		}));
+		bench(
+			'error reporting',
+			wrapBenchWithBudget(function (this: BenchFunction, ctx: BenchContext) {
+				return ctx.task(() => {
+					actor.reportError(new Error('Benchmark error'));
+				});
+			})
+		);
 	});
 });

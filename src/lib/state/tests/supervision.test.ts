@@ -9,7 +9,12 @@ import { createMachine } from 'xstate';
 import { SupervisedActor } from '../core/supervision/SupervisedActor';
 import { Supervisor } from '../core/supervision/Supervisor';
 import { RootSupervisor } from '../core/supervision/RootSupervisor';
-import { RestartStrategy, StopStrategy, EscalateStrategy, ResumeStrategy } from '../core/supervision/strategies';
+import {
+	RestartStrategy,
+	StopStrategy,
+	EscalateStrategy,
+	ResumeStrategy
+} from '../core/supervision/strategies';
 import { ActorHealthStatus, SupervisionStrategyType } from '../core/supervision/types';
 
 describe('Actor Supervision System', () => {

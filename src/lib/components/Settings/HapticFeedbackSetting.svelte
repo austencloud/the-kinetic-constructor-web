@@ -10,7 +10,7 @@
 	function toggleHapticFeedback() {
 		// Update the setting
 		settingsStore.setHapticFeedback(!hapticFeedback);
-		
+
 		// If enabling, provide a sample haptic feedback
 		if (!hapticFeedback && browser) {
 			setTimeout(() => {
@@ -27,12 +27,12 @@
 	</div>
 	<div class="setting-control">
 		<label class="switch">
-			<input 
-				type="checkbox" 
-				checked={hapticFeedback} 
+			<input
+				type="checkbox"
+				checked={hapticFeedback}
 				onchange={toggleHapticFeedback}
 				aria-label="Toggle haptic feedback"
-			>
+			/>
 			<span class="slider round"></span>
 		</label>
 	</div>
@@ -95,7 +95,7 @@
 
 	.slider:before {
 		position: absolute;
-		content: "";
+		content: '';
 		height: 18px;
 		width: 18px;
 		left: 3px;

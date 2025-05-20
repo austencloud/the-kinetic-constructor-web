@@ -9,12 +9,12 @@ To make components easily selectable in tests, add `data-test` attributes:
 ```svelte
 <!-- Good: Component with test attribute -->
 <div data-test="pictograph" class="pictograph-wrapper">
-  <!-- Component content -->
+	<!-- Component content -->
 </div>
 
 <!-- Bad: Component without test attribute -->
 <div class="pictograph-wrapper">
-  <!-- Component content -->
+	<!-- Component content -->
 </div>
 ```
 
@@ -46,7 +46,7 @@ For components driven by XState:
 
 ```svelte
 <div data-state={$sequenceState.value}>
-  <!-- Component content -->
+	<!-- Component content -->
 </div>
 ```
 
@@ -54,7 +54,7 @@ For components driven by XState:
 
 ```svelte
 {#if $sequenceState.matches('generating')}
-  <div data-test="generating-indicator">Generating...</div>
+	<div data-test="generating-indicator">Generating...</div>
 {/if}
 ```
 
@@ -62,10 +62,10 @@ For components driven by XState:
 
 ```svelte
 <script>
-  // Expose the actor for testing
-  if (typeof window !== 'undefined') {
-    window.sequenceActor = sequenceActor;
-  }
+	// Expose the actor for testing
+	if (typeof window !== 'undefined') {
+		window.sequenceActor = sequenceActor;
+	}
 </script>
 ```
 
@@ -77,19 +77,14 @@ For SVG components:
 
 ```svelte
 <svg data-test="grid-svg" viewBox="0 0 1000 1000">
-  <!-- SVG content -->
+	<!-- SVG content -->
 </svg>
 ```
 
 2. Add identifiers to important SVG elements:
 
 ```svelte
-<circle 
-  data-point-name="center"
-  cx="500" 
-  cy="500" 
-  r="10"
-/>
+<circle data-point-name="center" cx="500" cy="500" r="10" />
 ```
 
 3. Use consistent attribute names for similar elements:
@@ -147,14 +142,16 @@ performance.measure('grid-render', 'grid-render-start', 'grid-render-end');
 ```javascript
 // In your component
 onMount(() => {
-  if (typeof window !== 'undefined') {
-    window.addEventListener('grid-rendered', (e) => {
-      const renderTime = performance.getEntriesByName('grid-render')[0].duration;
-      dispatchEvent(new CustomEvent('performance-report', { 
-        detail: { component: 'grid', renderTime } 
-      }));
-    });
-  }
+	if (typeof window !== 'undefined') {
+		window.addEventListener('grid-rendered', (e) => {
+			const renderTime = performance.getEntriesByName('grid-render')[0].duration;
+			dispatchEvent(
+				new CustomEvent('performance-report', {
+					detail: { component: 'grid', renderTime }
+				})
+			);
+		});
+	}
 });
 ```
 

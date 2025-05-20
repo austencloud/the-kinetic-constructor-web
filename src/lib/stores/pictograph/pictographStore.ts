@@ -45,7 +45,6 @@ export const initializePictographData = (csvData: {
 	diamondData: string;
 	boxData: string;
 }): PictographData[] | null => {
-
 	try {
 		if (!csvData.diamondData && !csvData.boxData) {
 			console.warn('No CSV data provided for initialization.');
@@ -55,10 +54,8 @@ export const initializePictographData = (csvData: {
 		const diamondPictographs = parseCsvToJson(csvData.diamondData || '', 'diamond');
 		const boxPictographs = parseCsvToJson(csvData.boxData || '', 'box');
 
-
 		const combinedData = [...diamondPictographs, ...boxPictographs];
 		const allPictographData = groupPictographsByLetter(combinedData);
-
 
 		pictographDataStore.set(allPictographData);
 		return allPictographData; // Return the data if needed

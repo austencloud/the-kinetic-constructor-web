@@ -1,11 +1,11 @@
 <script lang="ts">
-  export let color: string;
+	export let color: string;
 
-  // Calculate styles based on the color prop
-  const borderColor = color === "blue" ? "#2E3192" : "#ED1C24";
-  const backgroundColor = color === "blue" ? "#e6f0ff" : "#ffe6e6";
+	// Calculate styles based on the color prop
+	const borderColor = color === 'blue' ? '#2E3192' : '#ED1C24';
+	const backgroundColor = color === 'blue' ? '#e6f0ff' : '#ffe6e6';
 
-  const boxStyles = `
+	const boxStyles = `
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -20,5 +20,5 @@
 </script>
 
 <div style={boxStyles}>
-  <p>Orientation Picker for {color === "blue" ? "Left" : "Right"}</p>
+	<p>Orientation Picker for {color === 'blue' ? 'Left' : 'Right'}</p>
 </div>

@@ -24,7 +24,8 @@ export const simulatedFoldState = writable<boolean>(true);
 
 // Initialize values from existing override if available
 try {
-	const existingOverride = typeof window !== 'undefined' ? localStorage.getItem('foldableDeviceOverride') : null;
+	const existingOverride =
+		typeof window !== 'undefined' ? localStorage.getItem('foldableDeviceOverride') : null;
 	if (existingOverride) {
 		const settings = JSON.parse(existingOverride);
 		simulatedFoldableType.set(settings.foldableType || 'zfold');

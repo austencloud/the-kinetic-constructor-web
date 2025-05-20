@@ -36,7 +36,6 @@ export const sequenceActor = stateRegistry.registerMachine('sequence', modernSeq
 	description: 'Manages sequence generation and related operations'
 });
 
-
 // Initialize persistence
 if (typeof window !== 'undefined') {
 	initializePersistence(sequenceActor);

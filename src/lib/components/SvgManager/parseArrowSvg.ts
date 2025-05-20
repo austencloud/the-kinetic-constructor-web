@@ -14,5 +14,4 @@ export const parseArrowSvg = (svgText: string): ArrowSvgData => {
 		},
 		center: { x: viewBoxParts[2] / 2, y: viewBoxParts[3] / 2 }
 	};
-}
-
+};

@@ -61,10 +61,9 @@
 
 				<div class="compact-info">
 					<p>
-
-            <strong><br/>Note:</strong> This is an alpha version.<br />
-            For bugs or feature requests, email<br />
-            <a href="mailto:austencloud@gmail.com" class="email-link">austencloud@gmail.com</a>
+						<strong><br />Note:</strong> This is an alpha version.<br />
+						For bugs or feature requests, email<br />
+						<a href="mailto:austencloud@gmail.com" class="email-link">austencloud@gmail.com</a>
 					</p>
 
 					<div class="donation-section">

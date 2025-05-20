@@ -8,7 +8,6 @@ const { Letter } = require('./src/lib/types/Letter'); // Adjust the path as nece
 const letterFilenameMap = {
 	// ASCII letters remain unchanged
 
-
 	// Greek letters
 	Σ: 'Sigma',
 	Δ: 'Delta',
@@ -40,7 +39,7 @@ const letterFilenameMap = {
 	ζ: 'zeta',
 	η: 'eta',
 	μ: 'mu',
-	ν: 'nu',
+	ν: 'nu'
 	// Add any other necessary mappings
 };
 

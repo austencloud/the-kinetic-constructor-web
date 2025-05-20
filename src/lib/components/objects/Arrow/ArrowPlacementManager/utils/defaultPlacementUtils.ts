@@ -1,19 +1,5 @@
 // src/lib/components/PlacementManagers/ArrowPlacementManager/utils/defaultPlacementUtils.ts
-import {
-	PRO,
-	ANTI,
-	FLOAT,
-	DASH,
-	STATIC,
-	DIAMOND,
-	BOX,
-	RADIAL,
-	NONRADIAL,
-	CLOCK,
-	COUNTER,
-	IN,
-	OUT
-} from '$lib/types/Constants';
+import { DIAMOND, BOX, RADIAL, NONRADIAL, CLOCK, COUNTER, IN, OUT } from '$lib/types/Constants';
 import { LetterType } from '$lib/types/LetterType';
 import { LetterUtils } from '$lib/utils/LetterUtils';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
@@ -129,7 +115,7 @@ function getAdjustmentKey(
 		const letterVal = pictographData.letter as string;
 		const letter = LetterUtils.getLetter(letterVal);
 		const letterType = LetterType.getLetterType(letter);
-		
+
 		if (letterType && (letterType === LetterType.Type3 || letterType === LetterType.Type5)) {
 			const char = letterVal.slice(0, -1);
 			letterSuffix = `_${char}_dash`;

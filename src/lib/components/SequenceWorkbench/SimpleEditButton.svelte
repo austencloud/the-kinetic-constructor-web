@@ -46,7 +46,9 @@
 		background-color: #2a2a2e;
 		color: #ff5722;
 		border: none;
-		box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+		box-shadow:
+			0 3px 6px rgba(0, 0, 0, 0.16),
+			0 3px 6px rgba(0, 0, 0, 0.23);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
@@ -64,7 +66,9 @@
 	.edit-button:hover {
 		background-color: #3c3c41;
 		transform: translateY(-2px) scale(1.05);
-		box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.26);
+		box-shadow:
+			0 6px 12px rgba(0, 0, 0, 0.2),
+			0 4px 8px rgba(0, 0, 0, 0.26);
 	}
 
 	.edit-button.active:hover {

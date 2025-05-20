@@ -31,7 +31,7 @@
 	aria-pressed={showAllActive}
 	aria-label={buttonState.ariaLabel}
 	data-testid="show-all-button"
-	>
+>
 	<span class="icon" aria-hidden="true">{buttonState.icon}</span>
 	<span class="text">{buttonState.text}</span>
 </button>

@@ -100,8 +100,6 @@
 					item.classList.remove('force-new-row');
 				}
 			});
-
-
 		}
 
 		// Debounce the checkOverflow function for window resize
@@ -175,7 +173,6 @@
 		border-radius: 12px; /* Rounded corners for items */
 		transition: all 0.2s ease-out;
 	}
-
 
 	@media (max-width: 640px) {
 		.multi-group-row {

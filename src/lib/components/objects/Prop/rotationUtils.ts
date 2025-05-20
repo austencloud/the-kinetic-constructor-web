@@ -5,4 +5,3 @@ export function rotateOffset(point: { x: number; y: number }, angleDeg: number) 
 		y: point.x * Math.sin(angleRad) + point.y * Math.cos(angleRad)
 	};
 }
-;

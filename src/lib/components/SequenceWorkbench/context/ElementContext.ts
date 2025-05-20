@@ -1,6 +1,6 @@
 /**
  * ElementContext.ts
- * 
+ *
  * This module provides shared context keys and utilities for element references
  * across components in the SequenceWorkbench.
  */
@@ -18,6 +18,6 @@ export const CURRENT_WORD_LABEL_CONTEXT_KEY = Symbol('current-word-label-element
  * Type definition for element context
  */
 export interface ElementContext {
-  getElement: () => HTMLElement | null;
-  setElement?: (element: HTMLElement | null) => boolean;
+	getElement: () => HTMLElement | null;
+	setElement?: (element: HTMLElement | null) => boolean;
 }

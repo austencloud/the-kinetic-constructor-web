@@ -80,7 +80,9 @@ const sequenceMachine = createModernMachine<SequenceMachineContext, SequenceMach
 				UPDATE_BEAT: {
 					actions: assign({
 						sequence: ({ context, event }) =>
-							context.sequence.map((beat: any, index: number) => (index === event.index ? event.beat : beat))
+							context.sequence.map((beat: any, index: number) =>
+								index === event.index ? event.beat : beat
+							)
 					})
 				},
 				CLEAR_SEQUENCE: {

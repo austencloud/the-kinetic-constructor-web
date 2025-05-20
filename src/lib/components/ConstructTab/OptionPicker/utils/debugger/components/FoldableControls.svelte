@@ -72,7 +72,6 @@
 	$: actionMessage = $simulateFoldable
 		? 'Apply the selected foldable settings.'
 		: 'Remove any active foldable simulation.';
-
 </script>
 
 <div class="foldable-test-controls">
@@ -239,6 +238,4 @@
 	.apply-button:hover {
 		background-color: #075985; /* Slightly lighter blue on hover */
 	}
-
-
 </style>

@@ -5,7 +5,6 @@ import { PropType } from '../../../types/Types';
 export function createPropData(motion: Motion): PropData {
 	// Generate a unique ID
 	const propId = generateUniqueId();
-	
 
 	// Create the prop with proper defaults
 	const propData: PropData = {
@@ -20,7 +19,7 @@ export function createPropData(motion: Motion): PropData {
 		svgCenter: { x: 0, y: 0 },
 		rotAngle: 0
 	};
-	
+
 	return propData;
 }
 
@@ -28,5 +27,5 @@ export function createPropData(motion: Motion): PropData {
  * Generate a unique ID for the prop
  */
 export function generateUniqueId(): string {
-    return crypto.randomUUID ? crypto.randomUUID() : `id-${Math.random().toString(36).substr(2, 9)}`;
+	return crypto.randomUUID ? crypto.randomUUID() : `id-${Math.random().toString(36).substr(2, 9)}`;
 }

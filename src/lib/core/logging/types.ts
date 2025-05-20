@@ -235,17 +235,17 @@ export interface PerformanceLogger {
  * Machine logger configuration
  */
 export interface MachineLoggerOptions {
-  name: string;
-  level?: LogLevel;
-  includedEvents?: string[];
-  excludedEvents?: string[];
-  contextFields?: string[];
-  includeSnapshots?: boolean;
-  logTransitions?: boolean;
-  performanceTracking?: {
-    enabled: boolean;  // This was the issue - it was requiring this to be defined
-    transitionThreshold?: number;
-  };
+	name: string;
+	level?: LogLevel;
+	includedEvents?: string[];
+	excludedEvents?: string[];
+	contextFields?: string[];
+	includeSnapshots?: boolean;
+	logTransitions?: boolean;
+	performanceTracking?: {
+		enabled: boolean; // This was the issue - it was requiring this to be defined
+		transitionThreshold?: number;
+	};
 }
 
 /**

@@ -13,4 +13,3 @@
 	<SectionHeader groupKey={group.key} isFirstHeader={rowIndex === 0} />
 	<OptionGroupGrid options={group.options} key={transitionKey + '-optgroup-' + group.key} />
 {/each}
-

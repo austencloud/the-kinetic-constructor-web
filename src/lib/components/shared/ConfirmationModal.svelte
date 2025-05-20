@@ -43,11 +43,7 @@
 	}
 </script>
 
-<Modal 
-	isOpen={isOpen} 
-	title={title} 
-	onClose={close}
->
+<Modal {isOpen} {title} onClose={close}>
 	<!-- Content goes in the default slot -->
 	<div class="confirmation-content">
 		<p>{message}</p>
@@ -59,7 +55,7 @@
 			</label>
 		{/if}
 	</div>
-	
+
 	<!-- Footer content goes in the named footer slot -->
 	<div class="modal-footer-buttons" slot="footer">
 		<button class="cancel-button" onclick={close}>

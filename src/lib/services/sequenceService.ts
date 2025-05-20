@@ -298,5 +298,3 @@ export async function deleteSequenceApi(sequenceId: string): Promise<void> {
 		}, 700);
 	});
 }
-
-

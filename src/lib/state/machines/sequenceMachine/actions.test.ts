@@ -45,7 +45,6 @@ vi.mock('../../stores/sequence/SequenceContainer', () => ({
 	}
 }));
 
-
 describe('Sequence Machine Actions', () => {
 	beforeEach(() => {
 		// Reset mocks before each test

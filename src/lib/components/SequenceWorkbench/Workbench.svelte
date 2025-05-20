@@ -19,8 +19,7 @@
 
 {#key undefined}
 	<div class="sequence-workbench" use:resizeObserver>
-		<SequenceWidget
-		/>
+		<SequenceWidget />
 	</div>
 {/key}
 

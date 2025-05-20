@@ -18,7 +18,6 @@ import { MotionOriCalculator } from '$lib/components/objects/Motion/MotionOriCal
  * Returns an empty array for an empty sequence (initial state).
  */
 export function getNextOptions(sequence: PictographData[]): PictographData[] {
-
 	const lastPictograph = sequence.at(-1);
 
 	// If sequence is empty, return initial options (currently none defined)
@@ -26,12 +25,9 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 		return [];
 	}
 
-
-
 	// Calculate the actual end orientations using MotionOriCalculator
 	const blueEndOri = calculateActualEndOrientation(lastPictograph.blueMotionData);
 	const redEndOri = calculateActualEndOrientation(lastPictograph.redMotionData);
-
 
 	// Find options where start position matches end position of last pictograph
 	// AND start orientations match calculated end orientations of the last pictograph
@@ -40,7 +36,6 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 		blueEndOri,
 		redEndOri
 	);
-
 
 	return options;
 }
@@ -73,15 +68,12 @@ export function findOptionsWithMatchingPositionAndOrientation(
 	blueEndOri?: Orientation,
 	redEndOri?: Orientation
 ): PictographData[] {
-
-
 	if (!targetStartPos) {
 		console.warn('Cannot find next options: Last pictograph has no end position.');
 		return [];
 	}
 
 	const allPictographs = get(pictographDataStore); // Use get() as this is outside a Svelte component/store context
-
 
 	if (!Array.isArray(allPictographs) || !allPictographs.length) {
 		console.warn('No pictographs available in the global store.');
@@ -92,7 +84,6 @@ export function findOptionsWithMatchingPositionAndOrientation(
 	const positionMatches = allPictographs.filter(
 		(pictograph) => pictograph?.startPos === targetStartPos
 	);
-
 
 	// If no orientation constraints, return all position matches
 	if (!blueEndOri && !redEndOri) {

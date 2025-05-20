@@ -68,7 +68,6 @@
 <!-- Toast Manager for notifications -->
 <ToastManager />
 
-
 <style>
 	/* Optional: Basic styling for the error message */
 	.layout-load-error {

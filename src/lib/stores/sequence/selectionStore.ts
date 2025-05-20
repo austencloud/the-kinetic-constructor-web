@@ -18,7 +18,6 @@ function createSelectedStartPosStore() {
 			const savedValue = localStorage.getItem(START_POSITION_STORAGE_KEY);
 			if (savedValue) {
 				initialValue = JSON.parse(savedValue);
-
 			}
 		} catch (error) {
 			console.error('Error loading start position from localStorage:', error);
@@ -58,10 +57,8 @@ function createSelectedStartPosStore() {
 					try {
 						if (newValue) {
 							localStorage.setItem(START_POSITION_STORAGE_KEY, JSON.stringify(newValue));
-
 						} else {
 							localStorage.removeItem(START_POSITION_STORAGE_KEY);
-
 						}
 					} catch (error) {
 						console.error('Error saving start position to localStorage:', error);

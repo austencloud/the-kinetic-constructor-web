@@ -1,4 +1,4 @@
-import type { GridPoint } from "./GridPoint";
+import type { GridPoint } from './GridPoint';
 
 export interface GridData {
 	allHandPointsStrict: Record<string, GridPoint>;

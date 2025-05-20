@@ -13,9 +13,9 @@
 	// Get confirmation preference from uiStore
 	let showConfirmation = $derived($uiStore.preferences.confirmDeletions);
 
-	// Log the confirmation preference for debugging
+	// Track confirmation preference changes
 	$effect(() => {
-		console.log('ClearSequenceButton: Confirmation preference updated:', showConfirmation);
+		// Confirmation preference is derived from uiStore
 	});
 
 	function handleClick() {

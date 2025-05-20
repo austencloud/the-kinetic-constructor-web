@@ -49,7 +49,7 @@
 		display: grid;
 		/* e.g., 3 columns, auto rows. Adjust as you prefer. */
 		grid-template-columns: repeat(3, 1fr);
-    gap: 4%;
+		gap: 4%;
 	}
 
 	/* 
@@ -61,11 +61,11 @@
 		/* Fill the parent's height while maintaining aspect ratio 
      or some limit. 
   */
-  width: clamp(40px, 6vw, 60px);
-  height: clamp(40px, 6vw, 60px);
+		width: clamp(40px, 6vw, 60px);
+		height: clamp(40px, 6vw, 60px);
 
-  aspect-ratio: 1 / 1; /* keep them circular */
-  border-radius: 50%;
+		aspect-ratio: 1 / 1; /* keep them circular */
+		border-radius: 50%;
 		display: flex;
 		justify-content: center;
 		align-items: center;

@@ -41,7 +41,6 @@ export class ArrowPlacementManager {
 
 		// Log values for debugging
 		if (arrow.loc == 'ne' && arrow.propRotDir == 'ccw' && arrow.motionType == 'pro') {
-
 		}
 		// Calculate final position accounting for mirroring
 		if (arrow.svgMirrored) {
@@ -57,6 +56,5 @@ export class ArrowPlacementManager {
 				y: initialPos.y + adjustment.y - svgCenterY
 			};
 		}
-
 	}
 }

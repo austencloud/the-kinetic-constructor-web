@@ -87,7 +87,6 @@ The migration includes:
 3. **Pictograph Store Adapter**: An adapter that provides backward compatibility with the old store API
 4. **Pictograph Component Rewrite**: Completely rewrote the component using Svelte 5 runes
 
-
 ## Lessons Learned and Challenges
 
 ### Type Compatibility Issues

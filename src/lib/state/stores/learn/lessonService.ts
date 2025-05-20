@@ -277,7 +277,9 @@ function generatePositionRecognitionQuestion(lessonConfig: LessonConfig, index: 
 					const redLoc = p.redMotionData?.startLoc;
 					const blueLoc = p.blueMotionData?.startLoc;
 					// Type guard that ensures only defined values of type string pass through
-					return [redLoc, blueLoc].filter((loc): loc is NonNullable<typeof loc> => typeof loc === 'string');
+					return [redLoc, blueLoc].filter(
+						(loc): loc is NonNullable<typeof loc> => typeof loc === 'string'
+					);
 				})
 				.map((loc) => loc.toUpperCase())
 		)

@@ -194,8 +194,6 @@ export class LetterUtils {
 		}
 	}
 
-
-
 	static getLetter(letterStr: string): Letter {
 		return this.fromString(letterStr);
 	}

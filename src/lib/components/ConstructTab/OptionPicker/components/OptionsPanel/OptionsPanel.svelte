@@ -7,7 +7,6 @@
 	import SingleRowRenderer from './SingleRowRenderer.svelte';
 	import MultiRowRenderer from './MultiRowRenderer.svelte';
 
-
 	type LayoutRow = {
 		type: 'single' | 'multi';
 		groups: Array<{ key: string; options: PictographData[] }>;
@@ -178,7 +177,6 @@
 
 				if (fits !== contentIsShort) {
 					contentIsShort = fits;
-
 				}
 				timeoutId = null;
 			}, 100);

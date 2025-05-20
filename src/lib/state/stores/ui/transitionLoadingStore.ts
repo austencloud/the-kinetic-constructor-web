@@ -8,26 +8,26 @@ export const transitionLoadingStore = writable(false);
 
 // Helper functions to manipulate the store
 export const transitionLoading = {
-  /**
-   * Start the loading state
-   */
-  start: () => {
-    transitionLoadingStore.set(true);
-  },
-  
-  /**
-   * End the loading state
-   */
-  end: () => {
-    transitionLoadingStore.set(false);
-  },
-  
-  /**
-   * Toggle the loading state
-   */
-  toggle: () => {
-    transitionLoadingStore.update(state => !state);
-  }
+	/**
+	 * Start the loading state
+	 */
+	start: () => {
+		transitionLoadingStore.set(true);
+	},
+
+	/**
+	 * End the loading state
+	 */
+	end: () => {
+		transitionLoadingStore.set(false);
+	},
+
+	/**
+	 * Toggle the loading state
+	 */
+	toggle: () => {
+		transitionLoadingStore.update((state) => !state);
+	}
 };
 
 export default transitionLoading;

@@ -332,7 +332,8 @@ async function ensureTKAGlyphVisibility(svgElement: SVGElement): Promise<void> {
 					letterElement.setAttribute('visibility', 'visible');
 
 					// Ensure the href attribute is properly set
-					const href = letterElement.getAttribute('href') || letterElement.getAttribute('xlink:href');
+					const href =
+						letterElement.getAttribute('href') || letterElement.getAttribute('xlink:href');
 					if (href && href.startsWith('/')) {
 						// Convert relative URL to absolute for external references
 						const fullUrl = window.location.origin + href;

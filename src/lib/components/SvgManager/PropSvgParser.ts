@@ -26,7 +26,6 @@ export const parsePropSvg = (svgText: string, propColor?: string): Omit<SvgData,
 				x: parseFloat(centerElement.getAttribute('cx') || '0') || center.x,
 				y: parseFloat(centerElement.getAttribute('cy') || '0') || center.y
 			};
-
 		} else {
 			console.warn(
 				`⚠️ No centerPoint element found in SVG for ${propColor || 'unknown'} prop, using default center: (${center.x}, ${center.y})`

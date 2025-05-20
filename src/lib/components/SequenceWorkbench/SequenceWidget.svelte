@@ -28,13 +28,11 @@
 	import RemoveStartPositionButton from './RemoveStartPositionButton.svelte';
 	import ClearSequenceButton from './ClearSequenceButton.svelte';
 	import EditButton from './EditButton.svelte';
-	// Explicitly import ShareButton with a console log to verify it's being imported
 	import ShareButton from './share/ShareButton.svelte';
 	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
-	// Log to verify ShareButton is imported
-	console.log('SequenceWidget: ShareButton imported:', ShareButton);
+	// ShareButton is imported for the sequence sharing functionality
 
 	const { size, resizeObserver } = useResizeObserver();
 	const { dimensions } = useResponsiveLayout();
@@ -221,9 +219,6 @@
 				hapticFeedbackService.trigger('error');
 			}
 
-			// Log for debugging
-			console.log('Start position selected - clearing entire sequence');
-
 			// Clear the entire sequence including start position
 			handleClearSequence();
 
@@ -232,9 +227,6 @@
 		} else if (selectedBeatIds.length > 0) {
 			// Pass the beatId directly to the action
 			sequenceActions.removeBeatAndFollowing(selectedBeatIds[0]);
-
-			// Log for debugging
-			console.log('Removing beat with ID:', selectedBeatIds[0]);
 
 			// Trigger haptic feedback for deletion
 			if (browser) {

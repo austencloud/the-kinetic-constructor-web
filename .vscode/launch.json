@@ -1,14 +1,13 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-      {
-        "type": "chrome",
-        "request": "launch",
-        "name": "Launch Chrome",
-        "url": "http://localhost:5173", // Replace with your dev server URL
-        "webRoot": "${workspaceFolder}/src",
-        "sourceMaps": true
-      }
-    ]
-  }
-  
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "chrome",
+			"request": "launch",
+			"name": "Launch Chrome",
+			"url": "http://localhost:5173", // Replace with your dev server URL
+			"webRoot": "${workspaceFolder}/src",
+			"sourceMaps": true
+		}
+	]
+}

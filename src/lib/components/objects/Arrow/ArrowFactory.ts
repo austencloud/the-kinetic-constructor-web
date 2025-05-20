@@ -27,5 +27,5 @@ export function createArrowData(motion: Motion): ArrowData {
 	return arrowData;
 }
 export function generateUniqueId(): string {
-    return crypto.randomUUID ? crypto.randomUUID() : `id-${Math.random().toString(36).substr(2, 9)}`;
+	return crypto.randomUUID ? crypto.randomUUID() : `id-${Math.random().toString(36).substr(2, 9)}`;
 }

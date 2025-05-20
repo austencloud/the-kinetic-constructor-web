@@ -65,7 +65,6 @@
 			class="grid-item-wrapper"
 			class:single-item={applySingleItemClass}
 			class:two-item={applyTwoItemClass}
-
 		>
 			<Option pictographData={option} isPartOfTwoItems={applyTwoItemClass} />
 		</div>
@@ -135,9 +134,7 @@
 
 	/* Force minimum spacing between items with desktop square aspect */
 
-
 	/* Smaller grid items on small screens */
-
 
 	/* Even smaller for very small screens */
 	@media (max-width: 380px) {

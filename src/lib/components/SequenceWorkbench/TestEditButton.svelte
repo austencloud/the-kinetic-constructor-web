@@ -20,11 +20,7 @@
 	}
 </script>
 
-<button
-	class="test-edit-button"
-	class:active={isEditMode}
-	onclick={handleClick}
->
+<button class="test-edit-button" class:active={isEditMode} onclick={handleClick}>
 	Edit Mode: {isEditMode ? 'ON' : 'OFF'}
 </button>
 

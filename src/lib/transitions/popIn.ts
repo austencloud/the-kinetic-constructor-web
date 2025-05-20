@@ -6,11 +6,11 @@ import { cubicOut } from 'svelte/easing';
 import type { TransitionConfig } from 'svelte/transition';
 
 interface PopInParams {
-  delay?: number;
-  duration?: number;
-  easing?: (t: number) => number;
-  start?: number;
-  opacity?: number;
+	delay?: number;
+	duration?: number;
+	easing?: (t: number) => number;
+	start?: number;
+	opacity?: number;
 }
 
 /**
@@ -18,26 +18,20 @@ interface PopInParams {
  * for a smooth, professional animation
  */
 export function popIn(
-  node: Element,
-  {
-    delay = 0,
-    duration = 200,
-    easing = cubicOut,
-    start = 0.85,
-    opacity = 0.2
-  }: PopInParams = {}
+	node: Element,
+	{ delay = 0, duration = 200, easing = cubicOut, start = 0.85, opacity = 0.2 }: PopInParams = {}
 ): TransitionConfig {
-  const style = getComputedStyle(node);
-  const targetOpacity = +style.opacity;
-  const transform = style.transform === 'none' ? '' : style.transform;
+	const style = getComputedStyle(node);
+	const targetOpacity = +style.opacity;
+	const transform = style.transform === 'none' ? '' : style.transform;
 
-  return {
-    delay,
-    duration,
-    easing,
-    css: (t, u) => `
+	return {
+		delay,
+		duration,
+		easing,
+		css: (t, u) => `
       transform: ${transform} scale(${start + (1 - start) * t});
       opacity: ${opacity + (targetOpacity - opacity) * t};
     `
-  };
+	};
 }

@@ -40,7 +40,7 @@ export async function renderSequence(
 	}
 
 	if (!browser || !element) {
-		console.error('Cannot render: not in browser environment or no beat frame element');
+		logger.error('Cannot render: not in browser environment or no beat frame element');
 
 		// Try to find the element one more time using more aggressive selectors
 		const alternativeElement =
@@ -49,7 +49,7 @@ export async function renderSequence(
 			document.querySelector('.sequence');
 
 		if (alternativeElement instanceof HTMLElement) {
-			console.log('SequenceRenderer: Found alternative element for rendering:', alternativeElement);
+			logger.debug('Found alternative element for rendering');
 			element = alternativeElement;
 		} else {
 			return null;
@@ -57,12 +57,10 @@ export async function renderSequence(
 	}
 
 	try {
-		console.log('SequenceRenderer: Starting sequence rendering');
-		console.log('SequenceRenderer: Beat frame element:', element);
+		logger.debug('Starting sequence rendering');
 
 		// Get export settings using new function
 		let settings = getImageExportSettings();
-		console.log('SequenceRenderer: Export settings:', settings);
 
 		// Find the start position beat
 		let startPosition = null;
@@ -72,9 +70,6 @@ export async function renderSequence(
 				break;
 			}
 		}
-
-		console.log('SequenceRenderer: Start position found:', !!startPosition);
-		console.log('SequenceRenderer: Sequence beats count:', sequenceBeats.length);
 
 		// Ensure the beat frame element is fully rendered
 		// Add a small delay to ensure all SVGs are fully rendered
@@ -107,21 +102,16 @@ export async function renderSequence(
 			difficultyLevel: difficultyLevel
 		});
 
-		console.log('SequenceRenderer: Rendering completed successfully', {
-			dataUrlLength: result?.dataUrl?.length || 0,
-			width: result?.width || 0,
-			height: result?.height || 0
-		});
+		logger.debug('Rendering completed successfully');
 
 		// Validate the result
 		if (!result || !result.dataUrl || result.dataUrl.length < 1000) {
-			console.error('SequenceRenderer: Invalid rendering result', result);
+			logger.error('Invalid rendering result');
 			throw new Error('Failed to generate a valid image');
 		}
 
 		return result;
 	} catch (error) {
-		console.error('Error rendering sequence:', error);
 		logger.error('Error rendering sequence', {
 			error: error instanceof Error ? error : new Error(String(error))
 		});

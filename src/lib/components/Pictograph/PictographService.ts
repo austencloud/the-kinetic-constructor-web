@@ -144,8 +144,6 @@ export class PictographService {
 			// For Type 3 motions with dash, calculate the location based on the shift motion
 			const locationManager = new ArrowLocationManager(this);
 
-
-
 			arrowLoc =
 				locationManager.getArrowLocation(
 					motion,
@@ -153,7 +151,6 @@ export class PictographService {
 					() => this.getShiftMotion(),
 					this.data.letter
 				) || motionData.endLoc;
-
 		} else {
 			// For other motions, use the standard calculation
 			arrowLoc = motion
@@ -413,8 +410,6 @@ export class PictographService {
 			const shouldForceReset = isLayoutShift || isGridChanged;
 
 			if (shouldForceReset) {
-
-
 				// For layout shifts, we need to ensure the arrows are completely recreated
 				// This is the key to fixing the issue
 				if (newData.redArrowData) {
@@ -431,7 +426,6 @@ export class PictographService {
 					// Ensure the motion type is correct
 					if (newData.redMotion && newData.redMotionData) {
 						if (newData.redArrowData.motionType !== newData.redMotionData.motionType) {
-
 							newData.redArrowData.motionType = newData.redMotionData.motionType;
 						}
 					}
@@ -446,13 +440,11 @@ export class PictographService {
 							newData.blueArrowData.loc,
 							newData.blueArrowData.svgMirrored
 						);
-
 					}
 
 					// Ensure the motion type is correct
 					if (newData.blueMotion && newData.blueMotionData) {
 						if (newData.blueArrowData.motionType !== newData.blueMotionData.motionType) {
-
 							newData.blueArrowData.motionType = newData.blueMotionData.motionType;
 						}
 					}

@@ -1,12 +1,11 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-      {
-        "label": "Restart npm start",
-        "type": "shell",
-        "command": "npm run start",
-        "problemMatcher": []
-      }
-    ]
-  }
-  
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Restart npm start",
+			"type": "shell",
+			"command": "npm run start",
+			"problemMatcher": []
+		}
+	]
+}

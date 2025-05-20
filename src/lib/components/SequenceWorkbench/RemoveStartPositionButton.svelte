@@ -84,7 +84,10 @@
 			0 3px 6px rgba(0, 0, 0, 0.16),
 			0 3px 6px rgba(0, 0, 0, 0.23);
 		border: none;
-		color: var(--tkc-icon-color-delete, #ff5555); /* Red color to indicate more destructive action */
+		color: var(
+			--tkc-icon-color-delete,
+			#ff5555
+		); /* Red color to indicate more destructive action */
 		pointer-events: auto;
 		white-space: nowrap; /* Prevent text wrapping */
 	}
@@ -130,7 +133,7 @@
 			--button-size-factor: 0.9;
 			padding: 0 12px;
 		}
-		
+
 		.button-text {
 			font-size: 13px;
 		}
@@ -141,7 +144,7 @@
 			--button-size-factor: 0.8;
 			padding: 0 10px;
 		}
-		
+
 		.button-text {
 			font-size: 12px;
 		}

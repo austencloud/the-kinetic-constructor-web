@@ -3,5 +3,5 @@ export enum LetterConditions {
 	BETA_ENDING = 'beta_ending',
 	GAMMA_ENDING = 'gamma_ending',
 	HYBRID = 'hybrid',
-	NON_HYBRID = 'non_hybrid',
+	NON_HYBRID = 'non_hybrid'
 }

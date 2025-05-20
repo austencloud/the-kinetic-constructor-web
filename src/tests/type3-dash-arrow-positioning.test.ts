@@ -8,7 +8,7 @@ import { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
 import { DASH, PRO, RED, BLUE } from '$lib/types/Constants';
 import ArrowLocationManager, {
-	calculateDashLocation,
+	calculateDashLocation
 } from '$lib/components/objects/Arrow/ArrowLocationManager';
 import { Motion } from '$lib/components/objects/Motion/Motion';
 

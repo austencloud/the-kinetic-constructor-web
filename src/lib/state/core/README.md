@@ -19,26 +19,23 @@ The container-based approach provides a more direct and ergonomic API for state 
 
 ```typescript
 // Create a state container
-const counterContainer = createContainer(
-  { count: 0 },
-  (state, update) => ({
-    increment: () => {
-      update(state => {
-        state.count += 1;
-      });
-    },
-    decrement: () => {
-      update(state => {
-        state.count -= 1;
-      });
-    },
-    reset: () => {
-      update(state => {
-        state.count = 0;
-      });
-    }
-  })
-);
+const counterContainer = createContainer({ count: 0 }, (state, update) => ({
+	increment: () => {
+		update((state) => {
+			state.count += 1;
+		});
+	},
+	decrement: () => {
+		update((state) => {
+			state.count -= 1;
+		});
+	},
+	reset: () => {
+		update((state) => {
+			state.count = 0;
+		});
+	}
+}));
 
 // Use the container
 counterContainer.increment();
@@ -50,30 +47,30 @@ console.log(counterContainer.state.count); // 1
 ```typescript
 // Create a state machine
 const counterMachine = createModernMachine({
-  id: 'counter',
-  initial: 'active',
-  context: { count: 0 },
-  states: {
-    active: {
-      on: {
-        INCREMENT: {
-          actions: assign({
-            count: ({ context }) => context.count + 1
-          })
-        },
-        DECREMENT: {
-          actions: assign({
-            count: ({ context }) => context.count - 1
-          })
-        },
-        RESET: {
-          actions: assign({
-            count: () => 0
-          })
-        }
-      }
-    }
-  }
+	id: 'counter',
+	initial: 'active',
+	context: { count: 0 },
+	states: {
+		active: {
+			on: {
+				INCREMENT: {
+					actions: assign({
+						count: ({ context }) => context.count + 1
+					})
+				},
+				DECREMENT: {
+					actions: assign({
+						count: ({ context }) => context.count - 1
+					})
+				},
+				RESET: {
+					actions: assign({
+						count: () => 0
+					})
+				}
+			}
+		}
+	}
 });
 
 // Create a machine container
@@ -90,22 +87,22 @@ In a Svelte 5 component (`.svelte` or `.svelte.ts` file):
 
 ```svelte
 <script lang="ts">
-  import { counterContainer } from './counterContainer';
-  import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
-  
-  // Use the container with Svelte 5 runes
-  const counter = useContainer(counterContainer);
-  
-  // Create derived values
-  const doubleCount = $derived(counter.count * 2);
+	import { counterContainer } from './counterContainer';
+	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+
+	// Use the container with Svelte 5 runes
+	const counter = useContainer(counterContainer);
+
+	// Create derived values
+	const doubleCount = $derived(counter.count * 2);
 </script>
 
 <div>
-  <h1>Counter: {counter.count}</h1>
-  <p>Double: {doubleCount}</p>
-  <button onclick={counterContainer.increment}>Increment</button>
-  <button onclick={counterContainer.decrement}>Decrement</button>
-  <button onclick={counterContainer.reset}>Reset</button>
+	<h1>Counter: {counter.count}</h1>
+	<p>Double: {doubleCount}</p>
+	<button onclick={counterContainer.increment}>Increment</button>
+	<button onclick={counterContainer.decrement}>Decrement</button>
+	<button onclick={counterContainer.reset}>Reset</button>
 </div>
 ```
 
@@ -113,18 +110,18 @@ In a Svelte 5 component (`.svelte` or `.svelte.ts` file):
 
 ```svelte
 <script lang="ts">
-  import { counterMachineContainer } from './counterMachine';
-  import { useMachine } from '$lib/state/core/svelte5-integration.svelte';
-  
-  // Use the machine with Svelte 5 runes
-  const counter = useMachine(counterMachineContainer);
+	import { counterMachineContainer } from './counterMachine';
+	import { useMachine } from '$lib/state/core/svelte5-integration.svelte';
+
+	// Use the machine with Svelte 5 runes
+	const counter = useMachine(counterMachineContainer);
 </script>
 
 <div>
-  <h1>Counter: {counter.state.context.count}</h1>
-  <button onclick={() => counter.send({ type: 'INCREMENT' })}>Increment</button>
-  <button onclick={() => counter.send({ type: 'DECREMENT' })}>Decrement</button>
-  <button onclick={() => counter.send({ type: 'RESET' })}>Reset</button>
+	<h1>Counter: {counter.state.context.count}</h1>
+	<button onclick={() => counter.send({ type: 'INCREMENT' })}>Increment</button>
+	<button onclick={() => counter.send({ type: 'DECREMENT' })}>Decrement</button>
+	<button onclick={() => counter.send({ type: 'RESET' })}>Reset</button>
 </div>
 ```
 

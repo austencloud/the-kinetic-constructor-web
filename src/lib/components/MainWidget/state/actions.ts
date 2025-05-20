@@ -46,7 +46,7 @@ export const actions = {
 		appService.send({ type: 'RETRY_INITIALIZATION' });
 	},
 
-    backgroundReady: (): void => {
-        appService.send({ type: 'BACKGROUND_READY' });
-    }
+	backgroundReady: (): void => {
+		appService.send({ type: 'BACKGROUND_READY' });
+	}
 };

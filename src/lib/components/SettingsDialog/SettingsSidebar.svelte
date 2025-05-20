@@ -1,7 +1,7 @@
 <script context="module" lang="ts">
-    // REMOVED: Lucide type import
+	// REMOVED: Lucide type import
 
-    // Export the Section type - icon is now just a string for FA classes
+	// Export the Section type - icon is now just a string for FA classes
 	export type Section = {
 		id: string;
 		label: string;
@@ -10,10 +10,10 @@
 </script>
 
 <script lang="ts">
-    // Instance script
+	// Instance script
 	import { createEventDispatcher } from 'svelte';
-    // REMOVED: Lucide runtime import
-    // Import the Section type for props
+	// REMOVED: Lucide runtime import
+	// Import the Section type for props
 
 	// Props received from parent
 	export let sections: Section[] = [];
@@ -27,7 +27,7 @@
 		dispatch('sectionSelect', id);
 	}
 
-    // REMOVED: getIconComponent function
+	// REMOVED: getIconComponent function
 </script>
 
 <nav class="w-48 flex-shrink-0 border-r border-slate-700 bg-slate-800/50 p-4">

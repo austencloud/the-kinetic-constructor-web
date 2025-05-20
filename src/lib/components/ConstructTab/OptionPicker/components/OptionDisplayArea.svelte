@@ -38,8 +38,6 @@
 		// Update hasOptions
 		hasOptions = props.optionsToDisplay && props.optionsToDisplay.length > 0;
 
-
-
 		// Determine display state
 		if (props.isLoading) {
 			displayState = 'loading';

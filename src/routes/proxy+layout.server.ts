@@ -4,7 +4,7 @@
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async () => {
-  // This is an empty load function that doesn't do anything
-  // But it satisfies SvelteKit's requirement for this file
-  return {};
+	// This is an empty load function that doesn't do anything
+	// But it satisfies SvelteKit's requirement for this file
+	return {};
 };

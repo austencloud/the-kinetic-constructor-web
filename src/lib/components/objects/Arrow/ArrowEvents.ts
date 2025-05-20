@@ -6,21 +6,21 @@
  * Interface for the error event detail
  */
 export interface ArrowErrorEventDetail {
-  message: string;
+	message: string;
 }
 
 /**
  * Interface for the loaded event detail
  */
 export interface ArrowLoadedEventDetail {
-  timeout?: boolean;
+	timeout?: boolean;
 }
 
 /**
  * Type for the Arrow component's custom events
  */
 export interface ArrowEvents {
-  error: CustomEvent<ArrowErrorEventDetail>;
-  loaded: CustomEvent<ArrowLoadedEventDetail>;
-  imageLoaded: CustomEvent<void>;
+	error: CustomEvent<ArrowErrorEventDetail>;
+	loaded: CustomEvent<ArrowLoadedEventDetail>;
+	imageLoaded: CustomEvent<void>;
 }

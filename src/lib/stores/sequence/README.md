@@ -16,11 +16,13 @@ The new implementation can be found in:
 ## Migration Plan
 
 1. Replace imports from the deprecated files with imports from the new implementation:
+
    - Replace `import { beatsStore } from '$lib/stores/sequence/beatsStore'` with `import { sequenceStore } from '$lib/state/stores/sequence/sequenceAdapter'`
    - Replace `import { isSequenceEmpty } from '$lib/stores/sequence/sequenceStateStore'` with a derived store from sequenceStore
    - Replace `import { sequenceActions } from '$lib/stores/sequence/sequenceActions'` with `import { sequenceActions } from '$lib/state/machines/sequenceMachine'`
 
 2. Update method calls:
+
    - Replace `beatsStore.set(beats)` with `sequenceStore.setSequence(beats)`
    - Replace `beatsStore.update(updater)` with appropriate sequenceStore methods
 

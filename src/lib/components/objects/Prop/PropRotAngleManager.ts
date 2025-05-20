@@ -1,4 +1,4 @@
-import type { Loc, Orientation } from "$lib/types/Types";
+import type { Loc, Orientation } from '$lib/types/Types';
 
 export default class PropRotAngleManager {
 	private loc: Loc;

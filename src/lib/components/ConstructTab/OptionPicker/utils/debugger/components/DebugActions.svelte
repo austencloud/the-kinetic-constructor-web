@@ -2,10 +2,10 @@
 <script lang="ts">
 	import { debugActions } from '../stores/debugStore';
 	import CopyButton from './CopyButton.svelte';
-	
+
 	// Add the layout context parameter
 	export let layoutContext: any;
-	
+
 	// Helper function to make TypeScript happy with the return type
 	async function copyAllInfo(): Promise<string> {
 		// This function needs to return a string for the CopyButton to copy
@@ -20,11 +20,7 @@
 </div>
 
 <div class="actions-area">
-	<CopyButton
-		onClick={copyAllInfo}
-		text="Copy All Info"
-		className="copy-button"
-	/>
+	<CopyButton onClick={copyAllInfo} text="Copy All Info" className="copy-button" />
 </div>
 
 <!-- No component-specific styles needed, using shared styles -->

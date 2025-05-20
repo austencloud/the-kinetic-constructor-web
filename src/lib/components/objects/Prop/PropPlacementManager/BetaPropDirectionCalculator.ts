@@ -121,7 +121,6 @@ export class BetaPropDirectionCalculator {
 
 			// Only do special handling for the red and blue props
 			if (redMotion && (prop.color === RED || prop.color === BLUE)) {
-
 				// Get direction from red motion, not from prop
 				let motionDirection: Direction | null = null;
 
@@ -154,7 +153,6 @@ export class BetaPropDirectionCalculator {
 				return prop.color === RED ? motionDirection : this.getOppositeDirection(motionDirection);
 			}
 		}
-
 
 		// Default behavior for other letters
 		const motionData = this.getMotionDataForProp(prop);

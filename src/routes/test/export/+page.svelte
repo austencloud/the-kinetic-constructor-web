@@ -16,7 +16,6 @@
 <div class="export-test-page">
 	<h1>Pictograph Export Testing</h1>
 	<div class="tabs">
-
 		<button
 			class="tab-button"
 			class:active={activeTab === 'enhanced'}
