@@ -36,13 +36,13 @@
 		inset: 0;
 		background: radial-gradient(
 			circle at center,
-			rgba(255, 255, 255, 0.1) 0%,
-			rgba(255, 255, 255, 0.05) 40%,
+			rgba(100, 255, 100, 0.1) 0%,
+			rgba(100, 255, 100, 0.05) 40%,
 			transparent 70%
 		);
-		border: 2px solid rgba(255, 255, 255, 0.4);
+		border: 2px solid rgba(100, 255, 100, 0.6);
 		border-radius: 8px;
-		box-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+		box-shadow: 0 0 8px rgba(100, 255, 100, 0.3);
 		opacity: 0;
 		transform: scale(1) translateZ(0);
 		transition: all 0.18s ease-out;

@@ -10,10 +10,12 @@
 		beat: BeatData;
 		onClick: () => void;
 		isStartPosition?: boolean;
+		isSelected?: boolean;
 	}>();
 
 	// Default values for optional props
 	const isStartPosition = $derived(props.isStartPosition ?? false);
+	const isSelected = $derived(props.isSelected ?? false);
 
 	// Derived values
 	const pictographData = $derived(props.beat?.pictographData || defaultPictographData);
@@ -36,7 +38,10 @@
 	}
 
 	function handleMouseEnter() {
-		showBorder = true;
+		// Only show hover border if not selected
+		if (!isSelected) {
+			showBorder = true;
+		}
 	}
 
 	function handleMouseLeave() {

@@ -5,7 +5,7 @@
 
 	import { onMount } from 'svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import AnimatedHighlight from './AnimatedHighlight.svelte';
+	import AnimatedHighlight from './GoldSelectionBorder.svelte';
 
 	// Props using Svelte 5 runes
 	const props = $props<{

@@ -19,8 +19,8 @@ export default defineConfig({
 		esbuildOptions: {
 			logLevel: 'error'
 		},
-		// Force Vite to always optimize dependencies
-		force: true
+		// Only force optimization when needed, not during regular development
+		force: process.env.VITE_FORCE_OPTIMIZE === 'true'
 	},
 	// Increase build performance and avoid timeout issues
 	build: {
@@ -49,8 +49,11 @@ export default defineConfig({
 		},
 		// Increase the timeout for dependency optimization
 		watch: {
-			usePolling: true,
+			usePolling: false, // Disable polling on Windows to reduce file system load
 			interval: 1000
+		},
+		fs: {
+			strict: false // Relax file system restrictions to help with Windows path issues
 		}
 	},
 	logLevel: 'error',

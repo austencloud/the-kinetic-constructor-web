@@ -1,4 +1,4 @@
-// src/lib/components/OptionPicker/runesStore.ts
+// src/lib/components/OptionPicker/optionsState.ts
 // Re-export from the .svelte.ts file to ensure runes are only used in the correct context
 export {
 	sequenceData,
@@ -9,4 +9,4 @@ export {
 	groupedOptions,
 	actions,
 	type LastSelectedTabState
-} from './runesStore.svelte';
+} from './optionsState.svelte';

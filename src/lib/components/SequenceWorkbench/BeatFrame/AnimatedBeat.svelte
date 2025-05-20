@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Beat from './Beat.svelte';
-	import AnimatedHighlight from './AnimatedHighlight.svelte';
+	import AnimatedHighlight from './GoldSelectionBorder.svelte';
 	import type { BeatData } from './BeatData';
 
 	const props = $props<{
@@ -85,7 +85,7 @@
 	class:selected={isSelected}
 	onanimationend={handleAnimationEnd}
 >
-	<Beat beat={props.beat} onClick={props.onClick} />
+	<Beat beat={props.beat} onClick={props.onClick} {isSelected} />
 
 	{#if isSelected}
 		<!-- Only show one highlight at a time to reduce rendering load -->
@@ -118,21 +118,14 @@
 	}
 
 	.selected {
-		/* Simple selection indicator that doesn't require continuous animation */
-		transform: scale(1.05) translateZ(0); /* Increased scale to match hover effect */
-		box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+		/* Selection indicator without scaling */
 		z-index: 25; /* Higher z-index for selected beats */
 	}
 
-	/* Ensure the selected state maintains proper scaling when hovered */
-	.selected:hover {
-		transform: scale(1.05) translateZ(0); /* Keep the same scale as non-hovered selected state */
-		z-index: 30; /* Even higher z-index when selected and hovered */
-	}
-
-	/* Add hover effect for non-selected state */
-	.animated-beat-container:not(.selected):hover {
-		z-index: 20; /* Raise z-index on hover */
+	/* Allow hover effect to control scaling for both selected and non-selected beats */
+	.animated-beat-container:hover {
+		transform: scale(1.05) translateZ(0); /* Apply scale on hover only */
+		z-index: 30; /* Higher z-index when hovered */
 	}
 
 	.animate {

@@ -33,7 +33,7 @@
 
 <div class="highlight-container" class:active>
 	{#if active}
-		<div class="gold-border-highlight"></div>
+		<div class="gold-selection-border"></div>
 
 		{#if showPulse}
 			<div class="pulse-effect" transition:fade={{ duration: 300, easing: cubicOut }}></div>
@@ -65,33 +65,34 @@
 		opacity: 1;
 	}
 
-	.gold-border-highlight {
+	.gold-selection-border {
 		position: absolute;
 		inset: 0;
 		border-radius: 8px;
 		border: 3px solid #ffcc00;
-		box-shadow: 0 0 6px rgba(255, 204, 0, 0.6);
-		opacity: 0.9;
+		box-shadow: 0 0 8px rgba(255, 204, 0, 0.7);
+		opacity: 1;
 		/* Use transform for hardware acceleration */
-		transform: translateZ(0);
+		transform: scale(1.05) translateZ(0); /* Match the hover scale exactly */
 		/* Use CSS animation instead of JS-driven animation */
 		animation: gold-pulse 2s infinite ease-in-out;
 		box-sizing: border-box;
 		overflow: visible; /* Allow the border to overflow */
+		z-index: 30; /* Ensure it's above the hover effect */
 	}
 
 	@keyframes gold-pulse {
 		0% {
-			opacity: 0.7;
-			box-shadow: 0 0 4px rgba(255, 204, 0, 0.5);
+			opacity: 0.9;
+			box-shadow: 0 0 6px rgba(255, 204, 0, 0.6);
 		}
 		50% {
 			opacity: 1;
-			box-shadow: 0 0 8px rgba(255, 204, 0, 0.8);
+			box-shadow: 0 0 10px rgba(255, 204, 0, 0.9);
 		}
 		100% {
-			opacity: 0.7;
-			box-shadow: 0 0 4px rgba(255, 204, 0, 0.5);
+			opacity: 0.9;
+			box-shadow: 0 0 6px rgba(255, 204, 0, 0.6);
 		}
 	}
 

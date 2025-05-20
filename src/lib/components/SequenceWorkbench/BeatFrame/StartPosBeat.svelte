@@ -10,7 +10,7 @@
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/BeatHoverEffect.svelte';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import AnimatedHighlight from './AnimatedHighlight.svelte';
+	import AnimatedHighlight from './GoldSelectionBorder.svelte';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
@@ -341,7 +341,10 @@
 	}
 
 	function handleMouseEnter() {
-		showBorder = true;
+		// Only show hover border if not selected
+		if (!isSelected) {
+			showBorder = true;
+		}
 	}
 
 	function handleMouseLeave() {
@@ -358,7 +361,7 @@
 	type="button"
 >
 	<div class="pictograph-wrapper">
-		<Beat beat={beatData} onClick={props.onClick} isStartPosition={true} />
+		<Beat beat={beatData} onClick={props.onClick} isStartPosition={true} {isSelected} />
 		<StyledBorderOverlay {pictographData} isEnabled={showBorder && !isSelected} />
 
 		{#if isSelected}
@@ -396,22 +399,14 @@
 	/* Style for selected state - simplified to work with AnimatedHighlight */
 	.start-pos-beat.selected {
 		background-color: rgba(255, 204, 0, 0.05); /* Subtle background highlight */
-		transform: scale(1.05) translateZ(0); /* Match the scale of the beat hover effect */
-		box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
 		transition: all 0.18s ease; /* Ensure smooth transition */
 		z-index: 25; /* Higher z-index for selected beats */
 	}
 
-	/* Ensure the selected state maintains proper scaling when hovered */
-	.start-pos-beat.selected:hover {
-		transform: scale(1.05) translateZ(0); /* Keep the same scale as non-hovered selected state */
-		z-index: 30; /* Even higher z-index when selected and hovered */
-	}
-
-	/* Add hover effect for non-selected state */
-	.start-pos-beat:hover:not(.selected) {
-		transform: scale(1.05) translateZ(0); /* Match the scale of the beat hover effect */
-		z-index: 20; /* Raise z-index on hover */
+	/* Add hover effect for all states */
+	.start-pos-beat:hover {
+		transform: scale(1.05) translateZ(0); /* Apply scale on hover only */
+		z-index: 30; /* Higher z-index when hovered */
 	}
 
 	.pictograph-wrapper {
