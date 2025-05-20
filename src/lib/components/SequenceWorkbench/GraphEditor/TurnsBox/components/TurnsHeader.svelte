@@ -2,18 +2,20 @@
 	import DirectionButton from './DirectionButton.svelte';
 	import type { Direction } from '$lib/stores/sequence/turnsStore';
 
-	// Props
-	export let color: string;
-	export let headerText: string;
-	export let direction: Direction;
-	export let iconPaths: { clockwise: string; counterClockwise: string };
-	export let onDirectionChanged: (direction: Direction) => void;
+	// Define props using Svelte 5 runes syntax
+	const props = $props<{
+		color: string;
+		headerText: string;
+		direction: Direction;
+		iconPaths: { clockwise: string; counterClockwise: string };
+		onDirectionChanged: (direction: Direction) => void;
+	}>();
 
 	// Handle direction change
 	function handleDirectionChange(newDirection: Direction) {
 		// Call the callback prop
-		if (onDirectionChanged) {
-			onDirectionChanged(newDirection);
+		if (props.onDirectionChanged) {
+			props.onDirectionChanged(newDirection);
 		}
 	}
 </script>
@@ -22,22 +24,22 @@
 	<!-- Counter-clockwise button -->
 	<DirectionButton
 		direction="counterclockwise"
-		active={direction === 'counterclockwise'}
-		{color}
-		iconPath={iconPaths.counterClockwise}
+		active={props.direction === 'counterclockwise'}
+		color={props.color}
+		iconPath={props.iconPaths.counterClockwise}
 		altText="Counter-clockwise rotation"
 		onDirectionSelected={handleDirectionChange}
 	/>
 
 	<!-- Label -->
-	<div class="header-label" style="color: {color};">{headerText}</div>
+	<div class="header-label" style="color: {props.color};">{props.headerText}</div>
 
 	<!-- Clockwise button -->
 	<DirectionButton
 		direction="clockwise"
-		active={direction === 'clockwise'}
-		{color}
-		iconPath={iconPaths.clockwise}
+		active={props.direction === 'clockwise'}
+		color={props.color}
+		iconPath={props.iconPaths.clockwise}
 		altText="Clockwise rotation"
 		onDirectionSelected={handleDirectionChange}
 	/>

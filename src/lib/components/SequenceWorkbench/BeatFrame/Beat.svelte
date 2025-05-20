@@ -106,11 +106,5 @@
 		transform: translateZ(0);
 		will-change: transform;
 		box-sizing: border-box;
-		background-color: rgba(
-			34,
-			34,
-			34,
-			0.9
-		); /* Add background color to ensure pictograph is visible when overflowing */
 	}
 </style>

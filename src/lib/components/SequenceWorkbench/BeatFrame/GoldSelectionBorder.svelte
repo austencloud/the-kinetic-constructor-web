@@ -69,7 +69,7 @@
 		position: absolute;
 		inset: 0;
 		border-radius: 8px;
-		border: 3px solid #ffcc00;
+		border: 4px solid #ffcc00;
 		box-shadow: 0 0 8px rgba(255, 204, 0, 0.7);
 		opacity: 1;
 		/* Use transform for hardware acceleration */

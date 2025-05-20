@@ -25,6 +25,7 @@
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
+	import { createSafePictographCopy } from '$lib/utils/pictographUtils';
 
 	// We'll use custom events instead of Svelte's event dispatcher
 	// This function creates a custom event that will bubble up through the DOM
@@ -105,8 +106,8 @@
 		// One-time subscription to get the initial value
 		const unsubscribe = selectedStartPos.subscribe((newStartPos) => {
 			if (newStartPos && !startPosition) {
-				// Create a deep copy to avoid reference issues
-				startPosition = JSON.parse(JSON.stringify(newStartPos));
+				// Create a safe copy to avoid reference issues
+				startPosition = createSafePictographCopy(newStartPos);
 			}
 		});
 
@@ -116,34 +117,38 @@
 		// Listen for the custom event when a start position is selected
 		const handleStartPosSelected = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
-				// Create a deep copy to avoid reference issues
-				const newStartPos = JSON.parse(JSON.stringify(event.detail.startPosition));
+				// Create a safe copy to avoid reference issues
+				const newStartPos = createSafePictographCopy(event.detail.startPosition);
 
-				// Update the local state
-				startPosition = newStartPos;
+				// Update the local state only if we got a valid copy
+				if (newStartPos) {
+					startPosition = newStartPos;
 
-				// Update the store (but don't subscribe to its changes to avoid loops)
-				selectedStartPos.set(newStartPos);
+					// Update the store (but don't subscribe to its changes to avoid loops)
+					selectedStartPos.set(newStartPos);
 
-				// Log for debugging
-				console.log('BeatFrameStateManager: Updated start position from event');
+					// Log for debugging
+					console.log('BeatFrameStateManager: Updated start position from event');
+				}
 			}
 		};
 
 		// Listen for the start position refresh event (used when first beat is removed)
 		const handleStartPosRefresh = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
-				// Create a deep copy to avoid reference issues
-				const newStartPos = JSON.parse(JSON.stringify(event.detail.startPosition));
+				// Create a safe copy to avoid reference issues
+				const newStartPos = createSafePictographCopy(event.detail.startPosition);
 
-				// Update the local state
-				startPosition = newStartPos;
+				// Update the local state only if we got a valid copy
+				if (newStartPos) {
+					startPosition = newStartPos;
 
-				// Update the store (but don't subscribe to its changes to avoid loops)
-				selectedStartPos.set(newStartPos);
+					// Update the store (but don't subscribe to its changes to avoid loops)
+					selectedStartPos.set(newStartPos);
 
-				// Log for debugging
-				console.log('BeatFrameStateManager: Refreshed start position after first beat removal');
+					// Log for debugging
+					console.log('BeatFrameStateManager: Refreshed start position after first beat removal');
+				}
 			}
 		};
 
@@ -169,8 +174,8 @@
 		sequenceContainer.selectBeat('start-position');
 
 		// Then dispatch a custom event for the start position selection
-		// Create a deep copy of startPosition to avoid reference issues
-		const startPosCopy = startPosition ? JSON.parse(JSON.stringify(startPosition)) : null;
+		// Create a safe copy of startPosition to avoid reference issues
+		const startPosCopy = startPosition ? createSafePictographCopy(startPosition) : null;
 
 		// Dispatch the event for the start position selector
 		const selectStartPosEvent = new CustomEvent('select-start-pos', {

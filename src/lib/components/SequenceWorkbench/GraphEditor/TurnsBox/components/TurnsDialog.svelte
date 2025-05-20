@@ -2,32 +2,39 @@
 	import { fly } from 'svelte/transition';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { TURNS_VALUES } from '$lib/stores/sequence/turnsStore';
+	import { browser } from '$app/environment';
 
-	// Props
-	export let isOpen: boolean;
-	export let color: string;
-	export let onClose: () => void;
-	export let onSelectTurns: (turns: string | number) => void;
+	// Define props using Svelte 5 runes syntax
+	const props = $props<{
+		isOpen: boolean;
+		color: string;
+		onClose: () => void;
+		onSelectTurns: (turns: string | number) => void;
+	}>();
 
 	// Handle dialog close
 	function handleClose() {
 		// Provide haptic feedback
-		hapticFeedbackService.trigger('selection');
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
 
 		// Call the callback prop
-		if (onClose) {
-			onClose();
+		if (props.onClose) {
+			props.onClose();
 		}
 	}
 
 	// Handle turns selection
 	function handleSelectTurns(value: string) {
 		// Provide haptic feedback
-		hapticFeedbackService.trigger('selection');
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
 
 		// Call the callback prop
-		if (onSelectTurns) {
-			onSelectTurns(value);
+		if (props.onSelectTurns) {
+			props.onSelectTurns(value);
 		}
 	}
 
@@ -35,13 +42,13 @@
 	const dialogBackground = `linear-gradient(to bottom right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))`;
 </script>
 
-{#if isOpen}
+{#if props.isOpen}
 	<div class="dialog-container" transition:fly={{ y: 20, duration: 200 }}>
 		<!-- Overlay for closing on outside click -->
 		<div
 			class="overlay"
-			on:click|stopPropagation={handleClose}
-			on:keydown={(e) => e.key === 'Enter' && handleClose()}
+			onclick={handleClose}
+			onkeydown={(e) => e.key === 'Enter' && handleClose()}
 			aria-label="Close dialog"
 			tabindex="0"
 			role="button"
@@ -51,15 +58,15 @@
 		<div
 			class="dialog"
 			style="
-				border-color: {color};
+				border-color: {props.color};
 				background: {dialogBackground};
 			"
 		>
 			{#each TURNS_VALUES as value}
 				<button
 					class="direct-set-button"
-					style="border-color: {color};"
-					on:click={() => handleSelectTurns(value)}
+					style="border-color: {props.color};"
+					onclick={() => handleSelectTurns(value)}
 					aria-label={`Set turns to ${value}`}
 				>
 					{value}

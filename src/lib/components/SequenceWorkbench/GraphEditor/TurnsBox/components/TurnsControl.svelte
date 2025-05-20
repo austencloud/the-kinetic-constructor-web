@@ -1,44 +1,53 @@
 <script lang="ts">
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { isMinTurns, isMaxTurns, type TurnsValue } from '$lib/stores/sequence/turnsStore';
+	import { browser } from '$app/environment';
 
-	// Props
-	export let turns: TurnsValue;
-	export let color: string;
-	export let onIncrement: () => void;
-	export let onDecrement: () => void;
-	export let onOpenDialog: () => void;
+	// Define props using Svelte 5 runes syntax
+	const props = $props<{
+		turns: TurnsValue;
+		color: string;
+		onIncrement: () => void;
+		onDecrement: () => void;
+		onOpenDialog: () => void;
+	}>();
 
 	// Handle increment button click
 	function handleIncrement() {
 		// Provide haptic feedback
-		hapticFeedbackService.trigger('selection');
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
 
 		// Call the callback prop
-		if (onIncrement) {
-			onIncrement();
+		if (props.onIncrement) {
+			props.onIncrement();
 		}
 	}
 
 	// Handle decrement button click
 	function handleDecrement() {
 		// Provide haptic feedback
-		hapticFeedbackService.trigger('selection');
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
 
 		// Call the callback prop
-		if (onDecrement) {
-			onDecrement();
+		if (props.onDecrement) {
+			props.onDecrement();
 		}
 	}
 
 	// Handle turns label click to open dialog
 	function handleOpenDialog() {
 		// Provide haptic feedback
-		hapticFeedbackService.trigger('selection');
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
 
 		// Call the callback prop
-		if (onOpenDialog) {
-			onOpenDialog();
+		if (props.onOpenDialog) {
+			props.onOpenDialog();
 		}
 	}
 </script>
@@ -49,10 +58,10 @@
 	<!-- Decrement button -->
 	<button
 		class="increment-button"
-		style="--color: {color}"
-		on:click={handleDecrement}
+		style="--color: {props.color}"
+		onclick={handleDecrement}
 		aria-label="Decrease turns"
-		disabled={isMinTurns(turns)}
+		disabled={isMinTurns(props.turns)}
 	>
 		−
 	</button>
@@ -60,20 +69,20 @@
 	<!-- Turns label/button -->
 	<button
 		class="turns-label"
-		style="--color: {color}"
-		on:click={handleOpenDialog}
+		style="--color: {props.color}"
+		onclick={handleOpenDialog}
 		aria-label="Set turns value"
 	>
-		<span class="turns-value">{turns}</span>
+		<span class="turns-value">{props.turns}</span>
 	</button>
 
 	<!-- Increment button -->
 	<button
 		class="increment-button"
-		style="--color: {color}"
-		on:click={handleIncrement}
+		style="--color: {props.color}"
+		onclick={handleIncrement}
 		aria-label="Increase turns"
-		disabled={isMaxTurns(turns)}
+		disabled={isMaxTurns(props.turns)}
 	>
 		+
 	</button>

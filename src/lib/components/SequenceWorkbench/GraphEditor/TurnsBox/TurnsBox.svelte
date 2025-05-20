@@ -2,24 +2,27 @@
 <script lang="ts">
 	import { turnsStore, blueTurns, redTurns, type Direction } from '$lib/stores/sequence/turnsStore';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
 
 	// Import sub-components
 	import TurnsHeader from './components/TurnsHeader.svelte';
 	import TurnsControl from './components/TurnsControl.svelte';
 	import TurnsDialog from './components/TurnsDialog.svelte';
 
-	// Component props
-	export let color: 'blue' | 'red';
-	export let onTurnsChanged: (data: { color: 'blue' | 'red'; turns: any }) => void;
-	export let onDirectionChanged: (data: { color: 'blue' | 'red'; direction: Direction }) => void;
+	// Define props using Svelte 5 runes syntax
+	const props = $props<{
+		color: 'blue' | 'red';
+		onTurnsChanged: (data: { color: 'blue' | 'red'; turns: any }) => void;
+		onDirectionChanged: (data: { color: 'blue' | 'red'; direction: Direction }) => void;
+	}>();
 
-	// Simple component state (UI only, not duplicating store data)
-	let isDialogOpen = false;
+	// Component state
+	let isDialogOpen = $state(false);
 
 	// Get derived state from stores
-	$: turnsData = color === 'blue' ? $blueTurns : $redTurns;
-	$: direction = turnsData.direction;
-	$: turns = turnsData.turns;
+	const turnsData = $derived(props.color === 'blue' ? $blueTurns : $redTurns);
+	const direction = $derived(turnsData.direction);
+	const turns = $derived(turnsData.turns);
 
 	// Color configurations
 	const COLORS = {
@@ -40,7 +43,7 @@
 	};
 
 	// Computed values based on color
-	$: colorConfig = COLORS[color];
+	const colorConfig = $derived(COLORS[props.color as keyof typeof COLORS]);
 
 	// Icon paths
 	const iconPaths = {
@@ -50,46 +53,68 @@
 
 	// Event handlers
 	function handleSetDirection(newDirection: Direction) {
-		turnsStore.setDirection(color, newDirection);
-		hapticFeedbackService.trigger('selection');
-		if (onDirectionChanged) {
-			onDirectionChanged({ color, direction: newDirection });
+		turnsStore.setDirection(props.color, newDirection);
+
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
+		if (props.onDirectionChanged) {
+			props.onDirectionChanged({ color: props.color, direction: newDirection });
 		}
 	}
 
 	function handleOpenDialog() {
 		isDialogOpen = true;
-		hapticFeedbackService.trigger('navigation');
+
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('navigation');
+		}
 	}
 
 	function handleCloseDialog() {
 		isDialogOpen = false;
-		hapticFeedbackService.trigger('navigation');
+
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('navigation');
+		}
 	}
 
 	function handleSelectTurns(value: string | number) {
 		const newTurns = value === 'fl' ? 'fl' : parseFloat(String(value));
-		turnsStore.setTurns(color, newTurns);
+		turnsStore.setTurns(props.color, newTurns);
 		isDialogOpen = false;
-		hapticFeedbackService.trigger('selection');
-		if (onTurnsChanged) {
-			onTurnsChanged({ color, turns: newTurns });
+
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
+		if (props.onTurnsChanged) {
+			props.onTurnsChanged({ color: props.color, turns: newTurns });
 		}
 	}
 
 	function handleIncrement() {
-		turnsStore.incrementTurns(color);
-		hapticFeedbackService.trigger('selection');
-		if (onTurnsChanged) {
-			onTurnsChanged({ color, turns: turnsData.turns });
+		turnsStore.incrementTurns(props.color);
+
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
+		if (props.onTurnsChanged) {
+			props.onTurnsChanged({ color: props.color, turns: turnsData.turns });
 		}
 	}
 
 	function handleDecrement() {
-		turnsStore.decrementTurns(color);
-		hapticFeedbackService.trigger('selection');
-		if (onTurnsChanged) {
-			onTurnsChanged({ color, turns: turnsData.turns });
+		turnsStore.decrementTurns(props.color);
+
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
+		if (props.onTurnsChanged) {
+			props.onTurnsChanged({ color: props.color, turns: turnsData.turns });
 		}
 	}
 

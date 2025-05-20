@@ -9,6 +9,7 @@
 	import { browser } from '$app/environment';
 	import { layoutStore } from '$lib/stores/layout/layoutStore';
 	import { createEventDispatcher, setContext } from 'svelte';
+	import { createSafePictographCopy } from '$lib/utils/pictographUtils';
 
 	// Import the sequence container and integration utilities
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
@@ -140,8 +141,8 @@
 		// One-time subscription to get the initial value
 		const unsubscribe = selectedStartPos.subscribe((newStartPos) => {
 			if (newStartPos && !startPosition) {
-				// Create a deep copy to avoid reference issues
-				startPosition = JSON.parse(JSON.stringify(newStartPos));
+				// Create a safe copy to avoid reference issues
+				startPosition = createSafePictographCopy(newStartPos);
 				// Log using our safe logging helper (only in dev mode)
 				safeLog('BeatFrame: Initialized startPosition with:', startPosition);
 			}
@@ -463,11 +464,13 @@
 					event.detail.startPosition
 				);
 
-				// Create a deep copy to avoid reference issues
-				const newStartPos = JSON.parse(JSON.stringify(event.detail.startPosition));
+				// Create a safe copy to avoid reference issues
+				const newStartPos = createSafePictographCopy(event.detail.startPosition);
 
-				// Update the local state
-				startPosition = newStartPos;
+				// Update the local state only if we got a valid copy
+				if (newStartPos) {
+					startPosition = newStartPos;
+				}
 
 				// Update the store (but don't subscribe to its changes to avoid loops)
 				selectedStartPos.set(newStartPos);
@@ -504,8 +507,8 @@
 		// Deselect current beat - clear all selections
 
 		// Dispatch a custom event to trigger the start position selector
-		// Create a deep copy of startPosition to avoid reference issues
-		const startPosCopy = startPosition ? JSON.parse(JSON.stringify(startPosition)) : null;
+		// Create a safe copy of startPosition to avoid reference issues
+		const startPosCopy = startPosition ? createSafePictographCopy(startPosition) : null;
 
 		const event = new CustomEvent('select-start-pos', {
 			bubbles: true,

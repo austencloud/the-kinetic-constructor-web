@@ -1,7 +1,6 @@
 <!-- src/lib/components/SequenceWorkbench/RightPanel/RightPanel.svelte -->
 <script lang="ts">
 	import { workbenchStore } from '$lib/state/stores/workbenchStore';
-	import { editModeStore } from '$lib/state/stores/editModeStore';
 	import ModernGenerationControls from './ModernGenerationControls.svelte';
 	import OptionPickerWithDebug from '$lib/components/ConstructTab/OptionPicker/OptionPickerWithDebug.svelte';
 	import StartPosPicker from '$lib/components/ConstructTab/StartPosPicker/StartPosPicker.svelte';
@@ -10,14 +9,15 @@
 	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicInOut } from 'svelte/easing';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 
 	// Local state
-	let isEditMode = $state(false);
+	let hasSelectedBeats = $state(false);
 
-	// Subscribe to the edit mode store
+	// Subscribe to the sequence container to check for selected beats
 	$effect(() => {
-		const unsubscribe = editModeStore.subscribe((state) => {
-			isEditMode = state.isEditMode;
+		const unsubscribe = sequenceContainer.subscribe((state) => {
+			hasSelectedBeats = state.selectedBeatIds.length > 0;
 		});
 
 		return unsubscribe;
@@ -38,7 +38,7 @@
 		<div in:fly={flyParams} out:fade={fadeParams}>
 			<ModernGenerationControls />
 		</div>
-	{:else if isEditMode}
+	{:else if hasSelectedBeats}
 		<div
 			class="full-height-wrapper graph-editor-wrapper"
 			in:fade={fadeParams}

@@ -1,37 +1,42 @@
 <script lang="ts">
 	import type { Direction } from '$lib/stores/sequence/turnsStore';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
 
-	// Props
-	export let direction: Direction;
-	export let active: boolean;
-	export let color: string;
-	export let iconPath: string;
-	export let altText: string;
-	export let onDirectionSelected: (direction: Direction) => void;
+	// Define props using Svelte 5 runes syntax
+	const props = $props<{
+		direction: Direction;
+		active: boolean;
+		color: string;
+		iconPath: string;
+		altText: string;
+		onDirectionSelected: (direction: Direction) => void;
+	}>();
 
 	// Handle button click
 	function handleClick() {
 		// Provide haptic feedback
-		hapticFeedbackService.trigger('selection');
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
 
 		// Call the callback prop
-		if (onDirectionSelected) {
-			onDirectionSelected(direction);
+		if (props.onDirectionSelected) {
+			props.onDirectionSelected(props.direction);
 		}
 	}
 </script>
 
 <button
 	class="direction-button"
-	class:active
-	style="--color: {color};"
-	on:click={handleClick}
-	aria-label={altText}
-	aria-pressed={active}
+	class:active={props.active}
+	style="--color: {props.color};"
+	onclick={handleClick}
+	aria-label={props.altText}
+	aria-pressed={props.active}
 >
 	<div class="direction-icon">
-		<img class="icon" src={iconPath} alt={altText} />
+		<img class="icon" src={props.iconPath} alt={props.altText} />
 	</div>
 </button>
 
