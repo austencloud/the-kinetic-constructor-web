@@ -5,7 +5,7 @@
 	// Components
 	import FullScreen from '$lib/AppFullScreen.svelte';
 	import MainLayout from '$lib/components/MainWidget/layout/MainLayout.svelte';
-	import LoadingOverlay from '$lib/components/MainWidget/loading/LoadingOverlay.svelte';
+	import EnhancedLoadingOverlay from '$lib/components/MainWidget/loading/EnhancedLoadingOverlay.svelte';
 	import BackgroundCanvas from '$lib/components/Backgrounds/BackgroundCanvas.svelte';
 	import BackgroundProvider from '$lib/components/Backgrounds/BackgroundProvider.svelte';
 	import FirstTimeSetupDialog from '$lib/components/FirstTimeSetup/FirstTimeSetupDialog.svelte';
@@ -124,7 +124,7 @@
 
 		{#if isInitializingApp || hasFailed}
 			<div class="loading-overlay-wrapper" transition:fade={{ duration: 300 }}>
-				<LoadingOverlay
+				<EnhancedLoadingOverlay
 					message={loadingMessage}
 					progress={loadingProgress}
 					onRetry={handleRetry}

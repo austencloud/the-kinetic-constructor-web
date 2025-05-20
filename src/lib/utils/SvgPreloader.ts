@@ -1,9 +1,9 @@
 // src/lib/utils/SvgPreloader.ts
 import type { Color, MotionType, Orientation, TKATurns } from '$lib/types/Types';
 import { PropType } from '$lib/types/Types';
-
-// Cache for SVG content
-const svgCache: Record<string, string> = {};
+import { resourceCache } from '$lib/services/ResourceCache';
+import { logger } from '$lib/core/logging';
+import { toAppError } from '$lib/types/ErrorTypes';
 
 export default class SvgPreloader {
 	private svgManager: any = null;
@@ -37,24 +37,27 @@ export default class SvgPreloader {
 	/**
 	 * Check if an SVG is already cached
 	 */
-	private isCached(key: string): boolean {
-		return !!svgCache[key];
+	private async isCached(key: string): Promise<boolean> {
+		return await resourceCache.has(key);
 	}
 
 	/**
 	 * Get SVG from cache or fetch and cache it
 	 */
 	private async getOrFetchSvg(key: string, fetchFn: () => Promise<string>): Promise<string> {
-		if (this.isCached(key)) {
-			return svgCache[key];
+		// Check ResourceCache first
+		const cachedSvg = await resourceCache.get<string>(key);
+		if (cachedSvg) {
+			return cachedSvg;
 		}
 
 		try {
 			const svgContent = await fetchFn();
-			svgCache[key] = svgContent;
+			await resourceCache.set(key, svgContent);
+			logger.debug(`Cached SVG for key: ${key}`);
 			return svgContent;
 		} catch (error) {
-			console.error(`Failed to fetch SVG for key ${key}:`, error);
+			logger.error(`Failed to fetch SVG for key ${key}:`, { error: toAppError(error) });
 			throw error;
 		}
 	}
@@ -146,7 +149,6 @@ export default class SvgPreloader {
 	async preloadCommonSvgs(): Promise<void> {
 		try {
 			await Promise.all([this.preloadCommonProps(), this.preloadCommonArrows()]);
-
 		} catch (error) {
 			console.warn('SVG preloading skipped (possibly SSR context)', error);
 		}
@@ -155,12 +157,9 @@ export default class SvgPreloader {
 	/**
 	 * Get SVG cache stats
 	 */
-	getCacheStats(): { total: number; props: number; arrows: number } {
-		const cacheKeys = Object.keys(svgCache);
+	getCacheStats(): { resourceCacheStats: any } {
 		return {
-			total: cacheKeys.length,
-			props: cacheKeys.filter((key) => key.startsWith('prop:')).length,
-			arrows: cacheKeys.filter((key) => key.startsWith('arrow:')).length
+			resourceCacheStats: resourceCache.getStats()
 		};
 	}
 }

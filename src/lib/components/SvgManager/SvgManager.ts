@@ -6,15 +6,19 @@ import {
 	type Orientation,
 	type TKATurns
 } from '$lib/types/Types';
+import { resourceCache } from '$lib/services/ResourceCache';
+import { logger } from '$lib/core/logging';
+import { toAppError } from '$lib/types/ErrorTypes';
 
 /**
- * Enhanced SvgManager that doesn't depend on svgPreloader
+ * Enhanced SvgManager that uses the centralized ResourceCache
  */
 export default class SvgManager {
 	/**
-	 * Cache for SVG content by key to avoid duplicate network requests
+	 * Local memory cache for immediate access during the current session
+	 * This is a fallback in case the ResourceCache is not available
 	 */
-	private static readonly cache: Map<string, string> = new Map();
+	private static readonly localCache: Map<string, string> = new Map();
 
 	/**
 	 * Get a unique key for caching SVG content
@@ -131,12 +135,18 @@ export default class SvgManager {
 	public async getPropSvg(propType: PropType, color: Color): Promise<string> {
 		const cacheKey = this.getCacheKey(['prop', propType, color]);
 
-		// Check local cache first
-		if (SvgManager.cache.has(cacheKey)) {
-			return SvgManager.cache.get(cacheKey)!;
-		}
-
 		try {
+			// Check ResourceCache first
+			const cachedSvg = await resourceCache.get<string>(cacheKey);
+			if (cachedSvg) {
+				return cachedSvg;
+			}
+
+			// Check local cache as fallback
+			if (SvgManager.localCache.has(cacheKey)) {
+				return SvgManager.localCache.get(cacheKey)!;
+			}
+
 			// Fallback to direct fetch - use the correct path with static prefix
 			const path = `/images/props/${propType}.svg`;
 			const baseSvg = await this.fetchSvg(path);
@@ -147,11 +157,15 @@ export default class SvgManager {
 			// Ensure the SVG has a centerPoint element
 			const svgWithCenterPoint = this.ensureCenterPoint(coloredSvg);
 
-			// Cache for future use
-			SvgManager.cache.set(cacheKey, svgWithCenterPoint);
+			// Store in both caches
+			SvgManager.localCache.set(cacheKey, svgWithCenterPoint);
+			await resourceCache.set(cacheKey, svgWithCenterPoint);
+
+			logger.debug(`Cached prop SVG: ${propType} (${color})`);
+
 			return svgWithCenterPoint;
 		} catch (error) {
-			console.error('Error fetching prop SVG:', error);
+			logger.error(`Error fetching prop SVG: ${propType} (${color})`, { error: toAppError(error) });
 			// Return a fallback SVG with centerPoint
 			return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 				<rect width="100" height="100" fill="#cccccc" />
@@ -172,12 +186,18 @@ export default class SvgManager {
 	): Promise<string> {
 		const cacheKey = this.getCacheKey(['arrow', motionType, startOri, String(turns), color]);
 
-		// Check local cache first
-		if (SvgManager.cache.has(cacheKey)) {
-			return SvgManager.cache.get(cacheKey)!;
-		}
-
 		try {
+			// Check ResourceCache first
+			const cachedSvg = await resourceCache.get<string>(cacheKey);
+			if (cachedSvg) {
+				return cachedSvg;
+			}
+
+			// Check local cache as fallback
+			if (SvgManager.localCache.has(cacheKey)) {
+				return SvgManager.localCache.get(cacheKey)!;
+			}
+
 			// Fallback to direct fetch
 			const basePath = '/images/arrows';
 			const typePath = motionType.toLowerCase();
@@ -193,41 +213,68 @@ export default class SvgManager {
 			// Ensure the SVG has a centerPoint element
 			const svgWithCenterPoint = this.ensureCenterPoint(coloredSvg);
 
-			// Cache for future use
-			SvgManager.cache.set(cacheKey, svgWithCenterPoint);
+			// Store in both caches
+			SvgManager.localCache.set(cacheKey, svgWithCenterPoint);
+			await resourceCache.set(cacheKey, svgWithCenterPoint);
+
+			logger.debug(`Cached arrow SVG: ${motionType}_${turns} (${color})`);
+
 			return svgWithCenterPoint;
 		} catch (error) {
 			// Check if it's a specific error we can handle
 			if (error instanceof DOMException && error.name === 'AbortError') {
-				console.warn(`Arrow SVG fetch timeout: ${motionType}_${turns}.svg`);
+				logger.warn(`Arrow SVG fetch timeout: ${motionType}_${turns}.svg`);
 			} else {
-				console.error('Error fetching arrow SVG:', error);
+				logger.error(`Error fetching arrow SVG: ${motionType}_${turns} (${color})`, {
+					error: toAppError(error)
+				});
 			}
 
 			// Return a fallback SVG with centerPoint
-			return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80">
+			const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80">
 				<rect width="240" height="80" fill="#cccccc" opacity="0.2" />
 				<path d="M240,40C240,40,240,40,240,40c-4,4.8-28.6,32.6-38.3,39.8c-1.4,1.1-8.4,4-16.6-4.2l26.8-27.2H9c-6.1,0-9.1-4.2-9-8.3
 					c0-4.3,3-8.5,9-8.5h202.6L184.9,4.4c8.2-8.2,15.2-5.3,16.6-4.2C211.2,7.3,235.8,35.2,239.8,40C239.9,39.9,239.8,39.9,240,40z"
 					fill="${color === 'red' ? '#ED1C24' : '#2E3192'}" />
 				<circle id="centerPoint" cx="120" cy="40" r="2" fill="red" />
 			</svg>`;
+
+			// Cache the fallback for future use
+			SvgManager.localCache.set(cacheKey, fallbackSvg);
+			try {
+				await resourceCache.set(cacheKey, fallbackSvg, 60000); // Short TTL for fallbacks
+			} catch (cacheError) {
+				// Ignore cache errors for fallbacks
+			}
+
+			return fallbackSvg;
 		}
 	}
 
 	/**
 	 * Clear the SVG cache (useful for testing or when memory needs to be reclaimed)
 	 */
-	public static clearCache(): void {
-		SvgManager.cache.clear();
+	public static async clearCache(): Promise<void> {
+		SvgManager.localCache.clear();
+		try {
+			// Clear only SVG resources from the cache
+			const stats = resourceCache.getStats();
+			if (stats.categories.prop || stats.categories.arrow) {
+				await resourceCache.clear();
+				logger.info('Cleared resource cache for SVGs');
+			}
+		} catch (error) {
+			logger.error('Error clearing resource cache:', { error: toAppError(error) });
+		}
 	}
 
 	/**
 	 * Get stats about the cache
 	 */
-	public static getCacheStats(): { size: number } {
+	public static getCacheStats(): { localSize: number; resourceCacheStats: any } {
 		return {
-			size: SvgManager.cache.size
+			localSize: SvgManager.localCache.size,
+			resourceCacheStats: resourceCache.getStats()
 		};
 	}
 
@@ -247,21 +294,33 @@ export default class SvgManager {
 			const { motionType, startOri, turns, color } = config;
 			const cacheKey = this.getCacheKey(['arrow', motionType, startOri, String(turns), color]);
 
-			// Skip if already cached
-			if (SvgManager.cache.has(cacheKey)) {
-				return Promise.resolve();
-			}
-
-			// Create the path
-			const basePath = '/images/arrows';
-			const typePath = motionType.toLowerCase();
-			const radialPath = startOri === 'out' || startOri === 'in' ? 'from_radial' : 'from_nonradial';
-			const fixedTurns = (typeof turns === 'number' ? turns : parseFloat(turns.toString())).toFixed(
-				1
-			);
-			const svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${fixedTurns}.svg`;
-
 			try {
+				// Check if already in ResourceCache
+				const cachedSvg = await resourceCache.get<string>(cacheKey);
+				if (cachedSvg) {
+					// Also update local cache for faster access
+					SvgManager.localCache.set(cacheKey, cachedSvg);
+					return Promise.resolve();
+				}
+
+				// Check local cache as fallback
+				if (SvgManager.localCache.has(cacheKey)) {
+					// Update ResourceCache from local cache
+					const localCachedSvg = SvgManager.localCache.get(cacheKey)!;
+					await resourceCache.set(cacheKey, localCachedSvg);
+					return Promise.resolve();
+				}
+
+				// Create the path
+				const basePath = '/images/arrows';
+				const typePath = motionType.toLowerCase();
+				const radialPath =
+					startOri === 'out' || startOri === 'in' ? 'from_radial' : 'from_nonradial';
+				const fixedTurns = (
+					typeof turns === 'number' ? turns : parseFloat(turns.toString())
+				).toFixed(1);
+				const svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${fixedTurns}.svg`;
+
 				// Fetch the SVG with retry logic
 				const svgData = await this.fetchSvg(svgPath);
 				const coloredSvg = this.applyColor(svgData, color);
@@ -269,14 +328,19 @@ export default class SvgManager {
 				// Ensure the SVG has a centerPoint element
 				const svgWithCenterPoint = this.ensureCenterPoint(coloredSvg);
 
-				// Cache the processed SVG
-				SvgManager.cache.set(cacheKey, svgWithCenterPoint);
+				// Store in both caches
+				SvgManager.localCache.set(cacheKey, svgWithCenterPoint);
+				await resourceCache.set(cacheKey, svgWithCenterPoint);
+
+				logger.debug(`Preloaded arrow SVG: ${motionType}_${turns} (${color})`);
 			} catch (error) {
 				// Handle errors gracefully without failing the entire batch
 				if (error instanceof DOMException && error.name === 'AbortError') {
-					console.warn(`Preload timeout for ${svgPath}`);
-				} else if (import.meta.env.DEV) {
-					console.warn(`Preload failed for ${svgPath}:`, error);
+					logger.warn(`Preload timeout for arrow: ${motionType}_${turns} (${color})`);
+				} else {
+					logger.warn(`Preload failed for arrow: ${motionType}_${turns} (${color})`, {
+						error: toAppError(error)
+					});
 				}
 
 				// Create a fallback SVG with centerPoint for the cache
@@ -288,8 +352,13 @@ export default class SvgManager {
 					<circle id="centerPoint" cx="120" cy="40" r="2" fill="red" />
 				</svg>`;
 
-				// Cache the fallback SVG
-				SvgManager.cache.set(cacheKey, fallbackSvg);
+				// Cache the fallback SVG in both caches
+				SvgManager.localCache.set(cacheKey, fallbackSvg);
+				try {
+					await resourceCache.set(cacheKey, fallbackSvg, 60000); // Short TTL for fallbacks
+				} catch (cacheError) {
+					// Ignore cache errors for fallbacks
+				}
 			}
 		});
 

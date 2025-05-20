@@ -179,37 +179,41 @@
 		return () => unsubscribe();
 	});
 
+	// Throttle function to prevent excessive animations
+	function throttle(callback: Function, delay: number) {
+		let lastCall = 0;
+		return function (...args: any[]) {
+			const now = Date.now();
+			if (now - lastCall >= delay) {
+				lastCall = now;
+				callback(...args);
+			}
+		};
+	}
+
 	// Listen for highlight events from the GraphEditor or beat selection
 	onMount(() => {
-		const handleBeatHighlight = (event: CustomEvent) => {
+		// Throttle the highlight handler to prevent excessive animations
+		const handleBeatHighlight = throttle((event: CustomEvent) => {
 			if (!isSelected) return;
 
 			const { color } = event.detail;
 
 			if (color === 'blue') {
-				// Reset the pulse effect to ensure it can be triggered again
 				bluePulseEffect = false;
-				// Use setTimeout to ensure the state change is processed
+				// Use a single setTimeout to reduce timer overhead
 				setTimeout(() => {
 					bluePulseEffect = true;
-					// Reset after animation completes
-					setTimeout(() => {
-						bluePulseEffect = false;
-					}, 500);
+					setTimeout(() => (bluePulseEffect = false), 500);
 				}, 10);
 			} else {
-				// Reset the pulse effect to ensure it can be triggered again
 				redPulseEffect = false;
-				// Use setTimeout to ensure the state change is processed
 				setTimeout(() => {
 					redPulseEffect = true;
-					// Reset after animation completes
-					setTimeout(() => {
-						redPulseEffect = false;
-					}, 500);
+					setTimeout(() => (redPulseEffect = false), 500);
 				}, 10);
 			}
-		};
+		}, 100); // Throttle to max 10 updates per second
 
 		// Listen for the custom event
 		document.addEventListener('beat-highlight', handleBeatHighlight as EventListener);
@@ -358,9 +362,11 @@
 		<StyledBorderOverlay {pictographData} isEnabled={showBorder && !isSelected} />
 
 		{#if isSelected}
-			<!-- Animated highlights for blue and red turns -->
+			<!-- Only show one highlight at a time to reduce rendering load -->
 			<AnimatedHighlight active={true} color="blue" pulseEffect={bluePulseEffect} />
-			<AnimatedHighlight active={true} color="red" pulseEffect={redPulseEffect} />
+			{#if pictographData?.redMotionData}
+				<AnimatedHighlight active={true} color="red" pulseEffect={redPulseEffect} />
+			{/if}
 		{/if}
 	</div>
 </button>
@@ -379,14 +385,33 @@
 		padding: 0; /* Remove default button padding */
 		margin: 0; /* Remove any margin */
 		box-sizing: border-box; /* Ensure padding is included in width/height */
-		transition: all 0.2s ease;
+		transition:
+			transform 0.18s ease,
+			box-shadow 0.18s ease;
+		/* Use hardware acceleration */
+		transform: translateZ(0);
+		will-change: transform, opacity;
 	}
 
 	/* Style for selected state - simplified to work with AnimatedHighlight */
 	.start-pos-beat.selected {
 		background-color: rgba(255, 204, 0, 0.05); /* Subtle background highlight */
-		transform: scale(1.02);
-		transition: all 0.2s ease-out; /* Ensure smooth transition */
+		transform: scale(1.05) translateZ(0); /* Match the scale of the beat hover effect */
+		box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+		transition: all 0.18s ease; /* Ensure smooth transition */
+		z-index: 25; /* Higher z-index for selected beats */
+	}
+
+	/* Ensure the selected state maintains proper scaling when hovered */
+	.start-pos-beat.selected:hover {
+		transform: scale(1.05) translateZ(0); /* Keep the same scale as non-hovered selected state */
+		z-index: 30; /* Even higher z-index when selected and hovered */
+	}
+
+	/* Add hover effect for non-selected state */
+	.start-pos-beat:hover:not(.selected) {
+		transform: scale(1.05) translateZ(0); /* Match the scale of the beat hover effect */
+		z-index: 20; /* Raise z-index on hover */
 	}
 
 	.pictograph-wrapper {
@@ -396,5 +421,17 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		border-radius: 8px;
+		overflow: visible; /* Changed from hidden to visible to allow hover effects to overflow */
+		transition: all 0.18s ease;
+		transform: translateZ(0);
+		will-change: transform;
+		box-sizing: border-box;
+		background-color: rgba(
+			34,
+			34,
+			34,
+			0.9
+		); /* Add background color to ensure pictograph is visible when overflowing */
 	}
 </style>

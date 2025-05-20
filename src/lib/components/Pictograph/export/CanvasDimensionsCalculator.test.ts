@@ -9,6 +9,8 @@ import { describe, it, expect } from 'vitest';
 import { calculateDimensions } from './CanvasDimensionsCalculator';
 import type { EnhancedExportOptions } from './exportTypes';
 import type { Beat } from '$lib/types/Beat';
+import { Letter } from '$lib/types/Letter';
+import type { TKAPosition } from '$lib/types/TKAPosition';
 
 // Create a mock beat for testing
 function createMockBeat(beatNumber: number): Beat {
@@ -17,7 +19,7 @@ function createMockBeat(beatNumber: number): Beat {
 		beatNumber,
 		filled: true,
 		pictographData: {
-			letter: 'A',
+			letter: Letter.A,
 			startPos: null,
 			endPos: null,
 			timing: null,
@@ -42,8 +44,8 @@ function createMockStartPosition(): Beat {
 		beatNumber: 0,
 		filled: true,
 		pictographData: {
-			letter: 'S',
-			startPos: 'start',
+			letter: Letter.S,
+			startPos: 'alpha1' as TKAPosition,
 			endPos: null,
 			timing: null,
 			direction: null,

@@ -12,96 +12,10 @@
 
 	// Default values for optional props
 	const active = $derived(props.active ?? false);
-	const colorProp = $derived(props.color ?? 'blue');
 	const pulseEffect = $derived(props.pulseEffect ?? false);
 
 	// Local state using $state
-	let animationFrame = $state<number | null>(null);
-	let startTime = $state(0);
-	let progress = $state(0);
-	let trailLength = $state(0.3); // 30% of the path for the trail effect
-	let animationDuration = $state(2000); // 2 seconds for one full circuit (adjusted from 2.5s)
-	let pathElement = $state<SVGPathElement | null>(null);
-	let pathLength = $state(0);
-	let containerElement = $state<HTMLDivElement | null>(null);
 	let showPulse = $state(false);
-
-	// Color configurations
-	const colors = {
-		blue: {
-			primary: '#2E3192',
-			glow: 'rgba(46, 49, 146, 0.8)'
-		},
-		red: {
-			primary: '#ED1C24',
-			glow: 'rgba(237, 28, 36, 0.8)'
-		}
-	};
-
-	// Ensure type safety for color access
-	const color = $derived(colorProp as keyof typeof colors);
-
-	// Animation function with CSS animation as fallback
-	function animate(timestamp: number) {
-		if (!startTime) startTime = timestamp;
-		const elapsed = timestamp - startTime;
-
-		// Calculate progress (0 to 1)
-		const newProgress = (elapsed % animationDuration) / animationDuration;
-
-		// Only update if progress has changed
-		if (newProgress !== progress) {
-			progress = newProgress;
-
-			// Directly update the SVG path for smoother animation
-			if (pathElement && pathLength > 0) {
-				// Update the stroke-dashoffset property directly
-				const offset = pathLength * (1 - progress);
-				pathElement.style.strokeDashoffset = `${offset}px`;
-
-				// Update the trail path if it exists
-				const trailPath = pathElement.nextElementSibling as SVGPathElement;
-				if (trailPath) {
-					const trailOffset = pathLength * (1 - progress - trailLength);
-					const adjustedTrailOffset = trailOffset < 0 ? pathLength + trailOffset : trailOffset;
-					trailPath.style.strokeDashoffset = `${adjustedTrailOffset}px`;
-				}
-			} else {
-				// If path element or path length is not available, try to update them
-				updatePathLength();
-			}
-		}
-
-		// Request next frame if still active
-		if (active) {
-			animationFrame = requestAnimationFrame(animate);
-		}
-	}
-
-	// Start animation when component becomes active
-	$effect(() => {
-		if (active && !animationFrame) {
-			startTime = 0;
-			animationFrame = requestAnimationFrame(animate);
-		} else if (!active && animationFrame) {
-			cancelAnimationFrame(animationFrame);
-			animationFrame = null;
-		}
-	});
-
-	// Force animation restart when active changes to true
-	$effect(() => {
-		if (active) {
-			// Cancel any existing animation
-			if (animationFrame) {
-				cancelAnimationFrame(animationFrame);
-				animationFrame = null;
-			}
-			// Start a new animation
-			startTime = 0;
-			animationFrame = requestAnimationFrame(animate);
-		}
-	});
 
 	// Handle pulse effect
 	$effect(() => {
@@ -115,107 +29,11 @@
 			}, 500);
 		}
 	});
-
-	// Get path length when path element is available
-	function updatePathLength() {
-		if (pathElement) {
-			// Force a reflow to ensure the path is properly rendered
-			void pathElement.getBoundingClientRect();
-
-			// Get the total length of the path
-			const totalLength = pathElement.getTotalLength();
-
-			// Only update if the length has changed or is not set
-			if (totalLength !== pathLength) {
-				pathLength = totalLength;
-
-				// Set initial dash array and offset
-				pathElement.style.strokeDasharray = `${pathLength}`;
-
-				// Reset the animation by setting the initial offset
-				if (progress === 0) {
-					pathElement.style.strokeDashoffset = `${pathLength}`;
-				}
-
-				console.log('Path length calculated:', pathLength);
-			}
-		}
-	}
-
-	// Note: We're now calculating these values directly in the animate function
-	// for better performance and to avoid reactivity issues
-
-	// Clean up animation on component destruction
-	$effect(() => {
-		// Return a cleanup function that will be called when the component is destroyed
-		return () => {
-			if (animationFrame) {
-				cancelAnimationFrame(animationFrame);
-				animationFrame = null;
-			}
-		};
-	});
-
-	// Initialize path length when component mounts or when path element changes
-	$effect(() => {
-		// Check if path element exists
-		if (pathElement) {
-			// Update path length immediately
-			updatePathLength();
-
-			// Start animation if active
-			if (active && !animationFrame) {
-				startTime = 0;
-				animationFrame = requestAnimationFrame(animate);
-			}
-
-			// Log for debugging
-			console.log('Path length updated:', pathLength);
-		}
-	});
-
-	// Set up resize observer
-	$effect(() => {
-		if (!containerElement) return;
-
-		// Create a ResizeObserver to update path length if container size changes
-		const resizeObserver = new ResizeObserver(() => {
-			updatePathLength();
-			console.log('Container resized, path length updated:', pathLength);
-		});
-
-		resizeObserver.observe(containerElement);
-
-		// Clean up when the component is destroyed
-		return () => {
-			resizeObserver.disconnect();
-		};
-	});
 </script>
 
-<div
-	class="highlight-container"
-	class:active
-	bind:this={containerElement}
-	style="--color: {colors[color].primary}; --glow-color: {colors[color].glow};"
->
+<div class="highlight-container" class:active>
 	{#if active}
-		<svg class="highlight-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-			<!-- Border path that follows the container's border with rounded corners -->
-			<path
-				bind:this={pathElement}
-				d="M10,5 H90 C95,5 95,5 95,10 V90 C95,95 95,95 90,95 H10 C5,95 5,95 5,90 V10 C5,5 5,5 10,5 Z"
-				class="highlight-path"
-				style="stroke-dasharray: 300; stroke-dashoffset: 300;"
-			/>
-
-			<!-- Trail effect (gradient that follows the leading edge) -->
-			<path
-				d="M10,5 H90 C95,5 95,5 95,10 V90 C95,95 95,95 90,95 H10 C5,95 5,95 5,90 V10 C5,5 5,5 10,5 Z"
-				class="highlight-trail"
-				style="stroke-dasharray: 300 0; stroke-dashoffset: 300;"
-			/>
-		</svg>
+		<div class="gold-border-highlight"></div>
 
 		{#if showPulse}
 			<div class="pulse-effect" transition:fade={{ duration: 300, easing: cubicOut }}></div>
@@ -231,77 +49,78 @@
 		right: 0;
 		bottom: 0;
 		pointer-events: none;
-		z-index: 10;
+		z-index: 25; /* Increased z-index to ensure it appears above other elements */
 		opacity: 0;
-		transition: opacity 0.3s ease;
+		transition: all 0.18s ease;
+		border-radius: 8px;
+		/* Scale with parent element */
+		transform: scale(1) translateZ(0);
+		transform-origin: center center;
+		will-change: transform, opacity;
+		box-sizing: border-box;
+		overflow: visible; /* Allow the highlight to overflow */
 	}
 
 	.highlight-container.active {
 		opacity: 1;
 	}
 
-	.highlight-svg {
+	.gold-border-highlight {
 		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		overflow: visible;
-	}
-
-	.highlight-path {
-		fill: none;
-		stroke: var(--color);
-		stroke-width: 3;
-		stroke-linecap: round;
-		filter: drop-shadow(0 0 5px var(--glow-color));
-		transition: stroke 0.3s ease;
-		will-change: stroke-dashoffset; /* Optimize for animation */
-		animation: dash 2s linear infinite;
-	}
-
-	.highlight-trail {
-		fill: none;
-		stroke: var(--color);
-		stroke-width: 3;
-		stroke-linecap: round;
-		filter: drop-shadow(0 0 8px var(--glow-color));
+		inset: 0;
+		border-radius: 8px;
+		border: 3px solid #ffcc00;
+		box-shadow: 0 0 6px rgba(255, 204, 0, 0.6);
 		opacity: 0.9;
-		will-change: stroke-dashoffset; /* Optimize for animation */
-		animation: dash 2s linear infinite;
-		animation-delay: -0.6s; /* 30% of the animation duration for trail effect */
+		/* Use transform for hardware acceleration */
+		transform: translateZ(0);
+		/* Use CSS animation instead of JS-driven animation */
+		animation: gold-pulse 2s infinite ease-in-out;
+		box-sizing: border-box;
+		overflow: visible; /* Allow the border to overflow */
 	}
 
-	@keyframes dash {
-		from {
-			stroke-dashoffset: 300; /* A large enough value to ensure full animation */
+	@keyframes gold-pulse {
+		0% {
+			opacity: 0.7;
+			box-shadow: 0 0 4px rgba(255, 204, 0, 0.5);
 		}
-		to {
-			stroke-dashoffset: 0;
+		50% {
+			opacity: 1;
+			box-shadow: 0 0 8px rgba(255, 204, 0, 0.8);
+		}
+		100% {
+			opacity: 0.7;
+			box-shadow: 0 0 4px rgba(255, 204, 0, 0.5);
 		}
 	}
 
 	.pulse-effect {
 		position: absolute;
 		inset: 0;
-		border: 3px solid var(--color);
+		border: 3px solid #ffcc00;
 		border-radius: inherit;
-		filter: drop-shadow(0 0 12px var(--glow-color));
+		box-shadow: 0 0 8px rgba(255, 204, 0, 0.7);
+		/* Use transform for hardware acceleration */
+		transform: translateZ(0);
 		animation: pulse 0.5s ease-out;
+		box-sizing: border-box;
+		z-index: 26; /* Ensure it's above the gold border */
+		overflow: visible; /* Allow the pulse effect to overflow */
 	}
 
 	@keyframes pulse {
 		0% {
 			opacity: 0.9;
-			transform: scale(0.97);
+			transform: scale(0.97) translateZ(0);
 		}
 		50% {
 			opacity: 1;
-			transform: scale(1.03);
+			transform: scale(1.03) translateZ(0);
 		}
 		100% {
 			opacity: 0;
-			transform: scale(1);
+			transform: scale(1) translateZ(0);
 		}
 	}
 </style>

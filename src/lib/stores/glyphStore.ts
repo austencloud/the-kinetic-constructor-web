@@ -58,21 +58,64 @@ export const fetchSVGDimensions = async (
 	}
 };
 
-// Preload common assets (dot, dash)
+// Preload common assets (dot, dash, and common letters)
 export const preloadCommonAssets = async (): Promise<void> => {
 	const dashPath = '/images/dash.svg';
 	const dotPath = '/images/same_opp_dot.svg';
 
-	const [dashDimensions, dotDimensions] = await Promise.all([
-		fetchSVGDimensions(dashPath),
-		fetchSVGDimensions(dotPath)
-	]);
+	// Common letters to preload (A-Z)
+	const commonLetters = Array.from(
+		{ length: 26 },
+		(_, i) => String.fromCharCode(65 + i) as unknown as Letter
+	);
 
-	assetCache.update((cache) => ({
-		...cache,
-		dashSVG: { svg: dashPath, dimensions: dashDimensions },
-		dotSVG: { svg: dotPath, dimensions: dotDimensions }
-	}));
+	try {
+		// First load dash and dot
+		const [dashDimensions, dotDimensions] = await Promise.all([
+			fetchSVGDimensions(dashPath),
+			fetchSVGDimensions(dotPath)
+		]);
+
+		assetCache.update((cache) => ({
+			...cache,
+			dashSVG: { svg: dashPath, dimensions: dashDimensions },
+			dotSVG: { svg: dotPath, dimensions: dotDimensions }
+		}));
+
+		// Then preload common letters in batches to avoid overwhelming the browser
+		const batchSize = 5;
+		for (let i = 0; i < commonLetters.length; i += batchSize) {
+			const batch = commonLetters.slice(i, i + batchSize);
+
+			// Create promises for each letter in the batch
+			const letterPromises = batch.map(async (letter) => {
+				try {
+					const path = getLetterPath(letter);
+					const dimensions = await fetchSVGDimensions(path);
+
+					// Update the cache with this letter
+					assetCache.update((cache) => {
+						const newCache = { ...cache };
+						newCache.letterSVGs.set(letter.toString(), {
+							svg: path,
+							dimensions
+						});
+						return newCache;
+					});
+
+					return { letter, success: true };
+				} catch (error) {
+					console.warn(`Failed to preload letter ${letter}:`, error);
+					return { letter, success: false };
+				}
+			});
+
+			// Wait for this batch to complete before moving to the next
+			await Promise.allSettled(letterPromises);
+		}
+	} catch (error) {
+		console.error('Error preloading common assets:', error);
+	}
 };
 
 // Utility for folder naming strategy

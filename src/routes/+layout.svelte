@@ -70,9 +70,14 @@
 <!-- Toast Manager for notifications -->
 <ToastManager />
 
-<!-- Safe Area Visualizer - only visible in development mode -->
+<!-- Development tools - only visible in development mode -->
 {#if import.meta.env.DEV}
 	<SafeAreaVisualizer enabled={false} />
+
+	<!-- Import and use ResourceCacheDebug in dev mode -->
+	{#await import('$lib/components/dev/ResourceCacheDebug.svelte') then { default: ResourceCacheDebug }}
+		<ResourceCacheDebug visible={true} />
+	{/await}
 {/if}
 
 <style>

@@ -802,14 +802,25 @@
 		justify-content: center;
 		align-items: center;
 		background-color: transparent;
-		/* Add transition for smooth size changes */
-		transition:
-			width 0.3s ease,
-			height 0.3s ease;
+		/* Standardize transition timing to 0.18s for consistency */
+		transition: all 0.18s ease;
 		/* Ensure content is properly centered */
 		box-sizing: border-box;
-		/* Prevent overflow */
-		overflow: hidden;
+		/* Allow overflow for hover effects */
+		overflow: visible;
+		z-index: 1;
+		/* Add margin to ensure there's space for the hover effect to expand into */
+		margin: 2px;
+	}
+
+	/* Increase z-index for selected beat containers */
+	.beat-container.selected {
+		z-index: 25;
+	}
+
+	/* Ensure beat containers have proper stacking on hover */
+	.beat-container:hover {
+		z-index: 20;
 	}
 
 	/* Specific styling for start position when it's the only beat */

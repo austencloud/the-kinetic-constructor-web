@@ -2,6 +2,10 @@
 import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 import { checkForSequenceInUrl } from '$lib/components/SequenceWorkbench/share/utils/ShareUtils';
 import { logger } from '$lib/core/logging';
+import { resourcePreloader } from '$lib/services/ResourcePreloader';
+import { resourceCache } from '$lib/services/ResourceCache';
+import { preloadCommonAssets } from '$lib/stores/glyphStore';
+import { toAppError } from '$lib/types/ErrorTypes';
 
 /**
  * Initialize the application, reporting progress via callback for XState
@@ -18,41 +22,52 @@ export async function initializeApplication(
 
 	try {
 		const isBrowser = typeof window !== 'undefined';
-		let preloadingPromise: Promise<any> = Promise.resolve();
 
-		// Phase 1: SVG Preloading (Browser only)
+		// Phase 1: Initialize Resource Cache (Browser only)
 		if (isBrowser) {
-			reportProgress(10, 'Preloading SVG resources...');
-			const { initSvgPreloading } = await import('./SvgPreloader');
-			preloadingPromise = initSvgPreloading();
-		} else {
-			reportProgress(10, 'Server-side rendering (skipping SVG preload)...');
+			reportProgress(5, 'Initializing resource cache...');
+			// Resource cache initializes automatically when imported
 		}
 
-		// Phase 2: Check for sequence in URL (Browser only)
+		// Phase 2: Resource Preloading (Browser only)
 		if (isBrowser) {
-			reportProgress(30, 'Checking for shared sequence...');
+			reportProgress(10, 'Preloading application resources...');
+
+			// Set the progress callback to update the UI
+			resourcePreloader.setProgressCallback((progress, message) => {
+				// Map the resource loading progress to 10-70% of the overall progress
+				const mappedProgress = 10 + Math.floor(progress * 0.6);
+				reportProgress(mappedProgress, message);
+			});
+
+			// Start preloading all resources
+			const preloadingPromise = resourcePreloader.preloadAll();
+
+			// Also preload glyph assets in parallel
+			const glyphPreloadingPromise = preloadCommonAssets();
+
+			// Wait for preloading to complete
+			await Promise.all([preloadingPromise, glyphPreloadingPromise]);
+		} else {
+			reportProgress(10, 'Server-side rendering (skipping resource preload)...');
+		}
+
+		// Phase 3: Check for sequence in URL (Browser only)
+		if (isBrowser) {
+			reportProgress(75, 'Checking for shared sequence...');
 			const foundSequenceInUrl = checkForSequenceInUrl(sequenceContainer);
 
 			// If we didn't find a sequence in URL, load from localStorage
 			if (!foundSequenceInUrl) {
-				reportProgress(40, 'Loading saved sequence...');
+				reportProgress(80, 'Loading saved sequence...');
 				sequenceContainer.loadFromLocalStorage();
 			}
-		}
-
-		// Phase 3: Wait for SVG Preloading (Browser only)
-		const preloadProgress = 70;
-		if (isBrowser) {
-			reportProgress(preloadProgress, 'Finalizing resource loading...');
-			await preloadingPromise;
-		} else {
-			reportProgress(preloadProgress, 'Skipping SVG finalize...');
 		}
 
 		// Phase 4: Final Preparations
 		reportProgress(90, 'Preparing user interface...');
 		if (isBrowser) {
+			// Small delay to ensure UI is ready
 			await new Promise((resolve) => setTimeout(resolve, 100));
 		}
 
@@ -60,7 +75,7 @@ export async function initializeApplication(
 		reportProgress(100, 'Ready!');
 		return true;
 	} catch (error) {
-		console.error('Initialization failed:', error);
+		logger.error('Initialization failed:', { error: toAppError(error) });
 		throw error;
 	}
 }

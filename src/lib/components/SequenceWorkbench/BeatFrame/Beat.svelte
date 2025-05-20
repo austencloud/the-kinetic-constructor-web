@@ -67,16 +67,25 @@
 		padding: 0;
 		margin: 0;
 		cursor: pointer;
-		transition: transform 0.2s ease;
+		transition: all 0.18s ease;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		border-radius: 4px;
+		border-radius: 8px;
 		min-width: 100%;
 		min-height: 100%;
 		box-sizing: border-box;
 		overflow: visible;
 		transform-origin: center center;
+		will-change: transform, z-index;
+		transform: translateZ(0);
+		position: relative;
+		z-index: 1;
+	}
+
+	.beat:hover {
+		transform: scale(1.05) translateZ(0); /* Increased scale for more noticeable hover effect */
+		z-index: 10; /* Raise z-index on hover to prevent overflow issues */
 	}
 
 	.pictograph-wrapper {
@@ -86,5 +95,17 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		border-radius: 8px;
+		overflow: visible; /* Changed from hidden to visible to allow hover effects to overflow */
+		transition: all 0.18s ease;
+		transform: translateZ(0);
+		will-change: transform;
+		box-sizing: border-box;
+		background-color: rgba(
+			34,
+			34,
+			34,
+			0.9
+		); /* Add background color to ensure pictograph is visible when overflowing */
 	}
 </style>

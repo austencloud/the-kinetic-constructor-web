@@ -55,16 +55,9 @@ export function createAndPositionComponents(
 					state.totalComponentsToLoad += 2;
 				}
 
-				logger.debug('Created red components', {
-					redPropData,
-					redArrowData,
-					redMotionData: {
-						id: redMotionData.id,
-						motionType: redMotionData.motionType,
-						startLoc: redMotionData.startLoc,
-						endLoc: redMotionData.endLoc
-					}
-				});
+				logger.debug(
+					`Created red components: ${redMotionData.motionType} from ${redMotionData.startLoc} to ${redMotionData.endLoc}`
+				);
 			} catch (redError) {
 				logger.error('Error creating red components', {
 					error: redError instanceof Error ? redError : new Error(String(redError))
@@ -84,16 +77,9 @@ export function createAndPositionComponents(
 					state.totalComponentsToLoad += 2;
 				}
 
-				logger.debug('Created blue components', {
-					bluePropData,
-					blueArrowData,
-					blueMotionData: {
-						id: blueMotionData.id,
-						motionType: blueMotionData.motionType,
-						startLoc: blueMotionData.startLoc,
-						endLoc: blueMotionData.endLoc
-					}
-				});
+				logger.debug(
+					`Created blue components: ${blueMotionData.motionType} from ${blueMotionData.startLoc} to ${blueMotionData.endLoc}`
+				);
 			} catch (blueError) {
 				logger.error('Error creating blue components', {
 					error: blueError instanceof Error ? blueError : new Error(String(blueError))
@@ -112,12 +98,7 @@ export function createAndPositionComponents(
 					gridData
 				);
 
-				logger.debug('Positioned components', {
-					redPropCoords: redPropData?.coords,
-					bluePropCoords: bluePropData?.coords,
-					redArrowCoords: redArrowData?.coords,
-					blueArrowCoords: blueArrowData?.coords
-				});
+				logger.debug('Positioned components');
 			} catch (positionError) {
 				logger.error('Error positioning components', {
 					error: positionError instanceof Error ? positionError : new Error(String(positionError))

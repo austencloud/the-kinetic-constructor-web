@@ -3,6 +3,7 @@
 	import { get } from 'svelte/store';
 	import { popIn } from '$lib/transitions/popIn';
 	import type { PictographData } from '$lib/types/PictographData';
+	import { logger } from '$lib/core/logging';
 	import type { PropData } from '../objects/Prop/PropData';
 	import type { ArrowData } from '../objects/Arrow/ArrowData';
 	import type { GridData } from '../objects/Grid/GridData';
@@ -98,6 +99,11 @@
 	let loadProgress = 0;
 	let service: PictographService | null = null;
 	let lastDataSnapshot: PictographDataSnapshot | null = null;
+
+	// Enhanced loading state tracking
+	let glyphLoaded = false;
+	let allComponentsLoaded = false;
+	let showPictograph = false; // Only show when everything is loaded
 
 	// Define the PictographEvents interface for proper typing
 	interface PictographEvents {
@@ -371,10 +377,42 @@
 	// Wrapper for checkLoadingCompleteUtil to maintain local state
 	function checkLoadingComplete() {
 		// Call the utility function
-		checkLoadingCompleteUtil(getLoadingManagerContext());
+		const isComplete = checkLoadingCompleteUtil(getLoadingManagerContext());
 
 		// Update render count
 		renderCount++;
+
+		// Update our enhanced loading state
+		if (isComplete) {
+			allComponentsLoaded = true;
+
+			// Only show the pictograph when both components and glyph are loaded
+			updateShowPictographState();
+		}
+	}
+
+	// Handle glyph loading events
+	function handleGlyphLoading() {
+		// Just log the event, we don't need to track the loading state
+		logger.debug('Pictograph: Glyph loading started');
+	}
+
+	function handleGlyphLoaded(event: CustomEvent<boolean>) {
+		glyphLoaded = event.detail;
+		logger.debug(`Pictograph: Glyph loaded (success: ${event.detail})`);
+
+		// Update pictograph visibility
+		updateShowPictographState();
+	}
+
+	// Update the showPictograph state based on all loading conditions
+	function updateShowPictographState() {
+		showPictograph = allComponentsLoaded && glyphLoaded;
+
+		// If everything is loaded, dispatch the loaded event
+		if (showPictograph) {
+			dispatch('loaded', { error: false });
+		}
 	}
 
 	// Create component error handler context
@@ -461,21 +499,16 @@
 			{/if}
 
 			{#if shouldShowMotionComponents(state)}
-				<!-- Wrap all motion components in a single animated container for unified animation -->
-				<g
-					in:popIn={{
-						duration: animationDuration,
-						start: 0.85, // More pronounced scale effect (from 0.85 to 1.0)
-						opacity: 0.2 // Start with slight visibility for smoother appearance
-					}}
-					style="transform-origin: center center;"
-				>
+				<!-- First, load all components but keep them hidden until fully loaded -->
+				<g style="visibility: hidden; position: absolute;">
 					{#if get(pictographDataStore)?.letter}
 						<TKAGlyph
 							letter={get(pictographDataStore)?.letter}
 							turnsTuple="(s, 0, 0)"
 							x={50}
 							y={800}
+							on:loading={handleGlyphLoading}
+							on:loaded={handleGlyphLoaded}
 						/>
 					{/if}
 
@@ -499,6 +532,42 @@
 						{/if}
 					{/each}
 				</g>
+
+				<!-- Only show the visible components when everything is loaded -->
+				{#if showPictograph}
+					<!-- Wrap all motion components in a single animated container for unified animation -->
+					<g
+						in:popIn={{
+							duration: animationDuration,
+							start: 0.85, // More pronounced scale effect (from 0.85 to 1.0)
+							opacity: 0.2 // Start with slight visibility for smoother appearance
+						}}
+						style="transform-origin: center center;"
+					>
+						{#if get(pictographDataStore)?.letter}
+							<TKAGlyph
+								letter={get(pictographDataStore)?.letter}
+								turnsTuple="(s, 0, 0)"
+								x={50}
+								y={800}
+							/>
+						{/if}
+
+						{#each [{ color: 'red', propData: redPropData, arrowData: redArrowData }, { color: 'blue', propData: bluePropData, arrowData: blueArrowData }] as { color, propData, arrowData } (color)}
+							{#if propData}
+								<Prop {propData} />
+							{/if}
+
+							{#if arrowData}
+								<Arrow
+									{arrowData}
+									loadTimeoutMs={isMobile() ? 2000 : 1000}
+									pictographService={service}
+								/>
+							{/if}
+						{/each}
+					</g>
+				{/if}
 			{/if}
 		{/if}
 	</PictographSVG>

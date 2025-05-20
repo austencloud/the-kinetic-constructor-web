@@ -160,8 +160,9 @@ export function handleComponentLoaded(component: string, context: LoadingManager
  * Checks if all required components are loaded
  *
  * @param context The loading manager context
+ * @returns True if all required components are loaded, false otherwise
  */
-export function checkLoadingComplete(context: LoadingManagerContext): void {
+export function checkLoadingComplete(context: LoadingManagerContext): boolean {
 	try {
 		// Check if all required components are loaded
 		const allLoaded = context.requiredComponents.every((comp) =>
@@ -189,9 +190,12 @@ export function checkLoadingComplete(context: LoadingManagerContext): void {
 			// Dispatch complete event
 			context.dispatch('complete');
 		}
+
+		return allLoaded;
 	} catch (error) {
 		logger.error('Error checking if loading is complete', {
 			error: error instanceof Error ? error : new Error(String(error))
 		});
+		return false;
 	}
 }

@@ -11,6 +11,8 @@
 	// Event dispatcher
 	const dispatch = createEventDispatcher<{
 		letterLoaded: Rect;
+		loadingStarted: void;
+		loadingComplete: boolean;
 	}>();
 
 	// Local state using Svelte 5 Runes
@@ -20,11 +22,16 @@
 	let isLoaded = $state(false);
 	let isFetchFailed = $state(false);
 	let hasDispatchedLetterLoaded = $state(false);
+	let isLoadingInProgress = $state(false);
 
 	// Load SVG with proper caching strategy
 	// This function is async, so it's called within an $effect
 	async function loadLetterSVG(currentLetter: Letter) {
 		if (!currentLetter) return;
+
+		// Signal that loading has started
+		isLoadingInProgress = true;
+		dispatch('loadingStarted');
 
 		const path = getLetterPath(currentLetter);
 		svgPath = path; // Update state
@@ -36,6 +43,8 @@
 		if (cachedSVG) {
 			dimensions = cachedSVG.dimensions; // Update state
 			isLoaded = true; // Update state
+			isLoadingInProgress = false;
+			dispatch('loadingComplete', true);
 			return;
 		}
 
@@ -54,9 +63,13 @@
 			});
 
 			isLoaded = true; // Update state
+			isLoadingInProgress = false;
+			dispatch('loadingComplete', true);
 		} catch (error) {
 			console.error(`Failed to load letter SVG for ${currentLetter}:`, error);
 			isFetchFailed = true; // Update state
+			isLoadingInProgress = false;
+			dispatch('loadingComplete', false);
 		}
 	}
 
