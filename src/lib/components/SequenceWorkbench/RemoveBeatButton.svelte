@@ -36,7 +36,6 @@
 	<div class="icon-wrapper">
 		<i class="fa-solid fa-trash"></i>
 	</div>
-	<span class="button-label">Remove Selected Beat</span>
 </button>
 
 <style>
@@ -49,6 +48,7 @@
 		--clear-button-width: calc(
 			var(--button-size-factor, 1) * var(--base-size)
 		); /* Width of clear button */
+		--remove-beat-button-width: 180px; /* Export this for other components to use */
 
 		position: absolute;
 		/* Position to the right of the clear button with proper spacing */
@@ -118,21 +118,11 @@
 		font-size: calc(var(--button-size-factor, 1) * var(--base-icon-size));
 	}
 
-	.button-label {
-		font-size: 14px;
-		font-weight: 500;
-		color: white;
-	}
-
 	/* Responsive adjustments */
 	@media (max-width: 768px) {
 		.remove-beat-button {
 			--button-size-factor: 0.9;
 			padding: 0 12px;
-		}
-
-		.button-label {
-			font-size: 13px;
 		}
 	}
 
@@ -140,10 +130,6 @@
 		.remove-beat-button {
 			--button-size-factor: 0.8;
 			padding: 0 10px;
-		}
-
-		.button-label {
-			font-size: 12px;
 		}
 	}
 </style>

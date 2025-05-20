@@ -189,6 +189,26 @@
 			detail: { beatId: 'start-position' }
 		});
 		document.dispatchEvent(globalEvent);
+
+		// Trigger the animated highlight effect for both blue and red
+		// This will make the animated highlight appear when the start position is selected
+		// Use a small delay to ensure the component has time to update its selected state
+		setTimeout(() => {
+			const blueHighlightEvent = new CustomEvent('beat-highlight', {
+				bubbles: true,
+				detail: { active: true, color: 'blue' }
+			});
+			document.dispatchEvent(blueHighlightEvent);
+
+			// Add a small delay before triggering the red highlight for a staggered effect
+			setTimeout(() => {
+				const redHighlightEvent = new CustomEvent('beat-highlight', {
+					bubbles: true,
+					detail: { active: true, color: 'red' }
+				});
+				document.dispatchEvent(redHighlightEvent);
+			}, 150);
+		}, 50);
 	}
 
 	// Track if shift key is pressed
@@ -267,6 +287,26 @@
 					detail: { beatId, multiSelect }
 				});
 				document.dispatchEvent(event);
+
+				// Trigger the animated highlight effect for both blue and red
+				// This will make the animated highlight appear when a beat is selected
+				// Use a small delay to ensure the component has time to update its selected state
+				setTimeout(() => {
+					const blueHighlightEvent = new CustomEvent('beat-highlight', {
+						bubbles: true,
+						detail: { active: true, color: 'blue' }
+					});
+					document.dispatchEvent(blueHighlightEvent);
+
+					// Add a small delay before triggering the red highlight for a staggered effect
+					setTimeout(() => {
+						const redHighlightEvent = new CustomEvent('beat-highlight', {
+							bubbles: true,
+							detail: { active: true, color: 'red' }
+						});
+						document.dispatchEvent(redHighlightEvent);
+					}, 150);
+				}, 50);
 
 				// Log selection for debugging
 				console.debug('Beat selected:', {
