@@ -5,6 +5,7 @@
 
 	import { onMount } from 'svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import AnimatedHighlight from './AnimatedHighlight.svelte';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
@@ -26,6 +27,8 @@
 	let isVisible = $state(false);
 	let isHovered = $state(false);
 	let isSelected = $state(false);
+	let bluePulseEffect = $state(false);
+	let redPulseEffect = $state(false);
 
 	// Import the sequence container to check if this beat is selected
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
@@ -44,6 +47,46 @@
 
 	// Accessibility
 	let uniqueId = $state(`start-pos-label-${Math.random().toString(36).substring(2, 9)}`);
+
+	// Listen for highlight events from the GraphEditor or beat selection
+	onMount(() => {
+		const handleBeatHighlight = (event: CustomEvent) => {
+			if (!isSelected) return;
+
+			const { color } = event.detail;
+
+			if (color === 'blue') {
+				// Reset the pulse effect to ensure it can be triggered again
+				bluePulseEffect = false;
+				// Use setTimeout to ensure the state change is processed
+				setTimeout(() => {
+					bluePulseEffect = true;
+					// Reset after animation completes
+					setTimeout(() => {
+						bluePulseEffect = false;
+					}, 500);
+				}, 10);
+			} else {
+				// Reset the pulse effect to ensure it can be triggered again
+				redPulseEffect = false;
+				// Use setTimeout to ensure the state change is processed
+				setTimeout(() => {
+					redPulseEffect = true;
+					// Reset after animation completes
+					setTimeout(() => {
+						redPulseEffect = false;
+					}, 500);
+				}, 10);
+			}
+		};
+
+		// Listen for the custom event
+		document.addEventListener('beat-highlight', handleBeatHighlight as EventListener);
+
+		return () => {
+			document.removeEventListener('beat-highlight', handleBeatHighlight as EventListener);
+		};
+	});
 
 	onMount(() => {
 		// Trigger entrance animation after a short delay
@@ -80,6 +123,12 @@
 			<span class="instruction">Choose your start position</span>
 		</div>
 	</div>
+
+	{#if isSelected}
+		<!-- Animated highlights for blue and red turns -->
+		<AnimatedHighlight active={true} color="blue" pulseEffect={bluePulseEffect} />
+		<AnimatedHighlight active={true} color="red" pulseEffect={redPulseEffect} />
+	{/if}
 </div>
 
 <style>
@@ -118,12 +167,9 @@
 		box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 	}
 
-	/* Style for selected state - match the gold color used for regular beats */
+	/* Style for selected state - simplified to work with AnimatedHighlight */
 	.empty-start-pos-label.selected {
-		background-color: rgba(255, 204, 0, 0.1);
-		box-shadow:
-			0 0 0 2px rgba(255, 204, 0, 0.7),
-			0 0 10px 2px rgba(255, 204, 0, 0.3); /* Primary border and outer glow */
+		background-color: rgba(255, 204, 0, 0.05);
 		transform: scale(1.02);
 		transition: all 0.2s ease-out;
 		z-index: 2; /* Ensure it appears above other elements */

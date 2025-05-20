@@ -25,6 +25,7 @@
 	import DeleteModal from './DeleteModal.svelte';
 	import SequenceOverlayButton from './SequenceOverlayButton.svelte';
 	import RemoveBeatButton from './RemoveBeatButton.svelte';
+	import RemoveStartPositionButton from './RemoveStartPositionButton.svelte';
 	import ClearSequenceButton from './ClearSequenceButton.svelte';
 	import EditButton from './EditButton.svelte';
 	// Explicitly import ShareButton with a console log to verify it's being imported
@@ -177,6 +178,7 @@
 	// Check if there's a selected beat
 	// Use $state and a direct subscription for immediate reactivity
 	let hasSelectedBeat = $state(false);
+	let isStartPositionSelected = $state(false);
 
 	// Create a more reactive subscription to the selection state
 	// This ensures immediate UI updates when selection changes
@@ -185,6 +187,9 @@
 		const unsubscribe = sequenceContainer.subscribe((state) => {
 			// Update the hasSelectedBeat state immediately when selection changes
 			hasSelectedBeat = state.selectedBeatIds.length > 0;
+
+			// Check if the start position is specifically selected
+			isStartPositionSelected = state.selectedBeatIds.includes('start-position');
 		});
 
 		// Clean up the subscription when the component is destroyed or the effect is re-run
@@ -461,7 +466,13 @@
 			<ShareButton />
 
 			{#if hasSelectedBeat}
-				<RemoveBeatButton onRemoveBeat={handleRemoveBeat} />
+				{#if isStartPositionSelected}
+					<!-- Show special button for start position -->
+					<RemoveStartPositionButton onRemoveBeat={handleRemoveBeat} />
+				{:else}
+					<!-- Show regular button for normal beats -->
+					<RemoveBeatButton onRemoveBeat={handleRemoveBeat} />
+				{/if}
 			{/if}
 
 			<!-- Edit button is always visible -->

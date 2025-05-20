@@ -10,6 +10,7 @@
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/StyledBorderOverlay.svelte';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import AnimatedHighlight from './AnimatedHighlight.svelte';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
@@ -22,6 +23,8 @@
 	let showBorder = $state(false);
 	let pictographData = $state<PictographData>(defaultPictographData);
 	let isSelected = $state(false);
+	let bluePulseEffect = $state(false);
+	let redPulseEffect = $state(false);
 
 	// Update isSelected when the selection changes
 	// Use a more reactive approach with a manual subscription for immediate updates
@@ -176,6 +179,46 @@
 		return () => unsubscribe();
 	});
 
+	// Listen for highlight events from the GraphEditor or beat selection
+	onMount(() => {
+		const handleBeatHighlight = (event: CustomEvent) => {
+			if (!isSelected) return;
+
+			const { color } = event.detail;
+
+			if (color === 'blue') {
+				// Reset the pulse effect to ensure it can be triggered again
+				bluePulseEffect = false;
+				// Use setTimeout to ensure the state change is processed
+				setTimeout(() => {
+					bluePulseEffect = true;
+					// Reset after animation completes
+					setTimeout(() => {
+						bluePulseEffect = false;
+					}, 500);
+				}, 10);
+			} else {
+				// Reset the pulse effect to ensure it can be triggered again
+				redPulseEffect = false;
+				// Use setTimeout to ensure the state change is processed
+				setTimeout(() => {
+					redPulseEffect = true;
+					// Reset after animation completes
+					setTimeout(() => {
+						redPulseEffect = false;
+					}, 500);
+				}, 10);
+			}
+		};
+
+		// Listen for the custom event
+		document.addEventListener('beat-highlight', handleBeatHighlight as EventListener);
+
+		return () => {
+			document.removeEventListener('beat-highlight', handleBeatHighlight as EventListener);
+		};
+	});
+
 	// Listen for the custom event as an alternative way to receive updates
 	onMount(() => {
 		// Handler for start position selected event
@@ -312,7 +355,13 @@
 >
 	<div class="pictograph-wrapper">
 		<Beat beat={beatData} onClick={props.onClick} isStartPosition={true} />
-		<StyledBorderOverlay {pictographData} isEnabled={showBorder || isSelected} />
+		<StyledBorderOverlay {pictographData} isEnabled={showBorder && !isSelected} />
+
+		{#if isSelected}
+			<!-- Animated highlights for blue and red turns -->
+			<AnimatedHighlight active={true} color="blue" pulseEffect={bluePulseEffect} />
+			<AnimatedHighlight active={true} color="red" pulseEffect={redPulseEffect} />
+		{/if}
 	</div>
 </button>
 
@@ -333,12 +382,9 @@
 		transition: all 0.2s ease;
 	}
 
-	/* Style for selected state */
+	/* Style for selected state - simplified to work with AnimatedHighlight */
 	.start-pos-beat.selected {
-		background-color: rgba(255, 204, 0, 0.1); /* Match the gold color used for regular beats */
-		box-shadow:
-			0 0 0 2px rgba(255, 204, 0, 0.7),
-			0 0 10px 2px rgba(255, 204, 0, 0.3); /* Primary border and outer glow */
+		background-color: rgba(255, 204, 0, 0.05); /* Subtle background highlight */
 		transform: scale(1.02);
 		transition: all 0.2s ease-out; /* Ensure smooth transition */
 	}
