@@ -15,8 +15,6 @@
 	// Import dev tools initializers
 	// Import safe area CSS
 	import '$lib/styles/safe-area.css';
-	// Import SafeAreaVisualizer for development
-	import SafeAreaVisualizer from '$lib/components/dev/SafeAreaVisualizer.svelte';
 	// Import FixedCornerButtons for global positioning
 
 	// This prop receives the data returned from your +layout.server.ts load function
@@ -70,15 +68,6 @@
 <!-- Toast Manager for notifications -->
 <ToastManager />
 
-<!-- Development tools - only visible in development mode -->
-{#if import.meta.env.DEV}
-	<SafeAreaVisualizer enabled={false} />
-
-	<!-- Import and use ResourceCacheDebug in dev mode -->
-	{#await import('$lib/components/dev/ResourceCacheDebug.svelte') then { default: ResourceCacheDebug }}
-		<ResourceCacheDebug visible={true} />
-	{/await}
-{/if}
 
 <style>
 	/* Optional: Basic styling for the error message */

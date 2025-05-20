@@ -7,6 +7,7 @@ import { toAppError } from '$lib/types/ErrorTypes';
 
 // Import the SvgManager directly to avoid circular dependencies
 import SvgManager from '$lib/components/SvgManager/SvgManager';
+import { resourceCache } from '$lib/services/ResourceCache';
 
 // Define resource categories
 export enum ResourceCategory {
@@ -97,6 +98,38 @@ export class ResourcePreloader {
 	}
 
 	/**
+	 * Generate a fallback SVG for missing resources
+	 * This can be used to create simple placeholder SVGs when files are missing
+	 */
+	private generateFallbackSvg(type: string, color: string = '#000000'): string {
+		switch (type) {
+			case 'dot':
+				return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25">
+					<circle cx="12.5" cy="12.5" r="12.5" fill="${color}"/>
+				</svg>`;
+			case 'dash':
+				return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+					<rect x="0" y="5" width="100" height="10" fill="${color}"/>
+				</svg>`;
+			case 'grid':
+				return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+					<rect x="0" y="0" width="200" height="200" fill="none" stroke="${color}" stroke-width="2"/>
+					<line x1="0" y1="100" x2="200" y2="100" stroke="${color}" stroke-width="1"/>
+					<line x1="100" y1="0" x2="100" y2="200" stroke="${color}" stroke-width="1"/>
+				</svg>`;
+			case 'number':
+				return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+					<text x="10" y="35" font-family="Arial" font-size="30" fill="${color}">0</text>
+				</svg>`;
+			default:
+				return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+					<rect x="5" y="5" width="40" height="40" fill="none" stroke="${color}" stroke-width="2"/>
+					<text x="15" y="32" font-family="Arial" font-size="20" fill="${color}">?</text>
+				</svg>`;
+		}
+	}
+
+	/**
 	 * Mark a resource as failed
 	 */
 	private markResourceFailed(resourceKey: string, error: any) {
@@ -104,16 +137,48 @@ export class ResourcePreloader {
 			this.resourcesFailed.add(resourceKey);
 
 			const errorMessage = error instanceof Error ? error.message : String(error);
+			const is404Error =
+				errorMessage.includes('404') ||
+				(error instanceof Error && error.message.includes('HTTP error 404'));
 
-			this.updateStatus({
-				failed: this.resourcesFailed.size,
-				errors: [
-					...get(resourceLoadingStatus).errors,
-					{ resource: resourceKey, error: errorMessage }
-				]
-			});
+			// Only add to the errors list if it's not a common 404 for optional resources
+			const isOptionalResource =
+				resourceKey.includes('glyph:letter:') ||
+				resourceKey.includes('glyph:number:') ||
+				resourceKey.includes('glyph:special:') ||
+				resourceKey.includes('grid:') ||
+				resourceKey === 'glyph:special:dot';
 
-			logger.warn(`Failed to preload resource: ${resourceKey}`, { error });
+			if (!isOptionalResource || !is404Error) {
+				this.updateStatus({
+					failed: this.resourcesFailed.size,
+					errors: [
+						...get(resourceLoadingStatus).errors,
+						{ resource: resourceKey, error: errorMessage }
+					]
+				});
+			} else {
+				// Just update the count without adding to the errors list
+				this.updateStatus({
+					failed: this.resourcesFailed.size
+				});
+			}
+
+			// Only log detailed errors in development mode
+			if (import.meta.env.DEV) {
+				// In development, log the full error for debugging
+				// But don't log 404s for optional resources to reduce noise
+				if (!isOptionalResource || !is404Error) {
+					logger.warn(`Failed to preload resource: ${resourceKey}`, { error });
+				}
+			} else {
+				// In production, just log the resource key without the full error details
+				// This prevents console spam for expected 404s
+				if (!isOptionalResource && !is404Error) {
+					// Only log non-optional, non-404 errors in production
+					logger.warn(`Failed to preload resource: ${resourceKey}`);
+				}
+			}
 		}
 	}
 
@@ -151,10 +216,10 @@ export class ResourcePreloader {
 	 * Preload common arrow SVGs
 	 */
 	async preloadArrows(): Promise<void> {
-		// Define arrow motion types for preloading (these are different from the MotionType in Types.ts)
-		const motionTypes = ['SAME', 'OPPOSITE', 'SPLIT', 'INSPIN', 'ANTISPIN'] as const;
-		// Define orientations for preloading (only 'in' and 'out' match the Orientation type)
-		const orientations = ['in', 'out', 'wall', 'wheel'] as const;
+		// Use the actual motion types that exist in the file system
+		const motionTypes = ['pro', 'anti', 'static', 'dash'] as const;
+		// Only use orientations that exist in the file system
+		const orientations = ['in', 'out'] as const;
 		const turns: TKATurns[] = [0, 0.5, 1, 1.5, 2, 2.5, 3];
 		const colors: Color[] = ['red', 'blue'];
 
@@ -182,6 +247,21 @@ export class ResourcePreloader {
 			}
 		}
 
+		// Add special handling for float.svg which has a different structure
+		// Only add it once since it doesn't have variations
+		arrowConfigs.push({
+			motionType: 'float',
+			orientation: 'in',
+			turn: 'fl' as TKATurns,
+			color: 'red'
+		});
+		arrowConfigs.push({
+			motionType: 'float',
+			orientation: 'in',
+			turn: 'fl' as TKATurns,
+			color: 'blue'
+		});
+
 		// Process in batches
 		for (let i = 0; i < arrowConfigs.length; i += batchSize) {
 			const batch = arrowConfigs.slice(i, i + batchSize);
@@ -190,8 +270,17 @@ export class ResourcePreloader {
 				batch.map(async ({ motionType, orientation, turn, color }) => {
 					const resourceKey = `arrow:${motionType}:${orientation}:${turn}:${color}`;
 					try {
-						// Type assertion needed because our arrow types don't match the MotionType in Types.ts
-						await this.svgManager.getArrowSvg(motionType as any, orientation as any, turn, color);
+						// Skip float with numeric turns since they don't exist
+						if (motionType === 'float' && turn !== 'fl') {
+							return;
+						}
+
+						await this.svgManager.getArrowSvg(
+							motionType as any,
+							orientation as any,
+							turn,
+							color as any
+						);
 						this.markResourceLoaded(resourceKey);
 					} catch (error) {
 						this.markResourceFailed(resourceKey, error);
@@ -217,9 +306,64 @@ export class ResourcePreloader {
 		const loadPromises = gridTypes.map(async (gridType) => {
 			const resourceKey = `grid:${gridType}`;
 			try {
-				const path = `/images/grids/${gridType}.svg`;
-				await fetch(path);
-				this.markResourceLoaded(resourceKey);
+				// Try the correct path first
+				const path = `/images/grid/${gridType}_grid.svg`;
+
+				try {
+					const response = await fetch(path);
+					if (!response.ok) {
+						throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+					}
+					this.markResourceLoaded(resourceKey);
+				} catch (fetchError) {
+					// Try alternative paths
+					const altPaths = [`/images/grids/${gridType}.svg`, `/images/grid/${gridType}.svg`];
+
+					let loaded = false;
+					for (const altPath of altPaths) {
+						try {
+							const altResponse = await fetch(altPath);
+							if (altResponse.ok) {
+								this.markResourceLoaded(resourceKey);
+								loaded = true;
+								break;
+							}
+						} catch {
+							// Continue to next alternative
+						}
+					}
+
+					if (!loaded) {
+						// Generate a fallback grid SVG
+						const fallbackSvg = this.generateFallbackSvg('grid');
+
+						// Create a Blob from the SVG string
+						const blob = new Blob([fallbackSvg], { type: 'image/svg+xml' });
+						const url = URL.createObjectURL(blob);
+
+						try {
+							// Fetch the blob URL to cache it
+							const fallbackResponse = await fetch(url);
+							if (fallbackResponse.ok) {
+								// Store in ResourceCache
+								try {
+									resourceCache.set(`fallback:grid:${gridType}`, fallbackSvg);
+								} catch (e) {
+									// Ignore cache errors
+								}
+
+								this.markResourceLoaded(resourceKey);
+								return;
+							}
+						} catch {
+							// If blob URL fetch fails, just mark as loaded anyway
+							this.markResourceLoaded(resourceKey);
+						} finally {
+							// Clean up the blob URL
+							URL.revokeObjectURL(url);
+						}
+					}
+				}
 			} catch (error) {
 				this.markResourceFailed(resourceKey, error);
 			}
@@ -248,13 +392,43 @@ export class ResourcePreloader {
 			inProgress: true
 		});
 
+		// Import the getLetterPath function from glyphStore
+		const { getLetterPath } = await import('$lib/stores/glyphStore');
+		const { Letter } = await import('$lib/types/Letter');
+
 		// Preload letters
 		const letterPromises = letters.map(async (letter) => {
 			const resourceKey = `glyph:letter:${letter}`;
 			try {
-				const path = `/images/letters/${letter}.svg`;
-				await fetch(path);
-				this.markResourceLoaded(resourceKey);
+				// Convert string to Letter enum and use getLetterPath to get the correct path
+				// For A-V, they are in Type1 folder
+				const letterEnum = Letter[letter as keyof typeof Letter];
+				const path = letterEnum
+					? getLetterPath(letterEnum)
+					: `/images/letters_trimmed/Type1/${letter}.svg`;
+
+				try {
+					const response = await fetch(path);
+					if (!response.ok) {
+						throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+					}
+					this.markResourceLoaded(resourceKey);
+				} catch (fetchError) {
+					// If the primary path fails, try the fallback path
+					try {
+						const fallbackPath = `/images/letters_trimmed/Type1/${letter}.svg`;
+						if (path !== fallbackPath) {
+							const fallbackResponse = await fetch(fallbackPath);
+							if (fallbackResponse.ok) {
+								this.markResourceLoaded(resourceKey);
+								return;
+							}
+						}
+						throw fetchError; // Re-throw if fallback also fails or is the same as primary
+					} catch {
+						throw fetchError; // Re-throw the original error
+					}
+				}
 			} catch (error) {
 				this.markResourceFailed(resourceKey, error);
 			}
@@ -264,11 +438,74 @@ export class ResourcePreloader {
 		const numberPromises = numbers.map(async (number) => {
 			const resourceKey = `glyph:number:${number}`;
 			try {
-				const path = `/images/numbers/${number.toString().replace('.', '_')}.svg`;
-				await fetch(path);
-				this.markResourceLoaded(resourceKey);
+				// Skip 0 since it doesn't exist and isn't needed
+				if (number === 0) {
+					// Mark as loaded to avoid errors
+					this.markResourceLoaded(resourceKey);
+					return;
+				}
+
+				// Use the correct path for number SVGs
+				const path = `/images/numbers/${number}.svg`;
+
+				try {
+					const response = await fetch(path);
+					if (!response.ok) {
+						throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+					}
+					this.markResourceLoaded(resourceKey);
+				} catch (fetchError) {
+					// Try alternative format (with underscore instead of dot)
+					try {
+						const altPath = `/images/numbers/${number.toString().replace('.', '_')}.svg`;
+						if (path !== altPath) {
+							const altResponse = await fetch(altPath);
+							if (altResponse.ok) {
+								this.markResourceLoaded(resourceKey);
+								return;
+							}
+						}
+						// Generate a fallback number SVG
+						const fallbackSvg = this.generateFallbackSvg('number');
+
+						// Create a Blob from the SVG string
+						const blob = new Blob([fallbackSvg], { type: 'image/svg+xml' });
+						const url = URL.createObjectURL(blob);
+
+						try {
+							// Fetch the blob URL to cache it
+							const fallbackResponse = await fetch(url);
+							if (fallbackResponse.ok) {
+								// Store in ResourceCache
+								try {
+									resourceCache.set(`fallback:number:${number}`, fallbackSvg);
+								} catch (e) {
+									// Ignore cache errors
+								}
+
+								this.markResourceLoaded(resourceKey);
+								return;
+							}
+						} catch {
+							// If blob URL fetch fails, just mark as loaded anyway
+							this.markResourceLoaded(resourceKey);
+							return;
+						} finally {
+							// Clean up the blob URL
+							URL.revokeObjectURL(url);
+						}
+					} catch {
+						throw fetchError;
+					}
+				}
 			} catch (error) {
-				this.markResourceFailed(resourceKey, error);
+				// Only log errors for non-zero numbers in production
+				if (number !== 0 || import.meta.env.DEV) {
+					this.markResourceFailed(resourceKey, error);
+				} else {
+					// Silently mark as loaded to avoid errors
+					this.markResourceLoaded(resourceKey);
+				}
 			}
 		});
 
@@ -276,9 +513,83 @@ export class ResourcePreloader {
 		const specialPromises = specialGlyphs.map(async (glyph) => {
 			const resourceKey = `glyph:special:${glyph}`;
 			try {
-				const path = `/images/${glyph}.svg`;
-				await fetch(path);
-				this.markResourceLoaded(resourceKey);
+				// Use specific paths for known glyphs
+				let primaryPath = '';
+				if (glyph === 'dot') {
+					primaryPath = `/images/same_opp_dot.svg`;
+				} else if (glyph === 'dash') {
+					primaryPath = `/images/dash.svg`;
+				} else {
+					primaryPath = `/images/${glyph}.svg`;
+				}
+
+				try {
+					const response = await fetch(primaryPath);
+					if (!response.ok) {
+						throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+					}
+					this.markResourceLoaded(resourceKey);
+				} catch (fetchError) {
+					// Try alternative locations with comprehensive fallbacks
+					const altPaths = [
+						`/images/${glyph}.svg`,
+						`/images/arrows/${glyph}.svg`,
+						`/images/same_opp_${glyph}.svg`,
+						`/images/special/${glyph}.svg`
+					];
+
+					// Remove the primary path from alternatives if it's already in the list
+					const uniqueAltPaths = altPaths.filter((path) => path !== primaryPath);
+
+					for (const altPath of uniqueAltPaths) {
+						try {
+							const altResponse = await fetch(altPath);
+							if (altResponse.ok) {
+								this.markResourceLoaded(resourceKey);
+								return;
+							}
+						} catch {
+							// Continue to next alternative
+						}
+					}
+
+					// If we get here, all alternatives failed
+					// For certain glyphs, create a fallback SVG in memory
+					if (glyph === 'dot' || glyph === 'dash') {
+						// Generate a fallback SVG and cache it
+						const fallbackSvg = this.generateFallbackSvg(glyph);
+
+						// Create a Blob from the SVG string
+						const blob = new Blob([fallbackSvg], { type: 'image/svg+xml' });
+						const url = URL.createObjectURL(blob);
+
+						// Fetch the blob URL to cache it
+						try {
+							const fallbackResponse = await fetch(url);
+							if (fallbackResponse.ok) {
+								// Store in ResourceCache if available
+								try {
+									// Use our own resourceCache instance instead of window
+									resourceCache.set(`fallback:${glyph}`, fallbackSvg);
+								} catch (e) {
+									// Ignore cache errors
+								}
+
+								this.markResourceLoaded(resourceKey);
+								return;
+							}
+						} catch {
+							// If blob URL fetch fails, just mark as loaded anyway
+							this.markResourceLoaded(resourceKey);
+							return;
+						} finally {
+							// Clean up the blob URL
+							URL.revokeObjectURL(url);
+						}
+					}
+
+					throw fetchError;
+				}
 			} catch (error) {
 				this.markResourceFailed(resourceKey, error);
 			}

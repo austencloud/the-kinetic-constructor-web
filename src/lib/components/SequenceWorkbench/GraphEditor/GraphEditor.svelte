@@ -5,17 +5,16 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import { DIAMOND } from '$lib/types/Constants';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-	import { onMount, createEventDispatcher } from 'svelte';
 	import { editModeStore } from '$lib/state/stores/editModeStore';
 	import { fade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { panelStore } from '$lib/components/SequenceWorkbench/ButtonPanel/stores/panelStore';
 
-	// Create event dispatcher
-	const dispatch = createEventDispatcher<{
-		turnsChanged: { color: 'blue' | 'red'; turns: any };
-		directionChanged: { color: 'blue' | 'red'; direction: any };
+	// Define props using Svelte 5 runes syntax
+	const props = $props<{
+		onTurnsChanged?: (data: { color: 'blue' | 'red'; turns: any }) => void;
+		onDirectionChanged?: (data: { color: 'blue' | 'red'; direction: any }) => void;
 	}>();
 
 	// Local state
@@ -130,8 +129,11 @@
 		}
 	}
 
-	// Set up resize observer
-	onMount(() => {
+	// Set up resize observer and initialization using $effect instead of onMount
+	$effect(() => {
+		// Only run this effect when containerElement is available
+		if (!containerElement) return;
+
 		// Initial update of container dimensions
 		updateContainerDimensions();
 
@@ -140,9 +142,7 @@
 			updateContainerDimensions();
 		});
 
-		if (containerElement) {
-			resizeObserver.observe(containerElement);
-		}
+		resizeObserver.observe(containerElement);
 
 		// Load selected beat data
 		loadSelectedBeatData();
@@ -152,6 +152,7 @@
 			loadSelectedBeatData();
 		});
 
+		// Return cleanup function
 		return () => {
 			resizeObserver.disconnect();
 			unsubscribe();
@@ -164,14 +165,16 @@
 	}
 
 	// Handle turns changed event
-	function handleTurnsChanged(event: CustomEvent) {
-		const { color, turns } = event.detail;
+	function handleTurnsChanged(data: { color: 'blue' | 'red'; turns: any }) {
+		const { color, turns } = data;
 
 		// Trigger haptic feedback
 		hapticFeedbackService.trigger('selection');
 
-		// Dispatch event to notify parent components
-		dispatch('turnsChanged', { color, turns });
+		// Call the callback prop if provided
+		if (props.onTurnsChanged) {
+			props.onTurnsChanged({ color, turns });
+		}
 
 		// Dispatch custom event for AnimatedBeat components to show the highlight effect
 		const highlightEvent = new CustomEvent('beat-highlight', {
@@ -214,14 +217,16 @@
 	}
 
 	// Handle direction changed event
-	function handleDirectionChanged(event: CustomEvent) {
-		const { color, direction } = event.detail;
+	function handleDirectionChanged(data: { color: 'blue' | 'red'; direction: any }) {
+		const { color, direction } = data;
 
 		// Trigger haptic feedback
 		hapticFeedbackService.trigger('selection');
 
-		// Dispatch event to notify parent components
-		dispatch('directionChanged', { color, direction });
+		// Call the callback prop if provided
+		if (props.onDirectionChanged) {
+			props.onDirectionChanged({ color, direction });
+		}
 
 		// Dispatch custom event for AnimatedBeat components to show the highlight effect
 		const highlightEvent = new CustomEvent('beat-highlight', {
@@ -285,75 +290,50 @@
 				<div class="turns-box-container blue-box">
 					<TurnsBox
 						color="blue"
-						on:turnsChanged={handleTurnsChanged}
-						on:directionChanged={handleDirectionChanged}
+						onTurnsChanged={handleTurnsChanged}
+						onDirectionChanged={handleDirectionChanged}
 					/>
 				</div>
 
 				<div class="turns-box-container red-box">
 					<TurnsBox
 						color="red"
-						on:turnsChanged={handleTurnsChanged}
-						on:directionChanged={handleDirectionChanged}
+						onTurnsChanged={handleTurnsChanged}
+						onDirectionChanged={handleDirectionChanged}
 					/>
 				</div>
 			</div>
 		{:else}
 			<!-- Panel is vertical (right) layout: Show Pictograph and TurnsBox components -->
-			{#if isPortrait}
-				<!-- Portrait layout with panel on right: Pictograph on top, turns boxes side by side below -->
-				<div class="pictograph-section" in:fade={{ duration: 200, easing: cubicOut }}>
-					<div
-						class="pictograph-container"
-						style="width: {pictographSize}px; height: {pictographSize}px;"
-					>
-						<Pictograph {pictographData} />
-					</div>
-				</div>
-
-				<div class="turns-boxes-row" in:fade={{ duration: 200, delay: 100, easing: cubicOut }}>
-					<div class="turns-box-container blue-box">
-						<TurnsBox
-							color="blue"
-							on:turnsChanged={handleTurnsChanged}
-							on:directionChanged={handleDirectionChanged}
-						/>
-					</div>
-
-					<div class="turns-box-container red-box">
-						<TurnsBox
-							color="red"
-							on:turnsChanged={handleTurnsChanged}
-							on:directionChanged={handleDirectionChanged}
-						/>
-					</div>
-				</div>
-			{:else}
-				<!-- Landscape layout with panel on right: Turns boxes on either side of pictograph -->
-				<div class="turns-box-container blue-box" in:fade={{ duration: 200, easing: cubicOut }}>
-					<TurnsBox
-						color="blue"
-						on:turnsChanged={handleTurnsChanged}
-						on:directionChanged={handleDirectionChanged}
-					/>
-				</div>
-
+			<!-- Always use vertical layout with pictograph on top and turns boxes below -->
+			<!-- Pictograph section at the top -->
+			<div class="pictograph-section" in:fade={{ duration: 200, easing: cubicOut }}>
 				<div
 					class="pictograph-container"
 					style="width: {pictographSize}px; height: {pictographSize}px;"
-					in:fade={{ duration: 200, delay: 100, easing: cubicOut }}
 				>
 					<Pictograph {pictographData} />
 				</div>
+			</div>
 
-				<div class="turns-box-container red-box" in:fade={{ duration: 200, easing: cubicOut }}>
+			<!-- Turns boxes row below pictograph -->
+			<div class="turns-boxes-row" in:fade={{ duration: 200, delay: 100, easing: cubicOut }}>
+				<div class="turns-box-container blue-box">
 					<TurnsBox
-						color="red"
-						on:turnsChanged={handleTurnsChanged}
-						on:directionChanged={handleDirectionChanged}
+						color="blue"
+						onTurnsChanged={handleTurnsChanged}
+						onDirectionChanged={handleDirectionChanged}
 					/>
 				</div>
-			{/if}
+
+				<div class="turns-box-container red-box">
+					<TurnsBox
+						color="red"
+						onTurnsChanged={handleTurnsChanged}
+						onDirectionChanged={handleDirectionChanged}
+					/>
+				</div>
+			</div>
 		{/if}
 	</div>
 </div>
@@ -361,7 +341,7 @@
 <style>
 	.graph-editor {
 		position: relative;
-		background-color: var(--tkc-background-color, #1a1a1d);
+		background-color: transparent; /* Changed to transparent background */
 		color: var(--tkc-text-color, #f8f9fa);
 		overflow: hidden;
 		height: 100%;
@@ -374,7 +354,7 @@
 		max-height: 100%;
 		isolation: isolate;
 		/* Add subtle shadow for depth */
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+		box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.25); /* Using relative units */
 	}
 
 	.editor-header {
@@ -382,9 +362,9 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1rem 1.25rem;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-		/* Add subtle gradient for visual interest */
-		background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent);
+		border-bottom: 0.0625rem solid rgba(255, 255, 255, 0.15); /* Using relative units */
+		/* Changed to transparent background */
+		background: transparent;
 	}
 
 	.editor-header h2 {
@@ -420,9 +400,9 @@
 
 	.editor-content {
 		display: flex;
-		flex-direction: row;
+		flex-direction: column; /* Always use column layout */
 		align-items: center;
-		justify-content: center; /* Center content horizontally */
+		justify-content: flex-start; /* Align content to the top */
 		padding: 1.5rem;
 		flex: 1;
 		overflow: auto;
@@ -434,10 +414,12 @@
 		/* Improve scrollbar styling for better user experience */
 		scrollbar-width: thin;
 		scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.1);
+		/* Ensure proper containment */
+		contain: content;
 	}
 
 	.editor-content.portrait {
-		flex-direction: column;
+		/* Portrait mode already uses column layout */
 		justify-content: flex-start; /* Align to top in portrait mode */
 		overflow-y: auto; /* Enable vertical scrolling if needed */
 	}
@@ -499,22 +481,35 @@
 		background-color: rgba(255, 255, 255, 0.5);
 	}
 
-	/* Container for pictograph in portrait mode with panel vertical/right */
+	/* Container for pictograph at the top */
 	.pictograph-section {
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		width: 100%;
 		margin-bottom: 1.5rem;
+		/* Ensure proper containment */
+		contain: layout;
+		/* Prevent overflow */
+		overflow: hidden;
+		/* Add minimum height to ensure visibility */
+		min-height: 200px;
 	}
 
-	/* Container for horizontal arrangement of TurnsBox components (panel vertical/right in portrait) */
+	/* Container for horizontal arrangement of TurnsBox components below pictograph */
 	.turns-boxes-row {
 		display: flex;
 		flex-direction: row;
 		justify-content: center; /* Center boxes horizontally */
+		align-items: stretch; /* Stretch boxes to equal height */
 		width: 100%;
 		gap: 1.5rem; /* Increased gap for better spacing */
+		/* Ensure proper containment */
+		contain: layout;
+		/* Add minimum height to ensure visibility */
+		min-height: 200px;
+		/* Prevent overflow */
+		overflow: visible;
 	}
 
 	.turns-box-container {
@@ -524,12 +519,23 @@
 		align-items: stretch;
 		justify-content: center;
 		height: 100%;
-		min-width: 0;
+		min-width: 0; /* Allow container to shrink below content size */
 		max-width: 350px; /* Prevent boxes from getting too wide */
+		width: 100%; /* Take full width of parent up to max-width */
 		/* Ensure the turns box container doesn't affect other components */
 		box-sizing: border-box;
 		/* Add subtle transition for smoother resizing */
 		transition: all 0.3s ease;
+		/* Prevent overflow */
+		overflow: hidden;
+		/* Ensure proper containment */
+		contain: layout paint;
+		/* Add minimum height to ensure visibility */
+		min-height: 200px;
+		/* Add maximum height to prevent excessive stretching */
+		max-height: 400px;
+		/* Add z-index to ensure proper stacking */
+		z-index: 1;
 	}
 
 	/* Add specific styling for blue and red boxes */
@@ -630,15 +636,29 @@
 		.editor-content {
 			padding: 0.75rem;
 			gap: 0.75rem;
+			/* Ensure proper containment on mobile */
+			contain: content;
 		}
 
-		.editor-content.small-screen.portrait .turns-boxes-row {
-			flex-direction: column;
+		.pictograph-section {
+			min-height: 150px; /* Smaller minimum height on mobile */
+			margin-bottom: 1rem; /* Reduce margin on mobile */
+		}
+
+		.turns-boxes-row {
+			flex-direction: column; /* Stack boxes vertically on mobile */
 			gap: 1rem;
+			min-height: auto; /* Allow height to adjust to content */
 		}
 
-		.editor-content.small-screen.portrait .turns-box-container {
+		.turns-box-container {
 			margin-bottom: 0.5rem;
+			min-height: 200px; /* Ensure minimum height on small screens */
+			max-height: 300px; /* Limit maximum height on small screens */
+			width: 100%; /* Take full width */
+			max-width: 100%; /* Allow full width in portrait mode */
+			/* Ensure proper containment on mobile */
+			contain: layout paint;
 		}
 	}
 
@@ -656,5 +676,8 @@
 	.editor-content.panel-horizontal .turns-box-container {
 		width: 100%;
 		max-width: none;
+		min-height: 180px; /* Ensure minimum height */
+		max-height: 250px; /* Limit maximum height */
+		overflow: hidden; /* Prevent overflow */
 	}
 </style>

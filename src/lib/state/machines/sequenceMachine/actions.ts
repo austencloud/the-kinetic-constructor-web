@@ -413,6 +413,8 @@ export function updateBeat({ event }: { event: any }) {
  * 1. Ensure both sequence and start position are properly cleared
  * 2. Properly reset state to allow creating new sequences
  * 3. Notify all components of the change
+ * 4. Exit Graph Editor mode if active
+ * 5. Return to the option picker (build) tab/view
  */
 export function clearSequence() {
 	console.log('Clearing sequence and start position');
@@ -439,6 +441,17 @@ export function clearSequence() {
 
 	// Reset the pictograph container to default data
 	pictographContainer.setData(defaultPictographData);
+
+	// Exit Graph Editor mode if it's active
+	import('$lib/state/stores/editModeStore').then(({ editModeStore }) => {
+		editModeStore.setEditMode(false);
+	});
+
+	// Return to the option picker (build) tab/view
+	import('$lib/state/machines/app/app.actions').then(({ appActions }) => {
+		// Change to the Construct tab (index 0)
+		appActions.changeTab(0);
+	});
 
 	// Instead of removing localStorage items, save the empty state
 	// This ensures we have a valid empty state rather than missing data

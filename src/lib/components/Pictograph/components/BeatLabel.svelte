@@ -1,15 +1,13 @@
 <script lang="ts">
 	import { popIn } from '$lib/transitions/popIn';
 
-	export let text: string;
-	export let position: 'top-left' | 'top-right' = 'top-left';
-	export let animationDuration = 200; // Animation duration for transitions
-	export let fontSize = 100; // Default font size, will be scaled relative to SVG viewBox
+	// Define props using Svelte 5 runes syntax
+	const { text, position = 'top-left', animationDuration = 200, fontSize = 100 } = $props();
 
-	// Calculate position based on the option
-	$: x = position === 'top-left' ? 50 : 900;
-	$: y = 50; // Always at the top
-	$: textAnchor = position === 'top-left' ? 'start' : 'end';
+	// Calculate position based on the option using $derived instead of $:
+	const x = $derived(position === 'top-left' ? 50 : 900);
+	const y = $derived(50); // Always at the top
+	const textAnchor = $derived(position === 'top-left' ? 'start' : 'end');
 </script>
 
 <g in:popIn={{ duration: animationDuration, start: 0.85, opacity: 0.2 }}>

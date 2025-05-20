@@ -1,7 +1,10 @@
 <!-- src/lib/components/Pictograph/components/LoadingProgress.svelte -->
 <script lang="ts">
-	export let loadProgress = 0;
-	export let showText = true;
+	// Convert to Svelte 5 runes syntax
+	const { loadProgress = 0, showText = true } = $props<{
+		loadProgress?: number;
+		showText?: boolean;
+	}>();
 </script>
 
 <div class="loading-bar-container">

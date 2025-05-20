@@ -5,6 +5,9 @@ import { writable, derived, type Readable } from 'svelte/store';
 export type TurnsValue = number | 'fl';
 export type Direction = 'clockwise' | 'counterclockwise' | null;
 
+// Available turns values for the dialog
+export const TURNS_VALUES = ['fl', '0', '0.5', '1', '1.5', '2', '2.5', '3'];
+
 // Define state interface
 export interface TurnsSide {
 	turns: TurnsValue;

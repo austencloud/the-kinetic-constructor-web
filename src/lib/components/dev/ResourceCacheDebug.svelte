@@ -45,10 +45,7 @@
 
 {#if visible}
 	<div class="resource-cache-debug" class:expanded={isExpanded}>
-		<div class="debug-header" on:click={toggleExpanded}>
-			<h3>Resource Cache</h3>
-			<span class="toggle-icon">{isExpanded ? '▼' : '▶'}</span>
-		</div>
+
 		
 		{#if isExpanded}
 			<div class="debug-content">

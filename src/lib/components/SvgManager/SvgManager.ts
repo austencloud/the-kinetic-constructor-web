@@ -200,6 +200,27 @@ export default class SvgManager {
 
 			// Fallback to direct fetch
 			const basePath = '/images/arrows';
+
+			// Special handling for float motion type
+			if (motionType === 'float' && turns === 'fl') {
+				// Float has a special path
+				const svgPath = `${basePath}/float.svg`;
+				const svgData = await this.fetchSvg(svgPath);
+				const coloredSvg = this.applyColor(svgData, color);
+
+				// Ensure the SVG has a centerPoint element
+				const svgWithCenterPoint = this.ensureCenterPoint(coloredSvg);
+
+				// Store in both caches
+				SvgManager.localCache.set(cacheKey, svgWithCenterPoint);
+				await resourceCache.set(cacheKey, svgWithCenterPoint);
+
+				logger.debug(`Cached float SVG: (${color})`);
+
+				return svgWithCenterPoint;
+			}
+
+			// Standard path for other motion types
 			const typePath = motionType.toLowerCase();
 			const radialPath = startOri === 'out' || startOri === 'in' ? 'from_radial' : 'from_nonradial';
 			const fixedTurns = (typeof turns === 'number' ? turns : parseFloat(turns.toString())).toFixed(
@@ -313,13 +334,22 @@ export default class SvgManager {
 
 				// Create the path
 				const basePath = '/images/arrows';
-				const typePath = motionType.toLowerCase();
-				const radialPath =
-					startOri === 'out' || startOri === 'in' ? 'from_radial' : 'from_nonradial';
-				const fixedTurns = (
-					typeof turns === 'number' ? turns : parseFloat(turns.toString())
-				).toFixed(1);
-				const svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${fixedTurns}.svg`;
+
+				// Special handling for float motion type
+				let svgPath;
+				if (motionType === 'float' && turns === 'fl') {
+					// Float has a special path
+					svgPath = `${basePath}/float.svg`;
+				} else {
+					// Standard path for other motion types
+					const typePath = motionType.toLowerCase();
+					const radialPath =
+						startOri === 'out' || startOri === 'in' ? 'from_radial' : 'from_nonradial';
+					const fixedTurns = (
+						typeof turns === 'number' ? turns : parseFloat(turns.toString())
+					).toFixed(1);
+					svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${fixedTurns}.svg`;
+				}
 
 				// Fetch the SVG with retry logic
 				const svgData = await this.fetchSvg(svgPath);

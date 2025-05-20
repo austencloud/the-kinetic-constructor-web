@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { popIn } from '$lib/transitions/popIn';
 
-	export let errorMessage: string | null = null;
-	export let animationDuration = 200; // Animation duration for transitions
+	// Convert to Svelte 5 runes syntax
+	const { errorMessage = null, animationDuration = 200 } = $props<{
+		errorMessage?: string | null;
+		animationDuration?: number;
+	}>();
 </script>
 
 <g in:popIn={{ duration: animationDuration, start: 0.85, opacity: 0.2 }}>

@@ -173,6 +173,22 @@ function createOptionPickerContainer() {
 					// Add the beat using the state machine
 					sequenceActions.addBeat(beatData);
 
+					// After adding the beat, automatically select it
+					// We need to wait for the beat to be added to the sequence
+					setTimeout(() => {
+						// Get the current sequence beats
+						const beats = sequenceSelectors.beats();
+
+						// Find the most recently added beat (the one with the highest index)
+						if (beats.length > 0) {
+							const mostRecentBeat = beats[beats.length - 1];
+							// Select this beat
+							sequenceContainer.selectBeat(mostRecentBeat.id);
+
+							console.log('Auto-selected most recently added beat:', mostRecentBeat.id);
+						}
+					}, 0);
+
 					// Dispatch a custom event to notify components that a beat was added
 					if (browser) {
 						const beatAddedEvent = new CustomEvent('beat-added', {
