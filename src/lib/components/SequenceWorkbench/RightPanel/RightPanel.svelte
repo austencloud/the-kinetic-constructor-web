@@ -1,13 +1,27 @@
 <!-- src/lib/components/SequenceWorkbench/RightPanel/RightPanel.svelte -->
 <script lang="ts">
 	import { workbenchStore } from '$lib/state/stores/workbenchStore';
+	import { editModeStore } from '$lib/state/stores/editModeStore';
 	import ModernGenerationControls from './ModernGenerationControls.svelte';
 	import OptionPickerWithDebug from '$lib/components/ConstructTab/OptionPicker/OptionPickerWithDebug.svelte';
 	import StartPosPicker from '$lib/components/ConstructTab/StartPosPicker/StartPosPicker.svelte';
+	import GraphEditor from '$lib/components/SequenceWorkbench/GraphEditor/GraphEditor.svelte';
 	import TransitionWrapper from './TransitionWrapper.svelte';
 	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicInOut } from 'svelte/easing';
+
+	// Local state
+	let isEditMode = $state(false);
+
+	// Subscribe to the edit mode store
+	$effect(() => {
+		const unsubscribe = editModeStore.subscribe((state) => {
+			isEditMode = state.isEditMode;
+		});
+
+		return unsubscribe;
+	});
 
 	// Transition parameters
 	const transitionDuration = 400;
@@ -23,6 +37,14 @@
 	{#if $workbenchStore.activeTab === 'generate'}
 		<div in:fly={flyParams} out:fade={fadeParams}>
 			<ModernGenerationControls />
+		</div>
+	{:else if isEditMode}
+		<div
+			class="full-height-wrapper graph-editor-wrapper"
+			in:fade={fadeParams}
+			out:fade={fadeParams}
+		>
+			<GraphEditor />
 		</div>
 	{:else}
 		<TransitionWrapper isSequenceEmpty={$isSequenceEmpty} {transitionDuration}>
@@ -54,5 +76,16 @@
 		height: 100%;
 		display: flex;
 		flex-direction: column;
+	}
+
+	/* Specific styles for the graph editor wrapper */
+	.graph-editor-wrapper {
+		/* Ensure the graph editor wrapper doesn't affect other components */
+		box-sizing: border-box;
+		/* Ensure the graph editor wrapper is contained within its parent */
+		max-width: 100%;
+		max-height: 100%;
+		/* Ensure the graph editor wrapper doesn't interfere with BeatFrame sizing */
+		isolation: isolate;
 	}
 </style>

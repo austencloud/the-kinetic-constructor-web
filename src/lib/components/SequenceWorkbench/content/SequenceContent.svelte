@@ -6,6 +6,8 @@
 	import { setContext } from 'svelte';
 	import { browser } from '$app/environment';
 	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from '../context/ElementContext';
+	import { editModeStore } from '$lib/state/stores/editModeStore';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 
 	// Props with callback for beat selection
 	const {
@@ -81,10 +83,36 @@
 		beatFrameNaturalHeight = event.detail.height;
 	}
 
+	// Local state for selection mode
+	let isSelectionMode = $state(false);
+
+	// Subscribe to the edit mode store
+	$effect(() => {
+		const unsubscribe = editModeStore.subscribe((state) => {
+			isSelectionMode = state.isSelectionMode;
+		});
+
+		return unsubscribe;
+	});
+
 	// Handle beat selected event
 	function handleBeatSelected(event: CustomEvent<{ beatId: string }>) {
+		const beatId = event.detail.beatId;
+
 		// Forward the event to the parent component using the callback prop
-		onBeatSelected(event.detail.beatId);
+		onBeatSelected(beatId);
+
+		// If in selection mode, select the beat and enter edit mode
+		if (isSelectionMode && beatId) {
+			// Select the beat
+			sequenceContainer.selectBeat(beatId);
+
+			// Enter edit mode
+			editModeStore.setEditMode(true);
+
+			// Log for debugging
+			console.log('Selection mode: Selected beat and entered edit mode', { beatId });
+		}
 	}
 
 	// Define the component's custom events for TypeScript

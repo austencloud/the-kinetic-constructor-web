@@ -26,6 +26,7 @@
 	import SequenceOverlayButton from './SequenceOverlayButton.svelte';
 	import RemoveBeatButton from './RemoveBeatButton.svelte';
 	import ClearSequenceButton from './ClearSequenceButton.svelte';
+	import EditButton from './EditButton.svelte';
 	// Explicitly import ShareButton with a console log to verify it's being imported
 	import ShareButton from './share/ShareButton.svelte';
 	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte';
@@ -437,6 +438,9 @@
 			{#if hasSelectedBeat}
 				<RemoveBeatButton onRemoveBeat={handleRemoveBeat} />
 			{/if}
+
+			<!-- Edit button is always visible -->
+			<EditButton />
 		</div>
 
 		<SequenceOverlay title={sequenceName}>
