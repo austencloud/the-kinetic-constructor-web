@@ -88,14 +88,12 @@ export async function renderSequence(
 			scale: 2, // Higher scale for better quality
 			quality: 1.0, // Always use maximum quality
 			format: 'png', // PNG format for lossless quality
-			// For 6-beat sequences with start position, we need to ensure we use 4 columns for beats
-			// For other cases, use dynamic columns based on sequence length for optimal layout
-			// Setting columns to 0 will let CanvasDimensionsCalculator determine the optimal layout
-			columns: 0, // Let CanvasDimensionsCalculator determine the optimal layout
+			// Use the same column calculation as the preview to ensure consistency
+			// This ensures the downloaded image matches what the user sees in the preview
+			columns: sequenceBeats.length <= 4 ? sequenceBeats.length : 4,
 			spacing: 0,
-			// Use settings from the image export settings
-			includeStartPosition:
-				settings.includeStartPosition === undefined ? true : !!settings.includeStartPosition,
+			// Always include start position
+			includeStartPosition: true, // Force to true regardless of settings
 			addWord: settings.addWord === undefined ? true : !!settings.addWord,
 			addUserInfo: settings.addUserInfo === undefined ? true : !!settings.addUserInfo,
 			addDifficultyLevel:

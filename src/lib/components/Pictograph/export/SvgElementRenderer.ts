@@ -37,17 +37,12 @@ export async function renderSvgElements(
 	// Try to find the start position element directly from the container
 	const startPositionContainer = containerElement.querySelector('.start-position');
 
-	// Only include the start position if:
-	// 1. The includeStartPosition option is true
-	// 2. There is actually a start position provided or found in the DOM
-	// This ensures we respect the user's choice to exclude the start position
-	let hasStartPosition =
-		options.includeStartPosition && (!!options.startPosition || !!startPositionContainer);
+	// Always include the start position if it exists
+	// This is a temporary fix until the grid layout issues are resolved
+	let hasStartPosition = !!options.startPosition || !!startPositionContainer;
 
 	if (startPositionContainer) {
-		console.log(
-			'EnhancedExporter: Found start position container in DOM, forcing hasStartPosition to true'
-		);
+		console.log('EnhancedExporter: Found start position container in DOM, including it in export');
 
 		const startPositionSvg = startPositionContainer.querySelector('svg');
 		if (startPositionSvg) {
@@ -87,6 +82,14 @@ export async function renderSvgElements(
 
 	// Process each SVG element
 	for (let i = 0; i < svgElements.length; i++) {
+		// Skip rendering the start position element if hasStartPosition is false
+		if (!hasStartPosition && i === startPositionIndex) {
+			console.log(
+				'EnhancedExporter: Skipping start position element because hasStartPosition is false'
+			);
+			continue;
+		}
+
 		let x, y;
 
 		if (hasStartPosition && i === startPositionIndex) {

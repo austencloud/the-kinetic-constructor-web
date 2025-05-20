@@ -12,6 +12,8 @@
 	export let propData: PropData | undefined = undefined;
 	export let beatId: string | undefined = undefined;
 	export let color: 'red' | 'blue' | undefined = undefined;
+	// Animation duration is passed from parent but not used directly in this component
+	export const animationDuration = 200;
 
 	// Component state
 	let svgData: PropSvgData | null = null;

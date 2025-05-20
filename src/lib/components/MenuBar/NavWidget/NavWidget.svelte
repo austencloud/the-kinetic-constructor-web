@@ -6,6 +6,8 @@
 	import { useSelector } from '@xstate/svelte';
 	import { appService } from '$lib/state/machines/app/app.machine';
 	import { uiStore } from '$lib/state/stores/uiStore';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
 
 	// Props using Svelte 5 runes
 	const { onChangeBackground = () => {}, onSettingsClick = () => {} } = $props<{
@@ -49,6 +51,11 @@
 		const now = Date.now();
 		if (now - lastClickTime < 50) return; // Debounce rapid clicks
 		lastClickTime = now;
+
+		// Provide haptic feedback for tab navigation
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('navigation');
+		}
 
 		// Update the app state machine
 		appService.send({ type: 'CHANGE_TAB', tab: index });

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { getContext, createEventDispatcher } from 'svelte'; // Import createEventDispatcher
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
 
 	// --- Props ---
 	export let categoryKeys: string[] = [];
@@ -15,6 +17,11 @@
 
 	// --- Event Handler ---
 	function handleTabClick(categoryKey: string) {
+		// Provide haptic feedback for tab navigation
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('navigation');
+		}
+
 		// Dispatch the event instead of calling a prop function
 		dispatch('tabSelect', categoryKey);
 	}

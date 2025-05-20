@@ -87,7 +87,9 @@ export async function exportSequenceImage(
 
 		// Log detailed information about the start position
 		console.log('EnhancedExporter: Start position details', {
-			hasStartPosition: mergedOptions.includeStartPosition && mergedOptions.startPosition,
+			// Start position is now always included if available
+			hasStartPosition:
+				mergedOptions.startPosition !== null && mergedOptions.startPosition !== undefined,
 			startPositionData: mergedOptions.startPosition,
 			firstBeatMetadata: mergedOptions.beats[0]?.metadata,
 			totalBeats: mergedOptions.beats.length
@@ -117,17 +119,84 @@ export async function exportSequenceImage(
 			drawTitle(ctx, mergedOptions.title, dimensions);
 		}
 
+		// Calculate consistent spacing for visual elements
+		// This spacing will be used for both the difficulty circle and user info
+		// to ensure visual consistency throughout the image
+		const spacingPercentage = 0.15; // 15% of top margin for spacing
+		const desiredSpacing = Math.round(topMargin * spacingPercentage);
+
+		// Default adjusted spacing (will be refined for difficulty circle if needed)
+		let adjustedSpacing = desiredSpacing;
+
 		// Draw difficulty circle if needed
 		if (mergedOptions.addDifficultyLevel) {
+			// Calculate the circle size based on the top margin height
+			// Make the circle diameter 80-90% of the top margin height
+			// For single-row sequences with larger top margins, use a smaller percentage
+			const isOneRow = dimensions.rows === 1;
+			const circleSizePercentage = 0.35; // 35% of top margin height for radius
+			const radius = Math.round(topMargin * circleSizePercentage);
+
+			// Calculate the vertical space between the bottom of the circle and the first beat
+			// This is the key calculation for visual consistency
+			// The first beat starts at y = topMargin, and the bottom of the circle is at y = circleY + radius
+
+			// Verify that the circle will fit within the top margin with this spacing
+			// We need: 2*radius + 2*desiredSpacing <= topMargin
+			// If not, adjust the spacing to ensure the circle fits
+			const requiredSpace = 2 * radius + 2 * desiredSpacing;
+			adjustedSpacing =
+				requiredSpace > topMargin
+					? Math.max(Math.floor((topMargin - 2 * radius) / 2), Math.floor(radius * 0.1)) // Ensure at least 10% of radius as spacing
+					: desiredSpacing;
+
+			// Now calculate the y-position of the circle center such that:
+			// (circleY + radius + adjustedSpacing = topMargin)
+			// Solving for circleY: circleY = topMargin - radius - adjustedSpacing
+			// But we also want to ensure the circle has the same spacing from the top edge
+			// So we'll use: circleY = radius + adjustedSpacing
+			const circleY = radius + adjustedSpacing;
+
+			// Use the same spacing for the left margin to ensure visual consistency
+			// This makes the distance from the left edge to the circle the same as
+			// the distance from the bottom of the circle to the first beat
+			const circleX = radius + adjustedSpacing;
+
+			// The actual spacing values will be:
+			// - Space between top edge and circle: circleY - radius
+			// - Space between left edge and circle: circleX - radius
+			// - Space between circle and first beat: topMargin - (circleY + radius)
+			// These values are logged below for debugging
+
 			// Draw circular difficulty indicator in the top-left corner
 			// with appropriate size and position
 			drawDifficultyCircle(
 				ctx,
 				mergedOptions.difficultyLevel,
-				60, // x position
-				60, // y position
-				40 // radius
+				circleX, // x position with margin
+				circleY, // y position with margin
+				radius // radius based on top margin height
 			);
+
+			console.log('EnhancedExporter: Positioned difficulty circle', {
+				circleX,
+				circleY,
+				radius,
+				diameter: radius * 2,
+				topMargin,
+				desiredSpacing,
+				adjustedSpacing,
+				requiredSpace,
+				spacingPercentage,
+				actualTopSpacing: circleY - radius,
+				actualLeftSpacing: circleX - radius,
+				actualBottomSpacing: topMargin - (circleY + radius),
+				topMarginPercentage: (radius * 2) / topMargin,
+				canvasWidth: width,
+				rows: dimensions.rows,
+				isOneRow,
+				circleSizePercentage
+			});
 		}
 
 		// Process each SVG element
@@ -135,7 +204,9 @@ export async function exportSequenceImage(
 
 		// Draw user info if needed
 		if (mergedOptions.addUserInfo) {
-			drawUserInfo(ctx, mergedOptions, dimensions);
+			// Pass the adjustedSpacing from the difficulty circle to ensure visual consistency
+			// This ensures the same spacing is used throughout the image
+			drawUserInfo(ctx, mergedOptions, dimensions, adjustedSpacing);
 		}
 
 		// Convert canvas to data URL

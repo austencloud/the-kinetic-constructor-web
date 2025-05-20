@@ -45,48 +45,77 @@ export function calculateCellSize(
 	totalCols: number,
 	gap: number
 ): number {
+	// Minimum cell size thresholds - pictographs won't shrink below these values
+	// Instead, scrollbars will appear when content would need to be smaller
+	const MIN_CELL_SIZE_FULLSCREEN = 100; // Minimum size in fullscreen mode
+	const MIN_CELL_SIZE_NORMAL = 70; // Minimum size in normal mode
+
 	// Ensure we have valid dimensions
 	if (containerWidth <= 0 || containerHeight <= 0 || totalRows <= 0 || totalCols <= 0) {
-		return 70; // Default fallback size - reduced from 80
+		return 80; // Default fallback size - increased for better readability
 	}
+
+	// Detect if we're in fullscreen mode by checking container dimensions
+	// Fullscreen containers are typically much larger
+	const isLikelyFullscreen = containerWidth > 800 && containerHeight > 600;
+
+	// Set the minimum cell size based on mode
+	const minCellSize = isLikelyFullscreen ? MIN_CELL_SIZE_FULLSCREEN : MIN_CELL_SIZE_NORMAL;
 
 	// Calculate total space needed for gaps
 	const totalGapWidth = gap * (totalCols - 1);
 	const totalGapHeight = gap * (totalRows - 1);
 
 	// Calculate available space after accounting for gaps and padding
-	// Increase padding to ensure pictographs don't overflow
-	const padding = beatCount === 0 ? containerWidth * 0.1 : 24; // Increased padding from 16 to 24
-	const availableWidth = Math.max(0, containerWidth - totalGapWidth - padding * 2);
-	const availableHeight = Math.max(0, containerHeight - totalGapHeight - padding * 2);
+	// Reduce horizontal padding to use more space, keep vertical padding for safety
+	const horizontalPadding = beatCount === 0 ? containerWidth * 0.05 : 10; // Reduced from 24 to 10px
+	const verticalPadding = 24; // Keep vertical padding to prevent overflow
+	const availableWidth = Math.max(0, containerWidth - totalGapWidth - horizontalPadding * 2);
+	const availableHeight = Math.max(0, containerHeight - totalGapHeight - verticalPadding * 2);
 
 	// Calculate cell size based on available space in both dimensions
 	const cellWidthByContainer = Math.floor(availableWidth / totalCols);
 	const cellHeightByContainer = Math.floor(availableHeight / totalRows);
 
-	// Use the smaller dimension to maintain square cells and prevent overflow
+	// Use the smaller dimension to maintain square cells and preserve aspect ratio
 	const baseSize = Math.min(cellWidthByContainer, cellHeightByContainer);
 
 	// Apply a scaling factor to ensure pictographs fit within cells
 	// This scaling factor ensures pictographs are slightly smaller than their containers
-	const scalingFactor = 0.85; // Reduce size by 15%
+	const scalingFactor = 0.92; // Reduce size by only 8% (was 15%)
 	const scaledBaseSize = Math.floor(baseSize * scalingFactor);
 
 	// For start position only, make it proportionally larger
 	const cellSize = beatCount === 0 ? scaledBaseSize * 1.1 : scaledBaseSize;
 
-	// Detect if we're in fullscreen mode by checking container dimensions
-	// Fullscreen containers are typically much larger
-	const isLikelyFullscreen = containerWidth > 800 && containerHeight > 600;
+	// Check if the calculated cell size is below the minimum threshold
+	// If so, use the minimum size instead - this will cause overflow and enable scrollbars
+	if (cellSize < minCellSize) {
+		console.debug('Cell size below minimum threshold, using minimum size instead:', {
+			calculatedSize: cellSize,
+			minCellSize,
+			totalRows,
+			totalCols,
+			containerWidth,
+			containerHeight
+		});
+
+		// Apply different constraints based on mode
+		if (isLikelyFullscreen) {
+			return Math.min(Math.max(minCellSize, MIN_CELL_SIZE_FULLSCREEN), 200); // Min 100px, Max 200px for fullscreen
+		} else {
+			return Math.min(Math.max(minCellSize, MIN_CELL_SIZE_NORMAL), 160); // Min 80px, Max 160px for normal view
+		}
+	}
 
 	// Apply different constraints based on mode
 	if (isLikelyFullscreen) {
 		// In fullscreen, allow larger cells but ensure they're not too large
 		// This helps ensure pictographs are displayed side by side correctly
-		return Math.min(Math.max(cellSize, 70), 180); // Min 70px, Max 180px for fullscreen (reduced from 250)
+		return Math.min(Math.max(cellSize, MIN_CELL_SIZE_FULLSCREEN), 200); // Min 100px, Max 200px for fullscreen
 	} else {
-		// In normal mode, use more conservative constraints
-		return Math.min(Math.max(cellSize, 50), 140); // Min 50px, Max 140px for normal view (reduced from 200)
+		// In normal mode, use more conservative constraints but allow larger cells
+		return Math.min(Math.max(cellSize, MIN_CELL_SIZE_NORMAL), 160); // Min 80px, Max 160px for normal view
 	}
 }
 

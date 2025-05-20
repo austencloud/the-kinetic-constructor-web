@@ -24,11 +24,7 @@
 
 	// Button settings configuration
 	const buttonSettings = [
-		{
-			label: 'Start Position',
-			key: 'includeStartPosition',
-			tooltip: 'Include start position in exported image'
-		},
+		// Start position is now always included
 		{
 			label: 'User Info',
 			key: 'addUserInfo',

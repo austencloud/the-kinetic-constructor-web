@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { fade } from 'svelte/transition';
-	
+	import { popIn } from '$lib/transitions/popIn';
+
 	export let errorMessage: string | null = null;
-	export let animationDuration = 300;
+	export let animationDuration = 200; // Animation duration for transitions
 </script>
 
-<g transition:fade={{ duration: animationDuration }}>
+<g in:popIn={{ duration: animationDuration, start: 0.85, opacity: 0.2 }}>
 	<circle cx="475" cy="450" r="40" fill="#fed7d7" />
 	<text
 		x="475"

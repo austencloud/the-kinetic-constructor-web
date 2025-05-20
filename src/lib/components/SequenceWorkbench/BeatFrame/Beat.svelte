@@ -3,6 +3,7 @@
 	import type { BeatData } from './BeatData';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/StyledBorderOverlay.svelte';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
@@ -25,6 +26,12 @@
 	// Handle the click event
 	function handleClick(event: MouseEvent) {
 		event.stopPropagation();
+
+		// Provide haptic feedback when selecting a beat
+		if (typeof window !== 'undefined' && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
 		props.onClick();
 	}
 

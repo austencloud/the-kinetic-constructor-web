@@ -12,16 +12,17 @@
 	}>();
 
 	const isSelected = $derived(props.isSelected ?? false);
-	const animationDelay = $derived(props.animationDelay ?? 0);
 
 	let shouldAnimate = $state(true);
 	let hasAnimated = $state(false);
 	let isVisible = $state(false);
 
+	// Start animation immediately on mount
 	onMount(() => {
-		setTimeout(() => {
+		// Use requestAnimationFrame for smoother animation start
+		requestAnimationFrame(() => {
 			isVisible = true;
-		}, animationDelay);
+		});
 	});
 
 	function handleAnimationEnd() {
@@ -50,7 +51,11 @@
 		height: 100%;
 		position: relative;
 		transform: scale(0.8);
-		transition: transform 0.3s ease;
+		transition: transform 0.2s ease;
+		/* Ensure proper aspect ratio */
+		aspect-ratio: 1 / 1;
+		/* Prevent any layout shifts during animation */
+		will-change: transform;
 	}
 
 	.visible {
@@ -58,18 +63,22 @@
 	}
 
 	.animate {
-		animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+		/* Faster animation for more responsive feel */
+		animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 	}
 
 	@keyframes scaleIn {
 		0% {
 			transform: scale(0.6);
+			opacity: 0.7;
 		}
 		50% {
 			transform: scale(1.05);
+			opacity: 1;
 		}
 		100% {
 			transform: scale(1);
+			opacity: 1;
 		}
 	}
 

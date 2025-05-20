@@ -1,4 +1,7 @@
 <script lang="ts">
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
+
 	// Use Svelte 5 props rune
 	const { onClick = () => {} } = $props<{
 		onClick?: () => void;
@@ -6,6 +9,11 @@
 
 	// Function to handle settings button click
 	function handleClick() {
+		// Provide haptic feedback when opening settings
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
 		onClick();
 	}
 </script>

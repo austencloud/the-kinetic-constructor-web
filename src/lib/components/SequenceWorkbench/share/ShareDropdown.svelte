@@ -3,11 +3,23 @@
 	import { fly } from 'svelte/transition';
 	import { clickOutside } from '$lib/utils/clickOutside';
 	import { isWebShareSupported } from '$lib/components/SequenceWorkbench/share/utils/ShareUtils';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
 
 	// Props
 	export let onShare: () => void;
 	export let onDownload: () => void;
 	export let onClose: () => void;
+
+	// Handle close with haptic feedback
+	function handleClose() {
+		// Provide haptic feedback when closing the dropdown
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
+		onClose();
+	}
 </script>
 
 <div
@@ -17,7 +29,7 @@
 >
 	<div class="dropdown-header">
 		<h3>Share Sequence</h3>
-		<button class="close-button" on:click={onClose} aria-label="Close">
+		<button class="close-button" on:click={handleClose} aria-label="Close">
 			<i class="fa-solid fa-times"></i>
 		</button>
 	</div>

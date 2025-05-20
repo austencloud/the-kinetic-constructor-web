@@ -40,9 +40,9 @@
 	});
 
 	// Props
-	const { 
-		beatCount, 
-		containerRef, 
+	const {
+		beatCount,
+		containerRef,
 		isScrollable = $bindable(false),
 		layoutOverride = $bindable(null),
 		fullScreenMode = $bindable(false)
@@ -112,7 +112,7 @@
 	// Calculate natural grid height
 	$effect(() => {
 		if (!containerRef) return;
-		
+
 		const gridElement = containerRef.querySelector('.beat-frame');
 		if (gridElement) {
 			naturalGridHeight = gridElement.scrollHeight; // Use scrollHeight for the most accurate content height
@@ -197,25 +197,121 @@
 
 		if (!beatFrame) return;
 
-		// Check if content is larger than container
-		const containerHeight = container.clientHeight;
-		const contentHeight = beatFrame.clientHeight;
+		// Find the sequence widget container (parent of our container)
+		// This is the actual constrained height container we need to check against
+		const sequenceWidget = container.closest('.sequence-widget') || container.parentElement;
+
+		// Get the available height from the sequence widget or parent element
+		// This is the actual constrained height we need to work within
+		const availableHeight =
+			sequenceWidgetHeight > 0
+				? sequenceWidgetHeight
+				: sequenceWidget
+					? sequenceWidget.clientHeight
+					: container.clientHeight;
+
+		// Get the content dimensions
+		const contentHeight = beatFrame.scrollHeight; // Use scrollHeight for more accurate measurement
+		const contentWidth = beatFrame.scrollWidth; // Use scrollWidth for more accurate measurement
 		const containerWidth = container.clientWidth;
-		const contentWidth = beatFrame.clientWidth;
 
 		// Add a small buffer to prevent flickering at the boundary
 		const buffer = 10; // 10px buffer
 
 		// Calculate overflow - check both height and width
-		const heightOverflow = contentHeight > containerHeight + buffer;
+		// Compare content height to the available height from sequence widget
+		const heightOverflow = contentHeight > availableHeight - buffer;
 		const widthOverflow = contentWidth > containerWidth + buffer;
 
-		// Update the overflow state
-		const newOverflowState = heightOverflow || widthOverflow;
+		// Get the minimum cell size based on fullscreen mode
+		const isLikelyFullscreen = containerWidth > 800 && availableHeight > 600;
+		const minCellSize = isLikelyFullscreen ? 100 : 80; // Match values from beatFrameHelpers.ts
+
+		// Check if the current cell size is at or near the minimum threshold
+		// If so, we should enable scrolling to prevent further shrinking
+		const cellSizeNearMinimum = cellSize <= minCellSize * 1.1; // Add 10% buffer
+
+		// Calculate the total height needed for the grid
+		const totalGridHeight = beatRows * cellSize;
+
+		// Check if the grid would be too tall for the available height
+		const gridTooTall = totalGridHeight > availableHeight - 40; // 40px buffer for padding
+
+		// Enhanced overflow detection:
+		// 1. If content physically overflows the container, enable scrollbars
+		// 2. If cell size is at/near minimum and we have multiple rows, enable scrollbars
+		// 3. If the grid would be too tall for the container, enable scrollbars
+		const newOverflowState = heightOverflow || widthOverflow || gridTooTall;
+
+		// Always log overflow information for debugging
+		console.debug('BeatFrame overflow analysis:', {
+			availableHeight,
+			contentHeight,
+			containerWidth,
+			contentWidth,
+			heightOverflow,
+			widthOverflow,
+			cellSize,
+			minCellSize,
+			cellSizeNearMinimum,
+			beatRows,
+			totalGridHeight,
+			gridTooTall,
+			newOverflowState,
+			sequenceWidgetWidth,
+			sequenceWidgetHeight
+		});
+
+		// Always log the current overflow state for debugging
+		console.log('Current overflow state:', {
+			contentOverflows,
+			newOverflowState,
+			heightOverflow,
+			widthOverflow,
+			cellSizeNearMinimum,
+			gridTooTall,
+			beatRows,
+			cellSize
+		});
 
 		// Only update if the state has changed to avoid unnecessary re-renders
 		if (contentOverflows !== newOverflowState) {
+			console.log('Overflow state changed:', {
+				from: contentOverflows,
+				to: newOverflowState,
+				reason: heightOverflow
+					? 'height overflow'
+					: widthOverflow
+						? 'width overflow'
+						: cellSizeNearMinimum
+							? 'cell size near minimum'
+							: gridTooTall
+								? 'grid too tall'
+								: 'unknown'
+			});
+
 			contentOverflows = newOverflowState;
+
+			// Force a layout recalculation after changing overflow state
+			setTimeout(() => {
+				if (beatFrame) {
+					// Update data-rows attribute to ensure CSS selectors work correctly
+					beatFrame.setAttribute('data-rows', String(beatRows));
+
+					// Add a data attribute to indicate if we're in scrollable mode
+					// This will be used for CSS selectors to adjust alignment
+					beatFrame.setAttribute('data-scrollable', String(newOverflowState));
+
+					// Log the DOM state after update
+					console.log('DOM state after update:', {
+						dataRows: beatFrame.getAttribute('data-rows'),
+						dataScrollable: beatFrame.getAttribute('data-scrollable'),
+						parentHasScrollableClass: beatFrame.closest('.scrollable-active') !== null,
+						containerScrollHeight: container.scrollHeight,
+						containerClientHeight: container.clientHeight
+					});
+				}
+			}, 0);
 		}
 	}
 

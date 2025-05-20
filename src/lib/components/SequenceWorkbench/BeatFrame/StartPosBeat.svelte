@@ -9,6 +9,7 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/StyledBorderOverlay.svelte';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
@@ -29,7 +30,6 @@
 		const unsubscribe = sequenceContainer.subscribe((state) => {
 			// Update the selection state immediately when it changes
 			isSelected = state.selectedBeatIds.includes('start-position');
-			console.log('Start position selection state updated:', isSelected);
 		});
 
 		// Clean up the subscription when the component is destroyed or the effect is re-run
@@ -281,6 +281,11 @@
 	function handleContainerClick(event: MouseEvent) {
 		// Only handle clicks directly on the container, not on children
 		if (event.target === event.currentTarget) {
+			// Provide haptic feedback when selecting the start position beat
+			if (typeof window !== 'undefined' && hapticFeedbackService.isAvailable()) {
+				hapticFeedbackService.trigger('selection');
+			}
+
 			// Call the actual click handler
 			props.onClick();
 

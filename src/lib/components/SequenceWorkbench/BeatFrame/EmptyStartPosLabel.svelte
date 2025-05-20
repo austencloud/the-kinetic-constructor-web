@@ -4,11 +4,23 @@
 	// when the sequence is empty
 
 	import { onMount } from 'svelte';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
 		onClick?: () => void;
 	}>();
+
+	// Function to handle click with haptic feedback
+	function handleClick() {
+		// Provide haptic feedback when selecting the start position
+		if (typeof window !== 'undefined' && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
+		// Call the original onClick handler
+		props.onClick?.();
+	}
 
 	// Animation state
 	let isVisible = $state(false);
@@ -24,7 +36,6 @@
 		const unsubscribe = sequenceContainer.subscribe((state) => {
 			// Update the selection state immediately when it changes
 			isSelected = state.selectedBeatIds.includes('start-position');
-			console.log('Empty start position selection state updated:', isSelected);
 		});
 
 		// Clean up the subscription when the component is destroyed or the effect is re-run
@@ -47,7 +58,7 @@
 	class:visible={isVisible}
 	class:hovered={isHovered}
 	class:selected={isSelected}
-	onclick={props.onClick}
+	onclick={handleClick}
 	onmouseenter={() => (isHovered = true)}
 	onmouseleave={() => (isHovered = false)}
 	role="button"
@@ -57,7 +68,7 @@
 	onkeydown={(e) => {
 		if (e.key === 'Enter' || e.key === ' ') {
 			e.preventDefault();
-			props.onClick?.();
+			handleClick();
 		}
 	}}
 >

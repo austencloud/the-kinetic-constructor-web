@@ -5,6 +5,8 @@
 	import { uiStore } from '../../stores/uiStore';
 	import ConfirmationModal from '../../../shared/ConfirmationModal.svelte';
 	import type { Beat } from '../../models/Act';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
 
 	export let row: number;
 	export let col: number;
@@ -23,12 +25,23 @@
 
 	// Handle click events
 	function handleClick() {
+		// Provide haptic feedback when selecting a beat
+		if (browser) {
+			hapticFeedbackService.trigger('selection');
+		}
+
 		dispatch('click', { row, col });
 	}
 
 	// Handle erase click
 	function handleEraseClick(event: MouseEvent) {
 		event.stopPropagation(); // Prevent selection
+
+		// Provide warning haptic feedback for deletion
+		if (browser) {
+			hapticFeedbackService.trigger('warning');
+		}
+
 		if ($uiStore.preferences.confirmDeletions) {
 			isEraseBeatModalOpen = true;
 		} else {
@@ -38,6 +51,11 @@
 
 	// Handle confirmation from modal
 	function confirmEraseBeat() {
+		// Provide warning haptic feedback for confirmed deletion
+		if (browser) {
+			hapticFeedbackService.trigger('warning');
+		}
+
 		actStore.eraseBeat(row, col);
 		isEraseBeatModalOpen = false;
 	}

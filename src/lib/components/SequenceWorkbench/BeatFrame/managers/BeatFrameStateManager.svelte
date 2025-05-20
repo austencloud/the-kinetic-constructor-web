@@ -191,6 +191,51 @@
 		document.dispatchEvent(globalEvent);
 	}
 
+	// Track if shift key is pressed
+	let isShiftKeyPressed = $state(false);
+	let isCtrlKeyPressed = $state(false);
+
+	// Set up event listeners for modifier keys
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === 'Shift') {
+				isShiftKeyPressed = true;
+			}
+			if (e.key === 'Control' || e.key === 'Meta') {
+				// Meta for Mac
+				isCtrlKeyPressed = true;
+			}
+		};
+
+		const handleKeyUp = (e: KeyboardEvent) => {
+			if (e.key === 'Shift') {
+				isShiftKeyPressed = false;
+			}
+			if (e.key === 'Control' || e.key === 'Meta') {
+				isCtrlKeyPressed = false;
+			}
+		};
+
+		// Handle window blur to reset key states
+		const handleBlur = () => {
+			isShiftKeyPressed = false;
+			isCtrlKeyPressed = false;
+		};
+
+		window.addEventListener('keydown', handleKeyDown);
+		window.addEventListener('keyup', handleKeyUp);
+		window.addEventListener('blur', handleBlur);
+
+		// Clean up event listeners
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown);
+			window.removeEventListener('keyup', handleKeyUp);
+			window.removeEventListener('blur', handleBlur);
+		};
+	});
+
 	export function handleBeatClick(beatIndex: number) {
 		// Get the beat ID from the index
 		if (beatIndex >= 0 && beatIndex < beats.length) {
@@ -198,8 +243,12 @@
 			const beatId = beat.id;
 
 			if (beatId) {
-				// Select the beat in the container
-				sequenceContainer.selectBeat(beatId);
+				// Use the tracked modifier key states for multi-select
+				// Either Shift or Ctrl/Cmd can be used for multi-select
+				const multiSelect = isShiftKeyPressed || isCtrlKeyPressed;
+
+				// Select the beat in the container with multi-select if a modifier key is pressed
+				sequenceContainer.selectBeat(beatId, multiSelect);
 
 				// Create a custom event for the beat selection
 				// This will be used by the deletion mode
@@ -215,9 +264,18 @@
 				// so it won't cause recursion
 				const event = new CustomEvent('beat-selected', {
 					bubbles: true,
-					detail: { beatId }
+					detail: { beatId, multiSelect }
 				});
 				document.dispatchEvent(event);
+
+				// Log selection for debugging
+				console.debug('Beat selected:', {
+					beatId,
+					multiSelect,
+					shiftKey: isShiftKeyPressed,
+					ctrlKey: isCtrlKeyPressed,
+					selectedBeatIds: sequenceContainer.state.selectedBeatIds
+				});
 			}
 		}
 	}
@@ -248,12 +306,30 @@
 
 		// Add the beat to the sequence container
 		sequenceContainer.addBeat(containerBeat as any); // Use type assertion to bypass TypeScript error
+
+		// Dispatch a custom event to notify components that a beat was added
+		if (typeof document !== 'undefined') {
+			const beatAddedEvent = new CustomEvent('beat-added', {
+				bubbles: true,
+				detail: { beat: containerBeat }
+			});
+			document.dispatchEvent(beatAddedEvent);
+		}
 	}
 
 	// Add a method to clear beats (could be called from parent)
 	export function clearBeats() {
 		// Use the sequence container to clear the sequence
 		sequenceContainer.setSequence([]);
+
+		// Dispatch a custom event to notify components that the sequence was cleared
+		if (typeof document !== 'undefined') {
+			const sequenceClearedEvent = new CustomEvent('sequence-cleared', {
+				bubbles: true,
+				detail: { timestamp: Date.now() }
+			});
+			document.dispatchEvent(sequenceClearedEvent);
+		}
 	}
 
 	// Add a test method to verify persistence
@@ -261,8 +337,12 @@
 		// Log the current state
 		console.log('Current sequence state:', {
 			beats: sequence.beats.length,
+			selectedBeatIds: sequence.selectedBeatIds,
 			startPosition: startPosition ? 'set' : 'not set'
 		});
+
+		// Log detailed beat information
+		console.log('Current beats:', sequence.beats);
 
 		// Check localStorage
 		if (browser) {
@@ -292,6 +372,15 @@
 		// Force a save
 		sequenceContainer.saveToLocalStorage();
 		console.log('Forced save to localStorage');
+
+		// Verify the sequence container state
+		console.log('SequenceContainer state:', {
+			beats: sequenceContainer.state.beats,
+			selectedBeatIds: sequenceContainer.state.selectedBeatIds,
+			currentBeatIndex: sequenceContainer.state.currentBeatIndex,
+			isModified: sequenceContainer.state.isModified,
+			metadata: sequenceContainer.state.metadata
+		});
 
 		return {
 			success: true,

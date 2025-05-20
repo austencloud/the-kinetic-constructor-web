@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
 	import { createEventDispatcher } from 'svelte';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
 
 	// Props
 	export let isOpen: boolean = false;
@@ -13,6 +15,11 @@
 
 	// Handle close action
 	function handleClose() {
+		// Provide haptic feedback when closing the fullscreen overlay
+		if (browser && hapticFeedbackService.isAvailable()) {
+			hapticFeedbackService.trigger('selection');
+		}
+
 		dispatch('close');
 	}
 

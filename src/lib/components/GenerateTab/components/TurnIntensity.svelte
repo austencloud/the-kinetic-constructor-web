@@ -1,6 +1,8 @@
 <!-- src/lib/components/GenerateTab/ui/TurnIntensity.svelte -->
 <script lang="ts">
 	import { settingsStore } from '../store/settings';
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
 
 	// Export the value property for binding
 	export let value: number = 3;
@@ -18,6 +20,16 @@
 	// Update intensity
 	function setIntensity(level: number) {
 		if (level >= MIN_INTENSITY && level <= MAX_INTENSITY) {
+			// Only trigger haptic feedback if the value is changing
+			if (value !== level && browser) {
+				// Use different feedback based on intensity level
+				if (level > 3) {
+					hapticFeedbackService.trigger('warning');
+				} else {
+					hapticFeedbackService.trigger('selection');
+				}
+			}
+
 			value = level;
 			settingsStore.setTurnIntensity(level);
 		}

@@ -53,13 +53,12 @@
 		if (beatFrameContext) {
 			const contextElement = beatFrameContext.getElement();
 			if (contextElement) {
-				console.log('SequenceWidget: Got element from context');
 				beatFrameElement = contextElement;
 			}
 		}
 	});
 
-	// Log when beatFrameElement changes
+	// Update when beatFrameElement changes
 	$effect(() => {
 		// If we have a valid element, store it in localStorage for persistence across hot reloads
 		if (beatFrameElement && browser) {
@@ -185,7 +184,6 @@
 		const unsubscribe = sequenceContainer.subscribe((state) => {
 			// Update the hasSelectedBeat state immediately when selection changes
 			hasSelectedBeat = state.selectedBeatIds.length > 0;
-			console.log('Selection state updated (reactive):', hasSelectedBeat, state.selectedBeatIds);
 		});
 
 		// Clean up the subscription when the component is destroyed or the effect is re-run
@@ -212,8 +210,6 @@
 
 		if (isStartPositionSelected) {
 			// If start position is selected, clear the entire sequence
-			console.log('Start position selected, clearing entire sequence');
-
 			// Trigger haptic feedback for deletion
 			if (browser) {
 				hapticFeedbackService.trigger('error');

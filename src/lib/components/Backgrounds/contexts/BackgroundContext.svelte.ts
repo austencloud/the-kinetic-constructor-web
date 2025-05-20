@@ -74,11 +74,9 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
   
   // Debug counter to track context creation
   let contextId = Math.floor(Math.random() * 10000);
-  console.log(`[INIT] Creating new runes background context with ID: ${contextId}`);
   
   // Ensure we don't create duplicate contexts
   if (contextInstances.size > 0) {
-    console.log('[INIT] Using existing context instance');
     // Return the existing context from getRunesBackgroundContext
     const existingContext = getRunesBackgroundContext();
     if (existingContext) {
@@ -106,7 +104,6 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
   
   // Create and track a single background system during context initialization
   if (browser && !backgroundSystem) {
-    console.log(`[INIT] Initial background system creation: ${backgroundType} at ${qualityLevel} quality`);
     try {
       backgroundSystem = BackgroundFactory.createBackgroundSystem({
         type: backgroundType,
@@ -172,15 +169,12 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
   
   // Function to create and initialize the background system
   function createAndInitializeBackgroundSystem(type: BackgroundType, quality: QualityLevel): void {
-    console.log(`[SYSTEM] Creating background system: ${type} at ${quality} quality`);
     
     if (backgroundSystem) {
-      console.log(`[SYSTEM] Cleaning up existing background system`);
       backgroundSystem.cleanup();
     }
     
     try {
-      console.log(`[SYSTEM] Instantiating new background system`);
       const newSystem = BackgroundFactory.createBackgroundSystem({
         type,
         initialQuality: quality
@@ -188,20 +182,17 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
       
       // Initialize if canvas is already set up
       if (isInitialized && canvas && ctx) {
-        console.log(`[SYSTEM] Initializing new background system`);
         newSystem.initialize(dimensions, quality);
       }
       
       // Set the background system
       backgroundSystem = newSystem;
       
-      console.log(`[SYSTEM] Background system created and initialized successfully`);
     } catch (error) {
       console.error('[SYSTEM] Error creating background system:', error);
       
       // Fallback to snowfall if there's an error with the requested background
       if (type !== 'snowfall') {
-        console.log('[SYSTEM] Falling back to snowfall background');
         try {
           const fallbackSystem = BackgroundFactory.createBackgroundSystem({
             type: 'snowfall',
@@ -224,7 +215,6 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
   function initializeCanvas(canvasElement: HTMLCanvasElement, onReady?: () => void): void {
     // Skip if already initialized with this canvas
     if (canvas === canvasElement && ctx) {
-      console.log('[CANVAS] Canvas already initialized');
       if (onReady) onReady();
       return;
     }
@@ -310,7 +300,6 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
     
     // Skip if animation is already running
     if (animationFrameId) {
-      console.log('Animation already running');
       return;
     }
     
@@ -387,7 +376,6 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
       return;
     }
     
-    console.log(`[SETTER] Setting quality: ${quality}`);
     
     isSettingState = true;
     try {
@@ -417,7 +405,6 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
       return;
     }
     
-    console.log(`[SETTER] Setting loading: ${loading}`);
     
     isSettingState = true;
     try {
@@ -440,7 +427,6 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
       return;
     }
     
-    console.log(`[SETTER] Setting background type: ${type}`);
     
     isSettingState = true;
     try {
@@ -556,12 +542,10 @@ let singletonContext: RunesBackgroundContext | undefined;
 export function setRunesBackgroundContext(): RunesBackgroundContext {
   // Reuse context if it exists
   if (singletonContext) {
-    console.log('[CONTEXT] Reusing existing runes background context');
     setContext(BACKGROUND_CONTEXT_KEY, singletonContext);
     return singletonContext;
   }
   
-  console.log('[CONTEXT] Setting up runes background context');
   singletonContext = createRunesBackgroundContext();
   setContext(BACKGROUND_CONTEXT_KEY, singletonContext);
   return singletonContext;

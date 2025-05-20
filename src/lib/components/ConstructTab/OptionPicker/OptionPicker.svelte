@@ -25,6 +25,8 @@
 		VTGTiming,
 		VTGDir
 	} from '$lib/types/Types';
+	// Import the loading state store
+	import transitionLoading from '$lib/state/stores/ui/transitionLoadingStore';
 	import OptionPickerHeader from './components/OptionPickerHeader';
 
 	// --- State Stores ---
@@ -159,6 +161,12 @@
 	$: groupedOptions = $groupedOptionsStore; // Options grouped by the current sort method's criteria
 	$: filteredOptions = $filteredOptionsStore; // Options after filtering (if any) and sorting
 	$: actualCategoryKeys = groupedOptions ? Object.keys(groupedOptions) : []; // Available category keys based on current grouping
+
+	// Clear the loading state when options are loaded
+	$: if (!isLoading && filteredOptions.length > 0) {
+		// Clear the transition loading state
+		transitionLoading.end();
+	}
 	// Determine which options to display based on the selected tab
 	$: optionsToDisplay =
 		$selectedTab === 'all'
@@ -293,10 +301,23 @@
 			const currentSortMethod = get(uiState).sortMethod;
 			// Persist 'all' as the last selection for this sort method
 			actions.setLastSelectedTabForSort(currentSortMethod, 'all');
-			// Optionally reset sort method if needed when showing all
-			// if (currentSortMethod !== 'type') {
-			// 	actions.setSortMethod('type');
-			// }
+
+			// Important: When showing all, we don't change the sort method
+			// This ensures we keep the current sort method but just show all options
+			console.log('Showing all options while maintaining sort method:', currentSortMethod);
+
+			// Dispatch an event to notify the ViewControl to update its icon
+			// Only force update if we're coming from a different view
+			if (typeof document !== 'undefined') {
+				const viewUpdateEvent = new CustomEvent('update-view-control', {
+					detail: {
+						mode: 'all',
+						forceUpdate: true // Force update only when explicitly showing all
+					},
+					bubbles: true
+				});
+				document.dispatchEvent(viewUpdateEvent);
+			}
 		} else if (detail.mode === 'group') {
 			// Switch to a grouped view (by Type, EndPos, etc.)
 			const newSortMethod = detail.method;
@@ -315,6 +336,7 @@
 
 			if (
 				lastSelectedForNewMethod &&
+				lastSelectedForNewMethod !== 'all' &&
 				availableKeysForNewMethod.includes(lastSelectedForNewMethod)
 			) {
 				// If there was a previously selected tab for this sort method, use it
@@ -323,9 +345,7 @@
 				// Otherwise, select the first available category tab
 				nextTabToSelect = availableKeysForNewMethod[0];
 			} else {
-				// If no categories exist for this grouping, maybe default back to 'all'? Or handle empty state.
-				// For now, setting to null might be okay if the display area handles it.
-				// Let's try setting back to 'all' if no sub-tabs exist
+				// If no categories exist for this grouping, default back to 'all'
 				nextTabToSelect = 'all';
 			}
 

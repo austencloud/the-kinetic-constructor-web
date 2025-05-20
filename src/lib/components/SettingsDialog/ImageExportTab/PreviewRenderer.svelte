@@ -120,8 +120,8 @@
 				// Use dynamic columns based on sequence length
 				columns: sequenceBeats.length <= 4 ? sequenceBeats.length : 4,
 				spacing: 0,
-				// Apply all settings from the UI
-				includeStartPosition: settings.includeStartPosition,
+				// Start position is now always included
+				includeStartPosition: true,
 				addUserInfo: settings.addUserInfo,
 				addWord: settings.addWord,
 				addDifficultyLevel: settings.addDifficultyLevel,

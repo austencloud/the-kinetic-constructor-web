@@ -1,5 +1,8 @@
 <!-- src/lib/components/GenerateTab/components/CAPButton.svelte -->
 <script lang="ts">
+	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { browser } from '$app/environment';
+
 	// Use Svelte 5 props rune
 	const props = $props<{
 		capType: {
@@ -16,6 +19,11 @@
 
 	// Handle button click
 	function handleClick() {
+		// Provide haptic feedback when selecting a CAP type
+		if (browser) {
+			hapticFeedbackService.trigger('selection');
+		}
+
 		if (props.onClick) {
 			props.onClick();
 		}

@@ -102,28 +102,56 @@ export function drawDifficultyCircle(
 	radius: number = 40
 ): void {
 	const level = Math.max(1, Math.min(5, Math.round(difficultyLevel || 1)));
+
+	// Save context for restoration
 	ctx.save();
+
+	// Draw the circle
 	ctx.beginPath();
 	ctx.arc(x, y, radius, 0, Math.PI * 2);
+
+	// Apply gradient fill
 	const gradient = createDifficultyGradient(ctx, x, y, radius, level);
 	ctx.fillStyle = gradient;
 	ctx.fill();
+
+	// Draw border with proportional line width
 	ctx.strokeStyle = 'black';
-	ctx.lineWidth = 1;
+	ctx.lineWidth = Math.max(1, Math.round(radius * 0.05)); // Scale line width with radius
 	ctx.stroke();
-	// Increase the font size multiplier from 1.5 to 1.8 for better readability
-	const fontSize = Math.round(radius * 1.8);
+
+	// Calculate font size proportional to the circle size
+	// Use 60% of the radius for the font size to ensure it fits well
+	const fontSize = Math.round(radius * 1.2); // Reduced from 1.5 to fit better
 	ctx.font = `bold ${fontSize}px Georgia`;
+
+	// Set text color based on difficulty level
 	ctx.fillStyle = level >= 4 ? 'white' : 'black';
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
+
+	// Add shadow for better contrast on darker backgrounds
 	if (level >= 4) {
 		ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
 		ctx.shadowBlur = 2;
 		ctx.shadowOffsetX = 1;
 		ctx.shadowOffsetY = 1;
 	}
-	const textY = level === 3 ? y - radius * 0.15 : y;
+
+	// Apply vertical offset for specific difficulty levels
+	const textY = level === 3 ? y - radius * 0.1 : y; // Reduced offset from 0.15 to 0.1
+
+	// Draw the text
 	ctx.fillText(level.toString(), x, textY);
+
+	// Log circle details for debugging
+	console.log('DifficultyCircleDrawer: Circle rendered', {
+		level,
+		x,
+		y,
+		radius,
+		fontSize,
+		lineWidth: ctx.lineWidth
+	});
 	ctx.restore();
 }

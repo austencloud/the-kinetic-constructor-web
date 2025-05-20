@@ -112,7 +112,6 @@ function createBackgroundContext(): BackgroundContext {
 		ctx = canvas.getContext('2d');
 
 		if (!ctx) {
-			console.error('Failed to get canvas context');
 			return;
 		}
 
@@ -143,7 +142,6 @@ function createBackgroundContext(): BackgroundContext {
 		reportFn?: (metrics: PerformanceMetrics) => void
 	): void {
 		if (!ctx || !canvas) {
-			console.error('Canvas not initialized');
 			return;
 		}
 

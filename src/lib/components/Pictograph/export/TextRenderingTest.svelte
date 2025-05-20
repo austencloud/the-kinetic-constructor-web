@@ -4,21 +4,40 @@
 	import { Letter } from '$lib/types/Letter';
 	import { onMount } from 'svelte';
 
-	// Test parameters
+	// Test parameters - focusing on realistic export sizes
 	let testSizes = [
-		{ width: 320, height: 480, label: 'Mobile Small' },
-		{ width: 768, height: 1024, label: 'Tablet' },
-		{ width: 1280, height: 720, label: 'Desktop HD' },
-		{ width: 1920, height: 1080, label: 'Desktop Full HD' },
-		{ width: 2560, height: 1440, label: 'Desktop 2K' }
+		// Standard export sizes
+		{ width: 950, height: 950, label: '1x1 Grid' },
+		{ width: 1900, height: 950, label: '2x1 Grid' },
+		{ width: 2850, height: 950, label: '3x1 Grid' },
+		{ width: 1900, height: 1900, label: '2x2 Grid' },
+		{ width: 2850, height: 1900, label: '3x2 Grid' },
+		{ width: 3800, height: 1900, label: '4x2 Grid' },
+		{ width: 2850, height: 2850, label: '3x3 Grid' },
+		{ width: 3800, height: 2850, label: '4x3 Grid' },
+		{ width: 3800, height: 3800, label: '4x4 Grid' }
 	];
 
+	// Test sequences designed to test different row layouts
 	let testSequences = [
-		{ beats: 1, title: 'Single Beat', difficulty: 1 },
-		{ beats: 2, title: 'Two Beats', difficulty: 2 },
-		{ beats: 3, title: 'Three Beats', difficulty: 3 },
-		{ beats: 8, title: 'Eight Beats', difficulty: 4 },
-		{ beats: 16, title: 'Sixteen Beats', difficulty: 5 }
+		// 1-row layouts
+		{ beats: 1, title: 'One Beat (1 row)', difficulty: 1 },
+		{ beats: 2, title: 'Two Beats (1 row)', difficulty: 1 },
+		{ beats: 3, title: 'Three Beats (1 row)', difficulty: 1 },
+		{ beats: 4, title: 'Four Beats (1 row)', difficulty: 1 },
+
+		// 2-row layouts
+		{ beats: 5, title: 'Five Beats (2 rows)', difficulty: 2 },
+		{ beats: 6, title: 'Six Beats (2 rows)', difficulty: 2 },
+		{ beats: 8, title: 'Eight Beats (2 rows)', difficulty: 2 },
+
+		// 3-row layouts
+		{ beats: 9, title: 'Nine Beats (3 rows)', difficulty: 3 },
+		{ beats: 12, title: 'Twelve Beats (3 rows)', difficulty: 3 },
+
+		// 4-row layouts
+		{ beats: 16, title: 'Sixteen Beats (4 rows)', difficulty: 4 },
+		{ beats: 20, title: 'Twenty Beats (4 rows)', difficulty: 5 }
 	];
 
 	// Results
@@ -220,16 +239,20 @@
 	.text-rendering-test {
 		padding: 20px;
 		font-family: Arial, sans-serif;
+		max-width: 100%;
+	}
+
+	.test-results {
+		margin-top: 20px;
+		max-height: 80vh;
+		overflow-y: auto;
+		padding-bottom: 20px;
 	}
 
 	button {
 		padding: 10px 20px;
 		font-size: 16px;
 		margin-bottom: 20px;
-	}
-
-	.test-results {
-		margin-top: 20px;
 	}
 
 	.results-grid {

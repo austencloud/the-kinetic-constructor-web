@@ -1,19 +1,14 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import {
-		saveImageExportSettings,
-		defaultImageExportSettings,
-		updateImageExportSettings,
-		getImageExportSettings
-	} from '$lib/state/image-export-settings.svelte';
+	// Image export settings imports temporarily removed
 	import { showSuccess, showError } from '$lib/components/shared/ToastManager.svelte';
 	import { onMount } from 'svelte';
 
 	// Import tab components
 	import SettingsTabs from './SettingsTabs.svelte';
 	import GeneralTab from './GeneralTab/GeneralTab.svelte';
-	import ImageExportTab from './ImageExportTab/ImageExportTab.svelte';
+	// ImageExportTab import temporarily removed
 
 	// Constants for localStorage keys
 	const SETTINGS_ACTIVE_TAB_KEY = 'settings_active_tab';
@@ -24,10 +19,10 @@
 		onClose: () => void;
 	}>();
 
-	// Define tabs - removed Haptic Feedback tab as requested
+	// Define tabs - temporarily removed Image Export tab
 	const tabs = [
-		{ id: 'general', label: 'General', icon: 'fa-sliders' },
-		{ id: 'export', label: 'Image Export', icon: 'fa-image' }
+		{ id: 'general', label: 'General', icon: 'fa-sliders' }
+		// Image Export tab temporarily removed
 	];
 
 	// Load the last active tab from localStorage or default to 'general'
@@ -108,11 +103,9 @@
 		}
 
 		try {
-			// Force save image export settings first - this is critical for the fix
-			saveImageExportSettings();
-			console.log('Image export settings forcefully saved');
+			// Image export settings saving temporarily removed
 
-			// Save all other settings
+			// Save general settings
 			if (browser && localStorage) {
 				try {
 					const settings = JSON.parse(localStorage.getItem('settings') || '{}');
@@ -172,11 +165,7 @@
 		}
 
 		try {
-			// Reset image export settings to defaults
-			updateImageExportSettings(structuredClone(defaultImageExportSettings));
-
-			// Force save to ensure persistence
-			saveImageExportSettings();
+			// Image export settings reset temporarily removed
 
 			// Reset general settings
 			if (browser && localStorage) {
@@ -250,9 +239,8 @@
 	<div class="settings-content" bind:this={contentContainer}>
 		{#if activeTab === 'general'}
 			<GeneralTab />
-		{:else if activeTab === 'export'}
-			<ImageExportTab />
 		{/if}
+		<!-- Image Export tab temporarily removed -->
 	</div>
 
 	<div class="settings-footer">

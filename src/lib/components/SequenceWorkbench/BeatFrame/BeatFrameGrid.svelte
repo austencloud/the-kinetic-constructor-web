@@ -36,6 +36,7 @@
 	style="--total-rows: {beatRows}; --total-cols: {beatCount === 0
 		? 1
 		: beatCols + 1}; --cell-size: {cellSize}px;"
+	data-rows={beatRows}
 >
 	{#each Array(beatRows) as _, rowIndex}
 		{#if rowIndex === 0}
@@ -85,37 +86,70 @@
 <style>
 	.beat-frame {
 		display: grid;
+		/* Use fixed size columns to maintain 1:1 aspect ratio */
 		grid-template-columns: repeat(var(--total-cols), var(--cell-size));
 		grid-template-rows: repeat(var(--total-rows), var(--cell-size));
 		gap: 0; /* No gap between cells */
-		justify-content: center;
+		justify-content: center; /* Center the grid horizontally */
 		align-content: center; /* Center by default for short sequences */
-		width: fit-content;
+		width: 100%; /* Use full width instead of fit-content */
+		max-width: calc(
+			var(--total-cols) * (var(--cell-size) + 20px)
+		); /* Prevent excessive stretching */
 		height: fit-content; /* Default for non-scrolling */
-		margin: auto; /* Default for centering */
-		transition: all 0.3s ease-out;
-		/* Add padding that respects safe area insets */
+		margin: 0 auto; /* Center horizontally with no vertical margin */
+		transition: all 0.2s ease-out; /* Faster transition for more responsive feel */
+		/* Reduce horizontal padding to use more space */
 		padding: 0 calc(var(--safe-inset-right, 0px)) calc(20px + var(--safe-inset-bottom, 0px))
 			calc(var(--safe-inset-left, 0px));
 		transform-origin: center center;
+		/* Ensure grid cells maintain their size */
+		min-height: calc(var(--total-rows) * var(--cell-size));
+	}
+
+	/* When there are multiple rows, align content to the top in scrollable mode */
+	:global(.scrollable-active) .beat-frame[data-rows='2'],
+	:global(.scrollable-active) .beat-frame[data-rows='3'],
+	:global(.scrollable-active) .beat-frame[data-rows='4'],
+	:global(.scrollable-active) .beat-frame[data-rows='5'],
+	:global(.scrollable-active) .beat-frame[data-rows='6'],
+	:global(.scrollable-active) .beat-frame[data-rows='7'],
+	:global(.scrollable-active) .beat-frame[data-rows='8'] {
+		align-content: start; /* Align to top when scrolling with multiple rows */
+		margin-top: 0; /* Remove top margin when aligned to top */
+	}
+
+	/* Use the data-scrollable attribute to control alignment */
+	:global(.scrollable-active) .beat-frame[data-scrollable='true'] {
+		align-content: start !important; /* Always align to top when scrollbars are enabled */
+		margin-top: 0; /* Remove top margin when aligned to top */
+		padding-top: 10px; /* Add some padding at the top for better spacing */
+		padding-bottom: 30px; /* Add padding at the bottom to ensure content isn't cut off */
+		/* Ensure grid cells maintain their size */
+		min-height: calc(var(--total-rows) * var(--cell-size) + 40px); /* Add padding to total height */
+		height: auto !important; /* Override any height constraints */
+		/* Add a border to make scrollable area visible for debugging */
+		border: 1px solid rgba(0, 255, 0, 0.3);
 	}
 
 	.beat-container {
 		position: relative;
-		width: var(--adjusted-cell-size, var(--cell-size));
-		height: var(--adjusted-cell-size, var(--cell-size));
+		width: var(--cell-size); /* Fixed width to maintain aspect ratio */
+		height: var(--cell-size); /* Fixed height to maintain aspect ratio */
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		background-color: transparent;
 		/* Add transition for smooth size changes */
 		transition:
-			width 0.3s ease,
-			height 0.3s ease;
+			width 0.2s ease,
+			height 0.2s ease;
 		/* Ensure content is properly centered */
 		box-sizing: border-box;
 		/* Prevent overflow */
 		overflow: hidden;
+		/* Enforce 1:1 aspect ratio */
+		aspect-ratio: 1 / 1;
 	}
 
 	/* Specific styling for start position when it's the only beat */

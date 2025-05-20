@@ -81,7 +81,13 @@ export function calculateOverlayLayout(
 	// The first column is reserved for the start position
 	let rows, cols;
 
-	if (hasStartPosition) {
+	// Special case: If we have only a start position with no beats, use a 1x1 grid
+	if (hasStartPosition && beatCount === 0) {
+		rows = 1;
+		cols = 1;
+	}
+	// Adjust layout for start position if needed for sequences with beats
+	else if (hasStartPosition) {
 		// Add one column for the start position
 		cols = baseCols + 1;
 
@@ -128,14 +134,20 @@ export function calculateOverlayLayout(
  * @param index Index of the beat
  * @param cols Number of columns in the grid
  * @param hasStartPosition Whether the grid has a start position in the top-left
+ * @param beatCount Number of beats in the sequence (used for special case handling)
  * @returns Object with row and column indices
  */
 export function getBeatPosition(
 	index: number,
 	cols: number,
-	hasStartPosition: boolean = true
+	hasStartPosition: boolean = true,
+	beatCount: number = -1
 ): { row: number; col: number } {
-	if (hasStartPosition) {
+	// Special case: If we have only a start position with no beats (1x1 grid)
+	if (hasStartPosition && beatCount === 0) {
+		// In this case, there are no beats to position, but we'll return a default
+		return { row: 0, col: 1 };
+	} else if (hasStartPosition) {
 		// When there's a start position, we need to adjust the layout
 		// Beats should be arranged in columns 2 and onwards
 		const beatsPerRow = cols - 1; // One less column for beats since column 1 is reserved
