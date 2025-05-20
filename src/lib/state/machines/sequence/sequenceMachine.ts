@@ -1,12 +1,12 @@
 /**
- * Modern Sequence Machine
+ * Sequence Machine
  *
- * This module provides a modern implementation of the sequence state machine
- * using the new container-based approach with XState v5.
+ * This module provides an implementation of the sequence state machine
+ * using the container-based approach with XState v5.
  */
 
 import { assign } from 'xstate';
-import { createModernMachine, createMachineContainer } from '$lib/state/core/modernMachine';
+import { createModernMachine, createMachineContainer } from '$lib/state/core/stateMachine';
 
 // Define the sequence machine context
 export interface SequenceMachineContext {

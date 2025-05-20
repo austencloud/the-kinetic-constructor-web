@@ -112,7 +112,7 @@
 			<GeneratorToggle
 				options={generatorToggleOptions}
 				value={generatorType}
-				on:change={(e) => handleGeneratorTypeChange(e.detail)}
+				onChange={(newValue) => handleGeneratorTypeChange(newValue)}
 			/>
 		</section>
 

@@ -60,8 +60,8 @@
 				<ToolsPanel
 					buttons={toolsPanelButtons}
 					activeMode={$workbenchStore.activeTab}
-					on:action={(e) => onToolsPanelAction(e.detail.id)}
-					on:close={() => workbenchStore.update((state) => ({ ...state, toolsPanelOpen: false }))}
+					onAction={(id) => onToolsPanelAction(id)}
+					onClose={() => workbenchStore.update((state) => ({ ...state, toolsPanelOpen: false }))}
 				/>
 			</div>
 		{:else}

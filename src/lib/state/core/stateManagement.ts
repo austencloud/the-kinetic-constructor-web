@@ -1,21 +1,21 @@
 /**
- * Modern State Management
+ * State Management
  *
- * This module exports all the utilities for the modern state management approach.
- * It serves as the main entry point for the new state management system.
+ * This module exports all the utilities for the state management approach.
+ * It serves as the main entry point for the state management system.
  */
 
 // Export container utilities
 export * from './container';
 
 // Export machine utilities
-export * from './modernMachine';
+export * from './stateMachine';
 
 // Export adapter utilities
 export * from './adapters';
 
 // Export testing utilities
-export * from './modernTesting';
+export * from './stateTesting';
 
 // Re-export types from the registry for compatibility
 export { type StateContainer, type StateContainerType } from './registry/types';
@@ -35,7 +35,7 @@ export function createState<T>(initialState: T): { state: T } {
 
 	if (hasRunes) {
 		// Import the runes version dynamically to avoid loading it in non-runes environments
-		const { createStateWithRunes } = require('./modern.svelte');
+		const { createStateWithRunes } = require('./stateManagement.svelte');
 		return createStateWithRunes(initialState);
 	} else {
 		// For Svelte 4, just return the initial state
@@ -60,7 +60,7 @@ export function createDerivedState<T>(fn: () => T): { state: T } {
 
 	if (hasRunes) {
 		// Import the runes version dynamically to avoid loading it in non-runes environments
-		const { createDerivedStateWithRunes } = require('./modern.svelte');
+		const { createDerivedStateWithRunes } = require('./stateManagement.svelte');
 		return createDerivedStateWithRunes(fn);
 	} else {
 		// For Svelte 4, just compute the value once

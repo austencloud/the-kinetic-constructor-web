@@ -1,11 +1,11 @@
 /**
- * Modern UI Store
+ * UI Store
  *
- * This module provides a modern implementation of the UI store using
- * the new container-based approach.
+ * This module provides an implementation of the UI store using
+ * the container-based approach.
  */
 
-import { createContainer } from '$lib/state/core/modern';
+import { createContainer } from '$lib/state/core/stateManagement';
 
 // Define the UI state interface
 export interface UiState {

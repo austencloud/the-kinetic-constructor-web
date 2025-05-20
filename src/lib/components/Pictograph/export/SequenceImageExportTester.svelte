@@ -9,7 +9,6 @@
 	import { browser } from '$app/environment';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
-	import type { PictographData } from '$lib/types/PictographData';
 	import type { Beat } from '$lib/types/Beat';
 	import { exportSequenceImage } from './SequenceImageExporter';
 	import { downloadImage } from './downloadUtils';
@@ -148,11 +147,8 @@
 
 			// Update the result
 			exportResult = result;
-
-			console.log('Export successful:', result);
 		} catch (error) {
 			exportError = `Export failed: ${error instanceof Error ? error.message : String(error)}`;
-			console.error('Export failed:', error);
 		} finally {
 			isExporting = false;
 		}
@@ -196,7 +192,6 @@
 					exportResult = result;
 				}
 			} catch (error) {
-				console.error('Preview rendering failed:', error);
 				// Don't show error to user for automatic previews
 			} finally {
 				isExporting = false;
@@ -219,7 +214,6 @@
 			});
 		} catch (error) {
 			exportError = `Download failed: ${error instanceof Error ? error.message : String(error)}`;
-			console.error('Download failed:', error);
 		}
 	}
 
@@ -245,7 +239,6 @@
 
 		// Only trigger if we have a container and beats
 		if (sequenceContainer && beats.length > 0) {
-			console.log('Settings changed, updating preview');
 			renderPreview();
 		}
 	});

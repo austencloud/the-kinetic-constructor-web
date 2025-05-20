@@ -39,7 +39,6 @@
 	function handleButtonAction(id: string) {
 		// Handle the action directly without dispatching any events
 		// This prevents the infinite recursion loop
-		console.log(`Handling button action: ${id}`);
 
 		// Handle specific actions based on the button ID
 		switch (id) {
@@ -57,42 +56,35 @@
 				break;
 
 			case 'saveImage':
-				console.log('Save image action triggered');
 				// Implement save image functionality here
 				break;
 
 			case 'addToDictionary':
-				console.log('Add to dictionary action triggered');
 				// Implement add to dictionary functionality here
 				break;
 
 			case 'mirrorSequence':
-				console.log('Mirror sequence action triggered');
 				// Implement mirror sequence functionality here
 				break;
 
 			case 'swapColors':
-				console.log('Swap colors action triggered');
 				// Implement swap colors functionality here
 				break;
 
 			case 'rotateSequence':
-				console.log('Rotate sequence action triggered');
 				// Implement rotate sequence functionality here
 				break;
 
 			case 'deleteBeat':
-				console.log('Delete beat action triggered');
 				// Implement delete beat functionality here
 				break;
 
 			case 'clearSequence':
-				console.log('Clear sequence action triggered');
 				// Implement clear sequence functionality here
 				break;
 
 			default:
-				console.log(`Unhandled action: ${id}`);
+				// Handle any other actions
 				break;
 		}
 	}

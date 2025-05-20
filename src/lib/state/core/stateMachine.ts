@@ -1,8 +1,8 @@
 /**
- * Modern state machine utilities
+ * State machine utilities
  *
  * This module provides utilities for working with XState v5 in a way that's
- * compatible with our new state management approach using Svelte stores.
+ * compatible with our state management approach using Svelte stores.
  */
 
 import {
@@ -94,7 +94,7 @@ export function createMachineContainer<
 				if ('nextEvents' in snapshot) initialState.nextEvents = snapshot.nextEvents;
 			}
 		} catch (error) {
-			console.error('Error copying properties from snapshot:', error);
+			// Handle error silently
 		}
 	}
 
@@ -113,7 +113,7 @@ export function createMachineContainer<
 						if ('nextEvents' in snapshot) state.nextEvents = snapshot.nextEvents;
 					}
 				} catch (error) {
-					console.error('Error updating state from snapshot:', error);
+					// Handle error silently
 				}
 			});
 		});

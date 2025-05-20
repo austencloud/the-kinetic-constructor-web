@@ -8,19 +8,17 @@
 	// State using Svelte 5 runes
 	let activeMode = $state<'construct' | 'generate'>('construct');
 
-	// Debug the current mode
+	// Track the active mode with an effect
 	$effect(() => {
-		console.log('MainWidget active mode:', activeMode);
+		// Mode changes are tracked here for reactivity
 	});
 
 	// Listen for mode switch events
 	onMount(() => {
 		const handleModeSwitch = (event: CustomEvent) => {
 			if (event.detail?.mode) {
-				console.log('Mode switch event received:', event.detail.mode);
 				activeMode = event.detail.mode;
 				hapticFeedbackService.trigger('navigation');
-
 			}
 		};
 
@@ -30,10 +28,8 @@
 		// Also listen for the action event with constructMode or generateMode
 		const handleAction = (event: CustomEvent) => {
 			if (event.detail?.id === 'constructMode') {
-				console.log('Construct mode action received');
 				activeMode = 'construct';
 			} else if (event.detail?.id === 'generateMode') {
-				console.log('Generate mode action received');
 				activeMode = 'generate';
 			}
 		};

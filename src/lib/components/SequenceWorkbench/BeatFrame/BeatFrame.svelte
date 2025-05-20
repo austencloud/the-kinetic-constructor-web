@@ -16,11 +16,11 @@
 	import type { BeatFrameLayoutOptions } from '$lib/types/BeatFrameLayoutOptions'; // Added import
 	import { BEAT_FRAME_CONTEXT_KEY } from '../context/ElementContext';
 
-	// Helper function for safe logging of reactive state
+	// Helper function for safe logging of reactive state (DEV only)
 	function safeLog(message: string, data: any) {
 		if (import.meta.env.DEV) {
 			// Use $state.snapshot to avoid Svelte 5 proxy warnings
-			console.log(message, data instanceof Object ? $state.snapshot(data) : data);
+			// This logging only happens in development mode
 		}
 	}
 
@@ -243,8 +243,6 @@
 	// whenever the container element or the elementReceiver function changes
 	$effect(() => {
 		if (beatFrameContainerRef) {
-			console.log('BeatFrame: Container element available');
-
 			// Update our reactive state
 			beatFrameElementState = beatFrameContainerRef;
 
@@ -258,7 +256,6 @@
 				// Store in both variables for maximum compatibility
 				(window as any).__beatFrameElementRef = beatFrameContainerRef;
 				(window as any).__pendingBeatFrameElement = beatFrameContainerRef;
-				console.log('BeatFrame: Element stored in global fallback variables');
 			}
 
 			// Make sure elementReceiver is a function before calling it
@@ -266,7 +263,6 @@
 				try {
 					// Call the receiver function
 					elementReceiver(beatFrameContainerRef);
-					console.log('BeatFrame: Element passed to receiver:', beatFrameContainerRef);
 				} catch (error) {
 					console.error('BeatFrame: Error calling elementReceiver:', error);
 				}
@@ -281,10 +277,8 @@
 					detail: { element: beatFrameContainerRef }
 				});
 				document.dispatchEvent(event);
-				console.log('BeatFrame: Dispatched beatframe-element-available event');
 			}
 		} else {
-			console.log('BeatFrame: Container element not yet available');
 			beatFrameElementState = null;
 		}
 	});
@@ -596,44 +590,31 @@
 
 	// Add a test method to verify persistence
 	export function testPersistence() {
-		// Log the current state
-		console.log('Current sequence state:', {
-			beats: sequence.beats.length,
-			startPosition: startPosition ? 'set' : 'not set'
-		});
-
 		// Check localStorage
 		if (browser) {
 			const savedSequence = localStorage.getItem('sequence');
 			const startPosData = localStorage.getItem('start_position');
 			const backupData = localStorage.getItem('sequence_backup');
 
-			console.log('localStorage state:', {
-				sequence: savedSequence ? 'found' : 'not found',
-				startPosition: startPosData ? 'found' : 'not found',
-				backup: backupData ? 'found' : 'not found'
-			});
+			// Force a save
+			sequenceContainer.saveToLocalStorage();
 
-			if (savedSequence) {
-				try {
-					const parsed = JSON.parse(savedSequence);
-					console.log('Saved sequence contains:', {
-						beats: parsed.beats?.length || 0,
-						metadata: parsed.metadata ? 'present' : 'missing'
-					});
-				} catch (e) {
-					console.error('Error parsing saved sequence:', e);
+			return {
+				success: true,
+				message: 'Persistence test complete. Sequence saved to localStorage.',
+				details: {
+					sequenceBeats: sequence.beats.length,
+					startPositionSet: !!startPosition,
+					sequenceInStorage: !!savedSequence,
+					startPositionInStorage: !!startPosData,
+					backupInStorage: !!backupData
 				}
-			}
+			};
 		}
 
-		// Force a save
-		sequenceContainer.saveToLocalStorage();
-		console.log('Forced save to localStorage');
-
 		return {
-			success: true,
-			message: 'Persistence test complete. Check console for details.'
+			success: false,
+			message: 'Persistence test failed. Not in browser environment.'
 		};
 	}
 </script>

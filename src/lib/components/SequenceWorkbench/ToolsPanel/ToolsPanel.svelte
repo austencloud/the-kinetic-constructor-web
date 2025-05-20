@@ -1,17 +1,20 @@
 <!-- src/lib/components/SequenceWorkbench/ToolsPanel/ToolsPanel.svelte -->
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import type { ButtonDefinition } from '../ButtonPanel/types';
 
-	// Props
-	export let buttons: ButtonDefinition[] = [];
-	export let activeMode: 'construct' | 'generate' | null = null;
-
-	// Create event dispatcher
-	const dispatch = createEventDispatcher<{
-		action: { id: string };
+	// Props using Svelte 5 runes
+	const props = $props<{
+		buttons?: ButtonDefinition[];
+		activeMode?: 'construct' | 'generate' | null;
+		onAction?: (id: string) => void;
+		onClose?: () => void;
 	}>();
+
+	// Default values
+	const buttons = $derived(props.buttons || []);
+	const activeMode = $derived(props.activeMode || null);
 
 	// Handle button click directly
 	function handleToolClick(id: string) {
@@ -20,41 +23,50 @@
 			navigator.vibrate(30);
 		}
 
-		// Log the action for debugging
-		console.log(`ToolsPanel: Dispatching action for button ${id}`);
-
-		// Dispatch the action event to the parent component ONLY
-		// This prevents the circular reference that was causing infinite recursion
-		dispatch('action', { id });
+		// Call the action callback if provided
+		if (props.onAction) {
+			props.onAction(id);
+		}
 	}
 
 	// Close tools panel
 	function handleClose() {
-		// Create and dispatch a custom event
-		const event = new CustomEvent('close-tools-panel', {
-			bubbles: true,
-			composed: true
-		});
-		document.dispatchEvent(event);
+		// Call the onClose callback if provided
+		if (props.onClose) {
+			props.onClose();
+		} else {
+			// Fallback: Create and dispatch a custom event
+			const event = new CustomEvent('close-tools-panel', {
+				bubbles: true,
+				composed: true
+			});
+			document.dispatchEvent(event);
+		}
 	}
 
-	// Organize buttons in logical groups with improved categorization
-	const modeButtons = buttons.filter((b) => ['constructMode', 'generateMode'].includes(b.id));
-	const sharingButtons = buttons.filter((b) => ['viewFullScreen', 'saveImage'].includes(b.id));
-	const manipulationButtons = buttons.filter((b) =>
-		['mirrorSequence', 'swapColors', 'rotateSequence'].includes(b.id)
-	);
-	const dictionaryButtons = buttons.filter((b) => ['addToDictionary'].includes(b.id));
-	const destructiveButtons = buttons.filter((b) => ['deleteBeat', 'clearSequence'].includes(b.id));
+	// Organize buttons in logical groups with improved categorization using $derived
+	const buttonGroups = $derived({
+		mode: buttons.filter((b: ButtonDefinition) => ['constructMode', 'generateMode'].includes(b.id)),
+		sharing: buttons.filter((b: ButtonDefinition) =>
+			['viewFullScreen', 'saveImage'].includes(b.id)
+		),
+		manipulation: buttons.filter((b: ButtonDefinition) =>
+			['mirrorSequence', 'swapColors', 'rotateSequence'].includes(b.id)
+		),
+		dictionary: buttons.filter((b: ButtonDefinition) => ['addToDictionary'].includes(b.id)),
+		destructive: buttons.filter((b: ButtonDefinition) =>
+			['deleteBeat', 'clearSequence'].includes(b.id)
+		)
+	});
 
 	// Combine all buttons in a logical order
-	const orderedButtons = [
-		...modeButtons,
-		...sharingButtons,
-		...manipulationButtons,
-		...dictionaryButtons,
-		...destructiveButtons
-	];
+	const orderedButtons = $derived([
+		...buttonGroups.mode,
+		...buttonGroups.sharing,
+		...buttonGroups.manipulation,
+		...buttonGroups.dictionary,
+		...buttonGroups.destructive
+	]);
 
 	let gridContainer: HTMLDivElement;
 
@@ -205,7 +217,7 @@
 <div class="tools-panel" transition:fly={{ y: 20, duration: 300 }}>
 	<div class="tools-header">
 		<h2>Tools</h2>
-		<button class="close-button" on:click={handleClose} aria-label="Close tools panel"> ✕ </button>
+		<button class="close-button" onclick={handleClose} aria-label="Close tools panel"> ✕ </button>
 	</div>
 
 	<div class="tools-content">
@@ -218,7 +230,7 @@
 					(button.id === 'generateMode' && activeMode === 'generate')
 						? 'active-mode'
 						: ''}"
-					on:click={() => handleToolClick(button.id)}
+					onclick={() => handleToolClick(button.id)}
 					style="--button-color: {button.color}"
 					title={button.title}
 					aria-label={button.title}

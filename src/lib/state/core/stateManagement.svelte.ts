@@ -1,7 +1,7 @@
 /**
- * Modern State Management with Svelte 5 Runes
+ * State Management with Svelte 5 Runes
  * 
- * This module provides utilities for modern state management using Svelte 5 runes.
+ * This module provides utilities for state management using Svelte 5 runes.
  * This file has a .svelte.ts extension to enable runes support.
  */
 

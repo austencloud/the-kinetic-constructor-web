@@ -5,7 +5,7 @@
  * using XState v5 and the new container-based approach.
  */
 
-import { createModernMachine, createMachineContainer } from '../../core/modernMachine';
+import { createModernMachine, createMachineContainer } from '../../core/stateMachine';
 import { sequenceContainer } from '../../stores/sequence/SequenceContainer';
 import type { GeneratorType, SettingsState } from '../../stores/settingsStore';
 import {
@@ -226,7 +226,13 @@ export const sequenceSelectors = {
  * Create actions for the sequence machine
  */
 export const sequenceActions = {
-	generate: (generatorType: GeneratorType, options: Omit<SettingsState, 'generatorType' | 'theme' | 'animationsEnabled' | 'lastUsedGeneratorType' | 'favoriteCapTypes'>) => {
+	generate: (
+		generatorType: GeneratorType,
+		options: Omit<
+			SettingsState,
+			'generatorType' | 'theme' | 'animationsEnabled' | 'lastUsedGeneratorType' | 'favoriteCapTypes'
+		>
+	) => {
 		modernSequenceContainer.send({
 			type: 'GENERATE',
 			generationType: generatorType,

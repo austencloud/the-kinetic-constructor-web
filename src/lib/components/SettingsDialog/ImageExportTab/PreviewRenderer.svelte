@@ -13,7 +13,7 @@
 		createTemporaryRenderElement,
 		cloneBeatFrameContent,
 		removeTemporaryElement,
-		logBeatFrameDetails
+		getBeatFrameDetails
 	} from '$lib/components/SequenceWorkbench/BeatFrame/beatFrameHelpers';
 	import type { ImageExportSettings } from '$lib/state/image-export-settings.svelte';
 
@@ -47,21 +47,13 @@
 
 	// Update the preview image
 	export async function updatePreview() {
-		console.log('🔍 updatePreview called', {
-			timestamp: new Date().toISOString(),
-			isLoading,
-			hasPreviewImage: !!previewImage
-		});
-
 		// Skip if not in browser or no preview element
 		if (!browser || !previewElement) {
-			console.log('⚠️ Skipping preview update: browser or previewElement not available');
 			return;
 		}
 
 		// Skip if sequence is empty
 		if (!sequenceBeats || sequenceBeats.length === 0) {
-			console.log('⚠️ Skipping preview update: sequence is empty');
 			previewImage = null;
 			error = 'No sequence to preview. Add beats to see a preview.';
 			return;
@@ -80,8 +72,10 @@
 				return;
 			}
 
-			// Log BeatFrame details for debugging
-			logBeatFrameDetails();
+			// Validate BeatFrame elements are available
+			if (!getBeatFrameDetails()?.hasCriticalElements) {
+				throw new Error('BeatFrame elements not ready for rendering');
+			}
 
 			// Create a temporary element for rendering
 			const tempElement = createTemporaryRenderElement(width, height);
@@ -93,19 +87,8 @@
 				throw new Error('Failed to clone BeatFrame content');
 			}
 
-			// Log preview generation details
-			console.log('Generating preview with settings:', {
-				sequenceTitle,
-				difficultyLevel,
-				beatsCount: sequenceBeats.length,
-				hasStartPosition: !!startPosition,
-				settings,
-				svgCount: tempElement.querySelectorAll('svg').length
-			});
-
 			// Make sure we have SVG elements
 			if (tempElement.querySelectorAll('svg').length === 0) {
-				console.error('No SVG elements found in the cloned BeatFrame');
 				throw new Error('No SVG elements found for rendering');
 			}
 
@@ -147,7 +130,6 @@
 				throw new Error('Failed to generate preview image');
 			}
 		} catch (err) {
-			console.error('Error generating preview:', err);
 			error =
 				'Failed to generate preview image: ' + (err instanceof Error ? err.message : String(err));
 			previewImage = null;

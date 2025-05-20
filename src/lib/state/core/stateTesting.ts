@@ -1,5 +1,5 @@
 /**
- * Testing utilities for modern state management
+ * Testing utilities for state management
  * 
  * This module provides utilities for testing state containers and machines
  * in a way that's compatible with both the old and new state management approaches.

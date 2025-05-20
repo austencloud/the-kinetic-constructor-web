@@ -9,7 +9,6 @@ export async function fetchDefaultLayouts(url: string): Promise<LayoutDict> {
 		const data: LayoutDict = await resp.json();
 		return data;
 	} catch (err) {
-		console.error('fetchDefaultLayouts error =>', err);
 		// Return an empty dictionary so the caller can fallback
 		return {};
 	}
@@ -91,15 +90,6 @@ export function calculateCellSize(
 	// Check if the calculated cell size is below the minimum threshold
 	// If so, use the minimum size instead - this will cause overflow and enable scrollbars
 	if (cellSize < minCellSize) {
-		console.debug('Cell size below minimum threshold, using minimum size instead:', {
-			calculatedSize: cellSize,
-			minCellSize,
-			totalRows,
-			totalCols,
-			containerWidth,
-			containerHeight
-		});
-
 		// Apply different constraints based on mode
 		if (isLikelyFullscreen) {
 			return Math.min(Math.max(minCellSize, MIN_CELL_SIZE_FULLSCREEN), 200); // Min 100px, Max 200px for fullscreen
@@ -177,23 +167,15 @@ export function autoAdjustLayout(beatCount: number): [number, number] {
 export function verifyBeatFrameElements(): boolean {
 	const beatFrameElement = document.querySelector('.beat-frame-container');
 	if (!beatFrameElement) {
-		console.log('⚠️ BeatFrame element not found during verification');
 		return false;
 	}
 
 	// Check for SVG elements
 	const svgElements = beatFrameElement.querySelectorAll('svg');
-	console.log(`🔍 BeatFrame verification: Found ${svgElements.length} SVG elements`);
 
 	// Check for arrows and other critical elements
 	const arrowElements = beatFrameElement.querySelectorAll('.arrow-path, .arrow-head');
 	const propElements = beatFrameElement.querySelectorAll('.pictograph-prop');
-
-	console.log(`🔍 BeatFrame verification details:`, {
-		svgCount: svgElements.length,
-		arrowCount: arrowElements.length,
-		propCount: propElements.length
-	});
 
 	// Consider it valid if we have SVGs and either arrows or props
 	return svgElements.length > 0 && (arrowElements.length > 0 || propElements.length > 0);
@@ -253,13 +235,18 @@ export function cloneBeatFrameContent(tempElement: HTMLDivElement): boolean {
 }
 
 /**
- * Logs detailed information about the BeatFrame element
+ * Gets detailed information about the BeatFrame element
+ * @returns Object with details about the BeatFrame elements or null if not found
  */
-export function logBeatFrameDetails(): void {
+export function getBeatFrameDetails(): {
+	svgCount: number;
+	arrowCount: number;
+	propCount: number;
+	hasCriticalElements: boolean;
+} | null {
 	const beatFrameElement = document.querySelector('.beat-frame-container');
 	if (!beatFrameElement) {
-		console.error('Could not find BeatFrame element in the DOM');
-		return;
+		return null;
 	}
 
 	// Verify BeatFrame has necessary elements
@@ -267,19 +254,16 @@ export function logBeatFrameDetails(): void {
 	const arrowElements = beatFrameElement.querySelectorAll('.arrow-path, .arrow-head');
 	const propElements = beatFrameElement.querySelectorAll('.pictograph-prop');
 
-	// Log detailed information about what we found
-	console.log('Found BeatFrame element with details:', {
-		element: beatFrameElement,
+	// Check if we have the expected elements
+	const hasCriticalElements =
+		svgElements.length > 0 && (arrowElements.length > 0 || propElements.length > 0);
+
+	return {
 		svgCount: svgElements.length,
 		arrowCount: arrowElements.length,
 		propCount: propElements.length,
-		html: beatFrameElement.innerHTML.substring(0, 200) + '...' // Log a preview of the HTML
-	});
-
-	// Warn if we're missing expected elements
-	if (svgElements.length === 0 || (arrowElements.length === 0 && propElements.length === 0)) {
-		console.warn('⚠️ BeatFrame may be missing critical elements for rendering');
-	}
+		hasCriticalElements
+	};
 }
 
 /**

@@ -5,7 +5,7 @@
  * using XState 5.
  */
 
-import { createModernMachine, createMachineContainer } from '$lib/state/core/modernMachine';
+import { createModernMachine, createMachineContainer } from '$lib/state/core/stateMachine';
 import type { PictographData } from '$lib/types/PictographData';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 import type { GridData } from '$lib/components/objects/Grid/GridData';
@@ -200,11 +200,11 @@ export const pictographMachine = createModernMachine<
  * Create the pictograph machine container
  */
 export const pictographMachineContainer = createMachineContainer(pictographMachine, {
+	// Only enable inspection in development mode
 	inspect: import.meta.env.DEV
 		? (event) => {
-				if (event.type === '@xstate.snapshot') {
-					console.log('Pictograph Machine State:', event.snapshot);
-				}
+				// State changes can be monitored here if needed
+				// No logging in production code
 			}
 		: undefined
 });

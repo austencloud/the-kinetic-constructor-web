@@ -182,10 +182,8 @@ function createOptionPickerContainer() {
 						// Find the most recently added beat (the one with the highest index)
 						if (beats.length > 0) {
 							const mostRecentBeat = beats[beats.length - 1];
-							// Select this beat
-							sequenceContainer.selectBeat(mostRecentBeat.id);
-
-							console.log('Auto-selected most recently added beat:', mostRecentBeat.id);
+							// Select this beat using sequenceActions
+							sequenceActions.selectBeat(mostRecentBeat.id);
 						}
 					}, 0);
 
