@@ -7,7 +7,7 @@
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 	import type { PictographData } from '$lib/types/PictographData';
-	import StyledBorderOverlay from '$lib/components/Pictograph/components/StyledBorderOverlay.svelte';
+	import StyledBorderOverlay from '$lib/components/Pictograph/components/BeatHoverEffect.svelte';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import AnimatedHighlight from './AnimatedHighlight.svelte';

@@ -11,13 +11,13 @@
 </script>
 
 {#if props.isEnabled}
-	<div class="hover-effect">
+	<div class="beat-hover-effect">
 		<div class="hover-overlay"></div>
 	</div>
 {/if}
 
 <style>
-	.hover-effect {
+	.beat-hover-effect {
 		position: absolute;
 		inset: 0;
 		pointer-events: none;

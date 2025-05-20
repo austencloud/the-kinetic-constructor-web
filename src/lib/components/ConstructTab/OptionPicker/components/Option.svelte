@@ -4,7 +4,7 @@
 	import { optionPickerContainer } from '$lib/state/stores/optionPicker/optionPickerContainer';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
-	import StyledBorderOverlay from '$lib/components/Pictograph/components/StyledBorderOverlay.svelte';
+	import StyledBorderOverlay from '$lib/components/Pictograph/components/BeatHoverEffect.svelte';
 
 	// Props using Svelte 5 runes
 	const props = $props<{

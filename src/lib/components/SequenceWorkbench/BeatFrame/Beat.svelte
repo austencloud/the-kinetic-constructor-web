@@ -2,7 +2,7 @@
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import type { BeatData } from './BeatData';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
-	import StyledBorderOverlay from '$lib/components/Pictograph/components/StyledBorderOverlay.svelte';
+	import StyledBorderOverlay from '$lib/components/Pictograph/components/BeatHoverEffect.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 	// Props using Svelte 5 runes
