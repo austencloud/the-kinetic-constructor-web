@@ -1,6 +1,6 @@
 <!-- src/lib/components/objects/Arrow/Arrow.svelte -->
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import type { ArrowData } from './ArrowData';
 	import type { ArrowSvgData } from '../../SvgManager/ArrowSvgData';
 	import { ArrowSvgLoader } from './services/ArrowSvgLoader';
@@ -14,15 +14,32 @@
 	import { derived } from 'svelte/store';
 
 	// Props - we support both direct arrowData and store-based approach
-	export let arrowData: ArrowData | undefined = undefined;
-	export let beatId: string | undefined = undefined;
-	export let color: 'red' | 'blue' | undefined = undefined;
-	export let motion: Motion | null = null;
-	export let pictographData: PictographData | null = null;
-	export let pictographService: PictographService | null = null;
-	export let loadTimeoutMs = 1000; // Configurable timeout
+	const props = $props<{
+		arrowData?: ArrowData;
+		beatId?: string;
+		color?: 'red' | 'blue';
+		motion?: Motion | null;
+		pictographData?: PictographData | null;
+		pictographService?: PictographService | null;
+		loadTimeoutMs?: number;
+		animationDuration?: number;
+
+		// Event handlers
+		loaded?: (event: { timeout?: boolean; error?: boolean }) => void;
+		error?: (event: { message: string; component: string; color: string }) => void;
+		imageLoaded?: () => void;
+	}>();
+
+	// Set defaults
+	const arrowData = props.arrowData;
+	const beatId = props.beatId;
+	const color = props.color;
+	const motion = props.motion ?? null;
+	const pictographData = props.pictographData ?? null;
+	const pictographService = props.pictographService ?? null;
+	const loadTimeoutMs = props.loadTimeoutMs ?? 1000; // Configurable timeout
 	// Animation duration is passed from parent but not used directly in this component
-	export const animationDuration = 200;
+	const animationDuration = props.animationDuration ?? 200;
 
 	// Get arrow data from the sequence store if beatId and color are provided
 	const arrowDataFromStore = derived(sequenceStore, ($sequenceStore) => {
@@ -35,48 +52,66 @@
 	});
 
 	// Use either the arrow data from store or the directly provided arrow data
-	$: effectiveArrowData = $arrowDataFromStore || arrowData;
+	let effectiveArrowData = $state<ArrowData | undefined>(undefined);
+
+	// Update effectiveArrowData when arrowDataFromStore changes
+	$effect(() => {
+		effectiveArrowData = $arrowDataFromStore || arrowData;
+	});
 
 	// Component state
-	let svgData: ArrowSvgData | null = null;
-	let transform = '';
-	let isLoaded = false;
-	let hasErrored = false;
+	let svgData = $state<ArrowSvgData | null>(null);
+	let transform = $state('');
+	let isLoaded = $state(false);
+	let hasErrored = $state(false);
 	let loadTimeout: NodeJS.Timeout;
-	let rotAngleManager: ArrowRotAngleManager | null = null;
+	let rotAngleManager = $state<ArrowRotAngleManager | null>(null);
 
 	// Services
-	const dispatch = createEventDispatcher();
 	const svgManager = new SvgManager();
 	const svgLoader = new ArrowSvgLoader(svgManager);
 
 	// Create mirror manager only when we have arrow data
-	$: mirrorManager = effectiveArrowData ? new ArrowSvgMirrorManager(effectiveArrowData) : null;
+	let mirrorManager = $state<ArrowSvgMirrorManager | null>(null);
+
+	$effect(() => {
+		mirrorManager = effectiveArrowData ? new ArrowSvgMirrorManager(effectiveArrowData) : null;
+	});
 
 	// Initialize the rotation angle manager when pictograph data is available
-	$: if (pictographData) {
-		rotAngleManager = new ArrowRotAngleManager(pictographData, pictographService || undefined);
-	}
+	$effect(() => {
+		if (pictographData) {
+			rotAngleManager = new ArrowRotAngleManager(pictographData, pictographService || undefined);
+		}
+	});
 
 	// Update mirror state whenever motion data or arrow data changes
-	$: if (effectiveArrowData && mirrorManager) {
-		mirrorManager.updateMirror();
-	}
+	$effect(() => {
+		if (effectiveArrowData && mirrorManager) {
+			mirrorManager.updateMirror();
+		}
+	});
 
 	// Calculate rotation angle (memoized)
-	$: rotationAngle = getRotationAngle();
+	let rotationAngle = $state(0);
+
+	$effect(() => {
+		rotationAngle = getRotationAngle();
+	});
 
 	// Transform calculation (memoized)
-	$: if (svgData && effectiveArrowData?.coords) {
-		// Apply transformations in the correct order
-		const mirrorTransform = effectiveArrowData.svgMirrored ? 'scale(-1, 1)' : '';
+	$effect(() => {
+		if (svgData && effectiveArrowData?.coords) {
+			// Apply transformations in the correct order
+			const mirrorTransform = effectiveArrowData.svgMirrored ? 'scale(-1, 1)' : '';
 
-		transform = `
-			translate(${effectiveArrowData.coords.x}, ${effectiveArrowData.coords.y})
-			rotate(${rotationAngle})
-			${mirrorTransform}
-		`.trim();
-	}
+			transform = `
+				translate(${effectiveArrowData.coords.x}, ${effectiveArrowData.coords.y})
+				rotate(${rotationAngle})
+				${mirrorTransform}
+			`.trim();
+		}
+	});
 
 	/**
 	 * Helper function to detect mobile devices
@@ -125,8 +160,17 @@
 				throw new Error('No arrow data available');
 			}
 
-			// Adjust timeout for mobile devices
-			const timeoutDuration = isMobile() ? loadTimeoutMs * 2 : loadTimeoutMs;
+			// Check if we're in OptionPicker context
+			const isInOptionPicker =
+				props.loadTimeoutMs === 10 ||
+				(props.pictographService === null && props.pictographData === null);
+
+			// For OptionPicker, use a much shorter timeout and prioritize immediate rendering
+			const timeoutDuration = isInOptionPicker
+				? 10 // Very short timeout for OptionPicker
+				: isMobile()
+					? loadTimeoutMs * 2
+					: loadTimeoutMs;
 
 			// Set safety timeout
 			loadTimeout = setTimeout(() => {
@@ -136,7 +180,7 @@
 						console.warn(`Arrow loading timed out after ${timeoutDuration}ms`);
 					}
 					isLoaded = true;
-					dispatch('loaded', { timeout: true });
+					props.loaded?.({ timeout: true });
 				}
 			}, timeoutDuration);
 
@@ -145,8 +189,11 @@
 				mirrorManager.updateMirror();
 			}
 
-			// Check component-level cache first
-			const cacheKey = `arrow-${effectiveArrowData.motionType}-${effectiveArrowData.startOri}-${effectiveArrowData.turns}-${effectiveArrowData.color}-${effectiveArrowData.svgMirrored}`;
+			// Use a more specific cache key for OptionPicker to avoid conflicts
+			const cacheKey = isInOptionPicker
+				? `option-picker-arrow-${effectiveArrowData.motionType}-${effectiveArrowData.turns}-${effectiveArrowData.propRotDir}`
+				: `arrow-${effectiveArrowData.motionType}-${effectiveArrowData.startOri}-${effectiveArrowData.turns}-${effectiveArrowData.color}-${effectiveArrowData.svgMirrored}`;
+
 			const cachedData = getCachedSvgData(cacheKey);
 
 			if (cachedData) {
@@ -154,7 +201,7 @@
 				svgData = cachedData;
 				clearTimeout(loadTimeout);
 				isLoaded = true;
-				dispatch('loaded');
+				props.loaded?.();
 				return;
 			}
 
@@ -175,7 +222,7 @@
 
 			clearTimeout(loadTimeout);
 			isLoaded = true;
-			dispatch('loaded');
+			props.loaded?.();
 		} catch (error) {
 			handleLoadError(error);
 		}
@@ -196,8 +243,8 @@
 		svgData = svgLoader.getFallbackSvgData();
 		clearTimeout(loadTimeout);
 		isLoaded = true;
-		dispatch('loaded', { error: true });
-		dispatch('error', {
+		props.loaded?.({ error: true });
+		props.error?.({
 			message: (error as Error)?.message || 'Unknown error',
 			component: 'Arrow',
 			color: effectiveArrowData?.color || 'unknown'
@@ -226,19 +273,87 @@
 			loadArrowSvg();
 		} else {
 			isLoaded = true;
-			dispatch('loaded', { error: true });
+			props.loaded?.({ error: true });
 		}
 
 		// Cleanup
 		return () => clearTimeout(loadTimeout);
 	});
 
-	// Reactive loading
-	$: {
-		if (effectiveArrowData?.motionType && !isLoaded && !hasErrored) {
+	// Track previous turns value to detect changes
+	let previousTurns: number | string | 'fl' | null = null;
+	let turnsChangeDebounceTimer: number | null = null;
+
+	// Reactive loading with debouncing
+	$effect(() => {
+		// Skip this effect if we're in a Pictograph with disableAnimations=true
+		// This is a common case in the OptionPicker where we don't need to reload on turns changes
+		const isInOptionPicker =
+			props.loadTimeoutMs === 10 ||
+			(props.pictographService === null && props.pictographData === null);
+
+		// For OptionPicker, we want to completely skip the animation and debouncing
+		if (isInOptionPicker) {
+			// Just update the previous turns value without triggering a reload
+			if (effectiveArrowData?.turns !== undefined) {
+				previousTurns = effectiveArrowData.turns;
+			}
+
+			// Force immediate load without animation for OptionPicker
+			if (!isLoaded && effectiveArrowData?.motionType) {
+				loadArrowSvg();
+			}
+
+			return;
+		}
+
+		// Force reload when turns change, but debounce to avoid excessive reloads
+		if (effectiveArrowData?.turns !== previousTurns && previousTurns !== null) {
+			// Clear any existing debounce timer
+			if (turnsChangeDebounceTimer !== null && typeof window !== 'undefined') {
+				window.clearTimeout(turnsChangeDebounceTimer);
+			}
+
+			// Use requestAnimationFrame for smoother updates
+			if (typeof window !== 'undefined') {
+				requestAnimationFrame(() => {
+					// Set a short debounce to batch multiple turns changes
+					turnsChangeDebounceTimer = window.setTimeout(() => {
+						// Reset state to force reload
+						isLoaded = false;
+						hasErrored = false;
+						svgData = null;
+
+						// Load the SVG immediately
+						if (effectiveArrowData?.motionType) {
+							loadArrowSvg();
+						}
+
+						// Clear the timer reference
+						turnsChangeDebounceTimer = null;
+					}, 50); // Short debounce time
+				});
+			}
+		}
+
+		// Update previous turns value
+		if (effectiveArrowData?.turns !== undefined) {
+			previousTurns = effectiveArrowData.turns;
+		}
+	});
+
+	// Load SVG if needed
+	$effect(() => {
+		// Load SVG if needed and not already loading
+		if (
+			effectiveArrowData?.motionType &&
+			!isLoaded &&
+			!hasErrored &&
+			turnsChangeDebounceTimer === null
+		) {
 			loadArrowSvg();
 		}
-	}
+	});
 </script>
 
 {#if svgData && isLoaded && effectiveArrowData}
@@ -258,8 +373,13 @@
 			y={-svgData.center.y}
 			aria-label="Arrow showing {effectiveArrowData.motionType} motion in {effectiveArrowData.color} direction"
 			role="img"
-			on:load={() => dispatch('imageLoaded')}
-			on:error={() => dispatch('error', { message: 'Image failed to load' })}
+			onload={() => props.imageLoaded?.()}
+			onerror={() =>
+				props.error?.({
+					message: 'Image failed to load',
+					component: 'Arrow',
+					color: effectiveArrowData?.color || 'unknown'
+				})}
 		/>
 	</g>
 {/if}

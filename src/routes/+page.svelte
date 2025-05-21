@@ -140,10 +140,10 @@
 			</div>
 
 			<!-- First-time setup dialog -->
-			<FirstTimeSetupDialog bind:this={firstTimeSetupDialog} />
+			<!-- <FirstTimeSetupDialog bind:this={firstTimeSetupDialog} /> -->
 
 			<!-- Setup button - always visible -->
-			<FirstTimeSetupButton showDialog={showFirstTimeSetupDialog} />
+			<!-- <FirstTimeSetupButton showDialog={showFirstTimeSetupDialog} /> -->
 		{/if}
 	</FullScreen>
 </div>

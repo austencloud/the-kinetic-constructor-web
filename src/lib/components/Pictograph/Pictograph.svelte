@@ -71,6 +71,7 @@
 	export let showLoadingIndicator = true;
 	export let beatNumber: number | null = null;
 	export let isStartPosition = false;
+	export let disableAnimations = false; // Add this prop to disable animations for OptionPicker
 
 	// Create a local pictograph data store
 	const pictographDataStore = createPictographDataStore(pictographData);
@@ -281,49 +282,56 @@
 	/**
 	 * Preload arrow SVGs in parallel for better performance
 	 */
-	async function preloadArrowSvgs() {
-		if (!service || !get(pictographDataStore)) return;
+	function preloadArrowSvgs() {
+		// Use requestAnimationFrame to schedule the preloading for the next frame
+		if (typeof window !== 'undefined') {
+			requestAnimationFrame(async () => {
+				if (!service || !get(pictographDataStore)) return;
 
-		const data = get(pictographDataStore);
-		const arrowConfigs: Array<{
-			motionType: MotionType;
-			startOri: Orientation;
-			turns: TKATurns;
-			color: Color;
-		}> = [];
+				const data = get(pictographDataStore);
+				const arrowConfigs: Array<{
+					motionType: MotionType;
+					startOri: Orientation;
+					turns: TKATurns;
+					color: Color;
+				}> = [];
 
-		// Add red arrow config if exists
-		if (data.redArrowData) {
-			arrowConfigs.push({
-				motionType: data.redArrowData.motionType,
-				startOri: data.redArrowData.startOri,
-				turns: data.redArrowData.turns,
-				color: data.redArrowData.color
-			});
-		}
-
-		// Add blue arrow config if exists
-		if (data.blueArrowData) {
-			arrowConfigs.push({
-				motionType: data.blueArrowData.motionType,
-				startOri: data.blueArrowData.startOri,
-				turns: data.blueArrowData.turns,
-				color: data.blueArrowData.color
-			});
-		}
-
-		// Preload SVGs if we have any configs
-		if (arrowConfigs.length > 0 && service) {
-			try {
-				// Create a new SvgManager instance for preloading
-				const svgManager = new SvgManager();
-				await svgManager.preloadArrowSvgs(arrowConfigs);
-			} catch (error) {
-				// Silently handle preloading errors
-				if (import.meta.env.DEV) {
-					console.warn('Arrow SVG preloading error:', error);
+				// Add red arrow config if exists
+				if (data.redArrowData) {
+					arrowConfigs.push({
+						motionType: data.redArrowData.motionType,
+						startOri: data.redArrowData.startOri,
+						turns: data.redArrowData.turns,
+						color: data.redArrowData.color
+					});
 				}
-			}
+
+				// Add blue arrow config if exists
+				if (data.blueArrowData) {
+					arrowConfigs.push({
+						motionType: data.blueArrowData.motionType,
+						startOri: data.blueArrowData.startOri,
+						turns: data.blueArrowData.turns,
+						color: data.blueArrowData.color
+					});
+				}
+
+				// Preload SVGs if we have any configs
+				if (arrowConfigs.length > 0 && service) {
+					try {
+						// Create a new SvgManager instance for preloading
+						const svgManager = new SvgManager();
+						await svgManager.preloadArrowSvgs(arrowConfigs);
+					} catch (error) {
+						// Silently handle preloading errors
+						if (import.meta.env.DEV) {
+							console.warn('Arrow SVG preloading error:', error);
+						}
+					}
+				}
+			});
+		} else {
+			// No preloading in SSR environment
 		}
 	}
 
@@ -362,32 +370,124 @@
 		}
 	}
 
-	// Wrapper for handleComponentLoadedUtil to maintain local state
+	// Debounce timer for component loading
+	let componentLoadDebounceTimer: number | null = null;
+	let pendingComponents = new Set<string>();
+
+	// Optimized wrapper for handleComponentLoadedUtil to maintain local state
 	function handleComponentLoaded(component: string) {
-		// Call the utility function
-		handleComponentLoadedUtil(component, getLoadingManagerContext());
+		// If animations are disabled (for OptionPicker), use a simpler, faster approach
+		if (disableAnimations) {
+			// Just mark the component as loaded immediately without animations or delays
+			const context = getLoadingManagerContext();
+			handleComponentLoadedUtil(component, context);
+			componentsLoaded = context.componentsLoaded;
 
-		// Update local state
-		componentsLoaded = getLoadingManagerContext().componentsLoaded;
+			// Check if all components are loaded
+			if (componentsLoaded === totalComponentsToLoad) {
+				allComponentsLoaded = true;
+				showPictograph = allComponentsLoaded && glyphLoaded;
 
-		// Check if loading is complete
-		checkLoadingComplete();
+				// If everything is loaded, dispatch the loaded event
+				if (showPictograph) {
+					dispatch('loaded', { error: false });
+				}
+			}
+			return;
+		}
+
+		// Normal animation flow for other cases
+		// Add component to pending set
+		pendingComponents.add(component);
+
+		// Clear existing debounce timer
+		if (componentLoadDebounceTimer !== null && typeof window !== 'undefined') {
+			window.clearTimeout(componentLoadDebounceTimer);
+		}
+
+		// Use requestAnimationFrame to schedule the update for the next frame
+		if (typeof window !== 'undefined') {
+			// Set a short debounce to batch multiple component loads
+			componentLoadDebounceTimer = window.setTimeout(() => {
+				// Process all pending components at once
+				if (pendingComponents.size > 0) {
+					// Create a local context once
+					const context = getLoadingManagerContext();
+
+					// Process all pending components
+					pendingComponents.forEach((comp) => {
+						// Call the utility function
+						handleComponentLoadedUtil(comp, context);
+					});
+
+					// Update local state once
+					componentsLoaded = context.componentsLoaded;
+
+					// Check if loading is complete
+					checkLoadingComplete();
+
+					// Clear pending components
+					pendingComponents.clear();
+				}
+
+				// Clear the timer reference
+				componentLoadDebounceTimer = null;
+			}, 16); // Use a frame-based timing (roughly 60fps)
+		} else {
+			// Fallback for SSR
+			const context = getLoadingManagerContext();
+			handleComponentLoadedUtil(component, context);
+			componentsLoaded = context.componentsLoaded;
+			checkLoadingComplete();
+		}
 	}
 
-	// Wrapper for checkLoadingCompleteUtil to maintain local state
+	// Optimized wrapper for checkLoadingCompleteUtil to maintain local state
 	function checkLoadingComplete() {
-		// Call the utility function
-		const isComplete = checkLoadingCompleteUtil(getLoadingManagerContext());
+		// If animations are disabled (for OptionPicker), use a simpler, faster approach
+		if (disableAnimations) {
+			// Call the utility function directly without animation frames
+			const isComplete = checkLoadingCompleteUtil(getLoadingManagerContext());
 
-		// Update render count
-		renderCount++;
+			// Update our enhanced loading state
+			if (isComplete) {
+				allComponentsLoaded = true;
+				showPictograph = allComponentsLoaded && glyphLoaded;
 
-		// Update our enhanced loading state
-		if (isComplete) {
-			allComponentsLoaded = true;
+				// If everything is loaded, dispatch the loaded event
+				if (showPictograph) {
+					dispatch('loaded', { error: false });
+				}
+			}
+			return;
+		}
 
-			// Only show the pictograph when both components and glyph are loaded
-			updateShowPictographState();
+		// Normal animation flow for other cases
+		// Use requestAnimationFrame to schedule the update for the next frame
+		if (typeof window !== 'undefined') {
+			requestAnimationFrame(() => {
+				// Call the utility function
+				const isComplete = checkLoadingCompleteUtil(getLoadingManagerContext());
+
+				// Update render count
+				renderCount++;
+
+				// Update our enhanced loading state
+				if (isComplete) {
+					allComponentsLoaded = true;
+
+					// Only show the pictograph when both components and glyph are loaded
+					updateShowPictographState();
+				}
+			});
+		} else {
+			// Fallback for SSR
+			const isComplete = checkLoadingCompleteUtil(getLoadingManagerContext());
+			renderCount++;
+			if (isComplete) {
+				allComponentsLoaded = true;
+				updateShowPictographState();
+			}
 		}
 	}
 
@@ -401,17 +501,41 @@
 		glyphLoaded = event.detail;
 		logger.debug(`Pictograph: Glyph loaded (success: ${event.detail})`);
 
-		// Update pictograph visibility
+		// If animations are disabled, update state directly
+		if (disableAnimations) {
+			showPictograph = allComponentsLoaded && glyphLoaded;
+
+			// If everything is loaded, dispatch the loaded event
+			if (showPictograph) {
+				dispatch('loaded', { error: false });
+			}
+			return;
+		}
+
+		// Normal flow with animations
 		updateShowPictographState();
 	}
 
 	// Update the showPictograph state based on all loading conditions
 	function updateShowPictographState() {
-		showPictograph = allComponentsLoaded && glyphLoaded;
+		// Use requestAnimationFrame to schedule the update for the next frame
+		if (typeof window !== 'undefined') {
+			requestAnimationFrame(() => {
+				showPictograph = allComponentsLoaded && glyphLoaded;
 
-		// If everything is loaded, dispatch the loaded event
-		if (showPictograph) {
-			dispatch('loaded', { error: false });
+				// If everything is loaded, dispatch the loaded event
+				if (showPictograph) {
+					dispatch('loaded', { error: false });
+				}
+			});
+		} else {
+			// Fallback for SSR
+			showPictograph = allComponentsLoaded && glyphLoaded;
+
+			// If everything is loaded, dispatch the loaded event
+			if (showPictograph) {
+				dispatch('loaded', { error: false });
+			}
 		}
 	}
 
@@ -516,57 +640,101 @@
 						{#if propData}
 							<Prop
 								{propData}
-								on:loaded={() => handleComponentLoaded(`${color}Prop`)}
-								on:error={(e) => handleComponentError(`${color}Prop`, e.detail.message)}
+								loaded={() => handleComponentLoaded(`${color}Prop`)}
+								error={(e) => handleComponentError(`${color}Prop`, e.message)}
 							/>
 						{/if}
 
 						{#if arrowData}
-							<Arrow
-								{arrowData}
-								loadTimeoutMs={isMobile() ? 2000 : 1000}
-								pictographService={service}
-								on:loaded={() => handleComponentLoaded(`${color}Arrow`)}
-								on:error={(e) => handleComponentError(`${color}Arrow`, e.detail.message)}
-							/>
+							<!-- Use a keyed each block to force component recreation when turns change -->
+							<!-- Use a more efficient key that doesn't include renderCount to reduce unnecessary reloads -->
+							{#each [`${arrowData.id}-${arrowData.turns}-${arrowData.propRotDir}`] as key (key)}
+								<Arrow
+									{arrowData}
+									loadTimeoutMs={isMobile() ? 2000 : 1000}
+									pictographService={service}
+									loaded={() => handleComponentLoaded(`${color}Arrow`)}
+									error={(e) => handleComponentError(`${color}Arrow`, e.message)}
+								/>
+							{/each}
 						{/if}
 					{/each}
 				</g>
 
 				<!-- Only show the visible components when everything is loaded -->
 				{#if showPictograph}
-					<!-- Wrap all motion components in a single animated container for unified animation -->
-					<g
-						in:popIn={{
-							duration: animationDuration,
-							start: 0.85, // More pronounced scale effect (from 0.85 to 1.0)
-							opacity: 0.2 // Start with slight visibility for smoother appearance
-						}}
-						style="transform-origin: center center;"
-					>
-						{#if get(pictographDataStore)?.letter}
-							<TKAGlyph
-								letter={get(pictographDataStore)?.letter}
-								turnsTuple="(s, 0, 0)"
-								x={50}
-								y={800}
-							/>
-						{/if}
-
-						{#each [{ color: 'red', propData: redPropData, arrowData: redArrowData }, { color: 'blue', propData: bluePropData, arrowData: blueArrowData }] as { color, propData, arrowData } (color)}
-							{#if propData}
-								<Prop {propData} />
-							{/if}
-
-							{#if arrowData}
-								<Arrow
-									{arrowData}
-									loadTimeoutMs={isMobile() ? 2000 : 1000}
-									pictographService={service}
+					<!-- For OptionPicker, skip animation completely -->
+					{#if disableAnimations}
+						<g style="transform-origin: center center;">
+							{#if get(pictographDataStore)?.letter}
+								<TKAGlyph
+									letter={get(pictographDataStore)?.letter}
+									turnsTuple="(s, 0, 0)"
+									x={50}
+									y={800}
 								/>
 							{/if}
-						{/each}
-					</g>
+
+							{#each [{ color: 'red', propData: redPropData, arrowData: redArrowData }, { color: 'blue', propData: bluePropData, arrowData: blueArrowData }] as { color, propData, arrowData } (color)}
+								{#if propData}
+									<Prop {propData} animationDuration={0} />
+								{/if}
+
+								{#if arrowData}
+									<!-- Use a keyed each block to force component recreation when turns change -->
+									<!-- Use a more efficient key that doesn't include renderCount to reduce unnecessary reloads -->
+									{#each [`${arrowData.id}-${arrowData.turns}-${arrowData.propRotDir}`] as key (key)}
+										<Arrow
+											{arrowData}
+											loadTimeoutMs={10}
+											pictographService={service}
+											loaded={() => {}}
+											error={() => {}}
+										/>
+									{/each}
+								{/if}
+							{/each}
+						</g>
+						<!-- For normal use, apply animation -->
+					{:else}
+						<g
+							in:popIn={{
+								duration: animationDuration,
+								start: 0.85,
+								opacity: 0.2
+							}}
+							style="transform-origin: center center;"
+						>
+							{#if get(pictographDataStore)?.letter}
+								<TKAGlyph
+									letter={get(pictographDataStore)?.letter}
+									turnsTuple="(s, 0, 0)"
+									x={50}
+									y={800}
+								/>
+							{/if}
+
+							{#each [{ color: 'red', propData: redPropData, arrowData: redArrowData }, { color: 'blue', propData: bluePropData, arrowData: blueArrowData }] as { color, propData, arrowData } (color)}
+								{#if propData}
+									<Prop {propData} {animationDuration} />
+								{/if}
+
+								{#if arrowData}
+									<!-- Use a keyed each block to force component recreation when turns change -->
+									<!-- Use a more efficient key that doesn't include renderCount to reduce unnecessary reloads -->
+									{#each [`${arrowData.id}-${arrowData.turns}-${arrowData.propRotDir}`] as key (key)}
+										<Arrow
+											{arrowData}
+											loadTimeoutMs={isMobile() ? 2000 : 1000}
+											pictographService={service}
+											loaded={() => {}}
+											error={() => {}}
+										/>
+									{/each}
+								{/if}
+							{/each}
+						</g>
+					{/if}
 				{/if}
 			{/if}
 		{/if}

@@ -1,45 +1,64 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import { parsePropSvg } from '../../SvgManager/PropSvgParser';
 	import SvgManager from '../../SvgManager/SvgManager';
 	import type { PropData } from './PropData';
 	import type { PropSvgData } from '../../SvgManager/PropSvgData';
 	import PropRotAngleManager from './PropRotAngleManager';
 	import { sequenceStore } from '$lib/state/stores/sequenceStore';
-	import { derived } from 'svelte/store';
 
-	// Props - we support both direct propData and store-based approach
-	export let propData: PropData | undefined = undefined;
-	export let beatId: string | undefined = undefined;
-	export let color: 'red' | 'blue' | undefined = undefined;
-	// Animation duration is passed from parent but not used directly in this component
-	export const animationDuration = 200;
+	// Props using Svelte 5 runes
+	const props = $props<{
+		propData?: PropData;
+		beatId?: string;
+		color?: 'red' | 'blue';
+		animationDuration?: number;
+
+		// Event handlers
+		loaded?: (event: { timeout?: boolean; error?: boolean }) => void;
+		error?: (event: { message: string }) => void;
+		imageLoaded?: () => void;
+	}>();
+
+	// Set defaults
+	const propData = props.propData;
+	const beatId = props.beatId;
+	const color = props.color;
+	const animationDuration = props.animationDuration ?? 200;
 
 	// Component state
-	let svgData: PropSvgData | null = null;
-	let isLoaded = false;
+	let svgData = $state<PropSvgData | null>(null);
+	let isLoaded = $state(false);
 	let loadTimeout: ReturnType<typeof setTimeout>;
-	let rotAngle = 0;
+	let rotAngle = $state(0);
 
 	// Services
-	const dispatch = createEventDispatcher();
 	const svgManager = new SvgManager();
 
-	// Get prop data from the sequence store if beatId and color are provided
-	const propDataFromStore = derived(sequenceStore, ($sequenceStore) => {
-		if (!beatId || !color) return null;
+	// Use the directly provided prop data as the base
+	let effectivePropData = $state<PropData | undefined>(propData);
 
-		const beat = $sequenceStore.beats.find((b) => b.id === beatId);
-		if (!beat) return null;
+	// Subscribe to the sequence store to update effectivePropData if needed
+	$effect(() => {
+		// Only subscribe if we have beatId and color
+		if (!beatId || !color) return;
 
-		return color === 'red' ? beat.redPropData : beat.bluePropData;
+		// Subscribe to the sequence store
+		const unsubscribe = sequenceStore.subscribe(($sequenceStore) => {
+			const beat = $sequenceStore.beats.find((b) => b.id === beatId);
+			if (!beat) return;
+
+			const storeData = color === 'red' ? beat.redPropData : beat.bluePropData;
+			if (storeData) {
+				effectivePropData = storeData;
+			}
+		});
+
+		return unsubscribe; // Cleanup function
 	});
 
-	// Use either the prop data from store or the directly provided prop data
-	$: effectivePropData = $propDataFromStore || propData;
-
-	// Reactive statement to compute rotation angle
-	$: {
+	// Compute rotation angle using $effect
+	$effect(() => {
 		// Ensure we have both loc and ori, and the SVG is loaded
 		if (effectivePropData) {
 			// Always try to calculate, even if loc or ori might be undefined
@@ -63,20 +82,23 @@
 				console.warn('Error calculating rotation angle:', error);
 			}
 		}
-	}
+	});
 
 	onMount(() => {
 		if (effectivePropData?.propType) {
 			loadSvg();
 		} else {
 			isLoaded = true;
-			dispatch('loaded', { error: true });
+			props.loaded?.({ error: true });
 		}
 
 		return () => {
 			clearTimeout(loadTimeout);
 		};
 	});
+
+	// Component-level cache for OptionPicker
+	const propSvgCache = new Map<string, PropSvgData>();
 
 	async function loadSvg() {
 		try {
@@ -85,12 +107,29 @@
 				throw new Error('No prop data available');
 			}
 
-			loadTimeout = setTimeout(() => {
-				if (!isLoaded) {
+			// Check if we're in OptionPicker context (very short timeout is a good indicator)
+			const isInOptionPicker =
+				animationDuration === 0 || (beatId === undefined && color === undefined);
+
+			if (isInOptionPicker && effectivePropData) {
+				const cacheKey = `prop-${effectivePropData.propType}-${effectivePropData.color}`;
+				if (propSvgCache.has(cacheKey)) {
+					svgData = propSvgCache.get(cacheKey)!;
 					isLoaded = true;
-					dispatch('loaded', { timeout: true });
+					props.loaded?.({});
+					return;
 				}
-			}, 10);
+			}
+
+			loadTimeout = setTimeout(
+				() => {
+					if (!isLoaded) {
+						isLoaded = true;
+						props.loaded?.({ timeout: true });
+					}
+				},
+				isInOptionPicker ? 5 : 1000
+			); // Much shorter timeout for OptionPicker
 
 			const svgText = await svgManager.getPropSvg(
 				effectivePropData.propType,
@@ -104,6 +143,12 @@
 				center
 			};
 
+			// Cache the result for OptionPicker
+			if (isInOptionPicker && effectivePropData) {
+				const cacheKey = `prop-${effectivePropData.propType}-${effectivePropData.color}`;
+				propSvgCache.set(cacheKey, svgData);
+			}
+
 			// Update the center in the prop data if it's directly provided
 			if (propData) {
 				propData.svgCenter = center;
@@ -111,7 +156,7 @@
 
 			clearTimeout(loadTimeout);
 			isLoaded = true;
-			dispatch('loaded');
+			props.loaded?.({});
 		} catch (error: any) {
 			console.error('Error loading prop SVG:', error);
 
@@ -125,16 +170,16 @@
 
 			clearTimeout(loadTimeout);
 			isLoaded = true;
-			dispatch('loaded', { error: true });
-			dispatch('error', { message: (error as Error)?.message || 'Unknown error' });
+			props.loaded?.({ error: true });
+			props.error?.({ message: (error as Error)?.message || 'Unknown error' });
 		}
 	}
 
 	function handleImageLoad() {
-		dispatch('imageLoaded');
+		props.imageLoaded?.();
 	}
 	function handleImageError() {
-		dispatch('error', { message: 'Image failed to load' });
+		props.error?.({ message: 'Image failed to load' });
 	}
 </script>
 
@@ -151,8 +196,8 @@
 			width={svgData.viewBox.width}
 			height={svgData.viewBox.height}
 			preserveAspectRatio="xMidYMid meet"
-			on:load={handleImageLoad}
-			on:error={handleImageError}
+			onload={handleImageLoad}
+			onerror={handleImageError}
 		/>
 	</g>
 {/if}

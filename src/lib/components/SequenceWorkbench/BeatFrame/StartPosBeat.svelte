@@ -19,13 +19,18 @@
 		onClick: () => void;
 	}>();
 
-	// Local state
-	let beatData = $state(props.beatData);
+	// Local state - create a copy of the props to avoid modifying readonly props
+	let localBeatData = $state<BeatData>({ ...props.beatData });
 	let showBorder = $state(false);
 	let pictographData = $state<PictographData>(defaultPictographData);
 	let isSelected = $state(false);
 	let bluePulseEffect = $state(false);
 	let redPulseEffect = $state(false);
+
+	// Update local beat data when props change
+	$effect(() => {
+		localBeatData = { ...props.beatData };
+	});
 
 	// Update isSelected when the selection changes
 	// Use a more reactive approach with a manual subscription for immediate updates
@@ -87,10 +92,10 @@
 	// Flag to prevent circular updates
 	let isUpdatingFromStartPos = false;
 
-	// Update pictographData when beatData changes, but only if not already updating from selectedStartPos
+	// Update pictographData when localBeatData changes, but only if not already updating from selectedStartPos
 	$effect(() => {
-		if (!isUpdatingFromStartPos && beatData && beatData.pictographData) {
-			pictographData = safeCopyPictographData(beatData.pictographData);
+		if (!isUpdatingFromStartPos && localBeatData && localBeatData.pictographData) {
+			pictographData = safeCopyPictographData(localBeatData.pictographData);
 		}
 	});
 
@@ -119,9 +124,9 @@
 						console.error('Failed to save start position to localStorage:', error);
 					}
 
-					// Update the beat data
-					beatData = {
-						...beatData,
+					// Update the local beat data
+					localBeatData = {
+						...localBeatData,
 						pictographData: startPosCopy,
 						filled: true
 					};
@@ -132,9 +137,9 @@
 					// Also update the pictographContainer
 					pictographContainer.setData(defaultPictographData);
 
-					// Update the beat data
-					beatData = {
-						...beatData,
+					// Update the local beat data
+					localBeatData = {
+						...localBeatData,
 						pictographData: defaultPictographData,
 						filled: false
 					};
@@ -168,27 +173,176 @@
 
 			const { color } = event.detail;
 
+			// Use requestAnimationFrame instead of setTimeout for better performance
 			if (color === 'blue') {
 				bluePulseEffect = false;
-				// Use a single setTimeout to reduce timer overhead
-				setTimeout(() => {
+				// Use requestAnimationFrame for smoother animations
+				requestAnimationFrame(() => {
 					bluePulseEffect = true;
-					setTimeout(() => (bluePulseEffect = false), 500);
-				}, 10);
+					// Still need setTimeout for the duration, but optimize it
+					const timer = setTimeout(() => {
+						bluePulseEffect = false;
+						clearTimeout(timer); // Clean up the timer
+					}, 500);
+				});
 			} else {
 				redPulseEffect = false;
-				setTimeout(() => {
+				requestAnimationFrame(() => {
 					redPulseEffect = true;
-					setTimeout(() => (redPulseEffect = false), 500);
-				}, 10);
+					// Still need setTimeout for the duration, but optimize it
+					const timer = setTimeout(() => {
+						redPulseEffect = false;
+						clearTimeout(timer); // Clean up the timer
+					}, 500);
+				});
 			}
 		}, 100); // Throttle to max 10 updates per second
 
-		// Listen for the custom event
+		// Handler for beat data updates
+		const handleBeatDataUpdated = throttle((event: CustomEvent) => {
+			if (!isSelected) return;
+
+			// Check if this is the start position being updated
+			const { beatId } = event.detail;
+			if (beatId !== 'start-position') return;
+
+			// Set flag to prevent circular updates
+			isUpdatingFromStartPos = true;
+
+			try {
+				// Force a re-render by creating a shallow copy
+				localBeatData = { ...localBeatData };
+
+				// Update the pictograph data if needed
+				if (event.detail.property === 'turns' || event.detail.property === 'direction') {
+					// Always force a complete redraw for turns and direction changes
+					const { color, property, value } = event.detail;
+
+					// Create a new copy of the pictograph data
+					const updatedPictographData = { ...pictographData };
+
+					// If changing direction, we may need to update the motion type
+					if (property === 'direction') {
+						// Convert from Direction to PropRotDir
+						const propRotDir =
+							value === 'clockwise' ? 'cw' : value === 'counterclockwise' ? 'ccw' : 'no_rot';
+
+						// Update the appropriate motion data
+						if (color === 'blue' && updatedPictographData.blueMotionData) {
+							// Update motion type based on direction change
+							if (
+								updatedPictographData.blueMotionData.motionType === 'pro' ||
+								updatedPictographData.blueMotionData.motionType === 'anti'
+							) {
+								// If changing from clockwise to counterclockwise or vice versa,
+								// switch between pro and anti motion types
+								if (updatedPictographData.blueMotionData.propRotDir !== propRotDir) {
+									updatedPictographData.blueMotionData = {
+										...updatedPictographData.blueMotionData,
+										motionType:
+											updatedPictographData.blueMotionData.motionType === 'pro' ? 'anti' : 'pro',
+										[property]: value
+									};
+								} else {
+									updatedPictographData.blueMotionData = {
+										...updatedPictographData.blueMotionData,
+										[property]: value
+									};
+								}
+							} else {
+								updatedPictographData.blueMotionData = {
+									...updatedPictographData.blueMotionData,
+									[property]: value
+								};
+							}
+						} else if (color === 'red' && updatedPictographData.redMotionData) {
+							// Update motion type based on direction change
+							if (
+								updatedPictographData.redMotionData.motionType === 'pro' ||
+								updatedPictographData.redMotionData.motionType === 'anti'
+							) {
+								// If changing from clockwise to counterclockwise or vice versa,
+								// switch between pro and anti motion types
+								if (updatedPictographData.redMotionData.propRotDir !== propRotDir) {
+									updatedPictographData.redMotionData = {
+										...updatedPictographData.redMotionData,
+										motionType:
+											updatedPictographData.redMotionData.motionType === 'pro' ? 'anti' : 'pro',
+										[property]: value
+									};
+								} else {
+									updatedPictographData.redMotionData = {
+										...updatedPictographData.redMotionData,
+										[property]: value
+									};
+								}
+							} else {
+								updatedPictographData.redMotionData = {
+									...updatedPictographData.redMotionData,
+									[property]: value
+								};
+							}
+						}
+					} else {
+						// For turns updates, just update the property
+						if (color === 'blue' && updatedPictographData.blueMotionData) {
+							updatedPictographData.blueMotionData = {
+								...updatedPictographData.blueMotionData,
+								[property]: value
+							};
+						} else if (color === 'red' && updatedPictographData.redMotionData) {
+							updatedPictographData.redMotionData = {
+								...updatedPictographData.redMotionData,
+								[property]: value
+							};
+						}
+					}
+
+					// For turns changes, we need to be more efficient
+					if (property === 'turns') {
+						// Instead of setting arrow data to null, update only the necessary properties
+						// This is more efficient than forcing a complete recreation
+						if (color === 'blue' && updatedPictographData.blueArrowData) {
+							// Update the turns value directly in the arrow data
+							updatedPictographData.blueArrowData = {
+								...updatedPictographData.blueArrowData,
+								turns: value
+							};
+						} else if (color === 'red' && updatedPictographData.redArrowData) {
+							// Update the turns value directly in the arrow data
+							updatedPictographData.redArrowData = {
+								...updatedPictographData.redArrowData,
+								turns: value
+							};
+						}
+					}
+
+					// Update the pictograph data
+					pictographData = updatedPictographData;
+
+					// Use requestAnimationFrame to schedule the update for the next frame
+					// This helps avoid blocking the main thread and reduces jank
+					requestAnimationFrame(() => {
+						pictographContainer.setData(updatedPictographData);
+					});
+				}
+
+				// Also trigger the pulse effect for the updated prop
+				const { color } = event.detail;
+				handleBeatHighlight({ detail: { color } } as CustomEvent);
+			} finally {
+				// Reset flag after updates are complete
+				isUpdatingFromStartPos = false;
+			}
+		}, 50); // Use a shorter throttle time for data updates
+
+		// Listen for the custom events
 		document.addEventListener('beat-highlight', handleBeatHighlight as EventListener);
+		document.addEventListener('beat-data-updated', handleBeatDataUpdated as EventListener);
 
 		return () => {
 			document.removeEventListener('beat-highlight', handleBeatHighlight as EventListener);
+			document.removeEventListener('beat-data-updated', handleBeatDataUpdated as EventListener);
 		};
 	});
 
@@ -217,9 +371,9 @@
 						console.error('Failed to save start position to localStorage:', error);
 					}
 
-					// Update the beat data
-					beatData = {
-						...beatData,
+					// Update the local beat data
+					localBeatData = {
+						...localBeatData,
 						pictographData: newStartPos,
 						filled: true
 					};
@@ -252,9 +406,9 @@
 					// Force the selectedStartPos store to update with a safe copy
 					selectedStartPos.set(newStartPos);
 
-					// Update the beat data
-					beatData = {
-						...beatData,
+					// Update the local beat data
+					localBeatData = {
+						...localBeatData,
 						pictographData: newStartPos,
 						filled: true
 					};
@@ -334,7 +488,7 @@
 	type="button"
 >
 	<div class="pictograph-wrapper">
-		<Beat beat={beatData} onClick={props.onClick} isStartPosition={true} {isSelected} />
+		<Beat beat={localBeatData} onClick={props.onClick} isStartPosition={true} {isSelected} />
 		<StyledBorderOverlay {pictographData} isEnabled={showBorder && !isSelected} />
 
 		{#if isSelected}

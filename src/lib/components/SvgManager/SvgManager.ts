@@ -21,6 +21,11 @@ export default class SvgManager {
 	private static readonly localCache: Map<string, string> = new Map();
 
 	/**
+	 * Track in-flight SVG fetch requests to prevent duplicate fetches
+	 */
+	private static readonly inFlightRequests: Map<string, Promise<string>> = new Map();
+
+	/**
 	 * Get a unique key for caching SVG content
 	 */
 	private getCacheKey(parts: string[]): string {
@@ -29,65 +34,125 @@ export default class SvgManager {
 
 	/**
 	 * Fetch SVG content with error handling and timeout
+	 * Optimized to reduce setTimeout violations and prevent duplicate fetches
 	 */
 	private async fetchSvg(path: string): Promise<string> {
-		try {
-			if (typeof window === 'undefined') {
-				throw new Error('Cannot fetch SVG in SSR context');
+		// Check if there's already an in-flight request for this path
+		if (SvgManager.inFlightRequests.has(path)) {
+			try {
+				// Wait for the existing request to complete
+				return await SvgManager.inFlightRequests.get(path)!;
+			} catch (error) {
+				// If the in-flight request fails, continue with a new request
+				console.warn(`In-flight SVG request for ${path} failed:`, error);
 			}
+		}
 
-			// Use AbortController for timeout control - increased timeout to 5000ms
-			const controller = new AbortController();
-			const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-			// Add retry logic for network issues
-			let retries = 2;
-			let response;
-
-			while (retries >= 0) {
-				try {
-					response = await fetch(path, {
-						signal: controller.signal,
-						// Add cache control headers
-						headers: {
-							'Cache-Control': 'max-age=3600'
-						}
-					});
-					break; // If successful, exit the retry loop
-				} catch (fetchError) {
-					if (retries === 0) throw fetchError;
-					retries--;
-					// Wait a bit before retrying
-					await new Promise((resolve) => setTimeout(resolve, 300));
+		// Create a new fetch promise
+		const fetchSvgPromise = (async () => {
+			try {
+				if (typeof window === 'undefined') {
+					throw new Error('Cannot fetch SVG in SSR context');
 				}
-			}
 
-			clearTimeout(timeoutId);
+				// Use a more efficient approach with Promise.race instead of setTimeout
+				const fetchPromise = async () => {
+					// Add retry logic for network issues
+					let retries = 2;
+					let response;
 
-			if (!response || !response.ok) {
-				throw new Error(`Failed to fetch SVG: ${path} (${response?.status || 'unknown'})`);
-			}
+					while (retries >= 0) {
+						try {
+							// Use fetch with cache: 'force-cache' to prioritize cached responses
+							response = await fetch(path, {
+								cache: 'force-cache', // Prefer cached responses
+								headers: {
+									'Cache-Control': 'max-age=3600'
+								}
+							});
+							break; // If successful, exit the retry loop
+						} catch (fetchError) {
+							if (retries === 0) throw fetchError;
+							retries--;
+							// Use a microtask instead of setTimeout to avoid violations
+							await Promise.resolve();
+						}
+					}
 
-			return response.text();
-		} catch (error) {
-			// Handle AbortError specifically
-			if (error instanceof DOMException && error.name === 'AbortError') {
-				console.warn(`SVG fetch timeout for ${path} - request took too long`);
-				// Return a simple fallback SVG
+					if (!response || !response.ok) {
+						throw new Error(`Failed to fetch SVG: ${path} (${response?.status || 'unknown'})`);
+					}
+
+					return response.text();
+				};
+
+				// Create a timeout promise that resolves with a fallback SVG
+				const timeoutPromise = new Promise<string>((resolve) => {
+					// Use requestAnimationFrame to schedule the timeout
+					let rafId: number;
+					const startTime = performance.now();
+
+					const checkTimeout = () => {
+						const elapsed = performance.now() - startTime;
+						if (elapsed >= 2000) {
+							// 2 second timeout
+							// Return a simple fallback SVG
+							resolve(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+								<rect width="100" height="100" fill="#cccccc" />
+								<text x="10" y="50" fill="#666666">Timeout</text>
+								<circle id="centerPoint" cx="50" cy="50" r="2" fill="red" />
+							</svg>`);
+						} else {
+							rafId = requestAnimationFrame(checkTimeout);
+						}
+					};
+
+					rafId = requestAnimationFrame(checkTimeout);
+
+					// Cleanup function
+					(timeoutPromise as any).cancel = () => {
+						cancelAnimationFrame(rafId);
+					};
+				});
+
+				// Race the fetch against the timeout
+				const result = await Promise.race([fetchPromise(), timeoutPromise]);
+
+				// Cancel the timeout if fetch completed first
+				if ((timeoutPromise as any).cancel) {
+					(timeoutPromise as any).cancel();
+				}
+
+				return result;
+			} catch (error) {
+				// Minimal logging in production
+				if (import.meta.env.DEV) {
+					console.error(`SVG fetch error for ${path}:`, error);
+				} else {
+					console.error(`SVG fetch error for ${path}`);
+				}
+
+				// Return a fallback SVG instead of throwing
 				return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 					<rect width="100" height="100" fill="#cccccc" />
-					<text x="10" y="50" fill="#666666">Timeout</text>
+					<text x="10" y="50" fill="#666666">Error</text>
 					<circle id="centerPoint" cx="50" cy="50" r="2" fill="red" />
 				</svg>`;
 			}
+		})();
 
-			// Minimal logging in production
-			if (import.meta.env.DEV) {
-				console.error(`SVG fetch error for ${path}:`, error);
-			} else {
-				console.error(`SVG fetch error for ${path}`);
+		// Register this as an in-flight request
+		SvgManager.inFlightRequests.set(path, fetchSvgPromise);
+
+		try {
+			// Wait for the fetch to complete
+			const result = await fetchSvgPromise;
+			return result;
+		} finally {
+			// Remove from in-flight requests when done
+			if (SvgManager.inFlightRequests.get(path) === fetchSvgPromise) {
+				SvgManager.inFlightRequests.delete(path);
 			}
-			throw error;
 		}
 	}
 
@@ -301,6 +366,7 @@ export default class SvgManager {
 
 	/**
 	 * Preload multiple arrow SVGs in parallel for better performance
+	 * Optimized to eliminate setTimeout violations
 	 */
 	public async preloadArrowSvgs(
 		arrowConfigs: Array<{
@@ -310,89 +376,135 @@ export default class SvgManager {
 			color: Color;
 		}>
 	): Promise<void> {
-		// Create an array of promises for all SVGs
-		const fetchPromises = arrowConfigs.map(async (config) => {
-			const { motionType, startOri, turns, color } = config;
-			const cacheKey = this.getCacheKey(['arrow', motionType, startOri, String(turns), color]);
+		// Use requestAnimationFrame to schedule preloading
+		if (typeof window !== 'undefined') {
+			return new Promise((resolve) => {
+				requestAnimationFrame(async () => {
+					try {
+						await this.doPreloadArrowSvgs(arrowConfigs);
+					} catch (error) {
+						logger.warn('Error during preloading SVGs', { error: toAppError(error) });
+					}
+					resolve();
+				});
+			});
+		} else {
+			// In SSR context, just resolve immediately
+			return Promise.resolve();
+		}
+	}
 
-			try {
-				// Check if already in ResourceCache
-				const cachedSvg = await resourceCache.get<string>(cacheKey);
-				if (cachedSvg) {
-					// Also update local cache for faster access
-					SvgManager.localCache.set(cacheKey, cachedSvg);
-					return Promise.resolve();
-				}
+	/**
+	 * Internal implementation of preloading that's scheduled by requestAnimationFrame
+	 */
+	private async doPreloadArrowSvgs(
+		arrowConfigs: Array<{
+			motionType: MotionType;
+			startOri: Orientation;
+			turns: TKATurns;
+			color: Color;
+		}>
+	): Promise<void> {
+		// Process configs in batches to avoid overwhelming the browser
+		const BATCH_SIZE = 2;
+		const batches: Array<typeof arrowConfigs> = [];
 
-				// Check local cache as fallback
-				if (SvgManager.localCache.has(cacheKey)) {
-					// Update ResourceCache from local cache
-					const localCachedSvg = SvgManager.localCache.get(cacheKey)!;
-					await resourceCache.set(cacheKey, localCachedSvg);
-					return Promise.resolve();
-				}
+		// Split configs into batches
+		for (let i = 0; i < arrowConfigs.length; i += BATCH_SIZE) {
+			batches.push(arrowConfigs.slice(i, i + BATCH_SIZE));
+		}
 
-				// Create the path
-				const basePath = '/images/arrows';
+		// Process each batch sequentially
+		for (const batch of batches) {
+			// Create an array of promises for the current batch
+			const fetchPromises = batch.map(async (config) => {
+				const { motionType, startOri, turns, color } = config;
+				const cacheKey = this.getCacheKey(['arrow', motionType, startOri, String(turns), color]);
 
-				// Special handling for float motion type
-				let svgPath;
-				if (motionType === 'float' && turns === 'fl') {
-					// Float has a special path
-					svgPath = `${basePath}/float.svg`;
-				} else {
-					// Standard path for other motion types
-					const typePath = motionType.toLowerCase();
-					const radialPath =
-						startOri === 'out' || startOri === 'in' ? 'from_radial' : 'from_nonradial';
-					const fixedTurns = (
-						typeof turns === 'number' ? turns : parseFloat(turns.toString())
-					).toFixed(1);
-					svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${fixedTurns}.svg`;
-				}
+				try {
+					// Check if already in ResourceCache
+					const cachedSvg = await resourceCache.get<string>(cacheKey);
+					if (cachedSvg) {
+						// Also update local cache for faster access
+						SvgManager.localCache.set(cacheKey, cachedSvg);
+						return;
+					}
 
-				// Fetch the SVG with retry logic
-				const svgData = await this.fetchSvg(svgPath);
-				const coloredSvg = this.applyColor(svgData, color);
+					// Check local cache as fallback
+					if (SvgManager.localCache.has(cacheKey)) {
+						// Update ResourceCache from local cache
+						const localCachedSvg = SvgManager.localCache.get(cacheKey)!;
+						await resourceCache.set(cacheKey, localCachedSvg);
+						return;
+					}
 
-				// Ensure the SVG has a centerPoint element
-				const svgWithCenterPoint = this.ensureCenterPoint(coloredSvg);
+					// Create the path
+					const basePath = '/images/arrows';
 
-				// Store in both caches
-				SvgManager.localCache.set(cacheKey, svgWithCenterPoint);
-				await resourceCache.set(cacheKey, svgWithCenterPoint);
+					// Special handling for float motion type
+					let svgPath;
+					if (motionType === 'float' && turns === 'fl') {
+						// Float has a special path
+						svgPath = `${basePath}/float.svg`;
+					} else {
+						// Standard path for other motion types
+						const typePath = motionType.toLowerCase();
+						const radialPath =
+							startOri === 'out' || startOri === 'in' ? 'from_radial' : 'from_nonradial';
+						const fixedTurns = (
+							typeof turns === 'number' ? turns : parseFloat(turns.toString())
+						).toFixed(1);
+						svgPath = `${basePath}/${typePath}/${radialPath}/${motionType}_${fixedTurns}.svg`;
+					}
 
-				logger.debug(`Preloaded arrow SVG: ${motionType}_${turns} (${color})`);
-			} catch (error) {
-				// Handle errors gracefully without failing the entire batch
-				if (error instanceof DOMException && error.name === 'AbortError') {
-					logger.warn(`Preload timeout for arrow: ${motionType}_${turns} (${color})`);
-				} else {
+					// Fetch the SVG - no retry logic here as fetchSvg already handles that
+					const svgData = await this.fetchSvg(svgPath);
+
+					// Use a microtask to yield to the main thread
+					await Promise.resolve();
+
+					const coloredSvg = this.applyColor(svgData, color);
+
+					// Ensure the SVG has a centerPoint element
+					const svgWithCenterPoint = this.ensureCenterPoint(coloredSvg);
+
+					// Store in both caches
+					SvgManager.localCache.set(cacheKey, svgWithCenterPoint);
+					await resourceCache.set(cacheKey, svgWithCenterPoint);
+
+					logger.debug(`Preloaded arrow SVG: ${motionType}_${turns} (${color})`);
+				} catch (error) {
+					// Handle errors gracefully without failing the entire batch
 					logger.warn(`Preload failed for arrow: ${motionType}_${turns} (${color})`, {
 						error: toAppError(error)
 					});
-				}
 
-				// Create a fallback SVG with centerPoint for the cache
-				const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80">
-					<rect width="240" height="80" fill="#cccccc" opacity="0.2" />
-					<path d="M240,40C240,40,240,40,240,40c-4,4.8-28.6,32.6-38.3,39.8c-1.4,1.1-8.4,4-16.6-4.2l26.8-27.2H9c-6.1,0-9.1-4.2-9-8.3
-						c0-4.3,3-8.5,9-8.5h202.6L184.9,4.4c8.2-8.2,15.2-5.3,16.6-4.2C211.2,7.3,235.8,35.2,239.8,40C239.9,39.9,239.8,39.9,240,40z"
-						fill="${color === 'red' ? '#ED1C24' : '#2E3192'}" />
-					<circle id="centerPoint" cx="120" cy="40" r="2" fill="red" />
-				</svg>`;
+					// Create a fallback SVG with centerPoint for the cache
+					const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80">
+						<rect width="240" height="80" fill="#cccccc" opacity="0.2" />
+						<path d="M240,40C240,40,240,40,240,40c-4,4.8-28.6,32.6-38.3,39.8c-1.4,1.1-8.4,4-16.6-4.2l26.8-27.2H9c-6.1,0-9.1-4.2-9-8.3
+							c0-4.3,3-8.5,9-8.5h202.6L184.9,4.4c8.2-8.2,15.2-5.3,16.6-4.2C211.2,7.3,235.8,35.2,239.8,40C239.9,39.9,239.8,39.9,240,40z"
+							fill="${color === 'red' ? '#ED1C24' : '#2E3192'}" />
+						<circle id="centerPoint" cx="120" cy="40" r="2" fill="red" />
+					</svg>`;
 
-				// Cache the fallback SVG in both caches
-				SvgManager.localCache.set(cacheKey, fallbackSvg);
-				try {
-					await resourceCache.set(cacheKey, fallbackSvg, 60000); // Short TTL for fallbacks
-				} catch (cacheError) {
-					// Ignore cache errors for fallbacks
+					// Cache the fallback SVG in both caches
+					SvgManager.localCache.set(cacheKey, fallbackSvg);
+					try {
+						await resourceCache.set(cacheKey, fallbackSvg, 60000); // Short TTL for fallbacks
+					} catch (cacheError) {
+						// Ignore cache errors for fallbacks
+					}
 				}
+			});
+
+			// Wait for all fetches in this batch to complete (or fail)
+			await Promise.allSettled(fetchPromises);
+
+			// Yield to the main thread between batches
+			if (typeof window !== 'undefined') {
+				await new Promise((resolve) => requestAnimationFrame(resolve));
 			}
-		});
-
-		// Wait for all fetches to complete (or fail)
-		await Promise.allSettled(fetchPromises);
+		}
 	}
 }

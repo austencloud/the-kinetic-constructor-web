@@ -3,6 +3,7 @@
 	import { turnsStore, blueTurns, redTurns, type Direction } from '$lib/stores/sequence/turnsStore';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 
 	// Import sub-components
 	import TurnsHeader from './components/TurnsHeader.svelte';
@@ -14,7 +15,11 @@
 		color: 'blue' | 'red';
 		onTurnsChanged: (data: { color: 'blue' | 'red'; turns: any }) => void;
 		onDirectionChanged: (data: { color: 'blue' | 'red'; direction: Direction }) => void;
+		layoutMode?: 'full' | 'header-only' | 'controls-only'; // New prop for U-shaped layout
 	}>();
+
+	// Default layout mode is 'full'
+	const layoutMode = $derived(props.layoutMode || 'full');
 
 	// Component state
 	let isDialogOpen = $state(false);
@@ -23,6 +28,42 @@
 	const turnsData = $derived(props.color === 'blue' ? $blueTurns : $redTurns);
 	const direction = $derived(turnsData.direction);
 	const turns = $derived(turnsData.turns);
+
+	// Get the current motion type from the selected beat
+	function getMotionType() {
+		const selectedBeatIds = sequenceContainer.state.selectedBeatIds;
+		if (selectedBeatIds.length === 0) return 'pro'; // Default to pro
+
+		const beatId = selectedBeatIds[0];
+
+		// Check if the start position is selected
+		if (beatId === 'start-position') {
+			// Try to get start position data from localStorage
+			if (browser) {
+				try {
+					const startPosJson = localStorage.getItem('start_position');
+					if (startPosJson) {
+						const startPosData = JSON.parse(startPosJson);
+						const motionData =
+							props.color === 'blue' ? startPosData.blueMotionData : startPosData.redMotionData;
+						return motionData?.motionType || 'pro';
+					}
+				} catch (error) {
+					console.error('Error loading start position data:', error);
+				}
+			}
+			return 'pro'; // Default to pro if no data found
+		}
+
+		// Handle regular beat selection
+		const beat = sequenceContainer.state.beats.find((b: { id: string }) => b.id === beatId);
+		if (beat) {
+			const motionData = props.color === 'blue' ? beat.blueMotionData : beat.redMotionData;
+			return motionData?.motionType || 'pro';
+		}
+
+		return 'pro'; // Default to pro if no beat found
+	}
 
 	// Color configurations
 	const COLORS = {
@@ -53,12 +94,15 @@
 
 	// Event handlers
 	function handleSetDirection(newDirection: Direction) {
+		// Update the turnsStore
 		turnsStore.setDirection(props.color, newDirection);
 
+		// Provide haptic feedback
 		if (browser && hapticFeedbackService.isAvailable()) {
 			hapticFeedbackService.trigger('selection');
 		}
 
+		// Call the callback prop to update the beat data
 		if (props.onDirectionChanged) {
 			props.onDirectionChanged({ color: props.color, direction: newDirection });
 		}
@@ -130,31 +174,44 @@
 
 <div
 	class="turns-box"
+	class:header-only={layoutMode === 'header-only'}
+	class:controls-only={layoutMode === 'controls-only'}
 	style="--box-color: {colorConfig.primary}; --box-gradient: {colorConfig.gradient};"
 >
-	<!-- Header with direction buttons -->
-	<TurnsHeader
-		color={colorConfig.primary}
-		headerText={colorConfig.text}
-		{direction}
-		{iconPaths}
-		onDirectionChanged={handleSetDirection}
-	/>
-
-	<!-- Turns widget -->
-	<div class="turns-widget">
-		<div class="turns-text-label">Turns</div>
-
-		<TurnsControl
-			{turns}
+	<!-- Header with direction buttons - shown in full and header-only modes -->
+	{#if layoutMode === 'full' || layoutMode === 'header-only'}
+		<TurnsHeader
 			color={colorConfig.primary}
-			onIncrement={handleIncrement}
-			onDecrement={handleDecrement}
-			onOpenDialog={handleOpenDialog}
+			headerText={colorConfig.text}
+			{direction}
+			{iconPaths}
+			onDirectionChanged={handleSetDirection}
 		/>
+	{/if}
 
-		<div class="motion-type-label">Pro</div>
-	</div>
+	<!-- Turns widget - shown in full and controls-only modes -->
+	{#if layoutMode === 'full' || layoutMode === 'controls-only'}
+		<div class="turns-widget">
+			<div class="turns-text-label">Turns</div>
+
+			<TurnsControl
+				{turns}
+				color={colorConfig.primary}
+				onIncrement={handleIncrement}
+				onDecrement={handleDecrement}
+				onOpenDialog={handleOpenDialog}
+			/>
+
+			{#if browser}
+				{@const currentMotionType = getMotionType()}
+				<div class="motion-type-label">
+					{currentMotionType === 'pro' ? 'Pro' : currentMotionType === 'anti' ? 'Anti' : 'Static'}
+				</div>
+			{:else}
+				<div class="motion-type-label">Pro</div>
+			{/if}
+		</div>
+	{/if}
 
 	<!-- Direct set dialog (appears when turns label is clicked) -->
 	<TurnsDialog
@@ -191,6 +248,20 @@
 		contain: layout paint;
 		/* Prevent content from spilling out */
 		max-height: 100%;
+		box-sizing: border-box; /* Ensure border is included in width/height calculations */
+	}
+
+	/* Special styles for header-only mode */
+	.turns-box.header-only {
+		min-height: auto;
+		max-height: none;
+		border-width: 3px;
+	}
+
+	/* Special styles for controls-only mode */
+	.turns-box.controls-only {
+		min-height: auto;
+		border-width: 3px;
 	}
 
 	/* Turns widget styles */
@@ -198,7 +269,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: clamp(0.625rem, 3vw, 1rem); /* Using relative units */
-		padding: clamp(1rem, 4vw, 1.5rem); /* Using relative units */
 		flex: 1;
 		justify-content: space-between; /* Distribute content evenly */
 		background: linear-gradient(
@@ -250,7 +320,6 @@
 	/* Responsive adjustments for different screen sizes */
 	@media (max-width: 768px) {
 		.turns-widget {
-			padding: clamp(0.75rem, 3vw, 1rem); /* Using relative units */
 			gap: 0.5rem; /* Using relative units */
 			overflow: hidden; /* Prevent overflow */
 			height: auto; /* Allow height to adjust to content */
@@ -261,14 +330,12 @@
 
 	@media (max-width: 480px) {
 		.turns-widget {
-			padding: 0.5rem; /* Reduce padding on very small screens */
 			min-height: 8rem; /* Reduce minimum height */
 		}
 	}
 
 	@media (max-width: 360px) {
 		.turns-widget {
-			padding: 0.375rem; /* Using relative units */
 			min-height: 7rem; /* Reduce minimum height further */
 		}
 

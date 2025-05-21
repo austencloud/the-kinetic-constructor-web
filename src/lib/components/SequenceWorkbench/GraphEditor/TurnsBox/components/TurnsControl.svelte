@@ -63,7 +63,7 @@
 		aria-label="Decrease turns"
 		disabled={isMinTurns(props.turns)}
 	>
-		−
+		<i class="fa-solid fa-minus"></i>
 	</button>
 
 	<!-- Turns label/button -->
@@ -84,35 +84,34 @@
 		aria-label="Increase turns"
 		disabled={isMaxTurns(props.turns)}
 	>
-		+
+		<i class="fa-solid fa-plus"></i>
 	</button>
 </div>
 
 <style>
 	.turns-control-container {
 		display: flex;
-		flex-direction: row; /* Changed from column to row */
+		flex-direction: row;
 		align-items: center;
-		justify-content: space-between; /* Space items evenly */
-		gap: 0.75rem; /* Using relative units */
+		justify-content: center;
 		width: 100%;
 		margin: 0.5rem 0; /* Using relative units */
-		padding: 0 0.5rem; /* Add horizontal padding */
+		box-sizing: border-box; /* Ensure padding is included in width calculation */
 	}
 
 	.increment-button {
-		width: clamp(2.5rem, 15vw, 3.5rem); /* Using relative units */
-		height: clamp(2.5rem, 15vw, 3.5rem); /* Using relative units */
+		width: clamp(2.25rem, 12vw, 3rem); /* Slightly smaller for better fit */
+		height: clamp(2.25rem, 12vw, 3rem); /* Slightly smaller for better fit */
 		background-color: white;
-		color: black;
+		color: var(--color); /* Use the color variable for the icon color */
 		border: 0.1875rem solid var(--color); /* Using relative units */
 		border-radius: 50%;
 		cursor: pointer;
 		transition:
 			transform 0.15s ease,
 			box-shadow 0.15s ease,
-			background-color 0.15s ease; /* Faster transitions */
-		font-size: clamp(1.25rem, 4vw, 1.75rem); /* Responsive font size with relative units */
+			background-color 0.15s ease,
+			color 0.15s ease; /* Added color transition */
 		/* Add subtle shadow for depth */
 		box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.2); /* Using relative units */
 		display: flex;
@@ -122,11 +121,13 @@
 		line-height: 1; /* Ensure proper vertical alignment of text */
 		flex-shrink: 0; /* Prevent shrinking */
 		z-index: 2; /* Ensure buttons are above other elements */
+		font-size: 1rem; /* Base font size for icons */
 	}
 
 	.increment-button:hover:enabled {
 		transform: scale(1.1);
-		background-color: #f8f8f8;
+		background-color: var(--color);
+		color: white;
 		box-shadow:
 			0 0.25rem 0.5rem rgba(0, 0, 0, 0.3),
 			inset 0 0.0625rem 0.1875rem rgba(255, 255, 255, 0.5);
@@ -134,7 +135,8 @@
 
 	.increment-button:active:enabled {
 		transform: scale(0.95);
-		background-color: #f0f0f0;
+		background-color: var(--color);
+		color: white;
 		box-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.2);
 	}
 
@@ -213,7 +215,8 @@
 		.increment-button {
 			width: clamp(2.25rem, 12vw, 3rem); /* Smaller on mobile */
 			height: clamp(2.25rem, 12vw, 3rem); /* Smaller on mobile */
-			font-size: clamp(1rem, 3.5vw, 1.5rem); /* Smaller font size on mobile */
+			font-size: 0.875rem; /* Smaller font size on mobile */
+			border-width: 0.125rem; /* Thinner border on mobile */
 		}
 	}
 

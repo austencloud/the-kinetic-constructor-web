@@ -468,7 +468,6 @@
 			{/if}
 
 			<!-- Edit button is always visible -->
-			<EditButton />
 		</div>
 
 		<SequenceOverlay title={sequenceName}>

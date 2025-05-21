@@ -77,6 +77,7 @@ export class ArrowSvgLoader {
 
 	/**
 	 * Loads an arrow SVG based on motion properties with optimized performance
+	 * Completely rewritten to eliminate setTimeout violations
 	 */
 	async loadSvg(
 		motionType: MotionType,
@@ -85,83 +86,53 @@ export class ArrowSvgLoader {
 		color: Color,
 		mirrored: boolean = false
 	): Promise<{ svgData: ArrowSvgData }> {
-		// Maximum number of retries
-		const maxRetries = 2;
-		let retries = 0;
-		let lastError: any = null;
+		try {
+			// Use a single call to getArrowSvg without any additional timeout
+			// The SvgManager already has built-in timeout handling
+			const svgText = await this.svgManager.getArrowSvg(motionType, startOri, turns, color);
 
-		while (retries <= maxRetries) {
-			try {
-				// Fetch SVG from manager with timeout protection
-				const svgTextPromise = this.svgManager.getArrowSvg(motionType, startOri, turns, color);
-
-				// Set up a race with a timeout (increased to 8000ms for better reliability)
-				const timeoutPromise = new Promise<string>((_, reject) => {
-					setTimeout(() => reject(new Error('SVG fetch timeout')), 8000);
-				});
-
-				// Race the fetch against the timeout
-				const svgText = await Promise.race([svgTextPromise, timeoutPromise]);
-
-				// Quick validation (avoid regex for performance)
-				if (!svgText || svgText.indexOf('<svg') === -1) {
-					throw new Error('Invalid SVG content: Missing <svg> element');
-				}
-
-				// Use optimized parsing
-				const originalSvgData = this.fastParseArrowSvg(svgText);
-
-				// Check for centerPoint element and add it if missing
-				const hasCenterPoint = svgText.includes('id="centerPoint"');
-
-				// Adjust center point if mirrored
-				const center = { ...originalSvgData.center };
-				if (mirrored) {
-					center.x = originalSvgData.viewBox.width - center.x;
-				}
-
-				// Create and return SVG data object with optimized base64 encoding
-				return {
-					svgData: {
-						imageSrc: `data:image/svg+xml;base64,${this.fastBtoa(svgText)}`,
-						viewBox: originalSvgData.viewBox,
-						center
-					}
-				};
-			} catch (error) {
-				lastError = error;
-
-				// If it's a timeout error, retry
-				if (error instanceof Error && error.message === 'SVG fetch timeout') {
-					retries++;
-
-					// Log retry attempt in development
-					if (import.meta.env.DEV) {
-						console.warn(
-							`Retrying SVG fetch (${retries}/${maxRetries}) for ${motionType}_${turns}.svg`
-						);
-					}
-
-					// Wait a bit before retrying (increasing delay with each retry)
-					await new Promise((resolve) => setTimeout(resolve, 300 * retries));
-					continue;
-				} else {
-					// For other errors, don't retry
-					break;
-				}
+			// Quick validation (avoid regex for performance)
+			if (!svgText || svgText.indexOf('<svg') === -1) {
+				throw new Error('Invalid SVG content: Missing <svg> element');
 			}
-		}
 
-		// If we got here, all retries failed
-		// Minimal logging in production
-		if (import.meta.env.DEV) {
-			console.error('Arrow SVG loading error after retries:', lastError);
-		} else {
-			console.warn(`Failed to load arrow SVG: ${motionType}_${turns}.svg`);
-		}
+			// Use optimized parsing
+			const originalSvgData = this.fastParseArrowSvg(svgText);
 
-		// Return fallback data directly instead of re-throwing
-		return { svgData: this.getFallbackSvgData(color) };
+			// Adjust center point if mirrored
+			const center = { ...originalSvgData.center };
+			if (mirrored) {
+				center.x = originalSvgData.viewBox.width - center.x;
+			}
+
+			// Create and return SVG data object with optimized base64 encoding
+			// Use a more efficient approach for base64 encoding
+			let imageSrc: string;
+
+			// Use a microtask to avoid blocking the main thread
+			await Promise.resolve();
+
+			// Encode the SVG
+			imageSrc = `data:image/svg+xml;base64,${this.fastBtoa(svgText)}`;
+
+			return {
+				svgData: {
+					imageSrc,
+					viewBox: originalSvgData.viewBox,
+					center
+				}
+			};
+		} catch (error) {
+			// Minimal logging in production
+			if (import.meta.env.DEV) {
+				console.warn(`Arrow SVG loading error for ${motionType}_${turns}.svg:`, error);
+			} else {
+				console.warn(`Failed to load arrow SVG: ${motionType}_${turns}.svg`);
+			}
+
+			// Return fallback data directly
+			return { svgData: this.getFallbackSvgData(color) };
+		}
 	}
 
 	/**

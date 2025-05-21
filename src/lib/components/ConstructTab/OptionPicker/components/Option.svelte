@@ -26,10 +26,7 @@
 	);
 	const ariaLabel = $derived(`Select option ${props.pictographData.letter || 'Unnamed'}`);
 
-	// We'll use a key to force re-render when pictograph data changes
-	const pictographKey = $derived(
-		`${props.pictographData.letter || ''}-${props.pictographData.startPos || ''}-${props.pictographData.endPos || ''}`
-	);
+	// No need for a key to force re-render - we want smooth transitions
 
 	// Show border state
 	let showBorder = $state(false);
@@ -62,16 +59,19 @@
 	aria-pressed={isSelected}
 >
 	<div class="pictograph-container" style="transform: scale({scaleFactor})">
-		{#key pictographKey}
-			<div class="pictograph-wrapper">
-				<Pictograph pictographData={props.pictographData} />
-				<StyledBorderOverlay
-					pictographData={props.pictographData}
-					isEnabled={showBorder || isSelected}
-					isGold={isSelected}
-				/>
-			</div>
-		{/key}
+		<!-- Remove the key block to prevent unnecessary re-renders -->
+		<div class="pictograph-wrapper">
+			<Pictograph
+				pictographData={props.pictographData}
+				disableAnimations={true}
+				showLoadingIndicator={false}
+			/>
+			<StyledBorderOverlay
+				pictographData={props.pictographData}
+				isEnabled={showBorder || isSelected}
+				isGold={isSelected}
+			/>
+		</div>
 	</div>
 </div>
 
@@ -83,8 +83,8 @@
 		align-items: center;
 		cursor: pointer;
 		transition:
-			transform 0.2s ease-in-out,
-			background-color 0.2s ease;
+			transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+			background-color 0.3s ease;
 		border-radius: 6px;
 		outline: none;
 	}
@@ -94,7 +94,7 @@
 		align-items: center;
 		width: 100%;
 		height: 100%;
-		transition: transform 0.2s ease-in-out;
+		transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
 	}
 	.pictograph-wrapper {
 		position: relative;
@@ -106,7 +106,7 @@
 	}
 	/* In Option.svelte */
 	.option:hover {
-		transform: scale(1.1); /* Bump this up from 1.05 */
+		transform: scale(1.05); /* Reduced from 1.1 to make it less bouncy */
 		background-color: rgba(243, 244, 246, 0.5);
 		z-index: 20; /* Add this to ensure it rises above siblings */
 	}

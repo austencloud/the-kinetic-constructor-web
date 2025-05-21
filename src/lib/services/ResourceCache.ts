@@ -241,23 +241,42 @@ export class ResourceCache {
 	 * Set a value in the cache
 	 */
 	async set<T>(key: string, value: T, ttlMs?: number): Promise<void> {
-		const entry: CacheEntry<T> = {
-			value,
-			timestamp: Date.now(),
-			expires: ttlMs ? Date.now() + ttlMs : undefined
-		};
+		// Create a promise for this set operation
+		const setPromise = (async () => {
+			const entry: CacheEntry<T> = {
+				value,
+				timestamp: Date.now(),
+				expires: ttlMs ? Date.now() + ttlMs : undefined
+			};
 
-		// Always update memory cache for fast access
-		this.memoryCache.set(key, entry);
+			// Always update memory cache for fast access
+			this.memoryCache.set(key, entry);
 
-		// Update persistent storage based on type
-		if (this.storageType === CacheStorageType.LOCAL_STORAGE) {
-			this.saveToLocalStorage();
-		} else if (this.storageType === CacheStorageType.INDEXED_DB) {
-			await this.setInIndexedDB(key, entry);
+			// Update persistent storage based on type
+			if (this.storageType === CacheStorageType.LOCAL_STORAGE) {
+				this.saveToLocalStorage();
+			} else if (this.storageType === CacheStorageType.INDEXED_DB) {
+				await this.setInIndexedDB(key, entry);
+			}
+
+			this.updateCacheStatus();
+
+			// Return the value so it can be used by get() if needed
+			return value;
+		})();
+
+		// Register this as an in-flight request
+		this.inFlightRequests.set(key, setPromise);
+
+		try {
+			// Wait for the operation to complete
+			await setPromise;
+		} finally {
+			// Remove from in-flight requests when done
+			if (this.inFlightRequests.get(key) === setPromise) {
+				this.inFlightRequests.delete(key);
+			}
 		}
-
-		this.updateCacheStatus();
 	}
 
 	/**
@@ -284,10 +303,24 @@ export class ResourceCache {
 		}
 	}
 
+	// Track in-flight requests to prevent duplicate fetches
+	private inFlightRequests: Map<string, Promise<any>> = new Map();
+
 	/**
 	 * Get a value from the cache
 	 */
 	async get<T>(key: string): Promise<T | null> {
+		// Check if there's an in-flight request for this key
+		if (this.inFlightRequests.has(key)) {
+			try {
+				// Wait for the in-flight request to complete
+				return (await this.inFlightRequests.get(key)) as T;
+			} catch (error) {
+				// If the in-flight request fails, continue with normal flow
+				console.warn(`In-flight request for ${key} failed:`, error);
+			}
+		}
+
 		// Check memory cache first for performance
 		if (this.memoryCache.has(key)) {
 			const entry = this.memoryCache.get(key) as CacheEntry<T>;

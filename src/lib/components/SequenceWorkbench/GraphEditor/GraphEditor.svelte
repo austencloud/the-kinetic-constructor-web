@@ -15,6 +15,7 @@
 	import TurnsBoxesRow from './TurnsBoxesRow.svelte';
 	import TurnsContainer from './TurnsContainer.svelte';
 	import ConstructButton from './ConstructButton.svelte';
+	import UShapedLayout from './UShapedLayout.svelte';
 
 	// Import utility functions
 	import { createGraphEditorState } from './utils/GraphEditorState';
@@ -110,9 +111,17 @@
 				onTurnsChanged={handleTurnsChanged}
 				onDirectionChanged={handleDirectionChanged}
 			/>
+		{:else if isPortrait && isSmallScreen}
+			<!-- Mobile portrait mode: Use U-shaped layout -->
+			<UShapedLayout
+				{pictographData}
+				{pictographSize}
+				onTurnsChanged={handleTurnsChanged}
+				onDirectionChanged={handleDirectionChanged}
+			/>
 		{:else}
 			<!-- Panel is vertical (right) layout: Show Pictograph and TurnsBox components -->
-			<!-- Always use vertical layout with pictograph on top and turns boxes below -->
+			<!-- Use vertical layout with pictograph on top and turns boxes below -->
 
 			<!-- Pictograph section at the top -->
 			<div class="pictograph-container-wrapper" in:fade={{ duration: 200, easing: cubicOut }}>
