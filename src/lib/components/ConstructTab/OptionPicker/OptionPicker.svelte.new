@@ -1,28 +1,31 @@
 <script lang="ts">
 	import { onMount, setContext } from 'svelte';
+	import { get } from 'svelte/store';
 	import { uiState, filteredOptionsStore, groupedOptionsStore, actions } from './store';
 	import { LAYOUT_CONTEXT_KEY } from './layoutContext';
 	import OptionDisplayArea from './components/OptionDisplayArea.svelte';
 	import { resize } from './actions/resize';
+	import type { ViewModeDetail } from './components/ViewControl/types';
 	import sequenceDataService from '$lib/services/SequenceDataService';
 	import { sequenceStore } from '$lib/state/stores/sequenceStore';
 	import OptionPickerHeader from './components/OptionPickerHeader/OptionPickerHeader.svelte';
 
 	// Import utility functions from refactored modules
-	import {
-		createWindowDimensionStores,
-		createSelectedTabStore,
+	import { sequenceBeatToPictographData } from './utils/TypeSafetyHelpers';
+	import { 
+		createWindowDimensionStores, 
+		createSelectedTabStore, 
 		createDerivedUIStores,
-		createDebouncedResizeHandler
+		createDebouncedResizeHandler 
 	} from './utils/OptionPickerState';
 	import { createLayoutContext } from './utils/OptionPickerLayoutContext';
-	import {
-		createViewChangeHandler,
-		createSubTabSelectHandler,
-		createWindowResizeHandler
+	import { 
+		createViewChangeHandler, 
+		createSubTabSelectHandler, 
+		createWindowResizeHandler 
 	} from './utils/OptionPickerEventHandlers';
-	import {
-		setupEventListeners,
+	import { 
+		setupEventListeners, 
 		cleanupEventListeners,
 		loadOptionsFromSequence,
 		initializeTabSelection,
@@ -31,18 +34,24 @@
 	} from './utils/OptionPickerInitialization';
 
 	// --- State Stores ---
-	const { windowWidth, windowHeight, containerWidth, containerHeight } =
-		createWindowDimensionStores();
-
+	const { 
+		windowWidth, 
+		windowHeight, 
+		containerWidth, 
+		containerHeight 
+	} = createWindowDimensionStores();
+	
 	const selectedTab = createSelectedTabStore();
 
 	// --- Derived UI State & Data ---
-	const { isLoading, actualCategoryKeys, optionsToDisplay, showTabs } = createDerivedUIStores(
-		uiState,
-		groupedOptionsStore,
-		filteredOptionsStore,
-		selectedTab
-	);
+	const { 
+		isLoading, 
+		groupedOptions, 
+		filteredOptions, 
+		actualCategoryKeys, 
+		optionsToDisplay, 
+		showTabs 
+	} = createDerivedUIStores(uiState, groupedOptionsStore, filteredOptionsStore, selectedTab);
 
 	// --- Create Layout Context ---
 	const layoutContextValue = createLayoutContext(
@@ -64,10 +73,7 @@
 	$: context = $layoutContextValue;
 
 	// --- Event Handlers ---
-	const debouncedHandleContainerResize = createDebouncedResizeHandler(
-		containerWidth,
-		containerHeight
-	);
+	const debouncedHandleContainerResize = createDebouncedResizeHandler(containerWidth, containerHeight);
 	const handleViewChange = createViewChangeHandler(selectedTab, uiState, actions);
 	const handleSubTabSelect = createSubTabSelectHandler(selectedTab, uiState, actions);
 	const updateWindowSize = createWindowResizeHandler(windowWidth, windowHeight);
@@ -79,33 +85,30 @@
 
 		// --- Initialization Logic ---
 		const loadOptions = () => loadOptionsFromSequence(sequenceDataService, actions);
-
+		
 		// Initial load
 		loadOptions();
 
 		// Set up the tab selection
-		// Convert Readable to Writable for the function call
-		const groupedOptionsWritable = {
-			subscribe: groupedOptionsStore.subscribe,
-			set: (value: any) => {}, // Dummy implementation
-			update: (fn: any) => {} // Dummy implementation
-		};
-		initializeTabSelection(selectedTab, groupedOptionsWritable, uiState, actions);
+		initializeTabSelection(selectedTab, groupedOptionsStore, uiState, actions);
 
 		// --- Event Listeners & Subscriptions ---
 		window.addEventListener('resize', updateWindowSize);
 		updateWindowSize();
 
 		// Set up sequence update handlers
-		const { handleSequenceUpdate, handleRefreshOptions, unsubscribeSequence } =
-			setupSequenceUpdateHandlers(loadOptions, sequenceStore, actions);
+		const { 
+			handleSequenceUpdate, 
+			handleRefreshOptions, 
+			unsubscribeSequence 
+		} = setupSequenceUpdateHandlers(loadOptions, sequenceStore, actions);
 
 		// --- Cleanup ---
 		return () => {
 			window.removeEventListener('resize', updateWindowSize);
 			cleanupSequenceUpdateHandlers(
-				handleSequenceUpdate,
-				handleRefreshOptions as EventListener,
+				handleSequenceUpdate, 
+				handleRefreshOptions as EventListener, 
 				unsubscribeSequence
 			);
 			cleanupEventListeners(optionPickerElement, handleSubTabSelect, handleViewChange);
@@ -114,18 +117,14 @@
 </script>
 
 <div class="option-picker" class:mobile={context.isMobile} class:portrait={context.isPortrait}>
-	<OptionPickerHeader
-		selectedTab={$selectedTab}
-		categoryKeys={$actualCategoryKeys}
-		showTabs={$showTabs}
-	/>
+	<OptionPickerHeader selectedTab={$selectedTab} categoryKeys={actualCategoryKeys} showTabs={$showTabs} />
 
 	<div class="options-container" use:resize={debouncedHandleContainerResize}>
 		<OptionDisplayArea
 			isLoading={$isLoading}
 			selectedTab={$selectedTab}
 			optionsToDisplay={$optionsToDisplay}
-			hasCategories={$actualCategoryKeys.length > 0}
+			hasCategories={actualCategoryKeys.length > 0}
 		/>
 	</div>
 </div>
