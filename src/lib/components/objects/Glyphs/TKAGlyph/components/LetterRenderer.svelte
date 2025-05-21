@@ -38,7 +38,7 @@
 
 		// Check cache first
 		const cacheKey = currentLetter.toString();
-		let cachedSVG = $assetCache.letterSVGs.get(cacheKey);
+		let cachedSVG = $assetCache.letters_trimmed.get(cacheKey);
 
 		if (cachedSVG) {
 			dimensions = cachedSVG.dimensions; // Update state
@@ -55,7 +55,7 @@
 
 			// Update cache
 			assetCache.update((cache: any) => {
-				cache.letterSVGs.set(cacheKey, {
+				cache.letters_trimmed.set(cacheKey, {
 					svg: path, // svgPath is already set
 					dimensions: fetchedDimensions
 				});

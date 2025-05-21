@@ -33,14 +33,16 @@ export async function initializeApplication(
 		if (isBrowser) {
 			reportProgress(10, 'Preloading application resources...');
 
-			// Set the progress callback to update the UI
+			// Set the progress callback to update the UI with detailed information
 			resourcePreloader.setProgressCallback((progress, message) => {
-				// Map the resource loading progress to 10-70% of the overall progress
-				const mappedProgress = 10 + Math.floor(progress * 0.6);
+				// Map the resource loading progress to 10-80% of the overall progress
+				// This gives more weight to the resource loading phase
+				const mappedProgress = 10 + Math.floor(progress * 0.7);
 				reportProgress(mappedProgress, message);
 			});
 
-			// Start preloading all resources
+			// Start preloading all resources - this now includes all pictograph components
+			// including arrows, props, grids, and glyphs
 			const preloadingPromise = resourcePreloader.preloadAll();
 
 			// Also preload glyph assets in parallel
@@ -48,6 +50,9 @@ export async function initializeApplication(
 
 			// Wait for preloading to complete
 			await Promise.all([preloadingPromise, glyphPreloadingPromise]);
+
+			// Log completion of preloading phase
+			console.log('All pictograph resources preloaded successfully');
 		} else {
 			reportProgress(10, 'Server-side rendering (skipping resource preload)...');
 		}

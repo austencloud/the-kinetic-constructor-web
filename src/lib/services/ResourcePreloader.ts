@@ -197,19 +197,45 @@ export class ResourcePreloader {
 			inProgress: true
 		});
 
-		const loadPromises = propTypes.flatMap((propType) =>
-			colors.map(async (color) => {
-				const resourceKey = `prop:${propType}:${color}`;
-				try {
-					await this.svgManager.getPropSvg(propType, color);
-					this.markResourceLoaded(resourceKey);
-				} catch (error) {
-					this.markResourceFailed(resourceKey, error);
-				}
-			})
-		);
+		// Create an array of all prop configurations for better progress tracking
+		const propConfigs = [];
+		for (const propType of propTypes) {
+			for (const color of colors) {
+				propConfigs.push({ propType, color });
+			}
+		}
 
-		await Promise.allSettled(loadPromises);
+		// Track progress for detailed updates
+		let loadedCount = 0;
+
+		// Process props in sequence to provide accurate progress updates
+		for (const { propType, color } of propConfigs) {
+			const resourceKey = `prop:${propType}:${color}`;
+			try {
+				// Update message with specific prop being loaded
+				this.updateStatus({
+					message: `Loading prop: ${propType} (${color})...`
+				});
+
+				await this.svgManager.getPropSvg(propType, color);
+
+				loadedCount++;
+				// Update progress message with percentage
+				const progressPercent = Math.floor((loadedCount / totalProps) * 100);
+				this.updateStatus({
+					message: `Loading props (${progressPercent}%)... ${propType} ${color}`
+				});
+
+				this.markResourceLoaded(resourceKey);
+			} catch (error) {
+				this.markResourceFailed(resourceKey, error);
+			}
+
+			// Yield to the main thread between props to keep UI responsive
+			if (typeof window !== 'undefined') {
+				await new Promise((resolve) => setTimeout(resolve, 0));
+			}
+		}
 	}
 
 	/**
@@ -217,27 +243,32 @@ export class ResourcePreloader {
 	 */
 	async preloadArrows(): Promise<void> {
 		// Use the actual motion types that exist in the file system
-		const motionTypes = ['pro', 'anti', 'static', 'dash'] as const;
+		const motionTypes = [
+			'pro',
+			'anti',
+			'static',
+			'dash',
+			'iso',
+			'same',
+			'opp',
+			'ext',
+			'ins',
+			'float'
+		] as const;
 		// Only use orientations that exist in the file system
-		const orientations = ['in', 'out'] as const;
+		const orientations = ['in', 'out', 'wall', 'wheel'] as const;
 		const turns: TKATurns[] = [0, 0.5, 1, 1.5, 2, 2.5, 3];
 		const colors: Color[] = ['red', 'blue'];
 
-		// Calculate total arrows to load
-		const totalArrows = motionTypes.length * orientations.length * turns.length * colors.length;
-
-		this.updateStatus({
-			category: ResourceCategory.ARROWS,
-			message: 'Loading arrow pictographs...',
-			total: get(resourceLoadingStatus).total + totalArrows,
-			inProgress: true
-		});
-
 		// Create batches of promises to avoid overwhelming the browser
-		const batchSize = 20;
+		const batchSize = 10;
 		const arrowConfigs = [];
 
+		// Generate all valid combinations
 		for (const motionType of motionTypes) {
+			// Skip float for regular turns processing - we'll add it separately
+			if (motionType === 'float') continue;
+
 			for (const orientation of orientations) {
 				for (const turn of turns) {
 					for (const color of colors) {
@@ -248,7 +279,6 @@ export class ResourcePreloader {
 		}
 
 		// Add special handling for float.svg which has a different structure
-		// Only add it once since it doesn't have variations
 		arrowConfigs.push({
 			motionType: 'float',
 			orientation: 'in',
@@ -262,9 +292,29 @@ export class ResourcePreloader {
 			color: 'blue'
 		});
 
+		// Calculate total arrows to load
+		const totalArrows = arrowConfigs.length;
+
+		this.updateStatus({
+			category: ResourceCategory.ARROWS,
+			message: 'Loading arrow pictographs...',
+			total: get(resourceLoadingStatus).total + totalArrows,
+			inProgress: true
+		});
+
+		// Track progress for detailed updates
+		let loadedCount = 0;
+		let currentBatch = 1;
+		const totalBatches = Math.ceil(arrowConfigs.length / batchSize);
+
 		// Process in batches
 		for (let i = 0; i < arrowConfigs.length; i += batchSize) {
 			const batch = arrowConfigs.slice(i, i + batchSize);
+
+			// Update message with batch information
+			this.updateStatus({
+				message: `Loading arrows (batch ${currentBatch}/${totalBatches})...`
+			});
 
 			await Promise.allSettled(
 				batch.map(async ({ motionType, orientation, turn, color }) => {
@@ -281,12 +331,27 @@ export class ResourcePreloader {
 							turn,
 							color as any
 						);
+
+						loadedCount++;
+						// Update progress message with more specific information
+						const progressPercent = Math.floor((loadedCount / totalArrows) * 100);
+						this.updateStatus({
+							message: `Loading arrows (${progressPercent}%)... ${motionType}_${turn} ${color}`
+						});
+
 						this.markResourceLoaded(resourceKey);
 					} catch (error) {
 						this.markResourceFailed(resourceKey, error);
 					}
 				})
 			);
+
+			// Yield to the main thread between batches to keep UI responsive
+			if (typeof window !== 'undefined') {
+				await new Promise((resolve) => setTimeout(resolve, 0));
+			}
+
+			currentBatch++;
 		}
 	}
 
@@ -602,26 +667,60 @@ export class ResourcePreloader {
 	 * Preload all resources
 	 */
 	async preloadAll(): Promise<void> {
+		// Reset loading state
+		this.resourcesLoaded.clear();
+		this.resourcesFailed.clear();
+
 		this.updateStatus({
 			loaded: 0,
 			failed: 0,
 			inProgress: true,
 			message: 'Starting resource preloading...',
-			progress: 0
+			progress: 0,
+			total: 0 // Will be updated by each preload method
 		});
 
 		try {
-			// Start with glyphs first since they're most visible to users
-			// and run in parallel with other resource loading
-			const glyphsPromise = this.preloadGlyphs();
+			// Define the loading phases with descriptive names
+			const phases = [
+				{ name: 'Props', method: this.preloadProps.bind(this), weight: 20 },
+				{ name: 'Grids', method: this.preloadGrids.bind(this), weight: 10 },
+				{ name: 'Arrows', method: this.preloadArrows.bind(this), weight: 50 },
+				{ name: 'Glyphs', method: this.preloadGlyphs.bind(this), weight: 20 }
+			];
 
-			// Preload other resources in sequence to avoid overwhelming the browser
-			await this.preloadProps();
-			await this.preloadGrids();
-			await this.preloadArrows();
+			// Calculate total weight for percentage calculations
+			const totalWeight = phases.reduce((sum, phase) => sum + phase.weight, 0);
+			let completedWeight = 0;
 
-			// Make sure glyphs are fully loaded before continuing
-			await glyphsPromise;
+			// Process each phase sequentially for better progress tracking
+			for (let i = 0; i < phases.length; i++) {
+				const phase = phases[i];
+				const phaseNumber = i + 1;
+
+				// Update overall progress message
+				this.updateStatus({
+					message: `Phase ${phaseNumber}/${phases.length}: Loading ${phase.name}...`
+				});
+
+				// Execute the preload method for this phase
+				await phase.method();
+
+				// Update completed weight for overall progress calculation
+				completedWeight += phase.weight;
+				const overallProgress = Math.floor((completedWeight / totalWeight) * 100);
+
+				// Update overall progress
+				this.updateStatus({
+					progress: overallProgress,
+					message: `${overallProgress}% complete - Finished loading ${phase.name}`
+				});
+
+				// Small delay between phases for UI updates
+				if (typeof window !== 'undefined') {
+					await new Promise((resolve) => setTimeout(resolve, 100));
+				}
+			}
 
 			// Log completion with resource counts
 			logger.info(

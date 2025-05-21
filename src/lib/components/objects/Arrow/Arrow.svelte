@@ -21,8 +21,8 @@
 		motion?: Motion | null;
 		pictographData?: PictographData | null;
 		pictographService?: PictographService | null;
-		loadTimeoutMs?: number;
-		animationDuration?: number;
+		loadTimeoutMs?: number; // Kept for backward compatibility
+		animationDuration?: number; // Kept for backward compatibility
 
 		// Event handlers
 		loaded?: (event: { timeout?: boolean; error?: boolean }) => void;
@@ -37,9 +37,6 @@
 	const motion = props.motion ?? null;
 	const pictographData = props.pictographData ?? null;
 	const pictographService = props.pictographService ?? null;
-	const loadTimeoutMs = props.loadTimeoutMs ?? 1000; // Configurable timeout
-	// Animation duration is passed from parent but not used directly in this component
-	const animationDuration = props.animationDuration ?? 200;
 
 	// Get arrow data from the sequence store if beatId and color are provided
 	const arrowDataFromStore = derived(sequenceStore, ($sequenceStore) => {
@@ -64,7 +61,6 @@
 	let transform = $state('');
 	let isLoaded = $state(false);
 	let hasErrored = $state(false);
-	let loadTimeout: NodeJS.Timeout;
 	let rotAngleManager = $state<ArrowRotAngleManager | null>(null);
 
 	// Services
@@ -113,16 +109,7 @@
 		}
 	});
 
-	/**
-	 * Helper function to detect mobile devices
-	 */
-	function isMobile(): boolean {
-		return (
-			typeof window !== 'undefined' &&
-			(window.innerWidth <= 768 ||
-				/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
-		);
-	}
+	// Mobile detection no longer needed with preloaded SVGs
 
 	/**
 	 * Simple in-memory component-level cache for SVG data
@@ -151,7 +138,7 @@
 	}
 
 	/**
-	 * Loads the arrow SVG with error handling and timeout
+	 * Loads the arrow SVG using preloaded resources without timeouts
 	 */
 	async function loadArrowSvg() {
 		try {
@@ -160,52 +147,26 @@
 				throw new Error('No arrow data available');
 			}
 
-			// Check if we're in OptionPicker context
-			const isInOptionPicker =
-				props.loadTimeoutMs === 10 ||
-				(props.pictographService === null && props.pictographData === null);
-
-			// For OptionPicker, use a much shorter timeout and prioritize immediate rendering
-			const timeoutDuration = isInOptionPicker
-				? 10 // Very short timeout for OptionPicker
-				: isMobile()
-					? loadTimeoutMs * 2
-					: loadTimeoutMs;
-
-			// Set safety timeout
-			loadTimeout = setTimeout(() => {
-				if (!isLoaded) {
-					// Use less verbose logging in production
-					if (import.meta.env.DEV) {
-						console.warn(`Arrow loading timed out after ${timeoutDuration}ms`);
-					}
-					isLoaded = true;
-					props.loaded?.({ timeout: true });
-				}
-			}, timeoutDuration);
-
 			// Update mirror state before loading SVG
 			if (mirrorManager) {
 				mirrorManager.updateMirror();
 			}
 
-			// Use a more specific cache key for OptionPicker to avoid conflicts
-			const cacheKey = isInOptionPicker
-				? `option-picker-arrow-${effectiveArrowData.motionType}-${effectiveArrowData.turns}-${effectiveArrowData.propRotDir}`
-				: `arrow-${effectiveArrowData.motionType}-${effectiveArrowData.startOri}-${effectiveArrowData.turns}-${effectiveArrowData.color}-${effectiveArrowData.svgMirrored}`;
+			// Create a consistent cache key for all contexts
+			const cacheKey = `arrow-${effectiveArrowData.motionType}-${effectiveArrowData.startOri}-${effectiveArrowData.turns}-${effectiveArrowData.color}-${effectiveArrowData.svgMirrored}`;
 
+			// Check component-level cache first for immediate rendering
 			const cachedData = getCachedSvgData(cacheKey);
 
 			if (cachedData) {
 				// Use cached data
 				svgData = cachedData;
-				clearTimeout(loadTimeout);
 				isLoaded = true;
 				props.loaded?.();
 				return;
 			}
 
-			// Load the SVG with current configuration
+			// Load the SVG with current configuration - should be fast since it's preloaded
 			const result = await svgLoader.loadSvg(
 				effectiveArrowData.motionType,
 				effectiveArrowData.startOri,
@@ -220,7 +181,6 @@
 			// Cache the result for future use
 			cacheSvgData(cacheKey, svgData);
 
-			clearTimeout(loadTimeout);
 			isLoaded = true;
 			props.loaded?.();
 		} catch (error) {
@@ -241,7 +201,6 @@
 
 		hasErrored = true;
 		svgData = svgLoader.getFallbackSvgData();
-		clearTimeout(loadTimeout);
 		isLoaded = true;
 		props.loaded?.({ error: true });
 		props.error?.({
@@ -275,9 +234,6 @@
 			isLoaded = true;
 			props.loaded?.({ error: true });
 		}
-
-		// Cleanup
-		return () => clearTimeout(loadTimeout);
 	});
 
 	// Track previous turns value to detect changes
@@ -286,27 +242,6 @@
 
 	// Reactive loading with debouncing
 	$effect(() => {
-		// Skip this effect if we're in a Pictograph with disableAnimations=true
-		// This is a common case in the OptionPicker where we don't need to reload on turns changes
-		const isInOptionPicker =
-			props.loadTimeoutMs === 10 ||
-			(props.pictographService === null && props.pictographData === null);
-
-		// For OptionPicker, we want to completely skip the animation and debouncing
-		if (isInOptionPicker) {
-			// Just update the previous turns value without triggering a reload
-			if (effectiveArrowData?.turns !== undefined) {
-				previousTurns = effectiveArrowData.turns;
-			}
-
-			// Force immediate load without animation for OptionPicker
-			if (!isLoaded && effectiveArrowData?.motionType) {
-				loadArrowSvg();
-			}
-
-			return;
-		}
-
 		// Force reload when turns change, but debounce to avoid excessive reloads
 		if (effectiveArrowData?.turns !== previousTurns && previousTurns !== null) {
 			// Clear any existing debounce timer

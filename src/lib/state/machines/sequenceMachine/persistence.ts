@@ -6,6 +6,7 @@ import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 import { pictographStore } from '$lib/state/stores/pictograph/pictograph.store';
 import type { Actor } from 'xstate';
 import { writable } from 'svelte/store';
+import { blueArrowData } from '$lib/state/stores/pictograph/pictographSelectors';
 
 // Create a replacement for the removed isSequenceEmpty store
 export const isSequenceEmpty = writable(true);
@@ -19,10 +20,6 @@ if (typeof window !== 'undefined') {
 	// Subscribe to the selectedStartPos store to track if we have a start position
 	selectedStartPos.subscribe((startPos) => {
 		hasStartPosition = !!startPos;
-
-		// We'll get the current sequence state in the sequenceStore subscription
-		// Just log that the start position changed
-		console.log('Start position updated:', hasStartPosition ? 'exists' : 'null');
 	});
 
 	// Also subscribe to sequence changes to update the empty state
@@ -32,13 +29,6 @@ if (typeof window !== 'undefined') {
 
 		// Update the isSequenceEmpty store
 		isSequenceEmpty.set(isEmpty);
-
-		// Log for debugging
-		console.log('isSequenceEmpty updated from sequence change:', {
-			isEmpty,
-			beatCount: state.beats.length,
-			hasStartPosition
-		});
 	});
 }
 
@@ -204,7 +194,7 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 									redMotionData: firstBeat.redMotionData || null,
 									blueMotionData: firstBeat.blueMotionData || null,
 									redArrowData: firstBeat.redArrowData || null,
-									blueArrowData: firstBeat.blueArrowData || null,
+									blueArrowData: blueArrowData || null,
 									grid: firstBeat.metadata?.grid || '',
 									timing: null,
 									direction: null,
@@ -330,8 +320,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 
 				// 2. Save to the modern storage format
 				sequenceContainer.saveToLocalStorage();
-
-				console.log('Saved sequence to both storage mechanisms with beats:', safeBeats.length);
 			} catch (error) {
 				console.error('Error saving sequence:', error);
 			}

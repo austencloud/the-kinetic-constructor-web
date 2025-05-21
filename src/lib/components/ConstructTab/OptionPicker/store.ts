@@ -39,7 +39,6 @@ function getStoredState() {
 			lastSelectedTab: parsed.lastSelectedTab || { type: 'all' }
 		};
 	} catch (e) {
-		console.error('Error reading from localStorage:', e);
 		return { sortMethod: 'type', lastSelectedTab: { type: 'all' } };
 	}
 }
@@ -74,11 +73,8 @@ if (browser) {
 // ===== Actions =====
 export const actions = {
 	loadOptions: (sequence: PictographData[]) => {
-		console.log('loadOptions called with sequence:', sequence);
-
 		// Don't try to load options if sequence is empty
 		if (!sequence || sequence.length === 0) {
-			console.warn('Attempted to load options with empty sequence');
 			optionsStore.set([]);
 			uiState.update((state) => ({ ...state, isLoading: false, error: null }));
 			return;
@@ -86,10 +82,8 @@ export const actions = {
 
 		// Check if pictographDataStore has been initialized
 		const allPictographs = get(pictographDataStore);
-		console.log('Current pictographDataStore contents:', allPictographs);
 
 		if (!Array.isArray(allPictographs) || allPictographs.length === 0) {
-			console.error('pictographDataStore is empty! Options cannot be loaded.');
 			// Instead of setting dummy data, just log the error and continue
 			console.error('Cannot load options: pictographDataStore is empty');
 
@@ -105,19 +99,14 @@ export const actions = {
 
 		sequenceStore.set(sequence);
 		uiState.update((state) => ({ ...state, isLoading: true, error: null }));
-		console.log('Set loading state to true');
 
 		try {
-			console.log('Getting next options for sequence:', sequence);
 			const nextOptions = getNextOptions(sequence);
-			console.log('Next options:', nextOptions);
 
 			// If we got no options, log a warning but don't treat it as an error
 			if (!nextOptions || nextOptions.length === 0) {
-				console.warn('No options available for the current sequence');
 			}
 
-			console.log('Setting options store with:', nextOptions || []);
 			optionsStore.set(nextOptions || []);
 
 			// Get the current UI state
@@ -137,7 +126,6 @@ export const actions = {
 				(!currentState.lastSelectedTab[currentSortMethod] ||
 					currentState.lastSelectedTab[currentSortMethod] === null)
 			) {
-				console.log('No tab selected yet, defaulting to "all"');
 				// Only in this case, set the default tab to 'all'
 				actions.setLastSelectedTabForSort(currentSortMethod, 'all');
 
@@ -148,7 +136,6 @@ export const actions = {
 				document.dispatchEvent(viewChangeEvent);
 			}
 		} catch (error) {
-			console.error('Error loading options:', error);
 			uiState.update((state) => ({
 				...state,
 				isLoading: false,

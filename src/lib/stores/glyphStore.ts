@@ -7,14 +7,14 @@ import { safeAsciiName } from '$lib/types/safeAsciiName';
 
 // Asset cache to prevent repeated fetches
 interface AssetCache {
-	letterSVGs: Map<string, { svg: string; dimensions: { width: number; height: number } }>;
+	letters_trimmed: Map<string, { svg: string; dimensions: { width: number; height: number } }>;
 	dashSVG: { svg: string; dimensions: { width: number; height: number } } | null;
 	dotSVG: { svg: string; dimensions: { width: number; height: number } } | null;
 	numberSVGs: Map<string, { svg: string; dimensions: { width: number; height: number } }>;
 }
 
 export const assetCache = writable<AssetCache>({
-	letterSVGs: new Map(),
+	letters_trimmed: new Map(),
 	dashSVG: null,
 	dotSVG: null,
 	numberSVGs: new Map()
@@ -96,7 +96,7 @@ export const preloadCommonAssets = async (): Promise<void> => {
 					// Update the cache with this letter
 					assetCache.update((cache) => {
 						const newCache = { ...cache };
-						newCache.letterSVGs.set(letter.toString(), {
+						newCache.letters_trimmed.set(letter.toString(), {
 							svg: path,
 							dimensions
 						});
