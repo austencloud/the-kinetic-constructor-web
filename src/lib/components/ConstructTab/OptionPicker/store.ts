@@ -5,7 +5,6 @@ import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore
 import type { SortMethod, ReversalFilter } from './config';
 import {
 	getNextOptions,
-	determineReversalCategory,
 	determineGroupKey,
 	getSortedGroupKeys,
 	getSorter
@@ -14,6 +13,7 @@ import { get } from 'svelte/store';
 import { browser } from '$app/environment';
 // Import the sequenceActions and sequenceSelectors from the state machine
 import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
+import pictographDataStore from '$lib/stores/pictograph/pictographStore';
 
 // ===== Core State =====
 export const sequenceStore = writable<PictographData[]>([]);
@@ -74,6 +74,8 @@ if (browser) {
 // ===== Actions =====
 export const actions = {
 	loadOptions: (sequence: PictographData[]) => {
+		console.log('loadOptions called with sequence:', sequence);
+
 		// Don't try to load options if sequence is empty
 		if (!sequence || sequence.length === 0) {
 			console.warn('Attempted to load options with empty sequence');
@@ -82,17 +84,40 @@ export const actions = {
 			return;
 		}
 
+		// Check if pictographDataStore has been initialized
+		const allPictographs = get(pictographDataStore);
+		console.log('Current pictographDataStore contents:', allPictographs);
+
+		if (!Array.isArray(allPictographs) || allPictographs.length === 0) {
+			console.error('pictographDataStore is empty! Options cannot be loaded.');
+			// Instead of setting dummy data, just log the error and continue
+			console.error('Cannot load options: pictographDataStore is empty');
+
+			// Set empty options
+			optionsStore.set([]);
+			uiState.update((state) => ({
+				...state,
+				isLoading: false,
+				error: 'No pictograph data available'
+			}));
+			return;
+		}
+
 		sequenceStore.set(sequence);
 		uiState.update((state) => ({ ...state, isLoading: true, error: null }));
+		console.log('Set loading state to true');
 
 		try {
+			console.log('Getting next options for sequence:', sequence);
 			const nextOptions = getNextOptions(sequence);
+			console.log('Next options:', nextOptions);
 
 			// If we got no options, log a warning but don't treat it as an error
 			if (!nextOptions || nextOptions.length === 0) {
 				console.warn('No options available for the current sequence');
 			}
 
+			console.log('Setting options store with:', nextOptions || []);
 			optionsStore.set(nextOptions || []);
 
 			// Get the current UI state

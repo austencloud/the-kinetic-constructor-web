@@ -83,7 +83,7 @@
 		{#if props.showTabs}
 			<TabsContainer
 				selectedTab={props.selectedTab}
-				categoryKeys={props.categoryKeys || []}
+				categoryKeys={Array.isArray(props.categoryKeys) ? props.categoryKeys : []}
 				isScrollable={$isScrollable}
 				showScrollIndicator={$showScrollIndicator}
 				useShortLabels={$useShortLabels}

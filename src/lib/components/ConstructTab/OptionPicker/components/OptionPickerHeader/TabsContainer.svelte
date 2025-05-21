@@ -71,7 +71,7 @@
 	});
 </script>
 
-{#if props.categoryKeys && props.categoryKeys.length > 0}
+{#if Array.isArray(props.categoryKeys) && props.categoryKeys.length > 0}
 	<div class="tabs-wrapper">
 		<!-- Left scroll indicator -->
 		{#if props.isScrollable && scrollPosition > 20}
@@ -92,7 +92,7 @@
 				{#each props.categoryKeys as categoryKey, index (categoryKey)}
 					<TabButton
 						{categoryKey}
-						isActive={props.selectedTab === categoryKey}
+						isActive={String(props.selectedTab) === String(categoryKey)}
 						isFirstTab={index === 0}
 						isLastTab={index === props.categoryKeys.length - 1}
 						useShortLabels={props.useShortLabels}

@@ -102,9 +102,9 @@
 	let lastDataSnapshot: PictographDataSnapshot | null = null;
 
 	// Enhanced loading state tracking
-	let glyphLoaded = false;
-	let allComponentsLoaded = false;
-	let showPictograph = false; // Only show when everything is loaded
+	let glyphLoaded = disableAnimations ? true : false;
+	let allComponentsLoaded = disableAnimations ? true : false;
+	let showPictograph = disableAnimations ? true : false; // Only show when everything is loaded
 
 	// Define the PictographEvents interface for proper typing
 	interface PictographEvents {
@@ -378,20 +378,16 @@
 	function handleComponentLoaded(component: string) {
 		// If animations are disabled (for OptionPicker), use a simpler, faster approach
 		if (disableAnimations) {
+			// For OptionPicker, we've already set showPictograph to true
 			// Just mark the component as loaded immediately without animations or delays
 			const context = getLoadingManagerContext();
 			handleComponentLoadedUtil(component, context);
 			componentsLoaded = context.componentsLoaded;
 
-			// Check if all components are loaded
-			if (componentsLoaded === totalComponentsToLoad) {
-				allComponentsLoaded = true;
-				showPictograph = allComponentsLoaded && glyphLoaded;
-
-				// If everything is loaded, dispatch the loaded event
-				if (showPictograph) {
-					dispatch('loaded', { error: false });
-				}
+			// Dispatch loaded event if not already dispatched
+			if (!showPictograph) {
+				showPictograph = true;
+				dispatch('loaded', { error: false });
 			}
 			return;
 		}
@@ -446,16 +442,17 @@
 	function checkLoadingComplete() {
 		// If animations are disabled (for OptionPicker), use a simpler, faster approach
 		if (disableAnimations) {
+			// For OptionPicker, we've already set showPictograph to true
 			// Call the utility function directly without animation frames
 			const isComplete = checkLoadingCompleteUtil(getLoadingManagerContext());
 
 			// Update our enhanced loading state
 			if (isComplete) {
 				allComponentsLoaded = true;
-				showPictograph = allComponentsLoaded && glyphLoaded;
 
-				// If everything is loaded, dispatch the loaded event
-				if (showPictograph) {
+				// Dispatch loaded event if not already dispatched
+				if (!showPictograph) {
+					showPictograph = true;
 					dispatch('loaded', { error: false });
 				}
 			}
@@ -501,12 +498,11 @@
 		glyphLoaded = event.detail;
 		logger.debug(`Pictograph: Glyph loaded (success: ${event.detail})`);
 
-		// If animations are disabled, update state directly
+		// If animations are disabled, we've already set showPictograph to true
 		if (disableAnimations) {
-			showPictograph = allComponentsLoaded && glyphLoaded;
-
-			// If everything is loaded, dispatch the loaded event
-			if (showPictograph) {
+			// Dispatch loaded event if not already dispatched
+			if (!showPictograph) {
+				showPictograph = true;
 				dispatch('loaded', { error: false });
 			}
 			return;
