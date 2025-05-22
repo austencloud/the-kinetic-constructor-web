@@ -86,6 +86,33 @@ import FLOAT_SVG from '$lib/assets/arrows/float.svg?raw';
 const coloredSvgCache = new Map<string, Map<string, string>>();
 
 /**
+ * Preloads commonly used arrows to ensure they're instantly available
+ * Call this function during application initialization
+ */
+export function preloadCommonArrows(): void {
+	// List of commonly used arrow configurations
+	const commonArrows = [
+		{ motionType: 'pro', startOri: 'clock', turns: '0.0', color: 'blue' },
+		{ motionType: 'pro', startOri: 'clock', turns: '0.0', color: 'red' },
+		{ motionType: 'pro', startOri: 'counter', turns: '0.0', color: 'blue' },
+		{ motionType: 'pro', startOri: 'counter', turns: '0.0', color: 'red' },
+		{ motionType: 'pro', startOri: 'in', turns: '0.0', color: 'blue' },
+		{ motionType: 'pro', startOri: 'in', turns: '0.0', color: 'red' },
+		{ motionType: 'pro', startOri: 'out', turns: '0.0', color: 'blue' },
+		{ motionType: 'pro', startOri: 'out', turns: '0.0', color: 'red' },
+		{ motionType: 'anti', startOri: 'clock', turns: '0.0', color: 'blue' },
+		{ motionType: 'anti', startOri: 'clock', turns: '0.0', color: 'red' },
+		{ motionType: 'static', startOri: 'in', turns: '0.0', color: 'blue' },
+		{ motionType: 'float', startOri: 'in', turns: 'fl', color: 'blue' }
+	];
+
+	// Pre-warm the cache with these common arrows
+	for (const arrow of commonArrows) {
+		getEmbeddedArrowSvg(arrow.motionType, arrow.startOri, arrow.turns, arrow.color);
+	}
+}
+
+/**
  * Optimized function to get embedded arrow SVG by type, orientation, turns, and color
  * Uses caching and efficient string operations for better performance
  */

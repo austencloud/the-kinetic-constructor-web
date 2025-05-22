@@ -8,6 +8,7 @@ import { glyphContainer } from '$lib/stores/glyphContainer.svelte';
 import { toAppError } from '$lib/types/ErrorTypes';
 import SvgManager from '$lib/components/SvgManager/SvgManager';
 import { PropType } from '$lib/types/Types';
+import { preloadCommonArrows } from '$lib/utils/embeddedArrowSvgs';
 
 /**
  * Initialize the application, reporting progress via callback for XState
@@ -45,6 +46,10 @@ export async function initializeApplication(
 
 			// Preload critical SVGs first (highest priority)
 			const svgManager = new SvgManager();
+
+			// Preload embedded SVGs first (fastest, no network requests)
+			reportProgress(12, 'Preloading embedded SVGs...');
+			preloadCommonArrows();
 
 			// Preload staff props
 			const staffPreloadPromise = svgManager.preloadPropSvgs([
