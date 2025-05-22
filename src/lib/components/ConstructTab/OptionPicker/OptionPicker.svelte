@@ -17,7 +17,12 @@
 
 	// --- Svelte 5 Reactive State using runes ---
 	let isLoading = $derived($uiState.isLoading);
-	let selectedTab = $derived($uiState.lastSelectedTab[$uiState.sortMethod] || 'all');
+	// For "Show All" view, always use 'all' as the selectedTab
+	let selectedTab = $derived(
+		$uiState.sortMethod === ('all' as any)
+			? 'all'
+			: $uiState.lastSelectedTab[$uiState.sortMethod] || 'all'
+	);
 	let groupedOptions = $derived($groupedOptionsStore);
 	let filteredOptions = $derived($filteredOptionsStore);
 	let actualCategoryKeys = $derived(groupedOptions ? Object.keys(groupedOptions) : []);
@@ -32,16 +37,33 @@
 			showTabs,
 			actualCategoryKeys,
 			lastSelectedTabState: $uiState.lastSelectedTab,
-			isShowAllView: $uiState.sortMethod === ('all' as any)
+			isShowAllView: $uiState.sortMethod === ('all' as any),
+			filteredOptionsLength: filteredOptions.length
 		});
 	});
 
-	// Determine which options to display based on the selected tab
+	// Determine which options to display based on the selected tab and sort method
 	let displayOptions = $derived(
-		selectedTab === 'all'
+		$uiState.sortMethod === ('all' as any) || selectedTab === 'all'
 			? filteredOptions
 			: (selectedTab && groupedOptions && groupedOptions[selectedTab]) || []
 	);
+
+	// Add an effect to log the options being displayed
+	$effect(() => {
+		if ($uiState.sortMethod === ('all' as any) || selectedTab === 'all') {
+			console.log('OptionPicker: Using all filtered options:', filteredOptions.length);
+		} else if (selectedTab && groupedOptions && groupedOptions[selectedTab]) {
+			console.log(
+				'OptionPicker: Using grouped options for tab:',
+				selectedTab,
+				'count:',
+				groupedOptions[selectedTab].length
+			);
+		} else {
+			console.log('OptionPicker: No matching options for tab:', selectedTab);
+		}
+	});
 
 	// Clear the loading state when options are loaded - using $effect instead of $:
 	$effect(() => {
@@ -52,6 +74,32 @@
 	});
 
 	// Event handlers are now handled through document event listeners in onMount
+
+	// Add an initialization effect to ensure the correct state on initial load
+	$effect(() => {
+		// If we're in "Show All" view, ensure the selectedTab is 'all'
+		if ($uiState.sortMethod === ('all' as any) && selectedTab !== 'all') {
+			console.log('OptionPicker: Initializing "Show All" view, setting selectedTab to "all"');
+			actions.setLastSelectedTabForSort('all', 'all');
+		}
+
+		// If we have options but they're not being displayed, force a re-evaluation
+		if (
+			filteredOptions.length > 0 &&
+			displayOptions.length === 0 &&
+			$uiState.sortMethod === ('all' as any)
+		) {
+			console.log('OptionPicker: Found options but not displaying them, forcing update');
+			// Force a re-evaluation by dispatching a show-all-view event
+			if (typeof document !== 'undefined') {
+				const showAllEvent = new CustomEvent('show-all-view', {
+					detail: { sortMethod: 'all' },
+					bubbles: true
+				});
+				document.dispatchEvent(showAllEvent);
+			}
+		}
+	});
 
 	// --- onMount: Load options based on sequence ---
 	onMount(() => {

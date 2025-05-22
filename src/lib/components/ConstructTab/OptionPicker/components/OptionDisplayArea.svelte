@@ -35,16 +35,18 @@
 
 	// Update display state based on props
 	$effect(() => {
-		// Ensure optionsToDisplay is an array
+		// Ensure optionsToDisplay is an array and log its length for debugging
 		const options = Array.isArray(props.optionsToDisplay) ? props.optionsToDisplay : [];
+		console.log('OptionDisplayArea: Options length:', options.length);
 
-		// Update hasOptions
+		// Update hasOptions - this is critical for determining whether to show options or an empty state
 		hasOptions = options.length > 0;
 
 		// Determine display state
 		if (props.isLoading) {
 			displayState = 'loading';
 			messageText = 'Loading options...';
+			console.log('OptionDisplayArea: Loading state');
 		} else if (!hasOptions) {
 			displayState = 'empty';
 
@@ -70,10 +72,28 @@
 				message: messageText,
 				isShowAllView,
 				currentTab,
-				hasCategories: props.hasCategories
+				hasCategories: props.hasCategories,
+				optionsLength: options.length
 			});
 		} else {
 			displayState = 'options';
+			console.log('OptionDisplayArea: Options state with', options.length, 'options');
+		}
+	});
+
+	// Add a second effect to force a re-evaluation after a short delay
+	// This helps with timing issues during initialization
+	$effect(() => {
+		if (typeof window !== 'undefined' && props.optionsToDisplay) {
+			// Force a re-evaluation after a short delay to ensure we have the latest data
+			setTimeout(() => {
+				const options = Array.isArray(props.optionsToDisplay) ? props.optionsToDisplay : [];
+				if (options.length > 0 && displayState === 'empty') {
+					console.log('OptionDisplayArea: Forcing update from empty to options state');
+					displayState = 'options';
+					hasOptions = true;
+				}
+			}, 100);
 		}
 	});
 </script>

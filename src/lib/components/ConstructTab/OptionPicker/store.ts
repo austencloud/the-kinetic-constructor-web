@@ -24,22 +24,22 @@ export type LastSelectedTabState = Partial<Record<SortMethodOrAll, string | null
 
 // Define the helper function to get stored state from localStorage
 function getStoredState() {
-	if (!browser) return { sortMethod: 'type', lastSelectedTab: {} };
+	if (!browser) return { sortMethod: 'all', lastSelectedTab: { all: 'all' } };
 
 	try {
 		const stored = localStorage.getItem('optionPickerUIState');
 
-		if (!stored) return { sortMethod: 'type', lastSelectedTab: { type: 'all' } };
+		if (!stored) return { sortMethod: 'all', lastSelectedTab: { all: 'all', type: 'all' } };
 
 		const parsed = JSON.parse(stored);
 
 		// Ensure we have a valid structure
 		return {
-			sortMethod: parsed.sortMethod || 'type',
-			lastSelectedTab: parsed.lastSelectedTab || { type: 'all' }
+			sortMethod: parsed.sortMethod || 'all',
+			lastSelectedTab: parsed.lastSelectedTab || { all: 'all', type: 'all' }
 		};
 	} catch (e) {
-		return { sortMethod: 'type', lastSelectedTab: { type: 'all' } };
+		return { sortMethod: 'all', lastSelectedTab: { all: 'all', type: 'all' } };
 	}
 }
 
