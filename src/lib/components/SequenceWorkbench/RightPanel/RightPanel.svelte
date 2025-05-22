@@ -2,7 +2,6 @@
 <script lang="ts">
 	import { workbenchStore } from '$lib/state/stores/workbenchStore';
 	import ModernGenerationControls from './ModernGenerationControls.svelte';
-	import OptionPickerWithDebug from '$lib/components/ConstructTab/OptionPicker/OptionPickerWithDebug.svelte';
 	import StartPosPicker from '$lib/components/ConstructTab/StartPosPicker/StartPosPicker.svelte';
 	import GraphEditor from '$lib/components/SequenceWorkbench/GraphEditor/GraphEditor.svelte';
 	import TransitionWrapper from './TransitionWrapper.svelte';
@@ -10,6 +9,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import { cubicInOut } from 'svelte/easing';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import OptionPicker from '$lib/components/ConstructTab/OptionPicker';
 
 	// Local state
 	let hasSelectedBeats = $state(false);
@@ -52,7 +52,7 @@
 				<StartPosPicker />
 			</div>
 			<div slot="optionPicker" class="full-height-wrapper">
-				<OptionPickerWithDebug />
+				<OptionPicker />
 			</div>
 		</TransitionWrapper>
 	{/if}

@@ -1,83 +1,57 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import { LayoutProvider } from './layout';
-	import { OptionPickerHeader } from './header';
-	import { OptionDisplayArea } from './display';
+	import OptionPickerHeader from './components/OptionPickerHeader';
+	import OptionDisplayArea from './components/OptionDisplayArea.svelte';
 	import { sequenceBeatToPictographData } from './utils';
 	// Import the working store system
-	import { 
-		actions, 
-		uiState, 
-		filteredOptionsStore, 
-		groupedOptionsStore 
-	} from './store';
+	import { actions, uiState, filteredOptionsStore, groupedOptionsStore } from './store';
 	import sequenceDataService from '$lib/services/SequenceDataService';
 	import type { SequenceBeat } from '$lib/services/SequenceDataService';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { sequenceStore } from '$lib/state/stores/sequenceStore';
 	import transitionLoading from '$lib/state/stores/ui/transitionLoadingStore';
-	import type { ViewModeDetail } from './components/ViewControl/types';
+
 	import type { Letter } from '$lib/types/Letter';
 
-	// --- Reactive UI State & Data ---
-	$: isLoading = $uiState.isLoading;
-	$: selectedTab = $uiState.lastSelectedTab[$uiState.sortMethod] || 'all';
-	$: groupedOptions = $groupedOptionsStore;
-	$: filteredOptions = $filteredOptionsStore;
-	$: actualCategoryKeys = groupedOptions ? Object.keys(groupedOptions) : [];
-	$: showTabs = selectedTab !== 'all';
+	// --- Svelte 5 Reactive State using runes ---
+	let isLoading = $derived($uiState.isLoading);
+	let selectedTab = $derived($uiState.lastSelectedTab[$uiState.sortMethod] || 'all');
+	let groupedOptions = $derived($groupedOptionsStore);
+	let filteredOptions = $derived($filteredOptionsStore);
+	let actualCategoryKeys = $derived(groupedOptions ? Object.keys(groupedOptions) : []);
+	// Show tabs ONLY when the sort method is NOT 'all' AND we have category keys to display
+	let showTabs = $derived($uiState.sortMethod !== ('all' as any) && actualCategoryKeys.length > 0);
+
+	// Debug logging for reactive state
+	$effect(() => {
+		console.log('OptionPicker reactive state updated:', {
+			sortMethod: $uiState.sortMethod,
+			selectedTab,
+			showTabs,
+			actualCategoryKeys,
+			lastSelectedTabState: $uiState.lastSelectedTab,
+			isShowAllView: $uiState.sortMethod === ('all' as any)
+		});
+	});
 
 	// Determine which options to display based on the selected tab
-	$: displayOptions = selectedTab === 'all' 
-		? filteredOptions 
-		: (selectedTab && groupedOptions && groupedOptions[selectedTab]) || [];
+	let displayOptions = $derived(
+		selectedTab === 'all'
+			? filteredOptions
+			: (selectedTab && groupedOptions && groupedOptions[selectedTab]) || []
+	);
 
-	// Clear the loading state when options are loaded
-	$: if (!isLoading && displayOptions && displayOptions.length > 0) {
-		// Clear the transition loading state
-		transitionLoading.end();
-	}
-
-	// --- Event Handlers ---
-	function handleViewChange(event: CustomEvent<ViewModeDetail>) {
-		const detail = event.detail;
-		
-		if (detail.mode === 'all') {
-			// Switch to 'Show All' view
-			const currentSortMethod = $uiState.sortMethod;
-			actions.setLastSelectedTabForSort(currentSortMethod, 'all');
-		} else if (detail.mode === 'group' && detail.method) {
-			// Switch to a grouped view
-			actions.setSortMethod(detail.method);
-			
-			// Determine which tab to select within the new grouping
-			const lastSelectedForNewMethod = $uiState.lastSelectedTab[detail.method];
-			const availableKeys = actualCategoryKeys;
-			
-			let nextTabToSelect: string | null = null;
-			
-			if (lastSelectedForNewMethod && lastSelectedForNewMethod !== 'all' && availableKeys.includes(lastSelectedForNewMethod)) {
-				// If there was a previously selected tab for this sort method, use it
-				nextTabToSelect = lastSelectedForNewMethod;
-			} else if (availableKeys.length > 0) {
-				// Otherwise, select the first available category tab
-				nextTabToSelect = availableKeys[0];
-			} else {
-				// If no categories exist for this grouping, default back to 'all'
-				nextTabToSelect = 'all';
-			}
-			
-			// Update the last selected tab preference if it changed
-			if (lastSelectedForNewMethod !== nextTabToSelect) {
-				actions.setLastSelectedTabForSort(detail.method, nextTabToSelect);
-			}
+	// Clear the loading state when options are loaded - using $effect instead of $:
+	$effect(() => {
+		if (!isLoading && displayOptions && displayOptions.length > 0) {
+			// Clear the transition loading state
+			transitionLoading.end();
 		}
-	}
+	});
 
-	function handleTabSelect(event: CustomEvent<string>) {
-		const tabKey = event.detail;
-		actions.setLastSelectedTabForSort($uiState.sortMethod, tabKey);
-	}
+	// Event handlers are now handled through document event listeners in onMount
 
 	// --- onMount: Load options based on sequence ---
 	onMount(() => {
@@ -126,8 +100,95 @@
 			}
 		};
 
+		// Listen for tab selection events from TabsContainer
+		const handleTabSelected = (event: CustomEvent) => {
+			console.log('OptionPicker received tab-selected event:', event.detail);
+			if (event.detail?.sortMethod && event.detail?.tabKey) {
+				// Update the store with the selected tab
+				actions.setLastSelectedTabForSort(event.detail.sortMethod, event.detail.tabKey);
+
+				// Force a UI update by updating the selectedTab variable
+				// This will trigger a reactive update in the component
+				selectedTab = event.detail.tabKey;
+			}
+		};
+
+		// Listen for direct tab selection events from TabButton
+		const handleDirectTabSelect = (event: CustomEvent<string>) => {
+			console.log('OptionPicker received direct-tab-select event:', event.detail);
+
+			// Get the current sort method
+			const currentSortMethod = $uiState.sortMethod;
+
+			// Update the store with the selected tab
+			actions.setLastSelectedTabForSort(currentSortMethod, event.detail);
+
+			// Force a UI update by updating the selectedTab variable
+			// This will trigger a reactive update in the component
+			selectedTab = event.detail;
+		};
+
+		// Listen for force-update-tabs events from ViewControl
+		const handleForceUpdateTabs = (event: CustomEvent) => {
+			console.log('OptionPicker received force-update-tabs event:', event.detail);
+
+			if (event.detail?.sortMethod) {
+				// Get the sort method from the event
+				const sortMethod = event.detail.sortMethod;
+
+				// Update the store with the sort method
+				actions.setSortMethod(sortMethod);
+
+				// Force a UI update by updating the showTabs variable
+				// This will trigger a reactive update in the component
+				setTimeout(() => {
+					// Get the grouped options for this sort method
+					const groupedOptions = get(groupedOptionsStore);
+					console.log('OptionPicker: Grouped options after force update:', groupedOptions);
+
+					// Update the actualCategoryKeys variable
+					if (groupedOptions && Object.keys(groupedOptions).length > 0) {
+						// This will trigger a reactive update of showTabs
+						console.log(
+							'OptionPicker: Category keys after force update:',
+							Object.keys(groupedOptions)
+						);
+					}
+				}, 0);
+			}
+		};
+
+		// Listen for show-all-view events from ViewControl
+		const handleShowAllView = (event: CustomEvent) => {
+			console.log('OptionPicker received show-all-view event:', event.detail);
+
+			// Force the UI to update to show all options without categories
+			// This is critical for the "Show All" view to work correctly
+			setTimeout(() => {
+				// Ensure we're in "Show All" mode
+				if ($uiState.sortMethod !== ('all' as any)) {
+					actions.setSortMethod('all' as any);
+				}
+
+				// Force the selectedTab to be 'all'
+				selectedTab = 'all';
+
+				// Log the current state
+				console.log('OptionPicker: Show All View state:', {
+					sortMethod: $uiState.sortMethod,
+					selectedTab,
+					showTabs,
+					filteredOptions: get(filteredOptionsStore).length
+				});
+			}, 0);
+		};
+
 		document.addEventListener('sequence-updated', handleSequenceUpdate);
 		document.addEventListener('refresh-options', handleRefreshOptions as EventListener);
+		document.addEventListener('option-picker-tab-selected', handleTabSelected as EventListener);
+		document.addEventListener('direct-tab-select', handleDirectTabSelect as EventListener);
+		document.addEventListener('force-update-tabs', handleForceUpdateTabs as EventListener);
+		document.addEventListener('show-all-view', handleShowAllView as EventListener);
 
 		// Subscribe to the sequenceStore for updates
 		const unsubscribeSequence = sequenceStore.subscribe((state) => {
@@ -164,6 +225,13 @@
 		return () => {
 			document.removeEventListener('sequence-updated', handleSequenceUpdate);
 			document.removeEventListener('refresh-options', handleRefreshOptions as EventListener);
+			document.removeEventListener(
+				'option-picker-tab-selected',
+				handleTabSelected as EventListener
+			);
+			document.removeEventListener('direct-tab-select', handleDirectTabSelect as EventListener);
+			document.removeEventListener('force-update-tabs', handleForceUpdateTabs as EventListener);
+			document.removeEventListener('show-all-view', handleShowAllView as EventListener);
 			unsubscribeSequence();
 		};
 	});
@@ -171,13 +239,7 @@
 
 <div class="option-picker" class:mobile={false} class:portrait={false}>
 	<LayoutProvider>
-		<OptionPickerHeader
-			{selectedTab}
-			categoryKeys={actualCategoryKeys}
-			{showTabs}
-			on:viewChange={handleViewChange}
-			on:tabSelect={handleTabSelect}
-		/>
+		<OptionPickerHeader {selectedTab} categoryKeys={actualCategoryKeys} {showTabs} />
 
 		<div class="options-container">
 			<OptionDisplayArea

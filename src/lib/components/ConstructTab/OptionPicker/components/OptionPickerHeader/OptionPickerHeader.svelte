@@ -36,9 +36,6 @@
 			categoryKeys: props.categoryKeys
 		});
 
-		// Debug the showTabs prop
-		console.log('showTabs prop value:', props.showTabs);
-
 		// Extra debug logging to help diagnose tab display issues
 		if (props.showTabs) {
 			console.log(
@@ -123,7 +120,6 @@
 				useShortLabels={$useShortLabels}
 				isMobileDevice={$isMobileDevice}
 				compactMode={$compactMode}
-				tabsContainerRefStore={tabsContainerRef}
 				onScroll={handleScroll}
 			/>
 		{:else}

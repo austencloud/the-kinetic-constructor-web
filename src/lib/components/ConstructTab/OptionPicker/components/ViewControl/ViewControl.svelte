@@ -1,23 +1,29 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
+	import { get } from 'svelte/store';
 	import type { SortMethod } from '../../config';
 	import { viewOptions } from './viewOptions';
 	import type { ViewModeDetail, ViewOption } from './types';
 	import ViewButton from './ViewButton.svelte';
 	import ViewDropdown from './ViewDropdown.svelte';
-	import { optionPickerContainer } from '$lib/state/stores/optionPicker/optionPickerContainer';
+	import { actions, uiState, groupedOptionsStore } from '../../store'; // Use working store instead
 
-	// --- Props ---
-	const props = $props<{
+	// --- Props using Svelte 5 runes ---
+	const {
+		initialSortMethod,
+		compact = false,
+		onviewChange
+	} = $props<{
 		initialSortMethod?: SortMethod;
 		compact?: boolean;
+		onviewChange?: (event: CustomEvent<ViewModeDetail>) => void;
 	}>();
 
 	// --- State ---
 	let isOpen = $state(false);
-	// Initialize with the current sort method from the container
+	// Initialize with the current sort method from the store
 	let selectedViewOption = $state<ViewOption>(
-		viewOptions.find((opt) => opt.value === optionPickerContainer.state.sortMethod) ||
+		viewOptions.find((opt) => opt.value === $uiState.sortMethod) ||
 			viewOptions.find((opt) => opt.value === 'all') ||
 			viewOptions[0]
 	);
@@ -28,12 +34,12 @@
 	$effect(() => {
 		// Force compact mode on mobile devices
 		const isMobile = window.innerWidth <= 640;
-		isCompact = props.compact || isMobile || false;
+		isCompact = compact || isMobile || false;
 
 		// Add resize listener to update compact mode when window size changes
 		const handleResize = () => {
 			const isMobile = window.innerWidth <= 640;
-			isCompact = props.compact || isMobile || false;
+			isCompact = compact || isMobile || false;
 		};
 
 		window.addEventListener('resize', handleResize);
@@ -45,21 +51,22 @@
 
 	// --- Lifecycle ---
 	$effect(() => {
-		// Keep the selected option in sync with the container state
-		const currentSortMethod = optionPickerContainer.state.sortMethod;
+		// Keep the selected option in sync with the store state
+		const currentSortMethod = $uiState.sortMethod;
+		const currentSelectedTab = $uiState.lastSelectedTab[currentSortMethod] || 'all';
 
-		// Always update the selectedViewOption to match the current sort method
-		// This ensures the UI always reflects the actual sorting state
-		if (currentSortMethod !== selectedViewOption.value) {
-			// If current sort method is not 'all' (which is the default), find the matching option
-			if (currentSortMethod) {
-				selectedViewOption =
-					viewOptions.find((opt) => opt.value === currentSortMethod) ||
-					viewOptions.find((opt) => opt.value === 'all') ||
-					viewOptions[0];
-			} else {
-				// If no sort method is set (or it's null/undefined), default to 'all'
-				selectedViewOption = viewOptions.find((opt) => opt.value === 'all') || viewOptions[0];
+		// Always update the selectedViewOption to match the current sorting state
+		if (currentSelectedTab === 'all') {
+			// If we're showing all, select the "All" option
+			const allOption = viewOptions.find((opt) => opt.value === 'all');
+			if (allOption && selectedViewOption.value !== 'all') {
+				selectedViewOption = allOption;
+			}
+		} else if (currentSortMethod !== selectedViewOption.value) {
+			// If we're using a specific sort method, find the matching option
+			const methodOption = viewOptions.find((opt) => opt.value === currentSortMethod);
+			if (methodOption) {
+				selectedViewOption = methodOption;
 			}
 		}
 
@@ -118,11 +125,68 @@
 				? { mode: 'all' }
 				: { mode: 'group', method: option.value as SortMethod };
 
-		// Update the optionPickerContainer state directly
-		// This ensures the container state is always in sync with the UI
-		if (option.value !== 'all') {
-			// Only update the sort method if it's a valid sort method
-			optionPickerContainer.setSortMethod(option.value as SortMethod);
+		console.log('ViewControl: handleViewSelect called with option:', option.value);
+
+		// Update the store state directly
+		if (option.value === 'all') {
+			// For "Show All" view, we need to set the sort method to 'all'
+			// This is critical for the UI to know we're in "Show All" mode
+			console.log('ViewControl: Setting "all" view');
+
+			// First update the sort method to ensure we're in the right mode
+			actions.setSortMethod('all' as SortMethod);
+
+			// Force a UI update by dispatching a custom event
+			const showAllEvent = new CustomEvent('show-all-view', {
+				detail: { sortMethod: 'all' },
+				bubbles: true
+			});
+			document.dispatchEvent(showAllEvent);
+
+			// Set the last selected tab to 'all' for all sort methods
+			// This ensures proper display when switching back to other views
+			['type', 'endPos', 'reversals'].forEach((method) => {
+				actions.setLastSelectedTabForSort(method as SortMethod, 'all');
+			});
+		} else {
+			// For other views, update the sort method
+			console.log('ViewControl: Setting sort method to:', option.value);
+			actions.setSortMethod(option.value as SortMethod);
+
+			// Get the last selected tab for this sort method
+			const lastSelectedTab = $uiState.lastSelectedTab[option.value as SortMethod];
+			console.log('ViewControl: Last selected tab for this sort method:', lastSelectedTab);
+
+			// If there's no last selected tab or it's 'all', we need to select the first tab
+			// This ensures the tabs are displayed properly
+			if (!lastSelectedTab || lastSelectedTab === 'all') {
+				console.log('ViewControl: No last selected tab, will select first available tab');
+
+				// Force a UI update by dispatching a custom event
+				const forceUpdateEvent = new CustomEvent('force-update-tabs', {
+					detail: { sortMethod: option.value },
+					bubbles: true
+				});
+				document.dispatchEvent(forceUpdateEvent);
+
+				// We'll select the first tab in the next tick after the UI updates
+				setTimeout(() => {
+					// Get the grouped options for this sort method
+					const groupedOptions = get(groupedOptionsStore);
+					console.log('ViewControl: Grouped options:', groupedOptions);
+
+					if (groupedOptions && Object.keys(groupedOptions).length > 0) {
+						// Get the first category key
+						const firstCategoryKey = Object.keys(groupedOptions)[0];
+						console.log('ViewControl: Selecting first category key:', firstCategoryKey);
+
+						// Set the last selected tab to the first category key
+						actions.setLastSelectedTabForSort(option.value as SortMethod, firstCategoryKey);
+					} else {
+						console.log('ViewControl: No grouped options available');
+					}
+				}, 100);
+			}
 		}
 
 		// Create a DOM event that will bubble up
@@ -132,7 +196,12 @@
 			composed: true
 		});
 
-		// Dispatch the event from the button element if available
+		// Call the Svelte 5 callback if provided
+		if (onviewChange) {
+			onviewChange(customEvent);
+		}
+
+		// Also dispatch the event from the button element if available (for compatibility)
 		if (buttonElement) {
 			console.log('Dispatching viewChange event with detail:', detail);
 			buttonElement.dispatchEvent(customEvent);
@@ -199,7 +268,7 @@
 	}
 </script>
 
-<div class="view-control" class:compact={isCompact}>
+<div class="view-control" class:compact={isCompact} data-sort-method={selectedViewOption.value}>
 	<ViewButton
 		{selectedViewOption}
 		{isOpen}

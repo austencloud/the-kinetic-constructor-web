@@ -50,13 +50,28 @@
 
 			// Set appropriate message text
 			const currentTab = String(props.selectedTab || '');
-			if (currentTab === 'all') {
+
+			// Check if we're in "Show All" view
+			const isShowAllView = !props.hasCategories || currentTab === 'all';
+
+			if (isShowAllView) {
+				// Generic message for "Show All" view
 				messageText = 'No options available for the current position.';
 			} else if (currentTab) {
+				// Specific message for category tabs
 				messageText = `No options available in the "${currentTab}" category.`;
 			} else {
+				// Fallback message
 				messageText = 'No options available.';
 			}
+
+			// Debug logging
+			console.log('OptionDisplayArea: Empty state with message:', {
+				message: messageText,
+				isShowAllView,
+				currentTab,
+				hasCategories: props.hasCategories
+			});
 		} else {
 			displayState = 'options';
 		}

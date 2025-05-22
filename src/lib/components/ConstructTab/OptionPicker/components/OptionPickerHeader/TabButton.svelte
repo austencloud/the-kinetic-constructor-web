@@ -4,6 +4,7 @@
 	import { formatTabName, formatShortTabName } from './tabLabelFormatter';
 	import { fly } from 'svelte/transition';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { actions } from '../../store';
 
 	// Props
 	const props = $props<{
@@ -21,7 +22,7 @@
 	let isHovered = $state(false);
 
 	// Event handler
-	function handleClick() {
+	function handleClick(event: MouseEvent) {
 		// Provide haptic feedback when selecting a category tab
 		if (typeof window !== 'undefined' && hapticFeedbackService.isAvailable()) {
 			hapticFeedbackService.trigger('navigation');
@@ -34,14 +35,46 @@
 			composed: true // Allows the event to cross the shadow DOM boundary
 		});
 
-		// Dispatch the event from the button element
-		const buttonElement = document.getElementById(`tab-${props.categoryKey}`);
+		// Stop the original click event from bubbling to prevent duplicate handling
+		event.stopPropagation();
+
+		// Get the current button element
+		const buttonElement = event.currentTarget as HTMLElement;
 		if (buttonElement) {
+			// Dispatch the event directly from the clicked button
+			// This ensures the event.target is correct for event delegation
 			buttonElement.dispatchEvent(customEvent);
+			console.log('TabButton: Dispatched tabSelect event for', props.categoryKey);
+
+			// Also dispatch a direct event to the document as a fallback
+			// This ensures the event is caught even if the bubbling chain is broken
+			const directEvent = new CustomEvent('direct-tab-select', {
+				detail: props.categoryKey,
+				bubbles: false // Don't bubble to prevent loops
+			});
+			document.dispatchEvent(directEvent);
 		} else {
-			// Fallback to document if button element is not found
-			console.warn('Button element not found, using document for event dispatch');
+			// Fallback to document if button element is not available
+			console.warn('Button element not available, using document for event dispatch');
 			document.dispatchEvent(customEvent);
+		}
+
+		// Force the UI to update by directly updating the store
+		// This is a critical fix for the tab selection issue
+		try {
+			// Get the current sort method from the view control element
+			const viewControlElement = document.querySelector('.view-control');
+			const currentSortMethod = viewControlElement?.getAttribute('data-sort-method') || 'type';
+
+			// Update the store directly
+			actions.setLastSelectedTabForSort(currentSortMethod as any, props.categoryKey);
+
+			console.log('TabButton: Directly updated store with tab selection:', {
+				sortMethod: currentSortMethod,
+				tabKey: props.categoryKey
+			});
+		} catch (error) {
+			console.error('Error directly updating store:', error);
 		}
 	}
 
@@ -68,6 +101,7 @@
 	aria-selected={props.isActive}
 	aria-controls={`options-panel-${props.categoryKey}`}
 	id="tab-{props.categoryKey}"
+	data-category-key={props.categoryKey}
 	title={formatTabName(props.categoryKey)}
 	style="--tab-flex-basis: {props.tabFlexBasis}"
 >

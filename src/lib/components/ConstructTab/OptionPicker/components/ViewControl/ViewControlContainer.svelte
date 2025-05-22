@@ -5,13 +5,7 @@
 	import ViewButton from './ViewButton.svelte';
 	import ViewDropdown from './ViewDropdown.svelte';
 	import { viewOptions } from './viewOptions';
-	import { initializeViewControlState, handleViewSelect } from './ViewControlState.svelte';
-	import {
-		setupEventListeners,
-		handleKeydown,
-		setupStateEffects
-	} from './ViewControlEvents.svelte';
-	import { initializeViewControl, initializeCompactMode } from './ViewControlInitialization.svelte';
+	import type { ViewOption } from './types';
 
 	// --- Props ---
 	const props = $props<{
@@ -19,30 +13,37 @@
 		compact?: boolean;
 	}>();
 
-	// --- Initialize State ---
-	const state = initializeViewControlState();
+	// --- State ---
+	let isOpen = $state(false);
+	let selectedViewOption = $state<ViewOption>(viewOptions[0]);
+	let buttonElement = $state<HTMLButtonElement | null>(null);
+	let isCompact = $state(props.compact || false);
 
-	// --- Initialization ---
-	// Initialize the ViewControl component
-	initializeViewControl(state);
+	// Update compact mode based on props and window size
+	$effect(() => {
+		// Force compact mode on mobile devices
+		const isMobile = window.innerWidth <= 640;
+		isCompact = props.compact || isMobile || false;
 
-	// Initialize compact mode based on props and window size
-	initializeCompactMode(state, props.compact);
+		// Add resize listener to update compact mode when window size changes
+		const handleResize = () => {
+			const isMobile = window.innerWidth <= 640;
+			isCompact = props.compact || isMobile || false;
+		};
 
-	// Set up state effects to sync UI with container state
-	setupStateEffects(state);
+		window.addEventListener('resize', handleResize);
 
-	// --- Event Listeners ---
-	// Set up event listeners for the ViewControl component
-	setupEventListeners(state);
+		return () => {
+			window.removeEventListener('resize', handleResize);
+		};
+	});
 
 	// --- Dropdown Management ---
 	function toggleDropdown() {
-		// Simply toggle the state
-		state.isOpen = !state.isOpen;
+		isOpen = !isOpen;
 
 		// Add haptic feedback on mobile devices when opening
-		if (state.isOpen && 'vibrate' in window.navigator) {
+		if (isOpen && 'vibrate' in window.navigator) {
 			try {
 				window.navigator.vibrate(50);
 			} catch (e) {
@@ -52,21 +53,69 @@
 	}
 
 	function closeDropdown() {
-		state.isOpen = false;
+		isOpen = false;
 	}
 
 	// --- Option Selection ---
-	function handleViewSelectWrapper(option: any) {
-		handleViewSelect(option, state, closeDropdown);
+	function handleViewSelect(option: ViewOption) {
+		selectedViewOption = option;
+		closeDropdown();
 	}
 
 	// --- Keyboard Navigation ---
-	function handleKeydownWrapper(event: KeyboardEvent) {
-		handleKeydown(event, state, closeDropdown, handleViewSelectWrapper);
+	function handleKeydown(event: KeyboardEvent) {
+		if (!isOpen) return;
+
+		const currentIndex = viewOptions.findIndex((opt) => opt.value === selectedViewOption.value);
+		let newIndex = currentIndex;
+
+		switch (event.key) {
+			case 'ArrowDown':
+				event.preventDefault();
+				newIndex = (currentIndex + 1) % viewOptions.length;
+				break;
+			case 'ArrowUp':
+				event.preventDefault();
+				newIndex = (currentIndex - 1 + viewOptions.length) % viewOptions.length;
+				break;
+			case 'Home':
+				event.preventDefault();
+				newIndex = 0;
+				break;
+			case 'End':
+				event.preventDefault();
+				newIndex = viewOptions.length - 1;
+				break;
+			case 'Enter':
+			case ' ':
+				event.preventDefault();
+				handleViewSelect(selectedViewOption);
+				return;
+			case 'Escape':
+				event.preventDefault();
+				closeDropdown();
+				return;
+			case 'Tab':
+				// Let Tab work normally, but close the dropdown
+				closeDropdown();
+				return;
+			default:
+				// Handle first-letter navigation
+				const key = event.key.toLowerCase();
+				const matchingOption = viewOptions.find((opt) => opt.label.toLowerCase().startsWith(key));
+				if (matchingOption) {
+					event.preventDefault();
+					newIndex = viewOptions.findIndex((opt) => opt.value === matchingOption.value);
+				}
+				break;
+		}
+
+		if (newIndex !== currentIndex) {
+			selectedViewOption = viewOptions[newIndex];
+		}
 	}
 
-	// This onDestroy is redundant with the cleanup in the $effect above
-	// But we keep it as a safety measure
+	// Clean up event listeners
 	onDestroy(() => {
 		document.removeEventListener('click', () => {});
 		document.removeEventListener('update-view-control', () => {});
@@ -76,24 +125,24 @@
 
 <div
 	class="view-control"
-	class:compact={state.isCompact}
-	class:dropdown-open={state.isOpen}
+	class:compact={isCompact}
+	class:dropdown-open={isOpen}
 	id="view-control-container"
 >
 	<ViewButton
-		selectedViewOption={state.selectedViewOption}
-		isOpen={state.isOpen}
+		{selectedViewOption}
+		{isOpen}
 		onClick={toggleDropdown}
-		compact={state.isCompact}
-		onButtonRef={(element) => (state.buttonElement = element)}
+		compact={isCompact}
+		onButtonRef={(element) => (buttonElement = element)}
 	/>
 
 	<ViewDropdown
-		isOpen={state.isOpen}
-		selectedViewOption={state.selectedViewOption}
+		{isOpen}
+		{selectedViewOption}
 		{viewOptions}
-		onSelect={handleViewSelectWrapper}
-		onKeydown={handleKeydownWrapper}
+		onSelect={handleViewSelect}
+		onKeydown={handleKeydown}
 	/>
 </div>
 

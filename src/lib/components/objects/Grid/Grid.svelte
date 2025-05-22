@@ -28,10 +28,12 @@
 	// Compute grid source based on mode
 	let gridSrc = $state('');
 	$effect(() => {
+		// Fix the path to use the correct location in the static folder
 		gridSrc =
 			effectiveGridMode === 'diamond'
 				? '/images/grid/diamond_grid.svg'
 				: '/images/grid/box_grid.svg';
+
 	});
 
 	/**

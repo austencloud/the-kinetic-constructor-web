@@ -1,22 +1,34 @@
 <!-- src/lib/components/ConstructTab/OptionPicker/components/OptionPickerHeader/TabsContainer.svelte -->
 <script lang="ts">
-	import { get, type Writable } from 'svelte/store';
 	import ScrollIndicator from './ScrollIndicator.svelte';
 	import ScrollHint from './ScrollHint.svelte';
 	import TabsTooltip from './TabsTooltip.svelte';
+	// Import TabsInnerContainer component properly
 	import TabsInnerContainer from './TabsInnerContainer.svelte';
+	// Import actions from the store
+	import { actions } from '../../store';
 
-	// Props
-	const props = $props<{
+	// Props using Svelte 5 runes
+	const {
+		selectedTab,
+		categoryKeys,
+		isScrollable,
+		showScrollIndicator,
+		useShortLabels,
+		isMobileDevice,
+		compactMode,
+		onScroll,
+		ontabSelect
+	} = $props<{
 		selectedTab: string | null;
 		categoryKeys: string[];
 		isScrollable: boolean;
 		showScrollIndicator: boolean;
 		useShortLabels: boolean;
-		isMobileDevice: boolean; // Keep if used directly for styling/logic within TabsContainer
-		compactMode: boolean; // Keep if used directly for styling/logic
-		tabsContainerRefStore?: Writable<HTMLDivElement | null>; // Expects the store itself
-		onScroll?: () => void; // Event handler for scroll
+		isMobileDevice: boolean;
+		compactMode: boolean;
+		onScroll?: () => void;
+		ontabSelect?: (event: CustomEvent<string>) => void;
 	}>();
 
 	// Local state for the DOM element and scroll position
@@ -34,27 +46,10 @@
 		}, 5000);
 	}, 1000);
 
-	$effect(() => {
-		if (props.tabsContainerRefStore) {
-			props.tabsContainerRefStore.set(actualTabsContainerElement);
-		}
-		// Optional: Cleanup when the element is unmounted or store changes
-		return () => {
-			if (
-				props.tabsContainerRefStore &&
-				actualTabsContainerElement &&
-				get(props.tabsContainerRefStore) === actualTabsContainerElement
-			) {
-				// If the hook doesn't clear it on its own destroy, uncommenting this might be useful.
-				// props.tabsContainerRefStore.set(null);
-			}
-		};
-	});
-
 	// Forward scroll event if onScroll prop is provided and update scroll position
 	function handleScroll() {
-		if (props.onScroll) {
-			props.onScroll();
+		if (onScroll) {
+			onScroll();
 		}
 
 		if (actualTabsContainerElement) {
@@ -69,36 +64,85 @@
 			maxScroll = actualTabsContainerElement.scrollWidth - actualTabsContainerElement.clientWidth;
 		}
 	});
+
+	// Set up event listener for tabSelected events (renamed from tabSelect to prevent recursion)
+	$effect(() => {
+		const handleTabSelect = (event: CustomEvent<string>) => {
+			// Forward the event to the parent component if the callback is provided
+			if (ontabSelect) {
+				// Create a new event with the original name for the parent component
+				const parentEvent = new CustomEvent('tabSelect', {
+					detail: event.detail
+				});
+
+				// Call the callback directly
+				ontabSelect(parentEvent);
+				console.log('TabsContainer: Forwarded tab selection to parent for', event.detail);
+			}
+
+			// IMPORTANT: Always update the store directly regardless of whether ontabSelect is provided
+			// This ensures the UI updates even if the event chain is broken
+			try {
+				// Get the current sort method from the view control element
+				const viewControlElement = document.querySelector('.view-control');
+				const currentSortMethod = viewControlElement?.getAttribute('data-sort-method') || 'type';
+
+				console.log('TabsContainer: Updating store with tab selection:', {
+					sortMethod: currentSortMethod,
+					tabKey: event.detail
+				});
+
+				// Update the store with the selected tab
+				actions.setLastSelectedTabForSort(currentSortMethod as any, event.detail);
+
+				// Force a UI update by dispatching a custom event
+				const updateEvent = new CustomEvent('option-picker-tab-selected', {
+					detail: {
+						sortMethod: currentSortMethod,
+						tabKey: event.detail
+					},
+					bubbles: true
+				});
+				document.dispatchEvent(updateEvent);
+			} catch (error) {
+				console.error('Error updating store with tab selection:', error);
+			}
+		};
+
+		// Add event listener to the document for the renamed event
+		document.addEventListener('tabSelected', handleTabSelect as EventListener);
+
+		// Clean up on destroy
+		return () => {
+			document.removeEventListener('tabSelected', handleTabSelect as EventListener);
+		};
+	});
 </script>
 
-{#if Array.isArray(props.categoryKeys) && props.categoryKeys.length > 0}
+{#if Array.isArray(categoryKeys) && categoryKeys.length > 0}
 	<div class="tabs-wrapper">
 		<!-- Left scroll indicator -->
-		<ScrollHint direction="left" show={props.isScrollable && scrollPosition > 20} />
+		<ScrollHint direction="left" show={isScrollable && scrollPosition > 20} />
 
 		<div
 			class="tabs"
 			role="tablist"
 			bind:this={actualTabsContainerElement}
-			class:scrollable={props.isScrollable}
+			class:scrollable={isScrollable}
 			onscroll={handleScroll}
 		>
-			<TabsInnerContainer
-				categoryKeys={props.categoryKeys}
-				selectedTab={props.selectedTab}
-				useShortLabels={props.useShortLabels}
-			/>
+			<TabsInnerContainer {categoryKeys} {selectedTab} {useShortLabels} />
 
 			<!-- Tooltip to indicate more options in other tabs -->
-			<TabsTooltip show={showTooltip} categoryCount={props.categoryKeys.length} />
+			<TabsTooltip show={showTooltip} categoryCount={categoryKeys.length} />
 		</div>
 
 		<!-- Right scroll indicator -->
-		<ScrollHint direction="right" show={props.isScrollable && scrollPosition < maxScroll - 20} />
+		<ScrollHint direction="right" show={isScrollable && scrollPosition < maxScroll - 20} />
 	</div>
 
-	{#if props.showScrollIndicator}
-		<ScrollIndicator show={props.isScrollable} />
+	{#if showScrollIndicator}
+		<ScrollIndicator show={isScrollable} />
 	{/if}
 {:else}
 	<!-- Placeholder when tabs are shown but empty -->
