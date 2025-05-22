@@ -8,6 +8,8 @@ import {
 } from '$lib/types/Types';
 import { resourceCache } from '$lib/services/ResourceCache';
 import { getEmbeddedPropSvg } from '$lib/utils/embeddedSvgs';
+import { getEmbeddedArrowSvg } from '$lib/utils/embeddedArrowSvgs';
+import { getEmbeddedGlyphSvg } from '$lib/utils/embeddedGlyphSvgs';
 import { logger } from '$lib/core/logging';
 import { toAppError } from '$lib/types/ErrorTypes';
 
@@ -299,7 +301,16 @@ export default class SvgManager {
 		const cacheKey = this.getCacheKey(['arrow', motionType, startOri, String(turns), color]);
 
 		try {
-			// Check ResourceCache first
+			// First check for embedded SVG (highest priority)
+			const embeddedSvg = getEmbeddedArrowSvg(motionType, startOri, turns, color);
+			if (embeddedSvg) {
+				// Store in both caches for future use
+				SvgManager.localCache.set(cacheKey, embeddedSvg);
+				await resourceCache.set(cacheKey, embeddedSvg);
+				return embeddedSvg;
+			}
+
+			// Check ResourceCache next
 			const cachedSvg = await resourceCache.get<string>(cacheKey);
 			if (cachedSvg) {
 				return cachedSvg;
@@ -620,6 +631,16 @@ export default class SvgManager {
 				const cacheKey = this.getCacheKey(['arrow', motionType, startOri, String(turns), color]);
 
 				try {
+					// First check for embedded SVG (highest priority)
+					const embeddedSvg = getEmbeddedArrowSvg(motionType, startOri, turns, color);
+					if (embeddedSvg) {
+						// Store in both caches for future use
+						SvgManager.localCache.set(cacheKey, embeddedSvg);
+						await resourceCache.set(cacheKey, embeddedSvg);
+						logger.debug(`Using embedded SVG for: ${motionType} ${startOri} ${turns} (${color})`);
+						return;
+					}
+
 					// Check if already in ResourceCache
 					const cachedSvg = await resourceCache.get<string>(cacheKey);
 					if (cachedSvg) {
