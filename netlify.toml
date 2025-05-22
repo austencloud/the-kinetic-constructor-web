@@ -1,3 +1,21 @@
 [build]
 command = "npm run build"
 publish = "build"
+
+# Set cache headers for SVG files
+[[headers]]
+  for = "/images/props/*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/images/arrows/*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Ensure proper CORS headers for SVG files
+[[headers]]
+  for = "/*.svg"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Content-Type = "image/svg+xml"

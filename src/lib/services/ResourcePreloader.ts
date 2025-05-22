@@ -246,17 +246,12 @@ export class ResourcePreloader {
 		const motionTypes = [
 			'pro',
 			'anti',
-			'static',
+			'float',
 			'dash',
-			'iso',
-			'same',
-			'opp',
-			'ext',
-			'ins',
-			'float'
+			'static'
 		] as const;
 		// Only use orientations that exist in the file system
-		const orientations = ['in', 'out', 'wall', 'wheel'] as const;
+		const orientations = ['in', 'out', 'clock', 'counter'] as const;
 		const turns: TKATurns[] = [0, 0.5, 1, 1.5, 2, 2.5, 3];
 		const colors: Color[] = ['red', 'blue'];
 

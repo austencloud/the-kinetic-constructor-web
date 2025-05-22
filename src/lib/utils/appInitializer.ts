@@ -6,6 +6,8 @@ import { resourcePreloader } from '$lib/services/ResourcePreloader';
 import { resourceCache } from '$lib/services/ResourceCache';
 import { glyphContainer } from '$lib/stores/glyphContainer.svelte';
 import { toAppError } from '$lib/types/ErrorTypes';
+import SvgManager from '$lib/components/SvgManager/SvgManager';
+import { PropType } from '$lib/types/Types';
 
 /**
  * Initialize the application, reporting progress via callback for XState
@@ -40,6 +42,16 @@ export async function initializeApplication(
 				const mappedProgress = 10 + Math.floor(progress * 0.7);
 				reportProgress(mappedProgress, message);
 			});
+
+			// Preload critical staff props first (highest priority)
+			const svgManager = new SvgManager();
+			const staffPreloadPromise = svgManager.preloadPropSvgs([
+				{ propType: PropType.STAFF, color: 'red' },
+				{ propType: PropType.STAFF, color: 'blue' }
+			]);
+
+			// Wait for staff props to load first
+			await staffPreloadPromise;
 
 			// Start preloading all resources - this now includes all pictograph components
 			// including arrows, props, grids, and glyphs

@@ -7,6 +7,7 @@ import {
 	type TKATurns
 } from '$lib/types/Types';
 import { resourceCache } from '$lib/services/ResourceCache';
+import { getEmbeddedPropSvg } from '$lib/utils/embeddedSvgs';
 import { logger } from '$lib/core/logging';
 import { toAppError } from '$lib/types/ErrorTypes';
 
@@ -86,6 +87,17 @@ export default class SvgManager {
 					return response.text();
 				};
 
+				// Detect if we're on a mobile device for longer timeout
+				const isMobileDevice =
+					typeof window !== 'undefined' &&
+					(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+						navigator.userAgent
+					) ||
+						window.innerWidth <= 768);
+
+				// Longer timeout for mobile devices
+				const timeoutDuration = isMobileDevice ? 5000 : 2000;
+
 				// Create a timeout promise that resolves with a fallback SVG
 				const timeoutPromise = new Promise<string>((resolve) => {
 					// Use requestAnimationFrame to schedule the timeout
@@ -94,14 +106,21 @@ export default class SvgManager {
 
 					const checkTimeout = () => {
 						const elapsed = performance.now() - startTime;
-						if (elapsed >= 2000) {
-							// 2 second timeout
+						if (elapsed >= timeoutDuration) {
 							// Return a simple fallback SVG
-							resolve(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-								<rect width="100" height="100" fill="#cccccc" />
-								<text x="10" y="50" fill="#666666">Timeout</text>
+							const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+								<rect width="100" height="100" fill="#f8f8f8" />
+								<circle cx="50" cy="50" r="30" fill="#cccccc" opacity="0.5" />
+								<text x="50" y="55" text-anchor="middle" fill="#666666" font-size="10">Loading</text>
 								<circle id="centerPoint" cx="50" cy="50" r="2" fill="red" />
-							</svg>`);
+							</svg>`;
+
+							// Log timeout for debugging
+							if (import.meta.env.DEV) {
+								console.warn(`SVG fetch timeout (${timeoutDuration}ms) for: ${path}`);
+							}
+
+							resolve(fallbackSvg);
 						} else {
 							rafId = requestAnimationFrame(checkTimeout);
 						}
@@ -201,7 +220,16 @@ export default class SvgManager {
 		const cacheKey = this.getCacheKey(['prop', propType, color]);
 
 		try {
-			// Check ResourceCache first
+			// First check for embedded SVG (highest priority)
+			const embeddedSvg = getEmbeddedPropSvg(propType, color);
+			if (embeddedSvg) {
+				// Store in both caches for future use
+				SvgManager.localCache.set(cacheKey, embeddedSvg);
+				await resourceCache.set(cacheKey, embeddedSvg);
+				return embeddedSvg;
+			}
+
+			// Check ResourceCache next
 			const cachedSvg = await resourceCache.get<string>(cacheKey);
 			if (cachedSvg) {
 				return cachedSvg;
@@ -210,6 +238,25 @@ export default class SvgManager {
 			// Check local cache as fallback
 			if (SvgManager.localCache.has(cacheKey)) {
 				return SvgManager.localCache.get(cacheKey)!;
+			}
+
+			// For staff props, always use embedded SVGs (this is a safety fallback)
+			if (propType === PropType.STAFF) {
+				const fallbackStaffSvg =
+					color === 'red'
+						? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252.8 77.8">
+						<path fill="#ED1C24" stroke="#FFFFFF" stroke-width="2.75" stroke-miterlimit="10" d="M251.4,67.7V10.1c0-4.8-4.1-8.7-9.1-8.7s-9.1,3.9-9.1,8.7v19.2H10.3c-4.9,0-8.9,3.8-8.9,8.5V41c0,4.6,4,8.5,8.9,8.5h222.9v18.2c0,4.8,4.1,8.7,9.1,8.7S251.4,72.5,251.4,67.7z"/>
+						<circle id="centerPoint" fill="#FF0000" cx="126.4" cy="38.9" r="2"/>
+					</svg>`
+						: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252.8 77.8">
+						<path fill="#2E3192" stroke="#FFFFFF" stroke-width="2.75" stroke-miterlimit="10" d="M251.4,67.7V10.1c0-4.8-4.1-8.7-9.1-8.7s-9.1,3.9-9.1,8.7v19.2H10.3c-4.9,0-8.9,3.8-8.9,8.5V41c0,4.6,4,8.5,8.9,8.5h222.9v18.2c0,4.8,4.1,8.7,9.1,8.7S251.4,72.5,251.4,67.7z"/>
+						<circle id="centerPoint" fill="#FF0000" cx="126.4" cy="38.9" r="2"/>
+					</svg>`;
+
+				// Store in both caches
+				SvgManager.localCache.set(cacheKey, fallbackStaffSvg);
+				await resourceCache.set(cacheKey, fallbackStaffSvg);
+				return fallbackStaffSvg;
 			}
 
 			// Fallback to direct fetch - use the correct path with static prefix
@@ -448,6 +495,16 @@ export default class SvgManager {
 				const cacheKey = this.getCacheKey(['prop', propType, color]);
 
 				try {
+					// First check for embedded SVG (highest priority)
+					const embeddedSvg = getEmbeddedPropSvg(propType, color);
+					if (embeddedSvg) {
+						// Store in both caches for future use
+						SvgManager.localCache.set(cacheKey, embeddedSvg);
+						await resourceCache.set(cacheKey, embeddedSvg);
+						logger.debug(`Using embedded SVG for: ${propType} (${color})`);
+						return;
+					}
+
 					// Check if already in ResourceCache
 					const cachedSvg = await resourceCache.get<string>(cacheKey);
 					if (cachedSvg) {
@@ -461,6 +518,26 @@ export default class SvgManager {
 						// Update ResourceCache from local cache
 						const localCachedSvg = SvgManager.localCache.get(cacheKey)!;
 						await resourceCache.set(cacheKey, localCachedSvg);
+						return;
+					}
+
+					// For staff props, always use embedded SVGs (this is a safety fallback)
+					if (propType === PropType.STAFF) {
+						const fallbackStaffSvg =
+							color === 'red'
+								? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252.8 77.8">
+								<path fill="#ED1C24" stroke="#FFFFFF" stroke-width="2.75" stroke-miterlimit="10" d="M251.4,67.7V10.1c0-4.8-4.1-8.7-9.1-8.7s-9.1,3.9-9.1,8.7v19.2H10.3c-4.9,0-8.9,3.8-8.9,8.5V41c0,4.6,4,8.5,8.9,8.5h222.9v18.2c0,4.8,4.1,8.7,9.1,8.7S251.4,72.5,251.4,67.7z"/>
+								<circle id="centerPoint" fill="#FF0000" cx="126.4" cy="38.9" r="2"/>
+							</svg>`
+								: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252.8 77.8">
+								<path fill="#2E3192" stroke="#FFFFFF" stroke-width="2.75" stroke-miterlimit="10" d="M251.4,67.7V10.1c0-4.8-4.1-8.7-9.1-8.7s-9.1,3.9-9.1,8.7v19.2H10.3c-4.9,0-8.9,3.8-8.9,8.5V41c0,4.6,4,8.5,8.9,8.5h222.9v18.2c0,4.8,4.1,8.7,9.1,8.7S251.4,72.5,251.4,67.7z"/>
+								<circle id="centerPoint" fill="#FF0000" cx="126.4" cy="38.9" r="2"/>
+							</svg>`;
+
+						// Store in both caches
+						SvgManager.localCache.set(cacheKey, fallbackStaffSvg);
+						await resourceCache.set(cacheKey, fallbackStaffSvg);
+						logger.debug(`Using fallback staff SVG for: ${propType} (${color})`);
 						return;
 					}
 

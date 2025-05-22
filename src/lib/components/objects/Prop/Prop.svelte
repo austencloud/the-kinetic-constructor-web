@@ -7,6 +7,30 @@
 	import PropRotAngleManager from './PropRotAngleManager';
 	import { sequenceStore } from '$lib/state/stores/sequenceStore';
 
+	/**
+	 * Safe base64 encoding that works on all browsers including mobile
+	 * Handles Unicode characters properly
+	 */
+	function safeBase64Encode(str: string): string {
+		try {
+			// First try the standard btoa
+			return btoa(str);
+		} catch (e) {
+			// If that fails (likely due to Unicode characters), use this safer approach
+			try {
+				// Convert string to UTF-8 encoded binary string
+				const binaryString = encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) =>
+					String.fromCharCode(parseInt(p1, 16))
+				);
+				return btoa(binaryString);
+			} catch (fallbackError) {
+				console.error('Base64 encoding failed:', fallbackError);
+				// Last resort fallback - use URI encoding which is more compatible
+				return encodeURIComponent(str);
+			}
+		}
+	}
+
 	// Props using Svelte 5 runes
 	const props = $props<{
 		propData?: PropData;
@@ -140,7 +164,7 @@
 					const { viewBox, center } = parsePropSvg(cachedSvg, effectivePropData.color);
 
 					svgData = {
-						imageSrc: `data:image/svg+xml;base64,${btoa(cachedSvg)}`,
+						imageSrc: `data:image/svg+xml;base64,${safeBase64Encode(cachedSvg)}`,
 						viewBox,
 						center
 					};
@@ -175,7 +199,7 @@
 			const { viewBox, center } = parsePropSvg(svgText, effectivePropData.color);
 
 			svgData = {
-				imageSrc: `data:image/svg+xml;base64,${btoa(svgText)}`,
+				imageSrc: `data:image/svg+xml;base64,${safeBase64Encode(svgText)}`,
 				viewBox,
 				center
 			};
@@ -197,10 +221,16 @@
 		} catch (error: any) {
 			console.error('Error loading prop SVG:', error);
 
-			// Fallback SVG for error state
+			// Create a better fallback SVG for error state
+			const fallbackColor = effectivePropData?.color === 'red' ? '#ED1C24' : '#2E3192';
+			const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+				<rect width="100" height="100" fill="#f8f8f8" />
+				<circle cx="50" cy="50" r="30" fill="${fallbackColor}" opacity="0.3" />
+				<circle id="centerPoint" cx="50" cy="50" r="2" fill="${fallbackColor}" />
+			</svg>`;
+
 			svgData = {
-				imageSrc:
-					'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZiIgLz48dGV4dCB4PSIyMCIgeT0iNTAiIGZpbGw9IiNmMDAiPkVycm9yPC90ZXh0Pjwvc3ZnPg==',
+				imageSrc: `data:image/svg+xml;base64,${safeBase64Encode(fallbackSvg)}`,
 				viewBox: { width: 100, height: 100 },
 				center: { x: 50, y: 50 }
 			};
