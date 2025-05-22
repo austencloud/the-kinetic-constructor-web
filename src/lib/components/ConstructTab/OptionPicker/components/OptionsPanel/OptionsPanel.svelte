@@ -1,11 +1,16 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { scrollActions } from '../../store/scrollStore';
 	import { determineGroupKey, getSortedGroupKeys } from '../../services/OptionsService';
 	import { resize } from '../../actions/resize';
 	import SingleRowRenderer from './SingleRowRenderer.svelte';
 	import MultiRowRenderer from './MultiRowRenderer.svelte';
+
+	// Event dispatcher
+	const dispatch = createEventDispatcher<{
+		optionSelect: PictographData;
+	}>();
 
 	type LayoutRow = {
 		type: 'single' | 'multi';
@@ -116,6 +121,12 @@
 		}
 		layoutRows = rows;
 	});
+
+	// Handle option selection events from child components
+	function handleOptionSelect(event: CustomEvent<PictographData>) {
+		// Forward the event to parent components
+		dispatch('optionSelect', event.detail);
+	}
 
 	const debouncedCheckContentHeight = (() => {
 		let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -234,9 +245,19 @@
 	<div class="panel-content">
 		{#each layoutRows as row, rowIndex (transitionKey + '-row-' + rowIndex)}
 			{#if row.type === 'single'}
-				<SingleRowRenderer groups={row.groups} {transitionKey} {rowIndex} />
+				<SingleRowRenderer 
+					groups={row.groups} 
+					{transitionKey} 
+					{rowIndex} 
+					on:optionSelect={handleOptionSelect}
+				/>
 			{:else if row.type === 'multi'}
-				<MultiRowRenderer groups={row.groups} {transitionKey} {rowIndex} />
+				<MultiRowRenderer 
+					groups={row.groups} 
+					{transitionKey} 
+					{rowIndex} 
+					on:optionSelect={handleOptionSelect}
+				/>
 			{/if}
 		{/each}
 	</div>
@@ -283,8 +304,7 @@
 		transform: translate(-50%, -50%);
 	}
 
-	/* Styles for multi-group-row and multi-group-item have been moved to MultiRowRenderer.svelte */
-
+	/* Scrollbar styling */
 	.options-panel {
 		scrollbar-width: thin;
 		scrollbar-color: rgba(100, 116, 139, 0.7) rgba(30, 41, 59, 0.1);

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+	import { getContext, createEventDispatcher } from 'svelte';
 	import { type Readable } from 'svelte/store';
 	import { fade, scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
@@ -11,6 +11,11 @@
 		type LayoutContextValue
 	} from '../layoutContext';
 	import { uiState } from '../store';
+
+	// Event dispatcher
+	const dispatch = createEventDispatcher<{
+		optionSelect: PictographData;
+	}>();
 
 	// --- Props ---
 	export let options: PictographData[] = [];
@@ -47,6 +52,12 @@
 			: options.length === 2
 				? 'repeat(2, 1fr)' // Force two columns for two items
 				: contextGridColumns; // Use the layout context's column definition otherwise
+
+	// Handle option selection
+	function handleOptionSelect(event: CustomEvent<PictographData>) {
+		// Forward the event to parent components
+		dispatch('optionSelect', event.detail);
+	}
 </script>
 
 <div
@@ -66,7 +77,11 @@
 			class:single-item={applySingleItemClass}
 			class:two-item={applyTwoItemClass}
 		>
-			<Option pictographData={option} isPartOfTwoItems={applyTwoItemClass} />
+			<Option 
+				pictographData={option} 
+				isPartOfTwoItems={applyTwoItemClass} 
+				on:optionSelect={handleOptionSelect}
+			/>
 		</div>
 	{/each}
 </div>
@@ -89,15 +104,9 @@
 		transition: height 0.3s ease-out; /* Smooth height transitions */
 		will-change: transform; /* Optimize for animations */
 		transform: translateZ(0); /* Force GPU acceleration */
-	}
-
-	/* Add top margin only if it's NOT part of a multi-group item */
-	:global(.options-panel > .options-grid) {
-		margin-top: 0.5rem; /* Adjust as needed */
-	}
-	/* Remove extra top margin if it directly follows a header in single layout */
-	:global(.options-panel > .section-header-container + .options-grid) {
-		margin-top: 0;
+		backface-visibility: hidden; /* Prevent flickering during animations */
+		grid-gap: var(--grid-gap, 0.5rem); /* Use gap from layout context */
+		padding: 0.5rem; /* Add padding around the grid */
 	}
 
 	/* --- Grid Item Wrapper --- */
@@ -132,11 +141,7 @@
 		padding: 0.25rem;
 	}
 
-	/* Force minimum spacing between items with desktop square aspect */
-
 	/* Smaller grid items on small screens */
-
-	/* Even smaller for very small screens */
 	@media (max-width: 380px) {
 		.grid-item-wrapper {
 			width: calc(var(--option-size, 100px) * 0.8);
