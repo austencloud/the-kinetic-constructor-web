@@ -33,6 +33,12 @@
 	let previousTab: string | null = $state(null); // Use $state for reactive updates
 	let isReady = $state(false); // Track if component is ready to be shown, use $state
 
+	// Optimization: Force immediate rendering for better performance
+	// This prevents the sequential loading effect
+	setTimeout(() => {
+		isReady = true;
+	}, 10);
+
 	const MAX_ITEMS_FOR_SMALL_GROUP = 2;
 
 	// Save scroll position when scrolling
@@ -213,15 +219,16 @@
 	});
 
 	onMount(() => {
+		// Optimization: Use a much shorter timeout for faster rendering
+		// This prevents the sequential loading effect
 		let initialCheckTimeout: ReturnType<typeof setTimeout> | null = setTimeout(() => {
 			if (panelElement) {
 				debouncedCheckContentHeight();
-				setTimeout(() => {
-					isReady = true;
-				}, 50);
+				// Set isReady immediately instead of waiting
+				isReady = true;
 			}
 			initialCheckTimeout = null;
-		}, 200);
+		}, 10); // Reduced from 200ms to 10ms for faster rendering
 
 		return () => {
 			if (initialCheckTimeout) {
@@ -245,17 +252,17 @@
 	<div class="panel-content">
 		{#each layoutRows as row, rowIndex (transitionKey + '-row-' + rowIndex)}
 			{#if row.type === 'single'}
-				<SingleRowRenderer 
-					groups={row.groups} 
-					{transitionKey} 
-					{rowIndex} 
+				<SingleRowRenderer
+					groups={row.groups}
+					{transitionKey}
+					{rowIndex}
 					on:optionSelect={handleOptionSelect}
 				/>
 			{:else if row.type === 'multi'}
-				<MultiRowRenderer 
-					groups={row.groups} 
-					{transitionKey} 
-					{rowIndex} 
+				<MultiRowRenderer
+					groups={row.groups}
+					{transitionKey}
+					{rowIndex}
 					on:optionSelect={handleOptionSelect}
 				/>
 			{/if}

@@ -230,32 +230,36 @@ export function createBeatDataHandler(
 							// This will trigger a complete redraw of the pictograph
 							// which will update the arrow angles correctly
 
-							// For turns changes, we need to be more efficient
-							if (property === 'turns') {
-								// Instead of setting arrow data to null, update only the necessary properties
-								if (updatedPictographData.blueArrowData) {
+							// Update arrow data for both turns and direction changes
+							// This ensures immediate visual feedback for all parameter changes
+							if (updatedPictographData.blueArrowData) {
+								if (property === 'turns') {
 									// Update the turns value directly in the arrow data
 									updatedPictographData.blueArrowData = {
 										...updatedPictographData.blueArrowData,
 										turns: value
 									};
+								} else if (property === 'direction') {
+									// Update the propRotDir value in the arrow data
+									const propRotDir =
+										value === 'clockwise' ? 'cw' : value === 'counterclockwise' ? 'ccw' : 'no_rot';
+									updatedPictographData.blueArrowData = {
+										...updatedPictographData.blueArrowData,
+										propRotDir: propRotDir,
+										// Also update the motion type to match the updated motion data
+										motionType: updatedMotionData.motionType
+									};
 								}
+							}
 
-								// Use requestAnimationFrame to schedule the update for the next frame
-								// This helps avoid blocking the main thread and reduces jank
-								if (typeof window !== 'undefined') {
-									requestAnimationFrame(() => {
-										// Force a complete redraw through the pictographContainer
-										// Use type assertion to handle potential type mismatches
-										pictographContainer.setData(updatedPictographData as any);
-									});
-								} else {
-									// For SSR environments, update directly
-									pictographContainer.setData(updatedPictographData as any);
-								}
+							// Always force a complete redraw for immediate visual feedback
+							// This ensures real-time updates for both turns and direction changes
+							if (typeof window !== 'undefined') {
+								// Immediate update without requestAnimationFrame for better responsiveness
+								pictographContainer.setData(updatedPictographData as any);
 							} else {
-								// For other changes, updating the reference is sufficient
-								pictographData.value = updatedPictographData;
+								// For SSR environments, update directly
+								pictographContainer.setData(updatedPictographData as any);
 							}
 						}
 					}
@@ -308,32 +312,36 @@ export function createBeatDataHandler(
 							// This will trigger a complete redraw of the pictograph
 							// which will update the arrow angles correctly
 
-							// For turns changes, we need to be more efficient
-							if (property === 'turns') {
-								// Instead of setting arrow data to null, update only the necessary properties
-								if (updatedPictographData.redArrowData) {
+							// Update arrow data for both turns and direction changes
+							// This ensures immediate visual feedback for all parameter changes
+							if (updatedPictographData.redArrowData) {
+								if (property === 'turns') {
 									// Update the turns value directly in the arrow data
 									updatedPictographData.redArrowData = {
 										...updatedPictographData.redArrowData,
 										turns: value
 									};
+								} else if (property === 'direction') {
+									// Update the propRotDir value in the arrow data
+									const propRotDir =
+										value === 'clockwise' ? 'cw' : value === 'counterclockwise' ? 'ccw' : 'no_rot';
+									updatedPictographData.redArrowData = {
+										...updatedPictographData.redArrowData,
+										propRotDir: propRotDir,
+										// Also update the motion type to match the updated motion data
+										motionType: updatedMotionData.motionType
+									};
 								}
+							}
 
-								// Use requestAnimationFrame to schedule the update for the next frame
-								// This helps avoid blocking the main thread and reduces jank
-								if (typeof window !== 'undefined') {
-									requestAnimationFrame(() => {
-										// Force a complete redraw through the pictographContainer
-										// Use type assertion to handle potential type mismatches
-										pictographContainer.setData(updatedPictographData as any);
-									});
-								} else {
-									// For SSR environments, update directly
-									pictographContainer.setData(updatedPictographData as any);
-								}
+							// Always force a complete redraw for immediate visual feedback
+							// This ensures real-time updates for both turns and direction changes
+							if (typeof window !== 'undefined') {
+								// Immediate update without requestAnimationFrame for better responsiveness
+								pictographContainer.setData(updatedPictographData as any);
 							} else {
-								// For other changes, updating the reference is sufficient
-								pictographData.value = updatedPictographData;
+								// For SSR environments, update directly
+								pictographContainer.setData(updatedPictographData as any);
 							}
 						}
 					}

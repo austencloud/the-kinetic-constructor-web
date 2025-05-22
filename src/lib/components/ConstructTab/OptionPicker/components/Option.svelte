@@ -59,7 +59,7 @@
 	aria-pressed={isSelected}
 >
 	<div class="pictograph-container" style="transform: scale({scaleFactor})">
-		<!-- Remove the key block to prevent unnecessary re-renders -->
+		<!-- Optimized pictograph rendering -->
 		<div class="pictograph-wrapper">
 			<Pictograph
 				pictographData={props.pictographData}

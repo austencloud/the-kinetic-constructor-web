@@ -262,7 +262,7 @@ export default class SvgManager {
 			}
 
 			// Fallback to direct fetch - use the correct path with static prefix
-			const path = `/images/props/${propType}.svg`;
+			const path = `/static/images/props/${propType}.svg`;
 			const baseSvg = await this.fetchSvg(path);
 
 			// Apply color transformation if needed
@@ -321,8 +321,8 @@ export default class SvgManager {
 				return SvgManager.localCache.get(cacheKey)!;
 			}
 
-			// Fallback to direct fetch
-			const basePath = '/images/arrows';
+			// Fallback to direct fetch - use the correct path with assets prefix
+			const basePath = '/static/images/arrows';
 
 			// Special handling for float motion type
 			if (motionType === 'float' && turns === 'fl') {
@@ -553,7 +553,7 @@ export default class SvgManager {
 					}
 
 					// Fetch the SVG - no retry logic here as fetchSvg already handles that
-					const path = `/images/props/${propType}.svg`;
+					const path = `/static/images/props/${propType}.svg`;
 					const svgData = await this.fetchSvg(path);
 
 					// Use a microtask to yield to the main thread

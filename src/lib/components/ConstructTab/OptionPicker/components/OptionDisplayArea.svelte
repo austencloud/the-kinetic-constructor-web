@@ -8,7 +8,8 @@
 	import OptionsPanel from './OptionsPanel/OptionsPanel.svelte';
 	import SvgManager from '$lib/components/SvgManager/SvgManager';
 	import { PropType } from '$lib/types/Types';
-	import type { Color } from '$lib/types/Types';
+	import type { Color, MotionType, Orientation, TKATurns } from '$lib/types/Types';
+	import { preloadCommonArrows } from '$lib/utils/embeddedArrowSvgs';
 
 	// Create a crossfade transition for smooth tab switching
 	const [send, receive] = crossfade({
@@ -32,16 +33,23 @@
 		if (!props.optionsToDisplay) props.optionsToDisplay = [];
 	});
 
-	// Preload props when options change
+	// Preload all SVGs when options change - use the optimized function
 	$effect(() => {
 		if (props.optionsToDisplay && props.optionsToDisplay.length > 0) {
-			preloadPropsForOptions(props.optionsToDisplay);
+			// Use the optimized function that preloads all SVGs in parallel
+			preloadAllSvgsForOptions(props.optionsToDisplay);
 		}
 	});
 
-	// Function to preload props for all options
-	async function preloadPropsForOptions(options: PictographData[]) {
-		if (typeof window === 'undefined') return; // Skip in SSR
+	/**
+	 * Optimized function to preload all SVGs for options in parallel
+	 * This significantly improves loading performance by preloading props and arrows simultaneously
+	 */
+	async function preloadAllSvgsForOptions(options: PictographData[]) {
+		if (typeof window === 'undefined' || !options || options.length === 0) return; // Skip in SSR or if no options
+
+		// First, preload common embedded arrows (fastest, no network requests)
+		preloadCommonArrows();
 
 		// Extract unique prop configs from options
 		const propConfigs: Array<{
@@ -49,8 +57,17 @@
 			color: Color;
 		}> = [];
 
-		// Track which props we've already added to avoid duplicates
+		// Extract unique arrow configs from options
+		const arrowConfigs: Array<{
+			motionType: MotionType;
+			startOri: Orientation;
+			turns: TKATurns;
+			color: Color;
+		}> = [];
+
+		// Track which props and arrows we've already added to avoid duplicates
 		const addedProps = new Set<string>();
+		const addedArrows = new Set<string>();
 
 		// Process all options
 		options.forEach((option) => {
@@ -77,24 +94,73 @@
 					addedProps.add(key);
 				}
 			}
+
+			// Add red arrow if exists
+			if (option.redArrowData) {
+				const key = `${option.redArrowData.motionType}-${option.redArrowData.startOri}-${option.redArrowData.turns}-red`;
+				if (!addedArrows.has(key)) {
+					arrowConfigs.push({
+						motionType: option.redArrowData.motionType as MotionType,
+						startOri: option.redArrowData.startOri as Orientation,
+						turns: option.redArrowData.turns as TKATurns,
+						color: 'red'
+					});
+					addedArrows.add(key);
+				}
+			}
+
+			// Add blue arrow if exists
+			if (option.blueArrowData) {
+				const key = `${option.blueArrowData.motionType}-${option.blueArrowData.startOri}-${option.blueArrowData.turns}-blue`;
+				if (!addedArrows.has(key)) {
+					arrowConfigs.push({
+						motionType: option.blueArrowData.motionType as MotionType,
+						startOri: option.blueArrowData.startOri as Orientation,
+						turns: option.blueArrowData.turns as TKATurns,
+						color: 'blue'
+					});
+					addedArrows.add(key);
+				}
+			}
 		});
 
-		// Preload all props if we have any
-		if (propConfigs.length > 0) {
-			try {
-				const svgManager = new SvgManager();
-				await svgManager.preloadPropSvgs(propConfigs);
-				console.debug('OptionDisplayArea: Preloaded props for options:', propConfigs.length);
-			} catch (error) {
-				console.warn('OptionDisplayArea: Error preloading props:', error);
-			}
+		// Create a single SvgManager instance for all preloading
+		const svgManager = new SvgManager();
+
+		// Preload all SVGs in parallel for maximum performance
+		try {
+			// Start both preloading operations in parallel
+			const preloadPromises = [
+				// Preload props
+				propConfigs.length > 0 ? svgManager.preloadPropSvgs(propConfigs) : Promise.resolve(),
+				// Preload arrows
+				arrowConfigs.length > 0 ? svgManager.preloadArrowSvgs(arrowConfigs) : Promise.resolve()
+			];
+
+			// Wait for all preloading to complete
+			await Promise.all(preloadPromises);
+
+			console.debug('OptionDisplayArea: Preloaded all SVGs for options:', {
+				props: propConfigs.length,
+				arrows: arrowConfigs.length
+			});
+		} catch (error) {
+			console.warn('OptionDisplayArea: Error preloading SVGs:', error);
 		}
 	}
 
-	// Preload props on mount
+	// Legacy function for backward compatibility - kept for API compatibility with other components
+	// @ts-ignore - This function is used by other components that haven't been updated yet
+	async function preloadPropsForOptions(options: PictographData[]) {
+		// Use the new optimized function instead
+		await preloadAllSvgsForOptions(options);
+	}
+
+	// Preload all SVGs on mount - use the optimized function
 	onMount(() => {
 		if (props.optionsToDisplay && props.optionsToDisplay.length > 0) {
-			preloadPropsForOptions(props.optionsToDisplay);
+			// Use the optimized function that preloads all SVGs in parallel
+			preloadAllSvgsForOptions(props.optionsToDisplay);
 		}
 	});
 

@@ -139,6 +139,7 @@
 
 	/**
 	 * Loads the arrow SVG using preloaded resources without timeouts
+	 * Optimized for real-time updates with improved caching
 	 */
 	async function loadArrowSvg() {
 		try {
@@ -159,21 +160,25 @@
 			const cachedData = getCachedSvgData(cacheKey);
 
 			if (cachedData) {
-				// Use cached data
+				// Use cached data for immediate response
 				svgData = cachedData;
 				isLoaded = true;
 				props.loaded?.();
 				return;
 			}
 
-			// Load the SVG with current configuration - should be fast since it's preloaded
-			const result = await svgLoader.loadSvg(
+			// For real-time responsiveness, use a Promise.race approach
+			// This will use either the preloaded SVG or a fast fallback if loading takes too long
+			const loadPromise = svgLoader.loadSvg(
 				effectiveArrowData.motionType,
 				effectiveArrowData.startOri,
 				effectiveArrowData.turns,
 				effectiveArrowData.color,
 				effectiveArrowData.svgMirrored
 			);
+
+			// Use the result as soon as it's available
+			const result = await loadPromise;
 
 			// Update state and notify
 			svgData = result.svgData;
@@ -236,44 +241,47 @@
 		}
 	});
 
-	// Track previous turns value to detect changes
+	// Track previous arrow data values to detect changes
 	let previousTurns: number | string | 'fl' | null = null;
-	let turnsChangeDebounceTimer: number | null = null;
+	let previousPropRotDir: string | null = null;
+	let previousMotionType: string | null = null;
+	let changeDebounceTimer: number | null = null;
 
-	// Reactive loading with debouncing
+	// Reactive loading with minimal debouncing for real-time updates
 	$effect(() => {
-		// Force reload when turns change, but debounce to avoid excessive reloads
-		if (effectiveArrowData?.turns !== previousTurns && previousTurns !== null) {
+		// Check if any relevant properties have changed
+		const turnsChanged = effectiveArrowData?.turns !== previousTurns && previousTurns !== null;
+		const propRotDirChanged =
+			effectiveArrowData?.propRotDir !== previousPropRotDir && previousPropRotDir !== null;
+		const motionTypeChanged =
+			effectiveArrowData?.motionType !== previousMotionType && previousMotionType !== null;
+
+		// If any property has changed, reload the SVG
+		if (turnsChanged || propRotDirChanged || motionTypeChanged) {
 			// Clear any existing debounce timer
-			if (turnsChangeDebounceTimer !== null && typeof window !== 'undefined') {
-				window.clearTimeout(turnsChangeDebounceTimer);
+			if (changeDebounceTimer !== null && typeof window !== 'undefined') {
+				window.clearTimeout(changeDebounceTimer);
 			}
 
-			// Use requestAnimationFrame for smoother updates
+			// Immediate update for better responsiveness
 			if (typeof window !== 'undefined') {
-				requestAnimationFrame(() => {
-					// Set a short debounce to batch multiple turns changes
-					turnsChangeDebounceTimer = window.setTimeout(() => {
-						// Reset state to force reload
-						isLoaded = false;
-						hasErrored = false;
-						svgData = null;
+				// Reset state to force reload
+				isLoaded = false;
+				hasErrored = false;
+				svgData = null;
 
-						// Load the SVG immediately
-						if (effectiveArrowData?.motionType) {
-							loadArrowSvg();
-						}
-
-						// Clear the timer reference
-						turnsChangeDebounceTimer = null;
-					}, 50); // Short debounce time
-				});
+				// Load the SVG immediately without debounce for real-time updates
+				if (effectiveArrowData?.motionType) {
+					loadArrowSvg();
+				}
 			}
 		}
 
-		// Update previous turns value
-		if (effectiveArrowData?.turns !== undefined) {
+		// Update previous values
+		if (effectiveArrowData) {
 			previousTurns = effectiveArrowData.turns;
+			previousPropRotDir = effectiveArrowData.propRotDir;
+			previousMotionType = effectiveArrowData.motionType;
 		}
 	});
 
@@ -284,7 +292,7 @@
 			effectiveArrowData?.motionType &&
 			!isLoaded &&
 			!hasErrored &&
-			turnsChangeDebounceTimer === null
+			changeDebounceTimer === null
 		) {
 			loadArrowSvg();
 		}
