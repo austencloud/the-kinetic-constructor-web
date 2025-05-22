@@ -1,10 +1,14 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { fade, crossfade } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import type { PictographData } from '$lib/types/PictographData';
 	import LoadingMessage from './messages/LoadingMessage.svelte';
 	import EmptyMessage from './messages/EmptyMessage.svelte';
 	import OptionsPanel from './OptionsPanel/OptionsPanel.svelte';
+	import SvgManager from '$lib/components/SvgManager/SvgManager';
+	import { PropType } from '$lib/types/Types';
+	import type { Color } from '$lib/types/Types';
 
 	// Create a crossfade transition for smooth tab switching
 	const [send, receive] = crossfade({
@@ -26,6 +30,72 @@
 	// Set default values
 	$effect(() => {
 		if (!props.optionsToDisplay) props.optionsToDisplay = [];
+	});
+
+	// Preload props when options change
+	$effect(() => {
+		if (props.optionsToDisplay && props.optionsToDisplay.length > 0) {
+			preloadPropsForOptions(props.optionsToDisplay);
+		}
+	});
+
+	// Function to preload props for all options
+	async function preloadPropsForOptions(options: PictographData[]) {
+		if (typeof window === 'undefined') return; // Skip in SSR
+
+		// Extract unique prop configs from options
+		const propConfigs: Array<{
+			propType: PropType;
+			color: Color;
+		}> = [];
+
+		// Track which props we've already added to avoid duplicates
+		const addedProps = new Set<string>();
+
+		// Process all options
+		options.forEach((option) => {
+			// Add red prop if exists
+			if (option.redPropData) {
+				const key = `${option.redPropData.propType}-red`;
+				if (!addedProps.has(key)) {
+					propConfigs.push({
+						propType: option.redPropData.propType,
+						color: 'red'
+					});
+					addedProps.add(key);
+				}
+			}
+
+			// Add blue prop if exists
+			if (option.bluePropData) {
+				const key = `${option.bluePropData.propType}-blue`;
+				if (!addedProps.has(key)) {
+					propConfigs.push({
+						propType: option.bluePropData.propType,
+						color: 'blue'
+					});
+					addedProps.add(key);
+				}
+			}
+		});
+
+		// Preload all props if we have any
+		if (propConfigs.length > 0) {
+			try {
+				const svgManager = new SvgManager();
+				await svgManager.preloadPropSvgs(propConfigs);
+				console.debug('OptionDisplayArea: Preloaded props for options:', propConfigs.length);
+			} catch (error) {
+				console.warn('OptionDisplayArea: Error preloading props:', error);
+			}
+		}
+	}
+
+	// Preload props on mount
+	onMount(() => {
+		if (props.optionsToDisplay && props.optionsToDisplay.length > 0) {
+			preloadPropsForOptions(props.optionsToDisplay);
+		}
 	});
 
 	/* ───────────── what we're going to show ───────────── */

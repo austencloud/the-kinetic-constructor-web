@@ -395,6 +395,127 @@ export default class SvgManager {
 	}
 
 	/**
+	 * Preload multiple prop SVGs in parallel for better performance
+	 * Optimized to eliminate setTimeout violations
+	 */
+	public async preloadPropSvgs(
+		propConfigs: Array<{
+			propType: PropType;
+			color: Color;
+		}>
+	): Promise<void> {
+		// Use requestAnimationFrame to schedule preloading
+		if (typeof window !== 'undefined') {
+			return new Promise((resolve) => {
+				requestAnimationFrame(async () => {
+					try {
+						await this.doPreloadPropSvgs(propConfigs);
+					} catch (error) {
+						logger.warn('Error during preloading prop SVGs', { error: toAppError(error) });
+					}
+					resolve();
+				});
+			});
+		} else {
+			// In SSR context, just resolve immediately
+			return Promise.resolve();
+		}
+	}
+
+	/**
+	 * Internal implementation of prop preloading that's scheduled by requestAnimationFrame
+	 */
+	private async doPreloadPropSvgs(
+		propConfigs: Array<{
+			propType: PropType;
+			color: Color;
+		}>
+	): Promise<void> {
+		// Process configs in batches to avoid overwhelming the browser
+		const BATCH_SIZE = 2;
+		const batches: Array<typeof propConfigs> = [];
+
+		// Split configs into batches
+		for (let i = 0; i < propConfigs.length; i += BATCH_SIZE) {
+			batches.push(propConfigs.slice(i, i + BATCH_SIZE));
+		}
+
+		// Process each batch sequentially
+		for (const batch of batches) {
+			// Create an array of promises for the current batch
+			const fetchPromises = batch.map(async (config) => {
+				const { propType, color } = config;
+				const cacheKey = this.getCacheKey(['prop', propType, color]);
+
+				try {
+					// Check if already in ResourceCache
+					const cachedSvg = await resourceCache.get<string>(cacheKey);
+					if (cachedSvg) {
+						// Also update local cache for faster access
+						SvgManager.localCache.set(cacheKey, cachedSvg);
+						return;
+					}
+
+					// Check local cache as fallback
+					if (SvgManager.localCache.has(cacheKey)) {
+						// Update ResourceCache from local cache
+						const localCachedSvg = SvgManager.localCache.get(cacheKey)!;
+						await resourceCache.set(cacheKey, localCachedSvg);
+						return;
+					}
+
+					// Fetch the SVG - no retry logic here as fetchSvg already handles that
+					const path = `/images/props/${propType}.svg`;
+					const svgData = await this.fetchSvg(path);
+
+					// Use a microtask to yield to the main thread
+					await Promise.resolve();
+
+					// Apply color transformation if needed
+					const coloredSvg = propType === PropType.HAND ? svgData : this.applyColor(svgData, color);
+
+					// Ensure the SVG has a centerPoint element
+					const svgWithCenterPoint = this.ensureCenterPoint(coloredSvg);
+
+					// Store in both caches
+					SvgManager.localCache.set(cacheKey, svgWithCenterPoint);
+					await resourceCache.set(cacheKey, svgWithCenterPoint);
+
+					logger.debug(`Preloaded prop SVG: ${propType} (${color})`);
+				} catch (error) {
+					// Handle errors gracefully without failing the entire batch
+					logger.warn(`Preload failed for prop: ${propType} (${color})`, {
+						error: toAppError(error)
+					});
+
+					// Create a fallback SVG with centerPoint for the cache
+					const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+						<rect width="100" height="100" fill="#cccccc" opacity="0.5" />
+						<text x="10" y="50" fill="${color === 'red' ? '#ED1C24' : '#2E3192'}">Prop</text>
+						<circle id="centerPoint" cx="50" cy="50" r="2" fill="red" />
+					</svg>`;
+
+					// Cache the fallback SVG in both caches
+					SvgManager.localCache.set(cacheKey, fallbackSvg);
+					try {
+						await resourceCache.set(cacheKey, fallbackSvg, 60000); // Short TTL for fallbacks
+					} catch (cacheError) {
+						// Ignore cache errors for fallbacks
+					}
+				}
+			});
+
+			// Wait for all promises in the current batch to complete
+			await Promise.all(fetchPromises);
+
+			// Yield to the main thread between batches to keep UI responsive
+			if (typeof window !== 'undefined') {
+				await new Promise((resolve) => setTimeout(resolve, 0));
+			}
+		}
+	}
+
+	/**
 	 * Internal implementation of preloading that's scheduled by requestAnimationFrame
 	 */
 	private async doPreloadArrowSvgs(

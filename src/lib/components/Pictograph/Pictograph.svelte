@@ -13,6 +13,7 @@
 	import TKAGlyph from '../objects/Glyphs/TKAGlyph/TKAGlyph.svelte';
 	import SvgManager from '../SvgManager/SvgManager';
 	import type { Color, MotionType, Orientation, TKATurns } from '$lib/types/Types';
+	import { PropType } from '$lib/types/Types';
 	import { PictographService } from './PictographService';
 	import PictographError from './components/PictographError.svelte';
 	import PictographDebug from './components/PictographDebug.svelte';
@@ -335,6 +336,62 @@
 		}
 	}
 
+	/**
+	 * Preload prop SVGs in parallel for better performance
+	 */
+	function preloadPropSvgs() {
+		// Use requestAnimationFrame to schedule the preloading for the next frame
+		if (typeof window !== 'undefined') {
+			requestAnimationFrame(async () => {
+				if (!service || !get(pictographDataStore)) return;
+
+				const data = get(pictographDataStore);
+				const propConfigs: Array<{
+					propType: PropType;
+					color: Color;
+				}> = [];
+
+				// Add red prop config if exists
+				if (data.redPropData) {
+					propConfigs.push({
+						propType: data.redPropData.propType,
+						color: data.redPropData.color
+					});
+				}
+
+				// Add blue prop config if exists
+				if (data.bluePropData) {
+					propConfigs.push({
+						propType: data.bluePropData.propType,
+						color: data.bluePropData.color
+					});
+				}
+
+				// Preload SVGs if we have any configs
+				if (propConfigs.length > 0 && service) {
+					try {
+						// Create a new SvgManager instance for preloading
+						const svgManager = new SvgManager();
+
+						// Use the optimized batch preloading method
+						await svgManager.preloadPropSvgs(propConfigs);
+
+						if (import.meta.env.DEV) {
+							console.debug('Props preloaded successfully:', propConfigs);
+						}
+					} catch (error) {
+						// Silently handle preloading errors
+						if (import.meta.env.DEV) {
+							console.warn('Prop SVG preloading error:', error);
+						}
+					}
+				}
+			});
+		} else {
+			// No preloading in SSR environment
+		}
+	}
+
 	// Wrapper for createAndPositionComponentsUtil to maintain local state
 	function createAndPositionComponents() {
 		try {
@@ -363,8 +420,9 @@
 			redArrowData = result.redArrowData;
 			blueArrowData = result.blueArrowData;
 
-			// Preload arrow SVGs in parallel
+			// Preload SVGs in parallel
 			preloadArrowSvgs();
+			preloadPropSvgs();
 		} catch (error) {
 			handleError('component creation', error);
 		}

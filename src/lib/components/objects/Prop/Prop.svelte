@@ -84,6 +84,19 @@
 		}
 	});
 
+	// Static component-level cache for all props
+	const propSvgCache = new Map<string, PropSvgData>();
+
+	// Function to check if we're in OptionPicker context
+	function isInOptionPicker() {
+		return animationDuration === 0 || (beatId === undefined && color === undefined);
+	}
+
+	// Function to get cache key for a prop
+	function getPropCacheKey(propType: string, propColor: string) {
+		return `prop-${propType}-${propColor}`;
+	}
+
 	onMount(() => {
 		if (effectivePropData?.propType) {
 			loadSvg();
@@ -97,9 +110,6 @@
 		};
 	});
 
-	// Component-level cache for OptionPicker
-	const propSvgCache = new Map<string, PropSvgData>();
-
 	async function loadSvg() {
 		try {
 			// Safety check
@@ -107,29 +117,56 @@
 				throw new Error('No prop data available');
 			}
 
-			// Check if we're in OptionPicker context (very short timeout is a good indicator)
-			const isInOptionPicker =
-				animationDuration === 0 || (beatId === undefined && color === undefined);
+			// Create a consistent cache key
+			const cacheKey = getPropCacheKey(effectivePropData.propType, effectivePropData.color);
 
-			if (isInOptionPicker && effectivePropData) {
-				const cacheKey = `prop-${effectivePropData.propType}-${effectivePropData.color}`;
-				if (propSvgCache.has(cacheKey)) {
-					svgData = propSvgCache.get(cacheKey)!;
+			// First check the component-level cache
+			if (propSvgCache.has(cacheKey)) {
+				svgData = propSvgCache.get(cacheKey)!;
+				isLoaded = true;
+				props.loaded?.({});
+				return;
+			}
+
+			// Then check the resource cache via SvgManager
+			// This will be populated if props were preloaded at app startup
+			try {
+				const cachedSvg = await svgManager.getPropSvg(
+					effectivePropData.propType,
+					effectivePropData.color
+				);
+
+				if (cachedSvg) {
+					const { viewBox, center } = parsePropSvg(cachedSvg, effectivePropData.color);
+
+					svgData = {
+						imageSrc: `data:image/svg+xml;base64,${btoa(cachedSvg)}`,
+						viewBox,
+						center
+					};
+
+					// Cache for future use
+					propSvgCache.set(cacheKey, svgData);
+
 					isLoaded = true;
 					props.loaded?.({});
 					return;
 				}
+			} catch (cacheError) {
+				// Continue with normal loading if cache check fails
+				console.debug('Cache miss for prop SVG, loading directly:', cacheError);
 			}
 
-			loadTimeout = setTimeout(
-				() => {
-					if (!isLoaded) {
-						isLoaded = true;
-						props.loaded?.({ timeout: true });
-					}
-				},
-				isInOptionPicker ? 5 : 1000
-			); // Much shorter timeout for OptionPicker
+			// Set a timeout for loading - longer for mobile
+			const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
+			const timeoutDuration = isInOptionPicker() ? 5 : isMobileDevice ? 3000 : 1000;
+
+			loadTimeout = setTimeout(() => {
+				if (!isLoaded) {
+					isLoaded = true;
+					props.loaded?.({ timeout: true });
+				}
+			}, timeoutDuration);
 
 			const svgText = await svgManager.getPropSvg(
 				effectivePropData.propType,
@@ -144,8 +181,8 @@
 			};
 
 			// Cache the result for OptionPicker
-			if (isInOptionPicker && effectivePropData) {
-				const cacheKey = `prop-${effectivePropData.propType}-${effectivePropData.color}`;
+			if (isInOptionPicker() && effectivePropData) {
+				const cacheKey = getPropCacheKey(effectivePropData.propType, effectivePropData.color);
 				propSvgCache.set(cacheKey, svgData);
 			}
 
