@@ -627,6 +627,7 @@
 							turnsTuple="(s, 0, 0)"
 							x={50}
 							y={800}
+							scale={1}
 							on:loading={handleGlyphLoading}
 							on:loaded={handleGlyphLoaded}
 						/>
@@ -668,6 +669,7 @@
 									turnsTuple="(s, 0, 0)"
 									x={50}
 									y={800}
+									scale={1}
 								/>
 							{/if}
 
@@ -707,6 +709,7 @@
 									turnsTuple="(s, 0, 0)"
 									x={50}
 									y={800}
+									scale={1}
 								/>
 							{/if}
 

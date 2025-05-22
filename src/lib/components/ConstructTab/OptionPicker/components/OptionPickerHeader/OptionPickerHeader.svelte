@@ -2,9 +2,12 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../../layoutContext';
-	import ViewControl from '../ViewControl';
+	import ViewControl from '../ViewControl/ViewControl.svelte';
 	import TabsContainer from './TabsContainer.svelte';
 	import { useResponsiveLayout } from './useResponsiveLayout';
+	import { optionPickerContainer } from '$lib/state/stores/optionPicker/optionPickerContainer';
+	import type { SortMethod } from '../../config';
+
 	// --- Props using Svelte 5 runes ---
 	const props = $props<{
 		selectedTab: string | null;
@@ -15,6 +18,40 @@
 	// --- Context ---
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 
+	// --- State ---
+	// Create a reactive effect to track the current sort method and selected tab
+	let currentSortMethod = $state<SortMethod | 'all'>(optionPickerContainer.state.sortMethod);
+	let selectedTabState = $state(optionPickerContainer.state.selectedTab);
+
+	// Keep state in sync with the container state
+	$effect(() => {
+		currentSortMethod = optionPickerContainer.state.sortMethod;
+		selectedTabState = optionPickerContainer.state.selectedTab;
+
+		// Debug logging
+		console.log('OptionPickerHeader state updated:', {
+			currentSortMethod,
+			selectedTabState,
+			showTabs: props.showTabs,
+			categoryKeys: props.categoryKeys
+		});
+
+		// Debug the showTabs prop
+		console.log('showTabs prop value:', props.showTabs);
+
+		// Extra debug logging to help diagnose tab display issues
+		if (props.showTabs) {
+			console.log(
+				'HEADER: Showing tabs for',
+				currentSortMethod,
+				'with selected tab',
+				selectedTabState
+			);
+		} else {
+			console.log('HEADER: Showing helper text because showTabs is false');
+		}
+	});
+
 	// --- Responsive Layout ---
 	// Destructure stores from the hook
 	const {
@@ -24,8 +61,7 @@
 		isScrollable,
 		compactMode,
 		showScrollIndicator,
-		handleScroll, // Make sure to get all needed functions/stores
-		checkTabsOverflow
+		handleScroll // Make sure to get all needed functions/stores
 	} = useResponsiveLayout(layoutContext);
 
 	// --- Event Handlers & Helpers ---
@@ -72,15 +108,13 @@
 			document.removeEventListener('viewChange', viewChangeHandler);
 		};
 	});
-
-	// We'll use a different approach to handle events
-	// Instead of using custom events, we'll pass callbacks to the TabsContainer component
 </script>
 
 <div class="option-picker-header" class:mobile={$isMobileDevice} data-testid="option-picker-header">
 	<div class="header-content">
 		<!-- TabsContainer or helper-message now comes first -->
 		{#if props.showTabs}
+			<!-- Show tabs when not in "Show All" mode -->
 			<TabsContainer
 				selectedTab={props.selectedTab}
 				categoryKeys={Array.isArray(props.categoryKeys) ? props.categoryKeys : []}
@@ -93,8 +127,8 @@
 				onScroll={handleScroll}
 			/>
 		{:else}
-			<!-- Message shown when tabs are hidden (e.g., showing all) -->
-			<div class="helper-message">Showing all - filter to see sections</div>
+			<!-- Show helper message when in "Show All" mode -->
+			<div class="helper-message">Showing all options - select a filter to see sections</div>
 		{/if}
 
 		<!-- ViewControl now comes second, will be on the right -->

@@ -31,7 +31,11 @@
 	class="view-button"
 	class:compact={isCompact}
 	bind:this={buttonRef}
-	onclick={props.onClick}
+	onclick={(e) => {
+		// Stop propagation to prevent the document click handler from firing
+		e.stopPropagation();
+		props.onClick();
+	}}
 	aria-label="Change view mode"
 	aria-expanded={props.isOpen}
 	aria-haspopup="listbox"
@@ -128,7 +132,7 @@
 		display: none;
 	}
 
-	/* 
+	/*
 		The ::after pseudo-element for glow is removed as it's not typical for SequenceWidget buttons.
 		The .view-button.compact class styles are removed as the base style now dictates the compact, round look.
 		Responsive media queries (@media) that previously handled compactness are removed for the same reason.

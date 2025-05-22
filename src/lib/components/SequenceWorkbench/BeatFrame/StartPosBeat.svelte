@@ -378,8 +378,6 @@
 						filled: true
 					};
 
-					// Log for debugging
-					console.log('StartPosBeat: Updated start position from event');
 				} finally {
 					// Reset flag after updates are complete
 					isUpdatingFromStartPos = false;

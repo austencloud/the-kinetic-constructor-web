@@ -1,28 +1,26 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { getLetterPath, assetCache, fetchSVGDimensions, type Rect } from '$lib/stores/glyphStore';
+	import { glyphContainer, type Rect } from '$lib/stores/glyphContainer.svelte';
 	import type { Letter } from '$lib/types/Letter';
 
 	// Props
-	let { letter = null } = $props<{
-		letter: Letter | null;
-	}>();
+	export let letter: Letter | null = null;
 
-	// Event dispatcher
+	// Events using createEventDispatcher
 	const dispatch = createEventDispatcher<{
 		letterLoaded: Rect;
 		loadingStarted: void;
 		loadingComplete: boolean;
 	}>();
 
-	// Local state using Svelte 5 Runes
-	let svgPath = $state('');
-	let dimensions = $state({ width: 0, height: 0 });
-	let imageElement = $state<SVGImageElement | null>(null);
-	let isLoaded = $state(false);
-	let isFetchFailed = $state(false);
-	let hasDispatchedLetterLoaded = $state(false);
-	let isLoadingInProgress = $state(false);
+	// Local state
+	let svgPath = '';
+	let dimensions = { width: 0, height: 0 };
+	let imageElement: SVGImageElement | null = null;
+	let isLoaded = false;
+	let isFetchFailed = false;
+	let hasDispatchedLetterLoaded = false;
+	let isLoadingInProgress = false;
 
 	// Load SVG with proper caching strategy
 	// This function is async, so it's called within an $effect
@@ -33,12 +31,12 @@
 		isLoadingInProgress = true;
 		dispatch('loadingStarted');
 
-		const path = getLetterPath(currentLetter);
+		const path = glyphContainer.getLetterPath(currentLetter);
 		svgPath = path; // Update state
 
 		// Check cache first
 		const cacheKey = currentLetter.toString();
-		let cachedSVG = $assetCache.letters_trimmed.get(cacheKey);
+		let cachedSVG = glyphContainer.cache.letters_trimmed.get(cacheKey);
 
 		if (cachedSVG) {
 			dimensions = cachedSVG.dimensions; // Update state
@@ -50,16 +48,13 @@
 
 		try {
 			// Fetch dimensions if not in cache
-			const fetchedDimensions = await fetchSVGDimensions(path);
+			const fetchedDimensions = await glyphContainer.fetchSVGDimensions(path);
 			dimensions = fetchedDimensions; // Update state
 
-			// Update cache
-			assetCache.update((cache: any) => {
-				cache.letters_trimmed.set(cacheKey, {
-					svg: path, // svgPath is already set
-					dimensions: fetchedDimensions
-				});
-				return cache;
+			// Update cache directly (no need for update function with runes)
+			glyphContainer.cache.letters_trimmed.set(cacheKey, {
+				svg: path, // svgPath is already set
+				dimensions: fetchedDimensions
 			});
 
 			isLoaded = true; // Update state
@@ -73,21 +68,19 @@
 		}
 	}
 
-	// Effect to react to letter changes
-	$effect(() => {
-		if (letter) {
-			isLoaded = false; // Reset loading state
-			isFetchFailed = false; // Reset error state
-			hasDispatchedLetterLoaded = false; // Reset dispatch state
-			loadLetterSVG(letter);
-		} else {
-			// Reset if letter becomes null
-			svgPath = '';
-			dimensions = { width: 0, height: 0 };
-			isLoaded = false;
-			isFetchFailed = false;
-		}
-	});
+	// React to letter changes
+	$: if (letter) {
+		isLoaded = false; // Reset loading state
+		isFetchFailed = false; // Reset error state
+		hasDispatchedLetterLoaded = false; // Reset dispatch state
+		loadLetterSVG(letter);
+	} else {
+		// Reset if letter becomes null
+		svgPath = '';
+		dimensions = { width: 0, height: 0 };
+		isLoaded = false;
+		isFetchFailed = false;
+	}
 
 	// Handle image loaded with proper layout calculation
 	function handleImageLoad() {
@@ -108,7 +101,7 @@
 			// Set flag to prevent multiple dispatches
 			hasDispatchedLetterLoaded = true; // Update state
 
-			// Dispatch the event
+			// Emit the event
 			dispatch('letterLoaded', rect);
 		} catch (error) {
 			console.error('Error calculating letter bounding box:', error);

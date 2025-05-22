@@ -4,7 +4,7 @@ import { checkForSequenceInUrl } from '$lib/components/SequenceWorkbench/share/u
 import { logger } from '$lib/core/logging';
 import { resourcePreloader } from '$lib/services/ResourcePreloader';
 import { resourceCache } from '$lib/services/ResourceCache';
-import { preloadCommonAssets } from '$lib/stores/glyphStore';
+import { glyphContainer } from '$lib/stores/glyphContainer.svelte';
 import { toAppError } from '$lib/types/ErrorTypes';
 
 /**
@@ -46,7 +46,7 @@ export async function initializeApplication(
 			const preloadingPromise = resourcePreloader.preloadAll();
 
 			// Also preload glyph assets in parallel
-			const glyphPreloadingPromise = preloadCommonAssets();
+			const glyphPreloadingPromise = glyphContainer.preloadCommonAssets();
 
 			// Wait for preloading to complete
 			await Promise.all([preloadingPromise, glyphPreloadingPromise]);

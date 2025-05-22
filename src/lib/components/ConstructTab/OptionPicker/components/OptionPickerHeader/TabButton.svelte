@@ -6,7 +6,16 @@
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 	// Props
-	const props = $props();
+	const props = $props<{
+		categoryKey: string;
+		isActive: boolean;
+		isFirstTab: boolean;
+		isLastTab: boolean;
+		useShortLabels: boolean;
+		tabFlexBasis: string;
+		index: number;
+		totalTabs: number;
+	}>();
 
 	// Local state for hover effect
 	let isHovered = $state(false);

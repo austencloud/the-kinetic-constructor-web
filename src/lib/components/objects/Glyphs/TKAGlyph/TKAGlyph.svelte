@@ -1,8 +1,8 @@
 <!-- src/lib/components/objects/Glyphs/TKAGlyph/TKAGlyph.svelte -->
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import { parseTurnsTupleString } from './utils/parseTurnsTuple';
-	import { preloadCommonAssets, assetCache, type Rect } from '$lib/stores/glyphStore';
+	import { glyphContainer, type Rect } from '$lib/stores/glyphContainer.svelte';
 	import type { Letter } from '$lib/types/Letter';
 	import type { DirRelation, PropRotDir, TKATurns } from '$lib/types/Types';
 	import LetterRenderer from './components/LetterRenderer.svelte';
@@ -10,18 +10,12 @@
 	import DotsRenderer from './components/DotsRenderer.svelte';
 	import TurnsRenderer from './components/TurnsRenderer.svelte';
 
-	// Props with TypeScript interface
+	// Props
 	export let letter: Letter | null = null;
 	export let turnsTuple: string = '';
 	export let x: number = 0;
 	export let y: number = 0;
 	export let scale: number = 1;
-
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		loaded: boolean;
-		loading: void;
-	}>();
 
 	// Local state
 	let letterRect: Rect | null = null;
@@ -30,8 +24,6 @@
 
 	// Parse the turnsTuple
 	$: parsedTurns = parseTurnsTuple(turnsTuple);
-
-	// Destructure for easier access
 	$: direction = parsedTurns?.direction || null;
 	$: topTurn = parsedTurns?.top || (0 as TKATurns);
 	$: bottomTurn = parsedTurns?.bottom || (0 as TKATurns);
@@ -39,10 +31,15 @@
 		(topTurn !== 'fl' && Number(topTurn) > 0) || (bottomTurn !== 'fl' && Number(bottomTurn) > 0);
 	$: shouldShowDots = hasTurns;
 
-	// Ensure common assets are loaded
+	// Ensure common assets are loaded if needed
 	onMount(() => {
-		if (!$assetCache.dotSVG || !$assetCache.dashSVG) {
-			preloadCommonAssets();
+		// Only trigger preloading if dash and dot aren't loaded yet
+		if (!glyphContainer.cache.dotSVG || !glyphContainer.cache.dashSVG) {
+			// Only preload if not already in progress
+			if (!glyphContainer.loading.isPreloading && !glyphContainer.loading.preloadCompleted) {
+				console.log('TKAGlyph: Triggering preload of common assets');
+				glyphContainer.preloadCommonAssets();
+			}
 		}
 	});
 
@@ -53,6 +50,12 @@
 		const [dir, top, bottom] = parseTurnsTupleString(tuple);
 		return { direction: dir, top, bottom };
 	}
+
+	// Create event dispatcher
+	const dispatch = createEventDispatcher<{
+		loaded: boolean;
+		loading: void;
+	}>();
 
 	// Handle letter loading events
 	function handleLetterLoaded(event: CustomEvent<Rect>) {

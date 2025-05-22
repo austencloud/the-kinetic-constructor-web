@@ -1,9 +1,10 @@
 <!-- src/lib/components/ConstructTab/OptionPicker/components/OptionPickerHeader/TabsContainer.svelte -->
 <script lang="ts">
 	import { get, type Writable } from 'svelte/store';
-	import TabButton from './TabButton.svelte';
 	import ScrollIndicator from './ScrollIndicator.svelte';
-	import { fade } from 'svelte/transition';
+	import ScrollHint from './ScrollHint.svelte';
+	import TabsTooltip from './TabsTooltip.svelte';
+	import TabsInnerContainer from './TabsInnerContainer.svelte';
 
 	// Props
 	const props = $props<{
@@ -38,7 +39,6 @@
 			props.tabsContainerRefStore.set(actualTabsContainerElement);
 		}
 		// Optional: Cleanup when the element is unmounted or store changes
-		// This might be more robustly handled by the hook's onDestroy if the hook manages the lifecycle
 		return () => {
 			if (
 				props.tabsContainerRefStore &&
@@ -74,12 +74,7 @@
 {#if Array.isArray(props.categoryKeys) && props.categoryKeys.length > 0}
 	<div class="tabs-wrapper">
 		<!-- Left scroll indicator -->
-		{#if props.isScrollable && scrollPosition > 20}
-			<div class="scroll-hint left" transition:fade={{ duration: 200 }}>
-				<div class="scroll-arrow">←</div>
-				<div class="scroll-hint-text">More</div>
-			</div>
-		{/if}
+		<ScrollHint direction="left" show={props.isScrollable && scrollPosition > 20} />
 
 		<div
 			class="tabs"
@@ -88,38 +83,18 @@
 			class:scrollable={props.isScrollable}
 			onscroll={handleScroll}
 		>
-			<div class="tabs-inner-container">
-				{#each props.categoryKeys as categoryKey, index (categoryKey)}
-					<TabButton
-						{categoryKey}
-						isActive={String(props.selectedTab) === String(categoryKey)}
-						isFirstTab={index === 0}
-						isLastTab={index === props.categoryKeys.length - 1}
-						useShortLabels={props.useShortLabels}
-						tabFlexBasis={`${100 / props.categoryKeys.length}%`}
-						{index}
-						totalTabs={props.categoryKeys.length}
-					/>
-				{/each}
-			</div>
+			<TabsInnerContainer
+				categoryKeys={props.categoryKeys}
+				selectedTab={props.selectedTab}
+				useShortLabels={props.useShortLabels}
+			/>
 
 			<!-- Tooltip to indicate more options in other tabs -->
-			{#if showTooltip && props.categoryKeys.length > 1}
-				<div class="tabs-tooltip" transition:fade={{ duration: 300 }}>
-					<div class="tooltip-content">
-						Explore {props.categoryKeys.length} categories
-					</div>
-				</div>
-			{/if}
+			<TabsTooltip show={showTooltip} categoryCount={props.categoryKeys.length} />
 		</div>
 
 		<!-- Right scroll indicator -->
-		{#if props.isScrollable && scrollPosition < maxScroll - 20}
-			<div class="scroll-hint right" transition:fade={{ duration: 200 }}>
-				<div class="scroll-arrow">→</div>
-				<div class="scroll-hint-text">More</div>
-			</div>
-		{/if}
+		<ScrollHint direction="right" show={props.isScrollable && scrollPosition < maxScroll - 20} />
 	</div>
 
 	{#if props.showScrollIndicator}
@@ -167,17 +142,6 @@
 		transition: all 0.3s ease; /* Smooth transitions */
 	}
 
-	.tabs-inner-container {
-		display: flex; /* Make this a flex container */
-		width: 100%; /* Make it take the full width of .tabs */
-		min-width: max-content; /* Ensure it's wide enough for all tabs if not scrollable */
-		gap: 4px;
-		padding: 0 4px;
-		/* Ensure inner container doesn't clip borders */
-		margin: 0 -2px; /* Compensate for tabs padding */
-		position: relative; /* For tooltip positioning */
-	}
-
 	/* Hide scrollbar in Webkit browsers by default */
 	.tabs::-webkit-scrollbar {
 		height: 4px;
@@ -201,77 +165,6 @@
 		-webkit-mask-image: linear-gradient(to right, transparent, black 10px, black 90%, transparent);
 	}
 
-	/* Scroll hint indicators */
-	.scroll-hint {
-		position: absolute;
-		top: 50%;
-		transform: translateY(-50%);
-		background: rgba(15, 23, 42, 0.8);
-		border: 1px solid rgba(148, 163, 184, 0.3);
-		border-radius: 8px;
-		padding: 4px 8px;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		z-index: 10;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-		pointer-events: none; /* Don't block clicks */
-		color: #e2e8f0;
-	}
-
-	.scroll-hint.left {
-		left: 0;
-	}
-
-	.scroll-hint.right {
-		right: 0;
-	}
-
-	.scroll-arrow {
-		font-size: 1.2rem;
-		font-weight: bold;
-		color: #38bdf8;
-		margin-bottom: 2px;
-	}
-
-	.scroll-hint-text {
-		font-size: 0.7rem;
-		opacity: 0.8;
-	}
-
-	/* Tooltip for category exploration */
-	.tabs-tooltip {
-		position: absolute;
-		top: -40px;
-		left: 50%;
-		transform: translateX(-50%);
-		background: rgba(15, 23, 42, 0.9);
-		border: 1px solid #38bdf8;
-		border-radius: 8px;
-		padding: 6px 12px;
-		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-		z-index: 20;
-		pointer-events: none;
-	}
-
-	.tooltip-content {
-		color: #f8fafc;
-		font-size: 0.85rem;
-		white-space: nowrap;
-	}
-
-	.tooltip-content::after {
-		content: '';
-		position: absolute;
-		bottom: -8px;
-		left: 50%;
-		transform: translateX(-50%);
-		border-left: 8px solid transparent;
-		border-right: 8px solid transparent;
-		border-top: 8px solid rgba(15, 23, 42, 0.9);
-	}
-
 	/* Placeholder used only for "No sub-categories" message */
 	.tabs-placeholder {
 		display: flex;
@@ -289,7 +182,6 @@
 		font-style: italic;
 		padding: clamp(0.4rem, 1vw, 0.6rem) clamp(0.8rem, 1.5vw, 1.2rem);
 		white-space: nowrap;
-		/* text-align: center; Removed, placeholder is justify-content: flex-start */
 	}
 
 	/* Mobile styles */
@@ -301,38 +193,6 @@
 		.no-categories-message {
 			font-size: 0.9rem;
 			padding: 0.4rem 0.6rem;
-		}
-
-		/* Reduce gap between tabs */
-		.tabs-inner-container {
-			gap: 2px;
-		}
-
-		/* Adjust tooltip position */
-		.tabs-tooltip {
-			top: -35px;
-			padding: 4px 8px;
-		}
-
-		.tooltip-content {
-			font-size: 0.75rem;
-		}
-	}
-
-	/* Very small screens */
-	@media (max-width: 480px) {
-		/* Further reduce gap between tabs */
-		.tabs-inner-container {
-			gap: 1px;
-		}
-
-		/* Hide scroll hint text on very small screens */
-		.scroll-hint-text {
-			display: none;
-		}
-
-		.scroll-hint {
-			padding: 2px 4px;
 		}
 	}
 </style>
