@@ -6,7 +6,7 @@
 	import type { ViewModeDetail, ViewOption } from './types';
 	import ViewButton from './ViewButton.svelte';
 	import ViewDropdown from './ViewDropdown.svelte';
-	import { actions, uiState, groupedOptionsStore } from '../../store'; // Use working store instead
+	import { actions, uiState, groupedOptionsStore, type SortMethodOrAll } from '../../store'; // Use working store instead
 
 	// --- Props using Svelte 5 runes ---
 	const {
@@ -134,7 +134,7 @@
 			console.log('ViewControl: Setting "all" view');
 
 			// First update the sort method to ensure we're in the right mode
-			actions.setSortMethod('all' as SortMethod);
+			actions.setSortMethod('all');
 
 			// Force a UI update by dispatching a custom event
 			const showAllEvent = new CustomEvent('show-all-view', {

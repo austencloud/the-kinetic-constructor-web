@@ -20,7 +20,7 @@ export const sequenceStore = writable<PictographData[]>([]);
 export const optionsStore = writable<PictographData[]>([]);
 
 // ===== UI State =====
-export type LastSelectedTabState = Partial<Record<SortMethod, string | null>>;
+export type LastSelectedTabState = Partial<Record<SortMethodOrAll, string | null>>;
 
 // Define the helper function to get stored state from localStorage
 function getStoredState() {
@@ -46,9 +46,12 @@ function getStoredState() {
 // Get the stored state
 const storedState = getStoredState();
 
+// Define a type that includes both SortMethod and 'all'
+export type SortMethodOrAll = SortMethod | 'all';
+
 // Initialize uiState with the stored values
 export const uiState = writable({
-	sortMethod: storedState.sortMethod as SortMethod,
+	sortMethod: storedState.sortMethod as SortMethodOrAll,
 	isLoading: false,
 	error: null as string | null,
 	lastSelectedTab: storedState.lastSelectedTab as LastSelectedTabState
@@ -145,10 +148,13 @@ export const actions = {
 		}
 	},
 
-	setSortMethod: (method: SortMethod) => {
+	setSortMethod: (method: SortMethod | 'all') => {
 		// Only update the sortMethod here. The component will reactively
 		// update the selectedTab based on the new method and stored preferences.
 		uiState.update((state) => ({ ...state, sortMethod: method }));
+
+		// Log the sort method change for debugging
+		console.log('Store: Sort method set to:', method);
 	},
 
 	setReversalFilter: (filter: ReversalFilter) => {
@@ -156,12 +162,16 @@ export const actions = {
 	},
 
 	// ADDED: Action to store the last selected tab for a given sort method
-	setLastSelectedTabForSort: (sortMethod: SortMethod, tabKey: string | null) => {
+	setLastSelectedTabForSort: (sortMethod: SortMethodOrAll, tabKey: string | null) => {
 		uiState.update((state) => {
 			// Avoid unnecessary updates if the value hasn't changed
 			if (state.lastSelectedTab[sortMethod] === tabKey) {
 				return state;
 			}
+
+			// Log the tab selection for debugging
+			console.log('Store: Setting last selected tab for sort method:', { sortMethod, tabKey });
+
 			return {
 				...state,
 				lastSelectedTab: {
@@ -238,7 +248,13 @@ export const filteredOptionsStore = derived(
 	([$options, $sequence, $ui]) => {
 		let options = [...$options];
 
-		options.sort(getSorter($ui.sortMethod, $sequence));
+		// Only sort if we have a valid sort method (not 'all')
+		if ($ui.sortMethod !== ('all' as any)) {
+			options.sort(getSorter($ui.sortMethod as SortMethod, $sequence));
+		} else {
+			// For 'all' view, use a simple alphabetical sort by letter
+			options.sort((a, b) => (a.letter ?? '').localeCompare(b.letter ?? ''));
+		}
 		return options;
 	}
 );
@@ -247,13 +263,23 @@ export const filteredOptionsStore = derived(
 export const groupedOptionsStore = derived(
 	[filteredOptionsStore, sequenceStore, uiState],
 	([$filteredOptions, $sequence, $ui]) => {
+		// Special case for 'all' view - don't group options
+		if ($ui.sortMethod === ('all' as any)) {
+			// For 'all' view, we return an empty object to indicate no grouping
+			return {};
+		}
+
+		// For valid sort methods, proceed with grouping
 		const groups: Record<string, PictographData[]> = {};
 		$filteredOptions.forEach((option) => {
-			const groupKey = determineGroupKey(option, $ui.sortMethod, $sequence);
+			// We know sortMethod is a valid SortMethod here (not 'all')
+			const groupKey = determineGroupKey(option, $ui.sortMethod as SortMethod, $sequence);
 			if (!groups[groupKey]) groups[groupKey] = [];
 			groups[groupKey].push(option);
 		});
-		const sortedKeys = getSortedGroupKeys(Object.keys(groups), $ui.sortMethod);
+
+		// Sort the group keys based on the sort method
+		const sortedKeys = getSortedGroupKeys(Object.keys(groups), $ui.sortMethod as SortMethod);
 		const sortedGroups: Record<string, PictographData[]> = {};
 		sortedKeys.forEach((key) => {
 			if (groups[key]) {
