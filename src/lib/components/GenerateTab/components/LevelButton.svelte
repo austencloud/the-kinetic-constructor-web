@@ -1,6 +1,7 @@
 <!-- src/lib/components/GenerateTab/ui/LevelSelector/LevelButton.svelte -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { derived } from 'svelte/runes';
 
 	// Props
 	export let level: number;
@@ -27,8 +28,8 @@
 		return colors[level - 1] || colors[0];
 	}
 
-	// Dynamic color
-	$: levelColor = getLevelColor(level);
+	// Dynamic color using derived rune
+	const levelColor = $derived(getLevelColor(level));
 </script>
 
 <button

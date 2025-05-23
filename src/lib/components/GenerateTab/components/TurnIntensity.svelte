@@ -3,6 +3,7 @@
 	import { settingsStore } from '../store/settings';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
+	import { derived } from 'svelte/runes';
 
 	// Export the value property for binding
 	export let value: number = 3;
@@ -14,8 +15,8 @@
 	// Labels for the intensity levels
 	const intensityLabels = ['Minimal', 'Light', 'Moderate', 'Heavy', 'Extreme'];
 
-	// Get current label
-	$: currentLabel = intensityLabels[value - 1] || 'Moderate';
+	// Get current label using derived rune
+	const currentLabel = $derived(intensityLabels[value - 1] || 'Moderate');
 
 	// Update intensity
 	function setIntensity(level: number) {

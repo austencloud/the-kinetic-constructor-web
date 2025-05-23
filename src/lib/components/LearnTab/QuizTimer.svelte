@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { derived } from 'svelte/runes';
+
 	export let seconds: number = 60;
 
-	// Format time as MM:SS
-	$: formattedTime = formatTime(seconds);
+	// Format time as MM:SS using derived rune
+	const formattedTime = $derived(formatTime(seconds));
 
 	function formatTime(totalSeconds: number): string {
 		const minutes = Math.floor(totalSeconds / 60);
