@@ -85,17 +85,55 @@ export function memoized<T>(computeFn: () => T): () => T {
 
 /**
  * Creates a safe effect that prevents infinite update loops
+ * Enhanced with stack trace capture for debugging
  *
  * @param effectFn The effect function to run
+ * @param debugName Optional name for the effect to identify it in logs
  */
-export function safeEffect(effectFn: () => void | (() => void)): void {
+export function safeEffect(
+	effectFn: () => void | (() => void),
+	debugName: string = 'unnamed'
+): void {
 	// Create a flag to track if we're currently updating
 	let isUpdating = $state(false);
+	let updateCount = $state(0);
+	let lastUpdateTime = $state(Date.now());
+
+	// Capture the stack trace at creation time
+	const creationStack = new Error().stack;
 
 	// Set up the effect with protection against infinite loops
 	$effect(() => {
+		const now = Date.now();
+		const timeSinceLastUpdate = now - lastUpdateTime;
+		updateCount++;
+		lastUpdateTime = now;
+
+		// Log every effect run with timing information
+		console.debug(
+			`[safeEffect:${debugName}] Run #${updateCount}, ` +
+				`${timeSinceLastUpdate}ms since last update`
+		);
+
+		// Detect potential infinite loops (many updates in short succession)
+		if (updateCount > 5 && timeSinceLastUpdate < 50) {
+			console.warn(
+				`[safeEffect:${debugName}] Potential infinite loop detected! ` +
+					`${updateCount} updates in rapid succession.`
+			);
+			console.warn(`Creation stack trace:`, creationStack);
+			console.warn(`Current stack trace:`, new Error().stack);
+		}
+
 		// Skip if we're already updating
-		if (isUpdating) return;
+		if (isUpdating) {
+			console.warn(
+				`[safeEffect:${debugName}] Prevented recursive update! ` +
+					`This could indicate an infinite loop.`
+			);
+			console.warn(`Current stack trace:`, new Error().stack);
+			return;
+		}
 
 		try {
 			// Set the flag to prevent recursive updates
@@ -103,6 +141,10 @@ export function safeEffect(effectFn: () => void | (() => void)): void {
 
 			// Run the effect function
 			return effectFn();
+		} catch (error) {
+			console.error(`[safeEffect:${debugName}] Error in effect:`, error);
+			console.error(`Stack trace:`, new Error().stack);
+			throw error;
 		} finally {
 			// Reset the flag when done
 			isUpdating = false;
@@ -203,30 +245,217 @@ export function createSafeState<T extends object>(initialState: T) {
 }
 
 /**
+ * Creates a debug effect that logs detailed information about each execution
+ * This is a wrapper around Svelte's native $effect that adds debugging
+ *
+ * @param effectFn The effect function to run
+ * @param debugName Optional name for the effect to identify it in logs
+ */
+export function debugEffect(
+	effectFn: () => void | (() => void),
+	debugName: string = 'debug-effect'
+): void {
+	let updateCount = $state(0);
+	let lastUpdateTime = $state(Date.now());
+
+	// Capture the stack trace at creation time
+	const creationStack = new Error().stack;
+
+	// Set up the effect with debugging
+	$effect(() => {
+		const now = Date.now();
+		const timeSinceLastUpdate = now - lastUpdateTime;
+		updateCount++;
+		lastUpdateTime = now;
+
+		// Log every effect run with timing information
+		console.debug(
+			`[debugEffect:${debugName}] Run #${updateCount}, ` +
+				`${timeSinceLastUpdate}ms since last update`
+		);
+
+		// Detect potential infinite loops (many updates in short succession)
+		if (updateCount > 5 && timeSinceLastUpdate < 50) {
+			console.warn(
+				`[debugEffect:${debugName}] Potential infinite loop detected! ` +
+					`${updateCount} updates in rapid succession.`
+			);
+			console.warn(`Creation stack trace:`, creationStack);
+			console.warn(`Current stack trace:`, new Error().stack);
+		}
+
+		try {
+			// Run the effect function
+			return effectFn();
+		} catch (error) {
+			console.error(`[debugEffect:${debugName}] Error in effect:`, error);
+			console.error(`Stack trace:`, new Error().stack);
+			throw error;
+		}
+	});
+}
+
+/**
  * Creates a safe async effect that prevents infinite update loops
+ * Enhanced with stack trace capture for debugging
  *
  * @param asyncEffectFn The async effect function to run
+ * @param debugName Optional name for the effect to identify it in logs
  */
-export function safeAsyncEffect(asyncEffectFn: () => Promise<void | (() => void)>): void {
+/**
+ * Monitors Svelte's internal effect queue to detect infinite loops
+ * This function patches Svelte's internal flush mechanism to track effect executions
+ *
+ * @param options Configuration options for the monitor
+ */
+export function monitorEffectQueue(
+	options: {
+		warnThreshold?: number;
+		errorThreshold?: number;
+		timeWindow?: number;
+		logFrequency?: number;
+	} = {}
+): () => void {
+	// Default options
+	const {
+		warnThreshold = 50, // Warn after this many effects in the time window
+		errorThreshold = 100, // Error after this many effects in the time window
+		timeWindow = 1000, // Time window in ms to track effects
+		logFrequency = 20 // Log every N effects
+	} = options;
+
+	// Track effect executions
+	let effectCount = 0;
+	let lastResetTime = Date.now();
+	let isMonitoring = true;
+
+	// Store original functions
+	const originalFlushSync = (window as any).__svelte_flush_sync;
+	const originalFlush = (window as any).__svelte_flush;
+
+	if (!originalFlushSync || !originalFlush) {
+		console.warn('Unable to monitor Svelte effect queue: internal functions not found');
+		return () => {}; // Return no-op cleanup function
+	}
+
+	// Create wrapper for flush_sync
+	(window as any).__svelte_flush_sync = function (...args: any[]) {
+		if (isMonitoring) {
+			trackEffect('flush_sync');
+		}
+		return originalFlushSync.apply(this, args);
+	};
+
+	// Create wrapper for flush
+	(window as any).__svelte_flush = function (...args: any[]) {
+		if (isMonitoring) {
+			trackEffect('flush');
+		}
+		return originalFlush.apply(this, args);
+	};
+
+	// Track effect execution
+	function trackEffect(type: string) {
+		effectCount++;
+
+		// Reset counter if time window has passed
+		const now = Date.now();
+		if (now - lastResetTime > timeWindow) {
+			if (effectCount > 5) {
+				console.debug(`[EffectMonitor] ${effectCount} effects in the last ${timeWindow}ms`);
+			}
+			effectCount = 1;
+			lastResetTime = now;
+			return;
+		}
+
+		// Log based on frequency
+		if (effectCount % logFrequency === 0) {
+			console.debug(`[EffectMonitor] ${effectCount} effects so far (${type})`);
+		}
+
+		// Check thresholds
+		if (effectCount >= errorThreshold) {
+			console.error(
+				`[EffectMonitor] CRITICAL: ${effectCount} effects in ${now - lastResetTime}ms!`
+			);
+			console.error('This is almost certainly an infinite loop. Stack trace:', new Error().stack);
+		} else if (effectCount >= warnThreshold) {
+			console.warn(`[EffectMonitor] WARNING: ${effectCount} effects in ${now - lastResetTime}ms`);
+			console.warn('This might be an infinite loop. Stack trace:', new Error().stack);
+		}
+	}
+
+	// Return cleanup function
+	return () => {
+		isMonitoring = false;
+		(window as any).__svelte_flush_sync = originalFlushSync;
+		(window as any).__svelte_flush = originalFlush;
+		console.debug('[EffectMonitor] Monitoring stopped');
+	};
+}
+
+export function safeAsyncEffect(
+	asyncEffectFn: () => Promise<void | (() => void)>,
+	debugName: string = 'unnamed-async'
+): void {
 	// Create a flag to track if we're currently updating
 	let isUpdating = $state(false);
+	let updateCount = $state(0);
+	let lastUpdateTime = $state(Date.now());
+
+	// Capture the stack trace at creation time
+	const creationStack = new Error().stack;
 
 	// Set up the effect with protection against infinite loops
 	$effect(() => {
+		const now = Date.now();
+		const timeSinceLastUpdate = now - lastUpdateTime;
+		updateCount++;
+		lastUpdateTime = now;
+
+		// Log every effect run with timing information
+		console.debug(
+			`[safeAsyncEffect:${debugName}] Run #${updateCount}, ` +
+				`${timeSinceLastUpdate}ms since last update`
+		);
+
+		// Detect potential infinite loops (many updates in short succession)
+		if (updateCount > 5 && timeSinceLastUpdate < 50) {
+			console.warn(
+				`[safeAsyncEffect:${debugName}] Potential infinite loop detected! ` +
+					`${updateCount} updates in rapid succession.`
+			);
+			console.warn(`Creation stack trace:`, creationStack);
+			console.warn(`Current stack trace:`, new Error().stack);
+		}
+
 		// Skip if we're already updating
-		if (isUpdating) return;
+		if (isUpdating) {
+			console.warn(
+				`[safeAsyncEffect:${debugName}] Prevented recursive update! ` +
+					`This could indicate an infinite loop.`
+			);
+			console.warn(`Current stack trace:`, new Error().stack);
+			return;
+		}
 
 		// Set the flag to prevent recursive updates
 		isUpdating = true;
 
+		// Log the start of the async operation
+		console.debug(`[safeAsyncEffect:${debugName}] Starting async operation`);
+
 		// Run the async effect function
 		asyncEffectFn()
 			.catch((error) => {
-				console.error('Error in async effect:', error);
+				console.error(`[safeAsyncEffect:${debugName}] Error in async effect:`, error);
+				console.error(`Stack trace:`, new Error().stack);
 			})
 			.finally(() => {
 				// Reset the flag when done
 				isUpdating = false;
+				console.debug(`[safeAsyncEffect:${debugName}] Async operation completed`);
 			});
 	});
 }
