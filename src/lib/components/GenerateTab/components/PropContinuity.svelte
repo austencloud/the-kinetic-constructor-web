@@ -1,6 +1,7 @@
 <!-- src/lib/components/GenerateTab/ui/PropContinuity.svelte -->
 <script lang="ts">
 	import { settingsStore } from '../store/settings';
+	import { derived } from 'svelte/runes';
 
 	// Export the value property for binding
 	export let value: 'continuous' | 'random' = 'continuous';
@@ -18,8 +19,8 @@
 		settingsStore.setPropContinuity(newValue);
 	}
 
-	// Get current option
-	$: currentOption = continuityOptions.find((opt) => opt.id === value) || continuityOptions[0];
+	// Get current option using derived rune
+	const currentOption = $derived(continuityOptions.find((opt) => opt.id === value) || continuityOptions[0]);
 </script>
 
 <div class="prop-continuity">

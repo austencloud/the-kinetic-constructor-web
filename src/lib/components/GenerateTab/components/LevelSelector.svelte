@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { settingsStore } from '../store/settings';
 	import LevelButton from './LevelButton.svelte';
+	import { derived } from 'svelte/runes';
 
 	// Export the value property for binding
 	export let value: number = 3;
@@ -19,8 +20,8 @@
 		'Expert level with complex combinations'
 	];
 
-	// Current description
-	$: currentDescription = levelDescriptions[value - 1] || levelDescriptions[0];
+	// Current description using derived rune
+	const currentDescription = $derived(levelDescriptions[value - 1] || levelDescriptions[0]);
 
 	// Set level
 	function setLevel(newLevel: number) {
