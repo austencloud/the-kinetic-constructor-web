@@ -8,7 +8,7 @@
 	import { onMount } from '$lib/utils/svelte-lifecycle';
 	import { browser } from '$app/environment';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from '../context/ElementContext';
 	import { getContext } from 'svelte';
 	import { showError } from '$lib/components/shared/ToastManager.svelte';
@@ -48,8 +48,8 @@
 		}
 	});
 
-	// Use the sequence container
-	const sequence = useContainer(sequenceContainer);
+	// Use the sequence container state directly
+	const sequence = $state(sequenceContainer.state);
 
 	// Get the current sequence data
 	const sequenceBeats = $derived(sequence.beats || []);

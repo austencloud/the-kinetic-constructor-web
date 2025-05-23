@@ -1,137 +1,174 @@
-# State Management Core
+# Svelte 5 Runes State Management
 
-This directory contains the core utilities for state management in the Kinetic Constructor application. It provides a unified approach to state management that works with both Svelte 4 and Svelte 5, with special integration for XState 5.
+This directory contains the core utilities for state management in the Kinetic Constructor application. It now focuses exclusively on Svelte 5 runes-based state management without any store integration.
 
 ## Key Components
 
-### Container-based State Management
+### Runes-based State Management
 
-The container-based approach provides a more direct and ergonomic API for state management compared to the traditional store/registry pattern.
+The runes-based approach provides a direct and efficient way to manage state in Svelte 5 components.
 
-- `container.ts` - Core utilities for creating state containers
-- `modernMachine.ts` - Utilities for working with XState 5 machines
-- `adapters.ts` - Adapters between different state management approaches
-- `svelte5-integration.svelte.ts` - Integration with Svelte 5 runes
+- `svelte5-integration.svelte.ts` - Utility functions for working with Svelte 5 runes
+- `MIGRATION-GUIDE.md` - Guide for migrating from stores to runes
 
 ## Usage Examples
 
-### Creating a State Container
-
-```typescript
-// Create a state container
-const counterContainer = createContainer({ count: 0 }, (state, update) => ({
-	increment: () => {
-		update((state) => {
-			state.count += 1;
-		});
-	},
-	decrement: () => {
-		update((state) => {
-			state.count -= 1;
-		});
-	},
-	reset: () => {
-		update((state) => {
-			state.count = 0;
-		});
-	}
-}));
-
-// Use the container
-counterContainer.increment();
-console.log(counterContainer.state.count); // 1
-```
-
-### Creating a Machine Container
-
-```typescript
-// Create a state machine
-const counterMachine = createModernMachine({
-	id: 'counter',
-	initial: 'active',
-	context: { count: 0 },
-	states: {
-		active: {
-			on: {
-				INCREMENT: {
-					actions: assign({
-						count: ({ context }) => context.count + 1
-					})
-				},
-				DECREMENT: {
-					actions: assign({
-						count: ({ context }) => context.count - 1
-					})
-				},
-				RESET: {
-					actions: assign({
-						count: () => 0
-					})
-				}
-			}
-		}
-	}
-});
-
-// Create a machine container
-const counterContainer = createMachineContainer(counterMachine);
-
-// Use the container
-counterContainer.send({ type: 'INCREMENT' });
-console.log(counterContainer.state.context.count); // 1
-```
-
-### Using with Svelte 5 Runes
-
-In a Svelte 5 component (`.svelte` or `.svelte.ts` file):
+### Using Safe State Updates
 
 ```svelte
 <script lang="ts">
-	import { counterContainer } from './counterContainer';
-	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import { safeUpdate } from '$lib/state/core/svelte5-integration.svelte';
 
-	// Use the container with Svelte 5 runes
-	const counter = useContainer(counterContainer);
+	// Create a state variable
+	let count = $state(0);
 
-	// Create derived values
-	const doubleCount = $derived(counter.count * 2);
+	// Create a safe update function
+	const increment = safeUpdate(() => {
+		count += 1;
+	});
+
+	const decrement = safeUpdate(() => {
+		count -= 1;
+	});
+
+	const reset = safeUpdate(() => {
+		count = 0;
+	});
 </script>
 
 <div>
-	<h1>Counter: {counter.count}</h1>
-	<p>Double: {doubleCount}</p>
-	<button onclick={counterContainer.increment}>Increment</button>
-	<button onclick={counterContainer.decrement}>Decrement</button>
-	<button onclick={counterContainer.reset}>Reset</button>
+	<h1>Counter: {count}</h1>
+	<button on:click={increment}>Increment</button>
+	<button on:click={decrement}>Decrement</button>
+	<button on:click={reset}>Reset</button>
 </div>
 ```
 
-### Using with XState 5 and Svelte 5 Runes
+### Using Safe Effects
 
 ```svelte
 <script lang="ts">
-	import { counterMachineContainer } from './counterMachine';
-	import { useMachine } from '$lib/state/core/svelte5-integration.svelte';
+	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 
-	// Use the machine with Svelte 5 runes
-	const counter = useMachine(counterMachineContainer);
+	let count = $state(0);
+	let doubleCount = $state(0);
+
+	// Create a safe effect that won't cause infinite loops
+	safeEffect(() => {
+		doubleCount = count * 2;
+		console.log('Count changed:', count, 'Double:', doubleCount);
+	});
 </script>
 
 <div>
-	<h1>Counter: {counter.state.context.count}</h1>
-	<button onclick={() => counter.send({ type: 'INCREMENT' })}>Increment</button>
-	<button onclick={() => counter.send({ type: 'DECREMENT' })}>Decrement</button>
-	<button onclick={() => counter.send({ type: 'RESET' })}>Reset</button>
+	<h1>Count: {count}</h1>
+	<p>Double: {doubleCount}</p>
+	<button on:click={() => (count += 1)}>Increment</button>
+</div>
+```
+
+### Using Memoized Values
+
+```svelte
+<script lang="ts">
+	import { memoized } from '$lib/state/core/svelte5-integration.svelte';
+
+	let count = $state(0);
+
+	// Create a memoized value function
+	const getDoubleCount = memoized(() => count * 2);
+	const getTripleCount = memoized(() => count * 3);
+
+	// Use the memoized values in a component
+	function logValues() {
+		console.log('Double:', getDoubleCount());
+		console.log('Triple:', getTripleCount());
+	}
+</script>
+
+<div>
+	<h1>Count: {count}</h1>
+	<p>Double: {getDoubleCount()}</p>
+	<p>Triple: {getTripleCount()}</p>
+	<button on:click={() => (count += 1)}>Increment</button>
+	<button on:click={logValues}>Log Values</button>
+</div>
+```
+
+### Using Safe State Objects
+
+```svelte
+<script lang="ts">
+	import { createSafeState } from '$lib/state/core/svelte5-integration.svelte';
+
+	// Create a safe state object
+	const { state, update, reset } = createSafeState({
+		user: null,
+		isLoggedIn: false,
+		preferences: {
+			theme: 'light',
+			notifications: true
+		}
+	});
+
+	// Update specific properties safely
+	function updateTheme(theme) {
+		update({
+			preferences: {
+				...state.preferences,
+				theme
+			}
+		});
+	}
+</script>
+
+<div>
+	<h1>User Settings</h1>
+	<p>Theme: {state.preferences.theme}</p>
+	<button on:click={() => updateTheme('dark')}>Dark Theme</button>
+	<button on:click={() => updateTheme('light')}>Light Theme</button>
+	<button on:click={reset}>Reset All</button>
+</div>
+```
+
+### Using Debounced Updates
+
+```svelte
+<script lang="ts">
+	import { debouncedUpdate } from '$lib/state/core/svelte5-integration.svelte';
+
+	let searchTerm = $state('');
+	let results = $state([]);
+
+	// Create a debounced search function
+	const performSearch = debouncedUpdate(async (term) => {
+		// This won't run on every keystroke, only after the user stops typing
+		results = await fetchSearchResults(term);
+	}, 300); // 300ms debounce
+
+	// Run the search when the search term changes
+	$effect(() => {
+		performSearch(searchTerm);
+	});
+</script>
+
+<div>
+	<input bind:value={searchTerm} placeholder="Search..." />
+	<ul>
+		{#each results as result}
+			<li>{result.title}</li>
+		{/each}
+	</ul>
 </div>
 ```
 
 ## Migration Guide
 
-When migrating from the old store/registry pattern to the new container-based approach:
+We've completely moved away from store-based state management to use Svelte 5 runes exclusively. This provides:
 
-1. Create a new container using `createContainer` or `createMachineContainer`
-2. Create an adapter using `containerToStore` if needed for backward compatibility
-3. Update components to use the new container directly or via the adapter
-4. For Svelte 5 components, use the `useContainer` or `useMachine` helpers
+1. Simpler mental model - no need to subscribe/unsubscribe
+2. Better performance - fewer reactivity layers
+3. Type safety - full TypeScript integration
+4. Fewer bugs - prevents common issues like memory leaks
 
-See the [State Management Migration Guide](../../../docs/state-management-migration-guide.md) for more details.
+See the [Runes Migration Guide](./MIGRATION-GUIDE.md) for detailed instructions on migrating your components.

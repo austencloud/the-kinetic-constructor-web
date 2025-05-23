@@ -1,206 +1,232 @@
 /**
- * Svelte 5 Runes Integration
+ * Svelte 5 Runes Utilities
  *
- * This module provides utilities for integrating our store-based state management
- * with Svelte 5 runes. This file has a .svelte.ts extension to enable runes support.
+ * This module provides utility functions for working with Svelte 5 runes.
+ * It focuses exclusively on runes-based state management without any store integration.
+ * This file has a .svelte.ts extension to enable runes support.
  */
 
-import type { Readable } from 'svelte/store';
+import { untrack } from 'svelte';
 
 /**
- * Creates a reactive state variable from a Svelte store
+ * Creates a safe state update function that prevents infinite update loops
  *
- * @param store A Svelte store
- * @param defaultValue Optional default value to use before the store is initialized
- * @returns A reactive state variable that updates when the store changes
+ * @param updateFn The function to execute safely
+ * @returns A function that safely executes the provided function
  */
-export function useStore<T>(store: Readable<T>, defaultValue?: T): T {
-	// Create a mutable reactive state variable with default value if provided
-	let state = $state<T | undefined>(defaultValue);
+export function safeUpdate<T extends any[]>(updateFn: (...args: T) => void): (...args: T) => void {
+	// Create a flag to track if we're currently updating
+	let isUpdating = $state(false);
 
-	// Initialize with first value
-	let initialized = $state(false);
+	// Return a wrapped function that prevents recursive updates
+	return (...args: T) => {
+		// Skip if we're already updating
+		if (isUpdating) return;
 
-	// Set up an effect to update the state when the store changes
-	$effect(() => {
-		// Log for debugging
-		console.log('Setting up store subscription');
-
-		// Get the initial value immediately
 		try {
-			// Use the get function if available
-			if (typeof store.get === 'function') {
-				const initialValue = (store as any).get();
-				if (initialValue !== undefined) {
-					state = initialValue;
-					initialized = true;
-					console.log('Initial store value:', initialValue);
-				}
-			}
-		} catch (e) {
-			console.warn('Error getting initial store value:', e);
+			// Set the flag to prevent recursive updates
+			isUpdating = true;
+
+			// Use untrack to prevent reactivity loops
+			untrack(() => {
+				updateFn(...args);
+			});
+		} finally {
+			// Reset the flag when done
+			isUpdating = false;
+		}
+	};
+}
+
+/**
+ * Creates a debounced state update function
+ *
+ * @param updateFn The function to debounce
+ * @param delayMs The debounce delay in milliseconds
+ * @returns A debounced function
+ */
+export function debouncedUpdate<T extends any[]>(
+	updateFn: (...args: T) => void,
+	delayMs: number = 100
+): (...args: T) => void {
+	// Store the timeout ID
+	let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+	// Return a debounced function
+	return (...args: T) => {
+		// Clear any existing timeout
+		if (timeoutId) {
+			clearTimeout(timeoutId);
 		}
 
-		// Subscribe to future updates
-		const unsubscribe = store.subscribe((value) => {
-			console.log('Store updated with value:', value);
-			if (value !== undefined) {
-				state = value;
-				initialized = true;
-			}
-		});
+		// Set a new timeout
+		timeoutId = setTimeout(() => {
+			// Use untrack to prevent reactivity loops
+			untrack(() => {
+				updateFn(...args);
+			});
+		}, delayMs);
+	};
+}
 
-		return unsubscribe;
-	});
+/**
+ * Creates a memoized value that only updates when dependencies change
+ *
+ * @param computeFn A function that computes the value
+ * @returns A function that returns the memoized value
+ */
+export function memoized<T>(computeFn: () => T): () => T {
+	// Create a derived value inside the function
+	const value = $derived(computeFn());
 
-	// Create a variable to store the state
-	const stateValue = $derived(state as T);
+	// Return a function that returns the derived value
+	return () => value;
+}
 
-	// Return a proxy that uses default values if not initialized
-	return new Proxy(Object.create(null), {
-		get: (_target, prop) => {
-			// Special case for Symbol.toPrimitive and other built-in symbols
-			if (typeof prop === 'symbol') {
-				// Handle primitive conversion explicitly
-				if (prop === Symbol.toPrimitive) {
-					return (hint: string) => {
-						// If not initialized or value is null/undefined, return appropriate defaults
-						if (!initialized || stateValue === null || stateValue === undefined) {
-							if (hint === 'number') return 0;
-							return hint === 'string' ? '' : false;
-						}
+/**
+ * Creates a safe effect that prevents infinite update loops
+ *
+ * @param effectFn The effect function to run
+ */
+export function safeEffect(effectFn: () => void | (() => void)): void {
+	// Create a flag to track if we're currently updating
+	let isUpdating = $state(false);
 
-						// For primitive values, return them directly
-						if (
-							typeof stateValue === 'string' ||
-							typeof stateValue === 'number' ||
-							typeof stateValue === 'boolean'
-						) {
-							return stateValue;
-						}
+	// Set up the effect with protection against infinite loops
+	$effect(() => {
+		// Skip if we're already updating
+		if (isUpdating) return;
 
-						// For objects, convert based on hint
-						if (hint === 'string') {
-							return String(stateValue);
-						} else if (hint === 'number') {
-							return Number(stateValue);
-						} else {
-							// Default conversion
-							return String(stateValue);
-						}
-					};
-				}
-				return undefined;
-			}
+		try {
+			// Set the flag to prevent recursive updates
+			isUpdating = true;
 
-			if (!initialized) {
-				// If we have a default value, use it
-				if (defaultValue !== undefined && defaultValue !== null) {
-					return defaultValue[prop as keyof T];
-				}
-				// Otherwise return undefined for the property
-				return undefined;
-			}
-
-			// Handle null or undefined state values
-			if (stateValue === null || stateValue === undefined) {
-				return undefined;
-			}
-
-			return stateValue[prop as keyof T];
+			// Run the effect function
+			return effectFn();
+		} finally {
+			// Reset the flag when done
+			isUpdating = false;
 		}
-		// We can't directly add valueOf and toString to the proxy
-		// Instead, we'll handle primitive conversions through Symbol.toPrimitive
-	}) as T;
-}
-
-/**
- * Creates a reactive state variable from a container
- *
- * @param container A state container
- * @returns A reactive state variable that updates when the container changes
- */
-export function useContainer<T extends object>(container: {
-	state: T;
-	subscribe: Readable<T>['subscribe'];
-}): T {
-	// Create a mutable reactive state variable with initial value from container
-	let state = $state<T>({ ...container.state });
-
-	// Set up an effect to update the state when the container changes
-	$effect(() => {
-		const unsubscribe = container.subscribe((value) => {
-			// Update all properties of the state object
-			Object.assign(state, value);
-		});
-
-		return unsubscribe;
-	});
-
-	return state;
-}
-
-/**
- * Creates a derived value from a reactive state variable
- *
- * @param fn A function that computes the derived value
- * @returns A derived value that updates when dependencies change
- */
-export function useDerived<T>(fn: () => T): T {
-	const value = $derived(fn());
-	return value;
-}
-
-/**
- * Creates an effect that runs when dependencies change
- *
- * @param fn A function that performs side effects
- * @returns A cleanup function
- */
-export function useEffect(fn: () => void | (() => void)): void {
-	$effect(() => {
-		return fn();
 	});
 }
 
 /**
- * Creates a reactive state variable from an XState machine container
+ * Safely logs state objects by creating snapshots
  *
- * @param container A machine container
- * @returns A reactive state object with machine state and helper methods
+ * @param label A label for the log message
+ * @param value The value to log (can be a state object or any other value)
+ * @param options Additional options for logging
  */
-export function useMachine<T extends object, E extends { type: string }>(container: {
-	state: T;
-	subscribe: Readable<T>['subscribe'];
-	send: (event: E) => void;
-	can: (eventType: string) => boolean;
-	matches: (stateValue: string) => boolean;
-	hasTag: (tag: string) => boolean;
-}) {
-	// Create a mutable reactive state variable with initial value from container
-	let state = $state<T>({ ...container.state });
+export function safeLog(
+	label: string,
+	value: any,
+	options: {
+		level?: 'log' | 'debug' | 'info' | 'warn' | 'error';
+		snapshot?: boolean;
+	} = {}
+): void {
+	const { level = 'debug', snapshot = true } = options;
 
-	// Set up an effect to update the state when the container changes
-	$effect(() => {
-		const unsubscribe = container.subscribe((value) => {
-			// Update all properties of the state object
-			Object.assign(state, value);
-		});
+	// Create a safe copy of the value
+	let safeValue;
 
-		return unsubscribe;
+	try {
+		if (snapshot) {
+			// Try to use $state.snapshot if available (Svelte 5 API)
+			if (
+				value &&
+				typeof value === 'object' &&
+				'$state' in globalThis &&
+				typeof (globalThis as any).$state.snapshot === 'function'
+			) {
+				safeValue = (globalThis as any).$state.snapshot(value);
+				console[level](`[snapshot] ${label}`, safeValue);
+			} else {
+				// For arrays and objects, create a shallow copy
+				if (Array.isArray(value)) {
+					safeValue = [...value];
+				} else if (value && typeof value === 'object' && value !== null) {
+					safeValue = { ...value };
+				} else {
+					safeValue = value;
+				}
+				console[level](`${label}`, safeValue);
+			}
+		} else {
+			// Log directly without snapshot
+			console[level](`${label}`, value);
+		}
+	} catch (error) {
+		// If anything goes wrong, fall back to a simple string representation
+		console[level](`${label} (safe logging failed)`, String(value));
+	}
+}
+
+/**
+ * Creates a state object with safe update methods
+ *
+ * @param initialState The initial state object
+ * @returns A state object with safe update methods
+ */
+export function createSafeState<T extends object>(initialState: T) {
+	// Create the state object
+	const state = $state<T>({ ...initialState });
+
+	// Create a safe update function
+	const update = safeUpdate((newState: Partial<T>) => {
+		// Update each property individually
+		for (const key in newState) {
+			if (Object.prototype.hasOwnProperty.call(newState, key)) {
+				// Only update if the value has actually changed
+				if (state[key as keyof T] !== newState[key as keyof T]) {
+					state[key as keyof T] = newState[key as keyof T] as any;
+				}
+			}
+		}
 	});
 
-	// Create helper methods that use the reactive state
-	const can = (eventType: string) => container.can(eventType);
-	const matches = (stateValue: string) => container.matches(stateValue);
-	const hasTag = (tag: string) => container.hasTag(tag);
-	const send = (event: E) => container.send(event);
+	// Create a safe reset function
+	const reset = safeUpdate(() => {
+		// Reset to initial state
+		for (const key in initialState) {
+			if (Object.prototype.hasOwnProperty.call(initialState, key)) {
+				state[key as keyof T] = initialState[key as keyof T];
+			}
+		}
+	});
 
 	return {
 		state,
-		can,
-		matches,
-		hasTag,
-		send
+		update,
+		reset
 	};
+}
+
+/**
+ * Creates a safe async effect that prevents infinite update loops
+ *
+ * @param asyncEffectFn The async effect function to run
+ */
+export function safeAsyncEffect(asyncEffectFn: () => Promise<void | (() => void)>): void {
+	// Create a flag to track if we're currently updating
+	let isUpdating = $state(false);
+
+	// Set up the effect with protection against infinite loops
+	$effect(() => {
+		// Skip if we're already updating
+		if (isUpdating) return;
+
+		// Set the flag to prevent recursive updates
+		isUpdating = true;
+
+		// Run the async effect function
+		asyncEffectFn()
+			.catch((error) => {
+				console.error('Error in async effect:', error);
+			})
+			.finally(() => {
+				// Reset the flag when done
+				isUpdating = false;
+			});
+	});
 }

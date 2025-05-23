@@ -169,27 +169,95 @@ export function setupPictographDataSubscription(
 ): { unsubscribe: () => void; getSnapshot: () => PictographDataSnapshot | null } {
 	let currentSnapshot = lastDataSnapshot;
 
+	// Add update throttling to prevent infinite loops
+	let lastUpdateTime = 0;
+	const MIN_UPDATE_INTERVAL = 100; // ms - increased to reduce update frequency
+	let updateCount = 0;
+	const MAX_UPDATES_PER_SECOND = 10; // reduced to be more conservative
+	let lastResetTime = Date.now();
+	let isProcessingUpdate = false; // Flag to prevent concurrent updates
+	let pendingData: PictographData | null = null; // Store pending updates
+	let updateTimeoutId: any = null; // For debouncing
+
 	const unsubscribe = pictographDataStore.subscribe((data) => {
-		if (data && service) {
-			// Use a safe comparison method that avoids circular references
-			const { hasChanged, updatedSnapshot } = checkForChanges(data, currentSnapshot);
-			currentSnapshot = updatedSnapshot;
+		if (!data || !service) return;
 
-			// Only process if there's a real change and service is initialized
-			if (hasChanged) {
-				if (debug) console.debug('Pictograph data changed, updating components');
+		// Store the latest data
+		pendingData = data;
 
-				// Update the service with new data
-				service.updateData(data);
+		// If we're already processing an update, don't start another one
+		if (isProcessingUpdate) {
+			return;
+		}
 
-				// Update local state
-				updateComponentsFn();
+		// Throttle updates to prevent infinite loops
+		const now = Date.now();
 
-				// Notify parent about the update
-				dispatch('dataUpdated', { type: 'all' });
+		// Reset counter every second
+		if (now - lastResetTime > 1000) {
+			updateCount = 0;
+			lastResetTime = now;
+		}
+
+		// Check if we're updating too frequently
+		if (now - lastUpdateTime < MIN_UPDATE_INTERVAL) {
+			updateCount++;
+
+			// If we're updating too frequently, log a warning and debounce
+			if (updateCount > MAX_UPDATES_PER_SECOND) {
+				if (debug) console.warn('Pictograph update throttled to prevent infinite loop');
+
+				// Clear any existing timeout
+				if (updateTimeoutId) {
+					clearTimeout(updateTimeoutId);
+				}
+
+				// Set a new timeout to process the update later
+				updateTimeoutId = setTimeout(() => {
+					processUpdate(pendingData);
+					pendingData = null;
+				}, 200); // Wait longer when throttling
+
+				return;
 			}
 		}
+
+		// Process the update immediately
+		processUpdate(data);
 	});
+
+	// Function to process updates with proper state tracking
+	function processUpdate(data: PictographData | null) {
+		if (!data || !service) return;
+
+		// Mark that we're processing an update
+		isProcessingUpdate = true;
+
+		// Update the last update time
+		lastUpdateTime = Date.now();
+
+		// Use a safe comparison method that avoids circular references
+		const { hasChanged, updatedSnapshot } = checkForChanges(data, currentSnapshot);
+
+		// Only update the snapshot if there's a real change
+		if (hasChanged) {
+			currentSnapshot = updatedSnapshot;
+
+			if (debug) console.debug('Pictograph data changed, updating components');
+
+			// Update the service with new data
+			service.updateData(data);
+
+			// Update local state
+			updateComponentsFn();
+
+			// Notify parent about the update
+			dispatch('dataUpdated', { type: 'all' });
+		}
+
+		// Reset processing flag when done
+		isProcessingUpdate = false;
+	}
 
 	return {
 		unsubscribe,

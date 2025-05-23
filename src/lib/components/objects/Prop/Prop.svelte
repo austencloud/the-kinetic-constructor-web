@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { parsePropSvg } from '../../SvgManager/PropSvgParser';
 	import SvgManager from '../../SvgManager/SvgManager';
 	import type { PropData } from './PropData';
 	import type { PropSvgData } from '../../SvgManager/PropSvgData';
 	import PropRotAngleManager from './PropRotAngleManager';
-	import { sequenceStore } from '$lib/state/stores/sequenceStore';
+	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 
 	/**
 	 * Safe base64 encoding that works on all browsers including mobile
@@ -62,27 +62,8 @@
 	// Use the directly provided prop data as the base
 	let effectivePropData = $state<PropData | undefined>(propData);
 
-	// Subscribe to the sequence store to update effectivePropData if needed
-	$effect(() => {
-		// Only subscribe if we have beatId and color
-		if (!beatId || !color) return;
-
-		// Subscribe to the sequence store
-		const unsubscribe = sequenceStore.subscribe(($sequenceStore) => {
-			const beat = $sequenceStore.beats.find((b) => b.id === beatId);
-			if (!beat) return;
-
-			const storeData = color === 'red' ? beat.redPropData : beat.bluePropData;
-			if (storeData) {
-				effectivePropData = storeData;
-			}
-		});
-
-		return unsubscribe; // Cleanup function
-	});
-
-	// Compute rotation angle using $effect
-	$effect(() => {
+	// Compute rotation angle using safeEffect
+	safeEffect(() => {
 		// Ensure we have both loc and ori, and the SVG is loaded
 		if (effectivePropData) {
 			// Always try to calculate, even if loc or ori might be undefined
@@ -99,9 +80,6 @@
 				if (propData) {
 					propData.rotAngle = rotAngle;
 				}
-
-				// If using store data and we need to update it, we would do it here
-				// This would require implementing an update function that uses sequenceStore.updateBeat
 			} catch (error) {
 				console.warn('Error calculating rotation angle:', error);
 			}
@@ -134,27 +112,41 @@
 		};
 	});
 
+	// Track if we're currently in the process of loading
+	let isLoading = $state(false);
+
 	async function loadSvg() {
 		try {
 			// Safety check
-			if (!effectivePropData) {
-				throw new Error('No prop data available');
+			if (!effectivePropData || isLoading) {
+				return;
 			}
+
+			// Mark that we're loading to prevent reactivity loops
+			isLoading = true;
 
 			// Create a consistent cache key
 			const cacheKey = getPropCacheKey(effectivePropData.propType, effectivePropData.color);
 
 			// First check the component-level cache
 			if (propSvgCache.has(cacheKey)) {
-				svgData = propSvgCache.get(cacheKey)!;
-				isLoaded = true;
-				props.loaded?.({});
+				untrack(() => {
+					svgData = propSvgCache.get(cacheKey)!;
+					isLoaded = true;
+					props.loaded?.({});
+				});
+				isLoading = false;
 				return;
 			}
 
 			// Then check the resource cache via SvgManager
 			// This will be populated if props were preloaded at app startup
 			try {
+				// Use a microtask to break potential reactivity chains
+				await new Promise<void>((resolve) => {
+					queueMicrotask(() => resolve());
+				});
+
 				const cachedSvg = await svgManager.getPropSvg(
 					effectivePropData.propType,
 					effectivePropData.color
@@ -163,17 +155,32 @@
 				if (cachedSvg) {
 					const { viewBox, center } = parsePropSvg(cachedSvg, effectivePropData.color);
 
-					svgData = {
-						imageSrc: `data:image/svg+xml;base64,${safeBase64Encode(cachedSvg)}`,
-						viewBox,
-						center
-					};
+					untrack(() => {
+						svgData = {
+							imageSrc: `data:image/svg+xml;base64,${safeBase64Encode(cachedSvg)}`,
+							viewBox,
+							center
+						};
 
-					// Cache for future use
-					propSvgCache.set(cacheKey, svgData);
+						// Cache for future use
+						propSvgCache.set(cacheKey, svgData);
 
-					isLoaded = true;
-					props.loaded?.({});
+						isLoaded = true;
+
+						// Use a much longer timeout to completely break the reactivity chain
+						// This is crucial for preventing infinite loops
+						if (props.loaded) {
+							setTimeout(() => {
+								// Use a try-catch to prevent errors from propagating
+								try {
+									props.loaded?.({});
+								} catch (error) {
+									console.error('Error in Prop loaded callback:', error);
+								}
+							}, 200); // Use a longer timeout
+						}
+					});
+					isLoading = false;
 					return;
 				}
 			} catch (cacheError) {
@@ -217,7 +224,19 @@
 
 			clearTimeout(loadTimeout);
 			isLoaded = true;
-			props.loaded?.({});
+
+			// Use a much longer timeout to completely break the reactivity chain
+			// This is crucial for preventing infinite loops
+			if (props.loaded) {
+				setTimeout(() => {
+					// Use a try-catch to prevent errors from propagating
+					try {
+						props.loaded?.({});
+					} catch (error) {
+						console.error('Error in Prop loaded callback:', error);
+					}
+				}, 200); // Use a longer timeout
+			}
 		} catch (error: any) {
 			console.error('Error loading prop SVG:', error);
 
@@ -237,8 +256,15 @@
 
 			clearTimeout(loadTimeout);
 			isLoaded = true;
-			props.loaded?.({ error: true });
-			props.error?.({ message: (error as Error)?.message || 'Unknown error' });
+
+			// Use setTimeout to break the reactivity chain for callbacks
+			setTimeout(() => {
+				// Use untrack to prevent reactivity loops
+				untrack(() => {
+					props.loaded?.({ error: true });
+					props.error?.({ message: (error as Error)?.message || 'Unknown error' });
+				});
+			}, 0);
 		}
 	}
 

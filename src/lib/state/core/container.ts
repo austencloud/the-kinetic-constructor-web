@@ -247,12 +247,19 @@ export function createContainer<T extends object, A extends Record<string, Funct
 
 	// Function to update state immutably
 	const update = (fn: (state: T) => void) => {
-		store.update((currentState) => {
-			// Use our safe clone function that handles non-cloneable objects
-			const copy = safeClone(currentState);
-			fn(copy);
-			return copy;
-		});
+		// Use a try-catch to handle any errors during update
+		try {
+			store.update((currentState) => {
+				// Use our safe clone function that handles non-cloneable objects
+				const copy = safeClone(currentState);
+				fn(copy);
+				return copy;
+			});
+		} catch (error) {
+			console.error('Error updating container state:', error);
+			// Re-throw to allow error handling
+			throw error;
+		}
 	};
 
 	// Create actions with access to state via store.update
@@ -284,16 +291,30 @@ export function createContainer<T extends object, A extends Record<string, Funct
 	// Create the container object with proper typing
 	const container = {
 		get state() {
-			return get(store);
+			// Use a safe clone to prevent reactivity issues with Svelte 5 runes
+			return safeClone(get(store));
 		},
 		...boundActions,
 		reset,
 		// Add subscribe method for compatibility with Svelte stores
-		subscribe: store.subscribe
+		subscribe: (callback: (value: T) => void) => {
+			// Wrap the callback to ensure we're always passing a fresh clone
+			// This prevents reactivity issues with Svelte 5 runes
+			return store.subscribe((value) => {
+				callback(safeClone(value));
+			});
+		},
+		// Add get method for compatibility with useStore in Svelte 5 runes
+		get: () => {
+			return safeClone(get(store));
+		}
 	};
 
 	// Return the container with proper type
-	return container as typeof container & { subscribe: typeof store.subscribe };
+	return container as typeof container & {
+		subscribe: typeof store.subscribe;
+		get: () => T;
+	};
 }
 
 /**

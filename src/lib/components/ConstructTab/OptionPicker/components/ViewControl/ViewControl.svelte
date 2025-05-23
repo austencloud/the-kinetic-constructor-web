@@ -136,12 +136,14 @@
 			// First update the sort method to ensure we're in the right mode
 			actions.setSortMethod('all');
 
-			// Force a UI update by dispatching a custom event
-			const showAllEvent = new CustomEvent('show-all-view', {
-				detail: { sortMethod: 'all' },
-				bubbles: true
-			});
-			document.dispatchEvent(showAllEvent);
+			// DISABLED: Force a UI update by dispatching a custom event
+			// const showAllEvent = new CustomEvent('show-all-view', {
+			// 	detail: { sortMethod: 'all' },
+			// 	bubbles: true
+			// });
+			// document.dispatchEvent(showAllEvent);
+
+			console.log('ViewControl: Event dispatching disabled to prevent reactivity loops');
 
 			// Set the last selected tab to 'all' for all sort methods
 			// This ensures proper display when switching back to other views
@@ -162,54 +164,74 @@
 			if (!lastSelectedTab || lastSelectedTab === 'all') {
 				console.log('ViewControl: No last selected tab, will select first available tab');
 
-				// Force a UI update by dispatching a custom event
-				const forceUpdateEvent = new CustomEvent('force-update-tabs', {
-					detail: { sortMethod: option.value },
-					bubbles: true
-				});
-				document.dispatchEvent(forceUpdateEvent);
+				// DISABLED: Force a UI update by dispatching a custom event
+				// const forceUpdateEvent = new CustomEvent('force-update-tabs', {
+				// 	detail: { sortMethod: option.value },
+				// 	bubbles: true
+				// });
+				// document.dispatchEvent(forceUpdateEvent);
 
-				// We'll select the first tab in the next tick after the UI updates
-				setTimeout(() => {
-					// Get the grouped options for this sort method
-					const groupedOptions = get(groupedOptionsStore);
-					console.log('ViewControl: Grouped options:', groupedOptions);
+				console.log('ViewControl: Event dispatching disabled to prevent reactivity loops');
 
-					if (groupedOptions && Object.keys(groupedOptions).length > 0) {
-						// Get the first category key
-						const firstCategoryKey = Object.keys(groupedOptions)[0];
-						console.log('ViewControl: Selecting first category key:', firstCategoryKey);
+				// DISABLED: We'll select the first tab in the next tick after the UI updates
+				// setTimeout(() => {
+				// 	// Get the grouped options for this sort method
+				// 	const groupedOptions = get(groupedOptionsStore);
+				// 	console.log('ViewControl: Grouped options:', groupedOptions);
+				//
+				// 	if (groupedOptions && Object.keys(groupedOptions).length > 0) {
+				// 		// Get the first category key
+				// 		const firstCategoryKey = Object.keys(groupedOptions)[0];
+				// 		console.log('ViewControl: Selecting first category key:', firstCategoryKey);
+				//
+				// 		// Set the last selected tab to the first category key
+				// 		actions.setLastSelectedTabForSort(option.value as SortMethod, firstCategoryKey);
+				// 	} else {
+				// 		console.log('ViewControl: No grouped options available');
+				// 	}
+				// }, 100);
 
-						// Set the last selected tab to the first category key
-						actions.setLastSelectedTabForSort(option.value as SortMethod, firstCategoryKey);
-					} else {
-						console.log('ViewControl: No grouped options available');
-					}
-				}, 100);
+				// Do a direct update instead of using setTimeout
+				// Get the grouped options for this sort method
+				const groupedOptions = get(groupedOptionsStore);
+				console.log('ViewControl: Grouped options:', groupedOptions);
+
+				if (groupedOptions && Object.keys(groupedOptions).length > 0) {
+					// Get the first category key
+					const firstCategoryKey = Object.keys(groupedOptions)[0];
+					console.log('ViewControl: Selecting first category key:', firstCategoryKey);
+
+					// Set the last selected tab to the first category key
+					actions.setLastSelectedTabForSort(option.value as SortMethod, firstCategoryKey);
+				} else {
+					console.log('ViewControl: No grouped options available');
+				}
 			}
 		}
 
-		// Create a DOM event that will bubble up
-		const customEvent = new CustomEvent('viewChange', {
-			detail,
-			bubbles: true,
-			composed: true
-		});
+		// DISABLED: Create a DOM event that will bubble up
+		// const customEvent = new CustomEvent('viewChange', {
+		// 	detail,
+		// 	bubbles: true,
+		// 	composed: true
+		// });
+		//
+		// // Call the Svelte 5 callback if provided
+		// if (onviewChange) {
+		// 	onviewChange(customEvent);
+		// }
+		//
+		// // Also dispatch the event from the button element if available (for compatibility)
+		// if (buttonElement) {
+		// 	console.log('Dispatching viewChange event with detail:', detail);
+		// 	buttonElement.dispatchEvent(customEvent);
+		// } else {
+		// 	// Fallback to dispatching from the document
+		// 	console.warn('Button element not available, using document for event dispatch');
+		// 	document.dispatchEvent(customEvent);
+		// }
 
-		// Call the Svelte 5 callback if provided
-		if (onviewChange) {
-			onviewChange(customEvent);
-		}
-
-		// Also dispatch the event from the button element if available (for compatibility)
-		if (buttonElement) {
-			console.log('Dispatching viewChange event with detail:', detail);
-			buttonElement.dispatchEvent(customEvent);
-		} else {
-			// Fallback to dispatching from the document
-			console.warn('Button element not available, using document for event dispatch');
-			document.dispatchEvent(customEvent);
-		}
+		console.log('ViewControl: Event dispatching disabled to prevent reactivity loops');
 
 		closeDropdown();
 	}

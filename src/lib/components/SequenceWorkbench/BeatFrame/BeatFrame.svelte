@@ -13,7 +13,7 @@
 
 	// Import the sequence container and integration utilities
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 	import type { BeatFrameLayoutOptions } from '$lib/types/BeatFrameLayoutOptions'; // Added import
 	import { BEAT_FRAME_CONTEXT_KEY } from '../context/ElementContext';
 
@@ -50,8 +50,8 @@
 		height: $sizeStore?.height || 0
 	});
 
-	// Use the sequence container with Svelte 5 runes
-	const sequence = useContainer(sequenceContainer);
+	// Use the sequence container state directly
+	const sequence = $state(sequenceContainer.state);
 
 	// Props using Svelte 5 runes
 	const {

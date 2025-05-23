@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 
 	// Local state for the form
@@ -11,8 +11,8 @@
 	let generationMessage = $state('');
 	let error = $state<string | null>(null);
 
-	// Use the sequence container with Svelte 5 runes
-	const sequence = useContainer(sequenceContainer);
+	// Use the sequence container state directly
+	const sequence = $state(sequenceContainer.state);
 
 	// Handle form submission
 	function handleAddBeat() {

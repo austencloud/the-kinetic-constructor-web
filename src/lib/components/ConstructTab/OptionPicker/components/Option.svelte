@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+	import { getContext, untrack } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { optionPickerContainer } from '$lib/state/stores/optionPicker/optionPickerContainer';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
@@ -21,25 +21,66 @@
 	// Reactive state using Svelte 5 runes
 	const isMobileDevice = $derived($layoutContext.isMobile);
 	const scaleFactor = $derived($layoutContext.layoutConfig.scaleFactor);
-	const isSelected = $derived(
-		optionPickerContainer.state.selectedPictograph === props.pictographData
-	);
+
+	// Use untrack to prevent circular dependencies with the container
+	const isSelected = $derived.by(() => {
+		return untrack(() => {
+			// Use a safer comparison that doesn't rely on object identity
+			const selectedPictograph = optionPickerContainer.state.selectedPictograph;
+			const currentPictograph = props.pictographData;
+
+			if (!selectedPictograph || !currentPictograph) return false;
+
+			// Compare key properties instead of object identity
+			return (
+				selectedPictograph.letter === currentPictograph.letter &&
+				selectedPictograph.startPos === currentPictograph.startPos &&
+				selectedPictograph.endPos === currentPictograph.endPos &&
+				selectedPictograph.direction === currentPictograph.direction
+			);
+		});
+	});
+
 	const ariaLabel = $derived(`Select option ${props.pictographData.letter || 'Unnamed'}`);
 
-	// No need for a key to force re-render - we want smooth transitions
+	// Create a stable copy of the pictograph data to prevent reactivity loops
+	// This is crucial for preventing the Pictograph component from re-rendering unnecessarily
+	let stablePictographData = $state<PictographData | null>(null);
+
+	// Initialize the stable copy once
+	$effect(() => {
+		if (!stablePictographData && props.pictographData) {
+			// Create a deep copy to break reactivity connections
+			stablePictographData = JSON.parse(JSON.stringify(props.pictographData));
+		}
+	});
 
 	// Show border state
 	let showBorder = $state(false);
 
+	// Track if component is mounted to prevent unnecessary updates
+	let isMounted = $state(false);
+	$effect(() => {
+		isMounted = true;
+		return () => {
+			isMounted = false;
+		};
+	});
+
 	function handleSelect() {
-		optionPickerContainer.selectOption(props.pictographData);
+		if (!isMounted) return;
+		untrack(() => {
+			optionPickerContainer.selectOption(props.pictographData);
+		});
 	}
 
 	function handleMouseEnter() {
+		if (!isMounted) return;
 		showBorder = true;
 	}
 
 	function handleMouseLeave() {
+		if (!isMounted) return;
 		showBorder = false;
 	}
 </script>
@@ -59,18 +100,20 @@
 	aria-pressed={isSelected}
 >
 	<div class="pictograph-container" style="transform: scale({scaleFactor})">
-		<!-- Optimized pictograph rendering -->
+		<!-- Optimized pictograph rendering with stable data -->
 		<div class="pictograph-wrapper">
-			<Pictograph
-				pictographData={props.pictographData}
-				disableAnimations={true}
-				showLoadingIndicator={false}
-			/>
-			<StyledBorderOverlay
-				pictographData={props.pictographData}
-				isEnabled={showBorder || isSelected}
-				isGold={isSelected}
-			/>
+			{#if stablePictographData}
+				<Pictograph
+					pictographData={stablePictographData}
+					disableAnimations={true}
+					showLoadingIndicator={false}
+				/>
+				<StyledBorderOverlay
+					pictographData={stablePictographData}
+					isEnabled={showBorder || isSelected}
+					isGold={isSelected}
+				/>
+			{/if}
 		</div>
 	</div>
 </div>

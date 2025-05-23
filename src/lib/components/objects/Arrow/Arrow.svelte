@@ -1,6 +1,6 @@
 <!-- src/lib/components/objects/Arrow/Arrow.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import type { ArrowData } from './ArrowData';
 	import type { ArrowSvgData } from '../../SvgManager/ArrowSvgData';
 	import { ArrowSvgLoader } from './services/ArrowSvgLoader';
@@ -10,8 +10,7 @@
 	import ArrowSvgMirrorManager from './ArrowSvgMirrorManager';
 	import type { PictographService } from '$lib/components/Pictograph/PictographService';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { sequenceStore } from '$lib/state/stores/sequenceStore';
-	import { derived } from 'svelte/store';
+	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 
 	// Props - we support both direct arrowData and store-based approach
 	const props = $props<{
@@ -32,35 +31,19 @@
 
 	// Set defaults
 	const arrowData = props.arrowData;
-	const beatId = props.beatId;
-	const color = props.color;
 	const motion = props.motion ?? null;
 	const pictographData = props.pictographData ?? null;
 	const pictographService = props.pictographService ?? null;
 
-	// Get arrow data from the sequence store if beatId and color are provided
-	const arrowDataFromStore = derived(sequenceStore, ($sequenceStore) => {
-		if (!beatId || !color) return null;
-
-		const beat = $sequenceStore.beats.find((b) => b.id === beatId);
-		if (!beat) return null;
-
-		return color === 'red' ? beat.redArrowData : beat.blueArrowData;
-	});
-
-	// Use either the arrow data from store or the directly provided arrow data
-	let effectiveArrowData = $state<ArrowData | undefined>(undefined);
-
-	// Update effectiveArrowData when arrowDataFromStore changes
-	$effect(() => {
-		effectiveArrowData = $arrowDataFromStore || arrowData;
-	});
+	// Use the directly provided arrow data
+	let effectiveArrowData = $state<ArrowData | undefined>(arrowData);
 
 	// Component state
 	let svgData = $state<ArrowSvgData | null>(null);
 	let transform = $state('');
 	let isLoaded = $state(false);
 	let hasErrored = $state(false);
+	let hasCalledLoaded = $state(false);
 	let rotAngleManager = $state<ArrowRotAngleManager | null>(null);
 
 	// Services
@@ -70,44 +53,41 @@
 	// Create mirror manager only when we have arrow data
 	let mirrorManager = $state<ArrowSvgMirrorManager | null>(null);
 
-	$effect(() => {
-		mirrorManager = effectiveArrowData ? new ArrowSvgMirrorManager(effectiveArrowData) : null;
-	});
+	// Initialize managers and state on component creation instead of using effects
+	// This prevents reactivity loops by setting up everything once
+	if (effectiveArrowData) {
+		// Create a local variable to avoid reactivity issues
+		const localArrowData = effectiveArrowData;
 
-	// Initialize the rotation angle manager when pictograph data is available
-	$effect(() => {
+		// Initialize mirror manager
+		mirrorManager = new ArrowSvgMirrorManager(localArrowData);
+
+		// Initialize rotation angle manager
 		if (pictographData) {
 			rotAngleManager = new ArrowRotAngleManager(pictographData, pictographService || undefined);
 		}
-	});
 
-	// Update mirror state whenever motion data or arrow data changes
-	$effect(() => {
-		if (effectiveArrowData && mirrorManager) {
-			mirrorManager.updateMirror();
+		// Update mirror state
+		const localMirrorManager = mirrorManager;
+		if (localMirrorManager) {
+			localMirrorManager.updateMirror();
 		}
-	});
+	}
 
-	// Calculate rotation angle (memoized)
-	let rotationAngle = $state(0);
+	// Calculate rotation angle once
+	let rotationAngle = $state(getRotationAngle());
 
-	$effect(() => {
-		rotationAngle = getRotationAngle();
-	});
+	// Calculate transform immediately
+	if (effectiveArrowData?.coords) {
+		// Apply transformations in the correct order
+		const mirrorTransform = effectiveArrowData.svgMirrored ? 'scale(-1, 1)' : '';
 
-	// Transform calculation (memoized)
-	$effect(() => {
-		if (svgData && effectiveArrowData?.coords) {
-			// Apply transformations in the correct order
-			const mirrorTransform = effectiveArrowData.svgMirrored ? 'scale(-1, 1)' : '';
-
-			transform = `
-				translate(${effectiveArrowData.coords.x}, ${effectiveArrowData.coords.y})
-				rotate(${rotationAngle})
-				${mirrorTransform}
-			`.trim();
-		}
-	});
+		transform = `
+			translate(${effectiveArrowData.coords.x}, ${effectiveArrowData.coords.y})
+			rotate(${rotationAngle})
+			${mirrorTransform}
+		`.trim();
+	}
 
 	// Mobile detection no longer needed with preloaded SVGs
 
@@ -139,34 +119,69 @@
 
 	/**
 	 * Loads the arrow SVG using preloaded resources without timeouts
-	 * Optimized for real-time updates with improved caching
+	 * Optimized for real-time updates with improved caching and protection against reactivity loops
 	 */
 	async function loadArrowSvg() {
+		console.log('[DEBUG] loadArrowSvg called');
 		try {
 			// Safety check
 			if (!effectiveArrowData) {
+				console.log('[DEBUG] No arrow data available');
 				throw new Error('No arrow data available');
 			}
 
+			console.log('[DEBUG] Loading arrow SVG for:', {
+				motionType: effectiveArrowData.motionType,
+				startOri: effectiveArrowData.startOri,
+				turns: effectiveArrowData.turns,
+				color: effectiveArrowData.color,
+				svgMirrored: effectiveArrowData.svgMirrored
+			});
+
 			// Update mirror state before loading SVG
 			if (mirrorManager) {
+				console.log('[DEBUG] Updating mirror state');
 				mirrorManager.updateMirror();
 			}
 
 			// Create a consistent cache key for all contexts
 			const cacheKey = `arrow-${effectiveArrowData.motionType}-${effectiveArrowData.startOri}-${effectiveArrowData.turns}-${effectiveArrowData.color}-${effectiveArrowData.svgMirrored}`;
+			console.log('[DEBUG] Arrow cache key:', cacheKey);
 
 			// Check component-level cache first for immediate rendering
 			const cachedData = getCachedSvgData(cacheKey);
 
 			if (cachedData) {
-				// Use cached data for immediate response
-				svgData = cachedData;
-				isLoaded = true;
-				props.loaded?.();
+				console.log('[DEBUG] Using cached arrow SVG data');
+				// Use untrack to prevent reactivity loops when updating state
+				untrack(() => {
+					// Use cached data for immediate response
+					svgData = cachedData;
+					isLoaded = true;
+				});
+
+				// Use a much longer timeout to completely break the reactivity chain
+				// This is crucial for preventing infinite loops
+				if (props.loaded && !hasCalledLoaded) {
+					console.log('[DEBUG] Scheduling loaded callback (cached)');
+					// Set a flag to prevent multiple callbacks
+					hasCalledLoaded = true;
+					setTimeout(() => {
+						// Use a try-catch to prevent errors from propagating
+						try {
+							untrack(() => {
+								console.log('[DEBUG] Calling loaded callback (cached)');
+								props.loaded?.();
+							});
+						} catch (error) {
+							console.error('[DEBUG] Error in Arrow loaded callback (cached):', error);
+						}
+					}, 200); // Use a longer timeout
+				}
 				return;
 			}
 
+			console.log('[DEBUG] No cached data found, loading SVG');
 			// For real-time responsiveness, use a Promise.race approach
 			// This will use either the preloaded SVG or a fast fallback if loading takes too long
 			const loadPromise = svgLoader.loadSvg(
@@ -178,23 +193,42 @@
 			);
 
 			// Use the result as soon as it's available
+			console.log('[DEBUG] Waiting for SVG load promise');
 			const result = await loadPromise;
+			console.log('[DEBUG] SVG loaded successfully');
 
-			// Update state and notify
-			svgData = result.svgData;
+			// Update state and notify with untrack to prevent reactivity loops
+			untrack(() => {
+				console.log('[DEBUG] Updating SVG data state');
+				svgData = result.svgData;
 
-			// Cache the result for future use
-			cacheSvgData(cacheKey, svgData);
+				// Cache the result for future use
+				console.log('[DEBUG] Caching SVG data');
+				cacheSvgData(cacheKey, svgData);
 
-			isLoaded = true;
-			props.loaded?.();
+				isLoaded = true;
+			});
+
+			// Use setTimeout to break the reactivity chain for callbacks
+			if (props.loaded && !hasCalledLoaded) {
+				console.log('[DEBUG] Scheduling loaded callback');
+				// Set a flag to prevent multiple callbacks
+				hasCalledLoaded = true;
+				setTimeout(() => {
+					untrack(() => {
+						console.log('[DEBUG] Calling loaded callback');
+						props.loaded?.();
+					});
+				}, 200); // Use a longer timeout to ensure all other operations complete
+			}
 		} catch (error) {
+			console.error('[DEBUG] Error loading arrow SVG:', error);
 			handleLoadError(error);
 		}
 	}
 
 	/**
-	 * Handles SVG loading errors with fallback
+	 * Handles SVG loading errors with fallback and protection against reactivity loops
 	 */
 	function handleLoadError(error: unknown) {
 		// Minimal logging in production
@@ -204,15 +238,29 @@
 			console.error('Arrow load error: ' + ((error as Error)?.message || 'Unknown error'));
 		}
 
-		hasErrored = true;
-		svgData = svgLoader.getFallbackSvgData();
-		isLoaded = true;
-		props.loaded?.({ error: true });
-		props.error?.({
-			message: (error as Error)?.message || 'Unknown error',
-			component: 'Arrow',
-			color: effectiveArrowData?.color || 'unknown'
+		// Use untrack to prevent reactivity loops when updating state
+		untrack(() => {
+			hasErrored = true;
+			svgData = svgLoader.getFallbackSvgData();
+			isLoaded = true;
 		});
+
+		// Use a longer timeout to completely break the reactivity chain for callbacks
+		setTimeout(() => {
+			// Use untrack to prevent reactivity loops
+			untrack(() => {
+				try {
+					props.loaded?.({ error: true });
+					props.error?.({
+						message: (error as Error)?.message || 'Unknown error',
+						component: 'Arrow',
+						color: effectiveArrowData?.color || 'unknown'
+					});
+				} catch (callbackError) {
+					console.error('Error in Arrow error callback:', callbackError);
+				}
+			});
+		}, 100);
 	}
 
 	/**
@@ -231,13 +279,45 @@
 		return effectiveArrowData?.rotAngle || 0;
 	}
 
-	// Lifecycle hooks
+	// Lifecycle hooks with protection against reactivity loops
 	onMount(() => {
-		if (effectiveArrowData?.motionType) {
-			loadArrowSvg();
-		} else {
+		console.log('[DEBUG] Arrow component mounted');
+
+		// Load SVG immediately if we have arrow data
+		if (effectiveArrowData?.motionType && !isLoaded && !hasCalledLoaded) {
+			console.log('[DEBUG] Arrow has motion type, loading SVG immediately');
+			// Make a local copy to avoid reactivity issues
+			const localArrowData = effectiveArrowData;
+
+			// Set flag to prevent multiple loads
+			hasCalledLoaded = true;
+
+			// Load SVG asynchronously
+			setTimeout(() => {
+				// Use try-catch to prevent errors from propagating
+				try {
+					// Load SVG with local data
+					if (localArrowData.motionType) {
+						loadArrowSvg();
+					}
+				} catch (error) {
+					console.error('[DEBUG] Error loading SVG:', error);
+				}
+			}, 50);
+		} else if (!isLoaded) {
+			console.log('[DEBUG] Arrow has no motion type, marking as loaded');
 			isLoaded = true;
-			props.loaded?.({ error: true });
+
+			// Notify parent component
+			if (props.loaded && !hasCalledLoaded) {
+				console.log('[DEBUG] Notifying parent about no-motion arrow');
+				hasCalledLoaded = true;
+
+				// Use a timeout to break the reactivity chain
+				setTimeout(() => {
+					props.loaded?.({ error: false });
+				}, 50);
+			}
 		}
 	});
 
@@ -245,58 +325,29 @@
 	let previousTurns: number | string | 'fl' | null = null;
 	let previousPropRotDir: string | null = null;
 	let previousMotionType: string | null = null;
-	let changeDebounceTimer: number | null = null;
 
-	// Reactive loading with minimal debouncing for real-time updates
-	$effect(() => {
-		// Check if any relevant properties have changed
-		const turnsChanged = effectiveArrowData?.turns !== previousTurns && previousTurns !== null;
-		const propRotDirChanged =
-			effectiveArrowData?.propRotDir !== previousPropRotDir && previousPropRotDir !== null;
-		const motionTypeChanged =
-			effectiveArrowData?.motionType !== previousMotionType && previousMotionType !== null;
+	// DISABLED: Reactive loading effect to prevent infinite loops
+	// This effect was causing infinite loops, so we've completely disabled it
+	// and rely only on the onMount initialization
 
-		// If any property has changed, reload the SVG
-		if (turnsChanged || propRotDirChanged || motionTypeChanged) {
-			// Clear any existing debounce timer
-			if (changeDebounceTimer !== null && typeof window !== 'undefined') {
-				window.clearTimeout(changeDebounceTimer);
-			}
-
-			// Immediate update for better responsiveness
-			if (typeof window !== 'undefined') {
-				// Reset state to force reload
-				isLoaded = false;
-				hasErrored = false;
-				svgData = null;
-
-				// Load the SVG immediately without debounce for real-time updates
-				if (effectiveArrowData?.motionType) {
-					loadArrowSvg();
-				}
-			}
-		}
-
-		// Update previous values
-		if (effectiveArrowData) {
-			previousTurns = effectiveArrowData.turns;
-			previousPropRotDir = effectiveArrowData.propRotDir;
-			previousMotionType = effectiveArrowData.motionType;
+	// Initialize previous values in an effect to properly track state
+	safeEffect(() => {
+		// Only initialize once
+		if (effectiveArrowData && !previousTurns) {
+			// Create a local copy to avoid TypeScript errors
+			const localArrowData = effectiveArrowData;
+			untrack(() => {
+				previousTurns = localArrowData.turns;
+				previousPropRotDir = localArrowData.propRotDir;
+				previousMotionType = localArrowData.motionType;
+			});
 		}
 	});
 
-	// Load SVG if needed
-	$effect(() => {
-		// Load SVG if needed and not already loading
-		if (
-			effectiveArrowData?.motionType &&
-			!isLoaded &&
-			!hasErrored &&
-			changeDebounceTimer === null
-		) {
-			loadArrowSvg();
-		}
-	});
+	// DISABLED: Additional loading effects
+	// We've completely disabled this effect and removed the isLoading state
+	// to prevent reactivity loops. The component now uses a simpler approach
+	// with timeouts and untrack() to break reactivity chains.
 </script>
 
 {#if svgData && isLoaded && effectiveArrowData}

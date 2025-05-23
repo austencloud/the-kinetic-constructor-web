@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { settingsStore } from '$lib/state/stores/settings/settings.store';
 	import { userContainer } from '$lib/state/stores/user/UserContainer';
-	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { uiStore } from '$lib/components/WriteTab/stores/uiStore';
@@ -12,7 +12,7 @@
 
 	// Get current settings
 	const settings = $derived(settingsStore.getSnapshot());
-	const user = useContainer(userContainer);
+	const user = $state(userContainer.state);
 	let username = $state(user.currentUser || 'User');
 
 	// Get UI preferences

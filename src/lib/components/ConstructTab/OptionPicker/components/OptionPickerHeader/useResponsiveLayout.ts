@@ -34,14 +34,21 @@ export function useResponsiveLayout(layoutContext: LayoutContext | null) {
 
 		if ((newIsScrollable || isNearlyOverflowing) && !get(compactMode)) {
 			compactMode.set(true);
-			// Force a re-check after a short delay to see if compact mode fixed the overflow
-			setTimeout(() => {
-				if (currentTabsContainerRef) {
-					const { scrollWidth, clientWidth } = currentTabsContainerRef;
-					isScrollable.set(scrollWidth > clientWidth);
-					showScrollIndicator.set(get(isScrollable));
-				}
-			}, 50);
+			// DISABLED: Force a re-check after a short delay to see if compact mode fixed the overflow
+			// setTimeout(() => {
+			// 	if (currentTabsContainerRef) {
+			// 		const { scrollWidth, clientWidth } = currentTabsContainerRef;
+			// 		isScrollable.set(scrollWidth > clientWidth);
+			// 		showScrollIndicator.set(get(isScrollable));
+			// 	}
+			// }, 50);
+
+			// Do a direct check instead of using setTimeout
+			if (currentTabsContainerRef) {
+				const { scrollWidth, clientWidth } = currentTabsContainerRef;
+				isScrollable.set(scrollWidth > clientWidth);
+				showScrollIndicator.set(get(isScrollable));
+			}
 		}
 		showScrollIndicator.set(newIsScrollable);
 	}
@@ -81,19 +88,24 @@ export function useResponsiveLayout(layoutContext: LayoutContext | null) {
 			useShortLabels.set(get(isMobileDevice) || value);
 		});
 
-		// Check if tabs are scrollable when tabsContainerRef changes or on mount
+		// DISABLED: Check if tabs are scrollable when tabsContainerRef changes or on mount
+		// We'll do a single check on mount instead of using a ResizeObserver
 		const unsubscribeTabsRefForOverflow = tabsContainerRef.subscribe((ref) => {
 			if (ref) {
+				// Do a single check on mount
 				checkTabsOverflow();
-				// Add resize observer to check for overflow
-				const resizeObserver = new ResizeObserver(() => {
-					checkTabsOverflow();
-				});
-				resizeObserver.observe(ref);
-				// Cleanup observer on new ref or unmount
-				return () => {
-					resizeObserver.disconnect();
-				};
+
+				// DISABLED: Add resize observer to check for overflow
+				// const resizeObserver = new ResizeObserver(() => {
+				// 	checkTabsOverflow();
+				// });
+				// resizeObserver.observe(ref);
+				// // Cleanup observer on new ref or unmount
+				// return () => {
+				// 	resizeObserver.disconnect();
+				// };
+
+				console.log('useResponsiveLayout: ResizeObserver disabled to prevent reactivity loops');
 			}
 		});
 

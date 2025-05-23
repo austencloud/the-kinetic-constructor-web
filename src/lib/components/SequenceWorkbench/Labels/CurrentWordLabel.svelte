@@ -1,14 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import DifficultyCircle from './DifficultyCircle.svelte';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 
-	const { currentWord = 'Word', width = 100 } = $props();
+	const { currentWord = 'Word', width = 100, difficultyLevel = 1 } = $props();
 
-	// Use the sequence container to get difficulty level
-	const sequence = useContainer(sequenceContainer);
-	const difficultyLevel = $derived(sequence.metadata?.difficulty || 1);
+	// Use the difficulty level directly from props with a default value of 1
 
 	let wordDisplay: HTMLSpanElement;
 	let fontSize = Math.max(width / 40, 30);
@@ -46,7 +43,7 @@
 	});
 
 	// Respond to changes in word or container width
-	$effect(() => {
+	safeEffect(() => {
 		if (currentWord || width) {
 			setTimeout(adjustFontSize, 0);
 		}

@@ -238,73 +238,154 @@ export class ResourceCache {
 	}
 
 	/**
-	 * Set a value in the cache
+	 * Set a value in the cache with complete decoupling from reactivity
 	 */
 	async set<T>(key: string, value: T, ttlMs?: number): Promise<void> {
-		// Create a promise for this set operation
-		const setPromise = (async () => {
-			const entry: CacheEntry<T> = {
-				value,
-				timestamp: Date.now(),
-				expires: ttlMs ? Date.now() + ttlMs : undefined
-			};
-
-			// Always update memory cache for fast access
-			this.memoryCache.set(key, entry);
-
-			// Update persistent storage based on type
-			if (this.storageType === CacheStorageType.LOCAL_STORAGE) {
-				this.saveToLocalStorage();
-			} else if (this.storageType === CacheStorageType.INDEXED_DB) {
-				await this.setInIndexedDB(key, entry);
-			}
-
-			this.updateCacheStatus();
-
-			// Return the value so it can be used by get() if needed
-			return value;
-		})();
-
-		// Register this as an in-flight request
-		this.inFlightRequests.set(key, setPromise);
-
-		try {
-			// Wait for the operation to complete
-			await setPromise;
-		} finally {
-			// Remove from in-flight requests when done
-			if (this.inFlightRequests.get(key) === setPromise) {
-				this.inFlightRequests.delete(key);
-			}
+		// Skip if we're already in a batch operation to prevent recursive updates
+		if (this.isBatchOperation) {
+			console.debug('Skipping recursive cache update for key:', key);
+			return;
 		}
+
+		// Create the cache entry
+		const entry: CacheEntry<T> = {
+			value,
+			timestamp: Date.now(),
+			expires: ttlMs ? Date.now() + ttlMs : undefined
+		};
+
+		// Always update memory cache immediately for fast access
+		this.memoryCache.set(key, entry);
+
+		// Update persistent storage in a completely decoupled way
+		if (this.storageType === CacheStorageType.LOCAL_STORAGE) {
+			// Use a timeout to break reactivity chains
+			setTimeout(() => {
+				this.saveToLocalStorage();
+				this.updateCacheStatus();
+			}, 100);
+		} else if (this.storageType === CacheStorageType.INDEXED_DB) {
+			// Use our batch processing approach for IndexedDB
+			// This will not wait for the operation to complete
+			this.setInIndexedDB(key, entry);
+
+			// Update cache status in a separate timeout
+			setTimeout(() => {
+				this.updateCacheStatus();
+			}, 100);
+		} else {
+			// Update cache status in a separate timeout
+			setTimeout(() => {
+				this.updateCacheStatus();
+			}, 100);
+		}
+
+		// Return immediately - don't wait for persistence operations
+		// This is crucial for breaking reactivity chains
+		return;
 	}
 
+	// Track pending IndexedDB operations
+	private pendingIndexedDBOperations: Map<string, CacheEntry<any>> = new Map();
+
+	// Track if we have a pending batch operation scheduled
+	private batchOperationScheduled = false;
+
 	/**
-	 * Set a value in IndexedDB
+	 * Set a value in IndexedDB with complete decoupling from reactivity
 	 */
 	private async setInIndexedDB<T>(key: string, entry: CacheEntry<T>): Promise<void> {
 		if (!this.dbPromise) return;
 
+		// Skip if we're already in a batch operation to prevent recursive updates
+		if (this.isBatchOperation) {
+			console.debug('Skipping recursive IndexedDB update for key:', key);
+			return;
+		}
+
+		// Skip if we already have an in-flight request for this key
+		if (this.inFlightRequests.has(key)) {
+			console.debug('Skipping duplicate IndexedDB update for key:', key);
+			return;
+		}
+
+		// Add to pending operations
+		this.pendingIndexedDBOperations.set(key, entry);
+
+		// Schedule batch processing if not already scheduled
+		if (!this.batchOperationScheduled) {
+			this.batchOperationScheduled = true;
+
+			// Use a longer timeout to completely break reactivity chains
+			setTimeout(() => this.processPendingIndexedDBOperations(), 200);
+		}
+
+		// Return immediately - don't wait for the operation to complete
+		// This is crucial for breaking reactivity chains
+		return;
+	}
+
+	/**
+	 * Process all pending IndexedDB operations in a batch
+	 */
+	private async processPendingIndexedDBOperations(): Promise<void> {
 		try {
-			const db = await this.dbPromise;
-			return new Promise((resolve, reject) => {
-				const transaction = db.transaction([this.STORE_NAME], 'readwrite');
-				const store = transaction.objectStore(this.STORE_NAME);
+			// Mark that we're in a batch operation
+			this.isBatchOperation = true;
 
-				const request = store.put({ key, ...entry });
+			// Skip if no pending operations
+			if (this.pendingIndexedDBOperations.size === 0) {
+				this.batchOperationScheduled = false;
+				this.isBatchOperation = false;
+				return;
+			}
 
-				request.onsuccess = () => resolve();
-				request.onerror = () => reject(new Error('Failed to store in IndexedDB'));
-			});
-		} catch (error) {
-			logger.error(`Failed to set value in IndexedDB for key: ${key}`, {
-				error: toAppError(error)
-			});
+			// Make a copy of the pending operations
+			const operations = new Map(this.pendingIndexedDBOperations);
+
+			// Clear pending operations
+			this.pendingIndexedDBOperations.clear();
+
+			// Process operations in a completely separate context
+			if (this.dbPromise) {
+				try {
+					const db = await this.dbPromise;
+
+					// Process each operation
+					for (const [key, entry] of operations.entries()) {
+						try {
+							// Skip if we already have an in-flight request for this key
+							if (this.inFlightRequests.has(key)) continue;
+
+							// Create a transaction for this operation
+							const transaction = db.transaction([this.STORE_NAME], 'readwrite');
+							const store = transaction.objectStore(this.STORE_NAME);
+
+							// Put the entry in the store
+							store.put({ key, ...entry });
+
+							// Don't wait for the transaction to complete
+							// This is crucial for breaking reactivity chains
+						} catch (error) {
+							console.error(`Failed to store in IndexedDB for key: ${key}`, error);
+						}
+					}
+				} catch (error) {
+					console.error('Failed to process IndexedDB operations:', error);
+				}
+			}
+		} finally {
+			// Reset flags
+			this.batchOperationScheduled = false;
+			this.isBatchOperation = false;
 		}
 	}
 
 	// Track in-flight requests to prevent duplicate fetches
 	private inFlightRequests: Map<string, Promise<any>> = new Map();
+
+	// Track if we're currently in a batch operation to prevent recursive updates
+	private isBatchOperation = false;
 
 	/**
 	 * Get a value from the cache

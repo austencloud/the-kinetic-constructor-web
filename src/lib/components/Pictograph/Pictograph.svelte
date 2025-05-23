@@ -1,371 +1,320 @@
 <!-- src/lib/components/Pictograph/Pictograph.svelte -->
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
-	import { get } from 'svelte/store';
-	import { popIn } from '$lib/transitions/popIn';
 	import type { PictographData } from '$lib/types/PictographData';
-	
+	import type { GridData } from '$lib/components/objects/Grid/GridData';
+	import type { PropData } from '$lib/components/objects/Prop/PropData';
+	import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
+	import { PictographService } from './PictographService';
+
 	// Component imports
-	import Grid from '../objects/Grid/Grid.svelte';
-	import Prop from '../objects/Prop/Prop.svelte';
-	import Arrow from '../objects/Arrow/Arrow.svelte';
-	import TKAGlyph from '../objects/Glyphs/TKAGlyph/TKAGlyph.svelte';
 	import PictographError from './components/PictographError.svelte';
 	import PictographDebug from './components/PictographDebug.svelte';
 	import InitializingSpinner from './components/InitializingSpinner.svelte';
 	import LoadingProgress from './components/LoadingProgress.svelte';
-	import BeatLabel from './components/BeatLabel.svelte';
-	import PictographWrapper from './components/PictographWrapper.svelte';
-	import PictographSVG from './components/PictographSVG.svelte';
-  
-	// Composables
-	import { createPictographState } from './composables/usePictographState';
-	import { usePictographData } from './composables/usePictographData';
-	import { usePictographLoading } from './composables/usePictographLoading';
-	import { usePictographComponents } from './composables/usePictographComponents';
-	import { usePictographSvgPreloading } from './composables/usePictographSvgPreloading';
-	import { usePictographErrorHandling } from './composables/usePictographErrorHandling';
-  
+	import PictographStateManager from './components/PictographStateManager.svelte';
+	import PictographComponentRenderer from './components/PictographComponentRenderer.svelte';
+	import PictographLoadingManager from './components/PictographLoadingManager.svelte';
+	import PictographComponentManager from './components/PictographComponentManager.svelte';
+	import PictographErrorHandler from './components/PictographErrorHandler.svelte';
+
 	// Utility imports
-	import {
-	  shouldShowBeatLabel,
-	  shouldShowDebugInfo,
-	  shouldShowLoadingIndicator,
-	  shouldShowMotionComponents
-	} from './utils/PictographRenderUtils';
-  
-	// Props
-	export let pictographData: PictographData | undefined = undefined;
-	export let onClick: (() => void) | undefined = undefined;
-	export let debug = false;
-	export let animationDuration = 200;
-	export let showLoadingIndicator = true;
-	export let beatNumber: number | null = null;
-	export let isStartPosition = false;
-	export let disableAnimations = false;
-  
-	// Derived values
-	const isBeatFramePictograph = beatNumber !== null || isStartPosition;
-  
-	// Event dispatcher
-	interface PictographEvents {
-	  loaded: { error?: boolean };
-	  error: { message: string; component?: string };
-	  dataUpdated: { data: PictographData };
+	import { shouldShowDebugInfo } from './utils/PictographRenderUtils';
+
+	// Define props using Svelte 5 runes syntax
+	const props = $props<{
+		pictographData?: PictographData;
+		onClick?: () => void;
+		debug?: boolean;
+		animationDuration?: number;
+		showLoadingIndicator?: boolean;
+		beatNumber?: number | null;
+		isStartPosition?: boolean;
+		disableAnimations?: boolean;
+		onLoaded?: (result: { error: boolean }) => void;
+		onError?: (error: { message: string; component: string }) => void;
+	}>();
+
+	// State variables
+	let currentState = $state('initializing');
+	let errorMessage = $state<string | null>(null);
+	let gridData = $state<GridData | null>(null);
+	let redPropData = $state<PropData | null>(null);
+	let bluePropData = $state<PropData | null>(null);
+	let redArrowData = $state<ArrowData | null>(null);
+	let blueArrowData = $state<ArrowData | null>(null);
+	let loadProgress = $state(0);
+	let renderCount = $state(0);
+	let showPictograph = $state(props.disableAnimations ?? false);
+	let service = $state<PictographService | null>(null);
+
+	// Component references - using $state to ensure reactivity
+	let stateManager = $state<PictographStateManager | null>(null);
+	let loadingManager = $state<PictographLoadingManager | null>(null);
+	let componentManager = $state<PictographComponentManager | null>(null);
+	let errorHandler = $state<PictographErrorHandler | null>(null);
+
+	// Track loading state for debug display
+	let componentsLoaded = $state(0);
+	let totalComponentsToLoad = $state(1);
+
+	// Handle state change
+	function handleStateChange(state: string) {
+		currentState = state;
 	}
-	const dispatch = createEventDispatcher<PictographEvents>();
-  
-	// Create a generic dispatch wrapper for composables
-	const dispatchWrapper = (event: string, detail?: any) => {
-	  if (event === 'loaded' && typeof detail?.error === 'boolean') {
-		dispatch('loaded', { error: detail.error });
-	  } else if (event === 'error' && detail?.message) {
-		dispatch('error', { message: detail.message, component: detail.component });
-	  } else if (event === 'dataUpdated' && detail?.data) {
-		dispatch('dataUpdated', { data: detail.data });
-	  } else {
-		// Fallback for other events - cast to bypass TypeScript
-		(dispatch as any)(event, detail);
-	  }
-	};
-  
-	// Create state
-	const state = createPictographState(pictographData, disableAnimations);
-  
-	// Create error handling
-	const { handleError, handleComponentError } = usePictographErrorHandling(
-	  state,
-	  dispatchWrapper
-	);
-  
-	// Create SVG preloading
-	const { preloadAllSvgs } = usePictographSvgPreloading(
-	  state,
-	  isBeatFramePictograph
-	);
-  
-	// Create component management
-	const { createAndPositionComponents, updateComponentsFromData } = usePictographComponents(
-	  state,
-	  preloadAllSvgs
-	);
-  
-	// Create loading management
-	const {
-	  handleGridLoaded,
-	  handleComponentLoaded,
-	  handleGlyphLoaded,
-	  updateShowPictographState
-	} = usePictographLoading(
-	  state,
-	  dispatchWrapper,
-	  createAndPositionComponents,
-	  checkLoadingComplete,
-	  disableAnimations
-	);
-  
-	// Create data management
-	const { initialize, setupDataSubscription, updatePictographData } = usePictographData(
-	  state,
-	  dispatchWrapper,
-	  updateComponentsFromData,
-	  handleError,
-	  debug
-	);
-  
-	// Check loading complete function
-	function checkLoadingComplete() {
-	  if (disableAnimations) {
-		const isComplete = get(state.requiredComponents).every(comp => 
-		  get(state.loadedComponents).has(comp)
-		);
-		
-		if (isComplete) {
-		  state.allComponentsLoaded.set(true);
-		  if (!get(state.showPictograph)) {
-			state.showPictograph.set(true);
-			dispatch('loaded', { error: false });
-		  }
+
+	// Handle error message change
+	function handleErrorMessageChange(message: string | null) {
+		errorMessage = message;
+	}
+
+	// Handle service initialization
+	function handleServiceInitialized(newService: PictographService) {
+		service = newService;
+	}
+
+	// Handle grid loaded
+	function handleGridLoaded(data: GridData) {
+		gridData = data;
+		if (loadingManager) {
+			// Use type assertion to access the exposed methods
+			(loadingManager as any).handleGridLoaded(data);
 		}
-		return;
-	  }
-  
-	  // Normal flow with animations
-	  if (typeof window !== 'undefined') {
-		requestAnimationFrame(() => {
-		  const isComplete = get(state.requiredComponents).every(comp => 
-			get(state.loadedComponents).has(comp)
-		  );
-		  
-		  state.renderCount.update(count => count + 1);
-		  
-		  if (isComplete) {
-			state.allComponentsLoaded.set(true);
-			updateShowPictographState();
-		  }
-		});
-	  }
+		// Update component counts for debug display
+		componentsLoaded = 1;
 	}
-  
-	// Reactive statement to update pictograph data
-	$: if (pictographData) {
-	  updatePictographData(pictographData);
+
+	// Handle component loaded
+	function handleComponentLoaded(component: string) {
+		if (loadingManager) {
+			// Use type assertion to access the exposed methods
+			(loadingManager as any).handleComponentLoaded(component);
+		}
+		// Update component counts for debug display
+		componentsLoaded++;
 	}
-  
-	// Extract individual stores for reactive statements
-	const {
-	  state: currentStateStore,
-	  errorMessage: errorMessageStore,
-	  gridData: gridDataStore,
-	  redPropData: redPropDataStore,
-	  bluePropData: bluePropDataStore,
-	  redArrowData: redArrowDataStore,
-	  blueArrowData: blueArrowDataStore,
-	  loadProgress: loadProgressStore,
-	  renderCount: renderCountStore,
-	  componentsLoaded: componentsLoadedStore,
-	  totalComponentsToLoad: totalComponentsToLoadStore,
-	  showPictograph: showPictographStore,
-	  pictographDataStore
-	} = state;
-  
-	// Reactive values using auto-subscription
-	$: currentState = $currentStateStore;
-	$: errorMessage = $errorMessageStore;
-	$: gridData = $gridDataStore;
-	$: redPropData = $redPropDataStore;
-	$: bluePropData = $bluePropDataStore;
-	$: redArrowData = $redArrowDataStore;
-	$: blueArrowData = $blueArrowDataStore;
-	$: loadProgress = $loadProgressStore;
-	$: renderCount = $renderCountStore;
-	$: componentsLoaded = $componentsLoadedStore;
-	$: totalComponentsToLoad = $totalComponentsToLoadStore;
-	$: showPictograph = $showPictographStore;
-  
-	// Mobile detection
-	function isMobile(): boolean {
-	  return (
-		typeof window !== 'undefined' &&
-		(window.innerWidth <= 768 ||
-		  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
-	  );
+
+	// Handle glyph loaded
+	function handleGlyphLoaded(event: CustomEvent<boolean>) {
+		if (loadingManager) {
+			// Use type assertion to access the exposed methods
+			(loadingManager as any).handleGlyphLoaded(event);
+		}
 	}
-  
-	// Lifecycle
-	let subscription = { unsubscribe: () => {} };
-  
-	onMount(() => {
-	  // Initialize the pictograph
-	  initialize();
-	  
-	  // Set up data subscription
-	  subscription = setupDataSubscription();
-	  
-	  // Cleanup function
-	  return () => {
-		get(state.loadedComponents).clear();
-		subscription.unsubscribe();
-	  };
+
+	// Handle component error
+	function handleComponentError(component: string, error: any) {
+		if (errorHandler) {
+			// Use type assertion to access the exposed methods
+			(errorHandler as any).handleComponentError(component, error);
+		} else {
+			// Fallback error handling
+			errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error';
+			currentState = 'error';
+		}
+	}
+
+	// Handle show pictograph
+	function handleShowPictograph(show: boolean) {
+		showPictograph = show;
+	}
+
+	// Create and position components
+	function createAndPositionComponents() {
+		if (componentManager) {
+			// Use type assertion to access the exposed methods
+			(componentManager as any).createAndPositionComponents();
+		}
+	}
+
+	// Handle component updates
+	function handleComponentUpdates(components: {
+		redPropData: PropData | null;
+		bluePropData: PropData | null;
+		redArrowData: ArrowData | null;
+		blueArrowData: ArrowData | null;
+		requiredComponents: string[];
+		totalComponentsToLoad: number;
+	}) {
+		redPropData = components.redPropData;
+		bluePropData = components.bluePropData;
+		redArrowData = components.redArrowData;
+		blueArrowData = components.blueArrowData;
+
+		// Update component counts for debug display
+		totalComponentsToLoad = components.totalComponentsToLoad;
+
+		if (loadingManager) {
+			// Use type assertion to access the exposed methods
+			(loadingManager as any).updateRequiredComponents(components.requiredComponents);
+			(loadingManager as any).updateTotalComponentsToLoad(components.totalComponentsToLoad);
+		}
+
+		renderCount++;
+	}
+
+	// Update load progress
+	$effect(() => {
+		if (loadingManager) {
+			// Use type assertion to access the exposed methods
+			loadProgress = (loadingManager as any).getLoadProgress?.() ?? 0;
+		}
 	});
-  </script>
-  
-  <PictographWrapper {pictographDataStore} {onClick} state={currentState}>
-	<PictographSVG {pictographDataStore} state={currentState} {errorMessage}>
-	  {#if currentState === 'initializing'}
-		{#if shouldShowLoadingIndicator(currentState, showLoadingIndicator)}
-		  <InitializingSpinner {animationDuration} />
-		{/if}
-	  {:else if currentState === 'error'}
-		<PictographError {errorMessage} {animationDuration} />
-	  {:else}
-		<Grid
-		  gridMode={get(pictographDataStore)?.gridMode}
-		  onPointsReady={handleGridLoaded}
-		  onError={(message) => handleComponentError('grid', message)}
-		  {debug}
-		/>
-  
-		{#if shouldShowBeatLabel(beatNumber, isStartPosition)}
-		  <BeatLabel
-			text={isStartPosition ? 'Start' : beatNumber?.toString() || ''}
-			position="top-left"
-			{animationDuration}
-		  />
-		{/if}
-  
-		{#if shouldShowMotionComponents(currentState)}
-		  <!-- Hidden components for preloading -->
-		  <g style="visibility: hidden; position: absolute;">
-			{#if get(pictographDataStore)?.letter}
-			  <TKAGlyph
-				letter={get(pictographDataStore)?.letter}
-				turnsTuple="(s, 0, 0)"
-				x={50}
-				y={800}
-				scale={1}
-				on:loading={() => {}}
-				on:loaded={handleGlyphLoaded}
-			  />
-			{/if}
-  
-			{#each [
-			  { color: 'red', propData: redPropData, arrowData: redArrowData }, 
-			  { color: 'blue', propData: bluePropData, arrowData: blueArrowData }
-			] as { color, propData, arrowData } (color)}
-			  {#if propData}
-				<Prop
-				  {propData}
-				  loaded={() => handleComponentLoaded(`${color}Prop`)}
-				  error={(e) => handleComponentError(`${color}Prop`, e.message)}
-				/>
-			  {/if}
-  
-			  {#if arrowData}
-				{#each [`${arrowData.id}-${arrowData.turns}-${arrowData.propRotDir}-${arrowData.motionType}`] as key (key)}
-				  <Arrow
-					{arrowData}
-					loadTimeoutMs={isMobile() ? 2000 : 1000}
-					pictographService={get(state.service)}
-					loaded={() => handleComponentLoaded(`${color}Arrow`)}
-					error={(e) => handleComponentError(`${color}Arrow`, e.message)}
-				  />
-				{/each}
-			  {/if}
-			{/each}
-		  </g>
-  
-		  <!-- Visible components -->
-		  {#if showPictograph}
-			{#if disableAnimations}
-			  <g style="transform-origin: center center;">
-				{#if get(pictographDataStore)?.letter}
-				  <TKAGlyph
-					letter={get(pictographDataStore)?.letter}
-					turnsTuple="(s, 0, 0)"
-					x={50}
-					y={800}
-					scale={1}
-				  />
+</script>
+
+<!-- Component Managers (no visual output) -->
+<PictographStateManager
+	bind:this={stateManager}
+	pictographData={props.pictographData}
+	disableAnimations={props.disableAnimations}
+	onDataInitialized={handleServiceInitialized}
+	onStateChange={handleStateChange}
+	onError={props.onError}
+/>
+
+<PictographLoadingManager
+	bind:this={loadingManager}
+	{service}
+	pictographData={props.pictographData}
+	disableAnimations={props.disableAnimations}
+	onLoaded={props.onLoaded}
+	onCreateAndPositionComponents={createAndPositionComponents}
+	onShowPictograph={handleShowPictograph}
+	onStateChange={handleStateChange}
+/>
+
+<PictographComponentManager
+	bind:this={componentManager}
+	{service}
+	pictographData={props.pictographData}
+	{gridData}
+	onUpdateComponents={handleComponentUpdates}
+/>
+
+<PictographErrorHandler
+	bind:this={errorHandler}
+	onError={props.onError}
+	onStateChange={handleStateChange}
+	onErrorMessageChange={handleErrorMessageChange}
+/>
+
+<!-- Visual Output -->
+{#if props.onClick}
+	<button type="button" class="pictograph-wrapper clickable" onclick={props.onClick}>
+		<svg class="pictograph" viewBox="0 0 950 950" xmlns="http://www.w3.org/2000/svg">
+			{#if currentState === 'initializing'}
+				{#if props.showLoadingIndicator ?? true}
+					<InitializingSpinner animationDuration={props.animationDuration ?? 200} />
 				{/if}
-  
-				{#each [
-				  { color: 'red', propData: redPropData, arrowData: redArrowData }, 
-				  { color: 'blue', propData: bluePropData, arrowData: blueArrowData }
-				] as { color, propData, arrowData } (color)}
-				  {#if propData}
-					<Prop {propData} animationDuration={0} />
-				  {/if}
-  
-				  {#if arrowData}
-					{#each [`${arrowData.id}-${arrowData.turns}-${arrowData.propRotDir}-${arrowData.motionType}`] as key (key)}
-					  <Arrow
-						{arrowData}
-						loadTimeoutMs={10}
-						pictographService={get(state.service)}
-						loaded={() => {}}
-						error={() => {}}
-					  />
-					{/each}
-				  {/if}
-				{/each}
-			  </g>
+			{:else if currentState === 'error'}
+				<PictographError {errorMessage} animationDuration={props.animationDuration ?? 200} />
 			{:else}
-			  <g
-				in:popIn={{
-				  duration: animationDuration,
-				  start: 0.85,
-				  opacity: 0.2
-				}}
-				style="transform-origin: center center;"
-			  >
-				{#if get(pictographDataStore)?.letter}
-				  <TKAGlyph
-					letter={get(pictographDataStore)?.letter}
-					turnsTuple="(s, 0, 0)"
-					x={50}
-					y={800}
-					scale={1}
-				  />
-				{/if}
-  
-				{#each [
-				  { color: 'red', propData: redPropData, arrowData: redArrowData }, 
-				  { color: 'blue', propData: bluePropData, arrowData: blueArrowData }
-				] as { color, propData, arrowData } (color)}
-				  {#if propData}
-					<Prop {propData} {animationDuration} />
-				  {/if}
-  
-				  {#if arrowData}
-					{#each [`${arrowData.id}-${arrowData.turns}-${arrowData.propRotDir}-${arrowData.motionType}`] as key (key)}
-					  <Arrow
-						{arrowData}
-						loadTimeoutMs={isMobile() ? 2000 : 1000}
-						pictographService={get(state.service)}
-						loaded={() => {}}
-						error={() => {}}
-					  />
-					{/each}
-				  {/if}
-				{/each}
-			  </g>
+				<PictographComponentRenderer
+					pictographData={props.pictographData}
+					{currentState}
+					{showPictograph}
+					{service}
+					{gridData}
+					{redPropData}
+					{bluePropData}
+					{redArrowData}
+					{blueArrowData}
+					debug={props.debug}
+					animationDuration={props.animationDuration}
+					beatNumber={props.beatNumber}
+					isStartPosition={props.isStartPosition}
+					disableAnimations={props.disableAnimations}
+					onGridLoaded={handleGridLoaded}
+					onComponentLoaded={handleComponentLoaded}
+					onComponentError={handleComponentError}
+					onGlyphLoaded={handleGlyphLoaded}
+				/>
 			{/if}
-		  {/if}
+		</svg>
+
+		{#if currentState === 'loading' && (props.showLoadingIndicator ?? true)}
+			<LoadingProgress {loadProgress} showText={true} />
 		{/if}
-	  {/if}
-	</PictographSVG>
-  
-	{#if currentState === 'loading' && shouldShowLoadingIndicator(currentState, showLoadingIndicator)}
-	  <LoadingProgress {loadProgress} showText={true} />
-	{/if}
-  
-	{#if shouldShowDebugInfo(debug)}
-	  <PictographDebug
-		state={currentState}
-		{componentsLoaded}
-		totalComponents={totalComponentsToLoad}
-		{renderCount}
-	  />
-	{/if}
-  </PictographWrapper>
+
+		{#if shouldShowDebugInfo(props.debug ?? false)}
+			<PictographDebug
+				state={currentState}
+				{componentsLoaded}
+				totalComponents={totalComponentsToLoad}
+				{renderCount}
+			/>
+		{/if}
+	</button>
+{:else}
+	<div class="pictograph-wrapper">
+		<svg class="pictograph" viewBox="0 0 950 950" xmlns="http://www.w3.org/2000/svg">
+			{#if currentState === 'initializing'}
+				{#if props.showLoadingIndicator ?? true}
+					<InitializingSpinner animationDuration={props.animationDuration ?? 200} />
+				{/if}
+			{:else if currentState === 'error'}
+				<PictographError {errorMessage} animationDuration={props.animationDuration ?? 200} />
+			{:else}
+				<PictographComponentRenderer
+					pictographData={props.pictographData}
+					{currentState}
+					{showPictograph}
+					{service}
+					{gridData}
+					{redPropData}
+					{bluePropData}
+					{redArrowData}
+					{blueArrowData}
+					debug={props.debug}
+					animationDuration={props.animationDuration}
+					beatNumber={props.beatNumber}
+					isStartPosition={props.isStartPosition}
+					disableAnimations={props.disableAnimations}
+					onGridLoaded={handleGridLoaded}
+					onComponentLoaded={handleComponentLoaded}
+					onComponentError={handleComponentError}
+					onGlyphLoaded={handleGlyphLoaded}
+				/>
+			{/if}
+		</svg>
+
+		{#if currentState === 'loading' && (props.showLoadingIndicator ?? true)}
+			<LoadingProgress {loadProgress} showText={true} />
+		{/if}
+
+		{#if shouldShowDebugInfo(props.debug ?? false)}
+			<PictographDebug
+				state={currentState}
+				{componentsLoaded}
+				totalComponents={totalComponentsToLoad}
+				{renderCount}
+			/>
+		{/if}
+	</div>
+{/if}
+
+<style>
+	.pictograph-wrapper {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.pictograph {
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+	}
+
+	.clickable {
+		cursor: pointer;
+		background: none;
+		border: none;
+		padding: 0;
+		margin: 0;
+		font: inherit;
+		color: inherit;
+	}
+</style>

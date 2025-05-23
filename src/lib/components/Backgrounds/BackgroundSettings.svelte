@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { backgroundContainer } from '$lib/state/stores/background/BackgroundContainer';
-	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 	import type { BackgroundType, QualityLevel } from './types/types';
 
-	// Use the background container with Svelte 5 runes
-	const background = useContainer(backgroundContainer);
+	// Use the background container state directly
+	const background = $state(backgroundContainer.state);
 
 	// Event handlers
 	function handleBackgroundChange(event: Event) {

@@ -1,30 +1,44 @@
 /**
- * Pictograph Component with Svelte 5 Runes Integration
+ * Pictograph Component with Svelte 5 Runes
  *
- * This file provides the Svelte 5 runes integration for the Pictograph component.
- * It's used by the Pictograph.svelte component to access the modern container.
+ * This file provides pure Svelte 5 runes utilities for the Pictograph component.
+ * It uses only runes-based state management without any store integration.
  */
 
-import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
-import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+import { safeEffect, createSafeState } from '$lib/state/core/svelte5-integration.svelte';
 import type { PictographData } from '$lib/types/PictographData';
 
 /**
- * Hook to use the pictograph container with Svelte 5 runes
+ * Creates a safe pictograph state with update methods
  */
-export function usePictographContainer() {
-	return useContainer(pictographContainer);
+export function createPictographState(initialData?: PictographData) {
+	// Create a safe state object with default values
+	return createSafeState({
+		data: initialData || null,
+		isLoading: false,
+		error: null,
+		components: {
+			grid: { loaded: false },
+			redProp: { loaded: false },
+			blueProp: { loaded: false },
+			redArrow: { loaded: false },
+			blueArrow: { loaded: false },
+			glyph: { loaded: false }
+		}
+	});
 }
 
 /**
- * Hook to use a local pictograph data with the container
+ * Creates a safe effect for handling pictograph data changes
  */
-export function useLocalPictographData(data: PictographData) {
-	// Set the data in the container
-	$effect(() => {
-		pictographContainer.setData(data);
+export function createPictographEffect(
+	data: PictographData | undefined,
+	onDataChange: (data: PictographData) => void
+) {
+	// Use a safe effect to prevent infinite loops
+	safeEffect(() => {
+		if (data) {
+			onDataChange(data);
+		}
 	});
-
-	// Return the container state
-	return useContainer(pictographContainer);
 }

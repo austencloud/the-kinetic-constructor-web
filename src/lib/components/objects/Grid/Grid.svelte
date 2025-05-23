@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount, createEventDispatcher, untrack } from 'svelte';
 	import { circleCoordinates } from './circleCoordinates';
 	import type { GridData } from './GridData';
-	import { settingsStore } from '$lib/state/stores/settings/settings.store';
 	import type { GridMode } from './types';
 	import type { GridErrorEventDetail, GridEvents } from './GridEvents';
+	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 
 	// Create event dispatcher for custom events
 	const dispatch = createEventDispatcher<GridEvents>();
@@ -21,19 +21,24 @@
 	let gridError = $state(false);
 	let gridErrorMessage = $state('');
 
-	// Get values from settings store with fallbacks using derived values
-	const effectiveGridMode = $derived(props.gridMode ?? $settingsStore.defaultGridMode);
-	const effectiveDebug = $derived(props.debug ?? $settingsStore.showGridDebug);
+	// Default settings without using store
+	const defaultSettings = {
+		defaultGridMode: 'diamond' as GridMode,
+		showGridDebug: false
+	};
+
+	// Get values with fallbacks using derived values
+	const effectiveGridMode = $derived(props.gridMode ?? defaultSettings.defaultGridMode);
+	const effectiveDebug = $derived(props.debug ?? defaultSettings.showGridDebug);
 
 	// Compute grid source based on mode
 	let gridSrc = $state('');
-	$effect(() => {
+	safeEffect(() => {
 		// Fix the path to use the correct location in the static folder
 		gridSrc =
 			effectiveGridMode === 'diamond'
 				? '/images/grid/diamond_grid.svg'
 				: '/images/grid/box_grid.svg';
-
 	});
 
 	/**
@@ -145,10 +150,14 @@
 				throw new Error('Grid data validation failed');
 			}
 
-			// Use setTimeout to break potential reactive cycles
-			setTimeout(() => {
-				props.onPointsReady(gridData);
-			}, 0);
+			// Use queueMicrotask to break potential reactive cycles
+			// This is more reliable than setTimeout for breaking reactivity chains
+			queueMicrotask(() => {
+				// Use untrack to prevent this from triggering reactivity loops
+				untrack(() => {
+					props.onPointsReady(gridData);
+				});
+			});
 		} catch (error) {
 			console.error('Error initializing grid:', error);
 			gridError = true;
@@ -161,10 +170,14 @@
 			// Create and return fallback grid data
 			const fallbackData = createFallbackGridData();
 
-			// Use setTimeout to break potential reactive cycles
-			setTimeout(() => {
-				props.onPointsReady(fallbackData);
-			}, 0);
+			// Use queueMicrotask to break potential reactive cycles
+			// This is more reliable than setTimeout for breaking reactivity chains
+			queueMicrotask(() => {
+				// Use untrack to prevent this from triggering reactivity loops
+				untrack(() => {
+					props.onPointsReady(fallbackData);
+				});
+			});
 		}
 	}
 

@@ -23,7 +23,7 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { BeatData as LegacyBeatData } from '../BeatData';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 	import { createSafePictographCopy } from '$lib/utils/pictographUtils';
 
@@ -39,8 +39,8 @@
 		});
 	};
 
-	// Use the sequence container with Svelte 5 runes
-	const sequence = useContainer(sequenceContainer);
+	// Use the sequence container state directly with Svelte 5 runes
+	const sequence = $state(sequenceContainer.state);
 
 	// Local state
 	let startPosition = $state<PictographData | null>(null);
@@ -61,8 +61,8 @@
 		pictographData: startPosition || defaultPictographData
 	});
 
-	// Subscribe to isSequenceEmpty store
-	$effect(() => {
+	// Subscribe to isSequenceEmpty store using safeEffect
+	safeEffect(() => {
 		const unsubscribe = isSequenceEmpty.subscribe((value) => {
 			sequenceIsEmpty = value;
 		});
@@ -220,8 +220,8 @@
 	let isShiftKeyPressed = $state(false);
 	let isCtrlKeyPressed = $state(false);
 
-	// Set up event listeners for modifier keys
-	$effect(() => {
+	// Set up event listeners for modifier keys using safeEffect
+	safeEffect(() => {
 		if (typeof window === 'undefined') return;
 
 		const handleKeyDown = (e: KeyboardEvent) => {

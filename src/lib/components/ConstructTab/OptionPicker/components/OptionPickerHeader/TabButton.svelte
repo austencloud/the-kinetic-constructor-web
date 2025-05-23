@@ -4,7 +4,7 @@
 	import { formatTabName, formatShortTabName } from './tabLabelFormatter';
 	import { fly } from 'svelte/transition';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import { actions } from '../../store';
+	import { safeUpdate } from '$lib/state/core/svelte5-integration.svelte';
 
 	// Props
 	const props = $props<{
@@ -21,71 +21,47 @@
 	// Local state for hover effect
 	let isHovered = $state(false);
 
-	// Event handler
-	function handleClick(event: MouseEvent) {
+	// Event handler with safe update to prevent reactivity loops
+	const handleClick = safeUpdate((event: MouseEvent) => {
 		// Provide haptic feedback when selecting a category tab
 		if (typeof window !== 'undefined' && hapticFeedbackService.isAvailable()) {
 			hapticFeedbackService.trigger('navigation');
 		}
 
-		// Create a custom event that will bubble up to the parent component
-		const customEvent = new CustomEvent('tabSelect', {
-			detail: props.categoryKey,
-			bubbles: true,
-			composed: true // Allows the event to cross the shadow DOM boundary
-		});
-
 		// Stop the original click event from bubbling to prevent duplicate handling
 		event.stopPropagation();
 
-		// Get the current button element
-		const buttonElement = event.currentTarget as HTMLElement;
-		if (buttonElement) {
-			// Dispatch the event directly from the clicked button
-			// This ensures the event.target is correct for event delegation
-			buttonElement.dispatchEvent(customEvent);
-			console.log('TabButton: Dispatched tabSelect event for', props.categoryKey);
+		// Log that we're using safe update
+		console.log('TabButton: Using safe update to prevent reactivity loops');
 
-			// Also dispatch a direct event to the document as a fallback
-			// This ensures the event is caught even if the bubbling chain is broken
-			const directEvent = new CustomEvent('direct-tab-select', {
-				detail: props.categoryKey,
-				bubbles: false // Don't bubble to prevent loops
-			});
-			document.dispatchEvent(directEvent);
-		} else {
-			// Fallback to document if button element is not available
-			console.warn('Button element not available, using document for event dispatch');
-			document.dispatchEvent(customEvent);
+		// Dispatch a custom event that parent components can listen for
+		const tabSelectedEvent = new CustomEvent('tab-selected', {
+			detail: {
+				categoryKey: props.categoryKey
+			},
+			bubbles: true
+		});
+
+		// Dispatch the event from the button element
+		if (event.currentTarget) {
+			event.currentTarget.dispatchEvent(tabSelectedEvent);
 		}
 
-		// Force the UI to update by directly updating the store
-		// This is a critical fix for the tab selection issue
-		try {
-			// Get the current sort method from the view control element
-			const viewControlElement = document.querySelector('.view-control');
-			const currentSortMethod = viewControlElement?.getAttribute('data-sort-method') || 'type';
+		console.log('TabButton: Dispatched tab-selected event:', {
+			categoryKey: props.categoryKey
+		});
+	});
 
-			// Update the store directly
-			actions.setLastSelectedTabForSort(currentSortMethod as any, props.categoryKey);
-
-			console.log('TabButton: Directly updated store with tab selection:', {
-				sortMethod: currentSortMethod,
-				tabKey: props.categoryKey
-			});
-		} catch (error) {
-			console.error('Error directly updating store:', error);
-		}
-	}
-
-	// Handle mouse enter/leave for hover effects
-	function handleMouseEnter() {
+	// Handle mouse enter/leave for hover effects with safe update
+	const handleMouseEnter = safeUpdate(() => {
 		isHovered = true;
-	}
+		console.log('TabButton: Mouse enter handled safely');
+	});
 
-	function handleMouseLeave() {
+	const handleMouseLeave = safeUpdate(() => {
 		isHovered = false;
-	}
+		console.log('TabButton: Mouse leave handled safely');
+	});
 </script>
 
 <button
@@ -192,18 +168,17 @@
 		transform: translateY(-2px); /* Slight lift effect */
 	}
 
-	/* Active indicator - the dot at the bottom */
-
-	/* Hover indicator - subtle line at the bottom */
+	/* Hover indicator styling */
 	.hover-indicator {
 		position: absolute;
 		bottom: -2px;
 		left: 50%;
 		transform: translateX(-50%);
-		width: 20px;
-		height: 2px;
-		background-color: rgba(255, 204, 0, 0.4); /* Subtle gold color */
-		border-radius: 1px;
+		width: 6px;
+		height: 6px;
+		background-color: #60a5fa;
+		border-radius: 50%;
+		z-index: 2;
 	}
 
 	/* Hover state for non-active tabs */

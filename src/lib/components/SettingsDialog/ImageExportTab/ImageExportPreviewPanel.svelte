@@ -2,7 +2,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 	import type { ImageExportSettings } from '$lib/state/image-export-settings.svelte';
 
 	// Import components
@@ -14,8 +14,8 @@
 		settings: ImageExportSettings;
 	}>();
 
-	// Use the sequence container
-	const sequence = useContainer(sequenceContainer);
+	// Use the sequence container state directly
+	const sequence = $state(sequenceContainer.state);
 
 	// Get the current sequence data
 	const sequenceBeats = $derived(sequence.beats || []);

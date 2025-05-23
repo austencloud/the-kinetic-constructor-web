@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { get } from 'svelte/store';
 	import { LayoutProvider } from './layout';
 	import OptionPickerHeader from './components/OptionPickerHeader';
@@ -17,92 +17,86 @@
 
 	// --- Svelte 5 Reactive State using runes ---
 	let isLoading = $derived($uiState.isLoading);
-	// For "Show All" view, always use 'all' as the selectedTab
-	let selectedTab = $derived(
-		$uiState.sortMethod === ('all' as any)
-			? 'all'
-			: $uiState.lastSelectedTab[$uiState.sortMethod] || 'all'
-	);
+	
+	// Use untrack to prevent circular dependencies
+	let selectedTab = $derived.by(() => {
+		return untrack(() => {
+			return $uiState.sortMethod === ('all' as any)
+				? 'all'
+				: $uiState.lastSelectedTab[$uiState.sortMethod] || 'all';
+		});
+	});
+	
 	let groupedOptions = $derived($groupedOptionsStore);
 	let filteredOptions = $derived($filteredOptionsStore);
 	let actualCategoryKeys = $derived(groupedOptions ? Object.keys(groupedOptions) : []);
-	// Show tabs ONLY when the sort method is NOT 'all' AND we have category keys to display
 	let showTabs = $derived($uiState.sortMethod !== ('all' as any) && actualCategoryKeys.length > 0);
 
-	// Debug logging for reactive state
+	// Remove the debug logging effect - it can cause loops
+	// Instead, use a single controlled effect for debugging
+	let debugTimer: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
-		console.log('OptionPicker reactive state updated:', {
-			sortMethod: $uiState.sortMethod,
-			selectedTab,
-			showTabs,
-			actualCategoryKeys,
-			lastSelectedTabState: $uiState.lastSelectedTab,
-			isShowAllView: $uiState.sortMethod === ('all' as any),
-			filteredOptionsLength: filteredOptions.length
+		// Clear any existing timer
+		if (debugTimer) clearTimeout(debugTimer);
+		
+		// Debounce the debug logging
+		debugTimer = setTimeout(() => {
+			untrack(() => {
+				console.log('OptionPicker state:', {
+					sortMethod: $uiState.sortMethod,
+					selectedTab,
+					showTabs,
+					actualCategoryKeys,
+					filteredOptionsLength: filteredOptions.length
+				});
+			});
+		}, 100);
+		
+		return () => {
+			if (debugTimer) clearTimeout(debugTimer);
+		};
+	});
+
+	// Determine display options with untrack to prevent loops
+	let displayOptions = $derived.by(() => {
+		return untrack(() => {
+			if ($uiState.sortMethod === ('all' as any) || selectedTab === 'all') {
+				return filteredOptions;
+			}
+			return (selectedTab && groupedOptions && groupedOptions[selectedTab]) || [];
 		});
 	});
 
-	// Determine which options to display based on the selected tab and sort method
-	let displayOptions = $derived(
-		$uiState.sortMethod === ('all' as any) || selectedTab === 'all'
-			? filteredOptions
-			: (selectedTab && groupedOptions && groupedOptions[selectedTab]) || []
-	);
-
-	// Add an effect to log the options being displayed
-	$effect(() => {
-		if ($uiState.sortMethod === ('all' as any) || selectedTab === 'all') {
-			console.log('OptionPicker: Using all filtered options:', filteredOptions.length);
-		} else if (selectedTab && groupedOptions && groupedOptions[selectedTab]) {
-			console.log(
-				'OptionPicker: Using grouped options for tab:',
-				selectedTab,
-				'count:',
-				groupedOptions[selectedTab].length
-			);
-		} else {
-			console.log('OptionPicker: No matching options for tab:', selectedTab);
-		}
-	});
-
-	// Clear the loading state when options are loaded - using $effect instead of $:
+	// Clear loading state - use a more controlled approach
+	let loadingClearTimer: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
 		if (!isLoading && displayOptions && displayOptions.length > 0) {
-			// Clear the transition loading state
-			transitionLoading.end();
-		}
-	});
-
-	// Event handlers are now handled through document event listeners in onMount
-
-	// Add an initialization effect to ensure the correct state on initial load
-	$effect(() => {
-		// If we're in "Show All" view, ensure the selectedTab is 'all'
-		if ($uiState.sortMethod === ('all' as any) && selectedTab !== 'all') {
-			console.log('OptionPicker: Initializing "Show All" view, setting selectedTab to "all"');
-			actions.setLastSelectedTabForSort('all', 'all');
-		}
-
-		// If we have options but they're not being displayed, force a re-evaluation
-		if (
-			filteredOptions.length > 0 &&
-			displayOptions.length === 0 &&
-			$uiState.sortMethod === ('all' as any)
-		) {
-			console.log('OptionPicker: Found options but not displaying them, forcing update');
-			// Force a re-evaluation by dispatching a show-all-view event
-			if (typeof document !== 'undefined') {
-				const showAllEvent = new CustomEvent('show-all-view', {
-					detail: { sortMethod: 'all' },
-					bubbles: true
+			// Clear any existing timer
+			if (loadingClearTimer) clearTimeout(loadingClearTimer);
+			
+			// Debounce the loading clear
+			loadingClearTimer = setTimeout(() => {
+				untrack(() => {
+					transitionLoading.end();
 				});
-				document.dispatchEvent(showAllEvent);
-			}
+			}, 50);
 		}
+		
+		return () => {
+			if (loadingClearTimer) clearTimeout(loadingClearTimer);
+		};
 	});
 
 	// --- onMount: Load options based on sequence ---
 	onMount(() => {
+		// Initialize state if needed
+		if ($uiState.sortMethod === ('all' as any) && selectedTab !== 'all') {
+			console.log('OptionPicker: Initializing "Show All" view');
+			untrack(() => {
+				actions.setLastSelectedTabForSort('all', 'all');
+			});
+		}
+
 		// Function to load options from sequence data
 		const loadOptionsFromSequence = async () => {
 			// Get current sequence data
@@ -153,11 +147,9 @@
 			console.log('OptionPicker received tab-selected event:', event.detail);
 			if (event.detail?.sortMethod && event.detail?.tabKey) {
 				// Update the store with the selected tab
-				actions.setLastSelectedTabForSort(event.detail.sortMethod, event.detail.tabKey);
-
-				// Force a UI update by updating the selectedTab variable
-				// This will trigger a reactive update in the component
-				selectedTab = event.detail.tabKey;
+				untrack(() => {
+					actions.setLastSelectedTabForSort(event.detail.sortMethod, event.detail.tabKey);
+				});
 			}
 		};
 
@@ -166,14 +158,12 @@
 			console.log('OptionPicker received direct-tab-select event:', event.detail);
 
 			// Get the current sort method
-			const currentSortMethod = $uiState.sortMethod;
+			const currentSortMethod = get(uiState).sortMethod;
 
 			// Update the store with the selected tab
-			actions.setLastSelectedTabForSort(currentSortMethod, event.detail);
-
-			// Force a UI update by updating the selectedTab variable
-			// This will trigger a reactive update in the component
-			selectedTab = event.detail;
+			untrack(() => {
+				actions.setLastSelectedTabForSort(currentSortMethod, event.detail);
+			});
 		};
 
 		// Listen for force-update-tabs events from ViewControl
@@ -185,7 +175,9 @@
 				const sortMethod = event.detail.sortMethod;
 
 				// Update the store with the sort method
-				actions.setSortMethod(sortMethod);
+				untrack(() => {
+					actions.setSortMethod(sortMethod);
+				});
 
 				// Force a UI update by updating the showTabs variable
 				// This will trigger a reactive update in the component
@@ -213,17 +205,16 @@
 			// Force the UI to update to show all options without categories
 			// This is critical for the "Show All" view to work correctly
 			setTimeout(() => {
-				// Ensure we're in "Show All" mode
-				if ($uiState.sortMethod !== ('all' as any)) {
-					actions.setSortMethod('all' as any);
-				}
-
-				// Force the selectedTab to be 'all'
-				selectedTab = 'all';
+				untrack(() => {
+					// Ensure we're in "Show All" mode
+					if (get(uiState).sortMethod !== ('all' as any)) {
+						actions.setSortMethod('all' as any);
+					}
+				});
 
 				// Log the current state
 				console.log('OptionPicker: Show All View state:', {
-					sortMethod: $uiState.sortMethod,
+					sortMethod: get(uiState).sortMethod,
 					selectedTab,
 					showTabs,
 					filteredOptions: get(filteredOptionsStore).length

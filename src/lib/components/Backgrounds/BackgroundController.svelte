@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { backgroundContainer } from '$lib/state/stores/background/BackgroundContainer';
-	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 	import { getService } from '$lib/core/di/serviceContext';
 	import { SERVICE_TOKENS } from '$lib/core/di/ServiceTokens';
 	import type { BackgroundService } from '$lib/core/services/BackgroundService';
@@ -13,8 +13,8 @@
 		Dimensions
 	} from '$lib/components/Backgrounds/types/types';
 
-	// Use the background container with Svelte 5 runes
-	const background = useContainer(backgroundContainer);
+	// Use the background container state directly
+	const background = $state(backgroundContainer.state);
 
 	// Props using Svelte 5 runes
 	const dimensions = $props() as Dimensions;
