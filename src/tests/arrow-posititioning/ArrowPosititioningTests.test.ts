@@ -1,5 +1,5 @@
 // tests/arrow-positioning/ArrowPositioningTests.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ArrowPlacementManager } from '$lib/components/objects/Arrow/ArrowPlacementManager';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 import type { PictographData } from '$lib/types/PictographData';
@@ -7,6 +7,11 @@ import type { PictographData } from '$lib/types/PictographData';
 // import type { GridData } from '$lib/components/objects/Grid/GridData';
 import { Letter } from '$lib/types/Letter';
 import { PictographChecker } from '$lib/components/Pictograph/services/PictographChecker';
+import {
+	initializeTestDataLoader,
+	getTestPictographByLetter,
+	resetTestData
+} from '$lib/utils/tests/pictographTestHelpers';
 
 // Mock data
 const mockGridData = {
@@ -27,22 +32,8 @@ const mockGridData = {
 	centerPoint: { coordinates: { x: 475, y: 475 } }
 };
 
-const mockPictographData: PictographData = {
-	letter: Letter.A,
-	gridMode: 'diamond',
-	startPos: 'alpha1',
-	endPos: 'alpha2',
-	timing: 'split',
-	direction: 'same',
-	gridData: null,
-	blueMotionData: null,
-	redMotionData: null,
-	redPropData: null,
-	bluePropData: null,
-	redArrowData: null,
-	blueArrowData: null,
-	grid: ''
-};
+// Real pictograph data will be loaded in beforeEach
+let testPictographData: PictographData;
 
 const mockArrowData: ArrowData = {
 	id: '123',
@@ -66,13 +57,27 @@ describe('ArrowPlacementManager', () => {
 	let manager: ArrowPlacementManager;
 	let mockChecker: PictographChecker;
 
-	beforeEach(() => {
-		mockChecker = new PictographChecker(mockPictographData);
+	beforeEach(async () => {
+		// Initialize test data loader with real CSV data
+		await initializeTestDataLoader();
+
+		// Get real pictograph data for Letter A
+		const pictographA = await getTestPictographByLetter(Letter.A);
+		if (!pictographA) {
+			throw new Error('Failed to load test pictograph data for Letter A');
+		}
+		testPictographData = pictographA;
+
+		mockChecker = new PictographChecker(testPictographData);
 		manager = new ArrowPlacementManager({
-			pictographData: mockPictographData,
+			pictographData: testPictographData,
 			gridData: mockGridData,
 			checker: mockChecker
 		});
+	});
+
+	afterEach(() => {
+		resetTestData();
 	});
 
 	it('should properly calculate initial arrow position', () => {

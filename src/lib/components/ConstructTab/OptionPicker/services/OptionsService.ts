@@ -21,31 +21,6 @@ import { MotionOriCalculator } from '$lib/components/objects/Motion/MotionOriCal
  * - sequence.length > 1: Multiple beats + start position (use ending orientations of last beat)
  */
 export function getNextOptions(sequence: PictographData[]): PictographData[] {
-	console.log('getNextOptions: Called with sequence:', {
-		length: sequence.length,
-		sequence: sequence.map((item, index) => ({
-			index,
-			letter: item.letter,
-			startPos: item.startPos,
-			endPos: item.endPos,
-			isStartPosition: item.isStartPosition,
-			blueMotionData: item.blueMotionData
-				? {
-						motionType: item.blueMotionData.motionType,
-						startOri: item.blueMotionData.startOri,
-						endOri: item.blueMotionData.endOri
-					}
-				: null,
-			redMotionData: item.redMotionData
-				? {
-						motionType: item.redMotionData.motionType,
-						startOri: item.redMotionData.startOri,
-						endOri: item.redMotionData.endOri
-					}
-				: null
-		}))
-	});
-
 	// If sequence is empty, return initial options (currently none defined)
 	if (sequence.length === 0) {
 		return [];
@@ -54,20 +29,9 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 	// For any sequence with beats (length >= 1), use the ending orientations of the last beat
 	const lastBeat = sequence[sequence.length - 1];
 
-	console.log('getNextOptions: Last beat identified:', {
-		index: sequence.length - 1,
-		letter: lastBeat.letter,
-		startPos: lastBeat.startPos,
-		endPos: lastBeat.endPos,
-		isStartPosition: lastBeat.isStartPosition,
-		blueMotionData: lastBeat.blueMotionData,
-		redMotionData: lastBeat.redMotionData
-	});
-
 	// Check if this is actually a start position (has isStartPosition flag)
 	// This handles the edge case where a start position is passed as the only element
 	if (sequence.length === 1 && lastBeat.isStartPosition === true) {
-		console.log('getNextOptions: Treating as start position');
 		// This is a start position, not a beat - use start position logic
 		const targetPosition = lastBeat.startPos ?? lastBeat.endPos;
 		const targetPositionString = targetPosition ? String(targetPosition) : undefined;
@@ -89,16 +53,6 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 	const blueEndOri = lastBeat.blueMotionData?.startOri || lastBeat.blueMotionData?.endOri;
 	const redEndOri = lastBeat.redMotionData?.startOri || lastBeat.redMotionData?.endOri;
 
-	console.log('OptionsService: Processing last beat:', {
-		letter: lastBeat.letter,
-		startPos: lastBeat.startPos,
-		endPos: lastBeat.endPos,
-		blueMotionData: lastBeat.blueMotionData,
-		redMotionData: lastBeat.redMotionData,
-		extractedBlueEndOri: blueEndOri,
-		extractedRedEndOri: redEndOri
-	});
-
 	// Find options where start position matches end position of last beat
 	// AND start orientations match calculated end orientations of the last beat
 	const options = findOptionsWithMatchingPositionAndOrientation(
@@ -106,11 +60,6 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 		blueEndOri,
 		redEndOri
 	);
-
-	console.log('OptionsService: Found', options.length, 'options for orientations:', {
-		blue: blueEndOri,
-		red: redEndOri
-	});
 
 	return options;
 }

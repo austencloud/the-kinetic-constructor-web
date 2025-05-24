@@ -1,10 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 import { convertPictographToContainerFormat } from '../utils/beatFrameUtils';
 import type { PictographData } from '$lib/types/PictographData';
 import { Letter } from '$lib/types/Letter';
 import type { TKAPosition } from '$lib/types/TKAPosition';
 import type { VTGTiming, VTGDir } from '$lib/types/Types';
+import {
+	initializeTestDataLoader,
+	getTestPictographByLetter,
+	resetTestData
+} from '$lib/utils/tests/pictographTestHelpers';
 
 // Mock the sequence container
 vi.mock('$lib/state/stores/sequence/SequenceContainer', () => ({
@@ -49,75 +54,53 @@ vi.mock('$lib/components/Pictograph/utils/defaultPictographData', () => ({
 }));
 
 describe('Beat Frame Synchronization', () => {
-	// Using real data from DiamondPictographDataFrame.csv: A,alpha3,alpha5,split,same,pro,cw,w,n,pro,cw,e,s
-	const mockPictographData: PictographData = {
-		letter: Letter.A,
-		startPos: 'alpha3' as TKAPosition,
-		endPos: 'alpha5' as TKAPosition,
-		timing: 'split' as VTGTiming,
-		direction: 'same' as VTGDir,
-		gridMode: 'diamond',
-		gridData: null,
-		redPropData: null,
-		bluePropData: null,
-		redMotionData: {
-			id: 'red-motion-test',
-			motionType: 'pro',
-			startOri: 'in',
-			endOri: 'in',
-			propRotDir: 'cw',
-			startLoc: 'e',
-			endLoc: 's',
-			turns: 0,
-			color: 'red',
-			leadState: null,
-			prefloatMotionType: null,
-			prefloatPropRotDir: null
-		},
-		blueMotionData: {
-			id: 'blue-motion-test',
-			motionType: 'pro',
-			startOri: 'in',
-			endOri: 'in',
-			propRotDir: 'cw',
-			startLoc: 'w',
-			endLoc: 'n',
-			turns: 0,
-			color: 'blue',
-			leadState: null,
-			prefloatMotionType: null,
-			prefloatPropRotDir: null
-		},
-		redArrowData: null,
-		blueArrowData: null,
-		grid: 'diamond'
-	};
+	// Using real data from DiamondPictographDataFrame.csv
+	let testPictographData: PictographData;
 
-	beforeEach(() => {
+	beforeEach(async () => {
+		// Initialize test data loader with real CSV data
+		await initializeTestDataLoader();
+
+		// Get real pictograph data for Letter A
+		const pictographA = await getTestPictographByLetter(Letter.A);
+		if (!pictographA) {
+			throw new Error('Failed to load test pictograph data for Letter A');
+		}
+		testPictographData = pictographA;
+
 		// Clear sequence state before each test
 		sequenceState.clearSequence();
 		vi.clearAllMocks();
 	});
 
+	afterEach(() => {
+		resetTestData();
+	});
+
 	it('should convert pictograph data to container format', () => {
-		const containerBeat = convertPictographToContainerFormat(mockPictographData);
+		const containerBeat = convertPictographToContainerFormat(testPictographData);
 
 		expect(containerBeat).toHaveProperty('id');
 		expect(containerBeat).toHaveProperty('number', 0);
 		expect(containerBeat.metadata).toEqual({
-			letter: Letter.A,
-			startPos: 'alpha3',
-			endPos: 'alpha5',
-			gridMode: 'diamond',
-			timing: 'split',
-			direction: 'same'
+			letter: testPictographData.letter,
+			startPos: testPictographData.startPos,
+			endPos: testPictographData.endPos,
+			gridMode: testPictographData.gridMode,
+			timing: testPictographData.timing,
+			direction: testPictographData.direction
 		});
 	});
 
 	it('should update beat count when beats are added', async () => {
-		// Add multiple beats
-		await sequenceState.addBeat(mockPictographData);
-		await sequenceState.addBeat({ ...mockPictographData, letter: Letter.B });
+		// Add multiple beats using real data
+		await sequenceState.addBeat(testPictographData);
+
+		// Get real data for Letter B
+		const pictographB = await getTestPictographByLetter(Letter.B);
+		if (pictographB) {
+			await sequenceState.addBeat(pictographB);
+		}
 
 		// Verify sequence state is updated
 		expect(sequenceState.beats.length).toBe(2);
@@ -126,18 +109,18 @@ describe('Beat Frame Synchronization', () => {
 
 	it('should handle start position changes', async () => {
 		// Set start position
-		await sequenceState.setStartPosition(mockPictographData);
+		await sequenceState.setStartPosition(testPictographData);
 
 		// Verify start position is set
 		expect(sequenceState.startPosition).toBeTruthy();
-		expect(sequenceState.startPosition?.startPos).toBe('alpha3');
+		expect(sequenceState.startPosition?.startPos).toBe(testPictographData.startPos);
 		expect(sequenceState.isEmpty).toBe(false);
 	});
 
 	it('should clear sequence correctly', async () => {
 		// Add some data first
-		await sequenceState.setStartPosition(mockPictographData);
-		await sequenceState.addBeat(mockPictographData);
+		await sequenceState.setStartPosition(testPictographData);
+		await sequenceState.addBeat(testPictographData);
 
 		// Verify data is there
 		expect(sequenceState.beats.length).toBe(1);
@@ -153,10 +136,14 @@ describe('Beat Frame Synchronization', () => {
 	});
 
 	it('should handle beat removal', async () => {
-		// Add beats
-		await sequenceState.addBeat(mockPictographData);
-		await sequenceState.addBeat({ ...mockPictographData, letter: Letter.B });
-		await sequenceState.addBeat({ ...mockPictographData, letter: Letter.C });
+		// Add beats using real data
+		await sequenceState.addBeat(testPictographData);
+
+		const pictographB = await getTestPictographByLetter(Letter.B);
+		const pictographC = await getTestPictographByLetter(Letter.C);
+
+		if (pictographB) await sequenceState.addBeat(pictographB);
+		if (pictographC) await sequenceState.addBeat(pictographC);
 
 		expect(sequenceState.beats.length).toBe(3);
 
@@ -168,9 +155,9 @@ describe('Beat Frame Synchronization', () => {
 	});
 
 	it('should maintain circular sequence detection', async () => {
-		// Set start position
+		// Set start position using real data
 		const startPos = {
-			...mockPictographData,
+			...testPictographData,
 			startPos: 'alpha1' as TKAPosition,
 			endPos: 'alpha1' as TKAPosition
 		};
@@ -178,7 +165,7 @@ describe('Beat Frame Synchronization', () => {
 
 		// Add beat that ends where start position begins
 		const circularBeat = {
-			...mockPictographData,
+			...testPictographData,
 			startPos: 'alpha5' as TKAPosition,
 			endPos: 'alpha1' as TKAPosition
 		};
@@ -189,9 +176,9 @@ describe('Beat Frame Synchronization', () => {
 	});
 
 	it('should detect CAP sequences', async () => {
-		// Set start position
+		// Set start position using real data
 		const startPos = {
-			...mockPictographData,
+			...testPictographData,
 			startPos: 'gamma1' as TKAPosition,
 			endPos: 'gamma2' as TKAPosition
 		};
@@ -199,7 +186,7 @@ describe('Beat Frame Synchronization', () => {
 
 		// Add beat that ends at compatible position (same base position)
 		const capBeat = {
-			...mockPictographData,
+			...testPictographData,
 			startPos: 'alpha7' as TKAPosition,
 			endPos: 'gamma3' as TKAPosition
 		};
@@ -218,40 +205,31 @@ describe('Beat Frame Synchronization', () => {
 		expect(sequenceState.beats.length).toBe(0);
 
 		// Add a beat to modern sequence state (like OptionPicker does)
-		await sequenceState.addBeat(mockPictographData);
+		await sequenceState.addBeat(testPictographData);
 
 		// Verify modern state is updated
 		expect(sequenceState.beats.length).toBe(1);
-		expect(sequenceState.word).toBe('A');
+		expect(sequenceState.word).toBe(testPictographData.letter?.toString() || '');
 
 		// The BeatFrameStateManager should have automatically synced this to the container
 		// This is what makes the BeatFrame UI update reactively
 		// Note: In the test environment, we can't directly test the container sync
 		// because it's mocked, but we can verify the sequence state is correct
-		expect(sequenceState.beats[0].letter).toBe(Letter.A);
-		expect(sequenceState.beats[0].startPos).toBe('alpha3');
-		expect(sequenceState.beats[0].endPos).toBe('alpha5');
+		expect(sequenceState.beats[0].letter).toBe(testPictographData.letter);
+		expect(sequenceState.beats[0].startPos).toBe(testPictographData.startPos);
+		expect(sequenceState.beats[0].endPos).toBe(testPictographData.endPos);
 	});
 
 	it('should handle multiple rapid beat additions without losing reactivity', async () => {
 		// This test ensures the reactive sync doesn't break with rapid updates
-		const beatB = {
-			...mockPictographData,
-			letter: Letter.B,
-			startPos: 'alpha5' as TKAPosition,
-			endPos: 'alpha7' as TKAPosition
-		};
-		const beatC = {
-			...mockPictographData,
-			letter: Letter.C,
-			startPos: 'alpha7' as TKAPosition,
-			endPos: 'alpha1' as TKAPosition
-		};
+		// Get real data for multiple letters
+		const pictographB = await getTestPictographByLetter(Letter.B);
+		const pictographC = await getTestPictographByLetter(Letter.C);
 
-		// Add multiple beats rapidly
-		await sequenceState.addBeat(mockPictographData);
-		await sequenceState.addBeat(beatB);
-		await sequenceState.addBeat(beatC);
+		// Add multiple beats rapidly using real data
+		await sequenceState.addBeat(testPictographData);
+		if (pictographB) await sequenceState.addBeat(pictographB);
+		if (pictographC) await sequenceState.addBeat(pictographC);
 
 		// Verify all beats are present and in correct order
 		expect(sequenceState.beats.length).toBe(3);

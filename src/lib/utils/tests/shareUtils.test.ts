@@ -1,7 +1,7 @@
 /**
  * Tests for shareUtils.ts
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer';
 import {
 	testSequenceUrlEncoding,
@@ -10,6 +10,12 @@ import {
 	isFileShareSupported,
 	copyToClipboard
 } from '$lib/components/SequenceWorkbench/share/utils/ShareUtils';
+import {
+	initializeTestDataLoader,
+	createTestBeatDataSequence,
+	resetTestData
+} from './pictographTestHelpers';
+import { Letter } from '$lib/types/Letter';
 
 // Mock browser environment
 vi.mock('$app/environment', () => ({
@@ -52,134 +58,66 @@ vi.mock('$lib/core/logging', () => ({
 }));
 
 /**
- * Generate a test sequence with the specified number of beats
+ * Generate a test sequence with the specified number of beats using real data
  * @param numBeats Number of beats to generate
  * @returns A test sequence with the specified number of beats
  */
-function generateTestSequence(numBeats: number): BeatData[] {
-	// Create a start position beat
-	const startPosBeat: BeatData = {
-		id: `beat-start-test`,
-		number: 0,
-		letter: '',
-		position: 'alpha5',
-		orientation: '',
-		turnsTuple: '',
-		redPropData: null,
-		bluePropData: null,
-		redArrowData: null,
-		blueArrowData: null,
-		redMotionData: {
-			id: `motion-start-red-test`,
-			color: 'red',
-			motionType: 'static',
-			startLoc: 's',
-			endLoc: 's',
-			startOri: 'in',
-			endOri: 'in',
-			propRotDir: 'no_rot',
-			turns: 0,
-			handRotDir: 'static',
-			leadState: 'leading',
-			prefloatMotionType: null,
-			prefloatPropRotDir: null
-		},
-		blueMotionData: {
-			id: `motion-start-blue-test`,
-			color: 'blue',
-			motionType: 'static',
-			startLoc: 's',
-			endLoc: 's',
-			startOri: 'in',
-			endOri: 'in',
-			propRotDir: 'no_rot',
-			turns: 0,
-			handRotDir: 'static',
-			leadState: 'leading',
-			prefloatMotionType: null,
-			prefloatPropRotDir: null
-		},
-		metadata: {
-			isStartPosition: true,
-			startPos: 'alpha5',
-			endPos: 'alpha5'
-		}
-	};
+async function generateTestSequence(numBeats: number): Promise<BeatData[]> {
+	// Create letters array for the requested number of beats
+	const letters: Letter[] = [];
+	const availableLetters = [
+		Letter.A,
+		Letter.B,
+		Letter.C,
+		Letter.D,
+		Letter.E,
+		Letter.F,
+		Letter.G,
+		Letter.H,
+		Letter.I
+	];
 
-	// Create regular beats
-	const beats: BeatData[] = [startPosBeat];
-
-	for (let i = 1; i <= numBeats; i++) {
-		const beat: BeatData = {
-			id: `beat-test-${i}`,
-			number: i,
-			letter: String.fromCharCode(64 + (i % 26) + 1), // A, B, C, ...
-			position: 'alpha5',
-			orientation: '',
-			turnsTuple: '',
-			redPropData: null,
-			bluePropData: null,
-			redArrowData: null,
-			blueArrowData: null,
-			redMotionData: {
-				id: `motion-red-test-${i}`,
-				color: 'red',
-				motionType: i % 2 === 0 ? 'anti' : 'pro',
-				startLoc: 's',
-				endLoc: i % 2 === 0 ? 'e' : 'w',
-				startOri: 'in',
-				endOri: 'in',
-				propRotDir: i % 2 === 0 ? 'cw' : 'ccw',
-				turns: i % 3 === 0 ? 1 : 0.5,
-				handRotDir: i % 2 === 0 ? 'cw_shift' : 'ccw_shift',
-				leadState: 'leading',
-				prefloatMotionType: null,
-				prefloatPropRotDir: null
-			},
-			blueMotionData: {
-				id: `motion-blue-test-${i}`,
-				color: 'blue',
-				motionType: i % 2 === 0 ? 'pro' : 'anti',
-				startLoc: 's',
-				endLoc: i % 2 === 0 ? 'w' : 'e',
-				startOri: 'in',
-				endOri: 'in',
-				propRotDir: i % 2 === 0 ? 'ccw' : 'cw',
-				turns: i % 4 === 0 ? 1.5 : 0.5,
-				handRotDir: i % 2 === 0 ? 'ccw_shift' : 'cw_shift',
-				leadState: 'leading',
-				prefloatMotionType: null,
-				prefloatPropRotDir: null
-			},
-			metadata: {
-				letter: String.fromCharCode(64 + (i % 26) + 1),
-				startPos: 'alpha5',
-				endPos: i % 2 === 0 ? 'beta1' : 'beta5'
-			}
-		};
-
-		beats.push(beat);
+	for (let i = 0; i < numBeats; i++) {
+		letters.push(availableLetters[i % availableLetters.length]);
 	}
 
-	return beats;
+	// Create sequence with start position using real data
+	const sequence = await createTestBeatDataSequence(letters, true);
+
+	// Return the array format (start position + beats)
+	const result: BeatData[] = [];
+	if (sequence.startPosition) {
+		result.push(sequence.startPosition);
+	}
+	result.push(...sequence.beatData);
+
+	return result;
 }
 
 describe('shareUtils', () => {
-	beforeEach(() => {
+	beforeEach(async () => {
+		await initializeTestDataLoader();
 		vi.clearAllMocks();
 	});
 
+	afterEach(() => {
+		resetTestData();
+	});
+
 	describe('URL encoding/decoding', () => {
-		it('should encode and decode a sequence correctly', () => {
+		it('should encode and decode a sequence correctly', async () => {
 			// For this test, we'll mock the testSequenceUrlEncoding function
 			// to return a successful result since we can't fully test the encoding/decoding
 			// in a unit test environment without the actual browser APIs
 
-			// Create a mock result
+			// Create a mock result using real data
+			const originalBeats = await generateTestSequence(3);
+			const decodedBeats = await generateTestSequence(3);
+
 			const mockResult = {
 				success: true,
-				originalBeats: generateTestSequence(3),
-				decodedBeats: generateTestSequence(3),
+				originalBeats,
+				decodedBeats,
 				encodedUrl: 'https://test.com/?seq=test',
 				encodedLength: 100,
 				compressedLength: 50,
@@ -192,8 +130,8 @@ describe('shareUtils', () => {
 			expect(mockResult.compressionRatio).toBeLessThan(1);
 		});
 
-		it('should generate a shareable URL', () => {
-			const testSequence = generateTestSequence(2);
+		it('should generate a shareable URL', async () => {
+			const testSequence = await generateTestSequence(2);
 			const url = generateShareableUrl(testSequence, 'Test Sequence');
 
 			expect(url).toBeTruthy();
@@ -234,8 +172,8 @@ describe('shareUtils', () => {
 if (typeof window !== 'undefined') {
 	(window as any).testShareUtils = {
 		generateTestSequence,
-		runUrlEncodingTest: (numBeats: number = 5) => {
-			const testSequence = generateTestSequence(numBeats);
+		runUrlEncodingTest: async (numBeats: number = 5) => {
+			const testSequence = await generateTestSequence(numBeats);
 			return testSequenceUrlEncoding(testSequence);
 		}
 	};

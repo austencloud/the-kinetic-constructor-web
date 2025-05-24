@@ -1,5 +1,5 @@
 // src/tests/type3-dash-arrow-positioning.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { PictographService } from '$lib/components/Pictograph/PictographService';
 import type { PictographData } from '$lib/types/PictographData';
 import type { MotionData } from '$lib/components/objects/Motion/MotionData';
@@ -11,6 +11,11 @@ import ArrowLocationManager, {
 	calculateDashLocation
 } from '$lib/components/objects/Arrow/ArrowLocationManager';
 import { Motion } from '$lib/components/objects/Motion/Motion';
+import {
+	initializeTestDataLoader,
+	getType3TestPictograph,
+	resetTestData
+} from '$lib/utils/tests/pictographTestHelpers';
 
 // Mock grid data
 const mockGridData = {
@@ -31,56 +36,8 @@ const mockGridData = {
 	centerPoint: { coordinates: { x: 475, y: 475 } }
 };
 
-// Create a Type 3 letter pictograph data
-const createType3PictographData = (): PictographData => {
-	// Using W- as a Type 3 letter
-	return {
-		letter: Letter.W_DASH,
-		gridMode: 'diamond',
-		startPos: null,
-		endPos: null,
-		timing: null,
-		direction: null,
-		gridData: mockGridData,
-		redMotionData: {
-			id: 'red-motion',
-			color: RED,
-			motionType: DASH,
-			startLoc: 'n',
-			endLoc: 's',
-			startOri: 'in',
-			endOri: 'in',
-			turns: 0,
-			propRotDir: 'cw',
-			leadState: null,
-			prefloatMotionType: null,
-			prefloatPropRotDir: null
-		},
-		blueMotionData: {
-			id: 'blue-motion',
-			color: BLUE,
-			motionType: PRO,
-			startLoc: 'e',
-			endLoc: 'w',
-			startOri: 'in',
-			endOri: 'in',
-			turns: 0,
-			propRotDir: 'cw',
-			leadState: null,
-			prefloatMotionType: null,
-			prefloatPropRotDir: null
-		},
-		redPropData: null,
-		bluePropData: null,
-		redArrowData: null,
-		blueArrowData: null,
-		redMotion: null,
-		blueMotion: null,
-		motions: [],
-		props: [],
-		grid: 'diamond'
-	};
-};
+// Real Type 3 pictograph data will be loaded in beforeEach
+let testType3PictographData: PictographData;
 
 describe('Type 3 Dash Arrow Positioning', () => {
 	let pictographData: PictographData;
@@ -88,9 +45,22 @@ describe('Type 3 Dash Arrow Positioning', () => {
 	let redArrowData: ArrowData;
 	let blueArrowData: ArrowData;
 
-	beforeEach(() => {
-		// Create fresh pictograph data for each test
-		pictographData = createType3PictographData();
+	beforeEach(async () => {
+		// Initialize test data loader with real CSV data
+		await initializeTestDataLoader();
+
+		// Get real Type 3 pictograph data (dash motion)
+		const type3Pictograph = await getType3TestPictograph();
+		if (!type3Pictograph) {
+			throw new Error('Failed to load Type 3 test pictograph data');
+		}
+
+		// Add grid data to the real pictograph data
+		testType3PictographData = {
+			...type3Pictograph,
+			gridData: mockGridData
+		};
+		pictographData = testType3PictographData;
 
 		// Create a new PictographService with the pictograph data
 		pictographService = new PictographService(pictographData);
@@ -112,6 +82,10 @@ describe('Type 3 Dash Arrow Positioning', () => {
 		if (pictographData.blueMotionData) {
 			blueArrowData = pictographService.createArrowData(pictographData.blueMotionData, BLUE);
 		}
+	});
+
+	afterEach(() => {
+		resetTestData();
 	});
 
 	it('should correctly identify Type 3 letters', () => {

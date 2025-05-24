@@ -388,12 +388,6 @@ class OptionPickerStateManager {
 			}
 
 			if (positionForOptions) {
-				console.log('OptionPickerState: Loading options with position:', {
-					startPos: positionForOptions.startPos,
-					endPos: positionForOptions.endPos,
-					blueMotionData: positionForOptions.blueMotionData,
-					redMotionData: positionForOptions.redMotionData
-				});
 				await this.loadOptions([positionForOptions]);
 			} else {
 				// No position data available, load empty options

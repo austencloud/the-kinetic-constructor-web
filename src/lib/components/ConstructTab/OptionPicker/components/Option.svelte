@@ -41,8 +41,27 @@
 	// Initialize the stable copy once
 	$effect(() => {
 		if (!stablePictographData && props.pictographData) {
-			// Create a deep copy to break reactivity connections
-			stablePictographData = JSON.parse(JSON.stringify(props.pictographData));
+			// Create a safe copy that handles circular references (Motion objects)
+			// Instead of JSON.parse(JSON.stringify()) which fails with circular references,
+			// we create a shallow copy with safe handling of motion data
+			stablePictographData = {
+				...props.pictographData,
+				// Create safe copies of motion data to avoid circular references
+				blueMotionData: props.pictographData.blueMotionData
+					? {
+							...props.pictographData.blueMotionData
+						}
+					: null,
+				redMotionData: props.pictographData.redMotionData
+					? {
+							...props.pictographData.redMotionData
+						}
+					: null,
+				// Exclude any Motion objects that might have circular references
+				redMotion: null,
+				blueMotion: null,
+				motions: []
+			};
 		}
 	});
 
