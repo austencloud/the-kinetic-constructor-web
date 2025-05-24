@@ -67,6 +67,15 @@ export const DEFAULT_COLUMNS = {
 };
 
 // --- Layout Rules (Simplified Aspects) ---
+//
+// RESPONSIVE GRID BEHAVIOR:
+// - Mobile: Always 4 columns regardless of orientation
+// - Tablet Landscape: 6 columns for better space utilization
+// - Desktop Portrait: 4 columns (narrow width)
+// - Desktop Landscape Square: 8 columns (wide enough)
+// - Desktop Landscape Wide: 8 columns (plenty of space)
+// - Very Wide Desktop (>1600px): +1 bonus column (capped at 8)
+//
 export const LAYOUT_RULES: LayoutRule[] = [
 	// --- Rules for Unfolded Foldable Devices ---
 	// (Keep the workaround for foldableType)
@@ -184,6 +193,19 @@ export const LAYOUT_RULES: LayoutRule[] = [
 		when: { minCount: 9, maxCount: 16, device: 'mobile' }
 	},
 	{
+		description: 'Tablet landscape with few/medium items (3-16) = 6 columns',
+		columns: 6,
+		when: {
+			minCount: 3,
+			maxCount: 16,
+			orientation: 'landscape',
+			extraCheck: (w, h, params) => {
+				// Tablet-sized screens in landscape
+				return w >= 768 && w < 1024 && params?.device !== 'mobile';
+			}
+		}
+	},
+	{
 		description: 'Small window width forces 4 columns',
 		columns: 4,
 		when: {
@@ -210,18 +232,35 @@ export const LAYOUT_RULES: LayoutRule[] = [
 		when: { minCount: 17, device: 'mobile', aspect: 'wide' }
 	},
 	{
-		description: 'Few/Medium items (3-16) on desktop, tall = 2 columns',
+		description: 'Few/Medium items (3-16) on desktop, tall = 4 columns',
 		columns: 4,
 		when: { minCount: 3, maxCount: 16, device: 'desktop', aspect: 'tall' }
 	},
 	{
-		description: 'Few/Medium items (3-16) on desktop, square = 4 columns',
-		columns: 4,
-		when: { minCount: 3, maxCount: 16, device: 'desktop', aspect: 'square' }
+		description: 'Few/Medium items (3-16) on desktop, square landscape = 8 columns',
+		columns: 8,
+		when: {
+			minCount: 3,
+			maxCount: 16,
+			device: 'desktop',
+			aspect: 'square',
+			orientation: 'landscape'
+		}
 	},
 	{
-		description: 'Few/Medium items (3-16) on desktop, wide = 4 columns',
+		description: 'Few/Medium items (3-16) on desktop, square portrait = 4 columns',
 		columns: 4,
+		when: {
+			minCount: 3,
+			maxCount: 16,
+			device: 'desktop',
+			aspect: 'square',
+			orientation: 'portrait'
+		}
+	},
+	{
+		description: 'Few/Medium items (3-16) on desktop, wide = 8 columns',
+		columns: 8,
 		when: { minCount: 3, maxCount: 16, device: 'desktop', aspect: 'wide' }
 	},
 	{

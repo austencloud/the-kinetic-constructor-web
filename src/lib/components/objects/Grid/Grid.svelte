@@ -4,7 +4,6 @@
 	import type { GridData } from './GridData';
 	import type { GridMode } from './types';
 	import type { GridErrorEventDetail, GridEvents } from './GridEvents';
-	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 
 	// Create event dispatcher for custom events
 	const dispatch = createEventDispatcher<GridEvents>();
@@ -31,15 +30,10 @@
 	const effectiveGridMode = $derived(props.gridMode ?? defaultSettings.defaultGridMode);
 	const effectiveDebug = $derived(props.debug ?? defaultSettings.showGridDebug);
 
-	// Compute grid source based on mode
-	let gridSrc = $state('');
-	safeEffect(() => {
-		// Fix the path to use the correct location in the static folder
-		gridSrc =
-			effectiveGridMode === 'diamond'
-				? '/images/grid/diamond_grid.svg'
-				: '/images/grid/box_grid.svg';
-	});
+	// Compute grid source based on mode using derived
+	const gridSrc = $derived(
+		effectiveGridMode === 'diamond' ? '/images/grid/diamond_grid.svg' : '/images/grid/box_grid.svg'
+	);
 
 	/**
 	 * Parses a string coordinate in the format "(x, y)" into a { x, y } object.

@@ -4,8 +4,6 @@
 	import { formatTabName, formatShortTabName } from './tabLabelFormatter';
 	import { fly } from 'svelte/transition';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import { safeUpdate } from '$lib/state/core/svelte5-integration.svelte';
-
 	// Props
 	const props = $props<{
 		categoryKey: string;
@@ -21,8 +19,8 @@
 	// Local state for hover effect
 	let isHovered = $state(false);
 
-	// Event handler with safe update to prevent reactivity loops
-	const handleClick = safeUpdate((event: MouseEvent) => {
+	// Event handler for click
+	function handleClick(event: MouseEvent) {
 		// Provide haptic feedback when selecting a category tab
 		if (typeof window !== 'undefined' && hapticFeedbackService.isAvailable()) {
 			hapticFeedbackService.trigger('navigation');
@@ -30,9 +28,6 @@
 
 		// Stop the original click event from bubbling to prevent duplicate handling
 		event.stopPropagation();
-
-		// Log that we're using safe update
-		console.log('TabButton: Using safe update to prevent reactivity loops');
 
 		// Dispatch a custom event that parent components can listen for
 		const tabSelectedEvent = new CustomEvent('tab-selected', {
@@ -46,22 +41,16 @@
 		if (event.currentTarget) {
 			event.currentTarget.dispatchEvent(tabSelectedEvent);
 		}
+	}
 
-		console.log('TabButton: Dispatched tab-selected event:', {
-			categoryKey: props.categoryKey
-		});
-	});
-
-	// Handle mouse enter/leave for hover effects with safe update
-	const handleMouseEnter = safeUpdate(() => {
+	// Handle mouse enter/leave for hover effects
+	function handleMouseEnter() {
 		isHovered = true;
-		console.log('TabButton: Mouse enter handled safely');
-	});
+	}
 
-	const handleMouseLeave = safeUpdate(() => {
+	function handleMouseLeave() {
 		isHovered = false;
-		console.log('TabButton: Mouse leave handled safely');
-	});
+	}
 </script>
 
 <button

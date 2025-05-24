@@ -1,31 +1,30 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import SectionHeader from '../SectionHeader.svelte';
 	import OptionGroupGrid from '../OptionGroupGrid.svelte';
 
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		optionSelect: PictographData;
+	// Props
+	const props = $props<{
+		groups: Array<{ key: string; options: PictographData[] }>;
+		transitionKey: string | number;
+		rowIndex: number;
+		onoptionselect?: (option: PictographData) => void;
 	}>();
 
-	// Props
-	export let groups: Array<{ key: string; options: PictographData[] }>;
-	export let transitionKey: string | number;
-	export let rowIndex: number;
-
 	// Handle option selection events from OptionGroupGrid
-	function handleOptionSelect(event: CustomEvent<PictographData>) {
-		// Forward the event to parent components
-		dispatch('optionSelect', event.detail);
+	function handleOptionSelect(option: PictographData) {
+		// Call the callback if provided
+		if (props.onoptionselect) {
+			props.onoptionselect(option);
+		}
 	}
 </script>
 
-{#each groups as group (transitionKey + '-group-' + group.key)}
-	<SectionHeader groupKey={group.key} isFirstHeader={rowIndex === 0} />
-	<OptionGroupGrid 
-		options={group.options} 
-		key={transitionKey + '-optgroup-' + group.key} 
-		on:optionSelect={handleOptionSelect}
+{#each props.groups as group (props.transitionKey + '-group-' + group.key)}
+	<SectionHeader groupKey={group.key} isFirstHeader={props.rowIndex === 0} />
+	<OptionGroupGrid
+		options={group.options}
+		key={props.transitionKey + '-optgroup-' + group.key}
+		onoptionselect={handleOptionSelect}
 	/>
 {/each}

@@ -6,7 +6,6 @@
 	// Import TabsInnerContainer component properly
 	import TabsInnerContainer from './TabsInnerContainer.svelte';
 	// Import actions from the store
-	import { actions } from '../../store';
 
 	// Props using Svelte 5 runes
 	const {

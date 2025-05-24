@@ -243,53 +243,8 @@
 		// 3. If the grid would be too tall for the container, enable scrollbars
 		const newOverflowState = heightOverflow || widthOverflow || gridTooTall;
 
-		// Always log overflow information for debugging
-		console.debug('BeatFrame overflow analysis:', {
-			availableHeight,
-			contentHeight,
-			containerWidth,
-			contentWidth,
-			heightOverflow,
-			widthOverflow,
-			cellSize,
-			minCellSize,
-			cellSizeNearMinimum,
-			beatRows,
-			totalGridHeight,
-			gridTooTall,
-			newOverflowState,
-			sequenceWidgetWidth,
-			sequenceWidgetHeight
-		});
-
-		// Always log the current overflow state for debugging
-		console.log('Current overflow state:', {
-			contentOverflows,
-			newOverflowState,
-			heightOverflow,
-			widthOverflow,
-			cellSizeNearMinimum,
-			gridTooTall,
-			beatRows,
-			cellSize
-		});
-
 		// Only update if the state has changed to avoid unnecessary re-renders
 		if (contentOverflows !== newOverflowState) {
-			console.log('Overflow state changed:', {
-				from: contentOverflows,
-				to: newOverflowState,
-				reason: heightOverflow
-					? 'height overflow'
-					: widthOverflow
-						? 'width overflow'
-						: cellSizeNearMinimum
-							? 'cell size near minimum'
-							: gridTooTall
-								? 'grid too tall'
-								: 'unknown'
-			});
-
 			contentOverflows = newOverflowState;
 
 			// Force a layout recalculation after changing overflow state
@@ -301,15 +256,6 @@
 					// Add a data attribute to indicate if we're in scrollable mode
 					// This will be used for CSS selectors to adjust alignment
 					beatFrame.setAttribute('data-scrollable', String(newOverflowState));
-
-					// Log the DOM state after update
-					console.log('DOM state after update:', {
-						dataRows: beatFrame.getAttribute('data-rows'),
-						dataScrollable: beatFrame.getAttribute('data-scrollable'),
-						parentHasScrollableClass: beatFrame.closest('.scrollable-active') !== null,
-						containerScrollHeight: container.scrollHeight,
-						containerClientHeight: container.clientHeight
-					});
 				}
 			}, 0);
 		}

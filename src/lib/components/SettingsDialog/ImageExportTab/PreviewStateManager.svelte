@@ -16,7 +16,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
+
 	import {
 		verifyBeatFrameElements,
 		calculateSettingsHash

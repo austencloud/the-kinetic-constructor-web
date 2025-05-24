@@ -1,14 +1,17 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	// Image export settings imports temporarily removed
+	import {
+		saveImageExportSettings,
+		resetImageExportSettings
+	} from '$lib/state/image-export-settings.svelte';
 	import { showSuccess, showError } from '$lib/components/shared/ToastManager.svelte';
 	import { onMount } from 'svelte';
 
 	// Import tab components
 	import SettingsTabs from './SettingsTabs.svelte';
 	import GeneralTab from './GeneralTab/GeneralTab.svelte';
-	// ImageExportTab import temporarily removed
+	import ImageExportTab from './ImageExportTab/ImageExportTab.svelte';
 
 	// Constants for localStorage keys
 	const SETTINGS_ACTIVE_TAB_KEY = 'settings_active_tab';
@@ -19,10 +22,10 @@
 		onClose: () => void;
 	}>();
 
-	// Define tabs - temporarily removed Image Export tab
+	// Define tabs
 	const tabs = [
-		{ id: 'general', label: 'General', icon: 'fa-sliders' }
-		// Image Export tab temporarily removed
+		{ id: 'general', label: 'General', icon: 'fa-sliders' },
+		{ id: 'imageExport', label: 'Image Export', icon: 'fa-image' }
 	];
 
 	// Load the last active tab from localStorage or default to 'general'
@@ -103,7 +106,8 @@
 		}
 
 		try {
-			// Image export settings saving temporarily removed
+			// Save image export settings
+			saveImageExportSettings();
 
 			// Save general settings
 			if (browser && localStorage) {
@@ -165,7 +169,8 @@
 		}
 
 		try {
-			// Image export settings reset temporarily removed
+			// Reset image export settings
+			resetImageExportSettings();
 
 			// Reset general settings
 			if (browser && localStorage) {
@@ -239,8 +244,9 @@
 	<div class="settings-content" bind:this={contentContainer}>
 		{#if activeTab === 'general'}
 			<GeneralTab />
+		{:else if activeTab === 'imageExport'}
+			<ImageExportTab />
 		{/if}
-		<!-- Image Export tab temporarily removed -->
 	</div>
 
 	<div class="settings-footer">

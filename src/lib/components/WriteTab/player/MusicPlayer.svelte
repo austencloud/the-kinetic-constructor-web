@@ -1,18 +1,17 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { writable } from 'svelte/store';
 
-	// Player state
-	const currentTime = writable(0);
-	const duration = writable(0);
-	const isPlaying = writable(false);
-	const volume = writable(0.7);
+	// Player state using Svelte 5 runes
+	let currentTime = $state(0);
+	let duration = $state(0);
+	let isPlaying = $state(false);
+	let volume = $state(0.7);
 
 	let audioElement: HTMLAudioElement;
 	let progressInterval: ReturnType<typeof setInterval> | null = null;
 
 	// Mock audio source - in a real implementation, this would be configurable
-	let audioSrc = '';
+	let audioSrc = $state('');
 
 	onMount(() => {
 		// Create audio element
@@ -20,12 +19,12 @@
 
 		// Set up event listeners
 		audioElement.addEventListener('loadedmetadata', () => {
-			duration.set(audioElement.duration);
+			duration = audioElement.duration;
 		});
 
 		audioElement.addEventListener('ended', () => {
-			isPlaying.set(false);
-			currentTime.set(0);
+			isPlaying = false;
+			currentTime = 0;
 			if (progressInterval) {
 				clearInterval(progressInterval);
 				progressInterval = null;
@@ -33,7 +32,7 @@
 		});
 
 		// Set initial volume
-		audioElement.volume = $volume;
+		audioElement.volume = volume;
 	});
 
 	onDestroy(() => {
@@ -52,9 +51,9 @@
 	function togglePlay() {
 		if (!audioElement) return;
 
-		if ($isPlaying) {
+		if (isPlaying) {
 			audioElement.pause();
-			isPlaying.set(false);
+			isPlaying = false;
 
 			if (progressInterval) {
 				clearInterval(progressInterval);
@@ -68,11 +67,11 @@
 			}
 
 			audioElement.play();
-			isPlaying.set(true);
+			isPlaying = true;
 
 			// Update progress
 			progressInterval = setInterval(() => {
-				currentTime.set(audioElement.currentTime);
+				currentTime = audioElement.currentTime;
 			}, 100);
 		}
 	}
@@ -83,8 +82,8 @@
 
 		audioElement.pause();
 		audioElement.currentTime = 0;
-		isPlaying.set(false);
-		currentTime.set(0);
+		isPlaying = false;
+		currentTime = 0;
 
 		if (progressInterval) {
 			clearInterval(progressInterval);
@@ -99,7 +98,7 @@
 
 		if (audioElement) {
 			audioElement.currentTime = newTime;
-			currentTime.set(newTime);
+			currentTime = newTime;
 		}
 	}
 
@@ -108,7 +107,7 @@
 		const target = event.target as HTMLInputElement;
 		const newVolume = parseFloat(target.value);
 
-		volume.set(newVolume);
+		volume = newVolume;
 
 		if (audioElement) {
 			audioElement.volume = newVolume;
@@ -148,8 +147,8 @@
 		audioSrc = name;
 
 		// Reset state
-		currentTime.set(0);
-		isPlaying.set(false);
+		currentTime = 0;
+		isPlaying = false;
 
 		if (progressInterval) {
 			clearInterval(progressInterval);
@@ -170,8 +169,8 @@
 
 <div class="music-player">
 	<div class="player-controls">
-		<button class="control-button" on:click={togglePlay} aria-label={$isPlaying ? 'Pause' : 'Play'}>
-			{#if $isPlaying}
+		<button class="control-button" onclick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
+			{#if isPlaying}
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"
@@ -203,7 +202,7 @@
 			{/if}
 		</button>
 
-		<button class="control-button" on:click={stop} aria-label="Stop">
+		<button class="control-button" onclick={stop} aria-label="Stop">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
 				width="24"
@@ -220,7 +219,7 @@
 		</button>
 
 		<div class="time-display">
-			{formatTime($currentTime)} / {formatTime($duration)}
+			{formatTime(currentTime)} / {formatTime(duration)}
 		</div>
 	</div>
 
@@ -228,9 +227,9 @@
 		<input
 			type="range"
 			min="0"
-			max={$duration || 100}
-			value={$currentTime}
-			on:input={handleProgressChange}
+			max={duration || 100}
+			value={currentTime}
+			oninput={handleProgressChange}
 			class="progress-slider"
 			aria-label="Playback progress"
 		/>
@@ -239,7 +238,7 @@
 	<div class="audio-info">
 		<button
 			class="audio-name"
-			on:click={openFilePicker}
+			onclick={openFilePicker}
 			type="button"
 			aria-label="Select audio file"
 		>
@@ -268,8 +267,8 @@
 				min="0"
 				max="1"
 				step="0.01"
-				value={$volume}
-				on:input={handleVolumeChange}
+				value={volume}
+				oninput={handleVolumeChange}
 				class="volume-slider"
 				aria-label="Volume"
 			/>

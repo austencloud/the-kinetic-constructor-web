@@ -8,6 +8,7 @@
 	// Import Stores
 	import { panelStore, buttonSizeStore } from './stores/panelStore';
 	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
+	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 
 	// Import Types
 	import type { ButtonDefinition, ActionEventDetail, LayoutOrientation } from './types';
@@ -43,14 +44,16 @@
 	$: buttonSize = buttonSizeFn(containerWidth, containerHeight, isContainerPortrait);
 
 	// --- Event Handlers ---
-	function handleButtonClick(event: CustomEvent<ActionEventDetail>) {
+	async function handleButtonClick(event: CustomEvent<ActionEventDetail>) {
 		const { id } = event.detail;
 		dispatch('action', { id });
 
 		if (id === 'clearSequence') {
-			// Use the sequence actions to clear the sequence
-			// This will also reset the start position
+			// Clear both the legacy sequence machine and the new sequence state
 			sequenceActions.clearSequence();
+
+			// Also clear the new Svelte 5 runes sequence state
+			await sequenceState.clearSequence();
 
 			if (browser) {
 				const customEvent = new CustomEvent('sequence-cleared', { bubbles: true });

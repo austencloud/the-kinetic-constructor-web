@@ -146,7 +146,6 @@ export async function initializeApplication(
 			await Promise.all([preloadingPromise, glyphPreloadingPromise]);
 
 			// Log completion of preloading phase
-			console.log('All pictograph resources preloaded successfully');
 		} else {
 			reportProgress(10, 'Server-side rendering (skipping resource preload)...');
 		}

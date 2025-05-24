@@ -6,11 +6,7 @@
 	import { getContainerAspect, BREAKPOINTS } from '../config';
 	import { resize } from '../actions/resize';
 	import type { PictographData } from '$lib/types/PictographData';
-	import {
-		optionPickerContainer,
-		filteredOptions,
-		groupedOptions
-	} from '$lib/state/stores/optionPicker/optionPickerContainer';
+	import { optionPickerState } from '../optionPickerState.svelte';
 
 	// --- State Stores ---
 	// Use sensible defaults for window dimensions
@@ -31,14 +27,10 @@
 	const filteredOptionsStore = writable<PictographData[]>([]);
 	const groupedOptionsStore = writable<Record<string, PictographData[]>>({});
 
-	// Update the writable stores when the container values change
+	// Update the writable stores when the option picker state changes
 	$: {
-		if (filteredOptions && filteredOptions.value) {
-			filteredOptionsStore.set(filteredOptions.value);
-		}
-		if (groupedOptions && groupedOptions.value) {
-			groupedOptionsStore.set(groupedOptions.value);
-		}
+		filteredOptionsStore.set(optionPickerState.filteredOptions);
+		groupedOptionsStore.set(optionPickerState.groupedOptions);
 	}
 
 	// --- Derived Layout Context ---
@@ -60,8 +52,8 @@
 			$filteredOptionsStore,
 			$groupedOptionsStore
 		]) => {
-			// Get the current selected tab from the container
-			const selectedTab = optionPickerContainer.state.selectedTab;
+			// Get the current selected tab from the option picker state
+			const selectedTab = optionPickerState.lastSelectedTab[optionPickerState.sortMethod] || 'all';
 
 			// 1. Get enhanced device info using container width (more reliable for component layout)
 			const { deviceType: enhancedDeviceType, foldableInfo } = getEnhancedDeviceType(

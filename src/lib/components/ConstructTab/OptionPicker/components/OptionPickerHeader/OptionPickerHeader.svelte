@@ -5,7 +5,7 @@
 	import ViewControl from '../ViewControl/ViewControl.svelte';
 	import TabsContainer from './TabsContainer.svelte';
 	import { useResponsiveLayout } from './useResponsiveLayout';
-	import { optionPickerContainer } from '$lib/state/stores/optionPicker/optionPickerContainer';
+	import { optionPickerState } from '../../optionPickerState.svelte';
 	import type { SortMethod } from '../../config';
 
 	// --- Props using Svelte 5 runes ---
@@ -20,8 +20,8 @@
 
 	// --- State ---
 	// Use derived state without effects
-	const currentSortMethod = $derived(optionPickerContainer.state.sortMethod);
-	const selectedTabState = $derived(optionPickerContainer.state.selectedTab);
+	const currentSortMethod = $derived(optionPickerState.sortMethod);
+	const selectedTabState = $derived(props.selectedTab);
 
 	// Remove the effect that logs state - use derived for debugging
 	const debugInfo = $derived.by(() => {

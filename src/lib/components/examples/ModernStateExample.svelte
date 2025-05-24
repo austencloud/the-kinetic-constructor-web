@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 
 	// Local state for the form

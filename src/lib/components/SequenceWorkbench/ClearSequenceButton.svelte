@@ -4,21 +4,22 @@
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
-	import { uiStore } from '$lib/components/WriteTab/stores/uiStore';
+	import { uiActions, confirmDeletions } from '$lib/components/WriteTab/stores/uiState.svelte';
+	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 
 	// State for confirmation modal
 	let isConfirmationModalOpen = $state(false);
 	let dontAskAgain = $state(false);
 
-	// Get confirmation preference from uiStore
-	let showConfirmation = $derived($uiStore.preferences.confirmDeletions);
+	// Get confirmation preference from uiState
+	let showConfirmation = $derived(confirmDeletions());
 
 	// Track confirmation preference changes
 	$effect(() => {
 		// Confirmation preference is derived from uiStore
 	});
 
-	function handleClick() {
+	async function handleClick() {
 		// Provide haptic feedback
 		if (browser) {
 			hapticFeedbackService.trigger('warning');
@@ -28,28 +29,40 @@
 		if (showConfirmation) {
 			isConfirmationModalOpen = true;
 		} else {
-			clearSequence();
+			await clearSequence();
 		}
 	}
 
-	function clearSequence() {
-		// Clear the sequence directly using the sequence actions
-		sequenceActions.clearSequence();
+	async function clearSequence() {
+		try {
+			// Clear the new Svelte 5 runes sequence state first (this handles all synchronization)
+			await sequenceState.clearSequence();
 
-		// Provide haptic feedback for deletion
-		if (browser) {
-			hapticFeedbackService.trigger('error');
+			// Clear the legacy sequence machine for backward compatibility
+			sequenceActions.clearSequence();
+
+			// Provide haptic feedback for deletion
+			if (browser) {
+				hapticFeedbackService.trigger('error');
+			}
+		} catch (error) {
+			console.error('ClearSequenceButton: Error during sequence clear:', error);
+
+			// Still provide haptic feedback even if there was an error
+			if (browser) {
+				hapticFeedbackService.trigger('error');
+			}
 		}
 	}
 
-	function handleConfirm() {
-		// Update the uiStore preference if "Don't ask again" is checked
+	async function handleConfirm() {
+		// Update the uiState preference if "Don't ask again" is checked
 		if (dontAskAgain) {
-			uiStore.toggleConfirmDeletions(false);
+			uiActions.toggleConfirmDeletions(false);
 		}
 
 		// Clear the sequence
-		clearSequence();
+		await clearSequence();
 
 		// Close the modal
 		closeModal();

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getContext, createEventDispatcher } from 'svelte';
+	import { getContext } from 'svelte';
 	import { type Readable } from 'svelte/store';
 	import { fade, scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
@@ -10,53 +10,58 @@
 		type LayoutContext,
 		type LayoutContextValue
 	} from '../layoutContext';
-	import { uiState } from '../store';
-
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		optionSelect: PictographData;
-	}>();
+	import { optionPickerState } from '../optionPickerState.svelte';
 
 	// --- Props ---
-	export let options: PictographData[] = [];
-	export let key: string = ''; // Key for parent transitions if needed
+	const props = $props<{
+		options?: PictographData[];
+		key?: string;
+		onoptionselect?: (option: PictographData) => void;
+	}>();
+
+	// Set defaults
+	const options = $derived(props.options ?? []);
+	const key = $derived(props.key ?? '');
 
 	// --- Context ---
 	// Get the context as a Readable<LayoutContextValue>
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 
 	// Properly extract the layout config values from the context store
-	$: ({
-		layoutConfig: { gridColumns: contextGridColumns, optionSize, gridGap, gridClass, aspectClass },
-		isMobile: isMobileDevice,
-		isTablet: isTabletDevice,
-		isPortrait: isPortraitMode
-	} = $layoutContext);
+	const layoutData = $derived($layoutContext);
+	const contextGridColumns = $derived(layoutData.layoutConfig.gridColumns);
+	const optionSize = $derived(layoutData.layoutConfig.optionSize);
+	const gridGap = $derived(layoutData.layoutConfig.gridGap);
+	const gridClass = $derived(layoutData.layoutConfig.gridClass);
+	const aspectClass = $derived(layoutData.layoutConfig.aspectClass);
+	const isMobileDevice = $derived(layoutData.isMobile);
+	const isTabletDevice = $derived(layoutData.isTablet);
+	const isPortraitMode = $derived(layoutData.isPortrait);
 
-	// --- Get Sort Method from Store ---
-	let currentSortMethod: string | null;
-	uiState.subscribe((state) => {
-		currentSortMethod = state.sortMethod;
-	});
+	// --- Get Sort Method from Option Picker State ---
+	const currentSortMethod = $derived(optionPickerState.sortMethod);
 
 	// --- Layout Overrides for Single/Two Items ---
 	// Determine if special single/two item styling should apply based on sorting context
-	$: isTypeSortContext = currentSortMethod === 'type';
-	$: applySingleItemClass = options.length === 1 && isTypeSortContext;
-	$: applyTwoItemClass = options.length === 2 && isTypeSortContext;
+	const isTypeSortContext = $derived(currentSortMethod === 'type');
+	const applySingleItemClass = $derived(options.length === 1 && isTypeSortContext);
+	const applyTwoItemClass = $derived(options.length === 2 && isTypeSortContext);
 
 	// Override grid columns if only one or two items are present in this specific grid
-	$: actualGridColumns =
+	const actualGridColumns = $derived(
 		options.length === 1
 			? '1fr' // Force single column for single item
 			: options.length === 2
 				? 'repeat(2, 1fr)' // Force two columns for two items
-				: contextGridColumns; // Use the layout context's column definition otherwise
+				: contextGridColumns // Use the layout context's column definition otherwise
+	);
 
 	// Handle option selection
-	function handleOptionSelect(event: CustomEvent<PictographData>) {
-		// Forward the event to parent components
-		dispatch('optionSelect', event.detail);
+	function handleOptionSelect(option: PictographData) {
+		// Call the callback if provided
+		if (props.onoptionselect) {
+			props.onoptionselect(option);
+		}
 	}
 </script>
 
@@ -77,10 +82,10 @@
 			class:single-item={applySingleItemClass}
 			class:two-item={applyTwoItemClass}
 		>
-			<Option 
-				pictographData={option} 
-				isPartOfTwoItems={applyTwoItemClass} 
-				on:optionSelect={handleOptionSelect}
+			<Option
+				pictographData={option}
+				isPartOfTwoItems={applyTwoItemClass}
+				onoptionselect={handleOptionSelect}
 			/>
 		</div>
 	{/each}

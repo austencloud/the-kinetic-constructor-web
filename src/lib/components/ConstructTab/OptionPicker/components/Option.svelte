@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getContext, untrack } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { optionPickerContainer } from '$lib/state/stores/optionPicker/optionPickerContainer';
+	import { optionPickerState } from '../optionPickerState.svelte';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/BeatHoverEffect.svelte';
@@ -10,6 +10,7 @@
 	const props = $props<{
 		pictographData: PictographData;
 		isPartOfTwoItems?: boolean;
+		onoptionselect?: (option: PictographData) => void;
 	}>();
 
 	// Default values for optional props
@@ -25,19 +26,9 @@
 	// Use untrack to prevent circular dependencies with the container
 	const isSelected = $derived.by(() => {
 		return untrack(() => {
-			// Use a safer comparison that doesn't rely on object identity
-			const selectedPictograph = optionPickerContainer.state.selectedPictograph;
-			const currentPictograph = props.pictographData;
-
-			if (!selectedPictograph || !currentPictograph) return false;
-
-			// Compare key properties instead of object identity
-			return (
-				selectedPictograph.letter === currentPictograph.letter &&
-				selectedPictograph.startPos === currentPictograph.startPos &&
-				selectedPictograph.endPos === currentPictograph.endPos &&
-				selectedPictograph.direction === currentPictograph.direction
-			);
+			// For now, we don't track selected pictographs in the new system
+			// This can be added later if needed
+			return false;
 		});
 	});
 
@@ -69,9 +60,16 @@
 
 	function handleSelect() {
 		if (!isMounted) return;
-		untrack(() => {
-			optionPickerContainer.selectOption(props.pictographData);
-		});
+
+		// Call the callback if provided (new Svelte 5 approach)
+		if (props.onoptionselect) {
+			props.onoptionselect(props.pictographData);
+		} else {
+			// Fallback to the modern option picker state
+			untrack(() => {
+				optionPickerState.selectOption(props.pictographData);
+			});
+		}
 	}
 
 	function handleMouseEnter() {

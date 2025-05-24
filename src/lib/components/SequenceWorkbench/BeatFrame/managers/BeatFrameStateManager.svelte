@@ -16,15 +16,14 @@
 </script>
 
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { browser } from '$app/environment';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { BeatData as LegacyBeatData } from '../BeatData';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
-	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
+	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 	import { createSafePictographCopy } from '$lib/utils/pictographUtils';
 
 	// We'll use custom events instead of Svelte's event dispatcher
@@ -39,12 +38,20 @@
 		});
 	};
 
-	// Use the sequence container state directly with Svelte 5 runes
-	const sequence = $state(sequenceContainer.state);
+	// Use reactive state for sequence container
+	let sequence = $state(sequenceContainer.state);
 
 	// Local state
 	let startPosition = $state<PictographData | null>(null);
 	let sequenceIsEmpty = $state(true);
+
+	// Subscribe to sequence container changes
+	$effect(() => {
+		const unsubscribe = sequenceContainer.subscribe((state) => {
+			sequence = state;
+		});
+		return unsubscribe;
+	});
 
 	// Derived values
 	const beats = $derived(convertContainerBeatsToLegacyFormat(sequence.beats));
@@ -61,15 +68,67 @@
 		pictographData: startPosition || defaultPictographData
 	});
 
-	// Subscribe to isSequenceEmpty store using safeEffect
-	safeEffect(() => {
-		const unsubscribe = isSequenceEmpty.subscribe((value) => {
-			sequenceIsEmpty = value;
-		});
+	// CRITICAL FIX: React to modern sequence state changes and sync to container
+	// This ensures BeatFrame UI updates when beats are added via OptionPicker
+	$effect(() => {
+		// Track modern sequence state changes
+		const modernBeats = sequenceState.beats;
+		const modernStartPos = sequenceState.startPosition;
 
-		return () => {
-			unsubscribe();
-		};
+		// Update local state
+		sequenceIsEmpty = sequenceState.isEmpty;
+
+		// Sync modern state to container if needed
+		// Check if sync is needed by comparing lengths and content
+		const needsSync =
+			modernBeats.length !== sequence.beats.length ||
+			modernBeats.some((modernBeat, index) => {
+				const containerBeat = sequence.beats[index];
+				return (
+					!containerBeat ||
+					containerBeat.metadata?.letter !== modernBeat.letter ||
+					containerBeat.metadata?.startPos !== modernBeat.startPos ||
+					containerBeat.metadata?.endPos !== modernBeat.endPos
+				);
+			});
+
+		if (needsSync) {
+			// Prevent infinite loops by checking if we're already syncing
+			// Use a flag to prevent recursive updates
+			if (!sequenceContainer.state.isModified || modernBeats.length > 0) {
+				// Convert modern beats to container format and update
+				const containerBeats = modernBeats.map((beat, index) => {
+					return {
+						id: crypto.randomUUID(),
+						number: index + 1, // Set proper beat number
+						redPropData: beat.redPropData,
+						bluePropData: beat.bluePropData,
+						redMotionData: beat.redMotionData,
+						blueMotionData: beat.blueMotionData,
+						redArrowData: beat.redArrowData,
+						blueArrowData: beat.blueArrowData,
+						metadata: {
+							letter: beat.letter,
+							startPos: beat.startPos,
+							endPos: beat.endPos,
+							gridMode: beat.gridMode,
+							timing: beat.timing,
+							direction: beat.direction
+						}
+					};
+				});
+
+				// Use untrack to prevent this update from triggering the effect again
+				untrack(() => {
+					sequenceContainer.setSequence(containerBeats);
+				});
+			}
+		}
+
+		// Update start position if changed
+		if (modernStartPos !== startPosition) {
+			startPosition = modernStartPos;
+		}
 	});
 
 	// Convert container beats to legacy BeatData format
@@ -220,8 +279,8 @@
 	let isShiftKeyPressed = $state(false);
 	let isCtrlKeyPressed = $state(false);
 
-	// Set up event listeners for modifier keys using safeEffect
-	safeEffect(() => {
+	// Set up event listeners for modifier keys using effect
+	$effect(() => {
 		if (typeof window === 'undefined') return;
 
 		const handleKeyDown = (e: KeyboardEvent) => {

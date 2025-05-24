@@ -6,6 +6,93 @@
  */
 
 import { browser } from '$app/environment';
+import { untrack } from 'svelte';
+
+/**
+ * Creates a safe update function that prevents infinite loops
+ */
+export function safeUpdate<T>(updateFn: () => T): () => T {
+	return () => {
+		return untrack(updateFn);
+	};
+}
+
+/**
+ * Creates a debounced update function
+ */
+export function debouncedUpdate<T extends (...args: any[]) => any>(fn: T, delay: number = 100): T {
+	let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+	return ((...args: Parameters<T>) => {
+		if (timeoutId) clearTimeout(timeoutId);
+		timeoutId = setTimeout(() => fn(...args), delay);
+	}) as T;
+}
+
+/**
+ * Creates a memoized value that only updates when dependencies change
+ */
+export function memoized<T>(fn: () => T): () => T {
+	let lastValue: T;
+	let hasValue = false;
+
+	return () => {
+		if (!hasValue) {
+			lastValue = fn();
+			hasValue = true;
+		}
+		return lastValue;
+	};
+}
+
+/**
+ * Creates a safe effect that prevents infinite loops
+ */
+export function safeEffect(fn: () => void | (() => void)): void {
+	$effect(() => {
+		return untrack(fn);
+	});
+}
+
+/**
+ * Creates a safe async effect that prevents infinite loops
+ */
+export function safeAsyncEffect(fn: () => Promise<void>): void {
+	$effect(() => {
+		untrack(async () => {
+			try {
+				await fn();
+			} catch (error) {
+				console.error('Error in async effect:', error);
+			}
+		});
+	});
+}
+
+/**
+ * Creates a safe state object with update methods
+ */
+export function createSafeState<T extends object>(
+	initialState: T
+): {
+	state: T;
+	update: (updater: (current: T) => T) => void;
+	set: (newState: T) => void;
+} {
+	const state = $state(initialState);
+
+	return {
+		get state() {
+			return state;
+		},
+		update: safeUpdate((updater: (current: T) => T) => {
+			Object.assign(state, updater(state));
+		}),
+		set: safeUpdate((newState: T) => {
+			Object.assign(state, newState);
+		})
+	};
+}
 
 /**
  * Creates a persistent state variable that syncs with localStorage

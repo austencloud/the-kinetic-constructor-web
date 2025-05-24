@@ -19,6 +19,20 @@
 	function handleToggleVisibility() {
 		backgroundContainer.setVisible(!background.isVisible);
 	}
+
+	// Function to get a user-friendly display name for each background
+	function getDisplayName(type: BackgroundType): string {
+		switch (type) {
+			case 'snowfall':
+				return 'Snowfall';
+			case 'nightSky':
+				return 'Night Sky';
+			case 'deepOcean':
+				return 'Deep Ocean';
+			default:
+				return type;
+		}
+	}
 </script>
 
 <div class="background-settings">
@@ -32,7 +46,7 @@
 			on:change={handleBackgroundChange}
 		>
 			{#each background.availableBackgrounds as bg}
-				<option value={bg}>{bg}</option>
+				<option value={bg}>{getDisplayName(bg)}</option>
 			{/each}
 		</select>
 	</div>

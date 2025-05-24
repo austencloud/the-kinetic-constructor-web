@@ -51,7 +51,8 @@
 				return 'Snowfall';
 			case 'nightSky':
 				return 'Night Sky';
-
+			case 'deepOcean':
+				return 'Deep Ocean';
 			default:
 				return type;
 		}

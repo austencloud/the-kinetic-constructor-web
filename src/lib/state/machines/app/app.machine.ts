@@ -117,7 +117,6 @@ export const appMachine = createMachine(
 						if (browser) {
 							try {
 								const savedBackground = loadBackgroundPreference();
-								console.log('Checking saved background in ready state:', savedBackground);
 
 								if (savedBackground && savedBackground !== context.background) {
 									console.log(
@@ -190,7 +189,7 @@ export const appMachine = createMachine(
 						actions: [
 							assign({
 								background: ({ event, context }) => {
-									const validBackgrounds: BackgroundType[] = ['snowfall', 'nightSky'];
+									const validBackgrounds: BackgroundType[] = ['snowfall', 'nightSky', 'deepOcean'];
 									return validBackgrounds.includes(event.background as BackgroundType)
 										? (event.background as BackgroundType)
 										: context.background;
@@ -200,7 +199,11 @@ export const appMachine = createMachine(
 								// Save the background preference to localStorage immediately
 								if (browser) {
 									try {
-										const validBackgrounds: BackgroundType[] = ['snowfall', 'nightSky'];
+										const validBackgrounds: BackgroundType[] = [
+											'snowfall',
+											'nightSky',
+											'deepOcean'
+										];
 										const background = event.background as BackgroundType;
 
 										if (validBackgrounds.includes(background)) {

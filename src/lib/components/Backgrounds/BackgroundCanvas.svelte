@@ -24,13 +24,23 @@
 	let backgroundType = $state(props.backgroundType || 'nightSky');
 	let appIsLoading = $state(props.appIsLoading !== undefined ? props.appIsLoading : true);
 
-	// Update state when props change
+	// Update internal state when props change
 	$effect(() => {
 		if (props.backgroundType !== undefined && props.backgroundType !== backgroundType) {
 			backgroundType = props.backgroundType;
 		}
-		if (props.appIsLoading !== undefined && props.appIsLoading !== appIsLoading) {
+		if (props.appIsLoading !== undefined) {
 			appIsLoading = props.appIsLoading;
+		}
+	});
+
+	// CRITICAL: Update context when backgroundType changes (after initialization)
+	$effect(() => {
+		if (!browser || !isInitialized || !activeContext) return;
+
+		// Update the context with the new background type
+		if (activeContext.backgroundType !== backgroundType) {
+			activeContext.setBackgroundType(backgroundType);
 		}
 	});
 

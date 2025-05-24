@@ -4,8 +4,7 @@
 	import ModernGenerationControls from './ModernGenerationControls.svelte';
 	import StartPosPicker from '$lib/components/ConstructTab/StartPosPicker/StartPosPicker.svelte';
 	import GraphEditor from '$lib/components/SequenceWorkbench/GraphEditor/GraphEditor.svelte';
-	import TransitionWrapper from './TransitionWrapper.svelte';
-	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
+	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicInOut } from 'svelte/easing';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
@@ -21,6 +20,19 @@
 		});
 
 		return unsubscribe;
+	});
+
+	// Debug the sequence state
+	$effect(() => {
+		console.log('🔥 RightPanel: sequence isEmpty:', sequenceState.isEmpty);
+		console.log('🔥 RightPanel: sequence hasStartPosition:', !!sequenceState.startPosition);
+		console.log('🔥 RightPanel: sequence beatsCount:', sequenceState.beats.length);
+		console.log('🔥 RightPanel: workbench activeTab:', $workbenchStore.activeTab);
+		console.log('🔥 RightPanel: hasSelectedBeats:', hasSelectedBeats);
+		console.log(
+			'🔥 RightPanel: Should show OptionPicker:',
+			!sequenceState.isEmpty && $workbenchStore.activeTab === 'construct'
+		);
 	});
 
 	// Transition parameters
@@ -47,14 +59,16 @@
 			<GraphEditor />
 		</div>
 	{:else}
-		<TransitionWrapper isSequenceEmpty={$isSequenceEmpty} {transitionDuration}>
-			<div slot="startPosPicker" class="full-height-wrapper">
+		<!-- Show StartPosPicker when sequence is empty, OptionPicker when it has content -->
+		{#if sequenceState.isEmpty}
+			<div class="full-height-wrapper" in:fade={fadeParams} out:fade={fadeParams}>
 				<StartPosPicker />
 			</div>
-			<div slot="optionPicker" class="full-height-wrapper">
+		{:else}
+			<div class="full-height-wrapper" in:fade={fadeParams} out:fade={fadeParams}>
 				<OptionPicker />
 			</div>
-		</TransitionWrapper>
+		{/if}
 	{/if}
 </div>
 

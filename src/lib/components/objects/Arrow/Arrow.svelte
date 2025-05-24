@@ -125,11 +125,8 @@
 	 * Optimized for real-time updates with improved caching and protection against reactivity loops
 	 */
 	async function loadArrowSvg() {
-		console.log('[DEBUG] loadArrowSvg called');
-
 		// Prevent multiple loading attempts - critical for preventing infinite loops
 		if (componentState.isLoadingStarted) {
-			console.log('[DEBUG] SVG loading already in progress, skipping');
 			return;
 		}
 
@@ -139,36 +136,24 @@
 		try {
 			// Safety check
 			if (!effectiveArrowData) {
-				console.log('[DEBUG] No arrow data available');
 				throw new Error('No arrow data available');
 			}
-
-			console.log('[DEBUG] Loading arrow SVG for:', {
-				motionType: effectiveArrowData.motionType,
-				startOri: effectiveArrowData.startOri,
-				turns: effectiveArrowData.turns,
-				color: effectiveArrowData.color,
-				svgMirrored: effectiveArrowData.svgMirrored
-			});
 
 			// Create a local copy of the arrow data to avoid reactivity issues
 			const localArrowData = { ...effectiveArrowData };
 
 			// Update mirror state before loading SVG
 			if (mirrorManager) {
-				console.log('[DEBUG] Updating mirror state');
 				mirrorManager.updateMirror();
 			}
 
 			// Create a consistent cache key for all contexts
 			const cacheKey = `arrow-${localArrowData.motionType}-${localArrowData.startOri}-${localArrowData.turns}-${localArrowData.color}-${localArrowData.svgMirrored}`;
-			console.log('[DEBUG] Arrow cache key:', cacheKey);
 
 			// Check component-level cache first for immediate rendering
 			const cachedData = getCachedSvgData(cacheKey);
 
 			if (cachedData) {
-				console.log('[DEBUG] Using cached arrow SVG data');
 				// Use untrack to prevent reactivity loops when updating state
 				untrack(() => {
 					// Update all state at once to reduce reactivity cycles
@@ -180,20 +165,18 @@
 				// Use a much longer timeout to completely break the reactivity chain
 				// This is crucial for preventing infinite loops
 				if (props.loaded) {
-					console.log('[DEBUG] Scheduling loaded callback (cached)');
 					setTimeout(() => {
 						// Use a try-catch to prevent errors from propagating
 						try {
 							props.loaded?.();
 						} catch (error) {
-							console.error('[DEBUG] Error in Arrow loaded callback (cached):', error);
+							console.error('Error in Arrow loaded callback (cached):', error);
 						}
 					}, 200); // Use a longer timeout
 				}
 				return;
 			}
 
-			console.log('[DEBUG] No cached data found, loading SVG');
 			// For real-time responsiveness, use a Promise.race approach
 			// This will use either the preloaded SVG or a fast fallback if loading takes too long
 			const loadPromise = svgLoader.loadSvg(
@@ -205,36 +188,30 @@
 			);
 
 			// Use the result as soon as it's available
-			console.log('[DEBUG] Waiting for SVG load promise');
 			const result = await loadPromise;
-			console.log('[DEBUG] SVG loaded successfully');
 
 			// Update state and notify with untrack to prevent reactivity loops
 			untrack(() => {
-				console.log('[DEBUG] Updating SVG data state');
 				// Update all state at once to reduce reactivity cycles
 				componentState.svgData = result.svgData;
 				componentState.isLoaded = true;
 				componentState.hasCalledLoaded = true;
 
 				// Cache the result for future use
-				console.log('[DEBUG] Caching SVG data');
 				cacheSvgData(cacheKey, componentState.svgData);
 			});
 
 			// Use setTimeout to break the reactivity chain for callbacks
 			if (props.loaded) {
-				console.log('[DEBUG] Scheduling loaded callback');
 				setTimeout(() => {
 					try {
 						props.loaded?.();
 					} catch (error) {
-						console.error('[DEBUG] Error in Arrow loaded callback:', error);
+						console.error('Error in Arrow loaded callback:', error);
 					}
 				}, 200); // Use a longer timeout to ensure all other operations complete
 			}
 		} catch (error) {
-			console.error('[DEBUG] Error loading arrow SVG:', error);
 			handleLoadError(error);
 		}
 	}
@@ -300,7 +277,6 @@
 	onMount(() => {
 		// Prevent multiple initializations - critical for preventing infinite loops
 		if (componentState.isInitialized) {
-			console.log('[DEBUG] Arrow component already initialized, skipping');
 			return;
 		}
 
@@ -313,8 +289,6 @@
 			!componentState.isLoaded &&
 			!componentState.hasCalledLoaded
 		) {
-			console.log('[DEBUG] Arrow has motion type, loading SVG immediately');
-
 			// Load SVG asynchronously
 			setTimeout(() => {
 				// Use try-catch to prevent errors from propagating
@@ -322,12 +296,10 @@
 					// Load SVG
 					loadArrowSvg();
 				} catch (error) {
-					console.error('[DEBUG] Error loading SVG:', error);
+					console.error('Error loading SVG:', error);
 				}
 			}, 50);
 		} else if (!componentState.isLoaded) {
-			console.log('[DEBUG] Arrow has no motion type, marking as loaded');
-
 			// Update state in a single operation
 			untrack(() => {
 				componentState.isLoaded = true;
@@ -336,14 +308,12 @@
 
 			// Notify parent component
 			if (props.loaded) {
-				console.log('[DEBUG] Notifying parent about no-motion arrow');
-
 				// Use a timeout to break the reactivity chain
 				setTimeout(() => {
 					try {
 						props.loaded?.({ error: false });
 					} catch (error) {
-						console.error('[DEBUG] Error in Arrow loaded callback:', error);
+						console.error('Error in Arrow loaded callback:', error);
 					}
 				}, 50);
 			}

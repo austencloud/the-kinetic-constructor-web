@@ -31,7 +31,7 @@ const initialState: BackgroundState = {
 	isVisible: true,
 	quality: 'medium',
 	performanceMetrics: null,
-	availableBackgrounds: ['snowfall', 'nightSky'],
+	availableBackgrounds: ['snowfall', 'nightSky', 'deepOcean'],
 	error: null
 };
 
@@ -61,34 +61,6 @@ const mergedInitialState: BackgroundState = {
  * Create the background container
  */
 export const backgroundContainer = createContainer(mergedInitialState, (state, update) => {
-	// Save state to localStorage when it changes
-	if (browser) {
-		const saveState = () => {
-			try {
-				localStorage.setItem(
-					'background_state',
-					JSON.stringify({
-						currentBackground: state.currentBackground,
-						isVisible: state.isVisible,
-						quality: state.quality
-					})
-				);
-			} catch (error) {
-				console.error('Failed to save background state:', error);
-			}
-		};
-
-		// Set up a subscription to save state changes
-		const unsubscribe = backgroundContainer.subscribe(() => {
-			saveState();
-		});
-
-		// Clean up subscription when the container is destroyed
-		if (typeof window !== 'undefined') {
-			window.addEventListener('beforeunload', unsubscribe);
-		}
-	}
-
 	return {
 		setBackground: (background: BackgroundType) => {
 			update((state) => {
@@ -168,6 +140,35 @@ export const backgroundContainer = createContainer(mergedInitialState, (state, u
 		}
 	};
 });
+
+// Set up state persistence after container creation to avoid circular dependency
+if (browser) {
+	const saveState = () => {
+		try {
+			const currentState = backgroundContainer.state;
+			localStorage.setItem(
+				'background_state',
+				JSON.stringify({
+					currentBackground: currentState.currentBackground,
+					isVisible: currentState.isVisible,
+					quality: currentState.quality
+				})
+			);
+		} catch (error) {
+			console.error('Failed to save background state:', error);
+		}
+	};
+
+	// Set up a subscription to save state changes
+	const unsubscribe = backgroundContainer.subscribe(() => {
+		saveState();
+	});
+
+	// Clean up subscription when the page unloads
+	if (typeof window !== 'undefined') {
+		window.addEventListener('beforeunload', unsubscribe);
+	}
+}
 
 // Export types
 export type BackgroundContainer = typeof backgroundContainer;

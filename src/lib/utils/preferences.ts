@@ -37,7 +37,7 @@ export function loadBackgroundPreference(): BackgroundType {
 		const savedBackground = localStorage.getItem(KEYS.BACKGROUND);
 
 		if (savedBackground) {
-			const validBackgrounds: BackgroundType[] = ['snowfall', 'nightSky'];
+			const validBackgrounds: BackgroundType[] = ['snowfall', 'nightSky', 'deepOcean'];
 			if (validBackgrounds.includes(savedBackground as BackgroundType)) {
 				return savedBackground as BackgroundType;
 			}

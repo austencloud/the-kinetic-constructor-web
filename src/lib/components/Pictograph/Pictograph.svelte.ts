@@ -5,15 +5,15 @@
  * It uses only runes-based state management without any store integration.
  */
 
-import { safeEffect, createSafeState } from '$lib/state/core/svelte5-integration.svelte';
+import { untrack } from 'svelte';
 import type { PictographData } from '$lib/types/PictographData';
 
 /**
- * Creates a safe pictograph state with update methods
+ * Creates a pictograph state with update methods using pure Svelte 5 runes
  */
 export function createPictographState(initialData?: PictographData) {
-	// Create a safe state object with default values
-	return createSafeState({
+	// Create state using pure runes
+	let state = $state({
 		data: initialData || null,
 		isLoading: false,
 		error: null,
@@ -26,19 +26,47 @@ export function createPictographState(initialData?: PictographData) {
 			glyph: { loaded: false }
 		}
 	});
+
+	// Create update function
+	const update = (newState: Partial<typeof state>) => {
+		untrack(() => {
+			Object.assign(state, newState);
+		});
+	};
+
+	// Create reset function
+	const reset = () => {
+		untrack(() => {
+			state.data = initialData || null;
+			state.isLoading = false;
+			state.error = null;
+			state.components = {
+				grid: { loaded: false },
+				redProp: { loaded: false },
+				blueProp: { loaded: false },
+				redArrow: { loaded: false },
+				blueArrow: { loaded: false },
+				glyph: { loaded: false }
+			};
+		});
+	};
+
+	return { state, update, reset };
 }
 
 /**
- * Creates a safe effect for handling pictograph data changes
+ * Creates an effect for handling pictograph data changes
  */
 export function createPictographEffect(
 	data: PictographData | undefined,
 	onDataChange: (data: PictographData) => void
 ) {
-	// Use a safe effect to prevent infinite loops
-	safeEffect(() => {
+	// Use a regular effect with untrack to prevent infinite loops
+	$effect(() => {
 		if (data) {
-			onDataChange(data);
+			untrack(() => {
+				onDataChange(data);
+			});
 		}
 	});
 }

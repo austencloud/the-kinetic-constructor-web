@@ -1,6 +1,7 @@
 // src/lib/components/Backgrounds/core/BackgroundFactory.ts
 import { SnowfallBackgroundSystem } from '../snowfall/SnowfallBackgroundSystem';
 import { NightSkyBackgroundSystem } from '../nightSky/NightSkyBackgroundSystem';
+import { DeepOceanBackgroundSystem } from '../deepOcean/DeepOceanBackgroundSystem';
 import type {
 	BackgroundSystem,
 	BackgroundType,
@@ -59,6 +60,9 @@ export class BackgroundFactory {
 			case 'nightSky':
 				backgroundSystem = new NightSkyBackgroundSystem();
 				break;
+			case 'deepOcean':
+				backgroundSystem = new DeepOceanBackgroundSystem();
+				break;
 			default:
 				console.warn(`Unknown background type "${options.type}". Defaulting to snowfall.`);
 				backgroundSystem = new SnowfallBackgroundSystem(); // Default to snowfall
@@ -96,6 +100,7 @@ export class BackgroundFactory {
 		switch (type) {
 			case 'snowfall':
 			case 'nightSky':
+			case 'deepOcean':
 				return quality !== 'minimal'; // Disable on minimal quality
 			default:
 				return false;

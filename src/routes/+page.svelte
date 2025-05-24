@@ -58,7 +58,7 @@
 	}
 
 	function handleBackgroundChange(event: CustomEvent<string>) {
-		const validBackgrounds = ['snowfall', 'nightSky'] as const;
+		const validBackgrounds = ['snowfall', 'nightSky', 'deepOcean'] as const;
 		type ValidBackground = (typeof validBackgrounds)[number];
 
 		if (validBackgrounds.includes(event.detail as any)) {
@@ -115,6 +115,7 @@
 				initialQuality={isInitializingApp || hasFailed ? 'medium' : 'high'}
 			>
 				<BackgroundCanvas
+					backgroundType={currentBackground || 'snowfall'}
 					appIsLoading={isInitializingApp || hasFailed}
 					onReady={handleBackgroundReady}
 					onPerformanceReport={handlePerformanceReport}

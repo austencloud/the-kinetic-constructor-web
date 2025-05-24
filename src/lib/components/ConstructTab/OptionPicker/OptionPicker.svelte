@@ -1,36 +1,75 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { get } from 'svelte/store';
 	import { LayoutProvider } from './layout';
 	import OptionPickerHeader from './components/OptionPickerHeader';
 	import OptionDisplayArea from './components/OptionDisplayArea.svelte';
-	import { sequenceBeatToPictographData } from './utils';
-	// Import the working store system
-	import { actions, uiState, filteredOptionsStore, groupedOptionsStore } from './store';
-	import sequenceDataService from '$lib/services/SequenceDataService';
-	import type { SequenceBeat } from '$lib/services/SequenceDataService';
+	// Import the modern runes-based sequence state
+	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
+	// Import the modern runes-based option picker state
+	import { optionPickerState } from './optionPickerState.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { sequenceStore } from '$lib/state/stores/sequenceStore';
+	import type { SortMethod } from './config';
+	import { getSorter, determineGroupKey, getSortedGroupKeys } from './services/OptionsService';
 	import transitionLoading from '$lib/state/stores/ui/transitionLoadingStore';
 
-	import type { Letter } from '$lib/types/Letter';
+	// --- Svelte 5 Reactive State using modern runes ---
+	let isLoading = $derived(optionPickerState.isLoading);
 
-	// --- Svelte 5 Reactive State using runes ---
-	let isLoading = $derived($uiState.isLoading);
-	
-	// Use untrack to prevent circular dependencies
+	// selectedTab MUST be reactive to sortMethod and lastSelectedTab changes
 	let selectedTab = $derived.by(() => {
-		return untrack(() => {
-			return $uiState.sortMethod === ('all' as any)
-				? 'all'
-				: $uiState.lastSelectedTab[$uiState.sortMethod] || 'all';
-		});
+		const currentSortMethod = optionPickerState.sortMethod;
+		const currentLastSelectedTab = optionPickerState.lastSelectedTab;
+
+		return currentSortMethod === 'all' ? 'all' : currentLastSelectedTab[currentSortMethod] || 'all';
 	});
-	
-	let groupedOptions = $derived($groupedOptionsStore);
-	let filteredOptions = $derived($filteredOptionsStore);
+
+	// CRITICAL FIX: Track the underlying state directly - now reactive!
+	let rawOptions = $derived(optionPickerState.options);
+	let sortMethod = $derived(optionPickerState.sortMethod);
+	let sequence = $derived(optionPickerState.sequence);
+
+	// Compute filteredOptions directly in the component to ensure reactivity
+	let filteredOptions = $derived.by(() => {
+		let options = [...rawOptions];
+
+		// Only sort if we have a valid sort method (not 'all')
+		if (sortMethod !== 'all') {
+			options.sort(getSorter(sortMethod as SortMethod, sequence));
+		} else {
+			// For 'all' view, use a simple alphabetical sort by letter
+			options.sort((a, b) => (a.letter ?? '').localeCompare(b.letter ?? ''));
+		}
+		return options;
+	});
+
+	// Compute groupedOptions directly in the component to ensure reactivity
+	let groupedOptions = $derived.by(() => {
+		// Special case for 'all' view - don't group options
+		if (sortMethod === 'all') {
+			return {};
+		}
+
+		// For valid sort methods, proceed with grouping
+		const groups: Record<string, PictographData[]> = {};
+		filteredOptions.forEach((option) => {
+			const groupKey = determineGroupKey(option, sortMethod as SortMethod, sequence);
+			if (!groups[groupKey]) groups[groupKey] = [];
+			groups[groupKey].push(option);
+		});
+
+		// Sort the group keys based on the sort method
+		const sortedKeys = getSortedGroupKeys(Object.keys(groups), sortMethod as SortMethod);
+		const sortedGroups: Record<string, PictographData[]> = {};
+		sortedKeys.forEach((key) => {
+			if (groups[key]) {
+				sortedGroups[key] = groups[key];
+			}
+		});
+		return sortedGroups;
+	});
+
 	let actualCategoryKeys = $derived(groupedOptions ? Object.keys(groupedOptions) : []);
-	let showTabs = $derived($uiState.sortMethod !== ('all' as any) && actualCategoryKeys.length > 0);
+	let showTabs = $derived(sortMethod !== 'all' && actualCategoryKeys.length > 0);
 
 	// Remove the debug logging effect - it can cause loops
 	// Instead, use a single controlled effect for debugging
@@ -38,34 +77,38 @@
 	$effect(() => {
 		// Clear any existing timer
 		if (debugTimer) clearTimeout(debugTimer);
-		
-		// Debounce the debug logging
-		debugTimer = setTimeout(() => {
-			untrack(() => {
-				console.log('OptionPicker state:', {
-					sortMethod: $uiState.sortMethod,
-					selectedTab,
-					showTabs,
-					actualCategoryKeys,
-					filteredOptionsLength: filteredOptions.length
-				});
-			});
-		}, 100);
-		
+
 		return () => {
 			if (debugTimer) clearTimeout(debugTimer);
 		};
 	});
 
-	// Determine display options with untrack to prevent loops
+	// Determine display options - MUST be reactive to filteredOptions, selectedTab, and groupedOptions
 	let displayOptions = $derived.by(() => {
-		return untrack(() => {
-			if ($uiState.sortMethod === ('all' as any) || selectedTab === 'all') {
-				return filteredOptions;
-			}
-			return (selectedTab && groupedOptions && groupedOptions[selectedTab]) || [];
-		});
+		// These variables MUST be reactive for the UI to update
+		const currentFilteredOptions = filteredOptions;
+		const currentSelectedTab = selectedTab;
+		const currentGroupedOptions = groupedOptions;
+		const currentSortMethod = sortMethod;
+
+		let result;
+		if (currentSortMethod === 'all' || currentSelectedTab === 'all') {
+			result = currentFilteredOptions;
+		} else {
+			result =
+				(currentSelectedTab &&
+					currentGroupedOptions &&
+					currentGroupedOptions[currentSelectedTab]) ||
+				[];
+		}
+
+		// Reactivity verified - displayOptions now properly updates when state changes
+
+		return result;
 	});
+
+	// Note: Reactive effects for sequence state changes are now handled
+	// centrally in optionPickerState.initializeReactiveEffects()
 
 	// Clear loading state - use a more controlled approach
 	let loadingClearTimer: ReturnType<typeof setTimeout> | undefined;
@@ -73,7 +116,7 @@
 		if (!isLoading && displayOptions && displayOptions.length > 0) {
 			// Clear any existing timer
 			if (loadingClearTimer) clearTimeout(loadingClearTimer);
-			
+
 			// Debounce the loading clear
 			loadingClearTimer = setTimeout(() => {
 				untrack(() => {
@@ -81,48 +124,61 @@
 				});
 			}, 50);
 		}
-		
+
 		return () => {
 			if (loadingClearTimer) clearTimeout(loadingClearTimer);
 		};
 	});
 
+	// Function to load options from sequence data using modern runes-based state
+	const loadOptionsFromSequence = async () => {
+		try {
+			// Use the modern optionPickerState method which handles all the logic
+			await optionPickerState.loadOptionsFromSequence();
+		} catch (error) {
+			console.error('OptionPicker: Error in loadOptionsFromSequence:', error);
+		}
+	};
+
+	// Handle option selection - this will trigger options reload
+	async function handleOptionSelect(option: PictographData) {
+		try {
+			// Use the modern option picker state to handle selection
+			await optionPickerState.selectOption(option);
+		} catch (error) {
+			console.error('OptionPicker: Error handling option selection:', error);
+		}
+	}
+
 	// --- onMount: Load options based on sequence ---
 	onMount(() => {
+		console.log('🔥🔥🔥 OptionPicker: Component mounted, initializing...');
+
+		// Initialize reactive effects for the option picker state
+		optionPickerState.initializeReactiveEffects();
+
 		// Initialize state if needed
-		if ($uiState.sortMethod === ('all' as any) && selectedTab !== 'all') {
-			console.log('OptionPicker: Initializing "Show All" view');
+		if (optionPickerState.sortMethod === 'all' && selectedTab !== 'all') {
 			untrack(() => {
-				actions.setLastSelectedTabForSort('all', 'all');
+				optionPickerState.setLastSelectedTabForSort('all', 'all');
 			});
 		}
 
-		// Function to load options from sequence data
-		const loadOptionsFromSequence = async () => {
-			// Get current sequence data
-			const fullSequence = sequenceDataService.getCurrentSequence();
-
-			// Find the start position beat (beat 0)
-			const startPosBeat = fullSequence.find(
-				(beat) =>
-					beat && typeof beat === 'object' && 'beat' in beat && (beat as SequenceBeat).beat === 0
-			) as SequenceBeat | undefined;
-
-			if (startPosBeat) {
-				// Convert to PictographData with proper typing
-				const pictographData = sequenceBeatToPictographData(startPosBeat);
-
-				// Load options based on the pictograph data
-				actions.loadOptions([pictographData]);
-			} else {
-				// No start position found, load empty options
-				actions.loadOptions([]);
-				console.log('No start position found in sequence data');
+		// Async initialization
+		const initializeSequence = async () => {
+			// Ensure sequence state is loaded
+			if (!sequenceState.startPosition && !sequenceState.isLoading) {
+				await sequenceState.loadSequence();
 			}
+
+			// Initial load with a small delay to ensure everything is ready
+			setTimeout(() => {
+				loadOptionsFromSequence();
+			}, 100);
 		};
 
-		// Initial load
-		loadOptionsFromSequence();
+		// Start the initialization
+		initializeSequence();
 
 		// --- Event Listeners & Subscriptions ---
 		// Listen for sequence-updated events
@@ -131,139 +187,122 @@
 		};
 
 		// Listen for refresh-options events (used when preserving start position after beat removal)
-		const handleRefreshOptions = (event: CustomEvent) => {
-			console.log('OptionPicker received refresh-options event:', event.detail);
-			if (event.detail?.startPosition) {
+		const handleRefreshOptions = async (event: Event) => {
+			const customEvent = event as CustomEvent;
+			if (customEvent.detail?.startPosition) {
 				// Load options based on the provided start position
-				actions.loadOptions([event.detail.startPosition]);
+				await optionPickerState.loadOptions([customEvent.detail.startPosition]);
 			} else {
 				// Fallback to loading from sequence data
-				loadOptionsFromSequence();
+				await loadOptionsFromSequence();
 			}
+		};
+
+		// Listen for start-position-selected events (immediate response to start position changes)
+		const handleStartPositionSelected = async (event: Event) => {
+			const customEvent = event as CustomEvent;
+			if (customEvent.detail?.startPosition) {
+				// Immediately load options based on the new start position
+				await optionPickerState.loadOptions([customEvent.detail.startPosition]);
+			}
+		};
+
+		// Listen for beat-added events (immediate response to new beats)
+		const handleBeatAdded = () => {
+			// When a beat is added, reload options from the current sequence
+			// This ensures the option picker shows options that can follow the new beat
+			loadOptionsFromSequence();
 		};
 
 		// Listen for tab selection events from TabsContainer
 		const handleTabSelected = (event: CustomEvent) => {
-			console.log('OptionPicker received tab-selected event:', event.detail);
 			if (event.detail?.sortMethod && event.detail?.tabKey) {
-				// Update the store with the selected tab
+				// Update the state with the selected tab
 				untrack(() => {
-					actions.setLastSelectedTabForSort(event.detail.sortMethod, event.detail.tabKey);
+					optionPickerState.setLastSelectedTabForSort(event.detail.sortMethod, event.detail.tabKey);
 				});
 			}
 		};
 
 		// Listen for direct tab selection events from TabButton
 		const handleDirectTabSelect = (event: CustomEvent<string>) => {
-			console.log('OptionPicker received direct-tab-select event:', event.detail);
-
 			// Get the current sort method
-			const currentSortMethod = get(uiState).sortMethod;
+			const currentSortMethod = optionPickerState.sortMethod;
 
-			// Update the store with the selected tab
+			// Update the state with the selected tab
 			untrack(() => {
-				actions.setLastSelectedTabForSort(currentSortMethod, event.detail);
+				optionPickerState.setLastSelectedTabForSort(currentSortMethod, event.detail);
 			});
 		};
 
 		// Listen for force-update-tabs events from ViewControl
 		const handleForceUpdateTabs = (event: CustomEvent) => {
-			console.log('OptionPicker received force-update-tabs event:', event.detail);
-
 			if (event.detail?.sortMethod) {
 				// Get the sort method from the event
 				const sortMethod = event.detail.sortMethod;
 
-				// Update the store with the sort method
+				// Update the state with the sort method
 				untrack(() => {
-					actions.setSortMethod(sortMethod);
+					optionPickerState.setSortMethod(sortMethod);
 				});
 
 				// Force a UI update by updating the showTabs variable
 				// This will trigger a reactive update in the component
 				setTimeout(() => {
 					// Get the grouped options for this sort method
-					const groupedOptions = get(groupedOptionsStore);
-					console.log('OptionPicker: Grouped options after force update:', groupedOptions);
+					const currentGroupedOptions = optionPickerState.groupedOptions;
 
 					// Update the actualCategoryKeys variable
-					if (groupedOptions && Object.keys(groupedOptions).length > 0) {
+					if (currentGroupedOptions && Object.keys(currentGroupedOptions).length > 0) {
 						// This will trigger a reactive update of showTabs
-						console.log(
-							'OptionPicker: Category keys after force update:',
-							Object.keys(groupedOptions)
-						);
 					}
 				}, 0);
 			}
 		};
 
 		// Listen for show-all-view events from ViewControl
-		const handleShowAllView = (event: CustomEvent) => {
-			console.log('OptionPicker received show-all-view event:', event.detail);
-
+		const handleShowAllView = () => {
 			// Force the UI to update to show all options without categories
 			// This is critical for the "Show All" view to work correctly
 			setTimeout(() => {
 				untrack(() => {
 					// Ensure we're in "Show All" mode
-					if (get(uiState).sortMethod !== ('all' as any)) {
-						actions.setSortMethod('all' as any);
+					if (optionPickerState.sortMethod !== 'all') {
+						optionPickerState.setSortMethod('all');
 					}
-				});
-
-				// Log the current state
-				console.log('OptionPicker: Show All View state:', {
-					sortMethod: get(uiState).sortMethod,
-					selectedTab,
-					showTabs,
-					filteredOptions: get(filteredOptionsStore).length
 				});
 			}, 0);
 		};
 
+		// Listen for reset-option-picker events (triggered during sequence clearing)
+		const handleResetOptionPicker = () => {
+			untrack(() => {
+				optionPickerState.reset();
+				// CRITICAL: Also clear the transition loading state to remove stuck overlay
+				transitionLoading.end();
+			});
+		};
+
 		document.addEventListener('sequence-updated', handleSequenceUpdate);
-		document.addEventListener('refresh-options', handleRefreshOptions as EventListener);
+		document.addEventListener('refresh-options', handleRefreshOptions);
+		document.addEventListener('start-position-selected', handleStartPositionSelected);
+		document.addEventListener('beat-added', handleBeatAdded as EventListener);
 		document.addEventListener('option-picker-tab-selected', handleTabSelected as EventListener);
 		document.addEventListener('direct-tab-select', handleDirectTabSelect as EventListener);
 		document.addEventListener('force-update-tabs', handleForceUpdateTabs as EventListener);
 		document.addEventListener('show-all-view', handleShowAllView as EventListener);
+		document.addEventListener('reset-option-picker', handleResetOptionPicker);
 
-		// Subscribe to the sequenceStore for updates
-		const unsubscribeSequence = sequenceStore.subscribe((state) => {
-			if (state && state.beats && state.beats.length > 0) {
-				// Convert StoreBeatData to PictographData format
-				const sequence = state.beats.map((beat) => {
-					// Ensure letter is properly typed as Letter | null
-					const letterValue = (beat.metadata?.letter as Letter | null) || null;
-
-					return {
-						letter: letterValue,
-						startPos: beat.metadata?.startPos || null,
-						endPos: beat.metadata?.endPos || null,
-						redPropData: beat.redPropData || null,
-						bluePropData: beat.bluePropData || null,
-						// Convert motion data from the store format
-						redMotionData: beat.redMotionData || null,
-						blueMotionData: beat.blueMotionData || null,
-						// Add required PictographData properties with default values
-						timing: null,
-						direction: null,
-						gridMode: 'diamond',
-						gridData: null,
-						redArrowData: null,
-						blueArrowData: null,
-						grid: 'diamond'
-					} as PictographData; // Explicitly cast to PictographData
-				});
-				actions.loadOptions(sequence);
-			}
-		});
+		// Note: Reactive effects for sequence state changes are now handled
+		// centrally in optionPickerState.initializeReactiveEffects()
+		// This prevents duplicate reactive effects and ensures proper state synchronization
 
 		// --- Cleanup ---
 		return () => {
 			document.removeEventListener('sequence-updated', handleSequenceUpdate);
-			document.removeEventListener('refresh-options', handleRefreshOptions as EventListener);
+			document.removeEventListener('refresh-options', handleRefreshOptions);
+			document.removeEventListener('start-position-selected', handleStartPositionSelected);
+			document.removeEventListener('beat-added', handleBeatAdded as EventListener);
 			document.removeEventListener(
 				'option-picker-tab-selected',
 				handleTabSelected as EventListener
@@ -271,7 +310,7 @@
 			document.removeEventListener('direct-tab-select', handleDirectTabSelect as EventListener);
 			document.removeEventListener('force-update-tabs', handleForceUpdateTabs as EventListener);
 			document.removeEventListener('show-all-view', handleShowAllView as EventListener);
-			unsubscribeSequence();
+			document.removeEventListener('reset-option-picker', handleResetOptionPicker);
 		};
 	});
 </script>
@@ -286,6 +325,7 @@
 				{selectedTab}
 				optionsToDisplay={displayOptions}
 				hasCategories={actualCategoryKeys.length > 0}
+				onoptionselect={handleOptionSelect}
 			/>
 		</div>
 	</LayoutProvider>

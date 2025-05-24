@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { backgroundContainer } from '$lib/state/stores/background/BackgroundContainer';
-	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
+
 	import { getService } from '$lib/core/di/serviceContext';
 	import { SERVICE_TOKENS } from '$lib/core/di/ServiceTokens';
 	import type { BackgroundService } from '$lib/core/services/BackgroundService';
@@ -65,6 +65,9 @@
 			backgroundService = getService<BackgroundService>(SERVICE_TOKENS.BACKGROUND_SERVICE);
 			errorHandler = getService<ErrorHandler>(SERVICE_TOKENS.ERROR_HANDLER);
 
+			// Set the initial background type to track changes
+			previousBackgroundType = background.currentBackground;
+
 			// Load background
 			await loadBackground(background.currentBackground);
 
@@ -95,8 +98,21 @@
 	});
 
 	// Watch for background type changes
+	let previousBackgroundType = $state<BackgroundType | null>(null);
 	$effect(() => {
-		if (backgroundSystem && background.currentBackground) {
+		// Only load background if the type has actually changed and we have services initialized
+		if (
+			backgroundService &&
+			background.currentBackground &&
+			background.currentBackground !== previousBackgroundType
+		) {
+			console.log(
+				'BackgroundController: Background type changed from',
+				previousBackgroundType,
+				'to',
+				background.currentBackground
+			);
+			previousBackgroundType = background.currentBackground;
 			loadBackground(background.currentBackground);
 		}
 	});

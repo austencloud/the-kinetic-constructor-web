@@ -2,7 +2,7 @@
 	import { browser } from '$app/environment';
 	import { fade, scale } from 'svelte/transition';
 	import { userContainer } from '$lib/state/stores/user/UserContainer';
-	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
+
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 	// Local state

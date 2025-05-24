@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { get } from 'svelte/store';
 	import type { SortMethod } from '../../config';
 	import { viewOptions } from './viewOptions';
 	import type { ViewModeDetail, ViewOption } from './types';
 	import ViewButton from './ViewButton.svelte';
 	import ViewDropdown from './ViewDropdown.svelte';
-	import { actions, uiState, groupedOptionsStore, type SortMethodOrAll } from '../../store'; // Use working store instead
+	import { optionPickerState, type SortMethodOrAll } from '../../optionPickerState.svelte';
 
 	// --- Props using Svelte 5 runes ---
 	const {
@@ -21,9 +20,9 @@
 
 	// --- State ---
 	let isOpen = $state(false);
-	// Initialize with the current sort method from the store
+	// Initialize with the current sort method from the option picker state
 	let selectedViewOption = $state<ViewOption>(
-		viewOptions.find((opt) => opt.value === $uiState.sortMethod) ||
+		viewOptions.find((opt) => opt.value === optionPickerState.sortMethod) ||
 			viewOptions.find((opt) => opt.value === 'all') ||
 			viewOptions[0]
 	);
@@ -51,9 +50,9 @@
 
 	// --- Lifecycle ---
 	$effect(() => {
-		// Keep the selected option in sync with the store state
-		const currentSortMethod = $uiState.sortMethod;
-		const currentSelectedTab = $uiState.lastSelectedTab[currentSortMethod] || 'all';
+		// Keep the selected option in sync with the option picker state
+		const currentSortMethod = optionPickerState.sortMethod;
+		const currentSelectedTab = optionPickerState.lastSelectedTab[currentSortMethod] || 'all';
 
 		// Always update the selectedViewOption to match the current sorting state
 		if (currentSelectedTab === 'all') {
@@ -127,14 +126,14 @@
 
 		console.log('ViewControl: handleViewSelect called with option:', option.value);
 
-		// Update the store state directly
+		// Update the option picker state directly
 		if (option.value === 'all') {
 			// For "Show All" view, we need to set the sort method to 'all'
 			// This is critical for the UI to know we're in "Show All" mode
 			console.log('ViewControl: Setting "all" view');
 
 			// First update the sort method to ensure we're in the right mode
-			actions.setSortMethod('all');
+			optionPickerState.setSortMethod('all');
 
 			// DISABLED: Force a UI update by dispatching a custom event
 			// const showAllEvent = new CustomEvent('show-all-view', {
@@ -148,15 +147,15 @@
 			// Set the last selected tab to 'all' for all sort methods
 			// This ensures proper display when switching back to other views
 			['type', 'endPos', 'reversals'].forEach((method) => {
-				actions.setLastSelectedTabForSort(method as SortMethod, 'all');
+				optionPickerState.setLastSelectedTabForSort(method as SortMethod, 'all');
 			});
 		} else {
 			// For other views, update the sort method
 			console.log('ViewControl: Setting sort method to:', option.value);
-			actions.setSortMethod(option.value as SortMethod);
+			optionPickerState.setSortMethod(option.value as SortMethod);
 
 			// Get the last selected tab for this sort method
-			const lastSelectedTab = $uiState.lastSelectedTab[option.value as SortMethod];
+			const lastSelectedTab = optionPickerState.lastSelectedTab[option.value as SortMethod];
 			console.log('ViewControl: Last selected tab for this sort method:', lastSelectedTab);
 
 			// If there's no last selected tab or it's 'all', we need to select the first tab
@@ -193,7 +192,7 @@
 
 				// Do a direct update instead of using setTimeout
 				// Get the grouped options for this sort method
-				const groupedOptions = get(groupedOptionsStore);
+				const groupedOptions = optionPickerState.groupedOptions;
 				console.log('ViewControl: Grouped options:', groupedOptions);
 
 				if (groupedOptions && Object.keys(groupedOptions).length > 0) {
@@ -202,7 +201,7 @@
 					console.log('ViewControl: Selecting first category key:', firstCategoryKey);
 
 					// Set the last selected tab to the first category key
-					actions.setLastSelectedTabForSort(option.value as SortMethod, firstCategoryKey);
+					optionPickerState.setLastSelectedTabForSort(option.value as SortMethod, firstCategoryKey);
 				} else {
 					console.log('ViewControl: No grouped options available');
 				}

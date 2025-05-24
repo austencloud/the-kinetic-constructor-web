@@ -6,7 +6,7 @@
 	import { saveImageExportSettings } from '$lib/state/image-export-settings.svelte';
 	import type { ImageExportSettings } from '$lib/state/image-export-settings.svelte';
 	import { userContainer } from '$lib/state/stores/user/UserContainer';
-	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
+
 	import { isMobileDevice as checkMobileDevice } from '$lib/utils/fileSystemUtils';
 	import ImageExportToggleButton from './ImageExportToggleButton.svelte';
 

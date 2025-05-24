@@ -1,14 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import DifficultyCircle from './DifficultyCircle.svelte';
-	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 
 	const { currentWord = 'Word', width = 100, difficultyLevel = 1 } = $props();
 
-	// Use the difficulty level directly from props with a default value of 1
-
 	let wordDisplay: HTMLSpanElement;
-	let fontSize = Math.max(width / 40, 30);
+	let fontSize = $state(Math.max(width / 40, 30));
 	let parentWidth: number;
 
 	const MAX_CHARS = 8;
@@ -39,14 +36,25 @@
 		// Get parent element width for sizing calculations
 		parentWidth = wordDisplay?.parentElement?.clientWidth ?? 0;
 		// Initial size adjustment
-		setTimeout(adjustFontSize, 0);
+		adjustFontSize();
 	});
 
-	// Respond to changes in word or container width
-	safeEffect(() => {
-		if (currentWord || width) {
-			setTimeout(adjustFontSize, 0);
-		}
+	// Use an effect to trigger font size adjustments when dependencies change
+	// This prevents infinite loops by using untrack and microtasks
+	$effect(() => {
+		// Track dependencies
+		currentWord;
+		width;
+
+		// Use untrack to prevent the adjustment from being tracked
+		untrack(() => {
+			// Use a microtask to ensure DOM is updated
+			queueMicrotask(() => {
+				if (wordDisplay && parentWidth) {
+					adjustFontSize();
+				}
+			});
+		});
 	});
 </script>
 

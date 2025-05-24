@@ -1,25 +1,24 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import SectionHeader from '../SectionHeader.svelte';
 	import OptionGroupGrid from '../OptionGroupGrid.svelte';
 	import type { Action } from 'svelte/action';
 	import { onMount, onDestroy } from 'svelte';
 
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		optionSelect: PictographData;
+	// Props
+	const props = $props<{
+		groups: Array<{ key: string; options: PictographData[] }>;
+		transitionKey: string | number;
+		rowIndex: number;
+		onoptionselect?: (option: PictographData) => void;
 	}>();
 
-	// Props
-	export let groups: Array<{ key: string; options: PictographData[] }>;
-	export let transitionKey: string | number;
-	export let rowIndex: number;
-
 	// Handle option selection events from OptionGroupGrid
-	function handleOptionSelect(event: CustomEvent<PictographData>) {
-		// Forward the event to parent components
-		dispatch('optionSelect', event.detail);
+	function handleOptionSelect(option: PictographData) {
+		// Call the callback if provided
+		if (props.onoptionselect) {
+			props.onoptionselect(option);
+		}
 	}
 
 	// Debounce function for performance
@@ -73,7 +72,8 @@
 			// Calculate the total width needed for all groups to fit side by side
 			// Include a small gap between items (e.g., 10px per item)
 			const gapPerItem = 10;
-			const totalWidthNeeded = groupItems.length * minGroupWidth + (groupItems.length - 1) * gapPerItem;
+			const totalWidthNeeded =
+				groupItems.length * minGroupWidth + (groupItems.length - 1) * gapPerItem;
 
 			// Determine if the groups would overflow
 			const wouldOverflow = totalWidthNeeded > containerWidth;
@@ -124,17 +124,17 @@
 </script>
 
 <div class="multi-group-row" use:setupMultiGroupRow>
-	{#each groups as group, groupIndex (transitionKey + '-multi-' + group.key)}
+	{#each props.groups as group, groupIndex (props.transitionKey + '-multi-' + group.key)}
 		<div class="multi-group-item" data-group-index={groupIndex}>
 			<SectionHeader
 				groupKey={group.key}
-				isFirstHeader={rowIndex === 0 && groupIndex === 0}
+				isFirstHeader={props.rowIndex === 0 && groupIndex === 0}
 				isCompact={true}
 			/>
-			<OptionGroupGrid 
-				options={group.options} 
-				key={transitionKey + '-multiopt-' + group.key} 
-				on:optionSelect={handleOptionSelect}
+			<OptionGroupGrid
+				options={group.options}
+				key={props.transitionKey + '-multiopt-' + group.key}
+				onoptionselect={handleOptionSelect}
 			/>
 		</div>
 	{/each}

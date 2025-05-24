@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { scrollActions } from '../../store/scrollStore';
 	import { determineGroupKey, getSortedGroupKeys } from '../../services/OptionsService';
@@ -7,25 +7,21 @@
 	import SingleRowRenderer from './SingleRowRenderer.svelte';
 	import MultiRowRenderer from './MultiRowRenderer.svelte';
 
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		optionSelect: PictographData;
-	}>();
-
 	type LayoutRow = {
 		type: 'single' | 'multi';
 		groups: Array<{ key: string; options: PictographData[] }>;
 	};
 
-	const {
-		selectedTab = null,
-		options = [],
-		transitionKey = 'default'
-	} = $props<{
+	const props = $props<{
 		selectedTab?: string | null;
 		options?: PictographData[];
 		transitionKey?: string | number;
+		onoptionselect?: (option: PictographData) => void;
 	}>();
+
+	const selectedTab = $derived(props.selectedTab ?? null);
+	const options = $derived(props.options ?? []);
+	const transitionKey = $derived(props.transitionKey ?? 'default');
 
 	let panelElement: HTMLElement | undefined = $state(); // Use $state for reactive updates
 	let contentIsShort = $state(false); // Use $state for reactive updates
@@ -129,9 +125,11 @@
 	});
 
 	// Handle option selection events from child components
-	function handleOptionSelect(event: CustomEvent<PictographData>) {
-		// Forward the event to parent components
-		dispatch('optionSelect', event.detail);
+	function handleOptionSelect(option: PictographData) {
+		// Call the callback if provided
+		if (props.onoptionselect) {
+			props.onoptionselect(option);
+		}
 	}
 
 	const debouncedCheckContentHeight = (() => {
@@ -256,14 +254,14 @@
 					groups={row.groups}
 					{transitionKey}
 					{rowIndex}
-					on:optionSelect={handleOptionSelect}
+					onoptionselect={handleOptionSelect}
 				/>
 			{:else if row.type === 'multi'}
 				<MultiRowRenderer
 					groups={row.groups}
 					{transitionKey}
 					{rowIndex}
-					on:optionSelect={handleOptionSelect}
+					onoptionselect={handleOptionSelect}
 				/>
 			{/if}
 		{/each}

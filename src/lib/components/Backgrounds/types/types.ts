@@ -1,6 +1,6 @@
 // src/lib/components/Backgrounds/types/types.ts
 // Background types
-export type BackgroundType = 'snowfall' | 'nightSky';
+export type BackgroundType = 'snowfall' | 'nightSky' | 'deepOcean';
 
 // --- Other type definitions remain the same ---
 export interface ParallaxLayer {

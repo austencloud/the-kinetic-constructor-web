@@ -10,13 +10,14 @@ import type {
 	Dimensions
 } from '$lib/components/Backgrounds/types/types';
 import { getContainer } from '$lib/core/di/ContainerProvider';
+import { detectAppropriateQuality } from '$lib/components/Backgrounds/config';
 
 @Injectable(SERVICE_TOKENS.BACKGROUND_SERVICE)
 export class BackgroundServiceImpl implements BackgroundService {
 	private currentBackground: BackgroundType = 'snowfall';
 	private backgroundSystem: BackgroundSystem | null = null;
-	private quality: QualityLevel = 'medium';
-	private availableBackgrounds: BackgroundType[] = ['snowfall', 'nightSky'];
+	private quality: QualityLevel;
+	private availableBackgrounds: BackgroundType[] = ['snowfall', 'nightSky', 'deepOcean'];
 	private dimensions: Dimensions = { width: 1280, height: 720 };
 
 	private errorHandler: ErrorHandler;
@@ -28,6 +29,9 @@ export class BackgroundServiceImpl implements BackgroundService {
 		this.backgroundFactory = container.get<BackgroundSystemFactory>(
 			SERVICE_TOKENS.BACKGROUND_FACTORY
 		);
+
+		// Automatically detect appropriate quality based on device performance
+		this.quality = detectAppropriateQuality();
 	}
 
 	async loadBackground(type: BackgroundType): Promise<BackgroundSystem> {

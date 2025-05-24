@@ -12,6 +12,7 @@
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import AnimatedHighlight from './GoldSelectionBorder.svelte';
 	import { createSafePictographCopy } from '$lib/utils/pictographUtils';
+	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
@@ -99,54 +100,40 @@
 		}
 	});
 
-	// Subscribe to the selectedStartPos store
+	// Note: Removed reactive effect watching sequenceState.startPosition to prevent infinite loops
+	// The component now relies on event-based updates and legacy store subscriptions
+
+	// Subscribe to the selectedStartPos store for backward compatibility
 	onMount(() => {
 		const unsubscribe = selectedStartPos.subscribe((startPos) => {
-			// Set flag to prevent circular updates
-			isUpdatingFromStartPos = true;
+			// Only update if modern sequence state doesn't have a start position
+			// This prevents conflicts between modern and legacy state
+			if (!sequenceState.startPosition && !isUpdatingFromStartPos) {
+				// Set flag to prevent circular updates
+				isUpdatingFromStartPos = true;
 
-			try {
-				if (startPos) {
-					// Create a safe copy to avoid reference issues
-					const startPosCopy = safeCopyPictographData(startPos);
+				try {
+					if (startPos) {
+						// Create a safe copy to avoid reference issues
+						const startPosCopy = safeCopyPictographData(startPos);
 
-					// Update the local pictograph data
-					pictographData = startPosCopy;
+						// Update the local pictograph data
+						pictographData = startPosCopy;
 
-					// Also update the pictographContainer
-					pictographContainer.setData(pictographData);
+						// Also update the pictographContainer
+						pictographContainer.setData(pictographData);
 
-					// Save to localStorage directly to ensure it's available during hot reloads
-					try {
-						// Use the safe copy for localStorage
-						localStorage.setItem('start_position', JSON.stringify(pictographData));
-					} catch (error) {
-						console.error('Failed to save start position to localStorage:', error);
+						// Update the local beat data
+						localBeatData = {
+							...localBeatData,
+							pictographData: startPosCopy,
+							filled: true
+						};
 					}
-
-					// Update the local beat data
-					localBeatData = {
-						...localBeatData,
-						pictographData: startPosCopy,
-						filled: true
-					};
-				} else {
-					// If no start position is set, use default data
-					pictographData = defaultPictographData;
-
-					// Also update the pictographContainer
-					pictographContainer.setData(defaultPictographData);
-
-					// Update the local beat data
-					localBeatData = {
-						...localBeatData,
-						pictographData: defaultPictographData,
-						filled: false
-					};
+				} finally {
+					// Reset flag after updates are complete
+					isUpdatingFromStartPos = false;
 				}
-			} finally {
-				// Reset flag after updates are complete
-				isUpdatingFromStartPos = false;
 			}
 		});
 
@@ -377,7 +364,6 @@
 						pictographData: newStartPos,
 						filled: true
 					};
-
 				} finally {
 					// Reset flag after updates are complete
 					isUpdatingFromStartPos = false;

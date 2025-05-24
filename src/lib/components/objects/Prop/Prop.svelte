@@ -5,7 +5,6 @@
 	import type { PropData } from './PropData';
 	import type { PropSvgData } from '../../SvgManager/PropSvgData';
 	import PropRotAngleManager from './PropRotAngleManager';
-	import { safeEffect } from '$lib/state/core/svelte5-integration.svelte';
 
 	/**
 	 * Safe base64 encoding that works on all browsers including mobile
@@ -54,7 +53,6 @@
 	let svgData = $state<PropSvgData | null>(null);
 	let isLoaded = $state(false);
 	let loadTimeout: ReturnType<typeof setTimeout>;
-	let rotAngle = $state(0);
 
 	// Services
 	const svgManager = new SvgManager();
@@ -62,27 +60,31 @@
 	// Use the directly provided prop data as the base
 	let effectivePropData = $state<PropData | undefined>(propData);
 
-	// Compute rotation angle using safeEffect
-	safeEffect(() => {
-		// Ensure we have both loc and ori, and the SVG is loaded
+	// Compute rotation angle using derived (without side effects)
+	const rotAngle = $derived.by(() => {
+		// Ensure we have both loc and ori
 		if (effectivePropData) {
-			// Always try to calculate, even if loc or ori might be undefined
 			try {
 				const rotAngleManager = new PropRotAngleManager({
 					loc: effectivePropData.loc,
 					ori: effectivePropData.ori
 				});
 
-				// Update rotAngle even if loc or ori are potentially undefined
-				rotAngle = rotAngleManager.getRotationAngle();
-
-				// Update the rotation angle in the prop data
-				if (propData) {
-					propData.rotAngle = rotAngle;
-				}
+				return rotAngleManager.getRotationAngle();
 			} catch (error) {
 				console.warn('Error calculating rotation angle:', error);
+				return 0;
 			}
+		}
+		return 0;
+	});
+
+	// Update the prop data with the rotation angle using an effect
+	$effect(() => {
+		if (propData && rotAngle !== undefined) {
+			untrack(() => {
+				propData.rotAngle = rotAngle;
+			});
 		}
 	});
 
