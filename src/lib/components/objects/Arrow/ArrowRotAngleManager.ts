@@ -18,10 +18,7 @@ import {
 import type {
 	Loc,
 	PropRotDir,
-	Orientation,
-	TKATurns,
-	HandRotDir,
-	GridMode
+	Orientation
 } from '$lib/types/Types';
 import type { Motion } from '../Motion/Motion';
 import { Letter } from '$lib/types/Letter';

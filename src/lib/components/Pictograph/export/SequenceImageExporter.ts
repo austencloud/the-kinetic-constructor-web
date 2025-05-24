@@ -40,8 +40,6 @@ export async function exportSequenceImage(
 	}
 
 	try {
-		console.log('EnhancedExporter: Starting export process');
-
 		// Default options with required fields
 		const defaultOptions: Required<Omit<EnhancedExportOptions, 'beats' | 'startPosition'>> = {
 			backgroundColor: 'white',
@@ -79,21 +77,8 @@ export async function exportSequenceImage(
 			throw new Error('No SVG elements found in container');
 		}
 
-		console.log(`EnhancedExporter: Found ${svgElements.length} SVG elements`);
-
 		// Find all reversal indicators
 		const reversalIndicators = Array.from(containerElement.querySelectorAll('.reversal-indicator'));
-		console.log(`EnhancedExporter: Found ${reversalIndicators.length} reversal indicators`);
-
-		// Log detailed information about the start position
-		console.log('EnhancedExporter: Start position details', {
-			// Start position is now always included if available
-			hasStartPosition:
-				mergedOptions.startPosition !== null && mergedOptions.startPosition !== undefined,
-			startPositionData: mergedOptions.startPosition,
-			firstBeatMetadata: mergedOptions.beats[0]?.metadata,
-			totalBeats: mergedOptions.beats.length
-		});
 
 		// Calculate dimensions
 		const dimensions = calculateDimensions(mergedOptions);
@@ -177,26 +162,6 @@ export async function exportSequenceImage(
 				circleY, // y position with margin
 				radius // radius based on top margin height
 			);
-
-			console.log('EnhancedExporter: Positioned difficulty circle', {
-				circleX,
-				circleY,
-				radius,
-				diameter: radius * 2,
-				topMargin,
-				desiredSpacing,
-				adjustedSpacing,
-				requiredSpace,
-				spacingPercentage,
-				actualTopSpacing: circleY - radius,
-				actualLeftSpacing: circleX - radius,
-				actualBottomSpacing: topMargin - (circleY + radius),
-				topMarginPercentage: (radius * 2) / topMargin,
-				canvasWidth: width,
-				rows: dimensions.rows,
-				isOneRow,
-				circleSizePercentage
-			});
 		}
 
 		// Process each SVG element
@@ -212,12 +177,6 @@ export async function exportSequenceImage(
 		// Convert canvas to data URL
 		const format = mergedOptions.format === 'jpeg' ? 'image/jpeg' : 'image/png';
 		const dataUrl = canvas.toDataURL(format, mergedOptions.quality);
-
-		console.log('EnhancedExporter: Export completed successfully', {
-			width: canvas.width,
-			height: canvas.height,
-			dataUrlLength: dataUrl.length
-		});
 
 		// Return the result
 		return {

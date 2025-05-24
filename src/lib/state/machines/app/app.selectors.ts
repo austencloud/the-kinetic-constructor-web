@@ -5,7 +5,6 @@
  * Selectors are functions that extract specific pieces of state from the machine.
  */
 
-import { derived } from 'svelte/store';
 import { useSelector } from '@xstate/svelte';
 import { appService } from './app.machine';
 import { createSelector } from '$lib/state/core';

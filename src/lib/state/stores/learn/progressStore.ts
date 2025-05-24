@@ -1,5 +1,5 @@
 // src/lib/state/stores/learn/progressStore.ts
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
 
 // Define types for progress tracking

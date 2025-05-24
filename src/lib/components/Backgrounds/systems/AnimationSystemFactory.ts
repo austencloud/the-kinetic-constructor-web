@@ -1,7 +1,7 @@
 import { createSnowflakeSystem } from './SnowflakeSystem';
 import { createShootingStarSystem } from './ShootingStarSystem';
 import { createSantaSystem } from './SantaSystem';
-import type { AnimationSystem, Snowflake, ShootingStarState, SantaState } from '../types/types';
+import type { AnimationSystem } from '../types/types';
 
 export const createAnimationSystem = <T>(
 	type: 'snowflake' | 'shootingStar' | 'santa'

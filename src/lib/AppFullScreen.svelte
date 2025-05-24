@@ -30,7 +30,6 @@
 			doc.mozFullScreenEnabled ||
 			doc.msFullscreenEnabled
 		);
-		// console.log('FullScreen onMount. Support:', fullscreenSupport);
 
 		// Assign the correct exit function, ensuring it's called on document
 		const exitFn =
@@ -83,7 +82,6 @@
 			if (isFull !== currentlyFull) {
 				isFull = currentlyFull;
 				dispatch('toggleFullscreen', isFull);
-				// console.log("Fullscreen state changed externally:", isFull);
 			}
 		};
 

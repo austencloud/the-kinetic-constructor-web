@@ -10,7 +10,6 @@ import { logger } from '$lib/core/logging';
 import type { Beat } from '$lib/types/Beat';
 import type { PictographData } from '$lib/types/PictographData';
 import { renderSvgToImage } from './svgRenderer';
-import { downloadImage } from './downloadUtils';
 
 /**
  * Options for exporting a single beat as an image
@@ -99,8 +98,6 @@ export async function exportSequenceAsImage(
 	}
 
 	try {
-		console.log('SequenceExporter: Starting export process');
-
 		// Default options with required fields
 		const defaultOptions: Required<Omit<SequenceExportOptions, 'beats' | 'startPosition'>> = {
 			backgroundColor: '#FFFFFF',
@@ -130,8 +127,6 @@ export async function exportSequenceAsImage(
 			throw new Error('No SVG elements found in container');
 		}
 
-		console.log(`SequenceExporter: Found ${svgElements.length} SVG elements`);
-
 		// Calculate dimensions
 		const beatSize = 950; // Base size of each beat
 		const spacing = mergedOptions.spacing;
@@ -145,15 +140,6 @@ export async function exportSequenceAsImage(
 		// Calculate canvas dimensions
 		const canvasWidth = columns * beatSize + (columns - 1) * spacing;
 		const canvasHeight = rows * beatSize + (rows - 1) * spacing;
-
-		console.log('SequenceExporter: Calculated dimensions', {
-			beatSize,
-			columns,
-			rows,
-			canvasWidth,
-			canvasHeight,
-			totalBeats
-		});
 
 		// Create a canvas
 		const canvas = document.createElement('canvas');
@@ -209,10 +195,6 @@ export async function exportSequenceAsImage(
 
 				// Increment processed count
 				processedCount++;
-
-				console.log(
-					`SequenceExporter: Processed SVG element ${processedCount}/${svgElements.length}`
-				);
 			} catch (error) {
 				console.error(`SequenceExporter: Error processing SVG element ${index}:`, error);
 				throw error;
@@ -225,12 +207,6 @@ export async function exportSequenceAsImage(
 		// Convert canvas to data URL
 		const format = mergedOptions.format === 'jpeg' ? 'image/jpeg' : 'image/png';
 		const dataUrl = canvas.toDataURL(format, mergedOptions.quality);
-
-		console.log('SequenceExporter: Export completed successfully', {
-			width: canvas.width,
-			height: canvas.height,
-			dataUrlLength: dataUrl.length
-		});
 
 		// Return the result
 		return {

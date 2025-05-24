@@ -68,21 +68,6 @@ export function calculateDimensions(options: EnhancedExportOptions): CanvasDimen
 		? Math.max(calculatedBottomMargin, MIN_BOTTOM_MARGIN)
 		: 0;
 
-	console.log('EnhancedExporter: Layout calculated', {
-		beatCount,
-		rowsForBeats,
-		columnsForBeats,
-		totalColumns,
-		hasStartPosition,
-		width,
-		height,
-		topMargin,
-		bottomMargin,
-		calculatedTopMargin,
-		MIN_TOP_MARGIN,
-		topMarginPercentage
-	});
-
 	return {
 		width,
 		height,

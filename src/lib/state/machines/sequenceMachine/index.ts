@@ -14,7 +14,6 @@
 // Import legacy dependencies for backward compatibility
 import { stateRegistry } from '../../core/registry';
 import { initializePersistence } from './persistence';
-import { generateSequenceActor } from './actors';
 
 // Re-export types from the legacy implementation for backward compatibility
 export * from './types';

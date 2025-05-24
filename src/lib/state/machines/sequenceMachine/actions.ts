@@ -70,7 +70,6 @@ export function updateSequence({ event }: { event: any }) {
 		// Convert the output to the container's BeatData format
 		const storeBeats = convertToStoreBeatData(doneEvent.output);
 		sequenceContainer.setSequence(storeBeats);
-		console.log('Sequence updated with new data:', storeBeats);
 
 		// Update the sequence word
 		updateSequenceWord();
@@ -163,12 +162,8 @@ export function addBeat({ event }: { event: any }) {
 export function removeBeat({ event }: { event: any }) {
 	const removeEvent = event as { type: 'REMOVE_BEAT'; beatId: string };
 
-	// Log the beat being removed for debugging
-	console.log('Removing beat with ID:', removeEvent.beatId);
-
 	// Check if this is the start position - if so, we shouldn't remove it
 	if (removeEvent.beatId === 'start-position') {
-		console.warn('Attempted to remove start position - this should not happen');
 		return;
 	}
 
@@ -178,7 +173,6 @@ export function removeBeat({ event }: { event: any }) {
 	try {
 		// Use our helper function to get the current value from the store
 		currentStartPos = getStoreValue(selectedStartPos);
-		console.log('Current start position before beat removal:', currentStartPos ? 'exists' : 'null');
 
 		// Validate and fix the start position data if needed
 		if (currentStartPos) {
@@ -210,12 +204,6 @@ export function removeBeat({ event }: { event: any }) {
 	// Get the current sequence state before removal
 	const beatCount = sequenceContainer.state.beats.length;
 	const isFirstBeat = beatCount > 0 && sequenceContainer.state.beats[0].id === removeEvent.beatId;
-
-	console.log('Beat removal info:', {
-		beatCount,
-		isFirstBeat,
-		hasStartPosition: !!currentStartPos
-	});
 
 	// Remove the beat from the sequence
 	sequenceContainer.removeBeat(removeEvent.beatId);
@@ -257,17 +245,12 @@ export function removeBeat({ event }: { event: any }) {
 			// Save the start position to localStorage
 			try {
 				localStorage.setItem('start_position', JSON.stringify(currentStartPos));
-				console.log('Saved start position to localStorage after beat removal');
 			} catch (error) {
 				console.error('Failed to save start position to localStorage:', error);
 			}
 
 			// Dispatch an additional event to ensure the UI updates correctly
 			if (isFirstBeat) {
-				console.log(
-					'First beat removed - dispatching additional events to preserve start position'
-				);
-
 				// Dispatch a sequence-updated event to ensure the UI refreshes
 				const sequenceUpdatedEvent = new CustomEvent('sequence-updated', {
 					detail: {
@@ -288,8 +271,6 @@ export function removeBeat({ event }: { event: any }) {
 					document.dispatchEvent(refreshEvent);
 				}, 0);
 			}
-
-			console.log('Preserved start position after beat removal');
 		}
 	}
 }
@@ -367,12 +348,9 @@ export function removeBeatAndFollowing({ event }: { event: any }) {
 				// Save the start position to localStorage
 				try {
 					localStorage.setItem('start_position', JSON.stringify(currentStartPos));
-					console.log('Saved start position to localStorage after beat removal');
 				} catch (error) {
 					console.error('Failed to save start position to localStorage:', error);
 				}
-
-				console.log('Preserved start position after beat removal');
 			}
 
 			// Update dev tools
@@ -417,8 +395,6 @@ export function updateBeat({ event }: { event: any }) {
  * 5. Return to the option picker (build) tab/view
  */
 export function clearSequence() {
-	console.log('Clearing sequence and start position');
-
 	// Set an empty sequence
 	sequenceContainer.setSequence([]);
 
@@ -472,8 +448,6 @@ export function clearSequence() {
 					word: ''
 				})
 			);
-
-			console.log('Saved empty sequence state to localStorage');
 		} catch (error) {
 			console.error('Error saving empty sequence state:', error);
 		}

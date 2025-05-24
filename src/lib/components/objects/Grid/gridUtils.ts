@@ -4,7 +4,7 @@
  * This file contains utility functions for working with grids.
  */
 
-import type { GridData, GridMode, GridPoint, Coordinate } from './types';
+import type { GridData, GridMode, GridPoint } from './types';
 
 /**
  * Parse grid coordinates based on the specified mode

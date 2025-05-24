@@ -9,7 +9,6 @@ import {
 import { resourceCache } from '$lib/services/ResourceCache';
 import { getEmbeddedPropSvg } from '$lib/utils/embeddedSvgs';
 import { getEmbeddedArrowSvg } from '$lib/utils/embeddedArrowSvgs';
-import { getEmbeddedGlyphSvg } from '$lib/utils/embeddedGlyphSvgs';
 import { logger } from '$lib/core/logging';
 import { toAppError } from '$lib/types/ErrorTypes';
 

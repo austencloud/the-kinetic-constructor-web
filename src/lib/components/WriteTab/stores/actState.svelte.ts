@@ -4,7 +4,7 @@
  * Modern replacement for actStore.ts using Svelte 5 runes
  */
 
-import type { Act, Sequence, Beat } from '../models/Act';
+import type { Act, Beat } from '../models/Act';
 import { createEmptyAct } from '../models/Act';
 import { browser } from '$app/environment';
 

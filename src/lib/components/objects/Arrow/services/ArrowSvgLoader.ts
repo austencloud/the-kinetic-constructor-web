@@ -1,7 +1,6 @@
 // src/lib/components/objects/Arrow/services/ArrowSvgLoader.ts
 import type { Color, MotionType, Orientation, TKATurns } from '$lib/types/Types';
 import type { ArrowSvgData } from '$lib/components/SvgManager/ArrowSvgData';
-import { parseArrowSvg } from '$lib/components/SvgManager/parseArrowSvg';
 import type SvgManager from '$lib/components/SvgManager/SvgManager';
 
 /**

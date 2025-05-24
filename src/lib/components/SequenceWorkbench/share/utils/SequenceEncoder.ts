@@ -3,8 +3,7 @@
  */
 import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer';
 import type { MotionData } from '$lib/components/objects/Motion/MotionData';
-import type { MotionType, Loc, PropRotDir, TKATurns, Orientation } from '$lib/types/Types';
-import { browser } from '$app/environment';
+
 import { logger } from '$lib/core/logging';
 
 /**

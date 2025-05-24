@@ -60,7 +60,7 @@ export async function renderSequence(
 		logger.debug('Starting sequence rendering');
 
 		// Get export settings using new function
-		let settings = getImageExportSettings();
+		const settings = getImageExportSettings();
 
 		// Find the start position beat
 		let startPosition = null;

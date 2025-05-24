@@ -21,33 +21,10 @@
 	onMount(() => {
 		// Load the current settings
 		settings = getImageExportSettings();
-
-		// Debug check - directly inspect localStorage
-		if (browser) {
-			try {
-				const savedSettings = localStorage.getItem('image-export-settings');
-				if (savedSettings) {
-					const parsed = JSON.parse(savedSettings);
-					console.log('ImageExportTab: Direct localStorage check on mount:', {
-						rememberLastSaveDirectory: parsed.rememberLastSaveDirectory,
-						type: typeof parsed.rememberLastSaveDirectory
-					});
-				}
-			} catch (error) {
-				console.error('ImageExportTab: Error checking localStorage:', error);
-			}
-		}
 	});
 
 	// Handle setting change
 	function handleSettingChange(key: keyof ImageExportSettings, value: any): void {
-		// Log the setting change
-		console.log(`ImageExportTab: Setting change: ${key}`, {
-			oldValue: settings[key],
-			newValue: value,
-			key
-		});
-
 		// Create a new settings object with the updated value
 		// Use a clean copy to avoid issues with Svelte 5 runes proxy objects
 		const newSettings = getImageExportSettings();
@@ -64,13 +41,6 @@
 			if (browser && hapticFeedbackService.isAvailable()) {
 				hapticFeedbackService.trigger('selection');
 			}
-
-			console.log(
-				'ImageExportTab: Explicitly set rememberLastSaveDirectory to:',
-				newSettings.rememberLastSaveDirectory,
-				'type:',
-				typeof newSettings.rememberLastSaveDirectory
-			);
 		}
 
 		// Update local state
@@ -81,36 +51,6 @@
 
 		// Force an immediate save to localStorage
 		saveImageExportSettings();
-
-		// Verify the change was applied
-		console.log(`ImageExportTab: Setting after change: ${key}`, {
-			currentValue: settings[key],
-			expectedValue: value,
-			match: settings[key] === value
-		});
-
-		// Add logging for rememberLastSaveDirectory
-		if (key === 'rememberLastSaveDirectory') {
-			// Directly check localStorage again to verify changes were saved
-			if (browser) {
-				try {
-					// Add a slight delay to ensure saving has completed
-					setTimeout(() => {
-						const savedSettings = localStorage.getItem('image-export-settings');
-						if (savedSettings) {
-							const parsed = JSON.parse(savedSettings);
-							console.log('ImageExportTab: LocalStorage after change:', {
-								rememberLastSaveDirectory: parsed.rememberLastSaveDirectory,
-								type: typeof parsed.rememberLastSaveDirectory,
-								expected: value === true
-							});
-						}
-					}, 50);
-				} catch (error) {
-					console.error('ImageExportTab: Error checking localStorage after change:', error);
-				}
-			}
-		}
 	}
 </script>
 

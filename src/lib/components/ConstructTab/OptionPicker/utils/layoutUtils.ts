@@ -116,7 +116,7 @@ export const getResponsiveLayout = memoizeLRU(
 
 		const containerAspect = getContainerAspect(containerWidth, containerHeight);
 
-		let gridGap = getGridGap({
+		const gridGap = getGridGap({
 			count,
 			containerWidth,
 			containerHeight,

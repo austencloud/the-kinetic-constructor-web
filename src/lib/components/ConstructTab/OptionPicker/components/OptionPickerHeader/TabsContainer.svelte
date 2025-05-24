@@ -24,16 +24,7 @@
 	let maxScroll = $state(0);
 	let showTooltip = $state(false);
 
-	// DISABLED: Show tooltip after a delay
-	// setTimeout(() => {
-	// 	showTooltip = true;
-	// 	// Hide tooltip after 5 seconds
-	// 	setTimeout(() => {
-	// 		showTooltip = false;
-	// 	}, 5000);
-	// }, 1000);
-
-	// Completely disable tooltips to prevent reactivity loops
+	// Disable tooltips to prevent reactivity loops
 	showTooltip = false;
 
 	// Forward scroll event if onScroll prop is provided and update scroll position
@@ -54,61 +45,6 @@
 			maxScroll = actualTabsContainerElement.scrollWidth - actualTabsContainerElement.clientWidth;
 		}
 	});
-
-	// DISABLED: Set up event listener for tabSelected events
-	// $effect(() => {
-	// 	const handleTabSelect = (event: CustomEvent<string>) => {
-	// 		// Forward the event to the parent component if the callback is provided
-	// 		if (ontabSelect) {
-	// 			// Create a new event with the original name for the parent component
-	// 			const parentEvent = new CustomEvent('tabSelect', {
-	// 				detail: event.detail
-	// 			});
-	//
-	// 			// Call the callback directly
-	// 			ontabSelect(parentEvent);
-	// 			console.log('TabsContainer: Forwarded tab selection to parent for', event.detail);
-	// 		}
-	//
-	// 		// IMPORTANT: Always update the store directly regardless of whether ontabSelect is provided
-	// 		// This ensures the UI updates even if the event chain is broken
-	// 		try {
-	// 			// Get the current sort method from the view control element
-	// 			const viewControlElement = document.querySelector('.view-control');
-	// 			const currentSortMethod = viewControlElement?.getAttribute('data-sort-method') || 'type';
-	//
-	// 			console.log('TabsContainer: Updating store with tab selection:', {
-	// 				sortMethod: currentSortMethod,
-	// 				tabKey: event.detail
-	// 			});
-	//
-	// 			// Update the store with the selected tab
-	// 			actions.setLastSelectedTabForSort(currentSortMethod as any, event.detail);
-	//
-	// 			// Force a UI update by dispatching a custom event
-	// 			const updateEvent = new CustomEvent('option-picker-tab-selected', {
-	// 				detail: {
-	// 					sortMethod: currentSortMethod,
-	// 					tabKey: event.detail
-	// 				},
-	// 				bubbles: true
-	// 			});
-	// 			document.dispatchEvent(updateEvent);
-	// 		} catch (error) {
-	// 			console.error('Error updating store with tab selection:', error);
-	// 		}
-	// 	};
-	//
-	// 	// Add event listener to the document for the renamed event
-	// 	document.addEventListener('tabSelected', handleTabSelect as EventListener);
-	//
-	// 	// Clean up on destroy
-	// 	return () => {
-	// 		document.removeEventListener('tabSelected', handleTabSelect as EventListener);
-	// 	};
-	// });
-
-	// Completely disable event listeners to prevent reactivity loops
 </script>
 
 {#if Array.isArray(categoryKeys) && categoryKeys.length > 0}

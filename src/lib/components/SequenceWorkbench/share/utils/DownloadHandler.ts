@@ -8,8 +8,7 @@ import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
 import { showError, showSuccess, showInfo } from '$lib/components/shared/ToastManager.svelte';
 import {
-	downloadImage,
-	type DownloadResult
+	downloadImage
 } from '$lib/components/Pictograph/export/downloadUtils';
 import { getImageExportSettings } from '$lib/state/image-export-settings.svelte';
 import { isMobileDevice } from '$lib/utils/fileSystemUtils';

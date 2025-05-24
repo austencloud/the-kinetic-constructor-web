@@ -5,8 +5,7 @@
  * controlling whether to show the GraphEditor or OptionPicker.
  */
 
-import { writable, derived, get } from 'svelte/store';
-import { browser } from '$app/environment';
+import { writable, get } from 'svelte/store';
 import { sequenceContainer } from './sequence/SequenceContainer';
 
 // Interface for the store state

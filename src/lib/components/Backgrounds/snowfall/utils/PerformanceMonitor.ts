@@ -5,7 +5,7 @@ export const createPerformanceMonitor = () => {
 	let lastTime = 0;
 	let frameCount = 0;
 	let fps = 60;
-	let warnings: string[] = [];
+	const warnings: string[] = [];
 	let particleCount = 0;
 	let reportCallback: ((fps: number, particleCount: number) => void) | null = null;
 

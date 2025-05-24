@@ -90,13 +90,13 @@ describe('ArrowPlacementManager', () => {
 
 	// Test more specific scenarios
 	it('should handle pro motion arrows correctly', () => {
-		const proArrow = { ...mockArrowData, motionType: 'pro' as 'pro' };
+		const proArrow = { ...mockArrowData, motionType: 'pro' as const };
 		manager.updateArrowPlacements([proArrow]);
 		// Assertions here
 	});
 
 	it('should handle anti motion arrows correctly', () => {
-		const antiArrow = { ...mockArrowData, motionType: 'anti' as 'anti' };
+		const antiArrow = { ...mockArrowData, motionType: 'anti' as const };
 		manager.updateArrowPlacements([antiArrow]);
 		// Assertions here
 	});

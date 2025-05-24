@@ -15,7 +15,7 @@ import {
 	EscalateStrategy,
 	ResumeStrategy
 } from '../core/supervision/strategies';
-import { ActorHealthStatus, SupervisionStrategyType } from '../core/supervision/types';
+import { ActorHealthStatus } from '../core/supervision/types';
 
 describe('Actor Supervision System', () => {
 	// Reset the root supervisor before each test

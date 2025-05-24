@@ -17,7 +17,7 @@ const initialState: SelectionState = {
 };
 
 // Create the selection state using Svelte 5 runes
-export let selectionState = $state<SelectionState>({ ...initialState });
+export const selectionState = $state<SelectionState>({ ...initialState });
 
 // Action functions for selection management
 export const selectionActions = {

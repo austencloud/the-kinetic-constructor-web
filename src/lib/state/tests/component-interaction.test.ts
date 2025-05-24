@@ -9,7 +9,7 @@ import { get, writable } from 'svelte/store';
 import { stateRegistry } from '../core/registry';
 import { createStore } from '../core/store';
 import { resetAllState } from '../core/testing';
-import { createMachine, assign, type AnyActorRef } from 'xstate';
+import { createMachine, assign } from 'xstate';
 
 // Mock counter store
 const createMockCounterStore = () => {

@@ -1,6 +1,6 @@
 // src/lib/components/PlacementManagers/ArrowPlacementManager/ArrowPlacementManager.ts
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
-import type { ArrowPlacementConfig, Coordinates } from './types';
+import type { ArrowPlacementConfig } from './types';
 import { getInitialPosition } from './utils/positionCalculator';
 import { calculateAdjustment } from './utils/adjustmentCalculator';
 

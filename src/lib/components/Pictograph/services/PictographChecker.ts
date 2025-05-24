@@ -3,7 +3,6 @@ import { CLOCK, COUNTER, IN, OUT } from '$lib/types/Constants';
 import type { PictographData } from '$lib/types/PictographData';
 import { LetterUtils } from '$lib/utils/LetterUtils';
 import { LetterConditions } from '../constants/LetterConditions';
-import type { Orientation } from '$lib/types/Types';
 
 export class PictographChecker {
 	private _pictographData: PictographData;

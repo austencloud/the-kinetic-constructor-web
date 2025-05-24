@@ -144,14 +144,5 @@ export function drawDifficultyCircle(
 	// Draw the text
 	ctx.fillText(level.toString(), x, textY);
 
-	// Log circle details for debugging
-	console.log('DifficultyCircleDrawer: Circle rendered', {
-		level,
-		x,
-		y,
-		radius,
-		fontSize,
-		lineWidth: ctx.lineWidth
-	});
 	ctx.restore();
 }

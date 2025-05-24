@@ -2,11 +2,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { PictographService } from '$lib/components/Pictograph/PictographService';
 import type { PictographData } from '$lib/types/PictographData';
-import type { MotionData } from '$lib/components/objects/Motion/MotionData';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
-import { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
-import { DASH, PRO, RED, BLUE } from '$lib/types/Constants';
+import { RED, BLUE } from '$lib/types/Constants';
 import ArrowLocationManager, {
 	calculateDashLocation
 } from '$lib/components/objects/Arrow/ArrowLocationManager';
@@ -112,10 +110,6 @@ describe('Type 3 Dash Arrow Positioning', () => {
 
 		// Verify the red arrow location matches the expected location
 		expect(redArrowData.loc).toBe(expectedLocation);
-
-		// Log the locations for debugging
-		console.log('Expected dash location:', expectedLocation);
-		console.log('Actual red arrow location:', redArrowData.loc);
 	});
 
 	it('should correctly position the dash arrow in the beat frame', () => {
@@ -143,10 +137,6 @@ describe('Type 3 Dash Arrow Positioning', () => {
 		// Verify the coordinates are not at the origin
 		expect(redArrowData.coords.x).not.toBe(0);
 		expect(redArrowData.coords.y).not.toBe(0);
-
-		// Log the final positions for debugging
-		console.log('Final red arrow location:', redArrowData.loc);
-		console.log('Final red arrow coordinates:', redArrowData.coords);
 	});
 
 	it('should use calculateDashLocationBasedOnShift for Type 3 dash motions', () => {
@@ -167,10 +157,6 @@ describe('Type 3 Dash Arrow Positioning', () => {
 
 		// Verify the red arrow location matches the calculated dash location
 		expect(redArrowData.loc).toBe(dashLocation);
-
-		// Log the locations for debugging
-		console.log('Calculated dash location:', dashLocation);
-		console.log('Red arrow location:', redArrowData.loc);
 	});
 
 	it('should maintain the correct dash location after updateData is called', () => {
@@ -186,9 +172,5 @@ describe('Type 3 Dash Arrow Positioning', () => {
 
 		// Verify the location is still correct
 		expect(newRedArrowData.loc).toBe(initialLocation);
-
-		// Log the locations for debugging
-		console.log('Initial location:', initialLocation);
-		console.log('New location after update:', newRedArrowData.loc);
 	});
 });

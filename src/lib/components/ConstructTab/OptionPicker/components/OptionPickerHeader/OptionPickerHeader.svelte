@@ -18,32 +18,6 @@
 
 	// --- State ---
 
-	// $effect(() => {
-	// 	if (debugTimer) clearTimeout(debugTimer);
-	//
-	// 	debugTimer = setTimeout(() => {
-	// 		console.log('OptionPickerHeader state:', debugInfo);
-	//
-	// 		// Extra debug logging to help diagnose tab display issues
-	// 		if (props.showTabs) {
-	// 			console.log(
-	// 				'HEADER: Showing tabs for',
-	// 				currentSortMethod,
-	// 				'with selected tab',
-	// 				selectedTabState
-	// 			);
-	// 		} else {
-	// 			console.log('HEADER: Showing helper text because showTabs is false');
-	// 		}
-	// 	}, 100);
-	//
-	// 	return () => {
-	// 		if (debugTimer) clearTimeout(debugTimer);
-	// 	};
-	// });
-
-	// Completely disable debug logging to prevent reactivity loops
-
 	// --- Responsive Layout ---
 	// Destructure stores from the hook
 	const {
@@ -54,53 +28,6 @@
 		showScrollIndicator,
 		handleScroll // Make sure to get all needed functions/stores
 	} = useResponsiveLayout(layoutContext);
-
-	// --- Event Handlers & Helpers ---
-	// DISABLED: Set up event listener for viewChange events
-	// $effect(() => {
-	// 	if (!$tabsContainerRef) return; // Access store value with $
-	//
-	// 	// Function to handle viewChange events
-	// 	const viewChangeHandler = (event: Event) => {
-	// 		// Check if this is a CustomEvent with detail
-	// 		if (event instanceof CustomEvent && event.detail) {
-	// 			console.log('Received viewChange event with detail:', event.detail);
-	//
-	// 			// IMPORTANT: Check if the event is already from the header element
-	// 			// This prevents infinite recursion by not re-dispatching events that originated from the header
-	// 			const target = event.target as HTMLElement;
-	// 			const isFromHeader = target && target.closest('.option-picker-header');
-	//
-	// 			// Only forward events that didn't originate from the header
-	// 			if (!isFromHeader) {
-	// 				// Forward the event to the parent component using a custom event
-	// 				// that doesn't trigger the document listeners again
-	// 				const headerElement = document.querySelector('.option-picker-header');
-	// 				if (headerElement) {
-	// 					// Create a new event with a different name to avoid recursion
-	// 					const customEvent = new CustomEvent('optionPickerViewChange', {
-	// 						detail: event.detail,
-	// 						bubbles: true
-	// 					});
-	// 					headerElement.dispatchEvent(customEvent);
-	// 				}
-	// 			}
-	// 		}
-	// 	};
-	//
-	// 	// Add event listener for both lowercase and capitalized versions
-	// 	// This ensures we catch events regardless of how they're dispatched
-	// 	document.addEventListener('viewchange', viewChangeHandler);
-	// 	document.addEventListener('viewChange', viewChangeHandler);
-	//
-	// 	// Clean up on destroy
-	// 	return () => {
-	// 		document.removeEventListener('viewchange', viewChangeHandler);
-	// 		document.removeEventListener('viewChange', viewChangeHandler);
-	// 	};
-	// });
-
-	// Completely disable event listeners to prevent reactivity loops
 </script>
 
 <div class="option-picker-header" class:mobile={$isMobileDevice} data-testid="option-picker-header">

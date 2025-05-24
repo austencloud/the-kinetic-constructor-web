@@ -1,4 +1,4 @@
-import { onMount, getContext } from 'svelte';
+import { onMount } from 'svelte';
 import { writable, type Writable } from 'svelte/store';
 import { getService } from './serviceContext';
 import type { ServiceToken } from './ServiceTokens';

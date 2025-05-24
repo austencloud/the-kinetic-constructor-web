@@ -79,9 +79,6 @@
 		const exportSettings = getImageExportSettings();
 		exportSettings.rememberLastSaveDirectory = rememberLastSaveDirectory;
 		updateImageExportSettings(exportSettings);
-
-		// Log for debugging
-		console.log('Remember save location toggled:', rememberLastSaveDirectory);
 	}
 
 	// Update username

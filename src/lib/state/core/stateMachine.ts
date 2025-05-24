@@ -6,16 +6,14 @@
  */
 
 import {
-	createMachine as xstateCreateMachine,
 	setup,
 	createActor,
 	type AnyActorRef,
 	type AnyStateMachine,
-	type ActorOptions,
-	type SnapshotFrom
+	type ActorOptions
 } from 'xstate';
 import { stateRegistry } from './registry';
-import { createContainer, createEffect } from './container';
+import { createContainer } from './container';
 
 /**
  * Creates an XState machine with improved ergonomics

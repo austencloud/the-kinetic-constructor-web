@@ -8,8 +8,6 @@
 import { describe, it, expect } from 'vitest';
 import { calculateDimensions } from './CanvasDimensionsCalculator';
 import type { EnhancedExportOptions } from './exportTypes';
-import type { Beat } from '$lib/types/Beat';
-import type { TKAPosition } from '$lib/types/TKAPosition';
 
 // Test data will be loaded from real CSV data
 

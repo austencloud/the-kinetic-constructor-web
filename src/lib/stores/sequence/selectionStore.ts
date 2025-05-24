@@ -32,8 +32,6 @@ function createSelectedStartPosStore() {
 			try {
 				if (value) {
 					localStorage.setItem(START_POSITION_STORAGE_KEY, JSON.stringify(value));
-					if (import.meta.env.DEV) {
-					}
 				} else {
 					localStorage.removeItem(START_POSITION_STORAGE_KEY);
 				}

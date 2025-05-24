@@ -1,7 +1,7 @@
 // src/lib/stores/browseTab/browseTabStore.ts
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
-import type { Writable, Readable } from 'svelte/store';
+import type { Readable } from 'svelte/store';
 
 // Define types for the browse tab
 export type FilterType =

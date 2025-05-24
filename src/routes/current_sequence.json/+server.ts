@@ -56,7 +56,7 @@ export async function GET() {
 		try {
 			const sequenceData = await readFile(filePath, 'utf8');
 			return json(JSON.parse(sequenceData));
-		} catch (readError) {
+		} catch {
 			// If file doesn't exist, return default sequence
 			return json([
 				{

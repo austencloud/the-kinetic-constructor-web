@@ -15,7 +15,6 @@ import {
 	type SnapshotFrom,
 	type ActorRefFrom,
 	type ActorOptions,
-	type InspectionEvent,
 	type InputFrom,
 	type EmittedFrom
 } from 'xstate';

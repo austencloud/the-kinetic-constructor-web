@@ -2,7 +2,6 @@
  * Helper functions for testing Svelte 5 components
  */
 import { vi } from 'vitest';
-import type { ComponentProps } from 'svelte';
 
 // Mock the onMount function to immediately call the callback
 vi.mock('svelte', () => {

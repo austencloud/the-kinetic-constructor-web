@@ -8,7 +8,6 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { writable, get } from 'svelte/store';
 import { stateRegistry } from '../core/registry';
 import { createMachine } from 'xstate';
-import type { AnyActorRef } from 'xstate';
 
 describe('State Registry', () => {
 	beforeEach(() => {

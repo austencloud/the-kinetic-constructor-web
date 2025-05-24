@@ -3,7 +3,6 @@ import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer'
 import { checkForSequenceInUrl } from '$lib/components/SequenceWorkbench/share/utils/ShareUtils';
 import { logger } from '$lib/core/logging';
 import { resourcePreloader } from '$lib/services/ResourcePreloader';
-import { resourceCache } from '$lib/services/ResourceCache';
 import { glyphContainer } from '$lib/stores/glyphContainer.svelte';
 import { toAppError } from '$lib/types/ErrorTypes';
 import SvgManager from '$lib/components/SvgManager/SvgManager';

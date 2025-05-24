@@ -2,7 +2,6 @@
 import { RADIAL, NONRADIAL, IN, OUT, CLOCK, COUNTER } from '$lib/types/Constants';
 import { LetterConditions } from '$lib/components/Pictograph/constants/LetterConditions';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
-import type { ArrowPlacementConfig } from '../types';
 
 /**
  * Generates orientation keys for arrow placements.

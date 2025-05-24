@@ -262,7 +262,7 @@ export function createPersistentObjectState<T extends object>(
 	}
 
 	// Create a mutable state object
-	let stateObj = { ...loadedValue };
+	const stateObj = { ...loadedValue };
 
 	// Create a debounced save function
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;

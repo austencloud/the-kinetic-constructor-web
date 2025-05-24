@@ -1,7 +1,7 @@
 // src/lib/components/SequenceWorkbench/BeatFrame/tests/BeatFrame.test.ts
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/svelte';
+import { render } from '@testing-library/svelte';
 import BeatFrameComposable from '../BeatFrameComposable.svelte';
 import { convertContainerBeatsToLegacyFormat, convertLegacyBeatToContainerFormat } from '../utils/beatFrameUtils';
 

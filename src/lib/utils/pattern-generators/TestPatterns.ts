@@ -104,22 +104,16 @@ export function generatePatternsCsv(): string {
  */
 export function main() {
 	// Test all implemented generators
-	console.log('======= GENERATED PATTERNS =======');
-	console.log(testPatternGenerators());
+	testPatternGenerators();
 
 	// Test specific letters
-	console.log('\n\n======= TESTING SPECIFIC LETTERS =======');
-	console.log(
-		testPatternGenerators({
-			letters: ['A', 'F', 'M', 'X', 'Alpha', 'Omega'],
-			maxSamplesPerLetter: 2
-		})
-	);
+	testPatternGenerators({
+		letters: ['A', 'F', 'M', 'X', 'Alpha', 'Omega'],
+		maxSamplesPerLetter: 2
+	});
 
 	// Generate CSV output for a sample
-	console.log('\n\n======= CSV SAMPLE OUTPUT =======');
-	const csvSample = generatePatternsCsv().split('\n').slice(0, 11).join('\n');
-	console.log(csvSample + '\n... (more rows)');
+	generatePatternsCsv();
 }
 
 // Uncomment to run the test program

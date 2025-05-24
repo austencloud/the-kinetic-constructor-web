@@ -2,7 +2,6 @@ import { BetaPropDirectionCalculator } from './BetaPropDirectionCalculator';
 import type { PictographData } from '$lib/types/PictographData';
 import type { Direction } from '$lib/types/Types';
 import type { PropData } from '$lib/components/objects/Prop/PropData';
-import { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
 import { PRO, ANTI, FLOAT } from '$lib/types/Constants';
 
@@ -68,7 +67,7 @@ export class BetaPropPositioner {
 		}
 
 		// Get direction from red motion
-		let direction = this.dirCalculator.getDirection(redProp);
+		const direction = this.dirCalculator.getDirection(redProp);
 		if (!direction) {
 			console.warn('Could not determine direction for G/H repositioning');
 			return;

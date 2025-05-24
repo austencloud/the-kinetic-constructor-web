@@ -1,8 +1,7 @@
 import type {
 	BackgroundSystem as OriginalBackgroundSystem,
 	BackgroundType,
-	QualityLevel,
-	AccessibilitySettings
+	QualityLevel
 } from '$lib/components/Backgrounds/types/types';
 
 export interface BackgroundSystemFactory {

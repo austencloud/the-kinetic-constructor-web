@@ -1,11 +1,8 @@
 // src/lib/services/ErrorHandlingService.ts
 
-import { browser } from '$app/environment';
 import {
 	errorLogger,
-	ErrorSeverity as LogErrorSeverity,
-	ErrorCategory,
-	type AppError as LogAppError
+	ErrorSeverity as LogErrorSeverity
 } from '$lib/core/logging/error-logger';
 
 // Re-export error severity for backward compatibility

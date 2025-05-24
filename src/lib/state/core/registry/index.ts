@@ -10,13 +10,12 @@
  */
 
 import { browser } from '$app/environment';
-import { writable, get, type Writable, type Readable } from 'svelte/store';
+import { type Writable, type Readable } from 'svelte/store';
 import {
 	createActor,
 	type AnyActorRef,
 	type AnyStateMachine,
 	type ActorOptions,
-	type AnyEventObject,
 	type Actor,
 	type SnapshotFrom,
 	type InspectionEvent

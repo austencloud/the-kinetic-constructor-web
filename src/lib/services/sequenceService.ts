@@ -1,6 +1,6 @@
 // src/lib/services/sequenceService.ts
 import { browser } from '$app/environment';
-import type { SequenceData, SequenceVariation } from '$lib/stores/browseTab/browseTabStore';
+import type { SequenceData } from '$lib/stores/browseTab/browseTabStore';
 
 // Mock data for development
 const MOCK_SEQUENCES: SequenceData[] = [

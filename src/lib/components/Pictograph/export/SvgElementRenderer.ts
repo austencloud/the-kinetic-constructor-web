@@ -39,7 +39,7 @@ export async function renderSvgElements(
 
 	// Always include the start position if it exists
 	// This is a temporary fix until the grid layout issues are resolved
-	let hasStartPosition = !!options.startPosition || !!startPositionContainer;
+	const hasStartPosition = !!options.startPosition || !!startPositionContainer;
 
 	if (startPositionContainer) {
 		console.log('EnhancedExporter: Found start position container in DOM, including it in export');

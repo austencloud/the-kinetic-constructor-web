@@ -6,7 +6,6 @@
 
 import type { CanvasDimensions, EnhancedExportOptions } from './exportTypes';
 import {
-	calculateOptimalFontSize,
 	calculateLayoutAwareFontSize,
 	type FontOptions
 } from './FontSizeHelper';
@@ -127,15 +126,6 @@ export function drawUserInfo(
 	// Update font size
 	dateFontOptions.size = dateOptimalSize;
 
-	// Log font sizes for debugging
-	console.log('UserInfoRenderer: Font sizes calculated', {
-		rows,
-		notesOptimalSize,
-		userNameOptimalSize,
-		dateOptimalSize,
-		MIN_FONT_SIZE
-	});
-
 	// Save context for restoration
 	ctx.save();
 
@@ -155,16 +145,6 @@ export function drawUserInfo(
 	// Position the text directly in the vertical center of the bottom margin area
 	// This ensures proper vertical centering without the separator line
 	const textY = height + topMargin + bottomMargin / 2;
-
-	// Log positioning information
-	console.log('UserInfoRenderer: Text positioning', {
-		margin,
-		spacing,
-		textY,
-		bottomMargin,
-		bottomOfBeats: height + topMargin,
-		canvasHeight: height + topMargin + bottomMargin
-	});
 
 	// Separator line removed to prevent text overflow issues
 

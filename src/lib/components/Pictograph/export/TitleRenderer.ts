@@ -6,7 +6,6 @@
 
 import type { CanvasDimensions } from './exportTypes';
 import {
-	calculateOptimalFontSize,
 	calculateLayoutAwareFontSize,
 	calculateLetterSpacing,
 	drawTextWithSpacing,
@@ -65,18 +64,6 @@ export function drawTitle(
 
 	// Update font size
 	fontOptions.size = optimalFontSize;
-
-	// Log font size and positioning for debugging
-	console.log('TitleRenderer: Font size and positioning calculated', {
-		title,
-		rows,
-		optimalFontSize,
-		availableWidth,
-		padding,
-		topMargin,
-		verticalPositionFactor: 0.5,
-		centerY: topMargin * 0.5
-	});
 
 	// Calculate letter spacing (kerning)
 	const letterSpacing = calculateLetterSpacing(

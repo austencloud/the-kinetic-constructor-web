@@ -6,7 +6,6 @@ import { writable } from 'svelte/store';
 // Import the PictographData type
 import type { PictographData } from '$lib/types/PictographData';
 import type { Letter } from '$lib/types/Letter';
-import { DIAMOND } from '$lib/types/Constants';
 
 // Track previous question letters to avoid repetition
 const previousLetterStore = writable<Letter | null>(null);

@@ -133,7 +133,6 @@ function parseCsvToJson(csv: string, gridMode: string) {
 
 function groupPictographsByLetter(pictographs: Record<string, any>[]): PictographData[] {
 	const processedPictographs: PictographData[] = [];
-	let skippedCount = 0;
 
 	pictographs.forEach((record) => {
 		const rawLetter = record.letter ? record.letter.trim() : '';

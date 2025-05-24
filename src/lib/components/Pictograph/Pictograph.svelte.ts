@@ -13,7 +13,7 @@ import type { PictographData } from '$lib/types/PictographData';
  */
 export function createPictographState(initialData?: PictographData) {
 	// Create state using pure runes
-	let state = $state({
+	const state = $state({
 		data: initialData || null,
 		isLoading: false,
 		error: null,

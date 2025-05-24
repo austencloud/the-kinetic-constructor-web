@@ -107,7 +107,7 @@ export function performPersist(
 		try {
 			const instance = container.instance;
 			let currentStateValue: any;
-			let lastPersistedValue: any = lastPersistedState[container.id]?.value;
+			const lastPersistedValue: any = lastPersistedState[container.id]?.value;
 
 			// Extract current state value based on container type
 			if (

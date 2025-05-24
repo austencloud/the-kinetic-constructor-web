@@ -3,7 +3,6 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { get } from 'svelte/store';
-import { stateRegistry } from '../../core/registry';
 import { createStore, createPersistentStore } from '../../core/store';
 import { setupIntegrationTests } from './setup';
 

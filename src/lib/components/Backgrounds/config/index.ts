@@ -23,7 +23,7 @@ export function getOptimizedConfig(quality: QualityLevel) {
 	const qualitySettings = CoreConfig.quality[quality];
 
 	// Apply accessibility settings if enabled
-	let config = {
+	const config = {
 		core: { ...CoreConfig },
 		snowfall: { ...SnowfallConfig },
 		seasonal: { ...SeasonalConfig },

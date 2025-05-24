@@ -35,7 +35,7 @@ function getStoredState() {
 			sortMethod: parsed.sortMethod || 'all',
 			lastSelectedTab: parsed.lastSelectedTab || { all: 'all', type: 'all' }
 		};
-	} catch (e) {
+	} catch {
 		return { sortMethod: 'all', lastSelectedTab: { all: 'all', type: 'all' } };
 	}
 }
@@ -138,7 +138,7 @@ class OptionPickerStateManager {
 
 	// Computed properties
 	get filteredOptions() {
-		let options = [...this.options];
+		const options = [...this.options];
 
 		// Only sort if we have a valid sort method (not 'all')
 		if (this.sortMethod !== 'all') {

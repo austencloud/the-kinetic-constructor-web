@@ -1,7 +1,6 @@
 /**
  * Utilities for image handling and processing
  */
-import { browser } from '$app/environment';
 
 /**
  * Convert a data URL to a Blob

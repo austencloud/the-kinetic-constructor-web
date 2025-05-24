@@ -177,8 +177,4 @@ if (typeof window !== 'undefined') {
 			return testSequenceUrlEncoding(testSequence);
 		}
 	};
-
-	console.log(
-		'Share utils test utilities initialized. Access via window.testShareUtils in the console.'
-	);
 }

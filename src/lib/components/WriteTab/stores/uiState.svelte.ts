@@ -4,7 +4,6 @@
  * Modern replacement for uiStore.ts using Svelte 5 runes
  */
 
-import { browser } from '$app/environment';
 import { createPersistentObjectState } from '$lib/state/core/runes.svelte';
 
 // Define the UI state interface

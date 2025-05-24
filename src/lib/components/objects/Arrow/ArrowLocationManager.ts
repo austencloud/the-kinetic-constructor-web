@@ -23,7 +23,7 @@ import {
 } from '$lib/types/Constants';
 import { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
-import type { Loc, Color } from '$lib/types/Types';
+import type { Loc } from '$lib/types/Types';
 import { LetterUtils } from '$lib/utils/LetterUtils';
 import type { PictographService } from '$lib/components/Pictograph/PictographService';
 

@@ -2,7 +2,7 @@
 import type { PictographData } from './mocks';
 import { DIAMOND, sequenceContainer } from './mocks';
 import { browser } from '$app/environment';
-import { turnsStore, type TurnsValue } from '$lib/stores/sequence/turnsStore';
+import { turnsStore } from '$lib/stores/sequence/turnsStore';
 import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 
 // Define the type for the sequence container
@@ -185,7 +185,7 @@ export function createBeatDataHandler(
 					// Update blue motion data
 					if (beat.blueMotionData) {
 						// If changing direction, we may need to update the motion type
-						let updatedMotionData = {
+						const updatedMotionData = {
 							...beat.blueMotionData,
 							[property]: value
 						};
@@ -267,7 +267,7 @@ export function createBeatDataHandler(
 					// Update red motion data
 					if (beat.redMotionData) {
 						// If changing direction, we may need to update the motion type
-						let updatedMotionData = {
+						const updatedMotionData = {
 							...beat.redMotionData,
 							[property]: value
 						};

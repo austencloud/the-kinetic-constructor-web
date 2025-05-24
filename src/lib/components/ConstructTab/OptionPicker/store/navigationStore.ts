@@ -30,7 +30,7 @@ const createNavigationStore = () => {
 		/**
 		 * Navigate to a new tab with direction awareness
 		 */
-		selectTab: (newTab: string | null, sortMethod: SortMethod) => {
+		selectTab: (newTab: string | null, _sortMethod: SortMethod) => {
 			update((state) => {
 				// Prevent rapid navigation during transitions
 				if (state.transitionLock) return state;

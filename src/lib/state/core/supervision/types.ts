@@ -9,7 +9,6 @@ import type {
 	Actor,
 	ActorOptions,
 	SnapshotFrom,
-	Snapshot,
 	ActorRefFrom
 } from 'xstate';
 

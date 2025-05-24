@@ -2,7 +2,6 @@ import type {
 	BackgroundSystem,
 	BackgroundType,
 	QualityLevel,
-	AccessibilitySettings,
 	Dimensions
 } from '$lib/components/Backgrounds/types/types';
 

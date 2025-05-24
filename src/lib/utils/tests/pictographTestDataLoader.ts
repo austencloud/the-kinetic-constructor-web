@@ -8,7 +8,7 @@
 import type { PictographData } from '$lib/types/PictographData';
 import type { Letter } from '$lib/types/Letter';
 import type { TKAPosition } from '$lib/types/TKAPosition';
-import type { VTGTiming, VTGDir, HandRotDir } from '$lib/types/Types';
+import type { VTGTiming, VTGDir } from '$lib/types/Types';
 import type { MotionData } from '$lib/components/objects/Motion/MotionData';
 import { LetterUtils } from '$lib/utils/LetterUtils';
 import { HandpathCalculator } from '$lib/components/objects/Motion/HandpathCalculator';
@@ -147,7 +147,6 @@ export class PictographTestDataLoader {
 			const records = parseCsvToJson(csvContent, gridMode);
 			this.pictographs = convertToPictographData(records);
 			this.isLoaded = true;
-			console.log(`Loaded ${this.pictographs.length} pictographs for testing`);
 		} catch (error) {
 			console.error('Failed to load pictograph test data:', error);
 			throw error;

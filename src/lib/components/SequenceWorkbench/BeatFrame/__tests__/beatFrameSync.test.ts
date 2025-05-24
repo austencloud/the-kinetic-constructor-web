@@ -4,7 +4,6 @@ import { convertPictographToContainerFormat } from '../utils/beatFrameUtils';
 import type { PictographData } from '$lib/types/PictographData';
 import { Letter } from '$lib/types/Letter';
 import type { TKAPosition } from '$lib/types/TKAPosition';
-import type { VTGTiming, VTGDir } from '$lib/types/Types';
 import {
 	initializeTestDataLoader,
 	getTestPictographByLetter,

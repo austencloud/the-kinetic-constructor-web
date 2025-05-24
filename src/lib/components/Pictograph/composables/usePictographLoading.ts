@@ -4,7 +4,6 @@ import type { PictographState } from './usePictographState';
 import {
 	handleGridLoaded as handleGridLoadedUtil,
 	handleComponentLoaded as handleComponentLoadedUtil,
-	checkLoadingComplete as checkLoadingCompleteUtil,
 	type LoadingManagerContext
 } from '../managers/PictographLoadingManager';
 import type { GridData } from '$lib/components/objects/Grid/GridData';
@@ -46,7 +45,7 @@ export function usePictographLoading(
 	}
 
 	// Debounced component loading for better performance
-	let pendingComponents = new Set<string>();
+	const pendingComponents = new Set<string>();
 	let debounceTimer: number | null = null;
 
 	function handleComponentLoaded(component: string) {

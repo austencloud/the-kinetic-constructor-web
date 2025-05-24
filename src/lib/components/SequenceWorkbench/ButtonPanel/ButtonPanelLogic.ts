@@ -1,4 +1,4 @@
-import type { ButtonDefinition, ActionEventDetail } from './types';
+import type { ButtonDefinition } from './types';
 import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
 import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 

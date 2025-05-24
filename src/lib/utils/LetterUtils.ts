@@ -1,5 +1,4 @@
 import { Letter } from '$lib/types/Letter';
-import { LetterType } from '$lib/types/LetterType';
 import { LetterConditions } from '../components/Pictograph/constants/LetterConditions';
 
 export class LetterUtils {
@@ -212,7 +211,7 @@ export class LetterUtils {
 		}
 
 		// Fifth, try normalized versions for special character handling
-		let normalizedStr = trimmedStr
+		const normalizedStr = trimmedStr
 			// Convert unicode and common alternatives
 			.replace(/θ/g, 'theta')
 			.replace(/Θ/g, 'Theta')
@@ -260,7 +259,7 @@ export class LetterUtils {
 	static tryFromString(letterStr: string): Letter | null {
 		try {
 			return this.fromString(letterStr);
-		} catch (error) {
+		} catch {
 			// Silently return null for failed parsing attempts
 			// (detailed logging is handled in fromString method)
 			return null;
