@@ -1,4 +1,4 @@
-import { settingsStore, type CAPType } from '../store/settings';
+import { type CAPType } from '../store/settings';
 import { generatorStore } from '../store/generator';
 import { capExecutors } from './capExecutors';
 import { validateCircularSequence } from './validators';

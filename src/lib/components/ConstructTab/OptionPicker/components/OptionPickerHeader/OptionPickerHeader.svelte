@@ -1,12 +1,10 @@
 <!-- src/lib/components/ConstructTab/OptionPicker/components/OptionPickerHeader/OptionPickerHeader.svelte -->
 <script lang="ts">
-	import { getContext, untrack } from 'svelte';
+	import { getContext } from 'svelte';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../../layoutContext';
 	import ViewControl from '../ViewControl/ViewControl.svelte';
 	import TabsContainer from './TabsContainer.svelte';
 	import { useResponsiveLayout } from './useResponsiveLayout';
-	import { optionPickerState } from '../../optionPickerState.svelte';
-	import type { SortMethod } from '../../config';
 
 	// --- Props using Svelte 5 runes ---
 	const props = $props<{
@@ -19,22 +17,7 @@
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 
 	// --- State ---
-	// Use derived state without effects
-	const currentSortMethod = $derived(optionPickerState.sortMethod);
-	const selectedTabState = $derived(props.selectedTab);
 
-	// Remove the effect that logs state - use derived for debugging
-	const debugInfo = $derived.by(() => {
-		return untrack(() => ({
-			currentSortMethod,
-			selectedTabState,
-			showTabs: props.showTabs,
-			categoryKeys: props.categoryKeys
-		}));
-	});
-
-	// DISABLED: Log only when needed, not in reactive context
-	let debugTimer: ReturnType<typeof setTimeout> | undefined;
 	// $effect(() => {
 	// 	if (debugTimer) clearTimeout(debugTimer);
 	//
@@ -60,14 +43,12 @@
 	// });
 
 	// Completely disable debug logging to prevent reactivity loops
-	console.log('OptionPickerHeader: Debug logging disabled to prevent reactivity loops');
 
 	// --- Responsive Layout ---
 	// Destructure stores from the hook
 	const {
 		isMobileDevice,
 		useShortLabels,
-		tabsContainerRef,
 		isScrollable,
 		compactMode,
 		showScrollIndicator,
@@ -120,7 +101,6 @@
 	// });
 
 	// Completely disable event listeners to prevent reactivity loops
-	console.log('OptionPickerHeader: Event listeners disabled to prevent reactivity loops');
 </script>
 
 <div class="option-picker-header" class:mobile={$isMobileDevice} data-testid="option-picker-header">
@@ -134,8 +114,6 @@
 				isScrollable={$isScrollable}
 				showScrollIndicator={$showScrollIndicator}
 				useShortLabels={$useShortLabels}
-				isMobileDevice={$isMobileDevice}
-				compactMode={$compactMode}
 				onScroll={handleScroll}
 			/>
 		{:else}

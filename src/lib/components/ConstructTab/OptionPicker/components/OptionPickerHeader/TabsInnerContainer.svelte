@@ -68,7 +68,6 @@
 	// });
 
 	// Completely disable event listeners to prevent reactivity loops
-	console.log('TabsInnerContainer: Event listeners disabled to prevent reactivity loops');
 </script>
 
 <div class="tabs-inner-container">

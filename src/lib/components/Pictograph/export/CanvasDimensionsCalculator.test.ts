@@ -5,17 +5,11 @@
  * calculates dimensions for various scenarios.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { calculateDimensions } from './CanvasDimensionsCalculator';
 import type { EnhancedExportOptions } from './exportTypes';
 import type { Beat } from '$lib/types/Beat';
-import { Letter } from '$lib/types/Letter';
 import type { TKAPosition } from '$lib/types/TKAPosition';
-import {
-	initializeTestDataLoader,
-	createTestSequence,
-	resetTestData
-} from '$lib/utils/tests/pictographTestHelpers';
 
 // Test data will be loaded from real CSV data
 

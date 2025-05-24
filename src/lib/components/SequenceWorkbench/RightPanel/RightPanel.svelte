@@ -22,19 +22,6 @@
 		return unsubscribe;
 	});
 
-	// Debug the sequence state
-	$effect(() => {
-		console.log('🔥 RightPanel: sequence isEmpty:', sequenceState.isEmpty);
-		console.log('🔥 RightPanel: sequence hasStartPosition:', !!sequenceState.startPosition);
-		console.log('🔥 RightPanel: sequence beatsCount:', sequenceState.beats.length);
-		console.log('🔥 RightPanel: workbench activeTab:', $workbenchStore.activeTab);
-		console.log('🔥 RightPanel: hasSelectedBeats:', hasSelectedBeats);
-		console.log(
-			'🔥 RightPanel: Should show OptionPicker:',
-			!sequenceState.isEmpty && $workbenchStore.activeTab === 'construct'
-		);
-	});
-
 	// Transition parameters
 	const transitionDuration = 400;
 	const fadeParams = { duration: transitionDuration, easing: cubicInOut };

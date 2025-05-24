@@ -185,9 +185,6 @@
 
 					// Update the store (but don't subscribe to its changes to avoid loops)
 					selectedStartPos.set(newStartPos);
-
-					// Log for debugging
-					console.log('BeatFrameStateManager: Updated start position from event');
 				}
 			}
 		};
@@ -204,9 +201,6 @@
 
 					// Update the store (but don't subscribe to its changes to avoid loops)
 					selectedStartPos.set(newStartPos);
-
-					// Log for debugging
-					console.log('BeatFrameStateManager: Refreshed start position after first beat removal');
 				}
 			}
 		};
@@ -371,15 +365,6 @@
 						document.dispatchEvent(redHighlightEvent);
 					}, 150);
 				}, 50);
-
-				// Log selection for debugging
-				console.debug('Beat selected:', {
-					beatId,
-					multiSelect,
-					shiftKey: isShiftKeyPressed,
-					ctrlKey: isCtrlKeyPressed,
-					selectedBeatIds: sequenceContainer.state.selectedBeatIds
-				});
 			}
 		}
 	}

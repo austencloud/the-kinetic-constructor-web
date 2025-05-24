@@ -11,7 +11,6 @@ import {
 	RED,
 	BLUE,
 	RADIAL,
-	NONRADIAL,
 	IN,
 	OUT,
 	CLOCK,

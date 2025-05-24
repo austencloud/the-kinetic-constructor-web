@@ -10,12 +10,7 @@ import type {
 	SequenceMetadata,
 	SequenceStartPos
 } from '$lib/services/SequenceDataService';
-import type { Letter } from '$lib/types/Letter';
 import { LetterUtils } from '$lib/utils/LetterUtils';
-
-// Import legacy stores for synchronization
-import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
-import { sequenceStore } from '$lib/state/stores/sequenceStore';
 
 // Types for our modern sequence state
 export interface SequenceState {
@@ -97,7 +92,6 @@ class SequenceStateManager {
 
 	// Actions
 	async setStartPosition(startPos: PictographData) {
-		console.log('SequenceState: setStartPosition called with:', startPos.startPos);
 		this.#isLoading = true;
 		this.#error = null;
 
@@ -121,15 +115,12 @@ class SequenceStateManager {
 					: null
 			};
 
-			console.log('SequenceState: Setting start position to:', startPosCopy.startPos);
-
 			// Update reactive state first
 			this.#startPosition = startPosCopy;
 
 			// Save to localStorage for persistence
 			if (browser) {
 				localStorage.setItem('start_position', JSON.stringify(startPosCopy));
-				console.log('SequenceState: Saved start position to localStorage');
 			}
 
 			// Update metadata
@@ -177,8 +168,6 @@ class SequenceStateManager {
 
 			// Save to file
 			await this.saveToFile();
-
-			console.log('SequenceState: Beat added successfully');
 		} catch (error) {
 			this.#error = error instanceof Error ? error.message : 'Failed to add beat';
 			console.error('SequenceState: Error adding beat:', error);
@@ -202,8 +191,6 @@ class SequenceStateManager {
 
 			// Save to file
 			await this.saveToFile();
-
-			console.log('SequenceState: Beat removed successfully');
 		} catch (error) {
 			this.#error = error instanceof Error ? error.message : 'Failed to remove beat';
 			console.error('SequenceState: Error removing beat:', error);
@@ -225,7 +212,6 @@ class SequenceStateManager {
 			// Clear localStorage
 			if (browser) {
 				localStorage.removeItem('start_position');
-				console.log('SequenceState: Cleared start position from localStorage');
 			}
 
 			// Save to file
@@ -274,7 +260,6 @@ class SequenceStateManager {
 
 	// Load sequence from file and localStorage
 	async loadSequence() {
-		console.log('SequenceState: Starting loadSequence...');
 		this.#isLoading = true;
 		this.#error = null;
 
@@ -287,13 +272,7 @@ class SequenceStateManager {
 						const startPos = JSON.parse(startPosJson);
 						if (startPos && typeof startPos === 'object') {
 							this.#startPosition = startPos as PictographData;
-							console.log(
-								'SequenceState: Loaded start position from localStorage:',
-								startPos.startPos
-							);
 						}
-					} else {
-						console.log('SequenceState: No start position found in localStorage');
 					}
 				} catch (error) {
 					console.warn('SequenceState: Failed to load start position from localStorage:', error);
@@ -306,27 +285,17 @@ class SequenceStateManager {
 					const response = await fetch('/current_sequence.json');
 					if (response.ok) {
 						const sequence = await response.json();
-						console.log('SequenceState: Loaded sequence from file:', sequence.length, 'items');
 						await this.parseSequenceData(sequence);
-					} else {
-						console.log('SequenceState: No sequence file found or failed to load');
 					}
 				} catch (error) {
 					console.warn('SequenceState: Failed to load sequence from file:', error);
 				}
 			}
-
-			console.log('SequenceState: Sequence loaded successfully. Final state:', {
-				hasStartPosition: !!this.#startPosition,
-				startPos: this.#startPosition?.startPos,
-				beatsCount: this.#beats.length
-			});
 		} catch (error) {
 			this.#error = error instanceof Error ? error.message : 'Failed to load sequence';
 			console.error('SequenceState: Error loading sequence:', error);
 		} finally {
 			this.#isLoading = false;
-			console.log('SequenceState: Loading complete, isLoading set to false');
 		}
 	}
 

@@ -1,7 +1,7 @@
 // src/lib/components/ConstructTab/OptionPicker/components/OptionPickerHeader/useResponsiveLayout.ts
 import { writable, get } from 'svelte/store';
 import type { LayoutContext } from '../../layoutContext';
-import { onMount, onDestroy } from 'svelte';
+import { onMount } from 'svelte';
 
 /**
  * Hook to manage responsive layout state
@@ -104,8 +104,6 @@ export function useResponsiveLayout(layoutContext: LayoutContext | null) {
 				// return () => {
 				// 	resizeObserver.disconnect();
 				// };
-
-				console.log('useResponsiveLayout: ResizeObserver disabled to prevent reactivity loops');
 			}
 		});
 

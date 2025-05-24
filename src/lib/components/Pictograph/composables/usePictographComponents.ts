@@ -2,7 +2,7 @@
 import { get } from 'svelte/store';
 import type { PictographState } from './usePictographState';
 import { createAndPositionComponents as createAndPositionComponentsUtil } from '../utils/componentPositioning';
-import { hasRequiredMotionData as hasRequiredMotionDataUtil } from '../managers/PictographLoadingManager';
+
 import { updateComponentsFromData as updateComponentsFromDataUtil } from '../managers/PictographStateManager';
 
 export function usePictographComponents(state: PictographState, preloadAllSvgs: () => void) {
@@ -51,8 +51,7 @@ export function usePictographComponents(state: PictographState, preloadAllSvgs: 
 				get(state.gridData),
 				createAndPositionComponents,
 				get(state.requiredComponents),
-				get(state.loadedComponents),
-				hasRequiredMotionDataUtil
+				get(state.loadedComponents)
 			);
 
 			// Update local state

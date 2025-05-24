@@ -2,20 +2,14 @@
 	import { onDestroy } from 'svelte';
 	import type { SortMethod } from '../../config';
 	import { viewOptions } from './viewOptions';
-	import type { ViewModeDetail, ViewOption } from './types';
+	import type { ViewOption } from './types';
 	import ViewButton from './ViewButton.svelte';
 	import ViewDropdown from './ViewDropdown.svelte';
-	import { optionPickerState, type SortMethodOrAll } from '../../optionPickerState.svelte';
+	import { optionPickerState } from '../../optionPickerState.svelte';
 
 	// --- Props using Svelte 5 runes ---
-	const {
-		initialSortMethod,
-		compact = false,
-		onviewChange
-	} = $props<{
-		initialSortMethod?: SortMethod;
+	const { compact = false } = $props<{
 		compact?: boolean;
-		onviewChange?: (event: CustomEvent<ViewModeDetail>) => void;
 	}>();
 
 	// --- State ---
@@ -118,31 +112,13 @@
 			}
 		}
 
-		// Create the event detail
-		const detail: ViewModeDetail =
-			option.value === 'all'
-				? { mode: 'all' }
-				: { mode: 'group', method: option.value as SortMethod };
-
-		console.log('ViewControl: handleViewSelect called with option:', option.value);
-
 		// Update the option picker state directly
 		if (option.value === 'all') {
 			// For "Show All" view, we need to set the sort method to 'all'
 			// This is critical for the UI to know we're in "Show All" mode
-			console.log('ViewControl: Setting "all" view');
 
 			// First update the sort method to ensure we're in the right mode
 			optionPickerState.setSortMethod('all');
-
-			// DISABLED: Force a UI update by dispatching a custom event
-			// const showAllEvent = new CustomEvent('show-all-view', {
-			// 	detail: { sortMethod: 'all' },
-			// 	bubbles: true
-			// });
-			// document.dispatchEvent(showAllEvent);
-
-			console.log('ViewControl: Event dispatching disabled to prevent reactivity loops');
 
 			// Set the last selected tab to 'all' for all sort methods
 			// This ensures proper display when switching back to other views
@@ -151,86 +127,27 @@
 			});
 		} else {
 			// For other views, update the sort method
-			console.log('ViewControl: Setting sort method to:', option.value);
 			optionPickerState.setSortMethod(option.value as SortMethod);
 
 			// Get the last selected tab for this sort method
 			const lastSelectedTab = optionPickerState.lastSelectedTab[option.value as SortMethod];
-			console.log('ViewControl: Last selected tab for this sort method:', lastSelectedTab);
 
 			// If there's no last selected tab or it's 'all', we need to select the first tab
 			// This ensures the tabs are displayed properly
 			if (!lastSelectedTab || lastSelectedTab === 'all') {
-				console.log('ViewControl: No last selected tab, will select first available tab');
-
-				// DISABLED: Force a UI update by dispatching a custom event
-				// const forceUpdateEvent = new CustomEvent('force-update-tabs', {
-				// 	detail: { sortMethod: option.value },
-				// 	bubbles: true
-				// });
-				// document.dispatchEvent(forceUpdateEvent);
-
-				console.log('ViewControl: Event dispatching disabled to prevent reactivity loops');
-
-				// DISABLED: We'll select the first tab in the next tick after the UI updates
-				// setTimeout(() => {
-				// 	// Get the grouped options for this sort method
-				// 	const groupedOptions = get(groupedOptionsStore);
-				// 	console.log('ViewControl: Grouped options:', groupedOptions);
-				//
-				// 	if (groupedOptions && Object.keys(groupedOptions).length > 0) {
-				// 		// Get the first category key
-				// 		const firstCategoryKey = Object.keys(groupedOptions)[0];
-				// 		console.log('ViewControl: Selecting first category key:', firstCategoryKey);
-				//
-				// 		// Set the last selected tab to the first category key
-				// 		actions.setLastSelectedTabForSort(option.value as SortMethod, firstCategoryKey);
-				// 	} else {
-				// 		console.log('ViewControl: No grouped options available');
-				// 	}
-				// }, 100);
-
 				// Do a direct update instead of using setTimeout
 				// Get the grouped options for this sort method
 				const groupedOptions = optionPickerState.groupedOptions;
-				console.log('ViewControl: Grouped options:', groupedOptions);
 
 				if (groupedOptions && Object.keys(groupedOptions).length > 0) {
 					// Get the first category key
 					const firstCategoryKey = Object.keys(groupedOptions)[0];
-					console.log('ViewControl: Selecting first category key:', firstCategoryKey);
 
 					// Set the last selected tab to the first category key
 					optionPickerState.setLastSelectedTabForSort(option.value as SortMethod, firstCategoryKey);
-				} else {
-					console.log('ViewControl: No grouped options available');
 				}
 			}
 		}
-
-		// DISABLED: Create a DOM event that will bubble up
-		// const customEvent = new CustomEvent('viewChange', {
-		// 	detail,
-		// 	bubbles: true,
-		// 	composed: true
-		// });
-		//
-		// // Call the Svelte 5 callback if provided
-		// if (onviewChange) {
-		// 	onviewChange(customEvent);
-		// }
-		//
-		// // Also dispatch the event from the button element if available (for compatibility)
-		// if (buttonElement) {
-		// 	console.log('Dispatching viewChange event with detail:', detail);
-		// 	buttonElement.dispatchEvent(customEvent);
-		// } else {
-		// 	// Fallback to dispatching from the document
-		// 	console.warn('Button element not available, using document for event dispatch');
-		// 	document.dispatchEvent(customEvent);
-		// }
-
-		console.log('ViewControl: Event dispatching disabled to prevent reactivity loops');
 
 		closeDropdown();
 	}

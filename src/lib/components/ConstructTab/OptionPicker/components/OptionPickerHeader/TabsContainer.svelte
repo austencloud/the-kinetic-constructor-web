@@ -8,27 +8,15 @@
 	// Import actions from the store
 
 	// Props using Svelte 5 runes
-	const {
-		selectedTab,
-		categoryKeys,
-		isScrollable,
-		showScrollIndicator,
-		useShortLabels,
-		isMobileDevice,
-		compactMode,
-		onScroll,
-		ontabSelect
-	} = $props<{
-		selectedTab: string | null;
-		categoryKeys: string[];
-		isScrollable: boolean;
-		showScrollIndicator: boolean;
-		useShortLabels: boolean;
-		isMobileDevice: boolean;
-		compactMode: boolean;
-		onScroll?: () => void;
-		ontabSelect?: (event: CustomEvent<string>) => void;
-	}>();
+	const { selectedTab, categoryKeys, isScrollable, showScrollIndicator, useShortLabels, onScroll } =
+		$props<{
+			selectedTab: string | null;
+			categoryKeys: string[];
+			isScrollable: boolean;
+			showScrollIndicator: boolean;
+			useShortLabels: boolean;
+			onScroll?: () => void;
+		}>();
 
 	// Local state for the DOM element and scroll position
 	let actualTabsContainerElement = $state<HTMLDivElement | null>(null);
@@ -121,7 +109,6 @@
 	// });
 
 	// Completely disable event listeners to prevent reactivity loops
-	console.log('TabsContainer: Event listeners disabled to prevent reactivity loops');
 </script>
 
 {#if Array.isArray(categoryKeys) && categoryKeys.length > 0}

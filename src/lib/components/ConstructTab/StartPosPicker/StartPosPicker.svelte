@@ -42,13 +42,6 @@
 		const isPictographLoading = pictographData.isLoading;
 		const pictographError = pictographData.error;
 
-		console.log('StartPosPicker: Pictograph data state changed:', {
-			isInitialized,
-			isPictographLoading,
-			dataCount: data.length,
-			hasError: !!pictographError
-		});
-
 		if (pictographError) {
 			console.error('StartPosPicker: Pictograph data error:', pictographError);
 			loadingError = true;
@@ -70,12 +63,6 @@
 					entry.blueMotionData &&
 					defaultStartPosKeys.includes(`${entry.startPos}_${entry.endPos}`)
 			);
-
-			console.log('StartPosPicker: Filtered start positions:', {
-				totalData: data.length,
-				filteredCount: filteredPictographs.length,
-				defaultKeys: defaultStartPosKeys
-			});
 
 			startPositionPictographs = filteredPictographs;
 			filteredDataAvailable = filteredPictographs.length > 0;
@@ -100,16 +87,12 @@
 	}
 
 	onMount(() => {
-		console.log('StartPosPicker: Component mounted, checking pictograph data...');
-
 		document.addEventListener('start-position-click', handleStartPosClick as EventListener);
 
 		// Async initialization
 		const initializePictographData = async () => {
 			// Check if pictograph data is already initialized
 			if (!pictographData.isInitialized && !pictographData.isLoading) {
-				console.log('StartPosPicker: Pictograph data not initialized, waiting...');
-
 				// Wait for pictograph data to be initialized
 				const initialized = await pictographData.waitForInitialization(10000);
 				if (!initialized) {
@@ -247,8 +230,6 @@
 
 				// Provide success haptic feedback when the start position is successfully set
 				hapticFeedbackService.trigger('success');
-
-				console.log('StartPosPicker: Start position set successfully using modern sequence state');
 			}
 		} catch (error) {
 			console.error('StartPosPicker: Error setting start position:', error);

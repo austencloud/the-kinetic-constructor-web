@@ -9,7 +9,6 @@
 	import type {
 		BackgroundSystem,
 		BackgroundType,
-		QualityLevel,
 		Dimensions
 	} from '$lib/components/Backgrounds/types/types';
 
@@ -106,12 +105,6 @@
 			background.currentBackground &&
 			background.currentBackground !== previousBackgroundType
 		) {
-			console.log(
-				'BackgroundController: Background type changed from',
-				previousBackgroundType,
-				'to',
-				background.currentBackground
-			);
 			previousBackgroundType = background.currentBackground;
 			loadBackground(background.currentBackground);
 		}

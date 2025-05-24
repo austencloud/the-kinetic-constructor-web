@@ -2,10 +2,7 @@
 import { get } from 'svelte/store';
 import type { PictographData } from '$lib/types/PictographData';
 import type { PictographState } from './usePictographState';
-import {
-	checkForDataChanges as checkForDataChangesUtil,
-	setupPictographDataSubscription
-} from '../managers/PictographStateManager';
+import { setupPictographDataSubscription } from '../managers/PictographStateManager';
 import {
 	initializePictograph,
 	createInitializationContext,
@@ -63,8 +60,7 @@ export function usePictographData(
 			get(state.lastDataSnapshot),
 			updateComponentsFromData,
 			dispatch,
-			debug,
-			checkForDataChangesUtil
+			debug
 		);
 	}
 

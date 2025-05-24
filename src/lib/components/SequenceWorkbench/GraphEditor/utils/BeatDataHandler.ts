@@ -63,7 +63,7 @@ export function createBeatDataHandler(
 							if (startPosData.grid) newData.grid = startPosData.grid;
 						}
 					} catch (error) {
-						console.error('Error loading start position data:', error);
+						// Error loading start position data - silently continue with defaults
 					}
 				}
 

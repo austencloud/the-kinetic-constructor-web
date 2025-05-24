@@ -1,5 +1,5 @@
 // src/lib/components/objects/Arrow/ArrowSvgMirrorManager.ts
-import { ANTI, CLOCKWISE, COUNTER_CLOCKWISE, NO_ROT, DASH, STATIC } from '$lib/types/Constants';
+import { ANTI, CLOCKWISE, COUNTER_CLOCKWISE, NO_ROT } from '$lib/types/Constants';
 import type { ArrowData } from './ArrowData';
 
 export default class ArrowSvgMirrorManager {

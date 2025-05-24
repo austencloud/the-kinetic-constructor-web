@@ -1,5 +1,5 @@
 // src/lib/components/PlacementManagers/ArrowPlacementManager/utils/defaultPlacementUtils.ts
-import { DIAMOND, BOX, RADIAL, NONRADIAL, CLOCK, COUNTER, IN, OUT } from '$lib/types/Constants';
+import { DIAMOND, RADIAL, NONRADIAL, CLOCK, COUNTER, IN, OUT } from '$lib/types/Constants';
 import { LetterType } from '$lib/types/LetterType';
 import { LetterUtils } from '$lib/utils/LetterUtils';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';

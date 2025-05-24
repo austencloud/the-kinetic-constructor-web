@@ -1,9 +1,9 @@
 import { createActor } from 'xstate';
-import { appMachine as appStateMachine } from '$lib/state/machines/app/app.machine';
+import { appMachine } from '$lib/state/machines/app/app.machine';
 import { tabs } from './appState';
 import { useSelector as useXStateSelector } from '@xstate/svelte';
 
-export const appService = createActor(appStateMachine, {
+export const appService = createActor(appMachine, {
 	inspect: import.meta.env.DEV ? undefined : undefined
 }).start();
 

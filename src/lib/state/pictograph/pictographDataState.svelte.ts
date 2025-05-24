@@ -18,7 +18,7 @@ function toCamelCase(str: string): string {
 // Extract motion attributes from CSV record
 function extractAttributes(record: Record<string, any>, color: 'red' | 'blue') {
 	const prefix = color === 'red' ? 'red' : 'blue';
-	
+
 	return {
 		id: `${color}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
 		motionType: record[`${prefix}MotionType`] || 'static',
@@ -37,34 +37,49 @@ function extractAttributes(record: Record<string, any>, color: 'red' | 'blue') {
 
 // Parse CSV data to JSON format
 function parseCsvToJson(csv: string, gridMode: string) {
-	const lines = csv.split('\n').filter(Boolean);
-	const headers = lines.shift()?.split(',').map(toCamelCase) || [];
+	const lines = csv
+		.split('\n')
+		.map((line) => line.trim()) // Trim whitespace
+		.filter((line) => line.length > 0); // Remove empty lines
 
-	return lines.map((line) => {
-		const values = line.split(',');
-		const record = headers.reduce(
-			(acc, header, index) => {
-				acc[header.trim()] = values[index]?.trim();
-				return acc;
-			},
-			{} as Record<string, any>
-		);
+	const rawHeaders = lines.shift()?.split(',') || [];
+	const headers = rawHeaders.map(toCamelCase);
 
-		record.gridMode = gridMode;
-		return record;
-	});
+	return lines
+		.filter((line) => line.trim().length > 0) // Additional filter for safety
+		.map((line) => {
+			const values = line.split(',');
+			return headers.reduce(
+				(acc, header, index) => {
+					acc[header.trim()] = values[index]?.trim();
+					return acc;
+				},
+				{ gridMode } as Record<string, any>
+			);
+		});
 }
 
 // Convert raw CSV records to PictographData
 function groupPictographsByLetter(pictographs: Record<string, any>[]): PictographData[] {
 	const processedPictographs: PictographData[] = [];
 	let skippedCount = 0;
+	const skippedReasons: Record<string, number> = {};
+	const skippedLetterExamples: string[] = [];
 
-	pictographs.forEach((record) => {
+	pictographs.forEach((record, index) => {
 		const rawLetter = record.letter;
 
+		// Check for missing or invalid letter field
 		if (!rawLetter || typeof rawLetter !== 'string') {
 			skippedCount++;
+			const reason = !rawLetter ? 'missing_letter' : 'non_string_letter';
+			skippedReasons[reason] = (skippedReasons[reason] || 0) + 1;
+
+			if (skippedLetterExamples.length < 10) {
+				skippedLetterExamples.push(
+					`Record ${index}: ${reason} - value: ${JSON.stringify(rawLetter)}`
+				);
+			}
 			return;
 		}
 
@@ -74,6 +89,12 @@ function groupPictographsByLetter(pictographs: Record<string, any>[]): Pictograp
 
 			if (!letter) {
 				skippedCount++;
+				const reason = 'letter_parse_failed';
+				skippedReasons[reason] = (skippedReasons[reason] || 0) + 1;
+
+				if (skippedLetterExamples.length < 10) {
+					skippedLetterExamples.push(`Record ${index}: ${reason} - letter: "${rawLetter}"`);
+				}
 				return;
 			}
 
@@ -100,13 +121,38 @@ function groupPictographsByLetter(pictographs: Record<string, any>[]): Pictograp
 				redPropData: null,
 				bluePropData: null
 			});
-		} catch {
+		} catch (error) {
 			skippedCount++;
+			const reason = 'processing_error';
+			skippedReasons[reason] = (skippedReasons[reason] || 0) + 1;
+
+			if (skippedLetterExamples.length < 10) {
+				skippedLetterExamples.push(
+					`Record ${index}: ${reason} - letter: "${rawLetter}", error: ${error}`
+				);
+			}
 		}
 	});
 
 	if (skippedCount > 0) {
 		console.warn(`Skipped ${skippedCount} invalid pictograph records during processing`);
+		console.warn('Skip reasons breakdown:', skippedReasons);
+
+		// Log unique letter values that failed to parse
+		const failedLetters = new Set<string>();
+		pictographs.forEach((record) => {
+			if (record.letter && typeof record.letter === 'string') {
+				const letter = LetterUtils.tryFromString(record.letter);
+				if (!letter) {
+					failedLetters.add(record.letter);
+				}
+			}
+		});
+
+		if (failedLetters.size > 0) {
+			console.warn('Unique letter values that failed to parse:', Array.from(failedLetters).sort());
+			console.warn('Examples of skipped records:', skippedLetterExamples.slice(0, 5));
+		}
 	}
 
 	return processedPictographs;
@@ -121,10 +167,18 @@ class PictographDataManager {
 	#isInitialized = $state(false);
 
 	// Getters for reactive access
-	get data() { return this.#data; }
-	get isLoading() { return this.#isLoading; }
-	get error() { return this.#error; }
-	get isInitialized() { return this.#isInitialized; }
+	get data() {
+		return this.#data;
+	}
+	get isLoading() {
+		return this.#isLoading;
+	}
+	get error() {
+		return this.#error;
+	}
+	get isInitialized() {
+		return this.#isInitialized;
+	}
 
 	// Computed properties
 	get isEmpty() {
@@ -137,17 +191,17 @@ class PictographDataManager {
 
 	// Get pictographs by letter
 	getByLetter(letter: Letter): PictographData[] {
-		return this.#data.filter(p => p.letter === letter);
+		return this.#data.filter((p) => p.letter === letter);
 	}
 
 	// Get pictographs by start position
 	getByStartPosition(startPos: string): PictographData[] {
-		return this.#data.filter(p => p.startPos === startPos);
+		return this.#data.filter((p) => p.startPos === startPos);
 	}
 
 	// Get pictographs by end position
 	getByEndPosition(endPos: string): PictographData[] {
-		return this.#data.filter(p => p.endPos === endPos);
+		return this.#data.filter((p) => p.endPos === endPos);
 	}
 
 	// Find pictographs matching position and orientations
@@ -157,7 +211,6 @@ class PictographDataManager {
 		redStartOri?: string
 	): PictographData[] {
 		if (!targetStartPos) {
-			console.warn('Cannot find pictographs: No target start position provided.');
 			return [];
 		}
 
@@ -179,8 +232,8 @@ class PictographDataManager {
 				pictograph.blueMotionData.startOri === blueStartOri;
 
 			const redMatches =
-				!redStartOri || 
-				!pictograph.redMotionData || 
+				!redStartOri ||
+				!pictograph.redMotionData ||
 				pictograph.redMotionData.startOri === redStartOri;
 
 			return blueMatches && redMatches;
@@ -189,7 +242,6 @@ class PictographDataManager {
 
 	// Initialize from CSV data
 	async initializeFromCsv(csvData: { diamondData: string; boxData: string }) {
-		console.log('PictographData: Starting initialization from CSV...');
 		this.#isLoading = true;
 		this.#error = null;
 
@@ -207,8 +259,6 @@ class PictographDataManager {
 			// Update reactive state
 			this.#data = allPictographData;
 			this.#isInitialized = true;
-
-			console.log(`PictographData: Initialized with ${allPictographData.length} pictographs`);
 		} catch (error) {
 			this.#error = error instanceof Error ? error.message : 'Failed to initialize pictograph data';
 			console.error('PictographData: Initialization error:', error);
@@ -220,13 +270,11 @@ class PictographDataManager {
 
 	// Load from server
 	async loadFromServer() {
-		console.log('PictographData: Loading from server...');
 		this.#isLoading = true;
 		this.#error = null;
 
 		try {
 			if (!browser) {
-				console.log('PictographData: Not in browser, skipping server load');
 				return;
 			}
 
@@ -245,9 +293,9 @@ class PictographDataManager {
 
 			// Initialize with the fetched data
 			await this.initializeFromCsv({ diamondData, boxData });
-
 		} catch (error) {
-			this.#error = error instanceof Error ? error.message : 'Failed to load pictograph data from server';
+			this.#error =
+				error instanceof Error ? error.message : 'Failed to load pictograph data from server';
 			console.error('PictographData: Server load error:', error);
 		} finally {
 			this.#isLoading = false;
@@ -260,7 +308,6 @@ class PictographDataManager {
 		this.#isLoading = false;
 		this.#error = null;
 		this.#isInitialized = false;
-		console.log('PictographData: State reset');
 	}
 
 	// Wait for initialization to complete
@@ -271,12 +318,11 @@ class PictographDataManager {
 
 		return new Promise((resolve) => {
 			const startTime = Date.now();
-			
+
 			const checkInitialized = () => {
 				if (this.#isInitialized) {
 					resolve(true);
 				} else if (Date.now() - startTime > timeoutMs) {
-					console.warn('PictographData: Initialization timeout');
 					resolve(false);
 				} else {
 					setTimeout(checkInitialized, 50);
@@ -294,7 +340,7 @@ export const pictographData = new PictographDataManager();
 // Auto-initialize when in browser (for backward compatibility)
 if (browser) {
 	// Try to load from server on module initialization
-	pictographData.loadFromServer().catch(error => {
+	pictographData.loadFromServer().catch((error) => {
 		console.warn('PictographData: Auto-initialization failed:', error);
 	});
 }
