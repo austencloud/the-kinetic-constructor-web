@@ -1,7 +1,11 @@
 <!-- src/lib/components/BrowseTab/BrowseTab.svelte -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { browseTabStore, selectedSequenceData } from '$lib/stores/browseTab/browseTabStore';
+	import {
+		browseTabState,
+		browseTabActions,
+		selectedSequenceData
+	} from '$lib/stores/browseTab/browseTabState.svelte';
 	import FilterPanel from './FilterPanel/FilterPanel.svelte';
 	import SequenceGrid from './SequenceGrid/SequenceGrid.svelte';
 	import SequenceViewer from './SequenceViewer/SequenceViewer.svelte';
@@ -16,18 +20,18 @@
 
 	// Handle sequence selection
 	function handleSequenceSelect(sequenceId: string) {
-		browseTabStore.selectSequence(sequenceId);
+		browseTabActions.selectSequence(sequenceId);
 	}
 
 	// Handle variation selection
 	function handleVariationSelect(index: number) {
-		browseTabStore.selectVariation(index);
+		browseTabActions.selectVariation(index);
 	}
 
 	// Handle favorite toggle
 	function handleFavoriteToggle(data: { sequenceId: string; variationId: string }) {
 		const { sequenceId, variationId } = data;
-		browseTabStore.toggleFavorite(sequenceId, variationId);
+		browseTabActions.toggleFavorite(sequenceId, variationId);
 	}
 
 	// Handle delete request
@@ -48,9 +52,9 @@
 	// Handle delete confirmation
 	function handleDeleteConfirm() {
 		if (deleteType === 'sequence' && sequenceToDelete) {
-			browseTabStore.deleteSequence(sequenceToDelete);
+			browseTabActions.deleteSequence(sequenceToDelete);
 		} else if (deleteType === 'variation' && sequenceToDelete && variationToDelete) {
-			browseTabStore.deleteVariation(sequenceToDelete, variationToDelete);
+			browseTabActions.deleteVariation(sequenceToDelete, variationToDelete);
 		}
 
 		showDeleteDialog = false;
@@ -63,7 +67,7 @@
 
 	// Load initial data on mount
 	onMount(() => {
-		browseTabStore.loadInitialData();
+		browseTabActions.loadInitialData();
 	});
 </script>
 
@@ -76,15 +80,15 @@
 
 		<!-- Middle: Sequence grid -->
 		<div class="sequence-grid-container">
-			{#if $browseTabStore.isLoading}
+			{#if browseTabState.isLoading}
 				<div class="loading-container">
 					<LoadingSpinner size="large" />
 					<p>Loading sequences...</p>
 				</div>
-			{:else if $browseTabStore.error}
+			{:else if browseTabState.error}
 				<div class="error-container">
-					<p class="error-message">{$browseTabStore.error}</p>
-					<button class="retry-button" on:click={() => browseTabStore.loadInitialData()}>
+					<p class="error-message">{browseTabState.error}</p>
+					<button class="retry-button" on:click={() => browseTabActions.loadInitialData()}>
 						Retry
 					</button>
 				</div>
@@ -94,8 +98,8 @@
 		</div>
 
 		<!-- Right side: Sequence viewer (only shown when a sequence is selected) -->
-		<div class="sequence-viewer-container" class:hidden={!$selectedSequenceData.sequence}>
-			{#if $selectedSequenceData.sequence && $selectedSequenceData.variation}
+		<div class="sequence-viewer-container" class:hidden={!selectedSequenceData().sequence}>
+			{#if selectedSequenceData().sequence && selectedSequenceData().variation}
 				<SequenceViewer
 					onselectVariation={handleVariationSelect}
 					ontoggleFavorite={handleFavoriteToggle}
@@ -109,7 +113,7 @@
 	{#if showDeleteDialog}
 		<DeleteConfirmationDialog
 			type={deleteType}
-			sequenceName={$selectedSequenceData.sequence?.word || ''}
+			sequenceName={selectedSequenceData().sequence?.word || ''}
 			onconfirm={handleDeleteConfirm}
 			oncancel={handleDeleteCancel}
 		/>

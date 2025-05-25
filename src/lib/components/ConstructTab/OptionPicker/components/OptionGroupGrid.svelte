@@ -2,7 +2,7 @@
 	import { getContext } from 'svelte';
 	import Option from './Option.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
+	import { LAYOUT_CONTEXT_KEY } from '../layoutContext';
 	import { optionPickerState } from '../optionPickerState.svelte';
 
 	// --- Props ---
@@ -17,19 +17,19 @@
 	const key = $derived(props.key ?? '');
 
 	// --- Context ---
-	// Get the context as a Readable<LayoutContextValue>
-	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
+	// Get the context using the getter function approach for Svelte 5 runes
+	const getLayoutContext = getContext<() => any>(LAYOUT_CONTEXT_KEY);
 
-	// Properly extract the layout config values from the context store
-	const layoutData = $derived($layoutContext);
-	const contextGridColumns = $derived(layoutData.layoutConfig.gridColumns);
-	const optionSize = $derived(layoutData.layoutConfig.optionSize);
-	const gridGap = $derived(layoutData.layoutConfig.gridGap);
-	const gridClass = $derived(layoutData.layoutConfig.gridClass);
-	const aspectClass = $derived(layoutData.layoutConfig.aspectClass);
-	const isMobileDevice = $derived(layoutData.isMobile);
-	const isTabletDevice = $derived(layoutData.isTablet);
-	const isPortraitMode = $derived(layoutData.isPortrait);
+	// Properly extract the layout config values from the context getter
+	const layoutData = $derived(getLayoutContext?.() ?? {});
+	const contextGridColumns = $derived(layoutData.layoutConfig?.gridColumns ?? 3);
+	const optionSize = $derived(layoutData.layoutConfig?.optionSize ?? 100);
+	const gridGap = $derived(layoutData.layoutConfig?.gridGap ?? 8);
+	const gridClass = $derived(layoutData.layoutConfig?.gridClass ?? '');
+	const aspectClass = $derived(layoutData.layoutConfig?.aspectClass ?? '');
+	const isMobileDevice = $derived(layoutData.isMobile ?? false);
+	const isTabletDevice = $derived(layoutData.isTablet ?? false);
+	const isPortraitMode = $derived(layoutData.isPortrait ?? false);
 
 	// --- Get Sort Method from Option Picker State ---
 	const currentSortMethod = $derived(optionPickerState.sortMethod);

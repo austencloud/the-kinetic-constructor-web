@@ -1,14 +1,13 @@
 // src/lib/components/ConstructTab/OptionPicker/components/OptionPickerHeader/useResponsiveLayout.ts
 import { writable, get } from 'svelte/store';
-import type { LayoutContext } from '../../layoutContext';
 import { onMount } from 'svelte';
 
 /**
  * Hook to manage responsive layout state
- * @param layoutContext The layout context from the parent component
+ * @param getLayoutContext The layout context getter function for Svelte 5 runes
  * @returns An object containing responsive layout state and functions
  */
-export function useResponsiveLayout(layoutContext: LayoutContext | null) {
+export function useResponsiveLayout(getLayoutContext: (() => any) | null) {
 	// Local state as Svelte stores
 	const isMobileDevice = writable(false);
 	const useShortLabels = writable(false);
@@ -54,12 +53,15 @@ export function useResponsiveLayout(layoutContext: LayoutContext | null) {
 	}
 
 	onMount(() => {
-		const contextValue = layoutContext;
-
 		const updateMobileState = () => {
 			let mobile = false;
-			if (contextValue && typeof contextValue === 'object' && 'isMobile' in contextValue) {
-				mobile = Boolean(contextValue.isMobile);
+			if (getLayoutContext) {
+				const contextValue = getLayoutContext();
+				if (contextValue && typeof contextValue === 'object' && 'isMobile' in contextValue) {
+					mobile = Boolean(contextValue.isMobile);
+				} else {
+					mobile = window.innerWidth <= 640;
+				}
 			} else {
 				mobile = window.innerWidth <= 640;
 			}

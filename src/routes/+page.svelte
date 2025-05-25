@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from '$lib/utils/svelte-lifecycle';
 	import { fade } from 'svelte/transition';
+	import { untrack } from 'svelte';
 
 	// Components
 	import FullScreen from '$lib/AppFullScreen.svelte';
@@ -17,12 +18,10 @@
 	import type { BackgroundType } from '$lib/components/Backgrounds/types/types';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
-	// Performance metrics type is defined in the handler directly
-
-	// Get window dimensions from UI store using $derived
+	// FIXED: Keep the useSelector pattern but add some loop prevention
 	const windowHeight = $derived($uiStore ? $uiStore.windowHeight + 'px' : '100vh');
 
-	// --- Get State directly from the app service using $derived ---
+	// Keep the XState selectors - they're needed for proper state machine integration!
 	const isInitializingAppStore = useSelector(appService, (state) =>
 		state.matches('initializingApp')
 	);
@@ -49,22 +48,40 @@
 	const loadingMessageStore = useSelector(appService, (state) => state.context.loadingMessage);
 	const loadingMessage = $derived($loadingMessageStore as string);
 
-	// --- Event Handlers ---
+	// FIXED: Event handlers with some debouncing but not too aggressive
+	let actionTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	function throttledAction(action: () => void, delay: number = 50) {
+		// Much lighter debouncing - just prevent rapid clicks
+		if (actionTimeout) return;
+		
+		actionTimeout = setTimeout(() => {
+			actionTimeout = null;
+		}, delay);
+		
+		action();
+	}
+
 	function handleFullScreenToggle(isFull: boolean) {
-		appActions.setFullScreen(isFull);
-		hapticFeedbackService.trigger('success');
+		throttledAction(() => {
+			appActions.setFullScreen(isFull);
+			hapticFeedbackService.trigger('success');
+		});
 	}
 
 	function handleBackgroundChange(event: CustomEvent<string>) {
-		const validBackgrounds = ['snowfall', 'nightSky', 'deepOcean'] as const;
-		type ValidBackground = (typeof validBackgrounds)[number];
+		throttledAction(() => {
+			const validBackgrounds = ['snowfall', 'nightSky', 'deepOcean'] as const;
+			type ValidBackground = (typeof validBackgrounds)[number];
 
-		if (validBackgrounds.includes(event.detail as any)) {
-			appActions.updateBackground(event.detail as ValidBackground);
-		}
+			if (validBackgrounds.includes(event.detail as any)) {
+				appActions.updateBackground(event.detail as ValidBackground);
+			}
+		});
 	}
 
 	function handleBackgroundReady() {
+		// Don't debounce this one - it's critical for initialization
 		appActions.backgroundReady();
 	}
 
@@ -72,25 +89,32 @@
 		fps: number;
 		memory?: { used: number; total: number };
 	}) {
-		// We're not using the metrics currently, but we need to provide the handler
-		// If we want to use them in the future, we can add an action to appActions
-		// Example: appActions.updatePerformanceMetrics(_metrics);
+		// Leave performance reports alone
 	}
 
 	function handleTabChange(event: CustomEvent<number>) {
-		appActions.changeTab(event.detail);
+		throttledAction(() => {
+			appActions.changeTab(event.detail);
+		});
 	}
 
 	function handleRetry() {
-		appActions.retryInitialization();
+		throttledAction(() => {
+			appActions.retryInitialization();
+		}, 100);
 	}
 
-	// --- Lifecycle ---
+	// FIXED: Much more conservative lifecycle approach
+	let hasInitialized = false;
+
 	onMount(() => {
-		// Force the state machine to transition
+		if (hasInitialized) return;
+		hasInitialized = true;
+
+		// Just a small delay to let things settle, not too long
 		setTimeout(() => {
 			appActions.backgroundReady();
-		}, 500);
+		}, 200);
 	});
 </script>
 
@@ -98,12 +122,12 @@
 	<FullScreen ontoggleFullscreen={handleFullScreenToggle}>
 		<div class="background" class:blur-background={isInitializingApp || hasFailed}>
 			<BackgroundProvider
-				backgroundType={currentBackground || 'snowfall'}
+				backgroundType={currentBackground}
 				isLoading={isInitializingApp || hasFailed}
 				initialQuality={isInitializingApp || hasFailed ? 'medium' : 'high'}
 			>
 				<BackgroundCanvas
-					backgroundType={currentBackground || 'snowfall'}
+					backgroundType={currentBackground}
 					appIsLoading={isInitializingApp || hasFailed}
 					onReady={handleBackgroundReady}
 					onPerformanceReport={handlePerformanceReport}
@@ -127,12 +151,6 @@
 			<div class="main-layout-wrapper" transition:fade={{ duration: 500, delay: 100 }}>
 				<MainLayout on:changeBackground={handleBackgroundChange} on:tabChange={handleTabChange} />
 			</div>
-
-			<!-- First-time setup dialog -->
-			<!-- <FirstTimeSetupDialog bind:this={firstTimeSetupDialog} /> -->
-
-			<!-- Setup button - always visible -->
-			<!-- <FirstTimeSetupButton showDialog={showFirstTimeSetupDialog} /> -->
 		{/if}
 	</FullScreen>
 </div>

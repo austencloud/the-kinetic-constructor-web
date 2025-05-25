@@ -17,15 +17,18 @@
 	// Local state using $state
 	let showPulse = $state(false);
 
-	// Handle pulse effect
+	// Handle pulse effect with guard to prevent infinite loops
+	let isPulsing = false;
 	$effect(() => {
-		if (pulseEffect && active) {
+		if (pulseEffect && active && !isPulsing) {
+			isPulsing = true;
 			showPulse = true;
 			hapticFeedbackService.trigger('selection');
 
 			// Reset pulse after animation completes
 			setTimeout(() => {
 				showPulse = false;
+				isPulsing = false;
 			}, 500);
 		}
 	});

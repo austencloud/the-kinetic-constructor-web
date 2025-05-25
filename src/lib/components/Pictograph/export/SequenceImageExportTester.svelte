@@ -217,7 +217,10 @@
 		}
 	}
 
-	// Effect to trigger automatic preview rendering when settings change
+	// Effect to trigger automatic preview rendering when settings change with debouncing
+	let renderTimeout: ReturnType<typeof setTimeout> | null = null;
+	let isRendering = false;
+
 	$effect(() => {
 		// Using void to suppress unused variable warnings while still creating dependencies
 		void beats.length;
@@ -237,9 +240,22 @@
 		void notes;
 		void difficultyLevel;
 
-		// Only trigger if we have a container and beats
-		if (sequenceContainer && beats.length > 0) {
-			renderPreview();
+		// Clear existing timeout to debounce rapid changes
+		if (renderTimeout) {
+			clearTimeout(renderTimeout);
+		}
+
+		// Only trigger if we have a container and beats, and not already rendering
+		if (sequenceContainer && beats.length > 0 && !isRendering) {
+			// Debounced render to prevent infinite loops from rapid state changes
+			renderTimeout = setTimeout(() => {
+				if (!isRendering) {
+					isRendering = true;
+					renderPreview().finally(() => {
+						isRendering = false;
+					});
+				}
+			}, 200); // 200ms debounce
 		}
 	});
 

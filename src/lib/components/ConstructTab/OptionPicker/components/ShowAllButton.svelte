@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
 	// Removed: fly, quintOut
-	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
+	import { LAYOUT_CONTEXT_KEY } from '../layoutContext';
 
 	// --- Props ---
 	let {
@@ -14,8 +14,8 @@
 
 	// --- Context ---
 	// Keep context if needed for internal styling (e.g., mobile class for padding/font)
-	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-	const isMobileDevice = $derived($layoutContext.isMobile);
+	const getLayoutContext = getContext<() => any>(LAYOUT_CONTEXT_KEY);
+	const isMobileDevice = $derived(getLayoutContext?.()?.isMobile ?? false);
 
 	// --- Computed ---
 	const buttonState = $derived({

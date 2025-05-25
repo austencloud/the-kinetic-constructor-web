@@ -1,7 +1,7 @@
 <!-- src/lib/components/ConstructTab/OptionPicker/components/OptionPickerHeader/OptionPickerHeader.svelte -->
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../../layoutContext';
+	import { LAYOUT_CONTEXT_KEY } from '../../layoutContext';
 	import ViewControl from '../ViewControl/ViewControl.svelte';
 	import TabsContainer from './TabsContainer.svelte';
 	import { useResponsiveLayout } from './useResponsiveLayout';
@@ -14,12 +14,12 @@
 	}>();
 
 	// --- Context ---
-	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
+	const getLayoutContext = getContext<() => any>(LAYOUT_CONTEXT_KEY);
 
 	// --- State ---
 
 	// --- Responsive Layout ---
-	// Destructure stores from the hook
+	// Destructure stores from the hook - pass the getter function
 	const {
 		isMobileDevice,
 		useShortLabels,
@@ -27,7 +27,7 @@
 		compactMode,
 		showScrollIndicator,
 		handleScroll // Make sure to get all needed functions/stores
-	} = useResponsiveLayout(layoutContext);
+	} = useResponsiveLayout(getLayoutContext);
 </script>
 
 <div class="option-picker-header" class:mobile={$isMobileDevice} data-testid="option-picker-header">

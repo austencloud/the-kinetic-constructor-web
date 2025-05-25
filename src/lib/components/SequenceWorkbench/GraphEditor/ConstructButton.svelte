@@ -3,7 +3,7 @@
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
-	import { workbenchStore } from '$lib/state/stores/workbenchStore';
+	import { setActiveTab } from '$lib/state/stores/workbenchStore.svelte';
 
 	// Define props using Svelte 5 runes syntax
 	const props = $props<{
@@ -21,7 +21,7 @@
 		sequenceContainer.clearSelection();
 
 		// Switch to construct tab
-		workbenchStore.update((state) => ({ ...state, activeTab: 'construct' }));
+		setActiveTab('construct');
 
 		// Call the onClick callback if provided
 		if (props.onClick) {

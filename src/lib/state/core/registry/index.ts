@@ -373,11 +373,7 @@ class StateRegistry {
 	 * Debug helper to log the current state of all containers
 	 */
 	debug(): void {
-		debugRegistry(
-			this.getAll(),
-			(id) => this.getDependencies(id),
-			(id) => this.getDependents(id)
-		);
+		debugRegistry(this.getAll());
 	}
 
 	/**

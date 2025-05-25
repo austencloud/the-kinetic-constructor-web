@@ -49,6 +49,9 @@
 				console.error('ServiceProvider: Error loading sequence from localStorage:', error);
 			}
 
+			// Add a small delay to prevent rapid state changes that could cause reactive loops
+			await new Promise((resolve) => setTimeout(resolve, 50));
+
 			// Now initialize state management
 			initializeStateManagement();
 			isStateInitialized = true;
@@ -59,14 +62,9 @@
 		}
 	}
 
-	// Start initialization in the script section for SSR compatibility
-	if (browser) {
-		initializeState();
-	}
-
-	// Also try in onMount as a fallback
+	// Only initialize in onMount to prevent double initialization and reactive loops
 	onMount(() => {
-		if (!isStateInitialized && browser) {
+		if (!isStateInitialized && browser && !isInitializing) {
 			initializeState();
 		}
 	});

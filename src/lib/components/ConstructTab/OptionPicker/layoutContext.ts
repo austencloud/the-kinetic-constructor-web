@@ -1,5 +1,4 @@
 // src/lib/components/OptionPicker/layoutContext.ts
-import type { Readable } from 'svelte/store';
 import type { DeviceType, ContainerAspect, ResponsiveLayoutConfig } from './config';
 import type { detectFoldableDevice } from '$lib/utils/deviceDetection';
 
@@ -18,5 +17,5 @@ export interface LayoutContextValue {
 	foldableInfo?: ReturnType<typeof detectFoldableDevice>;
 }
 
-// Type helper for consuming the context
-export type LayoutContext = Readable<LayoutContextValue>;
+// Type helper for consuming the context - now a getter function for Svelte 5 runes compatibility
+export type LayoutContext = () => LayoutContextValue;

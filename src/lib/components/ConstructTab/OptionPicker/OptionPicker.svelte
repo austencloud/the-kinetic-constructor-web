@@ -177,7 +177,8 @@
 
 	const loadOptionsFromSequence = async () => {
 		try {
-			await optionPickerState.loadOptionsFromSequence();
+			// Use the correct method name from optionPickerState
+			await optionPickerState.refreshOptionsFromCurrentSequence();
 		} catch (error) {
 			console.error('OptionPicker: Error in loadOptionsFromSequence:', error);
 		}

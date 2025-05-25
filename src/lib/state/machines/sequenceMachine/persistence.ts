@@ -1,3 +1,4 @@
+// src/lib/state/machines/sequenceMachine/persistence.ts
 /**
  * Persistence functionality for the sequence state machine
  */
@@ -5,11 +6,14 @@ import { sequenceStore } from '../../stores/sequenceStore';
 import { pictographStore } from '$lib/state/stores/pictograph/pictograph.store';
 import type { Actor } from 'xstate';
 import { blueArrowData } from '$lib/state/stores/pictograph/pictographSelectors';
+import { writable } from 'svelte/store';
 
-// Import reactive state functions (these will be used by components that can import .svelte.ts files)
-// For this .ts file, we'll use a different approach
-let selectedStartPos: any = null;
+// FIXED: Initialize selectedStartPos as a proper writable store instead of null
+let selectedStartPos = writable(null);
 let isSequenceEmptyValue = true;
+
+// Export the selectedStartPos store for use in other components
+export { selectedStartPos };
 
 // Export functions to manage the state
 export function setIsSequenceEmpty(isEmpty: boolean) {
@@ -21,28 +25,40 @@ export function getIsSequenceEmpty(): boolean {
 }
 
 export function setSelectedStartPos(startPos: any) {
-	selectedStartPos = startPos;
+	// FIXED: Always ensure we have a valid store before calling set
+	if (selectedStartPos && typeof selectedStartPos.set === 'function') {
+		selectedStartPos.set(startPos);
+	} else {
+		// Reinitialize if somehow the store got corrupted
+		selectedStartPos = writable(startPos);
+	}
 }
 
 export function getSelectedStartPos(): any {
-	return selectedStartPos;
+	let currentValue = null;
+	if (selectedStartPos && typeof selectedStartPos.subscribe === 'function') {
+		selectedStartPos.subscribe((value) => (currentValue = value))();
+	}
+	return currentValue;
 }
 
 // Set up a subscription to update isSequenceEmpty whenever the sequence changes
 if (typeof window !== 'undefined') {
-	// We need to check both the sequence beats and the start position
-	// to determine if the sequence is truly empty
 	let hasStartPosition = false;
 
-	// Track start position changes
-	hasStartPosition = !!selectedStartPos;
+	// Track start position changes safely
+	try {
+		const currentStartPos = getSelectedStartPos();
+		hasStartPosition = !!currentStartPos;
+	} catch (error) {
+		console.warn('Error getting start position:', error);
+		hasStartPosition = false;
+	}
 
 	// Subscribe to sequence changes to update the empty state
 	sequenceStore.subscribe((state) => {
 		// A sequence is only truly empty if it has no beats AND no start position
 		const isEmpty = state.beats.length === 0 && !hasStartPosition;
-
-		// Update the isSequenceEmpty value
 		setIsSequenceEmpty(isEmpty);
 	});
 }
@@ -65,7 +81,6 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 				setIsSequenceEmpty(!hasBeats);
 
 				// If we have beats, also restore the start position
-				// Use any type assertion to access pictographData which might be in metadata or directly on the beat
 				const firstBeat = sequenceContainer.state.beats[0] as any;
 				if (hasBeats) {
 					let pictographData = null;
@@ -100,7 +115,10 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 					}
 
 					if (pictographData) {
-						restoreStartPosition(pictographData);
+						// Use longer timeout to break reactivity chains
+						setTimeout(() => {
+							restoreStartPosition(pictographData);
+						}, 200);
 					}
 				}
 			}
@@ -119,12 +137,9 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 					if (backup.beats && Array.isArray(backup.beats) && backup.beats.length > 0) {
 						// Process the beats to ensure pictographData is properly preserved
 						const processedBeats = backup.beats.map((beat: any) => {
-							// Create a processed beat with all required properties
 							const processedBeat = { ...beat };
 
-							// Ensure the beat has a valid pictographData property
 							if (!processedBeat.pictographData && processedBeat.metadata) {
-								// Try to reconstruct pictographData from metadata and other properties
 								processedBeat.pictographData = {
 									letter: processedBeat.letter || processedBeat.metadata.letter || null,
 									startPos: processedBeat.position || processedBeat.metadata.startPos || null,
@@ -152,20 +167,14 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 
 						// Update the sequence store with the processed beats
 						sequenceStore.setSequence(processedBeats);
-
-						// Also update the modern container
 						sequenceContainer.setSequence(processedBeats);
 
-						// If the backup has a word, update the metadata
+						// Handle metadata updates
 						if (backup.word) {
-							sequenceContainer.updateMetadata({
-								name: backup.word
-							});
+							sequenceContainer.updateMetadata({ name: backup.word });
 						} else {
-							// Calculate the word from the beats
 							const letters = processedBeats
 								.map((beat: any) => {
-									// Look for letter data according to the BeatData interface
 									return (
 										beat.letter ||
 										(beat.metadata && typeof beat.metadata.letter === 'string'
@@ -175,30 +184,22 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 								})
 								.filter((letter: any): letter is string => letter !== null);
 
-							// Build the word from letters
 							const word = letters.join('');
-
-							// Update metadata with word
-							sequenceContainer.updateMetadata({
-								name: word
-							});
+							sequenceContainer.updateMetadata({ name: word });
 						}
 
-						// Set isSequenceEmpty to false to show the Option Picker
 						setIsSequenceEmpty(false);
 
-						// Extract the start position from the first beat (if it exists)
+						// Extract the start position from the first beat
 						const firstBeat = processedBeats[0];
 						if (firstBeat) {
 							let pictographData = null;
 
-							// Try to get pictographData from different possible locations
 							if (firstBeat.pictographData) {
 								pictographData = firstBeat.pictographData;
 							} else if (firstBeat.metadata?.pictographData) {
 								pictographData = firstBeat.metadata.pictographData;
 							} else {
-								// Try to reconstruct pictographData from beat properties
 								pictographData = {
 									letter: firstBeat.letter || firstBeat.metadata?.letter || null,
 									startPos: firstBeat.position || firstBeat.metadata?.startPos || null,
@@ -222,7 +223,10 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 							}
 
 							if (pictographData) {
-								restoreStartPosition(pictographData);
+								// Use longer timeout to break reactivity chains
+								setTimeout(() => {
+									restoreStartPosition(pictographData);
+								}, 300);
 							}
 						}
 
@@ -237,107 +241,124 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 	});
 
 	/**
-	 * Helper function to restore the start position
+	 * FIXED: Helper function to restore the start position with better error handling
 	 */
 	function restoreStartPosition(pictographData: any) {
-		// Create a deep copy to avoid reference issues
-		const startPosCopy = JSON.parse(JSON.stringify(pictographData));
+		try {
+			// Create a deep copy to avoid reference issues
+			const startPosCopy = JSON.parse(JSON.stringify(pictographData));
 
-		// Update the selectedStartPos store
-		selectedStartPos.set(startPosCopy);
+			// FIXED: Ensure selectedStartPos is a valid store before calling set
+			if (!selectedStartPos || typeof selectedStartPos.set !== 'function') {
+				selectedStartPos = writable(null);
+			}
 
-		// Also update the pictographStore
-		pictographStore.setData(startPosCopy);
+			// Update the selectedStartPos store safely
+			selectedStartPos.set(startPosCopy);
 
-		// Dispatch a custom event to notify components
-		if (typeof document !== 'undefined') {
-			const event = new CustomEvent('start-position-selected', {
-				detail: { startPosition: startPosCopy },
-				bubbles: true
-			});
-			document.dispatchEvent(event);
+			// Also update the pictographStore
+			if (pictographStore && typeof pictographStore.setData === 'function') {
+				pictographStore.setData(startPosCopy);
+			}
+
+			// Dispatch event with longer timeout to break reactivity chains
+			setTimeout(() => {
+				if (typeof document !== 'undefined') {
+					const event = new CustomEvent('start-position-selected', {
+						detail: { startPosition: startPosCopy },
+						bubbles: true
+					});
+					document.dispatchEvent(event);
+				}
+			}, 100);
+		} catch (error) {
+			console.error('Error restoring start position:', error);
+			// Initialize a fresh store if restoration fails
+			selectedStartPos = writable(null);
 		}
 	}
 
-	// Subscribe to state changes to save backup
+	// Subscribe to state changes to save backup with debouncing
+	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
 	sequenceActor.subscribe((state) => {
-		// Import the sequenceContainer and pictograph utilities to ensure they're available
-		Promise.all([
-			import('$lib/state/stores/sequence/SequenceContainer'),
-			import('$lib/utils/pictographUtils')
-		]).then(([{ sequenceContainer }, { createSafeBeatCopy }]) => {
-			try {
-				// Get the current beats from the sequence store
-				let beats: any[] = [];
-				sequenceStore.subscribe((state) => {
-					beats = state.beats;
-				})();
+		// Clear existing timeout to debounce saves
+		if (saveTimeout) {
+			clearTimeout(saveTimeout);
+		}
 
-				// Create safe copies of beats to handle circular references
-				const safeBeats = beats.map((beat) => {
-					// Create a safe copy of the beat
-					const safeBeat = createSafeBeatCopy(beat);
+		// Use longer timeout to break reactivity chains and debounce saves
+		saveTimeout = setTimeout(() => {
+			// Import required modules
+			Promise.all([
+				import('$lib/state/stores/sequence/SequenceContainer'),
+				import('$lib/utils/pictographUtils')
+			]).then(([{ sequenceContainer }, { createSafeBeatCopy }]) => {
+				try {
+					let beats: any[] = [];
+					sequenceStore.subscribe((state) => {
+						beats = state.beats;
+					})();
 
-					// Ensure pictographData is properly preserved
-					if (!safeBeat.pictographData && beat.metadata) {
-						// Try to reconstruct pictographData from metadata and other properties
-						safeBeat.pictographData = {
-							letter: beat.letter || beat.metadata.letter || null,
-							startPos: beat.position || beat.metadata.startPos || null,
-							endPos: beat.metadata.endPos || null,
-							gridMode: beat.metadata.gridMode || 'diamond',
-							redPropData: beat.redPropData || null,
-							bluePropData: beat.bluePropData || null,
-							redMotionData: beat.redMotionData || null,
-							blueMotionData: beat.blueMotionData || null,
-							redArrowData: beat.redArrowData || null,
-							blueArrowData: beat.blueArrowData || null,
-							grid: beat.metadata.grid || '',
-							timing: null,
-							direction: null,
-							gridData: null,
-							motions: [],
-							redMotion: null,
-							blueMotion: null,
-							props: []
-						};
-					}
+					// Create safe copies of beats
+					const safeBeats = beats.map((beat) => {
+						const safeBeat = createSafeBeatCopy(beat);
 
-					return safeBeat;
-				});
+						if (!safeBeat.pictographData && beat.metadata) {
+							safeBeat.pictographData = {
+								letter: beat.letter || beat.metadata.letter || null,
+								startPos: beat.position || beat.metadata.startPos || null,
+								endPos: beat.metadata.endPos || null,
+								gridMode: beat.metadata.gridMode || 'diamond',
+								redPropData: beat.redPropData || null,
+								bluePropData: beat.bluePropData || null,
+								redMotionData: beat.redMotionData || null,
+								blueMotionData: beat.blueMotionData || null,
+								redArrowData: beat.redArrowData || null,
+								blueArrowData: beat.blueArrowData || null,
+								grid: beat.metadata.grid || '',
+								timing: null,
+								direction: null,
+								gridData: null,
+								motions: [],
+								redMotion: null,
+								blueMotion: null,
+								props: []
+							};
+						}
 
-				// Calculate the sequence word from beats
-				const letters = beats
-					.map((beat: any) => {
-						// Look for letter data according to the BeatData interface
-						return (
-							beat.letter ||
-							(beat.metadata && typeof beat.metadata.letter === 'string'
-								? beat.metadata.letter
-								: null)
-						);
-					})
-					.filter((letter: any): letter is string => letter !== null);
+						return safeBeat;
+					});
 
-				// Build the word from letters
-				const word = letters.join('');
+					// Calculate the sequence word
+					const letters = beats
+						.map((beat: any) => {
+							return (
+								beat.letter ||
+								(beat.metadata && typeof beat.metadata.letter === 'string'
+									? beat.metadata.letter
+									: null)
+							);
+						})
+						.filter((letter: any): letter is string => letter !== null);
 
-				// Save to both storage mechanisms for backward compatibility
-				// 1. Save to the legacy backup format
-				localStorage.setItem(
-					'sequence_backup',
-					JSON.stringify({
-						beats: safeBeats,
-						options: state.context.generationOptions,
-						word: word // Add the word to the backup
-					})
-				);
+					const word = letters.join('');
 
-				// 2. Save to the modern storage format
-				sequenceContainer.saveToLocalStorage();
-			} catch (error) {
-				console.error('Error saving sequence:', error);
-			}
-		});
+					// Save to both storage mechanisms
+					localStorage.setItem(
+						'sequence_backup',
+						JSON.stringify({
+							beats: safeBeats,
+							options: state.context.generationOptions,
+							word: word
+						})
+					);
+
+					sequenceContainer.saveToLocalStorage();
+				} catch (error) {
+					console.error('Error saving sequence:', error);
+				}
+			});
+		}, 500); // Increased debounce time
 	});
 }

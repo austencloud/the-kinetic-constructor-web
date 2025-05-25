@@ -1,5 +1,3 @@
-<!-- src/lib/components/Pictograph/Pictograph.svelte -->
-<!-- SIMPLIFIED: Just load fast when ready, no complex modes -->
 <script lang="ts">
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { GridData } from '$lib/components/objects/Grid/GridData';
@@ -8,7 +6,6 @@
 	import { PictographService } from './PictographService';
 	import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
 
-	// Component imports
 	import PictographError from './components/PictographError.svelte';
 	import PictographDebug from './components/PictographDebug.svelte';
 	import InitializingSpinner from './components/InitializingSpinner.svelte';
@@ -19,7 +16,6 @@
 	import PictographComponentManager from './components/PictographComponentManager.svelte';
 	import PictographErrorHandler from './components/PictographErrorHandler.svelte';
 
-	// Utility imports
 	import { shouldShowDebugInfo } from './utils/PictographRenderUtils';
 
 	const props = $props<{
@@ -35,17 +31,14 @@
 		onError?: (error: { message: string; component: string }) => void;
 	}>();
 
-	// SIMPLIFIED: Check if we should start ready
 	const svgsAreReady = svgPreloadingService.isReady();
 	const shouldStartReady = svgsAreReady || props.disableAnimations;
 
-	// State variables - start in the right state immediately
 	let currentState = $state(shouldStartReady ? 'complete' : 'initializing');
 	let errorMessage = $state<string | null>(null);
 	let showPictograph = $state(shouldStartReady);
 	let loadProgress = $state(shouldStartReady ? 100 : 0);
 	
-	// Component data
 	let gridData = $state<GridData | null>(null);
 	let redPropData = $state<PropData | null>(null);
 	let bluePropData = $state<PropData | null>(null);
@@ -53,27 +46,22 @@
 	let blueArrowData = $state<ArrowData | null>(null);
 	let service = $state<PictographService | null>(null);
 	
-	// Progress tracking
 	let renderCount = $state(0);
 	let componentsLoaded = $state(shouldStartReady ? 1 : 0);
 	let totalComponentsToLoad = $state(1);
 
-	// Component references
 	let stateManager = $state<PictographStateManager | null>(null);
 	let loadingManager = $state<PictographLoadingManager | null>(null);
 	let componentManager = $state<PictographComponentManager | null>(null);
 	let errorHandler = $state<PictographErrorHandler | null>(null);
 
-	// SIMPLIFIED: Just notify parent immediately if we're ready
 	if (shouldStartReady && props.pictographData) {
 		queueMicrotask(() => {
 			props.onLoaded?.({ error: false });
 		});
 	}
 
-	// Event handlers - simplified logic
 	function handleStateChange(state: string) {
-		// Skip state transitions if we're already ready
 		if (!shouldStartReady || state === 'error') {
 			currentState = state;
 		}
@@ -118,7 +106,7 @@
 	}
 
 	function handleShowPictograph(show: boolean) {
-		showPictograph = show || shouldStartReady; // Always show if we should start ready
+		showPictograph = show || shouldStartReady;
 	}
 
 	function createAndPositionComponents() {
@@ -149,7 +137,6 @@
 		renderCount++;
 	}
 
-	// Update load progress
 	$effect(() => {
 		if (loadingManager) {
 			loadProgress = (loadingManager as any).getLoadProgress?.() ?? (shouldStartReady ? 100 : 0);
@@ -157,7 +144,6 @@
 	});
 </script>
 
-<!-- Component Managers - always present but simplified -->
 <PictographStateManager
 	bind:this={stateManager}
 	pictographData={props.pictographData}
@@ -193,7 +179,6 @@
 	onErrorMessageChange={handleErrorMessageChange}
 />
 
-<!-- Visual Output -->
 {#if props.onClick}
 	<button type="button" class="pictograph-wrapper clickable" onclick={props.onClick}>
 		<svg class="pictograph" viewBox="0 0 950 950" xmlns="http://www.w3.org/2000/svg">
@@ -215,7 +200,7 @@
 					{redArrowData}
 					{blueArrowData}
 					debug={props.debug}
-					animationDuration={shouldStartReady ? 0 : props.animationDuration} 
+					animationDuration={shouldStartReady ? 0 : props.animationDuration}
 					beatNumber={props.beatNumber}
 					isStartPosition={props.isStartPosition}
 					disableAnimations={shouldStartReady}
@@ -264,7 +249,7 @@
 					animationDuration={shouldStartReady ? 0 : props.animationDuration}
 					beatNumber={props.beatNumber}
 					isStartPosition={props.isStartPosition}
-					disableAnimations={shouldStartReady} 
+					disableAnimations={shouldStartReady}
 					onGridLoaded={handleGridLoaded}
 					onComponentLoaded={handleComponentLoaded}
 					onComponentError={handleComponentError}

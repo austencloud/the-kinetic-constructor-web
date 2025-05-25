@@ -1,7 +1,7 @@
 <!-- src/lib/components/ConstructTab/ConstructTab.svelte -->
 <script lang="ts">
 	import SharedWorkbench from '$lib/components/SequenceWorkbench/SharedWorkbench.svelte';
-	import { workbenchStore } from '$lib/state/stores/workbenchStore';
+	import { setActiveTab } from '$lib/state/stores/workbenchStore.svelte';
 	import type { ButtonDefinition } from '$lib/components/SequenceWorkbench/ButtonPanel/types';
 	import { uiStore } from '$lib/state/stores/uiStore';
 
@@ -44,11 +44,11 @@
 				break;
 
 			case 'constructMode':
-				workbenchStore.update((state) => ({ ...state, activeTab: 'construct' }));
+				setActiveTab('construct');
 				break;
 
 			case 'generateMode':
-				workbenchStore.update((state) => ({ ...state, activeTab: 'generate' }));
+				setActiveTab('generate');
 				break;
 
 			case 'saveImage':
@@ -78,10 +78,7 @@
 	}
 
 	$effect(() => {
-		workbenchStore.update((state) => ({
-			...state,
-			activeTab: isGenerateMode ? 'generate' : 'construct'
-		}));
+		setActiveTab(isGenerateMode ? 'generate' : 'construct');
 	});
 </script>
 

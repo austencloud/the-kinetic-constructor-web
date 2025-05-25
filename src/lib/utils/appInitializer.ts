@@ -69,8 +69,6 @@ export async function initializeApplication(
 				{ propType: PropType.FAN, color: 'blue' },
 				{ propType: PropType.TRIAD, color: 'red' },
 				{ propType: PropType.TRIAD, color: 'blue' },
-				{ propType: PropType.BIGSTAFF, color: 'red' },
-				{ propType: PropType.BIGSTAFF, color: 'blue' }
 			]);
 
 			reportProgress(20, 'Preloading all arrow SVGs...');

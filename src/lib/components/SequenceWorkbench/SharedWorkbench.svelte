@@ -1,6 +1,13 @@
 <!-- src/lib/components/SequenceWorkbench/SharedWorkbench.svelte -->
 <script lang="ts">
-	import { workbenchStore } from '$lib/state/stores/workbenchStore';
+	import {
+		getWorkbenchState,
+		toggleToolsPanel,
+		setToolsPanelOpen
+	} from '$lib/state/stores/workbenchStore.svelte';
+
+	// Get the workbench state
+	const workbenchState = getWorkbenchState();
 	import SequenceWidget from './SequenceWidget.svelte';
 	import RightPanel from './RightPanel/RightPanel.svelte';
 	import ToolsPanel from './ToolsPanel/ToolsPanel.svelte';
@@ -22,13 +29,13 @@
 	onMount(() => {
 		// Toggle tools panel listener
 		toggleToolsPanelListener = () => {
-			workbenchStore.update((state) => ({ ...state, toolsPanelOpen: !state.toolsPanelOpen }));
+			toggleToolsPanel();
 		};
 		document.addEventListener('toggleToolsPanel', toggleToolsPanelListener);
 
 		// Close tools panel listener
 		closeToolsPanelListener = () => {
-			workbenchStore.update((state) => ({ ...state, toolsPanelOpen: false }));
+			setToolsPanelOpen(false);
 		};
 		document.addEventListener('close-tools-panel', closeToolsPanelListener);
 
@@ -56,14 +63,14 @@
 	<div class="sequenceWorkbenchContainer">
 		<SequenceWidget />
 	</div>
-	<div class="optionPickerContainer" class:tools-panel-active={$workbenchStore.toolsPanelOpen}>
-		{#if $workbenchStore.toolsPanelOpen}
+	<div class="optionPickerContainer" class:tools-panel-active={workbenchState.toolsPanelOpen}>
+		{#if workbenchState.toolsPanelOpen}
 			<div class="tools-panel-overlay" transition:fly={{ duration: 300, x: 20 }}>
 				<ToolsPanel
 					buttons={toolsPanelButtons}
-					activeMode={$workbenchStore.activeTab}
+					activeMode={workbenchState.activeTab}
 					onAction={(id) => onToolsPanelAction(id)}
-					onClose={() => workbenchStore.update((state) => ({ ...state, toolsPanelOpen: false }))}
+					onClose={() => setToolsPanelOpen(false)}
 				/>
 			</div>
 		{:else}

@@ -2,7 +2,7 @@
 	import { getContext, untrack } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { optionPickerState } from '../optionPickerState.svelte';
-	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
+	import { LAYOUT_CONTEXT_KEY } from '../layoutContext';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/BeatHoverEffect.svelte';
 
@@ -16,12 +16,12 @@
 	// Default values for optional props
 	const isPartOfTwoItems = $derived(props.isPartOfTwoItems ?? false);
 
-	// Consume context
-	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
+	// Consume context - now using the getter function approach for Svelte 5 runes
+	const getLayoutContext = getContext<() => any>(LAYOUT_CONTEXT_KEY);
 
-	// Reactive state using Svelte 5 runes
-	const isMobileDevice = $derived($layoutContext.isMobile);
-	const scaleFactor = $derived($layoutContext.layoutConfig.scaleFactor);
+	// Reactive state using Svelte 5 runes - call the getter function to access current values
+	const isMobileDevice = $derived(getLayoutContext?.()?.isMobile ?? false);
+	const scaleFactor = $derived(getLayoutContext?.()?.layoutConfig?.scaleFactor ?? 1);
 
 	// Use untrack to prevent circular dependencies with the container
 	const isSelected = $derived.by(() => {

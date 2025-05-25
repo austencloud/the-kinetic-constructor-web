@@ -11,6 +11,8 @@ import {
 	convertLegacyBeatToContainerFormat,
 	convertPictographToContainerFormat
 } from '../utils/beatFrameUtils';
+import { selectedStartPos } from '$lib/state/machines/sequenceMachine/persistence';
+import { untrack } from 'svelte';
 
 /**
  * Composable for managing BeatFrame state using Svelte 5 runes
@@ -21,35 +23,63 @@ export function useBeatFrameState() {
 	let sequenceIsEmpty = $state(true);
 	let sequence = $state(sequenceContainer.state);
 
-	// CRITICAL FIX: Subscribe to both sequence container AND modern sequence state
+	// Guard flags to prevent infinite loops
+	let isUpdatingFromContainer = false;
+	let isUpdatingFromModernState = false;
+
+	// CRITICAL FIX: Subscribe to sequence container with loop prevention
 	$effect(() => {
 		const unsubscribe = sequenceContainer.subscribe((state) => {
-			// Don't use untrack here - we want reactivity to work
-			sequence = state;
+			if (!isUpdatingFromModernState) {
+				untrack(() => {
+					isUpdatingFromContainer = true;
+					sequence = state;
+					isUpdatingFromContainer = false;
+				});
+			}
 		});
 		return unsubscribe;
 	});
 
-	// CRITICAL FIX: React to modern sequence state changes and sync to container
+	// CRITICAL FIX: React to modern sequence state changes with debouncing and guards
+	let syncTimeout: ReturnType<typeof setTimeout> | null = null;
 	$effect(() => {
 		// Track modern sequence state changes
 		const modernBeats = sequenceState.beats;
 		const modernStartPos = sequenceState.startPosition;
+		const modernIsEmpty = sequenceState.isEmpty;
 
-		// Update local state
-		sequenceIsEmpty = sequenceState.isEmpty;
-
-		// Sync modern state to container if needed
-		if (modernBeats.length !== sequence.beats.length) {
-			// Convert modern beats to container format and update
-			const containerBeats = modernBeats.map((beat) => convertPictographToContainerFormat(beat));
-			sequenceContainer.setSequence(containerBeats);
+		// Clear existing timeout to debounce updates
+		if (syncTimeout) {
+			clearTimeout(syncTimeout);
 		}
 
-		// Update start position if changed
-		if (modernStartPos !== startPosition) {
-			startPosition = modernStartPos;
-		}
+		// Debounced sync to prevent rapid updates
+		syncTimeout = setTimeout(() => {
+			untrack(() => {
+				if (!isUpdatingFromContainer) {
+					isUpdatingFromModernState = true;
+
+					// Update local state
+					sequenceIsEmpty = modernIsEmpty;
+
+					// Sync modern state to container if needed (with length check to prevent unnecessary updates)
+					if (modernBeats.length !== sequence.beats.length) {
+						const containerBeats = modernBeats.map((beat) =>
+							convertPictographToContainerFormat(beat)
+						);
+						sequenceContainer.setSequence(containerBeats);
+					}
+
+					// Update start position if changed
+					if (modernStartPos !== startPosition) {
+						startPosition = modernStartPos;
+					}
+
+					isUpdatingFromModernState = false;
+				}
+			});
+		}, 50); // 50ms debounce
 	});
 
 	// Derived values
@@ -251,25 +281,43 @@ export function useBeatFrameState() {
 		};
 	}
 
-	// Initialize start position from store
+	// Initialize start position from store with loop prevention
+	let isInitializingStartPos = false;
 	$effect(() => {
 		const unsubscribe = selectedStartPos.subscribe((newStartPos) => {
-			if (newStartPos && !startPosition) {
-				startPosition = createSafePictographCopy(newStartPos);
+			if (newStartPos && !startPosition && !isInitializingStartPos) {
+				untrack(() => {
+					isInitializingStartPos = true;
+					startPosition = createSafePictographCopy(newStartPos);
+					isInitializingStartPos = false;
+				});
 			}
 		});
-		unsubscribe();
+		return unsubscribe;
 	});
 
-	// Listen for start position events
+	// Listen for start position events with debouncing
+	let eventTimeout: ReturnType<typeof setTimeout> | null = null;
 	$effect(() => {
 		const handleStartPosSelected = (event: CustomEvent) => {
-			if (event.detail?.startPosition) {
-				const newStartPos = createSafePictographCopy(event.detail.startPosition);
-				if (newStartPos) {
-					startPosition = newStartPos;
-					selectedStartPos.set(newStartPos);
+			if (event.detail?.startPosition && !isInitializingStartPos) {
+				// Clear existing timeout to debounce events
+				if (eventTimeout) {
+					clearTimeout(eventTimeout);
 				}
+
+				// Debounced event handling
+				eventTimeout = setTimeout(() => {
+					untrack(() => {
+						isInitializingStartPos = true;
+						const newStartPos = createSafePictographCopy(event.detail.startPosition);
+						if (newStartPos) {
+							startPosition = newStartPos;
+							selectedStartPos.set(newStartPos as any);
+						}
+						isInitializingStartPos = false;
+					});
+				}, 100); // 100ms debounce for events
 			}
 		};
 
@@ -277,6 +325,9 @@ export function useBeatFrameState() {
 		document.addEventListener('start-position-refresh', handleStartPosSelected as EventListener);
 
 		return () => {
+			if (eventTimeout) {
+				clearTimeout(eventTimeout);
+			}
 			document.removeEventListener(
 				'start-position-selected',
 				handleStartPosSelected as EventListener

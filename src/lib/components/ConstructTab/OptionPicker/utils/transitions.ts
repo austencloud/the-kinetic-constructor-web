@@ -1,6 +1,6 @@
 // src/lib/components/ConstructTab/OptionPicker/utils/transitions.ts
 import { cubicOut, quintOut } from 'svelte/easing';
-import type { NavigationDirection } from '../store/navigationStore';
+import type { NavigationDirection } from '../store/navigationStore.svelte';
 import { prefersReducedMotion } from './a11y';
 import { get } from 'svelte/store';
 

@@ -1,6 +1,6 @@
 <!-- src/lib/components/SequenceWorkbench/RightPanel/RightPanel.svelte -->
 <script lang="ts">
-	import { workbenchStore } from '$lib/state/stores/workbenchStore';
+	import { isGenerateTabActive } from '$lib/state/stores/workbenchStore.svelte';
 	import ModernGenerationControls from './ModernGenerationControls.svelte';
 	// StartPosPicker is now integrated into OptionPicker
 	import GraphEditor from '$lib/components/SequenceWorkbench/GraphEditor/GraphEditor.svelte';
@@ -33,7 +33,7 @@
 </script>
 
 <div class="right-panel">
-	{#if $workbenchStore.activeTab === 'generate'}
+	{#if isGenerateTabActive}
 		<div in:fly={flyParams} out:fade={fadeParams}>
 			<ModernGenerationControls />
 		</div>

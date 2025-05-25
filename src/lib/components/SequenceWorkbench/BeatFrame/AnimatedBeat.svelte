@@ -9,13 +9,15 @@
 		onClick: () => void;
 		isSelected?: boolean;
 		animationDelay?: number;
-		isNewlyAdded?: boolean; // New prop to indicate if this beat was just added
+		isNewlyAdded?: boolean;
 	}>();
 
-	const isSelected = $derived(props.isSelected ?? false);
-	const isNewlyAdded = $derived(props.isNewlyAdded ?? false);
+	// Use local copies to avoid reactivity issues
+	const localIsSelected = props.isSelected ?? false;
+	const localIsNewlyAdded = props.isNewlyAdded ?? false;
 
-	let shouldAnimate = $state(false); // Default to false, only animate newly added beats
+	// Initialize state directly instead of using reactive derivations
+	let shouldAnimate = $state(false); 
 	let hasAnimated = $state(false);
 	let isVisible = $state(false);
 	let bluePulseEffect = $state(false);
@@ -33,54 +35,59 @@
 		};
 	}
 
-	// Listen for highlight events from the GraphEditor or beat selection
+	// SINGLE onMount that handles everything
 	onMount(() => {
-		// Throttle the highlight handler to prevent excessive animations
+		// Set up initial animation state based on props
+		if (localIsNewlyAdded) {
+			shouldAnimate = true;
+			// Use longer timeout to break reactivity chains
+			setTimeout(() => {
+				isVisible = true;
+			}, 100);
+		} else {
+			// For existing beats, show immediately
+			isVisible = true;
+			hasAnimated = true;
+		}
+
+		// Set up event listener with throttling
 		const handleBeatHighlight = throttle((event: CustomEvent) => {
-			if (!isSelected) return;
+			// Use local copy to avoid reactivity
+			if (!localIsSelected) return;
 
 			const { color } = event.detail;
 
 			if (color === 'blue') {
 				bluePulseEffect = false;
-				// Use a single setTimeout to reduce timer overhead
+				// Use longer timeouts to break reactivity chains
 				setTimeout(() => {
 					bluePulseEffect = true;
-					setTimeout(() => (bluePulseEffect = false), 500);
-				}, 10);
+					setTimeout(() => {
+						bluePulseEffect = false;
+					}, 500);
+				}, 100);
 			} else {
 				redPulseEffect = false;
 				setTimeout(() => {
 					redPulseEffect = true;
-					setTimeout(() => (redPulseEffect = false), 500);
-				}, 10);
+					setTimeout(() => {
+						redPulseEffect = false;
+					}, 500);
+				}, 100);
 			}
-		}, 100); // Throttle to max 10 updates per second
+		}, 200); // Increased throttle time
 
-		// Listen for the custom event
+		// Add event listener
 		document.addEventListener('beat-highlight', handleBeatHighlight as EventListener);
 
+		// Cleanup function
 		return () => {
 			document.removeEventListener('beat-highlight', handleBeatHighlight as EventListener);
 		};
 	});
 
-	// Handle animation based on whether this is a newly added beat
-	onMount(() => {
-		if (isNewlyAdded) {
-			// For newly added beats, start with animation
-			shouldAnimate = true;
-			requestAnimationFrame(() => {
-				isVisible = true;
-			});
-		} else {
-			// For existing beats, show immediately without animation
-			isVisible = true;
-			hasAnimated = true; // Mark as already animated to prevent future animations
-		}
-	});
-
 	function handleAnimationEnd() {
+		// Use local flag to prevent reactive updates
 		if (!hasAnimated && shouldAnimate) {
 			hasAnimated = true;
 		}
@@ -91,13 +98,12 @@
 	class="animated-beat-container"
 	class:animate={shouldAnimate && !hasAnimated && isVisible}
 	class:visible={isVisible}
-	class:selected={isSelected}
+	class:selected={localIsSelected}
 	onanimationend={handleAnimationEnd}
 >
-	<Beat beat={props.beat} onClick={props.onClick} {isSelected} />
+	<Beat beat={props.beat} onClick={props.onClick} isSelected={localIsSelected} />
 
-	{#if isSelected}
-		<!-- Only show one highlight at a time to reduce rendering load -->
+	{#if localIsSelected}
 		<AnimatedHighlight active={true} color="blue" pulseEffect={bluePulseEffect} />
 		{#if props.beat.metadata?.redReversal}
 			<AnimatedHighlight active={true} color="red" pulseEffect={redPulseEffect} />
@@ -112,14 +118,12 @@
 		position: relative;
 		transform: scale(0.8) translateZ(0);
 		transition: all 0.18s ease;
-		/* Ensure proper aspect ratio */
 		aspect-ratio: 1 / 1;
-		/* Use hardware acceleration */
 		will-change: transform, opacity, z-index;
 		border-radius: 8px;
 		z-index: 1;
 		box-sizing: border-box;
-		overflow: visible; /* Allow content to overflow */
+		overflow: visible;
 	}
 
 	.visible {
@@ -127,18 +131,15 @@
 	}
 
 	.selected {
-		/* Selection indicator without scaling */
-		z-index: 25; /* Higher z-index for selected beats */
+		z-index: 25;
 	}
 
-	/* Allow hover effect to control scaling for both selected and non-selected beats */
 	.animated-beat-container:hover {
-		transform: scale(1.05) translateZ(0); /* Apply scale on hover only */
-		z-index: 30; /* Higher z-index when hovered */
+		transform: scale(1.05) translateZ(0);
+		z-index: 30;
 	}
 
 	.animate {
-		/* Faster animation for more responsive feel */
 		animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 	}
 

@@ -33,23 +33,33 @@
 		localBeatData = { ...props.beatData };
 	});
 
-	// Update isSelected when the selection changes
-	// Use a more reactive approach with a manual subscription for immediate updates
+	// Update isSelected when the selection changes with guard to prevent loops
+	let isUpdatingSelection = false;
 	$effect(() => {
-		// Create a subscription to the sequenceContainer state
-		const unsubscribe = sequenceContainer.subscribe((state) => {
-			// Update the selection state immediately when it changes
-			isSelected = state.selectedBeatIds.includes('start-position');
-		});
+		if (!isUpdatingSelection) {
+			// Create a subscription to the sequenceContainer state
+			const unsubscribe = sequenceContainer.subscribe((state) => {
+				if (!isUpdatingSelection) {
+					// Update the selection state immediately when it changes
+					isSelected = state.selectedBeatIds.includes('start-position');
+				}
+			});
 
-		// Clean up the subscription when the component is destroyed or the effect is re-run
-		return unsubscribe;
+			// Clean up the subscription when the component is destroyed or the effect is re-run
+			return unsubscribe;
+		}
 	});
 
-	// Initialize pictographData from props
+	// Initialize pictographData from props with guard
+	let isInitializingData = false;
 	$effect(() => {
-		if (props.beatData && props.beatData.pictographData) {
+		if (props.beatData && props.beatData.pictographData && !isInitializingData) {
+			isInitializingData = true;
 			pictographData = safeCopyPictographData(props.beatData.pictographData);
+			// Reset flag after a short delay
+			setTimeout(() => {
+				isInitializingData = false;
+			}, 10);
 		}
 	});
 

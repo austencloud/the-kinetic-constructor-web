@@ -502,7 +502,10 @@ class SequenceStateManager {
 // Create and export the singleton instance
 export const sequenceState = new SequenceStateManager();
 
-// Initialize on module load
+// Initialize on module load with delay to prevent reactive loops during app startup
 if (browser) {
-	sequenceState.loadSequence();
+	// Delay the loading to prevent interference with app initialization
+	setTimeout(() => {
+		sequenceState.loadSequence();
+	}, 100);
 }

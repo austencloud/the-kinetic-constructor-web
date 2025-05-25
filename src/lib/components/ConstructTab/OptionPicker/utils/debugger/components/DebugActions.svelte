@@ -1,6 +1,6 @@
 <!-- src/lib/components/OptionPicker/utils/debugger/components/DebugActions.svelte -->
 <script lang="ts">
-	import { debugActions } from '../stores/debugStore';
+	import { debugActions } from '../stores/debugStore.svelte';
 	import CopyButton from './CopyButton.svelte';
 
 	// Props using Svelte 5 runes
