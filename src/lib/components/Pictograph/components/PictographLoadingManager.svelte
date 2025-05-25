@@ -34,6 +34,10 @@
 				componentsLoaded++;
 			}
 
+			// For start position pictographs (disableAnimations = true), eliminate delays
+			const delay = props.disableAnimations ? 0 : 100;
+			const componentDelay = props.disableAnimations ? 0 : 50;
+
 			setTimeout(() => {
 				try {
 					const localState = props.onStateChange ? 'loading' : 'complete';
@@ -42,14 +46,14 @@
 					if (localState === 'loading' && localPictographData) {
 						setTimeout(() => {
 							props.onCreateAndPositionComponents();
-						}, 50);
+						}, componentDelay);
 					}
 				} catch (callbackError) {
 					// Error handled silently
 				} finally {
 					isProcessingGrid = false;
 				}
-			}, 100);
+			}, delay);
 		} catch (error) {
 			isProcessingGrid = false;
 			throw error;
@@ -60,6 +64,10 @@
 		untrack(() => {
 			if (!loadedComponents.has(component)) {
 				loadedComponents.add(component);
+
+				// For start position pictographs (disableAnimations = true), eliminate delays
+				const delay = props.disableAnimations ? 0 : 100;
+				const callbackDelay = props.disableAnimations ? 0 : 200;
 
 				setTimeout(() => {
 					untrack(() => {
@@ -74,17 +82,21 @@
 							if (props.onLoaded) {
 								setTimeout(() => {
 									props.onLoaded?.({ error: false });
-								}, 200);
+								}, callbackDelay);
 							}
 						}
 					});
-				}, 100);
+				}, delay);
 			}
 		});
 	}
 
 	function handleGlyphLoaded(_event: CustomEvent<boolean>) {
 		untrack(() => {
+			// For start position pictographs (disableAnimations = true), eliminate delays
+			const delay = props.disableAnimations ? 0 : 100;
+			const callbackDelay = props.disableAnimations ? 0 : 200;
+
 			setTimeout(() => {
 				untrack(() => {
 					props.onShowPictograph(true);
@@ -93,10 +105,10 @@
 					if (props.onLoaded) {
 						setTimeout(() => {
 							props.onLoaded?.({ error: false });
-						}, 200);
+						}, callbackDelay);
 					}
 				});
-			}, 100);
+			}, delay);
 		});
 	}
 

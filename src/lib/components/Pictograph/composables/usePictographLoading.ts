@@ -50,11 +50,12 @@ export function usePictographLoading(
 
 	function handleComponentLoaded(component: string) {
 		if (disableAnimations) {
-			// Fast path for OptionPicker
+			// Fast path for start position pictographs - immediate loading with no delays
 			const context = getLoadingManagerContext();
 			handleComponentLoadedUtil(component, context);
 			state.componentsLoaded.set(context.componentsLoaded);
 
+			// Immediately show pictograph for start positions
 			if (!get(state.showPictograph)) {
 				state.showPictograph.set(true);
 				dispatch('loaded', { error: false });
@@ -62,7 +63,7 @@ export function usePictographLoading(
 			return;
 		}
 
-		// Normal debounced loading
+		// Normal debounced loading for other pictographs
 		pendingComponents.add(component);
 
 		if (debounceTimer !== null && typeof window !== 'undefined') {
@@ -91,6 +92,7 @@ export function usePictographLoading(
 		state.glyphLoaded.set(event.detail);
 
 		if (disableAnimations) {
+			// Fast path for start position pictographs - immediate visibility
 			if (!get(state.showPictograph)) {
 				state.showPictograph.set(true);
 				dispatch('loaded', { error: false });

@@ -2,9 +2,9 @@
 <script lang="ts">
 	import { workbenchStore } from '$lib/state/stores/workbenchStore';
 	import ModernGenerationControls from './ModernGenerationControls.svelte';
-	import StartPosPicker from '$lib/components/ConstructTab/StartPosPicker/StartPosPicker.svelte';
+	// StartPosPicker is now integrated into OptionPicker
 	import GraphEditor from '$lib/components/SequenceWorkbench/GraphEditor/GraphEditor.svelte';
-	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
+	// sequenceState no longer needed - OptionPicker handles sequence state internally
 	import { fade, fly } from 'svelte/transition';
 	import { cubicInOut } from 'svelte/easing';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
@@ -12,8 +12,6 @@
 
 	// Local state
 	let hasSelectedBeats = $state(false);
-	let isTransitioning = $state(false);
-	let currentComponent = $state<'startPos' | 'optionPicker' | null>(null);
 
 	// Subscribe to the sequence container to check for selected beats
 	$effect(() => {
@@ -22,31 +20,6 @@
 		});
 
 		return unsubscribe;
-	});
-
-	// Handle component transitions based on sequence state
-	$effect(() => {
-		const shouldShowStartPos = sequenceState.isEmpty;
-		const targetComponent = shouldShowStartPos ? 'startPos' : 'optionPicker';
-
-		// Only transition if the target component is different from current
-		if (currentComponent !== targetComponent) {
-			if (currentComponent === null) {
-				// Initial load - no transition needed
-				currentComponent = targetComponent;
-			} else {
-				// Start transition
-				isTransitioning = true;
-
-				// After fade out completes, switch component and fade in
-				setTimeout(() => {
-					currentComponent = targetComponent;
-					setTimeout(() => {
-						isTransitioning = false;
-					}, 50); // Small delay to ensure component is mounted
-				}, transitionDuration * 0.6); // Fade out duration
-			}
-		}
 	});
 
 	// Transition parameters - faster for snappier feel
@@ -73,30 +46,10 @@
 			<GraphEditor />
 		</div>
 	{:else}
-		<!-- Sequential transition between StartPosPicker and OptionPicker -->
-		{#if currentComponent && !isTransitioning}
-			{#if currentComponent === 'startPos'}
-				<div class="full-height-wrapper" in:fade={fadeParams} out:fade={fadeParams}>
-					<StartPosPicker />
-				</div>
-			{:else if currentComponent === 'optionPicker'}
-				<div class="full-height-wrapper" in:fade={fadeParams} out:fade={fadeParams}>
-					<OptionPicker />
-				</div>
-			{/if}
-		{:else if isTransitioning}
-			<!-- Show loading indicator during transition -->
-			<div
-				class="full-height-wrapper transition-loading"
-				in:fade={{ duration: 100 }}
-				out:fade={{ duration: 100 }}
-			>
-				<div class="loading-content">
-					<div class="loading-spinner"></div>
-					<p>Loading...</p>
-				</div>
-			</div>
-		{/if}
+		<!-- Unified OptionPicker (handles both start position and beat options internally) -->
+		<div class="full-height-wrapper" in:fade={fadeParams} out:fade={fadeParams}>
+			<OptionPicker />
+		</div>
 	{/if}
 </div>
 
@@ -131,37 +84,5 @@
 		isolation: isolate;
 	}
 
-	/* Transition loading styles */
-	.transition-loading {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: rgba(15, 23, 42, 0.8);
-	}
-
-	.loading-content {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-		color: #e2e8f0;
-	}
-
-	.loading-spinner {
-		width: 32px;
-		height: 32px;
-		border: 3px solid rgba(255, 204, 0, 0.3);
-		border-top: 3px solid #ffcc00;
-		border-radius: 50%;
-		animation: spin 1s linear infinite;
-	}
-
-	@keyframes spin {
-		0% {
-			transform: rotate(0deg);
-		}
-		100% {
-			transform: rotate(360deg);
-		}
-	}
+	/* Transition loading styles removed - no longer needed with unified component */
 </style>
