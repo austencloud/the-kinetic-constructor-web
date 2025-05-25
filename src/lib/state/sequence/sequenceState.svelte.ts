@@ -132,12 +132,14 @@ class SequenceStateManager {
 			// Ensure legacy stores are synchronized for backward compatibility
 			if (browser && typeof document !== 'undefined') {
 				// Import and update legacy stores
-				const { selectedStartPos } = await import('$lib/stores/sequence/selectionStore');
+				const { setSelectedStartPosition } = await import(
+					'$lib/state/sequence/selectionState.svelte'
+				);
 				const { pictographContainer } = await import(
 					'$lib/state/stores/pictograph/pictographContainer'
 				);
 
-				selectedStartPos.set(startPosCopy);
+				setSelectedStartPosition(startPosCopy);
 				pictographContainer.setData(startPosCopy);
 
 				// Dispatch event for components that still rely on events
@@ -220,7 +222,9 @@ class SequenceStateManager {
 			// Ensure legacy stores are synchronized for backward compatibility
 			if (browser && typeof document !== 'undefined') {
 				// Import and update legacy stores
-				const { selectedStartPos } = await import('$lib/stores/sequence/selectionStore');
+				const { setSelectedStartPosition } = await import(
+					'$lib/state/sequence/selectionState.svelte'
+				);
 				const { pictographContainer } = await import(
 					'$lib/state/stores/pictograph/pictographContainer'
 				);
@@ -228,7 +232,7 @@ class SequenceStateManager {
 					'$lib/components/Pictograph/utils/defaultPictographData'
 				);
 
-				selectedStartPos.set(null);
+				setSelectedStartPosition(null);
 				pictographContainer.setData(defaultPictographData);
 
 				// Dispatch events for components that still rely on events

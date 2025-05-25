@@ -2,14 +2,31 @@
  * Persistence functionality for the sequence state machine
  */
 import { sequenceStore } from '../../stores/sequenceStore';
-import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 import { pictographStore } from '$lib/state/stores/pictograph/pictograph.store';
 import type { Actor } from 'xstate';
-import { writable } from 'svelte/store';
 import { blueArrowData } from '$lib/state/stores/pictograph/pictographSelectors';
 
-// Create a replacement for the removed isSequenceEmpty store
-export const isSequenceEmpty = writable(true);
+// Import reactive state functions (these will be used by components that can import .svelte.ts files)
+// For this .ts file, we'll use a different approach
+let selectedStartPos: any = null;
+let isSequenceEmptyValue = true;
+
+// Export functions to manage the state
+export function setIsSequenceEmpty(isEmpty: boolean) {
+	isSequenceEmptyValue = isEmpty;
+}
+
+export function getIsSequenceEmpty(): boolean {
+	return isSequenceEmptyValue;
+}
+
+export function setSelectedStartPos(startPos: any) {
+	selectedStartPos = startPos;
+}
+
+export function getSelectedStartPos(): any {
+	return selectedStartPos;
+}
 
 // Set up a subscription to update isSequenceEmpty whenever the sequence changes
 if (typeof window !== 'undefined') {
@@ -17,18 +34,16 @@ if (typeof window !== 'undefined') {
 	// to determine if the sequence is truly empty
 	let hasStartPosition = false;
 
-	// Subscribe to the selectedStartPos store to track if we have a start position
-	selectedStartPos.subscribe((startPos) => {
-		hasStartPosition = !!startPos;
-	});
+	// Track start position changes
+	hasStartPosition = !!selectedStartPos;
 
-	// Also subscribe to sequence changes to update the empty state
+	// Subscribe to sequence changes to update the empty state
 	sequenceStore.subscribe((state) => {
 		// A sequence is only truly empty if it has no beats AND no start position
 		const isEmpty = state.beats.length === 0 && !hasStartPosition;
 
-		// Update the isSequenceEmpty store
-		isSequenceEmpty.set(isEmpty);
+		// Update the isSequenceEmpty value
+		setIsSequenceEmpty(isEmpty);
 	});
 }
 
@@ -47,7 +62,7 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 			if (sequenceLoaded) {
 				// Update isSequenceEmpty based on the loaded sequence
 				const hasBeats = sequenceContainer.state.beats.length > 0;
-				isSequenceEmpty.set(!hasBeats);
+				setIsSequenceEmpty(!hasBeats);
 
 				// If we have beats, also restore the start position
 				// Use any type assertion to access pictographData which might be in metadata or directly on the beat
@@ -170,7 +185,7 @@ export function initializePersistence(sequenceActor: Actor<any>) {
 						}
 
 						// Set isSequenceEmpty to false to show the Option Picker
-						isSequenceEmpty.set(false);
+						setIsSequenceEmpty(false);
 
 						// Extract the start position from the first beat (if it exists)
 						const firstBeat = processedBeats[0];

@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { writable } from 'svelte/store';
 	import { browser } from '$app/environment';
 
-	export let buttonText = 'Install App';
-	export let showInstallPrompt = false;
+	// Props using Svelte 5 runes
+	const { buttonText = 'Install App', showInstallPrompt = false } = $props<{
+		buttonText?: string;
+		showInstallPrompt?: boolean;
+	}>();
 
-	const canInstall = writable(false);
+	let canInstall = $state(false);
 
 	// Standard event handlers from pwa.ts
 	onMount(() => {
@@ -16,13 +18,13 @@
 		window.addEventListener('beforeinstallprompt', (e) => {
 			e.preventDefault();
 			window.deferredPrompt = e;
-			canInstall.set(true);
+			canInstall = true;
 		});
 
 		// Update state when app is installed
 		window.addEventListener('appinstalled', () => {
 			window.deferredPrompt = null;
-			canInstall.set(false);
+			canInstall = false;
 		});
 	});
 
@@ -35,13 +37,13 @@
 
 		promptEvent.userChoice.then(() => {
 			window.deferredPrompt = null;
-			canInstall.set(false);
+			canInstall = false;
 		});
 	}
 </script>
 
-{#if showInstallPrompt && $canInstall}
-	<button class="install-button" on:click={promptInstall} aria-label="Install application">
+{#if showInstallPrompt && canInstall}
+	<button class="install-button" onclick={promptInstall} aria-label="Install application">
 		<span class="install-icon">📱</span>
 		<span class="install-text">{buttonText}</span>
 	</button>

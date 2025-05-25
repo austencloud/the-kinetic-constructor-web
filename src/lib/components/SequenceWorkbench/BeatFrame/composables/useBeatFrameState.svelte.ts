@@ -1,7 +1,6 @@
 // src/lib/components/SequenceWorkbench/BeatFrame/composables/useBeatFrameState.svelte.ts
 
 import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 import { createSafePictographCopy } from '$lib/utils/pictographUtils';

@@ -1,26 +1,28 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { glyphContainer, type Rect } from '$lib/stores/glyphContainer.svelte';
 	import type { Letter } from '$lib/types/Letter';
 
-	// Props
-	export let letter: Letter | null = null;
-
-	// Events using createEventDispatcher
-	const dispatch = createEventDispatcher<{
-		letterLoaded: Rect;
-		loadingStarted: void;
-		loadingComplete: boolean;
+	// Props using Svelte 5 runes
+	const {
+		letter = null,
+		onletterLoaded,
+		onloadingStarted,
+		onloadingComplete
+	} = $props<{
+		letter?: Letter | null;
+		onletterLoaded?: (rect: Rect) => void;
+		onloadingStarted?: () => void;
+		onloadingComplete?: (success: boolean) => void;
 	}>();
 
-	// Local state
-	let svgPath = '';
-	let dimensions = { width: 0, height: 0 };
-	let imageElement: SVGImageElement | null = null;
-	let isLoaded = false;
-	let isFetchFailed = false;
-	let hasDispatchedLetterLoaded = false;
-	let isLoadingInProgress = false;
+	// Local state using Svelte 5 runes
+	let svgPath = $state('');
+	let dimensions = $state({ width: 0, height: 0 });
+	let imageElement = $state<SVGImageElement | null>(null);
+	let isLoaded = $state(false);
+	let isFetchFailed = $state(false);
+	let hasDispatchedLetterLoaded = $state(false);
+	let isLoadingInProgress = $state(false);
 
 	// Load SVG with proper caching strategy
 	// This function is async, so it's called within an $effect
@@ -29,7 +31,7 @@
 
 		// Signal that loading has started
 		isLoadingInProgress = true;
-		dispatch('loadingStarted');
+		onloadingStarted?.();
 
 		const path = glyphContainer.getLetterPath(currentLetter);
 		svgPath = path; // Update state
@@ -42,7 +44,7 @@
 			dimensions = cachedSVG.dimensions; // Update state
 			isLoaded = true; // Update state
 			isLoadingInProgress = false;
-			dispatch('loadingComplete', true);
+			onloadingComplete?.(true);
 			return;
 		}
 
@@ -59,28 +61,30 @@
 
 			isLoaded = true; // Update state
 			isLoadingInProgress = false;
-			dispatch('loadingComplete', true);
+			onloadingComplete?.(true);
 		} catch (error) {
 			console.error(`Failed to load letter SVG for ${currentLetter}:`, error);
 			isFetchFailed = true; // Update state
 			isLoadingInProgress = false;
-			dispatch('loadingComplete', false);
+			onloadingComplete?.(false);
 		}
 	}
 
-	// React to letter changes
-	$: if (letter) {
-		isLoaded = false; // Reset loading state
-		isFetchFailed = false; // Reset error state
-		hasDispatchedLetterLoaded = false; // Reset dispatch state
-		loadLetterSVG(letter);
-	} else {
-		// Reset if letter becomes null
-		svgPath = '';
-		dimensions = { width: 0, height: 0 };
-		isLoaded = false;
-		isFetchFailed = false;
-	}
+	// React to letter changes using $effect
+	$effect(() => {
+		if (letter) {
+			isLoaded = false; // Reset loading state
+			isFetchFailed = false; // Reset error state
+			hasDispatchedLetterLoaded = false; // Reset dispatch state
+			loadLetterSVG(letter);
+		} else {
+			// Reset if letter becomes null
+			svgPath = '';
+			dimensions = { width: 0, height: 0 };
+			isLoaded = false;
+			isFetchFailed = false;
+		}
+	});
 
 	// Handle image loaded with proper layout calculation
 	function handleImageLoad() {
@@ -102,7 +106,7 @@
 			hasDispatchedLetterLoaded = true; // Update state
 
 			// Emit the event
-			dispatch('letterLoaded', rect);
+			onletterLoaded?.(rect);
 		} catch (error) {
 			console.error('Error calculating letter bounding box:', error);
 		}

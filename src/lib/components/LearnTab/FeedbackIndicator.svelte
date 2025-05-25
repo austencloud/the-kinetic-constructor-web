@@ -1,5 +1,8 @@
 <script lang="ts">
-	export let isCorrect: boolean | null = null;
+	// Props using Svelte 5 runes
+	const { isCorrect = null } = $props<{
+		isCorrect?: boolean | null;
+	}>();
 </script>
 
 <div

@@ -8,11 +8,12 @@
 import { sequenceContainer } from '../../stores/sequence/SequenceContainer';
 import type { BeatData } from '../../stores/sequence/SequenceContainer';
 import { convertToStoreBeatData } from './types';
-import { isSequenceEmpty } from './persistence';
-import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+import { getIsSequenceEmpty, setIsSequenceEmpty } from './persistence';
 import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 import type { Readable } from 'svelte/store';
+// Non-reactive state replacement for .ts file
+let selectedStartPos: any = null;
 
 /**
  * Helper function to get the current value from a Svelte store
@@ -221,8 +222,8 @@ export function removeBeat({ event }: { event: any }) {
 
 		// IMPORTANT: Always ensure the start position is preserved, especially when removing the first beat
 		if (currentStartPos) {
-			// First, update the selectedStartPos store directly
-			selectedStartPos.set(currentStartPos);
+			// First, update the selectedStartPos state directly
+			selectedStartPos = currentStartPos;
 
 			// Update the pictographContainer with the start position
 			pictographContainer.setData(currentStartPos);
@@ -298,8 +299,8 @@ export function removeBeatAndFollowing({ event }: { event: any }) {
 		// This ensures we can restore it if needed
 		let currentStartPos = null;
 		try {
-			// Use our helper function to get the current value from the store
-			currentStartPos = getStoreValue(selectedStartPos);
+			// Get the current value from the state
+			currentStartPos = selectedStartPos;
 
 			// Validate and fix the start position data if needed
 			if (currentStartPos) {
@@ -410,10 +411,10 @@ export function clearSequence() {
 
 	// Ensure isSequenceEmpty is set to true
 	// This is a backup in case the subscription in persistence.ts doesn't trigger
-	isSequenceEmpty.set(true);
+	setIsSequenceEmpty(true);
 
 	// Reset the start position to null
-	selectedStartPos.set(null);
+	selectedStartPos = null;
 
 	// Reset the pictograph container to default data
 	pictographContainer.setData(defaultPictographData);

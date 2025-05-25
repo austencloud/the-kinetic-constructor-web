@@ -1,22 +1,24 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { PictographService } from '$lib/components/Pictograph/PictographService';
 
-	export let pictographs: PictographData[] = [];
-	export let disabled: boolean = false;
+	// Props using Svelte 5 runes
+	const {
+		pictographs = [],
+		disabled = false,
+		onselect
+	} = $props<{
+		pictographs?: PictographData[];
+		disabled?: boolean;
+		onselect?: (pictograph: PictographData) => void;
+	}>();
 
-	const dispatch = createEventDispatcher();
-
-	// Create an array of unique IDs for each pictograph
-	let pictographIds: string[] = [];
-
-	// Generate a new set of IDs whenever pictographs array changes
-	$: if (Array.isArray(pictographs)) {
-		pictographIds = pictographs.map(() => crypto.randomUUID());
-	}
+	// Create an array of unique IDs for each pictograph using $derived
+	const pictographIds = $derived(
+		Array.isArray(pictographs) ? pictographs.map(() => crypto.randomUUID()) : []
+	);
 
 	// Process the pictograph data to ensure it has all required properties
 	function processData(data: PictographData): PictographData {
@@ -44,17 +46,19 @@
 		}
 	}
 
-	// Process pictographs for direct use
-	$: processedPictographs = Array.isArray(pictographs)
-		? pictographs.map((p) => (p ? processData(p) : defaultPictographData))
-		: [];
+	// Process pictographs for direct use using $derived
+	const processedPictographs = $derived(
+		Array.isArray(pictographs)
+			? pictographs.map((p) => (p ? processData(p) : defaultPictographData))
+			: []
+	);
 
 	// We'll use the processed pictographs directly instead of creating stores
 	// This ensures proper initialization of motion objects in the Pictograph component
 
 	function handleSelect(pictograph: PictographData) {
 		if (!disabled) {
-			dispatch('select', pictograph);
+			onselect?.(pictograph);
 		}
 	}
 </script>
@@ -65,7 +69,7 @@
 			{#key pictographIds[i]}
 				<button
 					class="pictograph-button"
-					on:click={() => handleSelect(pictographs[i])}
+					onclick={() => handleSelect(pictographs[i])}
 					{disabled}
 					aria-label="Pictograph answer option"
 				>

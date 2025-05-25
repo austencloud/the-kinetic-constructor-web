@@ -9,17 +9,16 @@
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 
-	// Props using Svelte 5 runes
-	const { onChangeBackground = () => {}, onSettingsClick = () => {} } = $props<{
-		onChangeBackground?: (background: string) => void;
-		onSettingsClick?: () => void;
-	}>();
+	// Props using Svelte 5 runes - currently unused but kept for future extensibility
+	// const { onChangeBackground = () => {}, onSettingsClick = () => {} } = $props<{
+	// 	onChangeBackground?: (background: string) => void;
+	// 	onSettingsClick?: () => void;
+	// }>();
 
 	// Get state from the app state machine
 	const currentTabStore = useSelector(appService, (state) => state.context.currentTab);
 	const previousTabStore = useSelector(appService, (state) => state.context.previousTab);
 
-	// Use $derived instead of $: reactive declarations
 	const activeTab = $derived($currentTabStore as number);
 	const previousTab = $derived($previousTabStore as number);
 

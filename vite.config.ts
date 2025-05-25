@@ -9,7 +9,6 @@ export default defineConfig({
 			'xstate',
 			'@xstate/svelte',
 			'svelte/transition',
-			'svelte/store',
 			'lz-string' // Add lz-string to the optimized dependencies
 		],
 		exclude: [],

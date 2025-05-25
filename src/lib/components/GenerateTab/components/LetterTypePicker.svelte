@@ -1,28 +1,29 @@
 <!-- src/lib/components/GenerateTab/Freeform/LetterTypePicker/LetterTypePicker.svelte -->
 <script lang="ts">
-	// Props
-	export let options: {
-		id: string;
-		label: string;
-		description: string;
-	}[];
-	export let selectedTypes: string[] = [];
-
-	// Events
-	import { createEventDispatcher } from 'svelte';
-	const dispatch = createEventDispatcher<{
-		select: string[];
+	// Props using Svelte 5 runes
+	let {
+		options,
+		selectedTypes = $bindable([]),
+		onselect
+	} = $props<{
+		options: {
+			id: string;
+			label: string;
+			description: string;
+		}[];
+		selectedTypes?: string[];
+		onselect?: (types: string[]) => void;
 	}>();
 
 	// Toggle selection of a letter type
 	function toggleSelection(typeId: string) {
 		if (selectedTypes.includes(typeId)) {
-			selectedTypes = selectedTypes.filter((id) => id !== typeId);
+			selectedTypes = selectedTypes.filter((id: string) => id !== typeId);
 		} else {
 			selectedTypes = [...selectedTypes, typeId];
 		}
 
-		dispatch('select', selectedTypes);
+		onselect?.(selectedTypes);
 	}
 </script>
 
@@ -34,7 +35,7 @@
 			<button
 				class="letter-type-button"
 				class:selected={selectedTypes.includes(option.id)}
-				on:click={() => toggleSelection(option.id)}
+				onclick={() => toggleSelection(option.id)}
 			>
 				<div class="letter-type-content">
 					<span class="letter-type-label">{option.label}</span>

@@ -18,7 +18,10 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
-	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	import {
+		getSelectedStartPosition,
+		setSelectedStartPosition
+	} from '$lib/state/sequence/selectionState.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { BeatData as LegacyBeatData } from '../BeatData';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
@@ -159,18 +162,14 @@
 		});
 	}
 
-	// Get the initial value from the selectedStartPos store
+	// Get the initial value from the selectedStartPosition state
 	onMount(() => {
-		// One-time subscription to get the initial value
-		const unsubscribe = selectedStartPos.subscribe((newStartPos) => {
-			if (newStartPos && !startPosition) {
-				// Create a safe copy to avoid reference issues
-				startPosition = createSafePictographCopy(newStartPos);
-			}
-		});
-
-		// Immediately unsubscribe to prevent further updates
-		unsubscribe();
+		// Initialize from the modern state
+		const currentStartPosition = getSelectedStartPosition();
+		if (currentStartPosition && !startPosition) {
+			// Create a safe copy to avoid reference issues
+			startPosition = createSafePictographCopy(currentStartPosition);
+		}
 
 		// Listen for the custom event when a start position is selected
 		const handleStartPosSelected = (event: CustomEvent) => {
@@ -182,8 +181,8 @@
 				if (newStartPos) {
 					startPosition = newStartPos;
 
-					// Update the store (but don't subscribe to its changes to avoid loops)
-					selectedStartPos.set(newStartPos);
+					// Update the modern state
+					setSelectedStartPosition(newStartPos);
 				}
 			}
 		};
@@ -198,8 +197,8 @@
 				if (newStartPos) {
 					startPosition = newStartPos;
 
-					// Update the store (but don't subscribe to its changes to avoid loops)
-					selectedStartPos.set(newStartPos);
+					// Update the modern state
+					setSelectedStartPosition(newStartPos);
 				}
 			}
 		};

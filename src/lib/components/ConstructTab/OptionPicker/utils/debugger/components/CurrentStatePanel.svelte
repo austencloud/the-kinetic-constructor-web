@@ -4,7 +4,10 @@
 	import { get } from 'svelte/store';
 	import CopyButton from './CopyButton.svelte';
 
-	export let layoutContext: any;
+	// Props using Svelte 5 runes
+	const { layoutContext } = $props<{
+		layoutContext: any;
+	}>();
 
 	// Function to build the current state text for copying
 	async function buildCurrentStateText(): Promise<string> {

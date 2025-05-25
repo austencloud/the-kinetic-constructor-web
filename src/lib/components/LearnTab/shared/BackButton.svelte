@@ -1,14 +1,12 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-
-	const dispatch = createEventDispatcher<{
-		click: void;
+	// Props using Svelte 5 runes
+	const { ariaLabel = 'Go back', onclick } = $props<{
+		ariaLabel?: string;
+		onclick?: () => void;
 	}>();
-
-	export let ariaLabel = 'Go back';
 </script>
 
-<button class="back-button" aria-label={ariaLabel} on:click={() => dispatch('click')}>
+<button class="back-button" aria-label={ariaLabel} {onclick}>
 	<span class="icon">
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -25,9 +23,7 @@
 			<polyline points="12 19 5 12 12 5"></polyline>
 		</svg>
 	</span>
-	<span class="label">
-		<slot>Back</slot>
-	</span>
+	<span class="label"> Back </span>
 </button>
 
 <style>

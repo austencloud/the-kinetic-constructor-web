@@ -1,14 +1,12 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-
-	const dispatch = createEventDispatcher<{
-		click: void;
+	// Props using Svelte 5 runes
+	const { ariaLabel = 'Start over', onclick } = $props<{
+		ariaLabel?: string;
+		onclick?: () => void;
 	}>();
-
-	export let ariaLabel = 'Start over';
 </script>
 
-<button class="start-over-button" aria-label={ariaLabel} on:click={() => dispatch('click')}>
+<button class="start-over-button" aria-label={ariaLabel} {onclick}>
 	<span class="icon">
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -27,9 +25,7 @@
 			<path d="M8 16H3v5"></path>
 		</svg>
 	</span>
-	<span class="label">
-		<slot>Start Over</slot>
-	</span>
+	<span class="label"> Start Over </span>
 </button>
 
 <style>

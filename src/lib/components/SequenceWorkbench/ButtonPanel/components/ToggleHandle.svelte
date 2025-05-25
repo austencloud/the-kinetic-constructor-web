@@ -1,14 +1,19 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-
-	export let buttonSize: number;
-	export let isVisible: boolean = true;
-	export let isPulsing: boolean = false;
-
-	const dispatch = createEventDispatcher<{ toggle: void }>();
+	// Props using Svelte 5 runes
+	const {
+		buttonSize,
+		isVisible = true,
+		isPulsing = false,
+		ontoggle
+	} = $props<{
+		buttonSize: number;
+		isVisible?: boolean;
+		isPulsing?: boolean;
+		ontoggle?: () => void;
+	}>();
 
 	function handleToggleClick() {
-		dispatch('toggle');
+		ontoggle?.();
 	}
 </script>
 
@@ -19,7 +24,7 @@
 >
 	<button
 		class="toggle-handle ripple"
-		on:click={handleToggleClick}
+		onclick={handleToggleClick}
 		title={isVisible ? 'Hide Tools' : 'Show Tools'}
 		aria-label={isVisible ? 'Hide Tools' : 'Show Tools'}
 		aria-expanded={isVisible}

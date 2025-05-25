@@ -1,14 +1,23 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { draggable } from '../utils/dragDropUtils';
 
-	export let src: string;
-	export let alt: string;
-	export let word: string;
+	// Props using Svelte 5 runes
+	let {
+		src = $bindable(''),
+		alt,
+		word,
+		ondragstart,
+		ondragend
+	} = $props<{
+		src?: string;
+		alt: string;
+		word: string;
+		ondragstart?: (data: { sequenceData: any }) => void;
+		ondragend?: () => void;
+	}>();
 
-	const dispatch = createEventDispatcher();
-	let imageElement: HTMLImageElement;
-	let isDragging = false;
+	let imageElement = $state<HTMLImageElement>();
+	let isDragging = $state(false);
 
 	// Mock sequence data for drag and drop
 	// In a real implementation, this would be loaded from metadata
@@ -36,12 +45,12 @@
 	// Handle drag start and end events
 	function handleDragStart() {
 		isDragging = true;
-		dispatch('dragstart', { sequenceData: mockSequenceData });
+		ondragstart?.({ sequenceData: mockSequenceData });
 	}
 
 	function handleDragEnd() {
 		isDragging = false;
-		dispatch('dragend');
+		ondragend?.();
 	}
 
 	// Custom drag handler that uses our utility but also sets the drag image
@@ -75,7 +84,7 @@
 			{alt}
 			class="thumbnail-image"
 			loading="lazy"
-			on:error={() => {
+			onerror={() => {
 				// If image fails to load, we could set a fallback
 				src = '';
 			}}

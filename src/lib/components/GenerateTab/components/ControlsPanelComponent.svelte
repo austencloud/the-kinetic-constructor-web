@@ -15,8 +15,10 @@
 	import GeneratorOptionsSection from '../controls/GeneratorOptionsSection.svelte';
 	import GenerateButtonSection from '../controls/GenerateButtonSection.svelte';
 
-	// Use both old and new state management during migration
-	export let useNewStateManagement = true;
+	// Props using Svelte 5 runes
+	const { useNewStateManagement = true } = $props<{
+		useNewStateManagement?: boolean;
+	}>();
 
 	// Generator types for the toggle
 	const generatorTypes = [

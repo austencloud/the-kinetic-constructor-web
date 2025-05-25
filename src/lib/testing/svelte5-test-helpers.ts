@@ -60,10 +60,7 @@ export function createMockComponentInstance<T extends Record<string, any>>(props
  * @param props The component props
  * @returns An object with the container and component instance
  */
-export function mockRender<T extends Record<string, any>>(
-	Component: any,
-	props: Record<string, any> = {}
-) {
+export function mockRender(Component: any, props: Record<string, any> = {}) {
 	// Create a container element
 	const container = document.createElement('div');
 

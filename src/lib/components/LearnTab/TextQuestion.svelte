@@ -1,5 +1,8 @@
 <script lang="ts">
-	export let text: string = '';
+	// Props using Svelte 5 runes
+	const { text = '' } = $props<{
+		text?: string;
+	}>();
 </script>
 
 <div class="text-question">

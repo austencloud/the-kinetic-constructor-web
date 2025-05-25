@@ -1,23 +1,25 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-
-	export let options: any[] = [];
-	export let disabled: boolean = false;
-
-	const dispatch = createEventDispatcher<{
-		select: any;
+	// Props using Svelte 5 runes
+	const {
+		options = [],
+		disabled = false,
+		onselect
+	} = $props<{
+		options?: any[];
+		disabled?: boolean;
+		onselect?: (option: any) => void;
 	}>();
 
 	function handleSelect(option: any) {
 		if (!disabled) {
-			dispatch('select', option);
+			onselect?.(option);
 		}
 	}
 </script>
 
 <div class="button-answers">
 	{#each options as option}
-		<button class="answer-button" on:click={() => handleSelect(option)} {disabled}>
+		<button class="answer-button" onclick={() => handleSelect(option)} {disabled}>
 			{option}
 		</button>
 	{/each}

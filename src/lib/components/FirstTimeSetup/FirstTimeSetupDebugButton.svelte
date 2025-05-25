@@ -1,12 +1,13 @@
 <script lang="ts">
-	// Create a function to manually show the first-time setup dialog
-	// This will be exported and used by the FirstTimeSetupDialog component
-	export let showDialog: () => void;
+	// Props using Svelte 5 runes
+	const { showDialog } = $props<{
+		showDialog: () => void;
+	}>();
 </script>
 
 <button
 	class="debug-button"
-	on:click={showDialog}
+	onclick={showDialog}
 	title="Show First-Time Setup Dialog (Debug)"
 	aria-label="Show First-Time Setup Dialog (Debug)"
 >

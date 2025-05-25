@@ -1,21 +1,24 @@
 <!-- src/lib/components/GenerateTab/controls/GeneratorTypeSection.svelte -->
 <script lang="ts">
 	import { settingsStore as newSettingsStore } from '$lib/state/stores/settingsStore';
-	import { settingsStore, generatorType as activeGeneratorType } from '../store/settings';
+	import { settingsStore, generatorType } from '../store/settings';
 	import { sequenceSelectors } from '$lib/state/machines/sequenceMachine';
 	import GeneratorToggle from '../components/GeneratorToggle.svelte';
 
-	// Generator types for the toggle
-	export let generatorTypes = [
-		{ id: 'circular', label: 'Circular' },
-		{ id: 'freeform', label: 'Freeform' }
-	];
+	// Props using Svelte 5 runes
+	const {
+		generatorTypes = [
+			{ id: 'circular', label: 'Circular' },
+			{ id: 'freeform', label: 'Freeform' }
+		],
+		useNewStateManagement = true
+	} = $props<{
+		generatorTypes?: Array<{ id: string; label: string }>;
+		useNewStateManagement?: boolean;
+	}>();
 
-	// Use both old and new state management during migration
-	export let useNewStateManagement = true;
-
-	// Get state from sequence machine
-	$: newGeneratorType = sequenceSelectors.generationType();
+	// Get state from sequence machine using $derived
+	const newGeneratorType = $derived(sequenceSelectors.generationType());
 
 	// Handle generator type change
 	function handleGeneratorTypeChange(type: string) {
@@ -36,7 +39,7 @@
 	<div class="generator-type-toggle">
 		<GeneratorToggle
 			options={generatorTypes}
-			value={useNewStateManagement ? newGeneratorType : $activeGeneratorType}
+			value={useNewStateManagement ? newGeneratorType : generatorType}
 			onChange={(newValue) => handleGeneratorTypeChange(newValue)}
 		/>
 	</div>

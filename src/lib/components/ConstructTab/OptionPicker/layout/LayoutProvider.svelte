@@ -27,11 +27,11 @@
 	const filteredOptionsStore = writable<PictographData[]>([]);
 	const groupedOptionsStore = writable<Record<string, PictographData[]>>({});
 
-	// Update the writable stores when the option picker state changes
-	$: {
+	// Update the writable stores when the option picker state changes using $effect
+	$effect(() => {
 		filteredOptionsStore.set(optionPickerState.filteredOptions);
 		groupedOptionsStore.set(optionPickerState.groupedOptions);
-	}
+	});
 
 	// --- Derived Layout Context ---
 	// This derived store calculates layout values based on various inputs
@@ -110,7 +110,7 @@
 
 	// --- Reactive Access to Context (Optional) ---
 	// You can reactively access the context value if needed directly in this component's logic/template
-	// Uncomment if needed: $: context = $layoutContextValue;
+	// Use $derived if needed: const context = $derived($layoutContextValue);
 
 	// Debounced function to update container dimensions when the container resizes
 	const debouncedHandleContainerResize = (() => {

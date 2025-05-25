@@ -1,5 +1,8 @@
 <script lang="ts">
-	export let onAdjustBeat: (adjustment: number) => void;
+	// Props using Svelte 5 runes
+	const { onAdjustBeat } = $props<{
+		onAdjustBeat: (adjustment: number) => void;
+	}>();
 
 	const handleDecrement = () => {
 		onAdjustBeat(-1);
@@ -11,8 +14,8 @@
 </script>
 
 <div class="beat-adjustment-panel">
-	<button class="button" on:click={handleDecrement}>-</button>
-	<button class="button" on:click={handleIncrement}>+</button>
+	<button class="button" onclick={handleDecrement}>-</button>
+	<button class="button" onclick={handleIncrement}>+</button>
 </div>
 
 <style>

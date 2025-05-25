@@ -1,21 +1,19 @@
 <!-- src/lib/components/SequenceWorkbench/ViewFullscreenButton.svelte -->
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { createEventDispatcher } from 'svelte';
-
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		viewFullscreen: void;
+	// Props using Svelte 5 runes
+	const { onViewFullscreen } = $props<{
+		onViewFullscreen?: () => void;
 	}>();
 
 	function handleClick() {
-		dispatch('viewFullscreen');
+		onViewFullscreen?.();
 	}
 </script>
 
 <button
 	class="fullscreen-button ripple"
-	on:click={handleClick}
+	onclick={handleClick}
 	aria-label="View fullscreen"
 	data-mdb-ripple="true"
 	data-mdb-ripple-color="light"

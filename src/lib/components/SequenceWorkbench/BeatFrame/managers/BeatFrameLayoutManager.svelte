@@ -18,14 +18,7 @@
 	import { useResizeObserver } from '$lib/composables/useResizeObserver';
 	import { autoAdjustLayout, calculateCellSize } from '../beatFrameHelpers';
 	import { layoutStore } from '$lib/stores/layout/layoutStore';
-	import { createEventDispatcher } from 'svelte';
 	import type { BeatFrameLayoutOptions } from '$lib/types/BeatFrameLayoutOptions';
-
-	// Create event dispatcher for natural height changes
-	const dispatch = createEventDispatcher<{
-		naturalheightchange: { height: number };
-		layoutchanged: { rows: number; cols: number; beatCount: number };
-	}>();
 
 	// Use Svelte 5 runes for reactive state
 	const { size: sizeStore, resizeObserver } = useResizeObserver({
@@ -45,13 +38,17 @@
 		containerRef,
 		isScrollable = $bindable(false),
 		layoutOverride = $bindable(null),
-		fullScreenMode = $bindable(false)
+		fullScreenMode = $bindable(false),
+		onnaturalheightchange,
+		onlayoutchanged
 	} = $props<{
 		beatCount: number;
 		containerRef: HTMLElement | null;
 		isScrollable?: boolean;
 		layoutOverride?: BeatFrameLayoutOptions | null;
 		fullScreenMode?: boolean;
+		onnaturalheightchange?: (data: { height: number }) => void;
+		onlayoutchanged?: (data: { rows: number; cols: number; beatCount: number }) => void;
 	}>();
 
 	// Local state
@@ -84,8 +81,8 @@
 			prevRows = beatRows;
 			prevCols = prevCols;
 
-			// Dispatch a custom event for layout changes
-			dispatch('layoutchanged', {
+			// Call layout changed callback
+			onlayoutchanged?.({
 				rows: beatRows,
 				cols: beatCols,
 				beatCount
@@ -121,9 +118,9 @@
 			naturalGridHeight = beatRows * cellSize + 20; // Add padding-bottom (20px) of the .beat-frame
 		}
 
-		// Dispatch natural height change event
+		// Call natural height change callback
 		if (naturalGridHeight > 0) {
-			dispatch('naturalheightchange', { height: naturalGridHeight });
+			onnaturalheightchange?.({ height: naturalGridHeight });
 		}
 
 		// Check for overflow after natural height is calculated

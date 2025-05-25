@@ -1,11 +1,18 @@
 <!-- src/lib/components/OptionPicker/utils/debugger/components/DebugToggleButton.svelte -->
 <script lang="ts">
-	export let toggleInfo: () => void;
-	export let title = 'Show layout debug info';
-	export let ariaLabel = 'Show layout debug info';
+	// Props using Svelte 5 runes
+	const {
+		toggleInfo,
+		title = 'Show layout debug info',
+		ariaLabel = 'Show layout debug info'
+	} = $props<{
+		toggleInfo: () => void;
+		title?: string;
+		ariaLabel?: string;
+	}>();
 </script>
 
-<button class="debug-layout-button" on:click={toggleInfo} {title} aria-label={ariaLabel}>
+<button class="debug-layout-button" onclick={toggleInfo} {title} aria-label={ariaLabel}>
 	<svg
 		xmlns="http://www.w3.org/2000/svg"
 		width="16"

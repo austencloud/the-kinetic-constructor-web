@@ -2,7 +2,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	// Convert export let to $props() for Svelte 5
 	const {
 		active = false,
 		index = 0,

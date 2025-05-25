@@ -2,7 +2,7 @@
 import type { PictographData } from './mocks';
 import { DIAMOND, sequenceContainer } from './mocks';
 import { browser } from '$app/environment';
-import { turnsStore } from '$lib/stores/sequence/turnsStore';
+import { turnsStore } from '$lib/state/stores/turnsStore.svelte';
 import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 
 // Define the type for the sequence container

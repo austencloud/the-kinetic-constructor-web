@@ -3,16 +3,24 @@
 	import LoadingSpinner from './LoadingSpinner.svelte';
 	import { resourceLoadingStatus } from '$lib/services/ResourcePreloader';
 
-	// --- Props ---
-	export let onRetry: () => void;
-	export let showInitializationError: boolean = false;
-	export let progress: number = 0;
-	export let message: string = 'Loading...';
-	export let errorMessage: string | null = null;
+	// Props using Svelte 5 runes
+	const {
+		onRetry,
+		showInitializationError = false,
+		progress = 0,
+		message = 'Loading...',
+		errorMessage = null
+	} = $props<{
+		onRetry: () => void;
+		showInitializationError?: boolean;
+		progress?: number;
+		message?: string;
+		errorMessage?: string | null;
+	}>();
 
 	// Local state
-	let animatedProgress = 0;
-	let dotCount = 0;
+	let animatedProgress = $state(0);
+	let dotCount = $state(0);
 	let animationInterval: number;
 
 	// Animate the progress bar and loading dots
@@ -68,10 +76,12 @@
 		}
 	});
 
-	// React to progress changes
-	$: if (progress !== animatedProgress && typeof window !== 'undefined') {
-		startAnimation();
-	}
+	// React to progress changes using $effect
+	$effect(() => {
+		if (progress !== animatedProgress && typeof window !== 'undefined') {
+			startAnimation();
+		}
+	});
 </script>
 
 <div class="loading-overlay">
@@ -117,7 +127,7 @@
 					<p class="error-text">
 						{errorMessage ?? 'An error occurred during initialization.'}
 					</p>
-					<button class="retry-button" on:click={onRetry}>Retry</button>
+					<button class="retry-button" onclick={onRetry}>Retry</button>
 				</div>
 			{/if}
 		</div>

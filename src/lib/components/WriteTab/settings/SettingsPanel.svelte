@@ -2,7 +2,10 @@
 	import { uiStore } from '../stores/uiStore';
 	import { fade } from 'svelte/transition';
 
-	export let isOpen: boolean = false;
+	// Props using Svelte 5 runes
+	let { isOpen = $bindable(false) } = $props<{
+		isOpen?: boolean;
+	}>();
 
 	function handleClose() {
 		isOpen = false;
@@ -12,8 +15,8 @@
 {#if isOpen}
 	<div
 		class="settings-backdrop"
-		on:click|self={handleClose}
-		on:keydown={(e) => e.key === 'Escape' && handleClose()}
+		onclick={(e) => e.target === e.currentTarget && handleClose()}
+		onkeydown={(e) => e.key === 'Escape' && handleClose()}
 		role="dialog"
 		tabindex="-1"
 		aria-modal="true"
@@ -23,7 +26,7 @@
 		<div class="settings-panel" transition:fade={{ duration: 150 }}>
 			<div class="settings-header">
 				<h2 id="settings-title">Settings</h2>
-				<button class="close-button" on:click={handleClose} aria-label="Close settings">
+				<button class="close-button" onclick={handleClose} aria-label="Close settings">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="20"
@@ -50,7 +53,7 @@
 							<input
 								type="checkbox"
 								checked={$uiStore.preferences.confirmDeletions}
-								on:change={() => uiStore.toggleConfirmDeletions()}
+								onchange={() => uiStore.toggleConfirmDeletions()}
 							/>
 							<span class="toggle-slider"></span>
 						</label>

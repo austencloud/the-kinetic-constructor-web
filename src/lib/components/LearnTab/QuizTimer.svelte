@@ -1,8 +1,11 @@
 <script lang="ts">
-	export let seconds: number = 60;
+	// Props using Svelte 5 runes
+	const { seconds = 60 } = $props<{
+		seconds?: number;
+	}>();
 
-	// Format time as MM:SS
-	$: formattedTime = formatTime(seconds);
+	// Format time as MM:SS using $derived
+	const formattedTime = $derived(formatTime(seconds));
 
 	function formatTime(totalSeconds: number): string {
 		const minutes = Math.floor(totalSeconds / 60);

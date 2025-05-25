@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 
-	export let animationDuration = 300;
+	// Props using Svelte 5 runes
+	const { animationDuration = 300 } = $props<{
+		animationDuration?: number;
+	}>();
 </script>
 
 <g transition:fade={{ duration: animationDuration }}>

@@ -1,11 +1,20 @@
 <script lang="ts">
-	// Props
-	export let type: 'rectangle' | 'circle' | 'text' | 'pictograph' | 'button' = 'rectangle';
-	export let width: string = '100%';
-	export let height: string = '20px';
-	export let borderRadius: string = '4px';
-	export let animate: boolean = true;
-	export let delay: number = 0;
+	// Props using Svelte 5 runes
+	const {
+		type = 'rectangle',
+		width = '100%',
+		height = '20px',
+		borderRadius = '4px',
+		animate = true,
+		delay = 0
+	} = $props<{
+		type?: 'rectangle' | 'circle' | 'text' | 'pictograph' | 'button';
+		width?: string;
+		height?: string;
+		borderRadius?: string;
+		animate?: boolean;
+		delay?: number;
+	}>();
 </script>
 
 <div

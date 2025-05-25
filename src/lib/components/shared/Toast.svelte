@@ -4,13 +4,22 @@
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 
-	export let message: string;
-	export let type: 'success' | 'error' | 'info' | 'warning' = 'info';
-	export let duration: number = 5000; // Duration in milliseconds
-	export let showCloseButton: boolean = true;
-	export let action: { label: string; onClick: () => void } | null = null;
+	// Props using Svelte 5 runes
+	const {
+		message,
+		type = 'info',
+		duration = 5000, // Duration in milliseconds
+		showCloseButton = true,
+		action = null
+	} = $props<{
+		message: string;
+		type?: 'success' | 'error' | 'info' | 'warning';
+		duration?: number;
+		showCloseButton?: boolean;
+		action?: { label: string; onClick: () => void } | null;
+	}>();
 
-	let visible = true;
+	let visible = $state(true);
 	let timeoutId: ReturnType<typeof setTimeout>;
 
 	onMount(() => {
@@ -41,8 +50,8 @@
 		}
 	}
 
-	// Get icon based on type
-	$: icon = {
+	// Get icon based on type using $derived
+	const iconMap = {
 		success:
 			'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
 		error:
@@ -50,7 +59,9 @@
 		warning:
 			'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
 		info: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
-	}[type];
+	} as const;
+
+	const icon = $derived(iconMap[type]);
 </script>
 
 {#if visible}
@@ -67,14 +78,14 @@
 			<div class="toast-message">{message}</div>
 
 			{#if action}
-				<button class="toast-action" on:click={handleAction}>
+				<button class="toast-action" onclick={handleAction}>
 					{action.label}
 				</button>
 			{/if}
 		</div>
 
 		{#if showCloseButton}
-			<button class="toast-close" on:click={close} aria-label="Close notification">
+			<button class="toast-close" onclick={close} aria-label="Close notification">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="16"

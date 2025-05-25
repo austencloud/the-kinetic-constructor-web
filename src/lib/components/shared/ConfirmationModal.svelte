@@ -1,33 +1,40 @@
 <script lang="ts">
 	import Modal from './Modal.svelte';
-	import { uiStore } from '../../components/WriteTab/stores/uiStore';
+	import { uiState } from '../../components/WriteTab/state/uiState.svelte';
 
-	// Define props using Svelte 5 syntax
-	const props = $props();
-
-	// Calculate defaults
-	const isOpen = props.isOpen ?? false;
-	const title = props.title ?? 'Confirm Action';
-	const message = props.message ?? 'Are you sure you want to proceed?';
-	const confirmText = props.confirmText ?? 'Confirm';
-	const cancelText = props.cancelText ?? 'Cancel';
-	const confirmButtonClass = props.confirmButtonClass ?? 'danger';
-	const showDontAskOption = props.showDontAskOption ?? true;
-	const onConfirm = props.onConfirm;
-	const onClose = props.onClose;
+	// Props using Svelte 5 runes
+	const {
+		isOpen = false,
+		title = 'Confirm Action',
+		message = 'Are you sure you want to proceed?',
+		confirmText = 'Confirm',
+		cancelText = 'Cancel',
+		confirmButtonClass = 'danger',
+		showDontAskOption = true,
+		onconfirm,
+		onclose
+	} = $props<{
+		isOpen?: boolean;
+		title?: string;
+		message?: string;
+		confirmText?: string;
+		cancelText?: string;
+		confirmButtonClass?: string;
+		showDontAskOption?: boolean;
+		onconfirm?: (event: { dontAskAgain: boolean }) => void;
+		onclose?: () => void;
+	}>();
 
 	// State variables
 	let dontAskAgain = $state(false);
 
 	function handleConfirm() {
 		if (dontAskAgain && showDontAskOption) {
-			uiStore.toggleConfirmDeletions(false);
+			uiState.toggleConfirmDeletions(false);
 		}
 
-		// Call the onConfirm callback if provided
-		if (typeof onConfirm === 'function') {
-			onConfirm({ dontAskAgain });
-		}
+		// Call the onconfirm callback if provided
+		onconfirm?.({ dontAskAgain });
 
 		close();
 	}
@@ -36,10 +43,8 @@
 		// Reset the checkbox when closing
 		dontAskAgain = false;
 
-		// Call the onClose callback if provided
-		if (typeof onClose === 'function') {
-			onClose();
-		}
+		// Call the onclose callback if provided
+		onclose?.();
 	}
 </script>
 

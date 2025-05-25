@@ -42,18 +42,18 @@ export interface StateTransition {
 }
 
 // Create individual state variables using Svelte 5 runes
-export let pictographStatus = $state<PictographStatus>('idle');
-export let pictographData = $state<PictographData | null>(null);
-export let pictographError = $state<PictographError | null>(null);
-export let loadProgress = $state(0);
-export let components = $state<PictographComponents>({
+export const pictographStatus = $state<PictographStatus>('idle');
+export const pictographData = $state<PictographData | null>(null);
+export const pictographError = $state<PictographError | null>(null);
+export const loadProgress = $state(0);
+export const components = $state<PictographComponents>({
 	grid: false,
 	redProp: false,
 	blueProp: false,
 	redArrow: false,
 	blueArrow: false
 });
-export let stateHistory = $state<StateTransition[]>([]);
+export const stateHistory = $state<StateTransition[]>([]);
 
 // Pictograph data store for CSV data
 export const pictographDataState = $state<PictographData[]>([]);

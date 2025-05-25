@@ -3,7 +3,7 @@
 	import { fade } from 'svelte/transition';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	import { getSelectedStartPosition } from '$lib/state/sequence/selectionState.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { autoAdjustLayout } from '../BeatFrame/beatFrameHelpers';
 
@@ -34,15 +34,11 @@
 		viewportWidth = window.innerWidth;
 		viewportHeight = window.innerHeight;
 
-		// Get the start position from the store
-		const unsubscribe = selectedStartPos.subscribe((newStartPos) => {
-			if (newStartPos) {
-				startPosition = JSON.parse(JSON.stringify(newStartPos));
-			}
-		});
-
-		// Immediately unsubscribe to prevent further updates
-		unsubscribe();
+		// Get the start position from the modern state
+		const currentStartPosition = getSelectedStartPosition();
+		if (currentStartPosition) {
+			startPosition = JSON.parse(JSON.stringify(currentStartPosition));
+		}
 
 		// Add window resize and orientation change listeners
 		const handleResize = () => {

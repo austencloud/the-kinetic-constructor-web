@@ -319,9 +319,9 @@ function createSequenceContainer() {
 
 				try {
 					Promise.all([
-						import('$lib/stores/sequence/selectionStore'),
+						import('$lib/state/sequence/selectionState.svelte'),
 						import('$lib/state/stores/pictograph/pictographContainer')
-					]).then(([{ selectedStartPos }, { pictographContainer }]) => {
+					]).then(([{ setSelectedStartPosition }, { pictographContainer }]) => {
 						const savedStartPos = localStorage.getItem('start_position');
 						let startPosData = null;
 
@@ -345,7 +345,7 @@ function createSequenceContainer() {
 
 							const startPosCopy = JSON.parse(JSON.stringify(startPosData));
 
-							selectedStartPos.set(startPosCopy);
+							setSelectedStartPosition(startPosCopy);
 
 							pictographContainer.setData(startPosCopy);
 

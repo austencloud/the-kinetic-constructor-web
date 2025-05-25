@@ -3,8 +3,10 @@
 	import { debugActions } from '../stores/debugStore';
 	import CopyButton from './CopyButton.svelte';
 
-	// Add the layout context parameter
-	export let layoutContext: any;
+	// Props using Svelte 5 runes
+	const { layoutContext } = $props<{
+		layoutContext: any;
+	}>();
 
 	// Helper function to make TypeScript happy with the return type
 	async function copyAllInfo(): Promise<string> {

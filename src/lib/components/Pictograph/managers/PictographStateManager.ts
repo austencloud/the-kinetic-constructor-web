@@ -4,7 +4,6 @@
  * This module provides state management functionality for the Pictograph component.
  */
 
-import { writable, get, type Writable } from 'svelte/store';
 import type { PictographData } from '$lib/types/PictographData';
 import { defaultPictographData } from '../utils/defaultPictographData';
 import {
@@ -16,25 +15,48 @@ import { logger } from '$lib/core/logging';
 import { PictographService } from '../PictographService';
 
 /**
- * Creates a pictograph data store with the provided initial data
+ * Creates a pictograph data state with the provided initial data
  *
  * @param initialData The initial pictograph data
- * @returns A writable store containing the pictograph data
+ * @returns A reactive state object containing the pictograph data
  */
-export function createPictographDataStore(initialData?: PictographData): Writable<PictographData> {
-	return writable(initialData || defaultPictographData);
+export function createPictographDataState(initialData?: PictographData) {
+	let data = $state(initialData || defaultPictographData);
+
+	return {
+		get data() {
+			return data;
+		},
+		set data(newData: PictographData) {
+			data = newData;
+		},
+		update: (updater: (current: PictographData) => PictographData) => {
+			data = updater(data);
+		}
+	};
 }
 
 /**
  * Initializes the pictograph service with the current data
  *
- * @param pictographDataStore The pictograph data store
+ * @param pictographData The pictograph data
  * @returns The initialized pictograph service
  */
-export function initializePictographService(
-	pictographDataStore: Writable<PictographData>
-): PictographService {
-	return new PictographService(get(pictographDataStore));
+export function initializePictographService(pictographData: PictographData): PictographService {
+	return new PictographService(pictographData);
+}
+
+/**
+ * Legacy function for backward compatibility with store-based approach
+ * @deprecated Use initializePictographService with direct data instead
+ */
+export function initializePictographServiceFromStore(pictographDataStore: any): PictographService {
+	// For backward compatibility, try to get data from store
+	const data =
+		typeof pictographDataStore?.data === 'function'
+			? pictographDataStore.data()
+			: pictographDataStore?.data || defaultPictographData;
+	return new PictographService(data);
 }
 
 /**

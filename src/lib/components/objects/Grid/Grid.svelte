@@ -1,12 +1,8 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher, untrack } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { circleCoordinates } from './circleCoordinates';
 	import type { GridData } from './GridData';
 	import type { GridMode } from './types';
-	import type { GridErrorEventDetail, GridEvents } from './GridEvents';
-
-	// Create event dispatcher for custom events
-	const dispatch = createEventDispatcher<GridEvents>();
 
 	// Props using Svelte 5 runes
 	const props = $props<{
@@ -157,9 +153,8 @@
 			gridError = true;
 			gridErrorMessage = error instanceof Error ? error.message : 'Unknown grid error';
 
-			// Dispatch error event both ways for compatibility
+			// Call error callback
 			props.onError?.(gridErrorMessage);
-			dispatch('error', { message: gridErrorMessage });
 
 			// Create and return fallback grid data
 			const fallbackData = createFallbackGridData();
@@ -185,9 +180,8 @@
 		gridError = true;
 		gridErrorMessage = 'Failed to load grid image';
 
-		// Dispatch error event both ways for compatibility
+		// Call error callback
 		props.onError?.(gridErrorMessage);
-		dispatch('error', { message: gridErrorMessage });
 	}
 </script>
 

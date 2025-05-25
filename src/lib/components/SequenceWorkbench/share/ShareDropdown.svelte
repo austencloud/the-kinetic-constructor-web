@@ -6,10 +6,12 @@
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 
-	// Props
-	export let onShare: () => void;
-	export let onDownload: () => void;
-	export let onClose: () => void;
+	// Props using Svelte 5 runes
+	const { onShare, onDownload, onClose } = $props<{
+		onShare: () => void;
+		onDownload: () => void;
+		onClose: () => void;
+	}>();
 
 	// Handle close with haptic feedback
 	function handleClose() {
@@ -29,14 +31,14 @@
 >
 	<div class="dropdown-header">
 		<h3>Share Sequence</h3>
-		<button class="close-button" on:click={handleClose} aria-label="Close">
+		<button class="close-button" onclick={handleClose} aria-label="Close">
 			<i class="fa-solid fa-times"></i>
 		</button>
 	</div>
 
 	<div class="dropdown-content">
 		{#if isWebShareSupported()}
-			<button class="share-option" on:click={onShare}>
+			<button class="share-option" onclick={onShare}>
 				<i class="fa-solid fa-share-alt"></i>
 				<span>Share</span>
 			</button>
@@ -47,7 +49,7 @@
 			</div>
 		{/if}
 
-		<button class="share-option" on:click={onDownload}>
+		<button class="share-option" onclick={onDownload}>
 			<i class="fa-solid fa-download"></i>
 			<span>Download as Image</span>
 		</button>

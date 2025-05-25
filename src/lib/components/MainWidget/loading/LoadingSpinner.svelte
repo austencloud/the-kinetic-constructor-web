@@ -1,7 +1,9 @@
 <!-- LoadingSpinner.svelte -->
 <script lang="ts">
-	// Define size prop with default value
-	export let size: 'small' | 'medium' | 'large' = 'medium';
+	// Props using Svelte 5 runes
+	const { size = 'medium' } = $props<{
+		size?: 'small' | 'medium' | 'large';
+	}>();
 </script>
 
 <div class="lds-ring" class:small={size === 'small'} class:large={size === 'large'}>

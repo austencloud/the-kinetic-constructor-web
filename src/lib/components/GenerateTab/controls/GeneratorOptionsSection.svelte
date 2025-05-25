@@ -1,15 +1,17 @@
 <!-- src/lib/components/GenerateTab/controls/GeneratorOptionsSection.svelte -->
 <script lang="ts">
-	import { generatorType as activeGeneratorType } from '../store/settings';
+	import { generatorType } from '../store/settings';
 	import { sequenceSelectors } from '$lib/state/machines/sequenceMachine';
 	import CircularSequencer from '../components/CircularSequencer.svelte';
 	import FreeformSequencer from '../components/FreeformSequencer.svelte';
 
-	// Use both old and new state management during migration
-	export let useNewStateManagement = true;
+	// Props using Svelte 5 runes
+	const { useNewStateManagement = true } = $props<{
+		useNewStateManagement?: boolean;
+	}>();
 
-	// Get state from sequence machine
-	$: newGeneratorType = sequenceSelectors.generationType();
+	// Get state from sequence machine using $derived
+	const newGeneratorType = $derived(sequenceSelectors.generationType());
 </script>
 
 <section class="control-section generator-options-section">
@@ -18,7 +20,7 @@
 	</div>
 
 	<div class="generator-content">
-		{#if (useNewStateManagement ? newGeneratorType : $activeGeneratorType) === 'circular'}
+		{#if (useNewStateManagement ? newGeneratorType : generatorType) === 'circular'}
 			<CircularSequencer />
 		{:else}
 			<FreeformSequencer />

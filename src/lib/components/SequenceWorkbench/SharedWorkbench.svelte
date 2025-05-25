@@ -7,9 +7,11 @@
 	import { fly } from 'svelte/transition';
 	import type { ButtonDefinition } from './ButtonPanel/types';
 
-	// Props
-	export let toolsPanelButtons: ButtonDefinition[];
-	export let onToolsPanelAction: (id: string) => void;
+	// Props using Svelte 5 runes
+	const { toolsPanelButtons, onToolsPanelAction } = $props<{
+		toolsPanelButtons: ButtonDefinition[];
+		onToolsPanelAction: (id: string) => void;
+	}>();
 
 	// Listen for toggleToolsPanel events
 	import { onMount, onDestroy } from 'svelte';

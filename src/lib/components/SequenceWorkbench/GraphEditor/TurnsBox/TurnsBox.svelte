@@ -1,6 +1,11 @@
 <!-- src/lib/components/SequenceWorkbench/GraphEditor/TurnsBox/TurnsBox.svelte -->
 <script lang="ts">
-	import { turnsStore, blueTurns, redTurns, type Direction } from '$lib/stores/sequence/turnsStore';
+	import {
+		turnsStore,
+		getBlueTurns,
+		getRedTurns,
+		type Direction
+	} from '$lib/state/stores/turnsStore.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
@@ -25,7 +30,7 @@
 	let isDialogOpen = $state(false);
 
 	// Get derived state from stores
-	const turnsData = $derived(props.color === 'blue' ? $blueTurns : $redTurns);
+	const turnsData = $derived(props.color === 'blue' ? getBlueTurns() : getRedTurns());
 	const direction = $derived(turnsData.direction);
 	const turns = $derived(turnsData.turns);
 

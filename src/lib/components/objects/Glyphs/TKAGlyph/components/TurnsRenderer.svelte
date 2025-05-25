@@ -3,17 +3,23 @@
 	import { assetCache, fetchSVGDimensions, type Rect } from '$lib/stores/glyphStore';
 	import type { TKATurns } from '$lib/types/Types';
 
-	// Props
-	export let topValue: TKATurns = 0;
-	export let bottomValue: TKATurns = 0;
-	export let letterRect: Rect;
+	// Props using Svelte 5 runes
+	const {
+		topValue = 0,
+		bottomValue = 0,
+		letterRect
+	} = $props<{
+		topValue?: TKATurns;
+		bottomValue?: TKATurns;
+		letterRect: Rect;
+	}>();
 
 	// Constants
 	const PADDING_X = 15;
 	const PADDING_Y = 5;
 
-	// Calculated positioning
-	$: turnsPositions = calculateTurnsPositions(letterRect, PADDING_X, PADDING_Y);
+	// Calculated positioning using $derived
+	const turnsPositions = $derived(calculateTurnsPositions(letterRect, PADDING_X, PADDING_Y));
 
 	// Pure functions for calculations
 	function calculateTurnsPositions(rect: Rect, paddingX: number, paddingY: number) {
@@ -71,11 +77,11 @@
 		}
 	}
 
-	// Ensure numbers are loaded
-	$: {
+	// Ensure numbers are loaded using $effect
+	$effect(() => {
 		if (topValue !== 0) ensureNumberLoaded(topValue);
 		if (bottomValue !== 0) ensureNumberLoaded(bottomValue);
-	}
+	});
 
 	// Helpers for rendering
 	function getNumberSVGDetails(value: TKATurns) {

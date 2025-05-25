@@ -3,7 +3,7 @@
 	import SharedWorkbench from '$lib/components/SequenceWorkbench/SharedWorkbench.svelte';
 	import { workbenchStore } from '$lib/state/stores/workbenchStore';
 	import type { ButtonDefinition } from '$lib/components/SequenceWorkbench/ButtonPanel/types';
-	import { openSequenceFullScreen } from '$lib/stores/sequence/fullScreenStore';
+	import { uiStore } from '$lib/state/stores/uiStore';
 
 	interface Props {
 		isGenerateMode?: boolean;
@@ -40,7 +40,7 @@
 	function handleButtonAction(id: string) {
 		switch (id) {
 			case 'viewFullScreen':
-				openSequenceFullScreen();
+				uiStore.toggleFullScreen();
 				break;
 
 			case 'constructMode':

@@ -67,11 +67,13 @@
 		}
 	}
 
-	// Reactive statement to derive button text and action message
-	$: actionButtonText = $simulateFoldable ? 'Apply Simulation' : 'Clear Simulation';
-	$: actionMessage = $simulateFoldable
-		? 'Apply the selected foldable settings.'
-		: 'Remove any active foldable simulation.';
+	// Derive button text and action message using $derived
+	const actionButtonText = $derived($simulateFoldable ? 'Apply Simulation' : 'Clear Simulation');
+	const actionMessage = $derived(
+		$simulateFoldable
+			? 'Apply the selected foldable settings.'
+			: 'Remove any active foldable simulation.'
+	);
 </script>
 
 <div class="foldable-test-controls">
@@ -106,7 +108,7 @@
 		</div>
 	{/if}
 
-	<button class="apply-button" on:click={handleApplyOrClear} title={actionMessage}>
+	<button class="apply-button" onclick={handleApplyOrClear} title={actionMessage}>
 		{actionButtonText} & Reload
 	</button>
 </div>

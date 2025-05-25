@@ -1,16 +1,17 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-
-	const dispatch = createEventDispatcher<{ click: void }>();
+	// Props using Svelte 5 runes
+	const { onclick } = $props<{
+		onclick?: () => void;
+	}>();
 
 	function handleClick() {
-		dispatch('click');
+		onclick?.();
 	}
 </script>
 
 <button
 	class="settings-button ripple"
-	on:click={handleClick}
+	onclick={handleClick}
 	aria-label="Open settings"
 	data-mdb-ripple="true"
 	data-mdb-ripple-color="light"

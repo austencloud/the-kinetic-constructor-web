@@ -21,12 +21,12 @@ export interface HistoryEntry {
 }
 
 // Create the act state using Svelte 5 runes
-export let currentAct = $state<Act>(createEmptyAct(DEFAULT_ROWS, DEFAULT_COLUMNS));
-export let isLoading = $state(false);
-export let error = $state<string | null>(null);
-export let isDirty = $state(false);
-export let history = $state<HistoryEntry[]>([]);
-export let historyIndex = $state(-1);
+export const currentAct = $state<Act>(createEmptyAct(DEFAULT_ROWS, DEFAULT_COLUMNS));
+export const isLoading = $state(false);
+export const error = $state<string | null>(null);
+export const isDirty = $state(false);
+export const history = $state<HistoryEntry[]>([]);
+export const historyIndex = $state(-1);
 export const maxHistorySize = 20;
 
 // Helper function to add a history entry

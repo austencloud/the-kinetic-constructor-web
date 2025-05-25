@@ -2,14 +2,16 @@
 	import { onMount } from 'svelte';
 	import { uiStore } from '../stores/uiStore';
 
-	// Props
-	export let onResize: (width: number) => void;
+	// Props using Svelte 5 runes
+	const { onResize } = $props<{
+		onResize: (width: number) => void;
+	}>();
 
-	// State
-	let isDragging = false;
-	let startX = 0;
-	let startWidth = 0;
-	let handle: HTMLDivElement;
+	// State using Svelte 5 runes
+	let isDragging = $state(false);
+	let startX = $state(0);
+	let startWidth = $state(0);
+	let handle = $state<HTMLDivElement>();
 
 	// Set up drag handlers
 	function handleMouseDown(event: MouseEvent) {
@@ -72,8 +74,8 @@
 <div
 	class="resize-handle"
 	bind:this={handle}
-	on:mousedown={handleMouseDown}
-	on:keydown={handleKeyDown}
+	onmousedown={handleMouseDown}
+	onkeydown={handleKeyDown}
 	class:dragging={isDragging}
 	title="Drag to resize"
 	role="button"

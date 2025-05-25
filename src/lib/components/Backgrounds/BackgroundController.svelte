@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { backgroundContainer } from '$lib/state/stores/background/BackgroundContainer';
 
 	import { getService } from '$lib/core/di/serviceContext';
@@ -16,16 +16,16 @@
 	const background = $state(backgroundContainer.state);
 
 	// Props using Svelte 5 runes
-	const dimensions = $props() as Dimensions;
+	const { dimensions, onready, onerror, onperformanceReport } = $props<{
+		dimensions: Dimensions;
+		onready?: () => void;
+		onerror?: (data: { message: string }) => void;
+		onperformanceReport?: (data: { fps: number }) => void;
+	}>();
+
+	// Ensure dimensions have default values
 	dimensions.width = dimensions.width || 0;
 	dimensions.height = dimensions.height || 0;
-
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		ready: undefined;
-		error: { message: string };
-		performanceReport: { fps: number };
-	}>();
 
 	// Services (initialized in onMount)
 	let backgroundService: BackgroundService;
@@ -82,7 +82,7 @@
 
 			// Update ready state
 			backgroundContainer.setReady(true);
-			dispatch('ready');
+			onready?.();
 		} catch (error) {
 			handleError('Failed to initialize background', error);
 		}
@@ -159,7 +159,7 @@
 			if (backgroundSystem.getMetrics) {
 				const metrics = backgroundSystem.getMetrics();
 				backgroundContainer.updatePerformanceMetrics(metrics);
-				dispatch('performanceReport', { fps: metrics.fps });
+				onperformanceReport?.({ fps: metrics.fps });
 			}
 
 			// Schedule next frame
@@ -188,7 +188,7 @@
 		});
 
 		backgroundContainer.setError(errorObj);
-		dispatch('error', { message });
+		onerror?.({ message });
 	}
 </script>
 

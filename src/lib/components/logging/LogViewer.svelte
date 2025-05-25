@@ -5,7 +5,7 @@
 -->
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { writable, derived, type Writable } from 'svelte/store';
+	import { type Writable } from 'svelte/store';
 	import {
 		LogLevel,
 		LogDomain,
@@ -14,70 +14,93 @@
 		type LogEntry
 	} from '$lib/core/logging';
 
-	// Props
-	export let maxHeight: string = '400px';
-	export let showToolbar: boolean = true;
-	export let showTimestamps: boolean = true;
-	export let showSource: boolean = true;
-	export let showDomain: boolean = true;
-	export let autoScroll: boolean = true;
-	export let initialLevel: LogLevel = LogLevel.INFO;
+	// Props using Svelte 5 runes
+	const {
+		maxHeight = '400px',
+		showToolbar = true,
+		showTimestamps = true,
+		showSource = true,
+		showDomain = true,
+		autoScroll: autoScrollProp = true,
+		initialLevel = LogLevel.INFO
+	} = $props<{
+		maxHeight?: string;
+		showToolbar?: boolean;
+		showTimestamps?: boolean;
+		showSource?: boolean;
+		showDomain?: boolean;
+		autoScroll?: boolean;
+		initialLevel?: LogLevel;
+	}>();
 
 	// Get the logs from context
 	const { logs } = getContext<{
 		logs: Writable<LogEntry[]>;
 	}>(Symbol('logger'));
 
-	// Filter state
-	const levelFilter = writable<LogLevel>(initialLevel);
-	const domainFilter = writable<LogDomain | null>(null);
-	const sourceFilter = writable<string>('');
-	const searchQuery = writable<string>('');
+	// Filter state using Svelte 5 runes
+	let levelFilter = $state<LogLevel>(initialLevel);
+	let domainFilter = $state<LogDomain | null>(null);
+	let sourceFilter = $state('');
+	let searchQuery = $state('');
+	let autoScroll = $state(autoScrollProp);
 
-	// Filtered logs
-	const filteredLogs = derived(
-		[logs, levelFilter, domainFilter, sourceFilter, searchQuery],
-		([$logs, $levelFilter, $domainFilter, $sourceFilter, $searchQuery]) => {
-			return $logs.filter((log) => {
-				// Filter by level
-				if (log.level < $levelFilter) return false;
+	// Get current logs from the store
+	let currentLogs = $state<LogEntry[]>([]);
 
-				// Filter by domain
-				if ($domainFilter && log.domain !== $domainFilter) return false;
+	// Subscribe to logs store
+	$effect(() => {
+		const unsubscribe = logs.subscribe((value) => {
+			currentLogs = value;
+		});
+		return unsubscribe;
+	});
 
-				// Filter by source
-				if ($sourceFilter && !log.source.includes($sourceFilter)) return false;
+	// Filtered logs using derived state
+	const filteredLogs = $derived(() => {
+		return currentLogs.filter((log) => {
+			// Filter by level
+			if (log.level < levelFilter) return false;
 
-				// Filter by search query
-				if ($searchQuery) {
-					const query = $searchQuery.toLowerCase();
-					const message = log.message.toLowerCase();
-					const source = log.source.toLowerCase();
-					const domain = log.domain?.toLowerCase() || '';
+			// Filter by domain
+			if (domainFilter && log.domain !== domainFilter) return false;
 
-					return (
-						message.includes(query) ||
-						source.includes(query) ||
-						domain.includes(query) ||
-						JSON.stringify(log.data).toLowerCase().includes(query)
-					);
-				}
+			// Filter by source
+			if (sourceFilter && !log.source.includes(sourceFilter)) return false;
 
-				return true;
-			});
-		}
-	);
+			// Filter by search query
+			if (searchQuery) {
+				const query = searchQuery.toLowerCase();
+				const message = log.message.toLowerCase();
+				const source = log.source.toLowerCase();
+				const domain = log.domain?.toLowerCase() || '';
+
+				return (
+					message.includes(query) ||
+					source.includes(query) ||
+					domain.includes(query) ||
+					JSON.stringify(log.data).toLowerCase().includes(query)
+				);
+			}
+
+			return true;
+		});
+	});
 
 	// Reference to the log container for auto-scrolling
-	let logContainer: HTMLDivElement;
-	let isScrolledToBottom = true;
+	let logContainer = $state<HTMLDivElement>();
+	let isScrolledToBottom = $state(true);
 
 	// Auto-scroll when new logs are added
-	$: if (autoScroll && isScrolledToBottom && logContainer && $filteredLogs.length > 0) {
-		setTimeout(() => {
-			logContainer.scrollTop = logContainer.scrollHeight;
-		}, 0);
-	}
+	$effect(() => {
+		if (autoScroll && isScrolledToBottom && logContainer && filteredLogs.length > 0) {
+			setTimeout(() => {
+				if (logContainer) {
+					logContainer.scrollTop = logContainer.scrollHeight;
+				}
+			}, 0);
+		}
+	});
 
 	// Handle scroll events to determine if we're at the bottom
 	function handleScroll() {
@@ -115,8 +138,8 @@
 
 	// Copy logs to clipboard
 	function copyLogs() {
-		const text = $filteredLogs
-			.map((log) => {
+		const text = filteredLogs()
+			.map((log: LogEntry) => {
 				let line = '';
 				if (showTimestamps) line += `[${formatTimestamp(log.timestamp)}] `;
 				line += `[${log.levelName.toUpperCase()}]`;
@@ -136,7 +159,7 @@
 	{#if showToolbar}
 		<div class="toolbar">
 			<div class="filters">
-				<select bind:value={$levelFilter}>
+				<select bind:value={levelFilter}>
 					<option value={LogLevel.TRACE}>TRACE</option>
 					<option value={LogLevel.DEBUG}>DEBUG</option>
 					<option value={LogLevel.INFO}>INFO</option>
@@ -145,22 +168,22 @@
 					<option value={LogLevel.FATAL}>FATAL</option>
 				</select>
 
-				<select bind:value={$domainFilter}>
+				<select bind:value={domainFilter}>
 					<option value={null}>All Domains</option>
 					{#each Object.values(LogDomain) as domain}
 						<option value={domain}>{domain}</option>
 					{/each}
 				</select>
 
-				<input type="text" placeholder="Filter by source..." bind:value={$sourceFilter} />
+				<input type="text" placeholder="Filter by source..." bind:value={sourceFilter} />
 
-				<input type="text" placeholder="Search logs..." bind:value={$searchQuery} />
+				<input type="text" placeholder="Search logs..." bind:value={searchQuery} />
 			</div>
 
 			<div class="actions">
-				<button on:click={clearLogs}>Clear</button>
-				<button on:click={exportLogs}>Export</button>
-				<button on:click={copyLogs}>Copy</button>
+				<button onclick={clearLogs}>Clear</button>
+				<button onclick={exportLogs}>Export</button>
+				<button onclick={copyLogs}>Copy</button>
 				<label>
 					<input type="checkbox" bind:checked={autoScroll} />
 					Auto-scroll
@@ -172,13 +195,13 @@
 	<div
 		class="log-container"
 		bind:this={logContainer}
-		on:scroll={handleScroll}
+		onscroll={handleScroll}
 		style="max-height: {maxHeight};"
 	>
-		{#if $filteredLogs.length === 0}
+		{#if filteredLogs().length === 0}
 			<div class="empty-state">No logs to display</div>
 		{:else}
-			{#each $filteredLogs as log (log.id)}
+			{#each filteredLogs() as log (log.id)}
 				<div class="log-entry" data-level={log.levelName}>
 					{#if showTimestamps}
 						<span class="timestamp">{formatTimestamp(log.timestamp)}</span>

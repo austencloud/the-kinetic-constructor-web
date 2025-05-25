@@ -1,16 +1,17 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
-	import { createEventDispatcher } from 'svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 
-	// Props
-	export let isOpen: boolean = false;
-	export let title: string | null = null;
-
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{
-		close: void;
+	// Props using Svelte 5 runes
+	const {
+		isOpen = false,
+		title = null,
+		onclose
+	} = $props<{
+		isOpen?: boolean;
+		title?: string | null;
+		onclose?: () => void;
 	}>();
 
 	// Handle close action
@@ -20,7 +21,7 @@
 			hapticFeedbackService.trigger('selection');
 		}
 
-		dispatch('close');
+		onclose?.();
 	}
 
 	// Handle escape key press on the window
@@ -42,13 +43,13 @@
 	}
 
 	// Reference to the content element for focus management
-	let contentElement: HTMLDivElement;
+	let contentElement = $state<HTMLDivElement>();
 
 	// Focus the content element when the overlay opens
 	function handleOverlayOpen() {
 		if (contentElement) {
 			setTimeout(() => {
-				contentElement.focus();
+				contentElement?.focus();
 			}, 50);
 		}
 	}
@@ -61,12 +62,12 @@
 	<div
 		class="fullscreen-overlay-wrapper"
 		transition:fade={{ duration: 200 }}
-		on:introend={handleOverlayOpen}
+		onintroend={handleOverlayOpen}
 	>
 		<!-- Clickable background button - this is accessible and clickable -->
 		<button
 			class="background-button"
-			on:click={handleBackgroundClick}
+			onclick={handleBackgroundClick}
 			aria-label="Close fullscreen view"
 		></button>
 
@@ -74,8 +75,8 @@
 		<div
 			class="fullscreen-content"
 			transition:scale={{ duration: 200, start: 0.95 }}
-			on:click={handleContentClick}
-			on:keydown={() => {}}
+			onclick={handleContentClick}
+			onkeydown={() => {}}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby={title ? 'fullscreen-title' : undefined}
@@ -90,7 +91,7 @@
 
 			<button
 				class="close-button"
-				on:click={handleClose}
+				onclick={handleClose}
 				aria-label="Close fullscreen view"
 				title="Close fullscreen view"
 			>

@@ -2,9 +2,16 @@
 	// Removed fade import
 	import { formatStyledHeader } from '../utils/headerUtils'; // Import the utility
 
-	export let groupKey: string; // The key for this header (e.g., "Type1")
-	export let isFirstHeader: boolean = false; // To adjust top margin
-	export let isCompact: boolean = false; // For compact display in multi-group rows
+	// Props using Svelte 5 runes
+	const {
+		groupKey,
+		isFirstHeader = false,
+		isCompact = false
+	} = $props<{
+		groupKey: string; // The key for this header (e.g., "Type1")
+		isFirstHeader?: boolean; // To adjust top margin
+		isCompact?: boolean; // For compact display in multi-group rows
+	}>();
 </script>
 
 <div class="section-header-container" class:first={isFirstHeader} class:compact={isCompact}>

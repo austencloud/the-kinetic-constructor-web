@@ -1,6 +1,6 @@
 <!-- src/lib/components/objects/Glyphs/TKAGlyph/TKAGlyph.svelte -->
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { parseTurnsTupleString } from './utils/parseTurnsTuple';
 	import { glyphContainer, type Rect } from '$lib/stores/glyphContainer.svelte';
 	import type { Letter } from '$lib/types/Letter';
@@ -10,26 +10,38 @@
 	import DotsRenderer from './components/DotsRenderer.svelte';
 	import TurnsRenderer from './components/TurnsRenderer.svelte';
 
-	// Props
-	export let letter: Letter | null = null;
-	export let turnsTuple: string = '';
-	export let x: number = 0;
-	export let y: number = 0;
-	export let scale: number = 1;
+	// Props using Svelte 5 runes
+	const {
+		letter = null,
+		turnsTuple = '',
+		x = 0,
+		y = 0,
+		scale = 1,
+		onloaded,
+		onloading
+	} = $props<{
+		letter?: Letter | null;
+		turnsTuple?: string;
+		x?: number;
+		y?: number;
+		scale?: number;
+		onloaded?: (success: boolean) => void;
+		onloading?: () => void;
+	}>();
 
-	// Local state
-	let letterRect: Rect | null = null;
-	let letterLoaded = false;
-	let isLoading = false;
+	// Local state using Svelte 5 runes
+	let letterRect = $state<Rect | null>(null);
+	let letterLoaded = $state(false);
 
-	// Parse the turnsTuple
-	$: parsedTurns = parseTurnsTuple(turnsTuple);
-	$: direction = parsedTurns?.direction || null;
-	$: topTurn = parsedTurns?.top || (0 as TKATurns);
-	$: bottomTurn = parsedTurns?.bottom || (0 as TKATurns);
-	$: hasTurns =
-		(topTurn !== 'fl' && Number(topTurn) > 0) || (bottomTurn !== 'fl' && Number(bottomTurn) > 0);
-	$: shouldShowDots = hasTurns;
+	// Parse the turnsTuple using $derived
+	const parsedTurns = $derived(parseTurnsTuple(turnsTuple));
+	const direction = $derived(parsedTurns?.direction || null);
+	const topTurn = $derived(parsedTurns?.top || (0 as TKATurns));
+	const bottomTurn = $derived(parsedTurns?.bottom || (0 as TKATurns));
+	const hasTurns = $derived(
+		(topTurn !== 'fl' && Number(topTurn) > 0) || (bottomTurn !== 'fl' && Number(bottomTurn) > 0)
+	);
+	const shouldShowDots = $derived(hasTurns);
 
 	// Ensure common assets are loaded if needed
 	onMount(() => {
@@ -50,32 +62,24 @@
 		return { direction: dir, top, bottom };
 	}
 
-	// Create event dispatcher
-	const dispatch = createEventDispatcher<{
-		loaded: boolean;
-		loading: void;
-	}>();
-
 	// Handle letter loading events
-	function handleLetterLoaded(event: CustomEvent<Rect>) {
-		letterRect = event.detail;
+	function handleLetterLoaded(rect: Rect) {
+		letterRect = rect;
 		letterLoaded = true;
-		dispatch('loaded', true);
+		onloaded?.(true);
 	}
 
 	function handleLoadingStarted() {
-		isLoading = true;
-		dispatch('loading');
+		onloading?.();
 	}
 
-	function handleLoadingComplete(event: CustomEvent<boolean>) {
-		isLoading = false;
-		if (event.detail) {
+	function handleLoadingComplete(success: boolean) {
+		if (success) {
 			// Loading completed successfully, but we still need the letterRect
 			// The letterLoaded flag will be set when the image is fully rendered
 		} else {
 			// Loading failed
-			dispatch('loaded', false);
+			onloaded?.(false);
 		}
 	}
 </script>
@@ -83,9 +87,9 @@
 <g class="tka-glyph" transform={`translate(${x}, ${y}) scale(${scale})`}>
 	<LetterRenderer
 		{letter}
-		on:letterLoaded={handleLetterLoaded}
-		on:loadingStarted={handleLoadingStarted}
-		on:loadingComplete={handleLoadingComplete}
+		onletterLoaded={handleLetterLoaded}
+		onloadingStarted={handleLoadingStarted}
+		onloadingComplete={handleLoadingComplete}
 	/>
 
 	{#if letterLoaded && letterRect}

@@ -8,27 +8,26 @@
 	import { browser } from '$app/environment';
 	import { useBeatFrameState } from './composables/useBeatFrameState.svelte';
 	import { useBeatFrameLayout } from './composables/useBeatFrameLayout.svelte';
-	import { setContext, createEventDispatcher } from 'svelte';
+	import { setContext } from 'svelte';
 	import { BEAT_FRAME_CONTEXT_KEY } from '../context/ElementContext';
-
-	// Event dispatcher for communicating with parent
-	const dispatch = createEventDispatcher<{
-		scrollablechange: { isScrollable: boolean };
-		naturalheightchange: { height: number };
-		layoutchange: { rows: number; cols: number; beatCount: number };
-	}>();
 
 	// Props using Svelte 5 runes
 	const {
 		isScrollable = $bindable(false),
 		layoutOverride = $bindable(null),
 		elementReceiver = $bindable<(element: HTMLElement | null) => void>(() => {}),
-		fullScreenMode = $bindable(false)
+		fullScreenMode = $bindable(false),
+		onscrollablechange,
+		onnaturalheightchange,
+		onlayoutchange
 	} = $props<{
 		isScrollable?: boolean;
 		layoutOverride?: BeatFrameLayoutOptions | null;
 		elementReceiver?: (element: HTMLElement | null) => void;
 		fullScreenMode?: boolean;
+		onscrollablechange?: (data: { isScrollable: boolean }) => void;
+		onnaturalheightchange?: (data: { height: number }) => void;
+		onlayoutchange?: (data: { rows: number; cols: number; beatCount: number }) => void;
 	}>();
 
 	// Set up resize observer for container dimensions
@@ -47,10 +46,10 @@
 
 	// Use composables for state and layout management
 	const stateManager = useBeatFrameState();
-	
+
 	// Create layout manager reactively
 	let layoutManager = $state<any>(null);
-	
+
 	$effect(() => {
 		layoutManager = useBeatFrameLayout(stateManager.beatCount, beatFrameContainerRef, size);
 	});
@@ -58,17 +57,17 @@
 	// Create a derived value for scrollable state
 	const shouldScroll = $derived(layoutManager?.contentOverflows || false);
 
-	// Communicate scrollable state changes to parent via events
+	// Communicate scrollable state changes to parent via callbacks
 	$effect(() => {
 		if (shouldScroll !== isScrollable) {
-			dispatch('scrollablechange', { isScrollable: shouldScroll });
+			onscrollablechange?.({ isScrollable: shouldScroll });
 		}
 	});
 
 	// Communicate layout changes to parent
 	$effect(() => {
 		if (layoutManager) {
-			dispatch('layoutchange', {
+			onlayoutchange?.({
 				rows: layoutManager.beatRows,
 				cols: layoutManager.beatCols,
 				beatCount: stateManager.beatCount
@@ -79,7 +78,7 @@
 	// Communicate natural height changes to parent
 	$effect(() => {
 		if (layoutManager?.naturalGridHeight > 0) {
-			dispatch('naturalheightchange', { height: layoutManager.naturalGridHeight });
+			onnaturalheightchange?.({ height: layoutManager.naturalGridHeight });
 		}
 	});
 

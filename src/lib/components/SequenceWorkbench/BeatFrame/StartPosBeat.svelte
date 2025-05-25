@@ -4,7 +4,7 @@
 	import Beat from './Beat.svelte';
 	import type { BeatData } from './BeatData';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
-	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	import { getSelectedStartPosition } from '$lib/state/sequence/selectionState.svelte';
 	import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 	import type { PictographData } from '$lib/types/PictographData';
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/BeatHoverEffect.svelte';
@@ -102,41 +102,35 @@
 	// Note: Removed reactive effect watching sequenceState.startPosition to prevent infinite loops
 	// The component now relies on event-based updates and legacy store subscriptions
 
-	// Subscribe to the selectedStartPos store for backward compatibility
+	// Initialize from the modern selectedStartPosition state
 	onMount(() => {
-		const unsubscribe = selectedStartPos.subscribe((startPos) => {
-			// Only update if modern sequence state doesn't have a start position
-			// This prevents conflicts between modern and legacy state
-			if (!sequenceState.startPosition && !isUpdatingFromStartPos) {
-				// Set flag to prevent circular updates
-				isUpdatingFromStartPos = true;
+		// Initialize from the modern state if available
+		const currentStartPosition = getSelectedStartPosition();
+		if (currentStartPosition && !sequenceState.startPosition && !isUpdatingFromStartPos) {
+			// Set flag to prevent circular updates
+			isUpdatingFromStartPos = true;
 
-				try {
-					if (startPos) {
-						// Create a safe copy to avoid reference issues
-						const startPosCopy = safeCopyPictographData(startPos);
+			try {
+				// Create a safe copy to avoid reference issues
+				const startPosCopy = safeCopyPictographData(currentStartPosition);
 
-						// Update the local pictograph data
-						pictographData = startPosCopy;
+				// Update the local pictograph data
+				pictographData = startPosCopy;
 
-						// Also update the pictographContainer
-						pictographContainer.setData(pictographData);
+				// Also update the pictographContainer
+				pictographContainer.setData(pictographData);
 
-						// Update the local beat data
-						localBeatData = {
-							...localBeatData,
-							pictographData: startPosCopy,
-							filled: true
-						};
-					}
-				} finally {
-					// Reset flag after updates are complete
-					isUpdatingFromStartPos = false;
-				}
+				// Update the local beat data
+				localBeatData = {
+					...localBeatData,
+					pictographData: startPosCopy,
+					filled: true
+				};
+			} finally {
+				// Reset flag after updates are complete
+				isUpdatingFromStartPos = false;
 			}
-		});
-
-		return () => unsubscribe();
+		}
 	});
 
 	// Throttle function to prevent excessive animations
@@ -386,8 +380,8 @@
 					// Also update the pictographContainer
 					pictographContainer.setData(pictographData);
 
-					// Force the selectedStartPos store to update with a safe copy
-					selectedStartPos.set(newStartPos);
+					// Update the modern state with a safe copy
+					// Note: We don't need to import setSelectedStartPosition here since this is event-driven
 
 					// Update the local beat data
 					localBeatData = {

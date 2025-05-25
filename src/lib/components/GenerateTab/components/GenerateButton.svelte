@@ -2,7 +2,6 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
 
-	// Use Svelte 5 props rune instead of export let
 	const props = $props<{
 		isLoading?: boolean;
 		hasError?: boolean;

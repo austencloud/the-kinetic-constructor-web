@@ -1,23 +1,23 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import { getService } from '$lib/core/di/serviceContext';
 	import { SERVICE_TOKENS } from '$lib/core/di/ServiceTokens';
 	import type { BackgroundSystemFactory } from '$lib/core/services/BackgroundSystem';
 	import type { BackgroundType } from '$lib/components/Backgrounds/types/types';
 
-	// Props
-	export let activeBackground: BackgroundType = 'snowfall';
-
-	// Event dispatcher
-	const dispatch = createEventDispatcher<{ change: BackgroundType }>();
+	// Props using Svelte 5 runes
+	let { activeBackground = $bindable('snowfall'), onchange } = $props<{
+		activeBackground?: BackgroundType;
+		onchange?: (type: BackgroundType) => void;
+	}>();
 
 	// Services
 	let backgroundFactory: BackgroundSystemFactory;
 	let backgroundService: any; // Using any for simplicity
 
 	// Background options
-	let availableBackgrounds: BackgroundType[] = [];
-	let supportedBackgrounds: BackgroundType[] = [];
+	let availableBackgrounds = $state<BackgroundType[]>([]);
+	let supportedBackgrounds = $state<BackgroundType[]>([]);
 
 	onMount(() => {
 		backgroundFactory = getService<BackgroundSystemFactory>(SERVICE_TOKENS.BACKGROUND_FACTORY);
@@ -40,7 +40,7 @@
 	function setBackground(type: BackgroundType) {
 		if (activeBackground !== type) {
 			activeBackground = type;
-			dispatch('change', type);
+			onchange?.(type);
 		}
 	}
 
@@ -62,7 +62,7 @@
 		{#each supportedBackgrounds as background}
 			<button
 				class:active={activeBackground === background}
-				on:click={() => setBackground(background)}
+				onclick={() => setBackground(background)}
 			>
 				{getDisplayName(background)}
 			</button>

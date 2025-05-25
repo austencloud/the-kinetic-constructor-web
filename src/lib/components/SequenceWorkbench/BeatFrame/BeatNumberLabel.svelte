@@ -1,13 +1,22 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	export let beatNumber: number = 1;
-	export let duration: number = 1; // Support for multi-beat durations
+	// Props using Svelte 5 runes
+	const {
+		beatNumber = 1,
+		duration = 1 // Support for multi-beat durations
+	} = $props<{
+		beatNumber?: number;
+		duration?: number;
+	}>();
 
-	$: beatText = duration > 1 ? `${beatNumber}-${beatNumber + duration - 1}` : `${beatNumber}`;
+	// Derived value using $derived
+	const beatText = $derived(
+		duration > 1 ? `${beatNumber}-${beatNumber + duration - 1}` : `${beatNumber}`
+	);
 
-	let container: HTMLElement;
-	let parentSize = 0;
+	let container = $state<HTMLElement>();
+	let parentSize = $state(0);
 
 	// Function to calculate font size based on parent container size
 	function calculateFontSize(): string {
@@ -42,9 +51,11 @@
 		});
 
 		// Find the parent beat container to observe
-		const beatContainer = container.closest('.beat-container');
-		if (beatContainer) {
-			resizeObserver.observe(beatContainer);
+		if (container) {
+			const beatContainer = container.closest('.beat-container');
+			if (beatContainer) {
+				resizeObserver.observe(beatContainer);
+			}
 		}
 
 		// Clean up the observer when the component is destroyed

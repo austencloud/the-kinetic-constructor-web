@@ -6,7 +6,7 @@
 
 	// Import existing stores for backward compatibility during migration
 	import {
-		generatorType as activeGeneratorType,
+		generatorType,
 		numBeats,
 		turnIntensity,
 		propContinuity,
@@ -21,13 +21,13 @@
 	onMount(() => {
 		// Initialize the sequence machine with the current settings
 
-		// Sync the old settings to the new settings store
-		newSettingsStore.setGeneratorType($activeGeneratorType);
-		newSettingsStore.setNumBeats($numBeats);
-		newSettingsStore.setTurnIntensity($turnIntensity);
-		newSettingsStore.setPropContinuity($propContinuity);
-		newSettingsStore.setCAPType($capType);
-		newSettingsStore.setLevel($level);
+		// Sync the modernized settings to the new settings store
+		newSettingsStore.setGeneratorType(generatorType);
+		newSettingsStore.setNumBeats(numBeats);
+		newSettingsStore.setTurnIntensity(turnIntensity);
+		newSettingsStore.setPropContinuity(propContinuity);
+		newSettingsStore.setCAPType(capType);
+		newSettingsStore.setLevel(level);
 	});
 </script>
 

@@ -1,6 +1,5 @@
 <!-- src/lib/components/SequenceWorkbench/BeatFrame/SelectionOverlay.svelte -->
 <script lang="ts">
-	// Convert export let to $props() for Svelte 5
 	const { isSelected = false } = $props<{
 		isSelected?: boolean;
 	}>();

@@ -5,10 +5,10 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import { PictographService } from '$lib/components/Pictograph/PictographService';
 
-	export let pictograph: PictographData | null = null;
-
-	// Track a unique ID for the pictograph that changes with each new pictograph
-	let pictographId = crypto.randomUUID();
+	// Props using Svelte 5 runes
+	const { pictograph = null } = $props<{
+		pictograph?: PictographData | null;
+	}>();
 
 	// Process the pictograph data to ensure it has all required properties
 	function processData(data: PictographData): PictographData {
@@ -27,7 +27,7 @@
 
 		// Initialize service to generate missing components if needed
 		try {
-			const service = new PictographService(processingData);
+			new PictographService(processingData);
 			return processingData;
 		} catch (err) {
 			console.error('Error processing pictograph data:', err);
@@ -35,15 +35,13 @@
 		}
 	}
 
-	// Process pictograph data when it changes
-	$: processedPictographData = pictograph ? processData(pictograph) : defaultPictographData;
+	// Process pictograph data when it changes using $derived
+	const processedPictographData = $derived(
+		pictograph ? processData(pictograph) : defaultPictographData
+	);
 
-	// Update the ID when pictograph changes
-	$: if (pictograph) {
-		pictographId = crypto.randomUUID(); // Generate new ID when pictograph changes
-	} else {
-		pictographId = crypto.randomUUID(); // Generate new ID for default data too
-	}
+	// Track a unique ID for the pictograph that changes with each new pictograph using $derived
+	const pictographId = $derived(crypto.randomUUID());
 </script>
 
 <div class="pictograph-question">

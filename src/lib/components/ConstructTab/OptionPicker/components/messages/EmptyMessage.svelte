@@ -1,6 +1,9 @@
 <script lang="ts">
-	export let type: 'empty' | 'initial' = 'empty';
-	export let message: string = 'No options available';
+	// Props using Svelte 5 runes
+	const { type = 'empty', message = 'No options available' } = $props<{
+		type?: 'empty' | 'initial';
+		message?: string;
+	}>();
 </script>
 
 <div class="message-container {type}">
