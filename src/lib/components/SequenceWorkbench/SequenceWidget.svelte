@@ -27,7 +27,6 @@
 	import RemoveBeatButton from './RemoveBeatButton.svelte';
 	import RemoveStartPositionButton from './RemoveStartPositionButton.svelte';
 	import ClearSequenceButton from './ClearSequenceButton.svelte';
-	import EditButton from './EditButton.svelte';
 	import ShareButton from './share/ShareButton.svelte';
 	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
@@ -70,7 +69,7 @@
 				(window as any).__beatFrameElementRef = beatFrameElement;
 				(window as any).__pendingBeatFrameElement = beatFrameElement;
 			} catch (error) {
-				console.error('SequenceWidget: Error storing beatFrameElement availability:', error);
+				// Silently handle localStorage errors
 			}
 		}
 	});
@@ -235,8 +234,6 @@
 
 			// Clear the selection after removing the beat
 			sequenceContainer.clearSelection();
-		} else {
-			console.warn('No beat selected to remove');
 		}
 	}
 
@@ -379,17 +376,11 @@
 						hapticFeedbackService.trigger('error');
 					}
 
-					// Log for debugging
-					console.log('Start position selected in deletion mode - clearing entire sequence');
-
 					// Clear the entire sequence including start position
 					handleClearSequence();
 				} else {
 					// Pass the beatId directly to the action
 					sequenceActions.removeBeatAndFollowing(beatId);
-
-					// Log for debugging
-					console.log('Removing beat in deletion mode with ID:', beatId);
 				}
 
 				// Exit deletion mode

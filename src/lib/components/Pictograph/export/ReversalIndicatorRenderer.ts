@@ -24,11 +24,6 @@ export function drawReversalIndicators(
 ): void {
 	// Check if the beat has reversal indicators
 	if (beat && (beat.metadata?.blueReversal || beat.metadata?.redReversal)) {
-		console.log(`EnhancedExporter: Beat has reversal indicators`, {
-			blueReversal: beat.metadata?.blueReversal,
-			redReversal: beat.metadata?.redReversal
-		});
-
 		// Draw reversal indicators
 		const indicatorSize = beatSize * 0.1; // 10% of beat size
 		const indicatorY = y + beatSize - indicatorSize * 1.5; // Position at bottom of beat

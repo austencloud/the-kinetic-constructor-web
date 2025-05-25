@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { get } from 'svelte/store';
-	import { getBackgroundContext } from './contexts/BackgroundContext';
 	import { useBackgroundContext } from './contexts/BackgroundContext.svelte';
 	import { BackgroundFactory } from './core/BackgroundFactory';
 	import type {

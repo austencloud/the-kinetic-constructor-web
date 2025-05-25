@@ -4,7 +4,7 @@
   A simplified log viewer that doesn't rely on context.
 -->
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { writable, derived } from 'svelte/store';
 	import {
 		LogLevel,

@@ -17,7 +17,6 @@
 
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { browser } from '$app/environment';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
 	import type { PictographData } from '$lib/types/PictographData';
@@ -423,57 +422,12 @@
 
 	// Add a test method to verify persistence
 	export function testPersistence() {
-		// Log the current state
-		console.log('Current sequence state:', {
-			beats: sequence.beats.length,
-			selectedBeatIds: sequence.selectedBeatIds,
-			startPosition: startPosition ? 'set' : 'not set'
-		});
-
-		// Log detailed beat information
-		console.log('Current beats:', sequence.beats);
-
-		// Check localStorage
-		if (browser) {
-			const savedSequence = localStorage.getItem('sequence');
-			const startPosData = localStorage.getItem('start_position');
-			const backupData = localStorage.getItem('sequence_backup');
-
-			console.log('localStorage state:', {
-				sequence: savedSequence ? 'found' : 'not found',
-				startPosition: startPosData ? 'found' : 'not found',
-				backup: backupData ? 'found' : 'not found'
-			});
-
-			if (savedSequence) {
-				try {
-					const parsed = JSON.parse(savedSequence);
-					console.log('Saved sequence contains:', {
-						beats: parsed.beats?.length || 0,
-						metadata: parsed.metadata ? 'present' : 'missing'
-					});
-				} catch (e) {
-					console.error('Error parsing saved sequence:', e);
-				}
-			}
-		}
-
 		// Force a save
 		sequenceContainer.saveToLocalStorage();
-		console.log('Forced save to localStorage');
-
-		// Verify the sequence container state
-		console.log('SequenceContainer state:', {
-			beats: sequenceContainer.state.beats,
-			selectedBeatIds: sequenceContainer.state.selectedBeatIds,
-			currentBeatIndex: sequenceContainer.state.currentBeatIndex,
-			isModified: sequenceContainer.state.isModified,
-			metadata: sequenceContainer.state.metadata
-		});
 
 		return {
 			success: true,
-			message: 'Persistence test complete. Check console for details.'
+			message: 'Persistence test complete.'
 		};
 	}
 

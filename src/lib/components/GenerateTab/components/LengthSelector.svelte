@@ -2,13 +2,13 @@
 <script lang="ts">
 	import { settingsStore } from '../store/settings';
 
-	// Props with default value
-	const props = $props<{
+	// Props with bindable value
+	let { value = $bindable(8) } = $props<{
 		value?: number;
 	}>();
 
 	// Create local state that we can modify
-	let currentValue = $state(props.value ?? 8);
+	let currentValue = $state(value);
 
 	// Constants
 	const MIN_BEATS = 1;
@@ -24,8 +24,8 @@
 
 	// Update the input value when the prop value changes
 	$effect(() => {
-		if (props.value !== undefined && props.value !== currentValue) {
-			currentValue = props.value;
+		if (value !== undefined && value !== currentValue) {
+			currentValue = value;
 			inputValue = currentValue.toString();
 		}
 	});
@@ -34,6 +34,7 @@
 	function updateValue(newValue: number) {
 		if (newValue !== currentValue) {
 			currentValue = newValue;
+			value = newValue; // Update the bindable prop
 			settingsStore.setNumBeats(newValue);
 
 			// Dispatch event using modern approach

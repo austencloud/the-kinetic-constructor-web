@@ -30,8 +30,7 @@
 		message: () => statusMessage
 	};
 	const mockSequenceActions = {
-		generate: (settings: any, type: string) => {
-			console.log('Generate action called with:', settings, type);
+		generate: (_settings: any, _type: string) => {
 			isGenerating = true;
 			statusMessage = 'Generating...';
 			setTimeout(() => {

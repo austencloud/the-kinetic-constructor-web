@@ -13,21 +13,17 @@
 	$: isSettingsDialogOpen = $isSettingsOpenStore;
 
 	let buttonSize = 50;
-	let iconSize = 38;
 
 	$: if ($uiStore && $uiStore.windowWidth) {
 		buttonSize = Math.max(30, Math.min(50, $uiStore.windowWidth / 12));
-		iconSize = buttonSize * 0.75;
 	}
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
 			buttonSize = Math.max(30, Math.min(50, window.innerWidth / 12));
-			iconSize = buttonSize * 0.75;
 
 			// Ensure settings dialog is closed on page load
 			if (isSettingsDialogOpen) {
-				console.log('Closing settings dialog on page load');
 				appActions.closeSettings();
 			}
 
@@ -41,7 +37,6 @@
 
 					// If the stored data includes isSettingsOpen, ensure it's set to false
 					if (parsedData && parsedData.context && parsedData.context.isSettingsOpen === true) {
-						console.log('Resetting persisted settings dialog state on page load');
 						parsedData.context.isSettingsOpen = false;
 						localStorage.setItem(storageKey, JSON.stringify(parsedData));
 					}
@@ -52,14 +47,6 @@
 		}
 		appActions.changeTab(0);
 	});
-
-	function handleToggleSettings() {
-		if (isSettingsDialogOpen) {
-			appActions.closeSettings();
-		} else {
-			appActions.openSettings();
-		}
-	}
 
 	function handleBackdropKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {

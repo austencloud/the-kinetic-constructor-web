@@ -1,15 +1,8 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { type Readable } from 'svelte/store';
-	import { fade, scale } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
 	import Option from './Option.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
-	import {
-		LAYOUT_CONTEXT_KEY,
-		type LayoutContext,
-		type LayoutContextValue
-	} from '../layoutContext';
+	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 	import { optionPickerState } from '../optionPickerState.svelte';
 
 	// --- Props ---

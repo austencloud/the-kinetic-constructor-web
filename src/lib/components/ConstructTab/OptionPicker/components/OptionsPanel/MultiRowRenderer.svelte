@@ -3,7 +3,6 @@
 	import SectionHeader from '../SectionHeader.svelte';
 	import OptionGroupGrid from '../OptionGroupGrid.svelte';
 	import type { Action } from 'svelte/action';
-	import { onMount, onDestroy } from 'svelte';
 
 	// Props
 	const props = $props<{

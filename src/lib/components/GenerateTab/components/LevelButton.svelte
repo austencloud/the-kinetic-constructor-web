@@ -1,18 +1,15 @@
 <!-- src/lib/components/GenerateTab/ui/LevelSelector/LevelButton.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-
 	// Props
-	export let level: number;
-	export let selected = false;
-
-	// Create event dispatcher
-	const dispatch = createEventDispatcher();
-
-	// Handle click
-	function handleClick() {
-		dispatch('click');
-	}
+	const {
+		level,
+		selected = false,
+		onclick
+	} = $props<{
+		level: number;
+		selected?: boolean;
+		onclick?: () => void;
+	}>();
 
 	// Get color based on level
 	function getLevelColor(level: number): string {
@@ -28,14 +25,14 @@
 	}
 
 	// Dynamic color
-	$: levelColor = getLevelColor(level);
+	const levelColor = $derived(getLevelColor(level));
 </script>
 
 <button
 	class="level-button"
 	class:selected
 	style="--level-color: {levelColor}"
-	on:click={handleClick}
+	{onclick}
 	aria-label="Level {level}"
 	aria-pressed={selected}
 >

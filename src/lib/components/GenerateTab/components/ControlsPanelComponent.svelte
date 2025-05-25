@@ -1,7 +1,6 @@
 <!-- src/lib/components/GenerateTab/layout/ControlsPanelComponent.svelte -->
 <script lang="ts">
-	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
-	import { settingsStore as newSettingsStore } from '$lib/state/stores/settingsStore';
+	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
 	import {
 		settingsStore,
 		numBeats,

@@ -60,7 +60,6 @@
 		const safeCopy = createSafePictographCopy(data);
 
 		if (!safeCopy) {
-			console.error('Failed to create safe copy of pictograph data');
 			return defaultPictographData;
 		}
 
@@ -355,7 +354,7 @@
 					try {
 						localStorage.setItem('start_position', JSON.stringify(pictographData));
 					} catch (error) {
-						console.error('Failed to save start position to localStorage:', error);
+						// Silently handle localStorage errors
 					}
 
 					// Update the local beat data
@@ -396,9 +395,6 @@
 						pictographData: newStartPos,
 						filled: true
 					};
-
-					// Log for debugging
-					console.log('StartPosBeat: Refreshed start position after first beat removal');
 				} finally {
 					// Reset flag after updates are complete
 					isUpdatingFromStartPos = false;
@@ -445,9 +441,6 @@
 
 			// Call the actual click handler
 			props.onClick();
-
-			// Log for debugging
-			console.log('StartPosBeat: Selected start position');
 		}
 	}
 

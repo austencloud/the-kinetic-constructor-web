@@ -14,17 +14,19 @@
 	);
 
 	// Component props
-	export let onBackgroundChange: (type: string) => void = () => {};
+	let { onBackgroundChange = () => {} }: { onBackgroundChange?: (type: string) => void } = $props();
 
 	// Component state
-	let availableBackgrounds: string[] = [];
-	let currentBackground = '';
+	let availableBackgrounds = $state<string[]>([]);
+	let currentBackground = $state('');
 
 	// Load available backgrounds when services are ready
-	$: if ($backgroundReady) {
-		availableBackgrounds = $backgroundService!.getAvailableBackgrounds();
-		currentBackground = $backgroundService!.getCurrentBackground();
-	}
+	$effect(() => {
+		if ($backgroundReady) {
+			availableBackgrounds = $backgroundService!.getAvailableBackgrounds();
+			currentBackground = $backgroundService!.getCurrentBackground();
+		}
+	});
 
 	function handleBackgroundChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
@@ -65,7 +67,7 @@
 	{#if $backgroundReady}
 		<div class="setting-group">
 			<label for="background-type">Background Type:</label>
-			<select id="background-type" value={currentBackground} on:change={handleBackgroundChange}>
+			<select id="background-type" bind:value={currentBackground} onchange={handleBackgroundChange}>
 				{#each availableBackgrounds as type}
 					<option value={type}>{getDisplayName(type)}</option>
 				{/each}

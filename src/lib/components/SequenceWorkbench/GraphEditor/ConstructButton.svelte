@@ -27,9 +27,6 @@
 		if (props.onClick) {
 			props.onClick();
 		}
-
-		// Log for debugging
-		console.log('ConstructButton: Returning to construct mode');
 	}
 </script>
 

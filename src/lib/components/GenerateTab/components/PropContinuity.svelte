@@ -2,8 +2,10 @@
 <script lang="ts">
 	import { settingsStore } from '../store/settings';
 
-	// Export the value property for binding
-	export let value: 'continuous' | 'random' = 'continuous';
+	// Props with bindable value
+	let { value = $bindable('continuous' as 'continuous' | 'random') } = $props<{
+		value?: 'continuous' | 'random';
+	}>();
 
 	// Options
 	const continuityOptions = [
@@ -17,9 +19,6 @@
 		value = newValue;
 		settingsStore.setPropContinuity(newValue);
 	}
-
-	// Get current option
-	$: currentOption = continuityOptions.find((opt) => opt.id === value) || continuityOptions[0];
 </script>
 
 <div class="prop-continuity">
@@ -30,7 +29,7 @@
 			id="prop-continuity-toggle"
 			type="button"
 			class="toggle-track"
-			on:click={toggleContinuity}
+			onclick={toggleContinuity}
 			aria-label="Toggle Prop Continuity"
 		>
 			<div class="toggle-labels">

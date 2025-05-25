@@ -3,8 +3,10 @@
 	import { settingsStore } from '../store/settings';
 	import LevelButton from './LevelButton.svelte';
 
-	// Export the value property for binding
-	export let value: number = 3;
+	// Props with bindable value
+	let { value = $bindable(3) } = $props<{
+		value?: number;
+	}>();
 
 	// Constants
 	const MIN_LEVEL = 1;
@@ -20,7 +22,7 @@
 	];
 
 	// Current description
-	$: currentDescription = levelDescriptions[value - 1] || levelDescriptions[0];
+	const currentDescription = $derived(levelDescriptions[value - 1] || levelDescriptions[0]);
 
 	// Set level
 	function setLevel(newLevel: number) {
@@ -42,7 +44,7 @@
 			<LevelButton
 				level={levelNum}
 				selected={value === levelNum}
-				on:click={() => setLevel(levelNum)}
+				onclick={() => setLevel(levelNum)}
 			/>
 		{/each}
 	</div>

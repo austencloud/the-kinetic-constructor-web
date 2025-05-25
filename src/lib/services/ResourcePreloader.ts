@@ -1,7 +1,6 @@
 // src/lib/services/ResourcePreloader.ts
 import { writable, get } from 'svelte/store';
 import type { Color, TKATurns } from '$lib/types/Types';
-import { PropType as PropTypeEnum } from '$lib/types/Types';
 import { logger } from '$lib/core/logging';
 import { toAppError } from '$lib/types/ErrorTypes';
 
@@ -243,13 +242,7 @@ export class ResourcePreloader {
 	 */
 	async preloadArrows(): Promise<void> {
 		// Use the actual motion types that exist in the file system
-		const motionTypes = [
-			'pro',
-			'anti',
-			'float',
-			'dash',
-			'static'
-		] as const;
+		const motionTypes = ['pro', 'anti', 'float', 'dash', 'static'] as const;
 		// Only use orientations that exist in the file system
 		const orientations = ['in', 'out', 'clock', 'counter'] as const;
 		const turns: TKATurns[] = [0, 0.5, 1, 1.5, 2, 2.5, 3];

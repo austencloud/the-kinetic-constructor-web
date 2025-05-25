@@ -1,27 +1,26 @@
 <!-- src/lib/components/BrowseTab/SequenceGrid/Thumbnail.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import type { SequenceData } from '$lib/stores/browseTab/browseTabStore';
 
 	// Props
-	export let sequence: SequenceData;
-	export let isSelected = false;
-
-	// Create event dispatcher
-	const dispatch = createEventDispatcher();
+	let { sequence, isSelected = false, onclick }: { 
+		sequence: SequenceData; 
+		isSelected?: boolean; 
+		onclick?: () => void; 
+	} = $props();
 
 	// Compute if any variation is a favorite
-	$: hasFavorite = sequence.variations.some((v) => v.metadata.isFavorite);
+	const hasFavorite = $derived(sequence.variations.some((v) => v.metadata.isFavorite));
 
 	// Get the first variation's thumbnail for display
-	$: thumbnailPath = sequence.variations[0]?.thumbnailPath || '';
+	const thumbnailPath = $derived(sequence.variations[0]?.thumbnailPath || '');
 
 	// Get difficulty level
-	$: difficultyLevel = sequence.metadata.level || 1;
+	const difficultyLevel = $derived(sequence.metadata.level || 1);
 
 	// Handle click
 	function handleClick() {
-		dispatch('click');
+		onclick?.();
 	}
 
 	// Placeholder image for development
@@ -31,10 +30,10 @@
 <div
 	class="thumbnail"
 	class:selected={isSelected}
-	on:click={handleClick}
+	onclick={handleClick}
 	role="button"
 	tabindex="0"
-	on:keydown={(e) => e.key === 'Enter' && handleClick()}
+	onkeydown={(e) => e.key === 'Enter' && handleClick()}
 >
 	<div class="thumbnail-image-container">
 		<!-- Use placeholder for development, would use actual thumbnails in production -->

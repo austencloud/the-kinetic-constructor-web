@@ -1,51 +1,51 @@
 <!-- src/lib/components/BrowseTab/SequenceViewer/SequenceViewer.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { selectedSequenceData, browseTabStore } from '$lib/stores/browseTab/browseTabStore';
 
-	// Create event dispatcher
-	const dispatch = createEventDispatcher<{
+	interface Events {
 		selectVariation: number;
 		toggleFavorite: { sequenceId: string; variationId: string };
 		deleteRequest: { type: 'sequence' | 'variation'; sequenceId: string; variationId?: string };
-	}>();
+	}
 
-	// Computed properties
-	$: sequence = $selectedSequenceData.sequence;
-	$: variation = $selectedSequenceData.variation;
-	$: currentIndex = $browseTabStore.selectedVariationIndex;
-	$: totalVariations = sequence?.variations.length || 0;
-	$: hasPrevious = currentIndex > 0;
-	$: hasNext = currentIndex < totalVariations - 1;
-	$: isFavorite = variation?.metadata.isFavorite || false;
+	let { onselectVariation, ontoggleFavorite, ondeleteRequest }: {
+		onselectVariation?: (index: number) => void;
+		ontoggleFavorite?: (data: { sequenceId: string; variationId: string }) => void;
+		ondeleteRequest?: (data: { type: 'sequence' | 'variation'; sequenceId: string; variationId?: string }) => void;
+	} = $props();
 
-	// Handle navigation
+	const sequence = $derived($selectedSequenceData.sequence);
+	const variation = $derived($selectedSequenceData.variation);
+	const currentIndex = $derived($browseTabStore.selectedVariationIndex);
+	const totalVariations = $derived(sequence?.variations.length || 0);
+	const hasPrevious = $derived(currentIndex > 0);
+	const hasNext = $derived(currentIndex < totalVariations - 1);
+	const isFavorite = $derived(variation?.metadata.isFavorite || false);
+
 	function handlePrevious() {
 		if (hasPrevious) {
-			dispatch('selectVariation', currentIndex - 1);
+			onselectVariation?.(currentIndex - 1);
 		}
 	}
 
 	function handleNext() {
 		if (hasNext) {
-			dispatch('selectVariation', currentIndex + 1);
+			onselectVariation?.(currentIndex + 1);
 		}
 	}
 
-	// Handle favorite toggle
 	function handleFavoriteToggle() {
 		if (sequence && variation) {
-			dispatch('toggleFavorite', {
+			ontoggleFavorite?.({
 				sequenceId: sequence.id,
 				variationId: variation.id
 			});
 		}
 	}
 
-	// Handle delete request
 	function handleDeleteVariation() {
 		if (sequence && variation) {
-			dispatch('deleteRequest', {
+			ondeleteRequest?.({
 				type: 'variation',
 				sequenceId: sequence.id,
 				variationId: variation.id
@@ -55,17 +55,16 @@
 
 	function handleDeleteSequence() {
 		if (sequence) {
-			dispatch('deleteRequest', {
+			ondeleteRequest?.({
 				type: 'sequence',
 				sequenceId: sequence.id
 			});
 		}
 	}
 
-	// Placeholder image for development
-	$: placeholderImage = sequence
+	const placeholderImage = $derived(sequence
 		? `https://via.placeholder.com/400x400/333333/FFFFFF?text=${sequence.word}`
-		: '';
+		: '');
 </script>
 
 <div class="sequence-viewer">
@@ -86,19 +85,17 @@
 
 		<div class="viewer-content">
 			<div class="image-container">
-				<!-- Use placeholder for development, would use actual image in production -->
 				<img
 					src={placeholderImage}
 					alt={`${sequence.word} (Variation ${currentIndex + 1})`}
 					class="sequence-image"
 				/>
 
-				<!-- Variation navigation -->
 				<div class="variation-navigation">
 					<button
 						class="nav-button prev"
 						disabled={!hasPrevious}
-						on:click={handlePrevious}
+						onclick={handlePrevious}
 						aria-label="Previous variation"
 					>
 						←
@@ -111,7 +108,7 @@
 					<button
 						class="nav-button next"
 						disabled={!hasNext}
-						on:click={handleNext}
+						onclick={handleNext}
 						aria-label="Next variation"
 					>
 						→
@@ -172,7 +169,7 @@
 			<button
 				class="action-button favorite"
 				class:active={isFavorite}
-				on:click={handleFavoriteToggle}
+				onclick={handleFavoriteToggle}
 				aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
 			>
 				<span class="button-icon">{isFavorite ? '★' : '☆'}</span>
@@ -182,7 +179,7 @@
 			<div class="delete-buttons">
 				<button
 					class="action-button delete"
-					on:click={handleDeleteVariation}
+					onclick={handleDeleteVariation}
 					aria-label="Delete variation"
 				>
 					<span class="button-icon">🗑️</span>
@@ -191,7 +188,7 @@
 
 				<button
 					class="action-button delete-sequence"
-					on:click={handleDeleteSequence}
+					onclick={handleDeleteSequence}
 					aria-label="Delete sequence"
 				>
 					<span class="button-icon">🗑️</span>
@@ -249,23 +246,23 @@
 	}
 
 	.metadata-item.difficulty[data-level='1'] {
-		background-color: #4caf50; /* Green */
+		background-color: #4caf50;
 	}
 
 	.metadata-item.difficulty[data-level='2'] {
-		background-color: #8bc34a; /* Light Green */
+		background-color: #8bc34a;
 	}
 
 	.metadata-item.difficulty[data-level='3'] {
-		background-color: #ffc107; /* Amber */
+		background-color: #ffc107;
 	}
 
 	.metadata-item.difficulty[data-level='4'] {
-		background-color: #ff9800; /* Orange */
+		background-color: #ff9800;
 	}
 
 	.metadata-item.difficulty[data-level='5'] {
-		background-color: #f44336; /* Red */
+		background-color: #f44336;
 	}
 
 	.viewer-content {
@@ -401,7 +398,7 @@
 	}
 
 	.action-button.favorite.active {
-		background-color: #ffc107; /* Amber */
+		background-color: #ffc107;
 		color: #000000;
 	}
 

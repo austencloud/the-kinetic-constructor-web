@@ -13,12 +13,16 @@
 		isScrollable = $bindable(false),
 		layoutOverride = $bindable(null),
 		elementReceiver = $bindable<(element: HTMLElement | null) => void>(() => {}),
-		fullScreenMode = $bindable(false)
+		fullScreenMode = $bindable(false),
+		onnaturalheightchange,
+		onbeatselected
 	} = $props<{
 		isScrollable?: boolean;
 		layoutOverride?: BeatFrameLayoutOptions | null;
 		elementReceiver?: (element: HTMLElement | null) => void;
 		fullScreenMode?: boolean;
+		onnaturalheightchange?: (event: CustomEvent) => void;
+		onbeatselected?: (event: CustomEvent) => void;
 	}>();
 
 	// Set up resize observer for container dimensions
@@ -41,7 +45,12 @@
 
 	// Event handlers for manager events
 	function handleNaturalHeightChange(event: CustomEvent) {
-		// Re-dispatch the event to maintain the external API
+		// Call the callback prop if provided
+		if (onnaturalheightchange) {
+			onnaturalheightchange(event);
+		}
+
+		// Re-dispatch the event to maintain the external API for backward compatibility
 		const customEvent = new CustomEvent('naturalheightchange', {
 			detail: event.detail,
 			bubbles: true
@@ -50,7 +59,12 @@
 	}
 
 	function handleBeatSelected(event: CustomEvent) {
-		// Re-dispatch the event to maintain the external API
+		// Call the callback prop if provided
+		if (onbeatselected) {
+			onbeatselected(event);
+		}
+
+		// Re-dispatch the event to maintain the external API for backward compatibility
 		const customEvent = new CustomEvent('beatselected', {
 			detail: event.detail,
 			bubbles: true

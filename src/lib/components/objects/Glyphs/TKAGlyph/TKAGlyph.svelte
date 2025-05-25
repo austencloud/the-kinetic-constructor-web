@@ -4,7 +4,7 @@
 	import { parseTurnsTupleString } from './utils/parseTurnsTuple';
 	import { glyphContainer, type Rect } from '$lib/stores/glyphContainer.svelte';
 	import type { Letter } from '$lib/types/Letter';
-	import type { DirRelation, PropRotDir, TKATurns } from '$lib/types/Types';
+	import type { TKATurns } from '$lib/types/Types';
 	import LetterRenderer from './components/LetterRenderer.svelte';
 	import DashRenderer from './components/DashRenderer.svelte';
 	import DotsRenderer from './components/DotsRenderer.svelte';
@@ -37,7 +37,6 @@
 		if (!glyphContainer.cache.dotSVG || !glyphContainer.cache.dashSVG) {
 			// Only preload if not already in progress
 			if (!glyphContainer.loading.isPreloading && !glyphContainer.loading.preloadCompleted) {
-				console.log('TKAGlyph: Triggering preload of common assets');
 				glyphContainer.preloadCommonAssets();
 			}
 		}

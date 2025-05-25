@@ -20,12 +20,10 @@ export interface SequenceOverlayManagerResult {
 export function useSequenceOverlayManager(): SequenceOverlayManagerResult {
 	// Define the functions to open and close overlay
 	function openOverlay() {
-		console.log('Opening sequence overlay from manager');
 		openSequenceOverlay();
 	}
 
 	function closeOverlay() {
-		console.log('Closing sequence overlay from manager');
 		closeSequenceOverlay();
 	}
 

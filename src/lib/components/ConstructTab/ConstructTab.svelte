@@ -5,10 +5,12 @@
 	import type { ButtonDefinition } from '$lib/components/SequenceWorkbench/ButtonPanel/types';
 	import { openSequenceFullScreen } from '$lib/stores/sequence/fullScreenStore';
 
-	// Props
-	export let isGenerateMode = false;
+	interface Props {
+		isGenerateMode?: boolean;
+	}
 
-	// Define Button Panel Data
+	let { isGenerateMode = false }: Props = $props();
+
 	const buttonPanelButtons: ButtonDefinition[] = [
 		{
 			icon: 'fa-book-medical',
@@ -35,15 +37,9 @@
 		{ icon: 'fa-eraser', title: 'Clear Sequence', id: 'clearSequence', color: '#ff7b00' }
 	];
 
-	// Handler for button panel actions
 	function handleButtonAction(id: string) {
-		// Handle the action directly without dispatching any events
-		// This prevents the infinite recursion loop
-
-		// Handle specific actions based on the button ID
 		switch (id) {
 			case 'viewFullScreen':
-				// Use the fullScreenStore to open the fullscreen overlay
 				openSequenceFullScreen();
 				break;
 
@@ -56,44 +52,37 @@
 				break;
 
 			case 'saveImage':
-				// Implement save image functionality here
 				break;
 
 			case 'addToDictionary':
-				// Implement add to dictionary functionality here
 				break;
 
 			case 'mirrorSequence':
-				// Implement mirror sequence functionality here
 				break;
 
 			case 'swapColors':
-				// Implement swap colors functionality here
 				break;
 
 			case 'rotateSequence':
-				// Implement rotate sequence functionality here
 				break;
 
 			case 'deleteBeat':
-				// Implement delete beat functionality here
 				break;
 
 			case 'clearSequence':
-				// Implement clear sequence functionality here
 				break;
 
 			default:
-				// Handle any other actions
 				break;
 		}
 	}
 
-	// Set active tab when component mounts
-	$: workbenchStore.update((state) => ({
-		...state,
-		activeTab: isGenerateMode ? 'generate' : 'construct'
-	}));
+	$effect(() => {
+		workbenchStore.update((state) => ({
+			...state,
+			activeTab: isGenerateMode ? 'generate' : 'construct'
+		}));
+	});
 </script>
 
 <div class="construct-tab">

@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import { writable, get } from 'svelte/store';
-	import { cubicOut } from 'svelte/easing';
+	import { onDestroy } from 'svelte';
+	import { writable } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { prefersReducedMotion } from '../utils/a11y';
 

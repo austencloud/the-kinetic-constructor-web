@@ -15,13 +15,11 @@
 	} from '../store/settings';
 
 	// Import layout components
-	import GenerateTabHeader from './GenerateTabHeader.svelte';
 	import GenerateTabContent from './GenerateTabContent.svelte';
 
 	// Initialization logic
 	onMount(() => {
 		// Initialize the sequence machine with the current settings
-		console.log('Initializing sequence machine with current settings');
 
 		// Sync the old settings to the new settings store
 		newSettingsStore.setGeneratorType($activeGeneratorType);

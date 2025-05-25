@@ -11,9 +11,9 @@ export * from './core/registry';
 
 // Import at the top to avoid circular dependencies
 import { stateRegistry } from './core/registry';
-import { appService as appActor } from './machines/app/app.machine';
 import { appActions } from './machines/app/app.actions';
 import * as appSelectors from './machines/app/app.selectors';
+import { appService as appActor } from './machines/app/app.machine';
 import { sequenceActor, sequenceActions, sequenceSelectors } from './machines/sequenceMachine';
 
 // Export state machines (excluding sequenceContainer to avoid ambiguity)
@@ -73,12 +73,20 @@ export function initializeStateManagement(): void {
 	}
 
 	// Explicitly start critical actors that must be running
-	if (appActor && appActor.getSnapshot().status !== 'active') {
-		appActor.start();
+	try {
+		if (appActor && appActor.getSnapshot().status !== 'active') {
+			appActor.start();
+		}
+	} catch (error) {
+		console.error('Error starting appActor:', error);
 	}
 
-	if (sequenceActor && sequenceActor.getSnapshot().status !== 'active') {
-		sequenceActor.start();
+	try {
+		if (sequenceActor && sequenceActor.getSnapshot().status !== 'active') {
+			sequenceActor.start();
+		}
+	} catch (error) {
+		console.error('Error starting sequenceActor:', error);
 	}
 
 	// Signal that the background is ready to start the app initialization

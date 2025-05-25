@@ -114,7 +114,6 @@
 				try {
 					const settings = JSON.parse(localStorage.getItem('settings') || '{}');
 					localStorage.setItem('settings', JSON.stringify(settings));
-					console.log('General settings saved');
 				} catch (error) {
 					console.error('Failed to save general settings:', error);
 				}
@@ -124,7 +123,6 @@
 			if (browser && contentContainer) {
 				try {
 					localStorage.setItem(SETTINGS_SCROLL_POSITION_KEY, contentContainer.scrollTop.toString());
-					console.log('Scroll position saved:', contentContainer.scrollTop);
 				} catch (error) {
 					console.error('Failed to save settings scroll position:', error);
 				}
@@ -134,7 +132,6 @@
 			if (browser) {
 				try {
 					localStorage.setItem(SETTINGS_ACTIVE_TAB_KEY, activeTab);
-					console.log('Active tab saved:', activeTab);
 				} catch (error) {
 					console.error('Failed to save active tab:', error);
 				}

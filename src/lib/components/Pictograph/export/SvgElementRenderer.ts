@@ -42,16 +42,10 @@ export async function renderSvgElements(
 	const hasStartPosition = !!options.startPosition || !!startPositionContainer;
 
 	if (startPositionContainer) {
-		console.log('EnhancedExporter: Found start position container in DOM, including it in export');
-
 		const startPositionSvg = startPositionContainer.querySelector('svg');
 		if (startPositionSvg) {
 			// Find the index of this SVG in our svgElements array
 			startPositionIndex = svgElements.findIndex((svg) => svg === startPositionSvg);
-			console.log(
-				'EnhancedExporter: Found start position element directly at index',
-				startPositionIndex
-			);
 		}
 	}
 
@@ -66,27 +60,15 @@ export async function renderSvgElements(
 			// The start position is in a container with class "start-position"
 			if (grandparent?.classList.contains('start-position')) {
 				startPositionIndex = i;
-				console.log('EnhancedExporter: Found start position element at index', i);
 				break;
 			}
 		}
 	}
 
-	console.log('EnhancedExporter: Rendering SVG elements', {
-		svgCount: svgElements.length,
-		hasStartPosition,
-		startPositionIndex,
-		columnsForBeats,
-		beatCount
-	});
-
 	// Process each SVG element
 	for (let i = 0; i < svgElements.length; i++) {
 		// Skip rendering the start position element if hasStartPosition is false
 		if (!hasStartPosition && i === startPositionIndex) {
-			console.log(
-				'EnhancedExporter: Skipping start position element because hasStartPosition is false'
-			);
 			continue;
 		}
 
@@ -96,7 +78,6 @@ export async function renderSvgElements(
 			// This is the start position - place it in its own column on the left (column 1)
 			x = 0;
 			y = topMargin;
-			console.log('EnhancedExporter: Positioning start position at', { x, y });
 		} else {
 			// This is a regular beat - calculate position in the main grid
 			// We need to map the SVG index to the correct beat index
@@ -132,14 +113,6 @@ export async function renderSvgElements(
 			// Calculate x and y coordinates
 			x = col * beatSize; // Column 0 is empty except for start position
 			y = row * beatSize + topMargin;
-
-			console.log('EnhancedExporter: Positioning beat', beatIndex, 'at', {
-				x,
-				y,
-				row,
-				col,
-				svgIndex: i
-			});
 		}
 
 		// Render the SVG to an image
@@ -168,8 +141,6 @@ export async function renderSvgElements(
 
 		// Draw the image on the canvas
 		ctx.drawImage(img, x, y, beatSize, beatSize);
-
-		console.log(`EnhancedExporter: Processed SVG element ${i + 1}/${svgElements.length}`);
 
 		// If this is a regular beat (not start position), check if it has reversal indicators
 		if (!(hasStartPosition && i === startPositionIndex) && options.addReversalSymbols) {

@@ -34,12 +34,10 @@ export function useFullScreenManager(): FullScreenManagerResult {
 
 	// Define the functions to open and close fullscreen
 	function openFullScreen() {
-		console.log('Opening sequence overlay from manager');
 		openSequenceFullScreen();
 	}
 
 	function closeFullScreen() {
-		console.log('Closing sequence overlay from manager');
 		closeSequenceFullScreen();
 	}
 

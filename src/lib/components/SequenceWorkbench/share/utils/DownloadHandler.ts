@@ -7,9 +7,7 @@
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
 import { showError, showSuccess, showInfo } from '$lib/components/shared/ToastManager.svelte';
-import {
-	downloadImage
-} from '$lib/components/Pictograph/export/downloadUtils';
+import { downloadImage } from '$lib/components/Pictograph/export/downloadUtils';
 import { getImageExportSettings } from '$lib/state/image-export-settings.svelte';
 import { isMobileDevice } from '$lib/utils/fileSystemUtils';
 import type { SequenceRenderResult } from './ImageUtils';
@@ -32,21 +30,15 @@ export async function downloadSequenceImage(options: DownloadOptions): Promise<b
 	const { sequenceName, imageResult } = options;
 
 	if (!browser) {
-		console.log('DownloadHandler: Not in browser environment, returning false');
 		return false;
 	}
 
 	try {
-		console.log('DownloadHandler: Starting download process');
-
 		// Get export settings
 		let settings: any = {};
 		try {
 			// Get settings directly using new function
 			settings = getImageExportSettings();
-			console.log('DownloadHandler: Using settings from getImageExportSettings()', {
-				...settings
-			});
 		} catch (error) {
 			console.error('DownloadHandler: Error getting export settings from function', error);
 
@@ -59,7 +51,6 @@ export async function downloadSequenceImage(options: DownloadOptions): Promise<b
 						const parsed = JSON.parse(savedSettings);
 						if (parsed && typeof parsed === 'object') {
 							settings = parsed;
-							console.log('DownloadHandler: Using settings from localStorage', settings);
 						}
 					} catch (parseError) {
 						console.error(
@@ -81,31 +72,17 @@ export async function downloadSequenceImage(options: DownloadOptions): Promise<b
 		// Get the exact sequence word from the UI
 		const exactWordName = sequenceName || 'Sequence';
 
-		// Log the exact word being used
-		console.log('DownloadHandler: Using exact sequence word:', exactWordName);
-
 		// Use the exact word for the filename (preserving case and format)
 		// This makes it more recognizable to users
 		const filename = `${exactWordName}.png`;
 
-		console.log('DownloadHandler: Downloading sequence:', {
-			wordName: exactWordName,
-			dataUrlLength: imageResult.dataUrl.length,
-			filename
-		});
-
 		// Use the direct download approach with the standard file save dialog
 		try {
-			console.log('DownloadHandler: Starting download with downloadImage function');
-
 			// Download the image with improved error handling
 			const result = await downloadImage({
 				dataUrl: imageResult.dataUrl,
 				filename
 			});
-
-			// Log the result for debugging
-			console.log('DownloadHandler: downloadImage returned:', result);
 
 			if (result.success) {
 				// Determine if we're on a mobile device
@@ -133,7 +110,6 @@ export async function downloadSequenceImage(options: DownloadOptions): Promise<b
 					showSuccess('Image saved successfully to Downloads folder', { duration: 5000 });
 				}
 
-				console.log('DownloadHandler: Download completed successfully');
 				return true;
 			} else {
 				console.warn('DownloadHandler: Download function returned false without throwing an error');
@@ -161,7 +137,6 @@ export async function downloadSequenceImage(options: DownloadOptions): Promise<b
 					downloadError.message.includes('aborted') ||
 					downloadError.name === 'AbortError')
 			) {
-				console.log('DownloadHandler: User cancelled save operation');
 				// Return false but don't show an error message for user cancellations
 				return false;
 			}

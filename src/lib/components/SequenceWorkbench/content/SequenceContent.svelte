@@ -13,7 +13,7 @@
 	const {
 		containerHeight = $bindable(0),
 		containerWidth = $bindable(0),
-		onBeatSelected = (beatId: string) => {}
+		onBeatSelected = (_beatId: string) => {}
 	} = $props<{
 		containerHeight?: number;
 		containerWidth?: number;
@@ -109,9 +109,6 @@
 
 			// Enter edit mode
 			editModeStore.setEditMode(true);
-
-			// Log for debugging
-			console.log('Selection mode: Selected beat and entered edit mode', { beatId });
 		}
 	}
 
@@ -137,8 +134,8 @@
 			<div class="beat-frame-wrapper" class:scroll-mode-active={beatFrameShouldScroll}>
 				<!-- Pass the scrollable state to BeatFrame to let it handle scrolling -->
 				<BeatFrame
-					on:naturalheightchange={handleBeatFrameHeightChange}
-					on:beatselected={handleBeatSelected}
+					onnaturalheightchange={handleBeatFrameHeightChange}
+					onbeatselected={handleBeatSelected}
 					isScrollable={beatFrameShouldScroll}
 					elementReceiver={function (el: HTMLElement | null) {
 						// Use a function to update the element reference

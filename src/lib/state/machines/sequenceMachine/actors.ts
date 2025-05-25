@@ -10,11 +10,6 @@ import type { SequenceMachineEvent, GenerateSequenceInput } from './types';
  */
 export const generateSequenceActor = fromCallback<SequenceMachineEvent, GenerateSequenceInput>(
 	({ sendBack, input }) => {
-		console.log(
-			`Generating ${input.generationType} sequence with options:`,
-			input.generationOptions
-		);
-
 		// Import the appropriate generator based on the type
 		(async () => {
 			try {

@@ -6,6 +6,7 @@ export const createSnowflakeSystem = () => {
 	const config = SnowfallConfig;
 	let windStrength = 0;
 	let windChangeTimer = 0;
+	let currentQuality = 'medium'; // Add missing variable declaration
 
 	const generateSnowflakeShape = (size: number): Path2D => {
 		const path = new Path2D();

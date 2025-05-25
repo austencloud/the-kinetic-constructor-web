@@ -32,7 +32,6 @@
 
 	// Handle background click - this is the main function to close when clicking on blank areas
 	function handleBackgroundClick() {
-		console.log('Background clicked, closing overlay');
 		handleClose();
 	}
 

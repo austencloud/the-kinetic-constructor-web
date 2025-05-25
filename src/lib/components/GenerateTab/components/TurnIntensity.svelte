@@ -4,8 +4,10 @@
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 
-	// Export the value property for binding
-	export let value: number = 3;
+	// Props with bindable value
+	let { value = $bindable(3) } = $props<{
+		value?: number;
+	}>();
 
 	// Constants
 	const MIN_INTENSITY = 1;
@@ -15,7 +17,7 @@
 	const intensityLabels = ['Minimal', 'Light', 'Moderate', 'Heavy', 'Extreme'];
 
 	// Get current label
-	$: currentLabel = intensityLabels[value - 1] || 'Moderate';
+	const currentLabel = $derived(intensityLabels[value - 1] || 'Moderate');
 
 	// Update intensity
 	function setIntensity(level: number) {
@@ -48,7 +50,7 @@
 			<button
 				class="intensity-button"
 				class:active={value === level}
-				on:click={() => setIntensity(level)}
+				onclick={() => setIntensity(level)}
 				aria-label="Set turn intensity to {intensityLabels[i]}"
 				aria-pressed={value === level}
 			>
