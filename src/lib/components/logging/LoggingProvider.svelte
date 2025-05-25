@@ -5,7 +5,7 @@
 
 <!--
   Logging Provider Component
-  
+
   Provides logging context to Svelte components and initializes the logging system.
 -->
 <script lang="ts">
@@ -21,13 +21,20 @@
 	} from '$lib/core/logging';
 
 	// Props
-	export let name: string = 'app';
-	export let options: ComponentLoggerOptions = {
-		enableTiming: true,
-		trackLifecycle: true,
-		trackRenders: false,
-		trackErrors: true
-	};
+	let {
+		name = 'app',
+		options = {
+			enableTiming: true,
+			trackLifecycle: true,
+			trackRenders: false,
+			trackErrors: true
+		},
+		children
+	}: {
+		name?: string;
+		options?: ComponentLoggerOptions;
+		children?: import('svelte').Snippet;
+	} = $props();
 
 	// Context key for the logger
 	const LOGGER_CONTEXT_KEY = Symbol('logger');

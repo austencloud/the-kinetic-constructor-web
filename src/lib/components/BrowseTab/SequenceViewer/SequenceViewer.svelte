@@ -2,16 +2,18 @@
 <script lang="ts">
 	import { selectedSequenceData, browseTabStore } from '$lib/stores/browseTab/browseTabStore';
 
-	interface Events {
-		selectVariation: number;
-		toggleFavorite: { sequenceId: string; variationId: string };
-		deleteRequest: { type: 'sequence' | 'variation'; sequenceId: string; variationId?: string };
-	}
-
-	let { onselectVariation, ontoggleFavorite, ondeleteRequest }: {
+	let {
+		onselectVariation,
+		ontoggleFavorite,
+		ondeleteRequest
+	}: {
 		onselectVariation?: (index: number) => void;
 		ontoggleFavorite?: (data: { sequenceId: string; variationId: string }) => void;
-		ondeleteRequest?: (data: { type: 'sequence' | 'variation'; sequenceId: string; variationId?: string }) => void;
+		ondeleteRequest?: (data: {
+			type: 'sequence' | 'variation';
+			sequenceId: string;
+			variationId?: string;
+		}) => void;
 	} = $props();
 
 	const sequence = $derived($selectedSequenceData.sequence);
@@ -62,9 +64,16 @@
 		}
 	}
 
-	const placeholderImage = $derived(sequence
-		? `https://via.placeholder.com/400x400/333333/FFFFFF?text=${sequence.word}`
-		: '');
+	// Generate a data URL for a simple SVG thumbnail
+	const generateSequenceImageSvg = (word: string) => {
+		const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+			<rect width="400" height="400" fill="#333333"/>
+			<text x="200" y="200" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="bold">${word}</text>
+		</svg>`;
+		return `data:image/svg+xml;base64,${btoa(svg)}`;
+	};
+
+	const placeholderImage = $derived(sequence ? generateSequenceImageSvg(sequence.word) : '');
 </script>
 
 <div class="sequence-viewer">

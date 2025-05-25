@@ -4,7 +4,13 @@
 	import { SERVICE_TOKENS } from '$lib/core/di/ServiceTokens';
 	import { ErrorSeverity, type ErrorHandler } from '$lib/core/services/ErrorHandling';
 
-	export let componentName = 'ErrorLogger';
+	let {
+		componentName = 'ErrorLogger',
+		children
+	}: {
+		componentName?: string;
+		children?: import('svelte').Snippet<[{ logError: (message: string) => void }]>;
+	} = $props();
 
 	let errorHandler: ErrorHandler;
 
@@ -31,5 +37,7 @@
 </script>
 
 <div class="error-logger">
-	<slot {logError}></slot>
+	{#if children}
+		{@render children({ logError })}
+	{/if}
 </div>

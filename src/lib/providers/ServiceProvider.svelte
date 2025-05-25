@@ -7,9 +7,16 @@
 	import { browser } from '$app/environment';
 	import SettingsManager from '$lib/components/SettingsManager/SettingsManager.svelte';
 
+	// Props
+	let {
+		children
+	}: {
+		children?: import('svelte').Snippet;
+	} = $props();
+
 	// State tracking
-	let isStateInitialized = false;
-	let isInitializing = false;
+	let isStateInitialized = $state(false);
+	let isInitializing = $state(false);
 
 	/**
 	 * Initialize the state management system
@@ -68,7 +75,9 @@
 {#if isStateInitialized || !browser}
 	<!-- Include the SettingsManager component to handle settings lifecycle -->
 	<SettingsManager />
-	<slot></slot>
+	{#if children}
+		{@render children()}
+	{/if}
 {:else}
 	<div class="loading">Initializing application...</div>
 {/if}

@@ -3,17 +3,18 @@
 	import type { SequenceData } from '$lib/stores/browseTab/browseTabStore';
 
 	// Props
-	let { sequence, isSelected = false, onclick }: { 
-		sequence: SequenceData; 
-		isSelected?: boolean; 
-		onclick?: () => void; 
+	let {
+		sequence,
+		isSelected = false,
+		onclick
+	}: {
+		sequence: SequenceData;
+		isSelected?: boolean;
+		onclick?: () => void;
 	} = $props();
 
 	// Compute if any variation is a favorite
 	const hasFavorite = $derived(sequence.variations.some((v) => v.metadata.isFavorite));
-
-	// Get the first variation's thumbnail for display
-	const thumbnailPath = $derived(sequence.variations[0]?.thumbnailPath || '');
 
 	// Get difficulty level
 	const difficultyLevel = $derived(sequence.metadata.level || 1);
@@ -23,8 +24,16 @@
 		onclick?.();
 	}
 
-	// Placeholder image for development
-	const placeholderImage = `https://via.placeholder.com/150x150/333333/FFFFFF?text=${sequence.word}`;
+	// Generate a data URL for a simple SVG thumbnail
+	const generateThumbnailSvg = (word: string) => {
+		const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150">
+			<rect width="150" height="150" fill="#333333"/>
+			<text x="75" y="75" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="14" font-weight="bold">${word}</text>
+		</svg>`;
+		return `data:image/svg+xml;base64,${btoa(svg)}`;
+	};
+
+	const placeholderImage = generateThumbnailSvg(sequence.word);
 </script>
 
 <div

@@ -1,10 +1,11 @@
 <!-- src/routes/auth/callback/[platform]/+page.svelte -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores'; // TODO: Update to use the new API
 	import { goto } from '$app/navigation';
 	import { handleOAuthCallback } from '$lib/services/auth';
 	import { logger } from '$lib/core/logging';
+
+	let { data } = $props();
 
 	let isProcessing = $state(true);
 	let success = $state(false);
@@ -13,13 +14,13 @@
 	onMount(async () => {
 		try {
 			// Get platform from route parameter
-			const platform = $page.params.platform?.toUpperCase();
+			const platform = data.platform?.toUpperCase();
 			if (!platform) {
 				throw new Error('Platform not specified');
 			}
 
 			// Get authorization code from URL
-			const code = $page.url.searchParams.get('code');
+			const code = data.code;
 			if (!code) {
 				throw new Error('Authorization code not found');
 			}

@@ -1,18 +1,19 @@
 <!-- src/lib/components/BrowseTab/SequenceGrid/SequenceGrid.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { groupedSequences, browseTabStore } from '$lib/stores/browseTab/browseTabStore';
 	import SectionHeader from './SectionHeader.svelte';
 	import Thumbnail from './Thumbnail.svelte';
 
-	// Create event dispatcher
-	const dispatch = createEventDispatcher<{
-		selectSequence: string;
-	}>();
+	// Props
+	let {
+		onselectSequence
+	}: {
+		onselectSequence?: (sequenceId: string) => void;
+	} = $props();
 
 	// Handle thumbnail click
 	function handleThumbnailClick(sequenceId: string) {
-		dispatch('selectSequence', sequenceId);
+		onselectSequence?.(sequenceId);
 	}
 </script>
 
@@ -20,7 +21,7 @@
 	{#if $groupedSequences.length === 0}
 		<div class="empty-state">
 			<p>No sequences match the current filter criteria.</p>
-			<button class="reset-button" on:click={() => browseTabStore.applyFilter({ type: 'all' })}>
+			<button class="reset-button" onclick={() => browseTabStore.applyFilter({ type: 'all' })}>
 				Reset Filters
 			</button>
 		</div>
@@ -34,7 +35,7 @@
 						<Thumbnail
 							{sequence}
 							isSelected={$browseTabStore.selectedSequenceId === sequence.id}
-							on:click={() => handleThumbnailClick(sequence.id)}
+							onclick={() => handleThumbnailClick(sequence.id)}
 						/>
 					{/each}
 				</div>

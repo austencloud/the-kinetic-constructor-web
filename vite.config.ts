@@ -8,11 +8,8 @@ export default defineConfig({
 			'clsx',
 			'xstate',
 			'@xstate/svelte',
-			'lucide-svelte',
 			'svelte/transition',
 			'svelte/store',
-			'svelte/motion',
-			'html2canvas', // Add html2canvas to the optimized dependencies
 			'lz-string' // Add lz-string to the optimized dependencies
 		],
 		exclude: [],
@@ -24,11 +21,9 @@ export default defineConfig({
 	},
 	// Increase build performance and avoid timeout issues
 	build: {
-		// Increase chunk size limit to avoid splitting html2canvas
 		chunkSizeWarningLimit: 1000,
 		rollupOptions: {
 			output: {
-				// Remove manual chunks for html2canvas as it's causing build issues
 				manualChunks: (id) => {
 					// Group xstate related modules
 					if (id.includes('xstate')) {

@@ -15,26 +15,28 @@
 	let variationToDelete: string | null = null;
 
 	// Handle sequence selection
-	function handleSequenceSelect(event: CustomEvent<string>) {
-		browseTabStore.selectSequence(event.detail);
+	function handleSequenceSelect(sequenceId: string) {
+		browseTabStore.selectSequence(sequenceId);
 	}
 
 	// Handle variation selection
-	function handleVariationSelect(event: CustomEvent<number>) {
-		browseTabStore.selectVariation(event.detail);
+	function handleVariationSelect(index: number) {
+		browseTabStore.selectVariation(index);
 	}
 
 	// Handle favorite toggle
-	function handleFavoriteToggle(event: CustomEvent<{ sequenceId: string; variationId: string }>) {
-		const { sequenceId, variationId } = event.detail;
+	function handleFavoriteToggle(data: { sequenceId: string; variationId: string }) {
+		const { sequenceId, variationId } = data;
 		browseTabStore.toggleFavorite(sequenceId, variationId);
 	}
 
 	// Handle delete request
-	function handleDeleteRequest(
-		event: CustomEvent<{ type: 'sequence' | 'variation'; sequenceId: string; variationId?: string }>
-	) {
-		const { type, sequenceId, variationId } = event.detail;
+	function handleDeleteRequest(data: {
+		type: 'sequence' | 'variation';
+		sequenceId: string;
+		variationId?: string;
+	}) {
+		const { type, sequenceId, variationId } = data;
 
 		deleteType = type;
 		sequenceToDelete = sequenceId;
@@ -87,7 +89,7 @@
 					</button>
 				</div>
 			{:else}
-				<SequenceGrid on:selectSequence={handleSequenceSelect} />
+				<SequenceGrid onselectSequence={handleSequenceSelect} />
 			{/if}
 		</div>
 
@@ -95,9 +97,9 @@
 		<div class="sequence-viewer-container" class:hidden={!$selectedSequenceData.sequence}>
 			{#if $selectedSequenceData.sequence && $selectedSequenceData.variation}
 				<SequenceViewer
-					on:selectVariation={handleVariationSelect}
-					on:toggleFavorite={handleFavoriteToggle}
-					on:deleteRequest={handleDeleteRequest}
+					onselectVariation={handleVariationSelect}
+					ontoggleFavorite={handleFavoriteToggle}
+					ondeleteRequest={handleDeleteRequest}
 				/>
 			{/if}
 		</div>
