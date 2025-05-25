@@ -21,15 +21,13 @@
 	let requiredComponents = $state(['grid']);
 	let isProcessingGrid = $state(false);
 
-	function handleGridLoaded(data: GridData) {
+	function handleGridLoaded(_data: GridData) {
 		try {
 			if (isProcessingGrid) {
 				return;
 			}
 
 			isProcessingGrid = true;
-
-			const localData = { ...data };
 
 			if (!loadedComponents.has('grid')) {
 				loadedComponents.add('grid');
@@ -47,7 +45,7 @@
 						}, 50);
 					}
 				} catch (callbackError) {
-					// Error handling without console log
+					// Error handled silently
 				} finally {
 					isProcessingGrid = false;
 				}
@@ -99,16 +97,6 @@
 					}
 				});
 			}, 100);
-		});
-	}
-
-	function notifyLoaded(hasError: boolean) {
-		untrack(() => {
-			setTimeout(() => {
-				if (props.onLoaded) {
-					props.onLoaded?.({ error: hasError });
-				}
-			}, 50);
 		});
 	}
 

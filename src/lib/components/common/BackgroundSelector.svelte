@@ -45,17 +45,14 @@
 	}
 
 	// Function to get a user-friendly display name for each background
+	const displayNames: Record<BackgroundType, string> = {
+		snowfall: 'Snowfall',
+		nightSky: 'Night Sky',
+		deepOcean: 'Deep Ocean'
+	};
+
 	function getDisplayName(type: BackgroundType): string {
-		switch (type) {
-			case 'snowfall':
-				return 'Snowfall';
-			case 'nightSky':
-				return 'Night Sky';
-			case 'deepOcean':
-				return 'Deep Ocean';
-			default:
-				return type;
-		}
+		return displayNames[type] || type;
 	}
 </script>
 

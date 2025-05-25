@@ -4,7 +4,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer';
 import {
-	testSequenceUrlEncoding,
 	generateShareableUrl,
 	isWebShareSupported,
 	isFileShareSupported,
@@ -167,14 +166,3 @@ describe('shareUtils', () => {
 		});
 	});
 });
-
-// Export utility functions for browser console testing
-if (typeof window !== 'undefined') {
-	(window as any).testShareUtils = {
-		generateTestSequence,
-		runUrlEncodingTest: async (numBeats: number = 5) => {
-			const testSequence = await generateTestSequence(numBeats);
-			return testSequenceUrlEncoding(testSequence);
-		}
-	};
-}

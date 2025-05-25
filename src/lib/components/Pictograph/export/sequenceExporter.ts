@@ -7,74 +7,8 @@
 
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
-import type { Beat } from '$lib/types/Beat';
-import type { PictographData } from '$lib/types/PictographData';
 import { renderSvgToImage } from './svgRenderer';
-
-/**
- * Options for exporting a single beat as an image
- */
-export interface BeatExportOptions {
-	// Content options
-	pictographData: PictographData;
-	beatNumber?: number;
-	isStartPosition?: boolean;
-
-	// Visual options
-	backgroundColor?: string;
-	scale?: number;
-	quality?: number;
-	format?: 'png' | 'jpeg';
-
-	// Dimensions
-	width?: number;
-	height?: number;
-}
-
-/**
- * Result of exporting a beat as an image
- */
-export interface BeatExportResult {
-	dataUrl: string;
-	width: number;
-	height: number;
-	format: string;
-}
-
-/**
- * Options for exporting a sequence as an image
- */
-export interface SequenceExportOptions {
-	// Content options
-	beats: Beat[];
-	startPosition?: Beat | null;
-
-	// Layout options
-	columns?: number;
-	spacing?: number;
-	includeStartPosition?: boolean;
-
-	// Visual options
-	backgroundColor?: string;
-	scale?: number;
-	quality?: number;
-	format?: 'png' | 'jpeg';
-
-	// Metadata options
-	title?: string;
-	showBeatNumbers?: boolean;
-	showReversals?: boolean;
-}
-
-/**
- * Result of exporting a sequence as an image
- */
-export interface SequenceExportResult {
-	dataUrl: string;
-	width: number;
-	height: number;
-	format: string;
-}
+import type { EnhancedExportOptions, EnhancedExportResult } from './exportTypes';
 
 /**
  * Exports a sequence of beats as an image
@@ -85,8 +19,8 @@ export interface SequenceExportResult {
  */
 export async function exportSequenceAsImage(
 	containerElement: HTMLElement,
-	options: SequenceExportOptions
-): Promise<SequenceExportResult> {
+	options: EnhancedExportOptions
+): Promise<EnhancedExportResult> {
 	// Validate environment
 	if (!browser) {
 		return Promise.reject(new Error('Cannot export: not in browser environment'));
@@ -99,7 +33,7 @@ export async function exportSequenceAsImage(
 
 	try {
 		// Default options with required fields
-		const defaultOptions: Required<Omit<SequenceExportOptions, 'beats' | 'startPosition'>> = {
+		const defaultOptions: Required<Omit<EnhancedExportOptions, 'beats' | 'startPosition'>> = {
 			backgroundColor: '#FFFFFF',
 			scale: 2,
 			quality: 0.92,
@@ -107,9 +41,16 @@ export async function exportSequenceAsImage(
 			columns: 4,
 			spacing: 20,
 			includeStartPosition: true,
-			showBeatNumbers: true,
-			showReversals: true,
-			title: ''
+			addBeatNumbers: true,
+			addReversalSymbols: true,
+			addWord: false,
+			addUserInfo: false,
+			addDifficultyLevel: false,
+			title: '',
+			userName: '',
+			notes: '',
+			exportDate: '',
+			difficultyLevel: 1
 		};
 
 		// Merge options with type safety

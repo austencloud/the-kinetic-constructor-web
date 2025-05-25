@@ -168,12 +168,7 @@ export function formatPatternCSV(pattern: PatternRow): string {
 
 // Format pattern for display
 export function formatPatternDisplay(pattern: PatternRow): string {
-	return (
-		`${pattern.letter}: ${pattern.startPos} → ${pattern.endPos}, ` +
-		`timing=${pattern.timing}, direction=${pattern.direction}, ` +
-		`blue: ${pattern.blueMotion}/${pattern.blueRotDir} (${pattern.blueStartLoc}→${pattern.blueEndLoc}), ` +
-		`red: ${pattern.redMotion}/${pattern.redRotDir} (${pattern.redStartLoc}→${pattern.redEndLoc})`
-	);
+	return `${pattern.letter}: ${pattern.startPos} → ${pattern.endPos}, timing=${pattern.timing}, direction=${pattern.direction}, blue: ${pattern.blueMotion}/${pattern.blueRotDir} (${pattern.blueStartLoc}→${pattern.blueEndLoc}), red: ${pattern.redMotion}/${pattern.redRotDir} (${pattern.redStartLoc}→${pattern.redEndLoc})`;
 }
 
 export { positionMappings, locationCycle, positionCycles };

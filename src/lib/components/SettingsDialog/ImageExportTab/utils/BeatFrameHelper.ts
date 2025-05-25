@@ -3,27 +3,6 @@
  */
 
 /**
- * Verifies that BeatFrame elements are fully loaded and ready for rendering
- * @returns boolean indicating if BeatFrame elements are ready
- */
-export function verifyBeatFrameElements(): boolean {
-	const beatFrameElement = document.querySelector('.beat-frame-container');
-	if (!beatFrameElement) {
-		return false;
-	}
-
-	// Check for SVG elements
-	const svgElements = beatFrameElement.querySelectorAll('svg');
-
-	// Check for arrows and other critical elements
-	const arrowElements = beatFrameElement.querySelectorAll('.arrow-path, .arrow-head');
-	const propElements = beatFrameElement.querySelectorAll('.pictograph-prop');
-
-	// Consider it valid if we have SVGs and either arrows or props
-	return svgElements.length > 0 && (arrowElements.length > 0 || propElements.length > 0);
-}
-
-/**
  * Creates a temporary element for rendering the BeatFrame
  * @param width Width of the temporary element
  * @param height Height of the temporary element
@@ -38,42 +17,6 @@ export function createTemporaryRenderElement(width: number, height: number): HTM
 	tempElement.className = 'temp-beat-frame-clone';
 	document.body.appendChild(tempElement);
 	return tempElement;
-}
-
-/**
- * Clones the BeatFrame content into a temporary element for rendering
- * @param tempElement The temporary element to clone into
- * @returns boolean indicating success
- */
-export function cloneBeatFrameContent(tempElement: HTMLDivElement): boolean {
-	const beatFrameElement = document.querySelector('.beat-frame-container');
-	if (!beatFrameElement) {
-		console.error('Could not find BeatFrame element in the DOM');
-		return false;
-	}
-
-	// Clone the BeatFrame content into our temporary element
-	tempElement.innerHTML = beatFrameElement.innerHTML;
-
-	// Force a layout calculation to ensure all elements are properly rendered
-	tempElement.getBoundingClientRect();
-
-	// Ensure SVG elements are properly cloned and visible
-	const clonedSvgs = tempElement.querySelectorAll('svg');
-	clonedSvgs.forEach((svg) => {
-		// Ensure SVG has proper dimensions
-		if (!svg.getAttribute('width') || svg.getAttribute('width') === '0') {
-			svg.setAttribute('width', '100%');
-		}
-		if (!svg.getAttribute('height') || svg.getAttribute('height') === '0') {
-			svg.setAttribute('height', '100%');
-		}
-		// Force visibility
-		svg.style.visibility = 'visible';
-		svg.style.display = 'block';
-	});
-
-	return clonedSvgs.length > 0;
 }
 
 /**

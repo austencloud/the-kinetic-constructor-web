@@ -30,18 +30,13 @@ export function toAppError(error: unknown, defaultMessage = 'An unknown error oc
 	}
 
 	if (typeof error === 'string') {
-		return {
-			message: error
-		};
+		return { message: error };
 	}
 
 	if (error && typeof error === 'object') {
-		// Try to extract message from object
 		const objError = error as Record<string, unknown>;
-		const message = typeof objError.message === 'string' ? objError.message : defaultMessage;
-
 		return {
-			message,
+			message: typeof objError.message === 'string' ? objError.message : defaultMessage,
 			details: objError
 		};
 	}

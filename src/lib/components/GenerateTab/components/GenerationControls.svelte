@@ -20,9 +20,7 @@
 	let currentScreenSize = $state<'mobile' | 'tablet' | 'desktop'>('desktop');
 	let windowWidth = $state(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
-	// --- XState Integration (Assumed selectors & actions) ---
-	// Example: import { sequenceSelectors, sequenceActions } from '$lib/state/machines/sequenceMachine';
-	// Mocked for this example
+	// --- XState Integration (Mocked for this example) ---
 	const mockSequenceSelectors = {
 		generationType: () => generatorType,
 		isGenerating: () => isGenerating,

@@ -168,22 +168,28 @@ export const getResponsiveLayout = memoizeLRU(
 );
 
 function doesRuleMatch(rule: any, params: GridConfigParams): boolean {
-	if (rule.when.count !== undefined && rule.when.count !== params.count) return false;
-	if (rule.when.minCount !== undefined && params.count < rule.when.minCount) return false;
-	if (rule.when.maxCount !== undefined && params.count > rule.when.maxCount) return false;
-	if (rule.when.device === 'desktop' && params.isMobileDevice) return false;
-	if (rule.when.device === 'mobile' && !params.isMobileDevice) return false;
-	if (rule.when.aspect && rule.when.aspect !== params.containerAspect) return false;
-	if (rule.when.aspects && !rule.when.aspects.includes(params.containerAspect)) return false;
-	if (rule.when.orientation === 'portrait' && !params.isPortraitMode) return false;
-	if (rule.when.orientation === 'landscape' && params.isPortraitMode) return false;
-	if (
-		rule.when.extraCheck &&
-		!rule.when.extraCheck(params.containerWidth, params.containerHeight, params)
-	)
-		return false;
+	const { when } = rule;
+	const {
+		count,
+		isMobileDevice,
+		containerAspect,
+		isPortraitMode,
+		containerWidth,
+		containerHeight
+	} = params;
 
-	return true;
+	return (
+		(when.count === undefined || when.count === count) &&
+		(when.minCount === undefined || count >= when.minCount) &&
+		(when.maxCount === undefined || count <= when.maxCount) &&
+		(when.device !== 'desktop' || !isMobileDevice) &&
+		(when.device !== 'mobile' || isMobileDevice) &&
+		(!when.aspect || when.aspect === containerAspect) &&
+		(!when.aspects || when.aspects.includes(containerAspect)) &&
+		(when.orientation !== 'portrait' || isPortraitMode) &&
+		(when.orientation !== 'landscape' || !isPortraitMode) &&
+		(!when.extraCheck || when.extraCheck(containerWidth, containerHeight, params))
+	);
 }
 
 const calculateGridConfiguration = memoizeLRU(

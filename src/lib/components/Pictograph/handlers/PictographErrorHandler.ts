@@ -56,15 +56,24 @@ export interface FallbackDataContext {
  * @param error The error object or message
  * @param context The error handler context containing necessary data and functions
  */
+/**
+ * Creates a safe error message from any error type
+ */
+function createSafeErrorMessage(error: any): string {
+	return error instanceof Error
+		? error.message
+		: typeof error === 'string'
+			? error
+			: 'Unknown error';
+}
+
 export function handlePictographError(
 	source: string,
 	error: any,
 	context: ErrorHandlerContext
 ): void {
 	try {
-		// Create a safe error message that won't have circular references
-		const errorMsg =
-			error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
+		const errorMsg = createSafeErrorMessage(error);
 
 		// Log the error
 		logger.error(`Pictograph error in ${source}: ${errorMsg}`, {
@@ -112,9 +121,7 @@ export function handlePictographComponentError(
 	fallbackData: FallbackDataContext
 ): void {
 	try {
-		// Create a safe error message
-		const errorMsg =
-			error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
+		const errorMsg = createSafeErrorMessage(error);
 
 		// Log the error
 		logger.warn(`Pictograph component error in ${component}: ${errorMsg}`, {

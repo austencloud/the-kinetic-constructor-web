@@ -10,7 +10,6 @@
 	import ArrowSvgMirrorManager from './ArrowSvgMirrorManager';
 	import type { PictographService } from '$lib/components/Pictograph/PictographService';
 	import type { PictographData } from '$lib/types/PictographData';
-	import ArrowDebuggerSetup from './ArrowDebuggerSetup.svelte';
 
 	// Props - we support both direct arrowData and store-based approach
 	const props = $props<{
@@ -270,9 +269,6 @@
 		return effectiveArrowData?.rotAngle || 0;
 	}
 
-	// Generate a unique ID for this component instance
-	const componentId = `arrow-${Math.random().toString(36).substring(2, 9)}`;
-
 	// Lifecycle hooks with protection against reactivity loops
 	onMount(() => {
 		// Prevent multiple initializations - critical for preventing infinite loops
@@ -332,8 +328,6 @@
 	// to prevent reactivity loops. The component now uses a simpler approach
 	// with timeouts and untrack() to break reactivity chains.
 </script>
-
-<ArrowDebuggerSetup {componentId} {componentState} />
 
 {#if componentState.svgData && componentState.isLoaded && effectiveArrowData}
 	<g

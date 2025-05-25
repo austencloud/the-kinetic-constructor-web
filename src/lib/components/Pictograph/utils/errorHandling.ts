@@ -27,11 +27,20 @@ export interface ErrorHandlerContext {
  * @param error The error object or message
  * @param context The error handler context containing necessary data and functions
  */
+/**
+ * Creates a safe error message from any error type
+ */
+function createSafeErrorMessage(error: any): string {
+	return error instanceof Error
+		? error.message
+		: typeof error === 'string'
+			? error
+			: 'Unknown error';
+}
+
 export function handleError(source: string, error: any, context: ErrorHandlerContext): void {
 	try {
-		// Create a safe error message that won't have circular references
-		const errorMsg =
-			error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
+		const errorMsg = createSafeErrorMessage(error);
 
 		// Get current pictograph data for context
 		let pictographData: PictographData | undefined;
@@ -132,8 +141,9 @@ export function handleComponentError(
 		blueArrowData: ArrowData | null;
 	}
 ): void {
+	const errorMsg = createSafeErrorMessage(error);
 	logger.warn(`Component error (${component})`, {
-		error: error instanceof Error ? error : new Error(String(error)),
+		error: error instanceof Error ? error : new Error(errorMsg),
 		data: {
 			component,
 			applyingFallback: true
