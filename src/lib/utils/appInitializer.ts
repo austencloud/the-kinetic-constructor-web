@@ -8,6 +8,7 @@ import { toAppError } from '$lib/types/ErrorTypes';
 import SvgManager from '$lib/components/SvgManager/SvgManager';
 import { PropType } from '$lib/types/Types';
 import { preloadCommonArrows } from '$lib/utils/embeddedArrowSvgs';
+import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
 
 /**
  * Initialize the application, reporting progress via callback for XState
@@ -43,22 +44,40 @@ export async function initializeApplication(
 				reportProgress(mappedProgress, message);
 			});
 
-			// Preload critical SVGs first (highest priority)
+			// Initialize SVG preloading service
+			svgPreloadingService.initialize();
+
+			// Preload ALL SVGs comprehensively to eliminate loading sequences
 			const svgManager = new SvgManager();
 
 			// Preload embedded SVGs first (fastest, no network requests)
 			reportProgress(12, 'Preloading embedded SVGs...');
 			preloadCommonArrows();
 
-			// Preload staff props
-			const staffPreloadPromise = svgManager.preloadPropSvgs([
+			// Comprehensive SVG preloading for instant pictograph rendering
+			reportProgress(15, 'Preloading all prop SVGs...');
+
+			// Preload ALL prop types and colors
+			const allPropPreloadPromise = svgManager.preloadPropSvgs([
 				{ propType: PropType.STAFF, color: 'red' },
-				{ propType: PropType.STAFF, color: 'blue' }
+				{ propType: PropType.STAFF, color: 'blue' },
+				{ propType: PropType.CLUB, color: 'red' },
+				{ propType: PropType.CLUB, color: 'blue' },
+				{ propType: PropType.HAND, color: 'red' },
+				{ propType: PropType.HAND, color: 'blue' },
+				{ propType: PropType.FAN, color: 'red' },
+				{ propType: PropType.FAN, color: 'blue' },
+				{ propType: PropType.TRIAD, color: 'red' },
+				{ propType: PropType.TRIAD, color: 'blue' },
+				{ propType: PropType.BIGSTAFF, color: 'red' },
+				{ propType: PropType.BIGSTAFF, color: 'blue' }
 			]);
 
-			// Preload common arrows (especially the ones with turns)
-			const arrowPreloadPromise = svgManager.preloadArrowSvgs([
-				// Pro arrows with different turns - RADIAL (in)
+			reportProgress(20, 'Preloading all arrow SVGs...');
+
+			// Preload ALL arrow combinations for instant rendering
+			const allArrowPreloadPromise = svgManager.preloadArrowSvgs([
+				// Pro arrows - all orientations and turns
 				{ motionType: 'pro', startOri: 'in', turns: 0, color: 'red' },
 				{ motionType: 'pro', startOri: 'in', turns: 0, color: 'blue' },
 				{ motionType: 'pro', startOri: 'in', turns: 0.5, color: 'red' },
@@ -81,6 +100,14 @@ export async function initializeApplication(
 				{ motionType: 'pro', startOri: 'out', turns: 0.5, color: 'blue' },
 				{ motionType: 'pro', startOri: 'out', turns: 1, color: 'red' },
 				{ motionType: 'pro', startOri: 'out', turns: 1, color: 'blue' },
+				{ motionType: 'pro', startOri: 'out', turns: 1.5, color: 'red' },
+				{ motionType: 'pro', startOri: 'out', turns: 1.5, color: 'blue' },
+				{ motionType: 'pro', startOri: 'out', turns: 2, color: 'red' },
+				{ motionType: 'pro', startOri: 'out', turns: 2, color: 'blue' },
+				{ motionType: 'pro', startOri: 'out', turns: 2.5, color: 'red' },
+				{ motionType: 'pro', startOri: 'out', turns: 2.5, color: 'blue' },
+				{ motionType: 'pro', startOri: 'out', turns: 3, color: 'red' },
+				{ motionType: 'pro', startOri: 'out', turns: 3, color: 'blue' },
 
 				// Pro arrows with different turns - NON-RADIAL (clock)
 				{ motionType: 'pro', startOri: 'clock', turns: 0, color: 'red' },
@@ -91,6 +118,12 @@ export async function initializeApplication(
 				{ motionType: 'pro', startOri: 'clock', turns: 1, color: 'blue' },
 				{ motionType: 'pro', startOri: 'clock', turns: 1.5, color: 'red' },
 				{ motionType: 'pro', startOri: 'clock', turns: 1.5, color: 'blue' },
+				{ motionType: 'pro', startOri: 'clock', turns: 2, color: 'red' },
+				{ motionType: 'pro', startOri: 'clock', turns: 2, color: 'blue' },
+				{ motionType: 'pro', startOri: 'clock', turns: 2.5, color: 'red' },
+				{ motionType: 'pro', startOri: 'clock', turns: 2.5, color: 'blue' },
+				{ motionType: 'pro', startOri: 'clock', turns: 3, color: 'red' },
+				{ motionType: 'pro', startOri: 'clock', turns: 3, color: 'blue' },
 
 				// Pro arrows with different turns - NON-RADIAL (counter)
 				{ motionType: 'pro', startOri: 'counter', turns: 0, color: 'red' },
@@ -99,6 +132,14 @@ export async function initializeApplication(
 				{ motionType: 'pro', startOri: 'counter', turns: 0.5, color: 'blue' },
 				{ motionType: 'pro', startOri: 'counter', turns: 1, color: 'red' },
 				{ motionType: 'pro', startOri: 'counter', turns: 1, color: 'blue' },
+				{ motionType: 'pro', startOri: 'counter', turns: 1.5, color: 'red' },
+				{ motionType: 'pro', startOri: 'counter', turns: 1.5, color: 'blue' },
+				{ motionType: 'pro', startOri: 'counter', turns: 2, color: 'red' },
+				{ motionType: 'pro', startOri: 'counter', turns: 2, color: 'blue' },
+				{ motionType: 'pro', startOri: 'counter', turns: 2.5, color: 'red' },
+				{ motionType: 'pro', startOri: 'counter', turns: 2.5, color: 'blue' },
+				{ motionType: 'pro', startOri: 'counter', turns: 3, color: 'red' },
+				{ motionType: 'pro', startOri: 'counter', turns: 3, color: 'blue' },
 
 				// Anti arrows with different turns - RADIAL (in)
 				{ motionType: 'anti', startOri: 'in', turns: 0, color: 'red' },
@@ -109,30 +150,109 @@ export async function initializeApplication(
 				{ motionType: 'anti', startOri: 'in', turns: 1, color: 'blue' },
 				{ motionType: 'anti', startOri: 'in', turns: 1.5, color: 'red' },
 				{ motionType: 'anti', startOri: 'in', turns: 1.5, color: 'blue' },
+				{ motionType: 'anti', startOri: 'in', turns: 2, color: 'red' },
+				{ motionType: 'anti', startOri: 'in', turns: 2, color: 'blue' },
+				{ motionType: 'anti', startOri: 'in', turns: 2.5, color: 'red' },
+				{ motionType: 'anti', startOri: 'in', turns: 2.5, color: 'blue' },
+				{ motionType: 'anti', startOri: 'in', turns: 3, color: 'red' },
+				{ motionType: 'anti', startOri: 'in', turns: 3, color: 'blue' },
 
-				// Anti arrows with different turns - NON-RADIAL (clock/counter)
+				// Anti arrows with different turns - RADIAL (out)
+				{ motionType: 'anti', startOri: 'out', turns: 0, color: 'red' },
+				{ motionType: 'anti', startOri: 'out', turns: 0, color: 'blue' },
+				{ motionType: 'anti', startOri: 'out', turns: 0.5, color: 'red' },
+				{ motionType: 'anti', startOri: 'out', turns: 0.5, color: 'blue' },
+				{ motionType: 'anti', startOri: 'out', turns: 1, color: 'red' },
+				{ motionType: 'anti', startOri: 'out', turns: 1, color: 'blue' },
+				{ motionType: 'anti', startOri: 'out', turns: 1.5, color: 'red' },
+				{ motionType: 'anti', startOri: 'out', turns: 1.5, color: 'blue' },
+				{ motionType: 'anti', startOri: 'out', turns: 2, color: 'red' },
+				{ motionType: 'anti', startOri: 'out', turns: 2, color: 'blue' },
+				{ motionType: 'anti', startOri: 'out', turns: 2.5, color: 'red' },
+				{ motionType: 'anti', startOri: 'out', turns: 2.5, color: 'blue' },
+				{ motionType: 'anti', startOri: 'out', turns: 3, color: 'red' },
+				{ motionType: 'anti', startOri: 'out', turns: 3, color: 'blue' },
+
+				// Anti arrows with different turns - NON-RADIAL (clock)
 				{ motionType: 'anti', startOri: 'clock', turns: 0, color: 'red' },
 				{ motionType: 'anti', startOri: 'clock', turns: 0, color: 'blue' },
 				{ motionType: 'anti', startOri: 'clock', turns: 0.5, color: 'red' },
 				{ motionType: 'anti', startOri: 'clock', turns: 0.5, color: 'blue' },
 				{ motionType: 'anti', startOri: 'clock', turns: 1, color: 'red' },
 				{ motionType: 'anti', startOri: 'clock', turns: 1, color: 'blue' },
+				{ motionType: 'anti', startOri: 'clock', turns: 1.5, color: 'red' },
+				{ motionType: 'anti', startOri: 'clock', turns: 1.5, color: 'blue' },
+				{ motionType: 'anti', startOri: 'clock', turns: 2, color: 'red' },
+				{ motionType: 'anti', startOri: 'clock', turns: 2, color: 'blue' },
+				{ motionType: 'anti', startOri: 'clock', turns: 2.5, color: 'red' },
+				{ motionType: 'anti', startOri: 'clock', turns: 2.5, color: 'blue' },
+				{ motionType: 'anti', startOri: 'clock', turns: 3, color: 'red' },
+				{ motionType: 'anti', startOri: 'clock', turns: 3, color: 'blue' },
 
-				// Static arrows
+				// Anti arrows with different turns - NON-RADIAL (counter)
+				{ motionType: 'anti', startOri: 'counter', turns: 0, color: 'red' },
+				{ motionType: 'anti', startOri: 'counter', turns: 0, color: 'blue' },
+				{ motionType: 'anti', startOri: 'counter', turns: 0.5, color: 'red' },
+				{ motionType: 'anti', startOri: 'counter', turns: 0.5, color: 'blue' },
+				{ motionType: 'anti', startOri: 'counter', turns: 1, color: 'red' },
+				{ motionType: 'anti', startOri: 'counter', turns: 1, color: 'blue' },
+				{ motionType: 'anti', startOri: 'counter', turns: 1.5, color: 'red' },
+				{ motionType: 'anti', startOri: 'counter', turns: 1.5, color: 'blue' },
+				{ motionType: 'anti', startOri: 'counter', turns: 2, color: 'red' },
+				{ motionType: 'anti', startOri: 'counter', turns: 2, color: 'blue' },
+				{ motionType: 'anti', startOri: 'counter', turns: 2.5, color: 'red' },
+				{ motionType: 'anti', startOri: 'counter', turns: 2.5, color: 'blue' },
+				{ motionType: 'anti', startOri: 'counter', turns: 3, color: 'red' },
+				{ motionType: 'anti', startOri: 'counter', turns: 3, color: 'blue' },
+
+				// Static arrows - all orientations and turns
 				{ motionType: 'static', startOri: 'in', turns: 0, color: 'red' },
 				{ motionType: 'static', startOri: 'in', turns: 0, color: 'blue' },
+				{ motionType: 'static', startOri: 'out', turns: 0, color: 'red' },
+				{ motionType: 'static', startOri: 'out', turns: 0, color: 'blue' },
+				{ motionType: 'static', startOri: 'clock', turns: 0, color: 'red' },
+				{ motionType: 'static', startOri: 'clock', turns: 0, color: 'blue' },
+				{ motionType: 'static', startOri: 'counter', turns: 0, color: 'red' },
+				{ motionType: 'static', startOri: 'counter', turns: 0, color: 'blue' },
 
-				// Dash arrows
+				// Dash arrows - all orientations and turns
+				{ motionType: 'dash', startOri: 'in', turns: 0, color: 'red' },
+				{ motionType: 'dash', startOri: 'in', turns: 0, color: 'blue' },
+				{ motionType: 'dash', startOri: 'out', turns: 0, color: 'red' },
+				{ motionType: 'dash', startOri: 'out', turns: 0, color: 'blue' },
 				{ motionType: 'dash', startOri: 'clock', turns: 0, color: 'red' },
 				{ motionType: 'dash', startOri: 'clock', turns: 0, color: 'blue' },
+				{ motionType: 'dash', startOri: 'counter', turns: 0, color: 'red' },
+				{ motionType: 'dash', startOri: 'counter', turns: 0, color: 'blue' },
 
-				// Float arrows
+				// Float arrows - all orientations
 				{ motionType: 'float', startOri: 'in', turns: 'fl', color: 'red' },
-				{ motionType: 'float', startOri: 'in', turns: 'fl', color: 'blue' }
+				{ motionType: 'float', startOri: 'in', turns: 'fl', color: 'blue' },
+				{ motionType: 'float', startOri: 'out', turns: 'fl', color: 'red' },
+				{ motionType: 'float', startOri: 'out', turns: 'fl', color: 'blue' },
+				{ motionType: 'float', startOri: 'clock', turns: 'fl', color: 'red' },
+				{ motionType: 'float', startOri: 'clock', turns: 'fl', color: 'blue' },
+				{ motionType: 'float', startOri: 'counter', turns: 'fl', color: 'red' },
+				{ motionType: 'float', startOri: 'counter', turns: 'fl', color: 'blue' }
 			]);
 
-			// Wait for critical SVGs to load first
-			await Promise.all([staffPreloadPromise, arrowPreloadPromise]);
+			// Wait for ALL SVGs to load first for instant pictograph rendering
+			reportProgress(50, 'Finalizing SVG preloading...');
+
+			try {
+				await Promise.all([allPropPreloadPromise, allArrowPreloadPromise]);
+
+				// Mark props and arrows as loaded
+				svgPreloadingService.markPropsLoaded();
+				svgPreloadingService.markArrowsLoaded();
+
+				reportProgress(55, 'SVG preloading complete - pictographs will render instantly!');
+			} catch (error) {
+				logger.warn('SVG preloading failed, falling back to on-demand loading', {
+					error: toAppError(error)
+				});
+				// Don't mark as loaded if preloading failed
+			}
 
 			// Start preloading all resources - this now includes all pictograph components
 			// including arrows, props, grids, and glyphs
@@ -143,6 +263,11 @@ export async function initializeApplication(
 
 			// Wait for preloading to complete
 			await Promise.all([preloadingPromise, glyphPreloadingPromise]);
+
+			// Mark glyphs as loaded
+			svgPreloadingService.markGlyphsLoaded();
+
+			reportProgress(65, 'All assets preloaded - ready for instant pictograph rendering!');
 
 			// Log completion of preloading phase
 		} else {

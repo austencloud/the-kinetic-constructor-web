@@ -4,6 +4,7 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import { PictographService } from '../PictographService';
 	import { defaultPictographData } from '../utils/defaultPictographData';
+	import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
 
 	// Define props using Svelte 5 runes syntax
 	const props = $props<{
@@ -75,9 +76,13 @@
 				clearTimeout(updateTimer);
 			}
 
-			// For OptionPicker (disableAnimations=true), process immediately without debouncing
-			if (props.disableAnimations) {
-				// Use setTimeout even for immediate processing to break reactivity chains
+			// Check if SVGs are preloaded for instant processing
+			const svgsPreloaded = svgPreloadingService.isReady();
+
+			// For OptionPicker (disableAnimations=true) or when SVGs are preloaded, process immediately
+			if (props.disableAnimations || svgsPreloaded) {
+				// Use minimal timeout to break reactivity chains
+				const delay = svgsPreloaded ? 0 : 10;
 				setTimeout(() => {
 					untrack(() => {
 						lastDataHash = currentHash;
@@ -87,7 +92,7 @@
 							updatePictographData(pictographData);
 						}
 					});
-				}, 10);
+				}, delay);
 			} else {
 				// Debounce updates for normal mode with a longer timeout
 				updateTimer = setTimeout(() => {

@@ -16,6 +16,7 @@
 
 	// Utility imports
 	import { shouldShowBeatLabel, shouldShowMotionComponents } from '../utils/PictographRenderUtils';
+	import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
 
 	// Define props using Svelte 5 runes syntax
 	const props = $props<{
@@ -70,7 +71,7 @@
 		class="pictograph-components"
 		class:hidden={!props.showPictograph}
 		style="transform-origin: center center;"
-		in:popIn={props.showPictograph && !props.disableAnimations
+		in:popIn={props.showPictograph && !props.disableAnimations && !svgPreloadingService.isReady()
 			? {
 					duration: props.animationDuration ?? 200,
 					start: 0.85,
@@ -85,7 +86,11 @@
 				x={50}
 				y={800}
 				scale={1}
-				on:loaded={props.onGlyphLoaded}
+				onloaded={(success) => {
+					// Create a CustomEvent to match the expected interface
+					const event = new CustomEvent('loaded', { detail: success });
+					props.onGlyphLoaded(event);
+				}}
 			/>
 		{/if}
 

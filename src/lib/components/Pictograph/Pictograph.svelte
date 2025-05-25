@@ -1,10 +1,12 @@
 <!-- src/lib/components/Pictograph/Pictograph.svelte -->
+<!-- SIMPLIFIED: Just load fast when ready, no complex modes -->
 <script lang="ts">
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { GridData } from '$lib/components/objects/Grid/GridData';
 	import type { PropData } from '$lib/components/objects/Prop/PropData';
 	import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 	import { PictographService } from './PictographService';
+	import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
 
 	// Component imports
 	import PictographError from './components/PictographError.svelte';
@@ -20,7 +22,6 @@
 	// Utility imports
 	import { shouldShowDebugInfo } from './utils/PictographRenderUtils';
 
-	// Define props using Svelte 5 runes syntax
 	const props = $props<{
 		pictographData?: PictographData;
 		onClick?: () => void;
@@ -34,99 +35,98 @@
 		onError?: (error: { message: string; component: string }) => void;
 	}>();
 
-	// State variables
-	let currentState = $state('initializing');
+	// SIMPLIFIED: Check if we should start ready
+	const svgsAreReady = svgPreloadingService.isReady();
+	const shouldStartReady = svgsAreReady || props.disableAnimations;
+
+	// State variables - start in the right state immediately
+	let currentState = $state(shouldStartReady ? 'complete' : 'initializing');
 	let errorMessage = $state<string | null>(null);
+	let showPictograph = $state(shouldStartReady);
+	let loadProgress = $state(shouldStartReady ? 100 : 0);
+	
+	// Component data
 	let gridData = $state<GridData | null>(null);
 	let redPropData = $state<PropData | null>(null);
 	let bluePropData = $state<PropData | null>(null);
 	let redArrowData = $state<ArrowData | null>(null);
 	let blueArrowData = $state<ArrowData | null>(null);
-	let loadProgress = $state(0);
-	let renderCount = $state(0);
-	let showPictograph = $state(props.disableAnimations ?? false);
 	let service = $state<PictographService | null>(null);
+	
+	// Progress tracking
+	let renderCount = $state(0);
+	let componentsLoaded = $state(shouldStartReady ? 1 : 0);
+	let totalComponentsToLoad = $state(1);
 
-	// Component references - using $state to ensure reactivity
+	// Component references
 	let stateManager = $state<PictographStateManager | null>(null);
 	let loadingManager = $state<PictographLoadingManager | null>(null);
 	let componentManager = $state<PictographComponentManager | null>(null);
 	let errorHandler = $state<PictographErrorHandler | null>(null);
 
-	// Track loading state for debug display
-	let componentsLoaded = $state(0);
-	let totalComponentsToLoad = $state(1);
-
-	// Handle state change
-	function handleStateChange(state: string) {
-		currentState = state;
+	// SIMPLIFIED: Just notify parent immediately if we're ready
+	if (shouldStartReady && props.pictographData) {
+		queueMicrotask(() => {
+			props.onLoaded?.({ error: false });
+		});
 	}
 
-	// Handle error message change
+	// Event handlers - simplified logic
+	function handleStateChange(state: string) {
+		// Skip state transitions if we're already ready
+		if (!shouldStartReady || state === 'error') {
+			currentState = state;
+		}
+	}
+
 	function handleErrorMessageChange(message: string | null) {
 		errorMessage = message;
 	}
 
-	// Handle service initialization
 	function handleServiceInitialized(newService: PictographService) {
 		service = newService;
 	}
 
-	// Handle grid loaded
 	function handleGridLoaded(data: GridData) {
 		gridData = data;
 		if (loadingManager) {
-			// Use type assertion to access the exposed methods
 			(loadingManager as any).handleGridLoaded(data);
 		}
-		// Update component counts for debug display
-		componentsLoaded = 1;
+		componentsLoaded = Math.max(componentsLoaded, 1);
 	}
 
-	// Handle component loaded
 	function handleComponentLoaded(component: string) {
 		if (loadingManager) {
-			// Use type assertion to access the exposed methods
 			(loadingManager as any).handleComponentLoaded(component);
 		}
-		// Update component counts for debug display
 		componentsLoaded++;
 	}
 
-	// Handle glyph loaded
 	function handleGlyphLoaded(event: CustomEvent<boolean>) {
 		if (loadingManager) {
-			// Use type assertion to access the exposed methods
 			(loadingManager as any).handleGlyphLoaded(event);
 		}
 	}
 
-	// Handle component error
 	function handleComponentError(component: string, error: any) {
 		if (errorHandler) {
-			// Use type assertion to access the exposed methods
 			(errorHandler as any).handleComponentError(component, error);
 		} else {
-			// Fallback error handling
 			errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error';
 			currentState = 'error';
 		}
 	}
 
-	// Handle show pictograph
 	function handleShowPictograph(show: boolean) {
-		showPictograph = show;
+		showPictograph = show || shouldStartReady; // Always show if we should start ready
 	}
 
-	// Create and position components
 	function createAndPositionComponents() {
 		if (componentManager) {
-			// Use type assertion to access the exposed methods
 			(componentManager as any).createAndPositionComponents();
 		}
 	}
 
-	// Handle component updates
 	function handleComponentUpdates(components: {
 		redPropData: PropData | null;
 		bluePropData: PropData | null;
@@ -139,12 +139,9 @@
 		bluePropData = components.bluePropData;
 		redArrowData = components.redArrowData;
 		blueArrowData = components.blueArrowData;
-
-		// Update component counts for debug display
 		totalComponentsToLoad = components.totalComponentsToLoad;
 
 		if (loadingManager) {
-			// Use type assertion to access the exposed methods
 			(loadingManager as any).updateRequiredComponents(components.requiredComponents);
 			(loadingManager as any).updateTotalComponentsToLoad(components.totalComponentsToLoad);
 		}
@@ -155,13 +152,12 @@
 	// Update load progress
 	$effect(() => {
 		if (loadingManager) {
-			// Use type assertion to access the exposed methods
-			loadProgress = (loadingManager as any).getLoadProgress?.() ?? 0;
+			loadProgress = (loadingManager as any).getLoadProgress?.() ?? (shouldStartReady ? 100 : 0);
 		}
 	});
 </script>
 
-<!-- Component Managers (no visual output) -->
+<!-- Component Managers - always present but simplified -->
 <PictographStateManager
 	bind:this={stateManager}
 	pictographData={props.pictographData}
@@ -175,7 +171,7 @@
 	bind:this={loadingManager}
 	{service}
 	pictographData={props.pictographData}
-	disableAnimations={props.disableAnimations}
+	disableAnimations={shouldStartReady}
 	onLoaded={props.onLoaded}
 	onCreateAndPositionComponents={createAndPositionComponents}
 	onShowPictograph={handleShowPictograph}
@@ -201,7 +197,7 @@
 {#if props.onClick}
 	<button type="button" class="pictograph-wrapper clickable" onclick={props.onClick}>
 		<svg class="pictograph" viewBox="0 0 950 950" xmlns="http://www.w3.org/2000/svg">
-			{#if currentState === 'initializing'}
+			{#if currentState === 'initializing' && !shouldStartReady}
 				{#if props.showLoadingIndicator ?? true}
 					<InitializingSpinner animationDuration={props.animationDuration ?? 200} />
 				{/if}
@@ -219,10 +215,10 @@
 					{redArrowData}
 					{blueArrowData}
 					debug={props.debug}
-					animationDuration={props.animationDuration}
+					animationDuration={shouldStartReady ? 0 : props.animationDuration} 
 					beatNumber={props.beatNumber}
 					isStartPosition={props.isStartPosition}
-					disableAnimations={props.disableAnimations}
+					disableAnimations={shouldStartReady}
 					onGridLoaded={handleGridLoaded}
 					onComponentLoaded={handleComponentLoaded}
 					onComponentError={handleComponentError}
@@ -231,7 +227,7 @@
 			{/if}
 		</svg>
 
-		{#if currentState === 'loading' && (props.showLoadingIndicator ?? true)}
+		{#if currentState === 'loading' && (props.showLoadingIndicator ?? true) && !shouldStartReady}
 			<LoadingProgress {loadProgress} showText={true} />
 		{/if}
 
@@ -247,7 +243,7 @@
 {:else}
 	<div class="pictograph-wrapper">
 		<svg class="pictograph" viewBox="0 0 950 950" xmlns="http://www.w3.org/2000/svg">
-			{#if currentState === 'initializing'}
+			{#if currentState === 'initializing' && !shouldStartReady}
 				{#if props.showLoadingIndicator ?? true}
 					<InitializingSpinner animationDuration={props.animationDuration ?? 200} />
 				{/if}
@@ -265,10 +261,10 @@
 					{redArrowData}
 					{blueArrowData}
 					debug={props.debug}
-					animationDuration={props.animationDuration}
+					animationDuration={shouldStartReady ? 0 : props.animationDuration}
 					beatNumber={props.beatNumber}
 					isStartPosition={props.isStartPosition}
-					disableAnimations={props.disableAnimations}
+					disableAnimations={shouldStartReady} 
 					onGridLoaded={handleGridLoaded}
 					onComponentLoaded={handleComponentLoaded}
 					onComponentError={handleComponentError}
@@ -277,7 +273,7 @@
 			{/if}
 		</svg>
 
-		{#if currentState === 'loading' && (props.showLoadingIndicator ?? true)}
+		{#if currentState === 'loading' && (props.showLoadingIndicator ?? true) && !shouldStartReady}
 			<LoadingProgress {loadProgress} showText={true} />
 		{/if}
 
