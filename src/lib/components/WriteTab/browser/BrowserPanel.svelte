@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import ThumbnailBox from './ThumbnailBox.svelte';
-	import { uiStore } from '../stores/uiStore';
+	import { uiActions, browserPanelWidth } from '../stores/uiState.svelte';
 
 	// Mock data for favorite sequences - in a real implementation, this would come from a store
 	let favorites: { id: string; word: string; thumbnails: string[] }[] = [];
@@ -43,13 +43,13 @@
 <div
 	class="browser-panel"
 	transition:fade={{ duration: 200 }}
-	style="width: {$uiStore.browserPanelWidth}px;"
+	style="width: {browserPanelWidth()}px;"
 >
 	<div class="browser-header">
 		<h2 class="text-xl font-semibold">Sequence Browser</h2>
 		<button
 			class="close-button"
-			on:click={() => uiStore.setBrowserPanelOpen(false)}
+			on:click={() => uiActions.setBrowserPanelOpen(false)}
 			aria-label="Close browser panel"
 		>
 			<svg

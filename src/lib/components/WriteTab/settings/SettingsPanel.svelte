@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { uiStore } from '../stores/uiStore';
+	import { uiActions, confirmDeletions } from '../stores/uiState.svelte';
 	import { fade } from 'svelte/transition';
 
 	// Props using Svelte 5 runes
@@ -52,8 +52,8 @@
 						<label class="toggle-switch">
 							<input
 								type="checkbox"
-								checked={$uiStore.preferences.confirmDeletions}
-								onchange={() => uiStore.toggleConfirmDeletions()}
+								checked={confirmDeletions()}
+								onchange={() => uiActions.toggleConfirmDeletions()}
 							/>
 							<span class="toggle-slider"></span>
 						</label>

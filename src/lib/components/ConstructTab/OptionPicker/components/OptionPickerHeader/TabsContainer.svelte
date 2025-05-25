@@ -24,6 +24,41 @@
 	let maxScroll = $state(0);
 	let showTooltip = $state(false);
 
+	// Handle tab selection events from TabButton components
+	function handleTabSelected(event: CustomEvent) {
+		event.stopPropagation();
+
+		// Convert the tab-selected event to a direct-tab-select event
+		const directTabSelectEvent = new CustomEvent('direct-tab-select', {
+			detail: event.detail.categoryKey,
+			bubbles: true
+		});
+
+		// Dispatch the event from the tabs container
+		if (actualTabsContainerElement) {
+			actualTabsContainerElement.dispatchEvent(directTabSelectEvent);
+		}
+	}
+
+	// Set up event listener for tab selection when element is available
+	$effect(() => {
+		if (actualTabsContainerElement) {
+			actualTabsContainerElement.addEventListener(
+				'tab-selected',
+				handleTabSelected as EventListener
+			);
+
+			return () => {
+				if (actualTabsContainerElement) {
+					actualTabsContainerElement.removeEventListener(
+						'tab-selected',
+						handleTabSelected as EventListener
+					);
+				}
+			};
+		}
+	});
+
 	// Disable tooltips to prevent reactivity loops
 	showTooltip = false;
 

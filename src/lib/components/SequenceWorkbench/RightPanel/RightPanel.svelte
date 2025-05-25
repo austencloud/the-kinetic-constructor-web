@@ -12,6 +12,8 @@
 
 	// Local state
 	let hasSelectedBeats = $state(false);
+	let isTransitioning = $state(false);
+	let currentComponent = $state<'startPos' | 'optionPicker' | null>(null);
 
 	// Subscribe to the sequence container to check for selected beats
 	$effect(() => {
@@ -22,8 +24,33 @@
 		return unsubscribe;
 	});
 
-	// Transition parameters
-	const transitionDuration = 400;
+	// Handle component transitions based on sequence state
+	$effect(() => {
+		const shouldShowStartPos = sequenceState.isEmpty;
+		const targetComponent = shouldShowStartPos ? 'startPos' : 'optionPicker';
+
+		// Only transition if the target component is different from current
+		if (currentComponent !== targetComponent) {
+			if (currentComponent === null) {
+				// Initial load - no transition needed
+				currentComponent = targetComponent;
+			} else {
+				// Start transition
+				isTransitioning = true;
+
+				// After fade out completes, switch component and fade in
+				setTimeout(() => {
+					currentComponent = targetComponent;
+					setTimeout(() => {
+						isTransitioning = false;
+					}, 50); // Small delay to ensure component is mounted
+				}, transitionDuration * 0.6); // Fade out duration
+			}
+		}
+	});
+
+	// Transition parameters - faster for snappier feel
+	const transitionDuration = 200; // Reduced from 400ms to 200ms for snappier transitions
 	const fadeParams = { duration: transitionDuration, easing: cubicInOut };
 	const flyParams = {
 		duration: transitionDuration,
@@ -46,14 +73,28 @@
 			<GraphEditor />
 		</div>
 	{:else}
-		<!-- Show StartPosPicker when sequence is empty, OptionPicker when it has content -->
-		{#if sequenceState.isEmpty}
-			<div class="full-height-wrapper" in:fade={fadeParams} out:fade={fadeParams}>
-				<StartPosPicker />
-			</div>
-		{:else}
-			<div class="full-height-wrapper" in:fade={fadeParams} out:fade={fadeParams}>
-				<OptionPicker />
+		<!-- Sequential transition between StartPosPicker and OptionPicker -->
+		{#if currentComponent && !isTransitioning}
+			{#if currentComponent === 'startPos'}
+				<div class="full-height-wrapper" in:fade={fadeParams} out:fade={fadeParams}>
+					<StartPosPicker />
+				</div>
+			{:else if currentComponent === 'optionPicker'}
+				<div class="full-height-wrapper" in:fade={fadeParams} out:fade={fadeParams}>
+					<OptionPicker />
+				</div>
+			{/if}
+		{:else if isTransitioning}
+			<!-- Show loading indicator during transition -->
+			<div
+				class="full-height-wrapper transition-loading"
+				in:fade={{ duration: 100 }}
+				out:fade={{ duration: 100 }}
+			>
+				<div class="loading-content">
+					<div class="loading-spinner"></div>
+					<p>Loading...</p>
+				</div>
 			</div>
 		{/if}
 	{/if}
@@ -88,5 +129,39 @@
 		max-height: 100%;
 		/* Ensure the graph editor wrapper doesn't interfere with BeatFrame sizing */
 		isolation: isolate;
+	}
+
+	/* Transition loading styles */
+	.transition-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(15, 23, 42, 0.8);
+	}
+
+	.loading-content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		color: #e2e8f0;
+	}
+
+	.loading-spinner {
+		width: 32px;
+		height: 32px;
+		border: 3px solid rgba(255, 204, 0, 0.3);
+		border-top: 3px solid #ffcc00;
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+	}
+
+	@keyframes spin {
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
 	}
 </style>

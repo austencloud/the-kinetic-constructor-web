@@ -1,5 +1,6 @@
 <!-- src/lib/components/SequenceWorkbench/BeatFrame/components/BeatFrameGrid.svelte -->
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import StartPosBeat from '../StartPosBeat.svelte';
 	import AnimatedBeat from '../AnimatedBeat.svelte';
 	import ReversalGlyph from '../ReversalGlyph.svelte';
@@ -30,6 +31,57 @@
 		onStartPosBeatClick: () => void;
 		onBeatClick: (beatIndex: number) => void;
 	}>();
+
+	// Track which beats are newly added to only animate those
+	let previousBeatIds = $state<Set<string>>(new Set());
+	let newlyAddedBeatIds = $state<Set<string>>(new Set());
+
+	// Update newly added beats when beats change
+	$effect(() => {
+		const currentBeatIds = new Set<string>();
+
+		// Collect valid beat IDs
+		beats.forEach((beat: LegacyBeatData) => {
+			if (beat.id && typeof beat.id === 'string') {
+				currentBeatIds.add(beat.id);
+			}
+		});
+
+		const newIds = new Set<string>();
+
+		// Find beats that are in current but not in previous
+		for (const id of currentBeatIds) {
+			if (!previousBeatIds.has(id)) {
+				newIds.add(id);
+			}
+		}
+
+		newlyAddedBeatIds = newIds;
+		previousBeatIds = currentBeatIds;
+
+		// Clear newly added status after animation duration
+		if (newIds.size > 0) {
+			setTimeout(() => {
+				newlyAddedBeatIds = new Set();
+			}, 500); // Clear after animation completes
+		}
+	});
+
+	// Listen for beat-added events to mark beats as newly added
+	onMount(() => {
+		const handleBeatAdded = (event: CustomEvent) => {
+			const addedBeat = event.detail?.beat;
+			if (addedBeat?.id) {
+				newlyAddedBeatIds = new Set([...newlyAddedBeatIds, addedBeat.id]);
+			}
+		};
+
+		document.addEventListener('beat-added', handleBeatAdded as EventListener);
+
+		return () => {
+			document.removeEventListener('beat-added', handleBeatAdded as EventListener);
+		};
+	});
 </script>
 
 <div
@@ -64,6 +116,7 @@
 							{beat}
 							onClick={() => onBeatClick(beatIndex)}
 							isSelected={selectedBeatIndex === beatIndex}
+							isNewlyAdded={beat.id ? newlyAddedBeatIds.has(beat.id) : false}
 						/>
 
 						{#if beat.metadata?.blueReversal || beat.metadata?.redReversal}

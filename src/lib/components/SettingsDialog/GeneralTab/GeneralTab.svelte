@@ -4,7 +4,7 @@
 
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import { uiStore } from '$lib/components/WriteTab/stores/uiStore';
+	import { uiActions, confirmDeletions } from '$lib/components/WriteTab/stores/uiState.svelte';
 	import {
 		getImageExportSettings,
 		updateImageExportSettings
@@ -27,20 +27,11 @@
 	const availableBackgrounds: BackgroundType[] = ['snowfall', 'nightSky', 'deepOcean'];
 
 	// Get UI preferences
-	let confirmDeletions = $state(true);
 	let rememberLastSaveDirectory = $state(true);
 
 	// Initialize state from stores
 	$effect(() => {
 		if (browser) {
-			// Get confirmation dialog preference
-			try {
-				const uiState = $uiStore;
-				confirmDeletions = uiState.preferences.confirmDeletions;
-			} catch (error) {
-				console.error('Failed to load confirmation dialog preference:', error);
-			}
-
 			// Get remember save location preference
 			try {
 				const exportSettings = getImageExportSettings();
@@ -61,11 +52,8 @@
 	function toggleConfirmDeletions() {
 		if (browser) hapticFeedbackService.trigger('selection');
 
-		// Toggle the state
-		confirmDeletions = !confirmDeletions;
-
-		// Update the store
-		uiStore.toggleConfirmDeletions(confirmDeletions);
+		// Update the store using the modern runes system
+		uiActions.toggleConfirmDeletions();
 	}
 
 	// Toggle remember save location
@@ -207,7 +195,7 @@
 				<label class="switch">
 					<input
 						type="checkbox"
-						checked={confirmDeletions}
+						checked={confirmDeletions()}
 						onchange={toggleConfirmDeletions}
 						aria-label="Toggle confirmation dialogs"
 					/>

@@ -9,11 +9,13 @@
 		onClick: () => void;
 		isSelected?: boolean;
 		animationDelay?: number;
+		isNewlyAdded?: boolean; // New prop to indicate if this beat was just added
 	}>();
 
 	const isSelected = $derived(props.isSelected ?? false);
+	const isNewlyAdded = $derived(props.isNewlyAdded ?? false);
 
-	let shouldAnimate = $state(true);
+	let shouldAnimate = $state(false); // Default to false, only animate newly added beats
 	let hasAnimated = $state(false);
 	let isVisible = $state(false);
 	let bluePulseEffect = $state(false);
@@ -63,12 +65,19 @@
 		};
 	});
 
-	// Start animation immediately on mount
+	// Handle animation based on whether this is a newly added beat
 	onMount(() => {
-		// Use requestAnimationFrame for smoother animation start
-		requestAnimationFrame(() => {
+		if (isNewlyAdded) {
+			// For newly added beats, start with animation
+			shouldAnimate = true;
+			requestAnimationFrame(() => {
+				isVisible = true;
+			});
+		} else {
+			// For existing beats, show immediately without animation
 			isVisible = true;
-		});
+			hasAnimated = true; // Mark as already animated to prevent future animations
+		}
 	});
 
 	function handleAnimationEnd() {

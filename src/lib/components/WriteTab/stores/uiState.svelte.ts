@@ -5,6 +5,7 @@
  */
 
 import { createPersistentObjectState } from '$lib/state/core/runes.svelte';
+import { browser } from '$app/environment';
 
 // Define the UI state interface
 export interface UIState {
@@ -22,19 +23,57 @@ export interface UIState {
 	};
 }
 
-// Create the initial state
+/**
+ * Migrate data from legacy uiStore to modern runes system
+ */
+function migrateLegacyData(): Partial<UIState> {
+	if (!browser) return {};
+
+	try {
+		// Check for legacy data from the old uiStore system
+		const legacyData = localStorage.getItem('write_tab_ui_state');
+		if (legacyData) {
+			const parsed = JSON.parse(legacyData);
+
+			// If the data structure looks like the legacy format, migrate it
+			if (parsed && typeof parsed === 'object') {
+				return {
+					isBrowserPanelOpen: parsed.isBrowserPanelOpen ?? true,
+					browserPanelWidth: parsed.browserPanelWidth ?? 300,
+					scrollPosition: {
+						beatGrid: parsed.scrollPosition?.beatGrid ?? 0,
+						cueScroll: parsed.scrollPosition?.cueScroll ?? 0
+					},
+					gridSettings: {
+						cellSize: parsed.gridSettings?.cellSize ?? 80
+					},
+					preferences: {
+						confirmDeletions: parsed.preferences?.confirmDeletions ?? true
+					}
+				};
+			}
+		}
+	} catch (error) {
+		console.warn('Failed to migrate legacy UI state data:', error);
+	}
+
+	return {};
+}
+
+// Create the initial state with migration
+const legacyData = migrateLegacyData();
 const initialState: UIState = {
-	isBrowserPanelOpen: true,
-	browserPanelWidth: 300, // Default browser panel width in pixels
+	isBrowserPanelOpen: legacyData.isBrowserPanelOpen ?? true,
+	browserPanelWidth: legacyData.browserPanelWidth ?? 300, // Default browser panel width in pixels
 	scrollPosition: {
-		beatGrid: 0,
-		cueScroll: 0
+		beatGrid: legacyData.scrollPosition?.beatGrid ?? 0,
+		cueScroll: legacyData.scrollPosition?.cueScroll ?? 0
 	},
 	gridSettings: {
-		cellSize: 80 // Default cell size in pixels
+		cellSize: legacyData.gridSettings?.cellSize ?? 80 // Default cell size in pixels
 	},
 	preferences: {
-		confirmDeletions: true // Default to showing confirmation dialogs
+		confirmDeletions: legacyData.preferences?.confirmDeletions ?? true // Default to showing confirmation dialogs
 	}
 };
 
