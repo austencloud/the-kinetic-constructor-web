@@ -39,7 +39,6 @@ export const sequenceOverlayState = {
  * Opens the sequence overlay
  */
 export function openSequenceOverlay() {
-	console.log('Opening sequence overlay');
 	sequenceOverlayStore.update((state) => ({
 		...state,
 		isOpen: true
@@ -50,7 +49,6 @@ export function openSequenceOverlay() {
  * Closes the sequence overlay
  */
 export function closeSequenceOverlay() {
-	console.log('Closing sequence overlay');
 	sequenceOverlayStore.update((state) => ({
 		...state,
 		isOpen: false
@@ -62,7 +60,6 @@ export function closeSequenceOverlay() {
  */
 export function toggleSequenceOverlay() {
 	sequenceOverlayStore.update((state) => {
-		console.log('Toggling sequence overlay, current value:', state.isOpen);
 		return {
 			...state,
 			isOpen: !state.isOpen

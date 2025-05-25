@@ -9,23 +9,15 @@
 export function verifyBeatFrameElements(): boolean {
 	const beatFrameElement = document.querySelector('.beat-frame-container');
 	if (!beatFrameElement) {
-		console.log('⚠️ BeatFrame element not found during verification');
 		return false;
 	}
 
 	// Check for SVG elements
 	const svgElements = beatFrameElement.querySelectorAll('svg');
-	console.log(`🔍 BeatFrame verification: Found ${svgElements.length} SVG elements`);
 
 	// Check for arrows and other critical elements
 	const arrowElements = beatFrameElement.querySelectorAll('.arrow-path, .arrow-head');
 	const propElements = beatFrameElement.querySelectorAll('.pictograph-prop');
-
-	console.log(`🔍 BeatFrame verification details:`, {
-		svgCount: svgElements.length,
-		arrowCount: arrowElements.length,
-		propCount: propElements.length
-	});
 
 	// Consider it valid if we have SVGs and either arrows or props
 	return svgElements.length > 0 && (arrowElements.length > 0 || propElements.length > 0);
@@ -98,15 +90,6 @@ export function logBeatFrameDetails(): void {
 	const svgElements = beatFrameElement.querySelectorAll('svg');
 	const arrowElements = beatFrameElement.querySelectorAll('.arrow-path, .arrow-head');
 	const propElements = beatFrameElement.querySelectorAll('.pictograph-prop');
-
-	// Log detailed information about what we found
-	console.log('Found BeatFrame element with details:', {
-		element: beatFrameElement,
-		svgCount: svgElements.length,
-		arrowCount: arrowElements.length,
-		propCount: propElements.length,
-		html: beatFrameElement.innerHTML.substring(0, 200) + '...' // Log a preview of the HTML
-	});
 
 	// Warn if we're missing expected elements
 	if (svgElements.length === 0 || (arrowElements.length === 0 && propElements.length === 0)) {

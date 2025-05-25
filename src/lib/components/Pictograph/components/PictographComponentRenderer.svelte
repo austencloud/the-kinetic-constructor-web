@@ -6,17 +6,16 @@
 	import type { PropData } from '$lib/components/objects/Prop/PropData';
 	import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 	import type { PictographService } from '../PictographService';
-	
+
 	// Component imports
 	import Grid from '../../objects/Grid/Grid.svelte';
 	import Prop from '../../objects/Prop/Prop.svelte';
 	import Arrow from '../../objects/Arrow/Arrow.svelte';
 	import TKAGlyph from '../../objects/Glyphs/TKAGlyph/TKAGlyph.svelte';
 	import BeatLabel from './BeatLabel.svelte';
-	
+
 	// Utility imports
 	import { shouldShowBeatLabel, shouldShowMotionComponents } from '../utils/PictographRenderUtils';
-	import { untrack } from 'svelte';
 
 	// Define props using Svelte 5 runes syntax
 	const props = $props<{

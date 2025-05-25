@@ -119,10 +119,6 @@ export const appMachine = createMachine(
 								const savedBackground = loadBackgroundPreference();
 
 								if (savedBackground && savedBackground !== context.background) {
-									console.log(
-										'Enforcing background from localStorage in ready state:',
-										savedBackground
-									);
 									// Use a small timeout to ensure this happens after other initialization
 									setTimeout(() => {
 										self.send({ type: 'UPDATE_BACKGROUND', background: savedBackground });
@@ -139,7 +135,6 @@ export const appMachine = createMachine(
 							try {
 								const savedTab = loadActiveTabPreference();
 								if (savedTab !== context.currentTab) {
-									console.log('Enforcing tab from localStorage in ready state:', savedTab);
 									// Use a small timeout to ensure this happens after other initialization
 									setTimeout(() => {
 										self.send({ type: 'CHANGE_TAB', tab: savedTab });
@@ -163,9 +158,7 @@ export const appMachine = createMachine(
 								// Save the current tab to localStorage immediately
 								if (browser) {
 									try {
-										console.log('Saving tab to localStorage immediately:', event.tab);
 										saveActiveTabPreference(event.tab);
-										console.log('Tab saved successfully');
 									} catch (error) {
 										console.error('Error saving last active tab:', error);
 									}
@@ -207,12 +200,7 @@ export const appMachine = createMachine(
 										const background = event.background as BackgroundType;
 
 										if (validBackgrounds.includes(background)) {
-											console.log(
-												'Saving background preference to localStorage immediately:',
-												background
-											);
 											saveBackgroundPreference(background);
-											console.log('Background preference saved successfully');
 										}
 									} catch (error) {
 										console.error('Error saving background preference:', error);
@@ -279,7 +267,6 @@ if (browser) {
 
 						// If the stored data includes isSettingsOpen, ensure it's set to false
 						if (parsedData && parsedData.context && 'isSettingsOpen' in parsedData.context) {
-							console.log('Ensuring settings dialog is closed in persisted state');
 							parsedData.context.isSettingsOpen = false;
 							localStorage.setItem(storageKey, JSON.stringify(parsedData));
 						}

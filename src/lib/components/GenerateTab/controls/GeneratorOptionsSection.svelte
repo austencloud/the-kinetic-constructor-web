@@ -1,6 +1,6 @@
 <!-- src/lib/components/GenerateTab/controls/GeneratorOptionsSection.svelte -->
 <script lang="ts">
-	import { settingsStore, generatorType as activeGeneratorType } from '../store/settings';
+	import { generatorType as activeGeneratorType } from '../store/settings';
 	import { sequenceSelectors } from '$lib/state/machines/sequenceMachine';
 	import CircularSequencer from '../components/CircularSequencer.svelte';
 	import FreeformSequencer from '../components/FreeformSequencer.svelte';

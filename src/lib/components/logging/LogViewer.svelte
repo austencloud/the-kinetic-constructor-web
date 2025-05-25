@@ -1,10 +1,10 @@
 <!--
   Log Viewer Component
-  
+
   Displays logs from the memory transport in a filterable, searchable interface.
 -->
 <script lang="ts">
-	import { getContext, onMount, onDestroy } from 'svelte';
+	import { getContext } from 'svelte';
 	import { writable, derived, type Writable } from 'svelte/store';
 	import {
 		LogLevel,

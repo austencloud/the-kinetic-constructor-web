@@ -1,6 +1,5 @@
 <!-- src/lib/components/objects/Glyphs/TKAGlyph/components/TurnsRenderer.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { assetCache, fetchSVGDimensions, type Rect } from '$lib/stores/glyphStore';
 	import type { TKATurns } from '$lib/types/Types';
 

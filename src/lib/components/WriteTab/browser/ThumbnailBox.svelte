@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import ThumbnailImage from './ThumbnailImage.svelte';
 
 	export let word: string;

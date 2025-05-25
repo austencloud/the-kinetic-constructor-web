@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Tab interface for settings dialog
-	import { fade } from 'svelte/transition';
+
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 

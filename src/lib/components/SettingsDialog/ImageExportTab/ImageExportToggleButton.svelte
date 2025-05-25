@@ -27,12 +27,6 @@
 			hapticFeedbackService.trigger('selection');
 		}
 
-		// Log toggle action for debugging
-		console.log(`Toggle button clicked for ${settingKey}:`, {
-			currentValue: isActive,
-			newValue: !isActive
-		});
-
 		// Call the toggle handler
 		onToggle(settingKey);
 

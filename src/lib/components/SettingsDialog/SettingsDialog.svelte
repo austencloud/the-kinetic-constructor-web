@@ -93,8 +93,6 @@
 
 	// Save all settings
 	function saveAllSettings() {
-		console.log('saveAllSettings called');
-
 		// Prevent multiple save operations
 		if (isSaving) return;
 
@@ -202,12 +200,10 @@
 				// Save scroll position
 				if (contentContainer) {
 					localStorage.setItem(SETTINGS_SCROLL_POSITION_KEY, contentContainer.scrollTop.toString());
-					console.log('Scroll position saved on close:', contentContainer.scrollTop);
 				}
 
 				// Save active tab
 				localStorage.setItem(SETTINGS_ACTIVE_TAB_KEY, activeTab);
-				console.log('Active tab saved on close:', activeTab);
 			} catch (error) {
 				console.error('Failed to save settings state on close:', error);
 			}

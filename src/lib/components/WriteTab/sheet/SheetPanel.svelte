@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import ActHeader from './header/ActHeader.svelte';
 	import BeatGrid from './grid/BeatGrid.svelte';
 	import CueScroll from './cue/CueScroll.svelte';

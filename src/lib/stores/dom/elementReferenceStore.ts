@@ -23,7 +23,6 @@ const createElementReferenceStore = () => {
 			const storedKeys = localStorage.getItem('element-reference-keys');
 			if (storedKeys) {
 				const keys = JSON.parse(storedKeys) as string[];
-				console.log('ElementReferenceStore: Found stored keys:', keys);
 			}
 		} catch (error) {
 			console.error('ElementReferenceStore: Error restoring references:', error);
@@ -38,11 +37,8 @@ const createElementReferenceStore = () => {
 		 */
 		setElement: (key: string, element: HTMLElement | null) => {
 			if (!element) {
-				console.warn(`ElementReferenceStore: Attempted to set null element for key "${key}"`);
 				return false;
 			}
-
-			console.log(`ElementReferenceStore: Setting element for key "${key}"`, element);
 
 			update((refs) => {
 				// Create a new object to ensure reactivity
@@ -80,7 +76,6 @@ const createElementReferenceStore = () => {
 			if (!element && browser) {
 				const globalFallback = (window as any)[`__element_ref_${key}`] as HTMLElement | null;
 				if (globalFallback) {
-					console.log(`ElementReferenceStore: Using global fallback for key "${key}"`);
 					// Update the store with the fallback
 					update((refs) => ({ ...refs, [key]: globalFallback }));
 					return globalFallback;
