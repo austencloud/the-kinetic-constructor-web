@@ -1,5 +1,5 @@
 <!-- Import at the end to avoid circular dependencies -->
-<script context="module" lang="ts">
+<script module lang="ts">
 	import { getContext } from 'svelte';
 </script>
 
@@ -52,7 +52,7 @@
 		name,
 		createComponentContext({
 			component: name,
-			props: $$props
+			props: { name, options }
 		})
 	);
 
@@ -76,7 +76,7 @@
 				domain: LogDomain.COMPONENT,
 				data: {
 					renderCount,
-					props: $$props
+					props: { name, options }
 				}
 			});
 		}
@@ -222,4 +222,6 @@
 	}
 </script>
 
-<slot />
+{#if children}
+	{@render children()}
+{/if}

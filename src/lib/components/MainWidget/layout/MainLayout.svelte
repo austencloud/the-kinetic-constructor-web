@@ -10,13 +10,15 @@
 	import { uiStore } from '$lib/state/stores/uiStore';
 
 	const isSettingsOpenStore = useSelector(appService, (state) => state.context.isSettingsOpen);
-	$: isSettingsDialogOpen = $isSettingsOpenStore;
+	const isSettingsDialogOpen = $derived($isSettingsOpenStore);
 
-	let buttonSize = 50;
+	let buttonSize = $state(50);
 
-	$: if ($uiStore && $uiStore.windowWidth) {
-		buttonSize = Math.max(30, Math.min(50, $uiStore.windowWidth / 12));
-	}
+	$effect(() => {
+		if ($uiStore && $uiStore.windowWidth) {
+			buttonSize = Math.max(30, Math.min(50, $uiStore.windowWidth / 12));
+		}
+	});
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
@@ -64,8 +66,8 @@
 		<div
 			class="settingsBackdrop"
 			transition:fade={{ duration: 300, easing: cubicOut }}
-			on:click={() => appActions.closeSettings()}
-			on:keydown={handleBackdropKeydown}
+			onclick={() => appActions.closeSettings()}
+			onkeydown={handleBackdropKeydown}
 			role="button"
 			tabindex="0"
 			aria-label="Close settings"

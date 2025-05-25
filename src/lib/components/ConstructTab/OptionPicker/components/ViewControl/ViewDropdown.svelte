@@ -3,11 +3,19 @@
 	import { quintOut } from 'svelte/easing';
 	import type { ViewOption } from './types';
 
-	export let isOpen: boolean;
-	export let selectedViewOption: ViewOption;
-	export let viewOptions: readonly ViewOption[];
-	export let onSelect: (option: ViewOption) => void;
-	export let onKeydown: (event: KeyboardEvent) => void;
+	let {
+		isOpen,
+		selectedViewOption,
+		viewOptions,
+		onSelect,
+		onKeydown
+	}: {
+		isOpen: boolean;
+		selectedViewOption: ViewOption;
+		viewOptions: readonly ViewOption[];
+		onSelect: (option: ViewOption) => void;
+		onKeydown: (event: KeyboardEvent) => void;
+	} = $props();
 
 	// No need to track the dropdown reference
 </script>

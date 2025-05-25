@@ -1,33 +1,38 @@
 <script lang="ts">
-	import { createEventDispatcher, getContext } from 'svelte';
+	import { getContext } from 'svelte';
 	// Removed: fly, quintOut
 	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../layoutContext';
 
 	// --- Props ---
-	export let showAllActive: boolean = false;
+	let {
+		showAllActive = false,
+		ontoggle
+	}: {
+		showAllActive?: boolean;
+		ontoggle?: () => void;
+	} = $props();
 
 	// --- Context ---
 	// Keep context if needed for internal styling (e.g., mobile class for padding/font)
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
-	$: isMobileDevice = $layoutContext.isMobile;
+	const isMobileDevice = $derived($layoutContext.isMobile);
 
 	// --- Computed ---
-	$: buttonState = {
+	const buttonState = $derived({
 		text: showAllActive ? 'Filters Off' : 'Show All',
 		icon: showAllActive ? '👁️' : '✨',
 		ariaLabel: showAllActive ? 'Enable filters and sorting' : 'Show all options without filtering'
-	};
+	});
 
 	// --- Events ---
-	const dispatch = createEventDispatcher<{ toggle: void }>();
-	const handleToggle = () => dispatch('toggle');
+	const handleToggle = () => ontoggle?.();
 </script>
 
 <button
 	class="show-all-button"
 	class:mobile={isMobileDevice}
 	class:active={showAllActive}
-	on:click={handleToggle}
+	onclick={handleToggle}
 	aria-pressed={showAllActive}
 	aria-label={buttonState.ariaLabel}
 	data-testid="show-all-button"

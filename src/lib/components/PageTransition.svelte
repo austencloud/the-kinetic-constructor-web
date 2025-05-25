@@ -3,7 +3,6 @@
 	import { onMount } from 'svelte';
 	import { cubicInOut } from 'svelte/easing';
 
-	// Convert export let to $props() for Svelte 5
 	const { active = false, direction = 'right' } = $props<{
 		active?: boolean;
 		direction?: 'right' | 'left';
@@ -18,7 +17,6 @@
 		}
 	});
 
-	// Replace reactive if-block with $effect
 	$effect(() => {
 		if (active && pageTransition && !isAnimating) {
 			startTransition();
@@ -28,21 +26,15 @@
 	function startTransition() {
 		isAnimating = true;
 
-		// Reset any existing animations
 		pageTransition.style.animation = 'none';
 
-		// Force reflow
 		void pageTransition.offsetWidth;
 
-		// Start animation
 		pageTransition.style.animation = `page-transition-${direction} 0.8s ${cubicInOut} forwards`;
-
-		// Dispatch animation start event is now handled via on:transitionstart
 	}
 
 	function handleAnimationEnd() {
 		isAnimating = false;
-		// Dispatch is now handled via on:transitionend
 	}
 </script>
 

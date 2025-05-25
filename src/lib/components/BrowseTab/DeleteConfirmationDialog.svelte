@@ -1,27 +1,29 @@
 <!-- src/lib/components/BrowseTab/DeleteConfirmationDialog.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
 
 	// Props
-	export let type: 'sequence' | 'variation' = 'variation';
-	export let sequenceName: string = '';
-
-	// Create event dispatcher
-	const dispatch = createEventDispatcher<{
-		confirm: void;
-		cancel: void;
-	}>();
+	let {
+		type = 'variation',
+		sequenceName = '',
+		onconfirm,
+		oncancel
+	}: {
+		type?: 'sequence' | 'variation';
+		sequenceName?: string;
+		onconfirm?: () => void;
+		oncancel?: () => void;
+	} = $props();
 
 	// Handle confirm
 	function handleConfirm() {
-		dispatch('confirm');
+		onconfirm?.();
 	}
 
 	// Handle cancel
 	function handleCancel() {
-		dispatch('cancel');
+		oncancel?.();
 	}
 
 	// Handle backdrop click
@@ -54,12 +56,12 @@
 	});
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 <div
 	class="dialog-backdrop"
-	on:click={handleBackdropClick}
-	on:keydown={handleBackdropKeydown}
+	onclick={handleBackdropClick}
+	onkeydown={handleBackdropKeydown}
 	role="presentation"
 	transition:fade={{ duration: 200 }}
 >
@@ -90,11 +92,11 @@
 		</div>
 
 		<div class="dialog-actions">
-			<button class="dialog-button cancel" on:click={handleCancel} bind:this={cancelButton}>
+			<button class="dialog-button cancel" onclick={handleCancel} bind:this={cancelButton}>
 				Cancel
 			</button>
 
-			<button class="dialog-button confirm" on:click={handleConfirm}> Delete </button>
+			<button class="dialog-button confirm" onclick={handleConfirm}> Delete </button>
 		</div>
 	</div>
 </div>

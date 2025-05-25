@@ -14,11 +14,13 @@
 	const {
 		pictographDataStore,
 		onClick = undefined,
-		state
+		state,
+		children
 	} = $props<{
 		pictographDataStore: Writable<PictographData>;
 		onClick?: (() => void) | undefined;
 		state: string;
+		children?: import('svelte').Snippet;
 	}>();
 
 	// Derived values
@@ -54,7 +56,9 @@
 	data-letter={dataLetter}
 	{...buttonProps}
 >
-	<slot />
+	{#if children}
+		{@render children()}
+	{/if}
 </svelte:element>
 
 <style>

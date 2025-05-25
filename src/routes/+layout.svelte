@@ -7,9 +7,15 @@
 	import ToastManager from '$lib/components/shared/ToastManager.svelte';
 	import '$lib/styles/safe-area.css';
 
-	export let data: LayoutData;
+	let {
+		data,
+		children
+	}: {
+		data: LayoutData;
+		children?: import('svelte').Snippet;
+	} = $props();
 
-	let initialized = false;
+	let initialized = $state(false);
 
 	onMount(async () => {
 		if (initialized || !browser) return;
@@ -37,12 +43,12 @@
 		<p>Could not load essential data: {data.error}</p>
 		<p>Please try refreshing the page.</p>
 		{#if browser}
-			<button on:click={() => window.location.reload()}>Refresh</button>
+			<button onclick={() => window.location.reload()}>Refresh</button>
 		{/if}
 	</div>
 {:else}
 	<ServiceProvider>
-		<slot />
+		{@render children?.()}
 	</ServiceProvider>
 {/if}
 

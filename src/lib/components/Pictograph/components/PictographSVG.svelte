@@ -10,10 +10,11 @@
 	import { getPictographAriaLabel } from '../utils/componentPositioning';
 
 	// Convert to Svelte 5 runes syntax
-	const { pictographDataStore, state, errorMessage } = $props<{
+	const { pictographDataStore, state, errorMessage, children } = $props<{
 		pictographDataStore: Writable<PictographData>;
 		state: string;
 		errorMessage: string | null;
+		children?: import('svelte').Snippet;
 	}>();
 </script>
 
@@ -24,7 +25,9 @@
 	role="img"
 	aria-label={getPictographAriaLabel(state, errorMessage, get(pictographDataStore))}
 >
-	<slot />
+	{#if children}
+		{@render children()}
+	{/if}
 </svg>
 
 <style>

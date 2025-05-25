@@ -1,35 +1,42 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
-	import { actStore } from '../../stores/actStore';
-	import { uiStore } from '../../stores/uiStore';
-	import { selectionStore } from '../../stores/selectionStore';
+	import { onMount } from 'svelte';
+	import { actState } from '../../state/actState.svelte';
+	import { uiState } from '../../state/uiState.svelte';
+	import { selectionState } from '../../stores/selectionStore';
 	import { dropTarget } from '../../utils/dragDropUtils';
 	import BeatCell from './BeatCell.svelte';
 	import StepLabel from './StepLabel.svelte';
 
-	const dispatch = createEventDispatcher();
+	// Props using Svelte 5 runes
+	const { onresize, onscroll } = $props<{
+		onresize?: (event: { cellSize: number; width?: number; height?: number }) => void;
+		onscroll?: (event: { scrollTop: number }) => void;
+	}>();
 
 	// Grid dimensions
 	const COLUMNS = 8;
 	const ROWS = 24;
 
-	let gridElement: HTMLDivElement;
-	let gridWidth = 0;
-	let gridHeight = 0;
-	let resizeObserver: ResizeObserver;
+	let gridElement = $state<HTMLDivElement>();
+	let gridWidth = $state(0);
+	let gridHeight = $state(0);
+	let resizeObserver = $state<ResizeObserver>();
 
 	// Calculate responsive cell size based on container dimensions
-	$: responsiveCellSize =
+	const responsiveCellSize = $derived(
 		gridWidth > 0
 			? Math.floor((gridWidth - (COLUMNS + 1)) / COLUMNS) // Always use full width
-			: 80; // Default fallback
+			: 80 // Default fallback
+	);
 
-	// Dispatch resize event when cell size changes
-	$: if (responsiveCellSize && dispatch) {
-		dispatch('resize', {
-			cellSize: responsiveCellSize
-		});
-	}
+	// Effect to dispatch resize event when cell size changes
+	$effect(() => {
+		if (responsiveCellSize && onresize) {
+			onresize({
+				cellSize: responsiveCellSize
+			});
+		}
+	});
 
 	// Set up resize observer to track container size changes
 	onMount(() => {
@@ -40,8 +47,8 @@
 					gridWidth = entry.contentRect.width;
 					gridHeight = entry.contentRect.height;
 
-					// Dispatch a resize event to synchronize with CueScroll
-					dispatch('resize', {
+					// Call resize callback to synchronize with CueScroll
+					onresize?.({
 						width: gridWidth,
 						height: gridHeight,
 						cellSize: responsiveCellSize
@@ -62,7 +69,7 @@
 	// Handle scroll events
 	function handleScroll() {
 		if (gridElement) {
-			dispatch('scroll', { scrollTop: gridElement.scrollTop });
+			onscroll?.({ scrollTop: gridElement.scrollTop });
 		}
 	}
 
@@ -80,26 +87,28 @@
 
 		// Use the data from the drop event
 		if (data) {
-			actStore.populateFromDrop(data, row, col);
+			actState.populateFromDrop(data, row, col);
 		}
 	}
 
 	// Handle cell selection
-	function handleCellClick(event: CustomEvent) {
-		const { row, col } = event.detail;
-		selectionStore.selectBeat(row, col);
+	function handleCellClick(event: { row: number; col: number }) {
+		const { row, col } = event;
+		selectionState.selectBeat(row, col);
 	}
 
-	// Sync scroll position when the store updates
-	$: if (gridElement && $uiStore.scrollPosition.beatGrid !== undefined) {
-		gridElement.scrollTop = $uiStore.scrollPosition.beatGrid;
-	}
+	// Sync scroll position when the UI state updates
+	$effect(() => {
+		if (gridElement && uiState.beatGridScroll !== undefined) {
+			gridElement.scrollTop = uiState.beatGridScroll;
+		}
+	});
 </script>
 
 <div
 	class="beat-grid"
 	bind:this={gridElement}
-	on:scroll={handleScroll}
+	onscroll={handleScroll}
 	use:dropTarget={{
 		acceptedTypes: ['application/sequence-data'],
 		dropEffect: 'copy',
@@ -113,15 +122,15 @@
 					<BeatCell
 						row={rowIndex}
 						col={colIndex}
-						beat={$actStore.act.sequences[rowIndex]?.beats[colIndex]}
-						on:click={handleCellClick}
+						beat={actState.act.sequences[rowIndex]?.beats[colIndex]}
+						onclick={handleCellClick}
 					/>
 
 					{#if colIndex === 0}
 						<StepLabel
 							row={rowIndex}
 							col={colIndex}
-							label={$actStore.act.sequences[rowIndex]?.beats[colIndex]?.step_label || ''}
+							label={actState.act.sequences[rowIndex]?.beats[colIndex]?.step_label || ''}
 						/>
 					{/if}
 				</div>

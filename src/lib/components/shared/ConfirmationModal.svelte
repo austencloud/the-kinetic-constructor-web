@@ -44,27 +44,31 @@
 </script>
 
 <Modal {isOpen} {title} onClose={close}>
-	<!-- Content goes in the default slot -->
-	<div class="confirmation-content">
-		<p>{message}</p>
+	{#snippet children()}
+		<!-- Content goes in the default slot -->
+		<div class="confirmation-content">
+			<p>{message}</p>
 
-		{#if showDontAskOption}
-			<label class="dont-ask-option">
-				<input type="checkbox" bind:checked={dontAskAgain} />
-				<span>Don't ask me again</span>
-			</label>
-		{/if}
-	</div>
+			{#if showDontAskOption}
+				<label class="dont-ask-option">
+					<input type="checkbox" bind:checked={dontAskAgain} />
+					<span>Don't ask me again</span>
+				</label>
+			{/if}
+		</div>
+	{/snippet}
 
-	<!-- Footer content goes in the named footer slot -->
-	<div class="modal-footer-buttons" slot="footer">
-		<button class="cancel-button" onclick={close}>
-			{cancelText}
-		</button>
-		<button class="confirm-button {confirmButtonClass}" onclick={handleConfirm}>
-			{confirmText}
-		</button>
-	</div>
+	{#snippet footer()}
+		<!-- Footer content goes in the named footer slot -->
+		<div class="modal-footer-buttons">
+			<button class="cancel-button" onclick={close}>
+				{cancelText}
+			</button>
+			<button class="confirm-button {confirmButtonClass}" onclick={handleConfirm}>
+				{confirmText}
+			</button>
+		</div>
+	{/snippet}
 </Modal>
 
 <style>

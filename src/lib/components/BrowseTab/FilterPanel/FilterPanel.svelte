@@ -7,19 +7,6 @@
 	} from '$lib/stores/browseTab/browseTabStore';
 	import { onMount } from 'svelte';
 
-	// Filter sections
-	const filterSections = [
-		{ id: 'all', label: 'All Sequences' },
-		{ id: 'favorites', label: 'Favorites' },
-		{ id: 'difficulty', label: 'Difficulty Level' },
-		{ id: 'startingPosition', label: 'Starting Position' },
-		{ id: 'startingLetter', label: 'Starting Letter' },
-		{ id: 'containsLetters', label: 'Contains Letters' },
-		{ id: 'length', label: 'Sequence Length' },
-		{ id: 'gridMode', label: 'Grid Mode' },
-		{ id: 'tag', label: 'Tags' }
-	];
-
 	// Sort options
 	const sortOptions = [
 		{ id: 'alphabetical', label: 'Alphabetical' },
@@ -56,10 +43,10 @@
 	const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 	// State
-	let activeSection = 'all';
-	let selectedLetters: string[] = [];
-	let sortDirection: 'asc' | 'desc' = 'asc';
-	let currentSort = 'alphabetical';
+	let activeSection = $state('all');
+	let selectedLetters = $state<string[]>([]);
+	let sortDirection = $state<'asc' | 'desc'>('asc');
+	let currentSort = $state('alphabetical');
 
 	// Apply a filter
 	function applyFilter(filter: FilterCriteria) {
@@ -122,7 +109,7 @@
 			<select
 				id="sort-select"
 				bind:value={currentSort}
-				on:change={() => applySort(currentSort, sortDirection)}
+				onchange={() => applySort(currentSort, sortDirection)}
 			>
 				{#each sortOptions as option}
 					<option value={option.id}>{option.label}</option>
@@ -131,7 +118,7 @@
 
 			<button
 				class="sort-direction-button"
-				on:click={toggleSortDirection}
+				onclick={toggleSortDirection}
 				aria-label={sortDirection === 'asc' ? 'Sort ascending' : 'Sort descending'}
 			>
 				{#if sortDirection === 'asc'}
@@ -151,7 +138,7 @@
 			<button
 				class="filter-button"
 				class:active={activeSection === 'all'}
-				on:click={() => applyFilter({ type: 'all' })}
+				onclick={() => applyFilter({ type: 'all' })}
 			>
 				All Sequences
 			</button>
@@ -159,7 +146,7 @@
 			<button
 				class="filter-button"
 				class:active={activeSection === 'favorites'}
-				on:click={() => applyFilter({ type: 'favorites' })}
+				onclick={() => applyFilter({ type: 'favorites' })}
 			>
 				Favorites
 			</button>
@@ -174,7 +161,7 @@
 						class="filter-button small"
 						class:active={activeSection === 'difficulty' &&
 							$browseTabStore.currentFilter.value === level}
-						on:click={() => applyFilter({ type: 'difficulty', value: level })}
+						onclick={() => applyFilter({ type: 'difficulty', value: level })}
 					>
 						{level}
 					</button>
@@ -191,7 +178,7 @@
 						class="filter-button"
 						class:active={activeSection === 'startingPosition' &&
 							$browseTabStore.currentFilter.value === position}
-						on:click={() => applyFilter({ type: 'startingPosition', value: position })}
+						onclick={() => applyFilter({ type: 'startingPosition', value: position })}
 					>
 						{position}
 					</button>
@@ -208,7 +195,7 @@
 						class="filter-button"
 						class:active={activeSection === 'gridMode' &&
 							$browseTabStore.currentFilter.value === mode}
-						on:click={() => applyFilter({ type: 'gridMode', value: mode })}
+						onclick={() => applyFilter({ type: 'gridMode', value: mode })}
 					>
 						{mode}
 					</button>
@@ -225,7 +212,7 @@
 						class="filter-button small"
 						class:active={activeSection === 'startingLetter' &&
 							$browseTabStore.currentFilter.value === letter}
-						on:click={() => applyFilter({ type: 'startingLetter', value: letter })}
+						onclick={() => applyFilter({ type: 'startingLetter', value: letter })}
 					>
 						{letter}
 					</button>
@@ -241,7 +228,7 @@
 					<button
 						class="filter-button small"
 						class:active={selectedLetters.includes(letter)}
-						on:click={() => toggleLetter(letter)}
+						onclick={() => toggleLetter(letter)}
 					>
 						{letter}
 					</button>
@@ -252,7 +239,7 @@
 					<span>Selected: {selectedLetters.join(', ')}</span>
 					<button
 						class="clear-button"
-						on:click={() => {
+						onclick={() => {
 							selectedLetters = [];
 							applyFilter({ type: 'all' });
 						}}
@@ -272,7 +259,7 @@
 						class="filter-button small"
 						class:active={activeSection === 'length' &&
 							$browseTabStore.currentFilter.value === length}
-						on:click={() => applyFilter({ type: 'length', value: length })}
+						onclick={() => applyFilter({ type: 'length', value: length })}
 					>
 						{length}
 					</button>
@@ -288,7 +275,7 @@
 					<button
 						class="filter-button tag"
 						class:active={activeSection === 'tag' && $browseTabStore.currentFilter.value === tag}
-						on:click={() => applyFilter({ type: 'tag', value: tag })}
+						onclick={() => applyFilter({ type: 'tag', value: tag })}
 					>
 						{tag}
 					</button>

@@ -8,8 +8,6 @@
 	import EnhancedLoadingOverlay from '$lib/components/MainWidget/loading/EnhancedLoadingOverlay.svelte';
 	import BackgroundCanvas from '$lib/components/Backgrounds/BackgroundCanvas.svelte';
 	import BackgroundProvider from '$lib/components/Backgrounds/BackgroundProvider.svelte';
-	import FirstTimeSetupDialog from '$lib/components/FirstTimeSetup/FirstTimeSetupDialog.svelte';
-	import FirstTimeSetupButton from '$lib/components/FirstTimeSetup/FirstTimeSetupButton.svelte';
 
 	// State Management
 	import { appActions } from '$lib/state/machines/app/app.actions';
@@ -52,8 +50,8 @@
 	const loadingMessage = $derived($loadingMessageStore as string);
 
 	// --- Event Handlers ---
-	function handleFullScreenToggle(event: CustomEvent<boolean>) {
-		appActions.setFullScreen(event.detail);
+	function handleFullScreenToggle(isFull: boolean) {
+		appActions.setFullScreen(isFull);
 		hapticFeedbackService.trigger('success');
 	}
 
@@ -87,16 +85,6 @@
 		appActions.retryInitialization();
 	}
 
-	// Reference to the first-time setup dialog component
-	let firstTimeSetupDialog = $state<{ showDialog: () => void } | null>(null);
-
-	// Function to show the first-time setup dialog
-	function showFirstTimeSetupDialog() {
-		if (firstTimeSetupDialog) {
-			firstTimeSetupDialog.showDialog();
-		}
-	}
-
 	// --- Lifecycle ---
 	onMount(() => {
 		// Force the state machine to transition
@@ -107,7 +95,7 @@
 </script>
 
 <div id="main-widget" style="height: {windowHeight}" class="main-widget">
-	<FullScreen on:toggleFullscreen={handleFullScreenToggle}>
+	<FullScreen ontoggleFullscreen={handleFullScreenToggle}>
 		<div class="background" class:blur-background={isInitializingApp || hasFailed}>
 			<BackgroundProvider
 				backgroundType={currentBackground || 'snowfall'}

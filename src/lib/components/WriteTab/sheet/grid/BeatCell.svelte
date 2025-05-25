@@ -1,27 +1,35 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-	import { selectionStore, selectedBeat } from '../../stores/selectionStore';
-	import { actStore } from '../../stores/actStore';
-	import { uiStore } from '../../stores/uiStore';
+	import { selectionState } from '../../stores/selectionStore';
+	import { actState } from '../../state/actState.svelte';
+	import { uiState } from '../../state/uiState.svelte';
 	import ConfirmationModal from '../../../shared/ConfirmationModal.svelte';
 	import type { Beat } from '../../models/Act';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 
-	export let row: number;
-	export let col: number;
-	export let beat: Beat | undefined = undefined;
-
-	const dispatch = createEventDispatcher();
+	// Props using Svelte 5 runes
+	const {
+		row,
+		col,
+		beat = undefined,
+		onclick
+	} = $props<{
+		row: number;
+		col: number;
+		beat?: Beat;
+		onclick?: (event: { row: number; col: number }) => void;
+	}>();
 
 	// Modal state
-	let isEraseBeatModalOpen = false;
+	let isEraseBeatModalOpen = $state(false);
 
-	// Determine if this cell is selected
-	$: isSelected = $selectedBeat?.row === row && $selectedBeat?.col === col;
-
-	// Determine if this cell has content
-	$: isFilled = beat?.is_filled || !!beat?.pictograph_data;
+	// Derived state using Svelte 5 runes
+	const isSelected = $derived(() => {
+		const selectedBeat = selectionState.selectedBeat();
+		return selectedBeat?.row === row && selectedBeat?.col === col;
+	});
+	const isFilled = $derived(beat?.is_filled || !!beat?.pictograph_data);
+	const beatNumber = $derived(beat?.beat_number || row * 8 + col + 1);
 
 	// Handle click events
 	function handleClick() {
@@ -30,7 +38,7 @@
 			hapticFeedbackService.trigger('selection');
 		}
 
-		dispatch('click', { row, col });
+		onclick?.({ row, col });
 	}
 
 	// Handle erase click
@@ -42,10 +50,10 @@
 			hapticFeedbackService.trigger('warning');
 		}
 
-		if ($uiStore.preferences.confirmDeletions) {
+		if (uiState.showConfirmDeletions) {
 			isEraseBeatModalOpen = true;
 		} else {
-			actStore.eraseBeat(row, col);
+			actState.eraseBeat(row, col);
 		}
 	}
 
@@ -56,12 +64,9 @@
 			hapticFeedbackService.trigger('warning');
 		}
 
-		actStore.eraseBeat(row, col);
+		actState.eraseBeat(row, col);
 		isEraseBeatModalOpen = false;
 	}
-
-	// Generate beat number for display
-	$: beatNumber = beat?.beat_number || row * 8 + col + 1;
 </script>
 
 <div
@@ -70,8 +75,8 @@
 	class:selected={isSelected}
 	data-row={row}
 	data-col={col}
-	on:click={handleClick}
-	on:keydown={(e) => e.key === 'Enter' && handleClick()}
+	onclick={handleClick}
+	onkeydown={(e) => e.key === 'Enter' && handleClick()}
 	tabindex="0"
 	role="button"
 	aria-label={`Beat ${beatNumber}`}
@@ -81,7 +86,7 @@
 			<!-- Placeholder for pictograph visualization -->
 			<div class="pictograph-placeholder">
 				<span class="beat-number">{beatNumber}</span>
-				<button class="erase-button" on:click={handleEraseClick} aria-label="Erase beat">
+				<button class="erase-button" onclick={handleEraseClick} aria-label="Erase beat">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="12"
@@ -116,8 +121,8 @@
 	confirmText="Erase"
 	cancelText="Cancel"
 	confirmButtonClass="danger"
-	on:confirm={confirmEraseBeat}
-	on:close={() => (isEraseBeatModalOpen = false)}
+	onconfirm={confirmEraseBeat}
+	onclose={() => (isEraseBeatModalOpen = false)}
 />
 
 <style>

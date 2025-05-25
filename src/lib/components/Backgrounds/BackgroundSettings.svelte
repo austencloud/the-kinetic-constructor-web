@@ -43,7 +43,7 @@
 		<select
 			id="background-select"
 			value={background.currentBackground}
-			on:change={handleBackgroundChange}
+			onchange={handleBackgroundChange}
 		>
 			{#each background.availableBackgrounds as bg}
 				<option value={bg}>{getDisplayName(bg)}</option>
@@ -53,7 +53,7 @@
 
 	<div class="settings-group">
 		<label for="quality-select">Quality:</label>
-		<select id="quality-select" value={background.quality} on:change={handleQualityChange}>
+		<select id="quality-select" value={background.quality} onchange={handleQualityChange}>
 			<option value="low">Low</option>
 			<option value="medium">Medium</option>
 			<option value="high">High</option>
@@ -66,7 +66,7 @@
 			id="visibility-toggle"
 			class="toggle-button"
 			class:active={background.isVisible}
-			on:click={handleToggleVisibility}
+			onclick={handleToggleVisibility}
 		>
 			{background.isVisible ? 'Visible' : 'Hidden'}
 		</button>

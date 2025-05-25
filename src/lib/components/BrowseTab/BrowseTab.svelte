@@ -110,8 +110,8 @@
 		<DeleteConfirmationDialog
 			type={deleteType}
 			sequenceName={$selectedSequenceData.sequence?.word || ''}
-			on:confirm={handleDeleteConfirm}
-			on:cancel={handleDeleteCancel}
+			onconfirm={handleDeleteConfirm}
+			oncancel={handleDeleteCancel}
 		/>
 	{/if}
 </div>

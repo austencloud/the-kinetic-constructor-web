@@ -2,25 +2,26 @@
 	import ActHeader from './header/ActHeader.svelte';
 	import BeatGrid from './grid/BeatGrid.svelte';
 	import CueScroll from './cue/CueScroll.svelte';
-	import { uiStore } from '../stores/uiStore';
+	import { uiState } from '../state/uiState.svelte';
 
 	// Reactive variable to store the current cell size
-	let currentCellSize = $uiStore.gridSettings.cellSize;
+	let currentCellSize = $state(uiState.cellSize);
 
 	// Handle synchronized scrolling between beat grid and cue scroll
-	function handleBeatGridScroll(event: CustomEvent) {
-		uiStore.updateBeatGridScroll(event.detail.scrollTop);
-		uiStore.updateCueScrollPosition(event.detail.scrollTop);
+	function handleBeatGridScroll(event: { scrollTop: number }) {
+		uiState.updateBeatGridScroll(event.scrollTop);
+		uiState.updateCueScrollPosition(event.scrollTop);
 	}
 
-	function handleCueScrollScroll(event: CustomEvent) {
-		uiStore.updateCueScrollPosition(event.detail.scrollTop);
-		uiStore.updateBeatGridScroll(event.detail.scrollTop);
+	function handleCueScrollScroll(event: { scrollTop: number }) {
+		uiState.updateCueScrollPosition(event.scrollTop);
+		uiState.updateBeatGridScroll(event.scrollTop);
 	}
 
 	// Handle grid resize events
-	function handleGridResize(event: CustomEvent) {
-		currentCellSize = event.detail.cellSize;
+	function handleGridResize(event: { cellSize: number; width?: number; height?: number }) {
+		currentCellSize = event.cellSize;
+		uiState.updateCellSize(event.cellSize);
 	}
 </script>
 
@@ -28,8 +29,8 @@
 	<ActHeader />
 
 	<div class="sheet-content" style="--current-cell-size: {currentCellSize}px;">
-		<CueScroll on:scroll={handleCueScrollScroll} />
-		<BeatGrid on:scroll={handleBeatGridScroll} on:resize={handleGridResize} />
+		<CueScroll onscroll={handleCueScrollScroll} />
+		<BeatGrid onscroll={handleBeatGridScroll} onresize={handleGridResize} />
 	</div>
 </div>
 
