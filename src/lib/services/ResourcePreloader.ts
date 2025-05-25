@@ -1,6 +1,7 @@
 // src/lib/services/ResourcePreloader.ts
 import { writable, get } from 'svelte/store';
 import type { Color, TKATurns } from '$lib/types/Types';
+import { PropType } from '$lib/types/Types';
 import { logger } from '$lib/core/logging';
 import { toAppError } from '$lib/types/ErrorTypes';
 
@@ -185,7 +186,7 @@ export class ResourcePreloader {
 	 * Preload all prop SVGs
 	 */
 	async preloadProps(): Promise<void> {
-		const propTypes = Object.values(PropTypeEnum);
+		const propTypes = Object.values(PropType);
 		const colors: Color[] = ['red', 'blue'];
 		const totalProps = propTypes.length * colors.length;
 

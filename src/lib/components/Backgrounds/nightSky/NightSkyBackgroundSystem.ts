@@ -290,52 +290,54 @@ export class NightSkyBackgroundSystem implements BackgroundSystem {
 			b.y = -b.radius;
 			b.x = Math.random() * dim.width;
 		}
-	}private drawCelestialBody(ctx: CanvasRenderingContext2D) {
+	}
+	private drawCelestialBody(ctx: CanvasRenderingContext2D) {
 		const b = this.celestialBody;
 		if (!b || !b.illumination) return;
-	
+
 		const { x, y, radius, color } = b;
 		const { fraction, phaseValue, angle } = b.illumination;
-		
+
 		ctx.save();
-		
+
 		// Step 1: First draw the base moon (fully illuminated)
 		ctx.fillStyle = color;
 		ctx.beginPath();
 		ctx.arc(x, y, radius, 0, Math.PI * 2);
 		ctx.fill();
-		
+
 		// Step 2: Create a clipping path for the moon
 		ctx.beginPath();
 		ctx.arc(x, y, radius, 0, Math.PI * 2);
 		ctx.clip();
-		
+
 		// Step 3: Calculate the terminator position (the line between light and dark)
 		// phaseValue: 0 = new, 0.25 = first quarter, 0.5 = full, 0.75 = last quarter, 1 = new
 		const terminatorX = x + radius * Math.cos(phaseValue * Math.PI * 2);
-		
+
 		// Step 4: Draw the shadow based on the moon phase
 		// Get the background color or a truly dark color for shadow
 		const shadowColor = this.a11y.highContrast ? '#000000' : '#050505';
 		ctx.fillStyle = shadowColor;
-		
+
 		// Determine which side to shade
 		const shadowStartX = phaseValue <= 0.5 ? x - radius : terminatorX;
-		const shadowWidth = phaseValue <= 0.5 ? terminatorX - shadowStartX : (x + radius) - terminatorX;
-		
+		const shadowWidth = phaseValue <= 0.5 ? terminatorX - shadowStartX : x + radius - terminatorX;
+
 		// Draw the shadow rectangle, which will be clipped to the moon circle
 		ctx.fillRect(shadowStartX, y - radius, shadowWidth, radius * 2);
-		
+
 		// Step 5: For crescent phases, adjust by drawing a second shadow
 		if (phaseValue < 0.25 || phaseValue > 0.75) {
 			// For crescent phases, we need to shade the other half too
 			const secondShadowStartX = phaseValue < 0.25 ? terminatorX : x - radius;
-			const secondShadowWidth = phaseValue < 0.25 ? (x + radius) - terminatorX : terminatorX - secondShadowStartX;
+			const secondShadowWidth =
+				phaseValue < 0.25 ? x + radius - terminatorX : terminatorX - secondShadowStartX;
 			ctx.fillRect(secondShadowStartX, y - radius, secondShadowWidth, radius * 2);
 		}
-		
+
 		ctx.restore();
-		
+
 		// Optional: Add a subtle outline
 		if (this.quality === 'high' && !this.a11y.highContrast) {
 			ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';

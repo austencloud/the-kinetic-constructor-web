@@ -2,16 +2,19 @@
 	import { fade, scale } from 'svelte/transition';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
+	import type { Snippet } from 'svelte';
 
 	// Props using Svelte 5 runes
 	const {
 		isOpen = false,
 		title = null,
-		onclose
+		onclose,
+		children
 	} = $props<{
 		isOpen?: boolean;
 		title?: string | null;
 		onclose?: () => void;
+		children: Snippet;
 	}>();
 
 	// Handle close action
@@ -115,7 +118,7 @@
 			<div class="fullscreen-body">
 				<!-- Wrap slot in a div to prevent clicks from closing the overlay -->
 				<div class="content-wrapper">
-					<slot />
+					{@render children?.()}
 				</div>
 			</div>
 		</div>

@@ -6,12 +6,75 @@
  */
 
 import type { PictographData } from '$lib/types/PictographData';
-import type { Letter } from '$lib/types/Letter';
+import { Letter } from '$lib/types/Letter';
 import type { Beat } from '$lib/types/Beat';
 import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer';
 import type { TKAPosition } from '$lib/types/TKAPosition';
 import type { VTGTiming, VTGDir } from '$lib/types/Types';
 import { getPictographTestDataLoader } from './pictographTestDataLoader';
+
+/**
+ * Create a mock Beat object for testing
+ */
+export function createMockBeat(beatNumber: number = 1, id?: string): Beat {
+	return {
+		id: id || `mock-beat-${beatNumber}`,
+		beatNumber,
+		filled: true,
+		pictographData: {
+			letter: Letter.A,
+			startPos: 'alpha1',
+			endPos: null,
+			timing: null,
+			direction: null,
+			gridMode: 'diamond',
+			gridData: null,
+			blueMotionData: null,
+			redMotionData: null,
+			redPropData: null,
+			bluePropData: null,
+			redArrowData: null,
+			blueArrowData: null,
+			grid: 'diamond',
+			motions: [],
+			redMotion: null,
+			blueMotion: null,
+			props: []
+		}
+	};
+}
+
+/**
+ * Create a mock start position Beat object for testing
+ */
+export function createMockStartPosition(id?: string): Beat {
+	return {
+		id: id || 'mock-start-position',
+		beatNumber: 0,
+		filled: true,
+		pictographData: {
+			letter: null,
+			startPos: 'alpha1',
+			endPos: null,
+			timing: null,
+			direction: null,
+			gridMode: 'diamond',
+			gridData: null,
+			blueMotionData: null,
+			redMotionData: null,
+			redPropData: null,
+			bluePropData: null,
+			redArrowData: null,
+			blueArrowData: null,
+			grid: 'diamond',
+			motions: [],
+			redMotion: null,
+			blueMotion: null,
+			props: [],
+			isStartPosition: true
+		}
+	};
+}
 
 /**
  * Sample CSV content for testing (subset of real data)

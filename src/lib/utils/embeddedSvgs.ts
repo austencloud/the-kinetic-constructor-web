@@ -5,7 +5,6 @@
 
 // Staff prop SVG embedded directly
 
-
 // Red staff SVG (with color applied)
 export const RED_STAFF_SVG = `<?xml version="1.0" encoding="utf-8"?>
 <svg version="1.1" id="staff" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
@@ -34,8 +33,8 @@ export const BLUE_STAFF_SVG = `<?xml version="1.0" encoding="utf-8"?>
 
 // Get the embedded SVG for a prop by type and color
 export function getEmbeddedPropSvg(propType: string, color: string): string | null {
-  if (propType === 'staff') {
-    return color === 'red' ? RED_STAFF_SVG : BLUE_STAFF_SVG;
-  }
-  return null;
+	if (propType === 'staff') {
+		return color === 'red' ? RED_STAFF_SVG : BLUE_STAFF_SVG;
+	}
+	return null;
 }

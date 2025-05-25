@@ -9,30 +9,30 @@ class UIState {
 	// Selection state
 	selectedSequence = $state<number | null>(null);
 	selectedBeat = $state<number | null>(null);
-	
+
 	// View state
 	isFullScreen = $state(false);
 	showGrid = $state(true);
 	showCues = $state(true);
-	
+
 	// Browser panel state
 	isBrowserPanelOpen = $state(true);
 	browserPanelWidth = $state(300);
-	
+
 	// Scroll positions
 	beatGridScroll = $state(0);
 	cueScrollPosition = $state(0);
-	
+
 	// Grid settings
 	cellSize = $state(80);
-	
+
 	// Modal states
 	showConfirmDeletions = $state(true);
-	
+
 	// Layout state
 	windowWidth = $state(browser ? window.innerWidth : 1024);
 	windowHeight = $state(browser ? window.innerHeight : 768);
-	
+
 	// Loading states
 	isLoading = $state(false);
 	loadingMessage = $state('');
@@ -50,7 +50,7 @@ class UIState {
 			this.windowWidth = window.innerWidth;
 			this.windowHeight = window.innerHeight;
 		};
-		
+
 		window.addEventListener('resize', updateSize);
 		updateSize(); // Set initial size
 	}
@@ -72,7 +72,7 @@ class UIState {
 
 	private saveToStorage() {
 		if (!browser) return;
-		
+
 		try {
 			const state = {
 				isBrowserPanelOpen: this.isBrowserPanelOpen,
@@ -85,35 +85,35 @@ class UIState {
 			console.error('Failed to save UI state:', error);
 		}
 	}
-	
+
 	// Selection actions
 	selectSequence(sequenceIndex: number | null) {
 		this.selectedSequence = sequenceIndex;
 		this.selectedBeat = null; // Clear beat selection when sequence changes
 	}
-	
+
 	selectBeat(beatIndex: number | null) {
 		this.selectedBeat = beatIndex;
 	}
-	
+
 	clearSelection() {
 		this.selectedSequence = null;
 		this.selectedBeat = null;
 	}
-	
+
 	// View actions
 	toggleFullScreen() {
 		this.isFullScreen = !this.isFullScreen;
 	}
-	
+
 	setFullScreen(fullScreen: boolean) {
 		this.isFullScreen = fullScreen;
 	}
-	
+
 	toggleGrid() {
 		this.showGrid = !this.showGrid;
 	}
-	
+
 	toggleCues() {
 		this.showCues = !this.showCues;
 	}
@@ -153,19 +153,19 @@ class UIState {
 		this.cellSize = size;
 		this.saveToStorage();
 	}
-	
+
 	// Modal actions
 	toggleConfirmDeletions(show?: boolean) {
 		this.showConfirmDeletions = show !== undefined ? show : !this.showConfirmDeletions;
 		this.saveToStorage();
 	}
-	
+
 	// Window size actions
 	updateWindowSize(width: number, height: number) {
 		this.windowWidth = width;
 		this.windowHeight = height;
 	}
-	
+
 	// Loading actions
 	setLoading(isLoading: boolean, message: string = '') {
 		this.isLoading = isLoading;

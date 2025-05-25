@@ -3,7 +3,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 import BeatFrameComposable from '../BeatFrameComposable.svelte';
-import { convertContainerBeatsToLegacyFormat, convertLegacyBeatToContainerFormat } from '../utils/beatFrameUtils';
+import {
+	convertContainerBeatsToLegacyFormat,
+	convertLegacyBeatToContainerFormat
+} from '../utils/beatFrameUtils';
 
 // Mock dependencies
 vi.mock('$lib/state/stores/sequence/SequenceContainer', () => ({
@@ -162,7 +165,7 @@ describe('BeatFrameComposable', () => {
 		const { container } = render(BeatFrameComposable, {
 			props: { isScrollable: true }
 		});
-		
+
 		const containerElement = container.querySelector('.beat-frame-container');
 		expect(containerElement?.classList.contains('scrollable-active')).toBe(true);
 	});
@@ -171,14 +174,14 @@ describe('BeatFrameComposable', () => {
 		const { container } = render(BeatFrameComposable, {
 			props: { fullScreenMode: true }
 		});
-		
+
 		const containerElement = container.querySelector('.beat-frame-container');
 		expect(containerElement?.classList.contains('fullscreen-mode')).toBe(true);
 	});
 
 	it('should call elementReceiver when provided', () => {
 		const elementReceiver = vi.fn();
-		
+
 		render(BeatFrameComposable, {
 			props: { elementReceiver }
 		});
@@ -226,7 +229,7 @@ describe('BeatFrame Integration', () => {
 		const { component } = render(BeatFrameComposable);
 
 		const result = component.testPersistence();
-		
+
 		expect(result).toHaveProperty('success');
 		expect(result).toHaveProperty('message');
 		expect(typeof result.success).toBe('boolean');
@@ -240,9 +243,9 @@ Object.defineProperty(window, 'localStorage', {
 		getItem: vi.fn(),
 		setItem: vi.fn(),
 		removeItem: vi.fn(),
-		clear: vi.fn(),
+		clear: vi.fn()
 	},
-	writable: true,
+	writable: true
 });
 
 // Mock crypto for ID generation

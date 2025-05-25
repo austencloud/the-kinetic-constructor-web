@@ -1,9 +1,6 @@
 // src/lib/services/ErrorHandlingService.ts
 
-import {
-	errorLogger,
-	ErrorSeverity as LogErrorSeverity
-} from '$lib/core/logging/error-logger';
+import { errorLogger, ErrorSeverity as LogErrorSeverity } from '$lib/core/logging/error-logger';
 
 // Re-export error severity for backward compatibility
 export enum ErrorSeverity {

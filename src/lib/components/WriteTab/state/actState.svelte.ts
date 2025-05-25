@@ -67,7 +67,7 @@ class ActState {
 	private addToHistory(act: Act) {
 		// Remove any history after current index (when undoing then making new changes)
 		this.history = this.history.slice(0, this.historyIndex + 1);
-		
+
 		// Add new state
 		this.history.push(structuredClone(act));
 		this.historyIndex = this.history.length - 1;
@@ -121,13 +121,15 @@ class ActState {
 	}
 
 	// Batch update multiple beats
-	updateBeats(updates: Array<{
-		sequenceIndex: number;
-		beatIndex: number;
-		beatData: Partial<Beat>;
-	}>) {
+	updateBeats(
+		updates: Array<{
+			sequenceIndex: number;
+			beatIndex: number;
+			beatData: Partial<Beat>;
+		}>
+	) {
 		const newAct = structuredClone(this.act);
-		
+
 		updates.forEach(({ sequenceIndex, beatIndex, beatData }) => {
 			if (newAct.sequences[sequenceIndex] && newAct.sequences[sequenceIndex].beats[beatIndex]) {
 				newAct.sequences[sequenceIndex].beats[beatIndex] = {
@@ -190,7 +192,7 @@ class ActState {
 		const newAct = structuredClone(this.act);
 		if (newAct.sequences[sequenceIndex]) {
 			// Reset all beats in the sequence
-			newAct.sequences[sequenceIndex].beats.forEach(beat => {
+			newAct.sequences[sequenceIndex].beats.forEach((beat) => {
 				beat.pictograph_data = null;
 				beat.step_label = '';
 				beat.is_filled = false;

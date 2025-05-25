@@ -17,21 +17,21 @@ const rootDir = path.resolve(__dirname, '..');
 
 // Colors for console output
 const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m'
+	reset: '\x1b[0m',
+	bright: '\x1b[1m',
+	dim: '\x1b[2m',
+	red: '\x1b[31m',
+	green: '\x1b[32m',
+	yellow: '\x1b[33m',
+	blue: '\x1b[34m',
+	cyan: '\x1b[36m'
 };
 
 // Directories to clean
 const directoriesToClean = [
-  path.join(rootDir, 'node_modules', '.vite'),
-  path.join(rootDir, '.svelte-kit'),
-  path.join(rootDir, 'node_modules', '.cache')
+	path.join(rootDir, 'node_modules', '.vite'),
+	path.join(rootDir, '.svelte-kit'),
+	path.join(rootDir, 'node_modules', '.cache')
 ];
 
 // Files to clean
@@ -44,46 +44,57 @@ console.log(`${colors.bright}${colors.cyan}Windows Vite Cache Fix${colors.reset}
 
 // Function to safely remove a directory on Windows
 function safeRemoveDirectory(dir) {
-  if (!fs.existsSync(dir)) {
-    console.log(`${colors.dim}Directory does not exist, skipping:${colors.reset} ${dir}`);
-    return;
-  }
+	if (!fs.existsSync(dir)) {
+		console.log(`${colors.dim}Directory does not exist, skipping:${colors.reset} ${dir}`);
+		return;
+	}
 
-  console.log(`${colors.yellow}Removing directory:${colors.reset} ${dir}`);
-  
-  try {
-    // First attempt: Use fs.rmSync with force option
-    fs.rmSync(dir, { recursive: true, force: true });
-    console.log(`${colors.green}✓ Successfully removed using Node.js fs.rmSync${colors.reset}`);
-    return;
-  } catch (error) {
-    console.log(`${colors.yellow}Standard removal failed, trying Windows-specific methods...${colors.reset}`);
-  }
+	console.log(`${colors.yellow}Removing directory:${colors.reset} ${dir}`);
 
-  if (isWindows) {
-    try {
-      // Second attempt: Use Windows rmdir command
-      const normalizedPath = dir.replace(/\//g, '\\');
-      execSync(`rmdir /s /q "${normalizedPath}"`, { stdio: 'ignore' });
-      console.log(`${colors.green}✓ Successfully removed using Windows rmdir command${colors.reset}`);
-      return;
-    } catch (error) {
-      console.log(`${colors.yellow}Windows rmdir failed, trying with timeout...${colors.reset}`);
-    }
+	try {
+		// First attempt: Use fs.rmSync with force option
+		fs.rmSync(dir, { recursive: true, force: true });
+		console.log(`${colors.green}✓ Successfully removed using Node.js fs.rmSync${colors.reset}`);
+		return;
+	} catch (error) {
+		console.log(
+			`${colors.yellow}Standard removal failed, trying Windows-specific methods...${colors.reset}`
+		);
+	}
 
-    try {
-      // Third attempt: Use del command with /F /Q options
-      const normalizedPath = dir.replace(/\//g, '\\');
-      execSync(`del /F /Q /S "${normalizedPath}\\*"`, { stdio: 'ignore' });
-      execSync(`rmdir /s /q "${normalizedPath}"`, { stdio: 'ignore' });
-      console.log(`${colors.green}✓ Successfully removed using Windows del and rmdir commands${colors.reset}`);
-      return;
-    } catch (error) {
-      console.error(`${colors.red}All removal methods failed for ${dir}:${colors.reset}`, error.message);
-    }
-  } else {
-    console.error(`${colors.red}Failed to remove ${dir} and no Windows-specific fallbacks available${colors.reset}`);
-  }
+	if (isWindows) {
+		try {
+			// Second attempt: Use Windows rmdir command
+			const normalizedPath = dir.replace(/\//g, '\\');
+			execSync(`rmdir /s /q "${normalizedPath}"`, { stdio: 'ignore' });
+			console.log(
+				`${colors.green}✓ Successfully removed using Windows rmdir command${colors.reset}`
+			);
+			return;
+		} catch (error) {
+			console.log(`${colors.yellow}Windows rmdir failed, trying with timeout...${colors.reset}`);
+		}
+
+		try {
+			// Third attempt: Use del command with /F /Q options
+			const normalizedPath = dir.replace(/\//g, '\\');
+			execSync(`del /F /Q /S "${normalizedPath}\\*"`, { stdio: 'ignore' });
+			execSync(`rmdir /s /q "${normalizedPath}"`, { stdio: 'ignore' });
+			console.log(
+				`${colors.green}✓ Successfully removed using Windows del and rmdir commands${colors.reset}`
+			);
+			return;
+		} catch (error) {
+			console.error(
+				`${colors.red}All removal methods failed for ${dir}:${colors.reset}`,
+				error.message
+			);
+		}
+	} else {
+		console.error(
+			`${colors.red}Failed to remove ${dir} and no Windows-specific fallbacks available${colors.reset}`
+		);
+	}
 }
 
 // Clear directories
@@ -91,39 +102,39 @@ directoriesToClean.forEach(safeRemoveDirectory);
 
 // Clear files using glob patterns
 filesToClean.forEach((filePattern) => {
-  const basePath = path.dirname(filePattern);
-  const fileName = path.basename(filePattern);
+	const basePath = path.dirname(filePattern);
+	const fileName = path.basename(filePattern);
 
-  if (fs.existsSync(basePath)) {
-    try {
-      const files = fs.readdirSync(basePath);
-      const matchingFiles = files.filter((file) => {
-        // Convert glob pattern to regex
-        const regexPattern = fileName.replace(/\./g, '\\.').replace(/\*/g, '.*');
-        return new RegExp(`^${regexPattern}$`).test(file);
-      });
+	if (fs.existsSync(basePath)) {
+		try {
+			const files = fs.readdirSync(basePath);
+			const matchingFiles = files.filter((file) => {
+				// Convert glob pattern to regex
+				const regexPattern = fileName.replace(/\./g, '\\.').replace(/\*/g, '.*');
+				return new RegExp(`^${regexPattern}$`).test(file);
+			});
 
-      matchingFiles.forEach((file) => {
-        const fullPath = path.join(basePath, file);
-        console.log(`${colors.yellow}Removing file:${colors.reset} ${fullPath}`);
-        fs.unlinkSync(fullPath);
-        console.log(`${colors.green}✓ Successfully removed${colors.reset}`);
-      });
-    } catch (error) {
-      console.error(`${colors.red}Error processing ${filePattern}:${colors.reset}`, error);
-    }
-  } else {
-    console.log(`${colors.dim}Directory does not exist, skipping:${colors.reset} ${basePath}`);
-  }
+			matchingFiles.forEach((file) => {
+				const fullPath = path.join(basePath, file);
+				console.log(`${colors.yellow}Removing file:${colors.reset} ${fullPath}`);
+				fs.unlinkSync(fullPath);
+				console.log(`${colors.green}✓ Successfully removed${colors.reset}`);
+			});
+		} catch (error) {
+			console.error(`${colors.red}Error processing ${filePattern}:${colors.reset}`, error);
+		}
+	} else {
+		console.log(`${colors.dim}Directory does not exist, skipping:${colors.reset} ${basePath}`);
+	}
 });
 
 // Clear npm cache for problematic packages
 try {
-  console.log(`${colors.yellow}Clearing npm cache for html2canvas...${colors.reset}`);
-  execSync('npm cache clean --force html2canvas', { stdio: 'inherit' });
-  console.log(`${colors.green}✓ Successfully cleared npm cache${colors.reset}`);
+	console.log(`${colors.yellow}Clearing npm cache for html2canvas...${colors.reset}`);
+	execSync('npm cache clean --force html2canvas', { stdio: 'inherit' });
+	console.log(`${colors.green}✓ Successfully cleared npm cache${colors.reset}`);
 } catch (error) {
-  console.error(`${colors.red}Error clearing npm cache:${colors.reset}`, error);
+	console.error(`${colors.red}Error clearing npm cache:${colors.reset}`, error);
 }
 
 console.log(`\n${colors.bright}${colors.green}Vite cache cleared successfully!${colors.reset}`);

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { setContext, onMount, onDestroy } from 'svelte';
+	import { setContext, onMount, onDestroy, type Snippet } from 'svelte';
 	import { writable, derived, type Readable } from 'svelte/store';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContextValue } from '../layoutContext';
 	import { getResponsiveLayout, getEnhancedDeviceType } from '../utils/layoutUtils';
@@ -7,6 +7,12 @@
 	import { resize } from '../actions/resize';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { optionPickerState } from '../optionPickerState.svelte';
+
+	interface Props {
+		children: Snippet;
+	}
+
+	let { children }: Props = $props();
 
 	// --- State Stores ---
 	// Use sensible defaults for window dimensions
@@ -179,7 +185,7 @@
 </script>
 
 <div class="layout-container" use:resize={debouncedHandleContainerResize}>
-	<slot />
+	{@render children?.()}
 </div>
 
 <style>

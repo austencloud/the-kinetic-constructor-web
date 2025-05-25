@@ -1,6 +1,6 @@
 /**
  * Sequence Machine Reactive State - Svelte 5 Runes
- * 
+ *
  * This file contains the reactive state for the sequence machine using Svelte 5 runes.
  * It can only be imported by .svelte or .svelte.ts files.
  */
@@ -38,7 +38,7 @@ export function initializeSequenceMachineState() {
  */
 export function setSelectedStartPosition(startPos: PictographData | null) {
 	selectedStartPosition = startPos;
-	
+
 	if (browser) {
 		try {
 			if (startPos) {

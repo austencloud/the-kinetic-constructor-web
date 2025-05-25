@@ -4,7 +4,6 @@
  * This module provides helper functions for rendering the Pictograph component.
  */
 
-
 /**
  * Determines if the pictograph should show a beat label
  *

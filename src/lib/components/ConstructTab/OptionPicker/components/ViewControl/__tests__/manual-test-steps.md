@@ -5,6 +5,7 @@ This document outlines the steps to manually test the ViewControl persistence fu
 ## Test Case 1: "Show All" Persistence
 
 ### Steps:
+
 1. Open the application in a browser
 2. Navigate to the OptionPicker component
 3. Click on the ViewControl dropdown
@@ -22,6 +23,7 @@ This document outlines the steps to manually test the ViewControl persistence fu
 ## Test Case 2: Filter Option Persistence
 
 ### Steps:
+
 1. Open the application in a browser
 2. Navigate to the OptionPicker component
 3. Click on the ViewControl dropdown
@@ -39,6 +41,7 @@ This document outlines the steps to manually test the ViewControl persistence fu
 ## Test Case 3: Switching Between Options
 
 ### Steps:
+
 1. Open the application in a browser
 2. Navigate to the OptionPicker component
 3. Click on the ViewControl dropdown
@@ -61,6 +64,7 @@ This document outlines the steps to manually test the ViewControl persistence fu
 ## Test Case 4: Console Logging
 
 ### Steps:
+
 1. Open the application in a browser
 2. Open the browser's developer tools console
 3. Navigate to the OptionPicker component
@@ -78,12 +82,14 @@ This document outlines the steps to manually test the ViewControl persistence fu
 If the tests fail, check the following:
 
 1. Look at the localStorage values in the browser's developer tools:
+
    - `viewControlMode` should be either "all" or "group"
    - `viewControlSortMethod` should contain the selected sort method when `viewControlMode` is "group"
 
 2. Check the console for any error messages or warnings
 
 3. Verify that the events are being dispatched correctly:
+
    - `option-picker-update` event
    - `update-view-control` event
 

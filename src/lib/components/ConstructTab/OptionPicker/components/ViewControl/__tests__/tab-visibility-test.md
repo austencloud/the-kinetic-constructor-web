@@ -5,6 +5,7 @@ This document outlines the steps to manually test the tab visibility functionali
 ## Test Case 1: "Show All" Option
 
 ### Steps:
+
 1. Open the application in a browser
 2. Navigate to the OptionPicker component
 3. Click on the ViewControl dropdown
@@ -20,6 +21,7 @@ This document outlines the steps to manually test the tab visibility functionali
 ## Test Case 2: Filter Option (Type)
 
 ### Steps:
+
 1. Open the application in a browser
 2. Navigate to the OptionPicker component
 3. Click on the ViewControl dropdown
@@ -35,6 +37,7 @@ This document outlines the steps to manually test the tab visibility functionali
 ## Test Case 3: Filter Option (End Position)
 
 ### Steps:
+
 1. Open the application in a browser
 2. Navigate to the OptionPicker component
 3. Click on the ViewControl dropdown
@@ -50,6 +53,7 @@ This document outlines the steps to manually test the tab visibility functionali
 ## Test Case 4: Filter Option (Reversals)
 
 ### Steps:
+
 1. Open the application in a browser
 2. Navigate to the OptionPicker component
 3. Click on the ViewControl dropdown
@@ -65,6 +69,7 @@ This document outlines the steps to manually test the tab visibility functionali
 ## Test Case 5: Switching Between Options
 
 ### Steps:
+
 1. Open the application in a browser
 2. Navigate to the OptionPicker component
 3. Click on the ViewControl dropdown
@@ -84,6 +89,7 @@ This document outlines the steps to manually test the tab visibility functionali
 ## Test Case 6: Page Refresh with "Show All"
 
 ### Steps:
+
 1. Open the application in a browser
 2. Navigate to the OptionPicker component
 3. Click on the ViewControl dropdown
@@ -101,6 +107,7 @@ This document outlines the steps to manually test the tab visibility functionali
 ## Test Case 7: Page Refresh with Filter Option
 
 ### Steps:
+
 1. Open the application in a browser
 2. Navigate to the OptionPicker component
 3. Click on the ViewControl dropdown
@@ -120,12 +127,14 @@ This document outlines the steps to manually test the tab visibility functionali
 If the tests fail, check the following:
 
 1. Look at the localStorage values in the browser's developer tools:
+
    - `viewControlMode` should be either "all" or "group"
    - `viewControlSortMethod` should contain the selected sort method when `viewControlMode` is "group"
 
 2. Check the console for any error messages or warnings
 
 3. Verify that the showTabs derived store is updating correctly:
+
    - When "Show All" is selected, it should return false
    - When a filter option is selected, it should return true
 

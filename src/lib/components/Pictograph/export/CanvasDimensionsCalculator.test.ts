@@ -8,6 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import { calculateDimensions } from './CanvasDimensionsCalculator';
 import type { EnhancedExportOptions } from './exportTypes';
+import { createMockBeat, createMockStartPosition } from '$lib/utils/tests/pictographTestHelpers';
 
 // Test data will be loaded from real CSV data
 

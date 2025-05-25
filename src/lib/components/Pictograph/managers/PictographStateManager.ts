@@ -13,6 +13,7 @@ import {
 } from '../utils/dataComparison';
 import { logger } from '$lib/core/logging';
 import { PictographService } from '../PictographService';
+import { type Writable, get } from 'svelte/store';
 
 /**
  * Creates a pictograph data state with the provided initial data

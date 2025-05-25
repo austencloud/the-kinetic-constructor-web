@@ -5,9 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { get } from 'svelte/store';
 import { gridStore } from '../stores/grid/grid.store';
-import {
-	selectIsGridLoaded
-} from '../stores/grid/grid.selectors';
+import { selectIsGridLoaded } from '../stores/grid/grid.selectors';
 import type { GridData, GridMode } from '$lib/components/objects/Grid/types';
 
 // Mock the parseGridCoordinates function

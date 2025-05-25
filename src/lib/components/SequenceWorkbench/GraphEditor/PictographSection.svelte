@@ -10,7 +10,4 @@
 	}>();
 </script>
 
-<Pictograph
-	pictographData={props.pictographData}
-	isStartPosition={props.isStartPosition}
-/>
+<Pictograph pictographData={props.pictographData} isStartPosition={props.isStartPosition} />

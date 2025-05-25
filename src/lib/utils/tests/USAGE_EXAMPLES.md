@@ -3,6 +3,7 @@
 ## Problem Solved
 
 **Before**: Confusing sequence length that included start position
+
 ```typescript
 // ❌ Confusing - what does length mean?
 const sequence = await createTestSequence([Letter.A, Letter.B], true);
@@ -10,6 +11,7 @@ console.log(sequence.length); // 3 - includes start position! 😕
 ```
 
 **After**: Clear separation of start position and sequence beats
+
 ```typescript
 // ✅ Clear - length is actual sequence length
 const sequence = await createTestSequence([Letter.A, Letter.B], true);
@@ -35,7 +37,7 @@ console.log(`Beat count: ${sequence.beats.length}`); // 3
 
 // Access individual beats
 sequence.beats.forEach((beat, index) => {
-  console.log(`Beat ${index + 1}: ${beat.pictographData.letter}`);
+	console.log(`Beat ${index + 1}: ${beat.pictographData.letter}`);
 });
 ```
 
@@ -51,12 +53,12 @@ console.log(`Beat count: ${sequenceWithStart.beats.length}`); // 2
 
 // Access start position
 if (sequenceWithStart.startPosition) {
-  console.log(`Start position: ${sequenceWithStart.startPosition.pictographData.startPos}`);
+	console.log(`Start position: ${sequenceWithStart.startPosition.pictographData.startPos}`);
 }
 
 // Access sequence beats
 sequenceWithStart.beats.forEach((beat, index) => {
-  console.log(`Beat ${index + 1}: ${beat.pictographData.letter}`);
+	console.log(`Beat ${index + 1}: ${beat.pictographData.letter}`);
 });
 ```
 
@@ -64,44 +66,44 @@ sequenceWithStart.beats.forEach((beat, index) => {
 
 ```typescript
 describe('My Component Tests', () => {
-  beforeEach(async () => {
-    await initializeTestDataLoader();
-  });
+	beforeEach(async () => {
+		await initializeTestDataLoader();
+	});
 
-  afterEach(() => {
-    resetTestData();
-  });
+	afterEach(() => {
+		resetTestData();
+	});
 
-  it('should handle sequence correctly', async () => {
-    const sequence = await createTestSequence([Letter.A, Letter.B, Letter.C]);
-    
-    // Test actual sequence length (no confusion!)
-    expect(sequence.length).toBe(3);
-    expect(sequence.beats.length).toBe(3);
-    expect(sequence.startPosition).toBe(null);
-    
-    // Test individual beats
-    expect(sequence.beats[0].pictographData.letter).toBe(Letter.A);
-    expect(sequence.beats[1].pictographData.letter).toBe(Letter.B);
-    expect(sequence.beats[2].pictographData.letter).toBe(Letter.C);
-  });
+	it('should handle sequence correctly', async () => {
+		const sequence = await createTestSequence([Letter.A, Letter.B, Letter.C]);
 
-  it('should handle start position separately', async () => {
-    const sequence = await createTestSequence([Letter.A, Letter.B], true);
-    
-    // Clear separation of concerns
-    expect(sequence.length).toBe(2); // Actual sequence length
-    expect(sequence.beats.length).toBe(2); // Same as sequence.length
-    expect(sequence.startPosition).toBeTruthy(); // Start position exists
-    
-    // Start position is separate
-    expect(sequence.startPosition?.pictographData.isStartPosition).toBe(true);
-    expect(sequence.startPosition?.id).toBe('start-position');
-    
-    // Beats are numbered correctly (1, 2, 3...)
-    expect(sequence.beats[0].beatNumber).toBe(1);
-    expect(sequence.beats[1].beatNumber).toBe(2);
-  });
+		// Test actual sequence length (no confusion!)
+		expect(sequence.length).toBe(3);
+		expect(sequence.beats.length).toBe(3);
+		expect(sequence.startPosition).toBe(null);
+
+		// Test individual beats
+		expect(sequence.beats[0].pictographData.letter).toBe(Letter.A);
+		expect(sequence.beats[1].pictographData.letter).toBe(Letter.B);
+		expect(sequence.beats[2].pictographData.letter).toBe(Letter.C);
+	});
+
+	it('should handle start position separately', async () => {
+		const sequence = await createTestSequence([Letter.A, Letter.B], true);
+
+		// Clear separation of concerns
+		expect(sequence.length).toBe(2); // Actual sequence length
+		expect(sequence.beats.length).toBe(2); // Same as sequence.length
+		expect(sequence.startPosition).toBeTruthy(); // Start position exists
+
+		// Start position is separate
+		expect(sequence.startPosition?.pictographData.isStartPosition).toBe(true);
+		expect(sequence.startPosition?.id).toBe('start-position');
+
+		// Beats are numbered correctly (1, 2, 3...)
+		expect(sequence.beats[0].beatNumber).toBe(1);
+		expect(sequence.beats[1].beatNumber).toBe(2);
+	});
 });
 ```
 

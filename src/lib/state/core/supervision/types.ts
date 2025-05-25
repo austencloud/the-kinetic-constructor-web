@@ -4,13 +4,7 @@
  * This file contains TypeScript interfaces and types for the supervision system.
  */
 
-import type {
-	AnyStateMachine,
-	Actor,
-	ActorOptions,
-	SnapshotFrom,
-	ActorRefFrom
-} from 'xstate';
+import type { AnyStateMachine, Actor, ActorOptions, SnapshotFrom, ActorRefFrom } from 'xstate';
 
 /**
  * Supervision strategy types that determine how to handle actor failures

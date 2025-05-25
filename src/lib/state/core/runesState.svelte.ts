@@ -20,7 +20,11 @@ import { stateRegistry } from './registry';
 export function createRunesState<T, A extends Record<string, Function>>(
 	id: string,
 	initialState: T,
-	actions: (setState: (newState: T) => void, updateState: (fn: (state: T) => T) => void, getState: () => T) => A,
+	actions: (
+		setState: (newState: T) => void,
+		updateState: (fn: (state: T) => T) => void,
+		getState: () => T
+	) => A,
 	options: {
 		persist?: boolean;
 		description?: string;
@@ -60,7 +64,7 @@ export function createRunesState<T, A extends Record<string, Function>>(
 
 	const persistState = (value: T) => {
 		if (!storage || !browser) return;
-		
+
 		try {
 			storage.setItem(id, JSON.stringify(value));
 		} catch (error) {
@@ -70,7 +74,7 @@ export function createRunesState<T, A extends Record<string, Function>>(
 
 	const loadPersistedState = () => {
 		if (!storage || !browser) return;
-		
+
 		try {
 			const persisted = storage.getItem(id);
 			if (persisted) {
@@ -89,7 +93,9 @@ export function createRunesState<T, A extends Record<string, Function>>(
 
 	// Combine everything into a single state object
 	const stateObject = {
-		get state() { return state; },
+		get state() {
+			return state;
+		},
 		getSnapshot: getState, // For compatibility with XState and other libraries
 		...stateActions,
 		...resetAction
@@ -127,7 +133,9 @@ export function createDerivedState<T>(
 	const derivedValue = $derived(deriveFn());
 
 	const derivedObject = {
-		get value() { return derivedValue; },
+		get value() {
+			return derivedValue;
+		},
 		getSnapshot: () => derivedValue
 	};
 
@@ -213,7 +221,9 @@ export function createPersistentRunesState<T>(
 
 	// Create the state object
 	const persistentState = {
-		get state() { return state; },
+		get state() {
+			return state;
+		},
 		set: setState,
 		update: updateState,
 		getSnapshot: getState,
@@ -243,9 +253,15 @@ export function createSimpleState<T>(initialValue: T) {
 	let state = $state(initialValue);
 
 	return {
-		get value() { return state; },
-		set value(newValue: T) { state = newValue; },
-		update: (fn: (current: T) => T) => { state = fn(state); },
+		get value() {
+			return state;
+		},
+		set value(newValue: T) {
+			state = newValue;
+		},
+		update: (fn: (current: T) => T) => {
+			state = fn(state);
+		},
 		getSnapshot: () => state
 	};
 }
@@ -264,7 +280,7 @@ export function createReactiveEffect(
 		// Track specific dependencies
 		$effect(() => {
 			// Access all dependencies to track them
-			dependencies.forEach(dep => dep());
+			dependencies.forEach((dep) => dep());
 			return effectFn();
 		});
 	} else {

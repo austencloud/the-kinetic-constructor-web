@@ -1,11 +1,13 @@
 # Testing & Validation Guide: Svelte 5 Runes Migration
 
 ## Overview
+
 This guide provides comprehensive testing procedures to validate the migration from legacy Svelte stores to Svelte 5 runes-based state management.
 
 ## Pre-Testing Checklist
 
 ### 1. Build Validation
+
 ```bash
 # Ensure TypeScript compilation succeeds
 npm run check
@@ -18,7 +20,9 @@ grep -r "from 'svelte/store'" src/ --include="*.svelte" --include="*.ts"
 ```
 
 ### 2. Import Validation
+
 Verify all components are importing from the new state files:
+
 - `uiState.svelte.ts` instead of `uiStore.ts`
 - `selectionState.svelte.ts` instead of `selectionStore.ts`
 - `actState.svelte.ts` instead of `actStore.ts`
@@ -30,6 +34,7 @@ Verify all components are importing from the new state files:
 ### 1. Developer Tools Testing
 
 #### SequenceInspector Component
+
 - [ ] **Toggle functionality**: Inspector opens/closes correctly
 - [ ] **JSON generation**: Sequence data displays as formatted JSON
 - [ ] **Copy functionality**: Copy button works and shows feedback states
@@ -37,6 +42,7 @@ Verify all components are importing from the new state files:
 - [ ] **State persistence**: Inspector state resets properly on close
 
 #### MusicPlayer Component
+
 - [ ] **Play/pause**: Audio controls work correctly
 - [ ] **Progress tracking**: Time display updates during playback
 - [ ] **Volume control**: Volume slider affects audio output
@@ -46,6 +52,7 @@ Verify all components are importing from the new state files:
 ### 2. Browse Tab Testing
 
 #### State Management
+
 - [ ] **Filtering**: All filter types work (favorites, tags, difficulty, etc.)
 - [ ] **Sorting**: Alphabetical, difficulty, date, and length sorting
 - [ ] **Selection**: Sequence and variation selection updates correctly
@@ -53,6 +60,7 @@ Verify all components are importing from the new state files:
 - [ ] **Error handling**: Failed API calls show appropriate errors
 
 #### Data Operations
+
 - [ ] **Favorite toggle**: Marking/unmarking favorites works
 - [ ] **Deletion**: Sequence and variation deletion with rollback on error
 - [ ] **Loading states**: Loading indicators show during async operations
@@ -61,12 +69,14 @@ Verify all components are importing from the new state files:
 ### 3. Pictograph State Testing
 
 #### Component Loading
+
 - [ ] **Status transitions**: Proper state transitions (idle → loading → complete)
 - [ ] **Progress tracking**: Load progress updates correctly
 - [ ] **Error handling**: Component load failures show errors
 - [ ] **Data integrity**: Pictograph data maintains structure
 
 #### State Synchronization
+
 - [ ] **Grid data**: Grid updates reflect in state
 - [ ] **Prop data**: Red/blue prop data updates correctly
 - [ ] **Arrow data**: Arrow data updates properly
@@ -75,6 +85,7 @@ Verify all components are importing from the new state files:
 ### 4. WriteTab Testing
 
 #### UI State
+
 - [ ] **Panel toggle**: Browser panel opens/closes correctly
 - [ ] **Panel resize**: Width changes persist and respect constraints
 - [ ] **Scroll sync**: Beat grid and cue scroll synchronization
@@ -82,6 +93,7 @@ Verify all components are importing from the new state files:
 - [ ] **Preferences**: Confirmation dialog settings persist
 
 #### Selection State
+
 - [ ] **Beat selection**: Single beat selection works
 - [ ] **Multi-selection**: Multi-select with modifier keys
 - [ ] **Selection clearing**: Clear selection functionality
@@ -89,6 +101,7 @@ Verify all components are importing from the new state files:
 - [ ] **Cross-component sync**: Selection state consistent across components
 
 #### Act State
+
 - [ ] **Auto-save**: Changes automatically save to localStorage
 - [ ] **Undo/redo**: History management works correctly
 - [ ] **Beat operations**: Add, update, delete beats
@@ -98,6 +111,7 @@ Verify all components are importing from the new state files:
 ### 5. Sequence State Testing
 
 #### Beat Management
+
 - [ ] **Add beats**: Single and multiple beat addition
 - [ ] **Remove beats**: Beat deletion and cleanup
 - [ ] **Update beats**: Beat property modifications
@@ -105,6 +119,7 @@ Verify all components are importing from the new state files:
 - [ ] **Current beat**: Current beat index management
 
 #### Persistence
+
 - [ ] **Auto-save**: Modified sequences save automatically
 - [ ] **Load on startup**: Sequences restore from localStorage
 - [ ] **Data integrity**: Complex beat data preserves structure
@@ -113,6 +128,7 @@ Verify all components are importing from the new state files:
 ## Performance Testing
 
 ### 1. Memory Usage
+
 ```javascript
 // Monitor memory usage in browser dev tools
 // Check for memory leaks during state updates
@@ -120,12 +136,14 @@ Verify all components are importing from the new state files:
 ```
 
 ### 2. Reactivity Performance
+
 - [ ] **Large datasets**: Test with 100+ beats/sequences
 - [ ] **Rapid updates**: Fast consecutive state changes
 - [ ] **Derived state efficiency**: Complex derived calculations
 - [ ] **Effect cleanup**: No infinite loops or excessive re-runs
 
 ### 3. Bundle Size Analysis
+
 ```bash
 # Compare bundle sizes before/after migration
 npm run build
@@ -136,12 +154,14 @@ npm run build
 ## Integration Testing
 
 ### 1. Cross-Component Communication
+
 - [ ] **State sharing**: Multiple components accessing same state
 - [ ] **Event propagation**: Custom events work correctly
 - [ ] **Derived state consistency**: Derived values consistent across components
 - [ ] **Action coordination**: Actions from different components don't conflict
 
 ### 2. Persistence Integration
+
 - [ ] **localStorage sync**: All persistent states save/load correctly
 - [ ] **Storage quotas**: Large data sets handle storage limits
 - [ ] **Concurrent tabs**: Multiple tabs don't corrupt state
@@ -150,12 +170,14 @@ npm run build
 ## Regression Testing
 
 ### 1. Existing Functionality
+
 - [ ] **All features work**: No functionality lost in migration
 - [ ] **UI behavior**: Visual behavior identical to before
 - [ ] **Data flow**: Information flows correctly between components
 - [ ] **Error states**: Error handling maintains previous behavior
 
 ### 2. Edge Cases
+
 - [ ] **Empty states**: Components handle empty data correctly
 - [ ] **Invalid data**: Malformed data doesn't break components
 - [ ] **Network failures**: Offline scenarios work properly
@@ -164,21 +186,23 @@ npm run build
 ## Automated Testing
 
 ### 1. Unit Tests
+
 ```typescript
 // Example test structure
 import { describe, it, expect } from 'vitest';
 import { uiActions, uiState } from './uiState.svelte';
 
 describe('UI State', () => {
-  it('should toggle browser panel', () => {
-    const initialState = uiState.isBrowserPanelOpen;
-    uiActions.toggleBrowserPanel();
-    expect(uiState.isBrowserPanelOpen).toBe(!initialState);
-  });
+	it('should toggle browser panel', () => {
+		const initialState = uiState.isBrowserPanelOpen;
+		uiActions.toggleBrowserPanel();
+		expect(uiState.isBrowserPanelOpen).toBe(!initialState);
+	});
 });
 ```
 
 ### 2. Integration Tests
+
 ```typescript
 // Test cross-component state sharing
 // Test persistence mechanisms
@@ -188,6 +212,7 @@ describe('UI State', () => {
 ## Validation Checklist
 
 ### ✅ Migration Complete When:
+
 - [ ] All legacy store imports removed
 - [ ] TypeScript compilation succeeds
 - [ ] All functional tests pass
@@ -200,6 +225,7 @@ describe('UI State', () => {
 - [ ] Documentation updated
 
 ### 🚨 Rollback Triggers:
+
 - Critical functionality broken
 - Significant performance regression
 - Data corruption or loss

@@ -12,8 +12,6 @@ import {
 	type BackgroundState
 } from './backgroundAdapter';
 
-
-
 // Re-export the type with the old name for backward compatibility
 export type BackgroundStoreState = BackgroundState;
 

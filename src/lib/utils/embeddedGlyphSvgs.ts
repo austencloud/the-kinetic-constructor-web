@@ -48,14 +48,14 @@ export const LETTER_C_SVG = `<svg xmlns="http://www.w3.org/2000/svg" version="1.
 
 // Function to get embedded glyph SVG by letter
 export function getEmbeddedGlyphSvg(letter: string): string | null {
-  switch (letter.toUpperCase()) {
-    case 'A':
-      return LETTER_A_SVG;
-    case 'B':
-      return LETTER_B_SVG;
-    case 'C':
-      return LETTER_C_SVG;
-    default:
-      return null;
-  }
+	switch (letter.toUpperCase()) {
+		case 'A':
+			return LETTER_A_SVG;
+		case 'B':
+			return LETTER_B_SVG;
+		case 'C':
+			return LETTER_C_SVG;
+		default:
+			return null;
+	}
 }

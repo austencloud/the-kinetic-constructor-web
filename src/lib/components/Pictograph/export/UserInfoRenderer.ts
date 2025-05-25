@@ -5,10 +5,7 @@
  */
 
 import type { CanvasDimensions, EnhancedExportOptions } from './exportTypes';
-import {
-	calculateLayoutAwareFontSize,
-	type FontOptions
-} from './FontSizeHelper';
+import { calculateLayoutAwareFontSize, type FontOptions } from './FontSizeHelper';
 
 /**
  * Draws user info at the bottom of the canvas with responsive sizing

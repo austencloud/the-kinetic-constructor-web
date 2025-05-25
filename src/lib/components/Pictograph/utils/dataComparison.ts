@@ -12,12 +12,7 @@ import { logger } from '$lib/core/logging';
  * @param depth Current recursion depth
  * @returns True if the values are equal, false otherwise
  */
-export function safeCompare<T>(
-	a: T,
-	b: T,
-	visited = new WeakSet(),
-	depth = 0
-): boolean {
+export function safeCompare<T>(a: T, b: T, visited = new WeakSet(), depth = 0): boolean {
 	// Prevent infinite recursion
 	const MAX_DEPTH = 10;
 	if (depth > MAX_DEPTH) {
@@ -112,45 +107,45 @@ export function safeCompare<T>(
 export function simpleCompare<T>(a: T, b: T): boolean {
 	// Reference equality
 	if (a === b) return true;
-	
+
 	// Handle null/undefined
 	if (a == null && b == null) return true;
 	if (a == null || b == null) return false;
-	
+
 	// For primitives
 	if (typeof a !== 'object' && typeof b !== 'object') {
 		return String(a) === String(b);
 	}
-	
+
 	// For objects, only do shallow comparison of key properties
 	if (typeof a === 'object' && typeof b === 'object') {
 		// Arrays
 		if (Array.isArray(a) && Array.isArray(b)) {
 			return a.length === b.length && a.every((val, i) => val === b[i]);
 		}
-		
+
 		// Don't compare arrays with non-arrays
 		if (Array.isArray(a) || Array.isArray(b)) return false;
-		
+
 		// Objects - only compare enumerable properties at top level
 		const aKeys = Object.keys(a || {});
 		const bKeys = Object.keys(b || {});
-		
+
 		if (aKeys.length !== bKeys.length) return false;
-		
-		return aKeys.every(key => {
+
+		return aKeys.every((key) => {
 			const aVal = (a as any)[key];
 			const bVal = (b as any)[key];
-			
+
 			// Skip functions and Svelte internals
 			if (typeof aVal === 'function' || key.startsWith('$')) {
 				return true;
 			}
-			
+
 			return aVal === bVal;
 		});
 	}
-	
+
 	return false;
 }
 

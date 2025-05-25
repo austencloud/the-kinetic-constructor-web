@@ -24,28 +24,28 @@ The system consists of three main components:
 ### Basic Usage
 
 ```typescript
-import { 
-  initializeTestDataLoader, 
-  getTestPictographByLetter,
-  resetTestData 
+import {
+	initializeTestDataLoader,
+	getTestPictographByLetter,
+	resetTestData
 } from '$lib/utils/tests/pictographTestHelpers';
 import { Letter } from '$lib/types/Letter';
 
 describe('My Test Suite', () => {
-  beforeEach(async () => {
-    await initializeTestDataLoader();
-  });
+	beforeEach(async () => {
+		await initializeTestDataLoader();
+	});
 
-  afterEach(() => {
-    resetTestData();
-  });
+	afterEach(() => {
+		resetTestData();
+	});
 
-  it('should work with real pictograph data', async () => {
-    const pictographA = await getTestPictographByLetter(Letter.A);
-    expect(pictographA).toBeTruthy();
-    expect(pictographA?.letter).toBe(Letter.A);
-    // Use real data instead of hardcoded mocks
-  });
+	it('should work with real pictograph data', async () => {
+		const pictographA = await getTestPictographByLetter(Letter.A);
+		expect(pictographA).toBeTruthy();
+		expect(pictographA?.letter).toBe(Letter.A);
+		// Use real data instead of hardcoded mocks
+	});
 });
 ```
 
@@ -78,9 +78,9 @@ const alpha3StartPictographs = loader.getByStartPosition('alpha3');
 
 // Complex filtering
 const specificPictographs = loader.getByMultipleCriteria({
-  timing: 'split',
-  direction: 'same',
-  redMotionType: 'pro'
+	timing: 'split',
+	direction: 'same',
+	redMotionType: 'pro'
 });
 ```
 
@@ -91,28 +91,28 @@ const specificPictographs = loader.getByMultipleCriteria({
 ```typescript
 // ❌ Old approach - hardcoded mock data
 const mockPictographData: PictographData = {
-  letter: Letter.A,
-  startPos: 'alpha3' as TKAPosition,
-  endPos: 'alpha5' as TKAPosition,
-  timing: 'split' as VTGTiming,
-  direction: 'same' as VTGDir,
-  gridMode: 'diamond',
-  redMotionData: {
-    id: 'red-motion-test',
-    motionType: 'pro',
-    startOri: 'in',
-    endOri: 'in',
-    propRotDir: 'cw',
-    startLoc: 'e',
-    endLoc: 's',
-    turns: 0,
-    color: 'red',
-    leadState: null,
-    prefloatMotionType: null,
-    prefloatPropRotDir: null,
-    handRotDir: 'cw_shift' // Hardcoded - may be incorrect!
-  },
-  // ... more hardcoded data
+	letter: Letter.A,
+	startPos: 'alpha3' as TKAPosition,
+	endPos: 'alpha5' as TKAPosition,
+	timing: 'split' as VTGTiming,
+	direction: 'same' as VTGDir,
+	gridMode: 'diamond',
+	redMotionData: {
+		id: 'red-motion-test',
+		motionType: 'pro',
+		startOri: 'in',
+		endOri: 'in',
+		propRotDir: 'cw',
+		startLoc: 'e',
+		endLoc: 's',
+		turns: 0,
+		color: 'red',
+		leadState: null,
+		prefloatMotionType: null,
+		prefloatPropRotDir: null,
+		handRotDir: 'cw_shift' // Hardcoded - may be incorrect!
+	}
+	// ... more hardcoded data
 };
 ```
 
@@ -121,26 +121,26 @@ const mockPictographData: PictographData = {
 ```typescript
 // ✅ New approach - real data from CSV
 describe('My Test Suite', () => {
-  let testPictographData: PictographData;
+	let testPictographData: PictographData;
 
-  beforeEach(async () => {
-    await initializeTestDataLoader();
-    const pictographA = await getTestPictographByLetter(Letter.A);
-    if (!pictographA) {
-      throw new Error('Failed to load test pictograph data for Letter A');
-    }
-    testPictographData = pictographA; // Real data with correct hand rotation!
-  });
+	beforeEach(async () => {
+		await initializeTestDataLoader();
+		const pictographA = await getTestPictographByLetter(Letter.A);
+		if (!pictographA) {
+			throw new Error('Failed to load test pictograph data for Letter A');
+		}
+		testPictographData = pictographA; // Real data with correct hand rotation!
+	});
 
-  afterEach(() => {
-    resetTestData();
-  });
+	afterEach(() => {
+		resetTestData();
+	});
 
-  it('should work with real data', () => {
-    // Use testPictographData - it's real and accurate
-    expect(testPictographData.letter).toBe(Letter.A);
-    expect(testPictographData.redMotionData?.handRotDir).toBeTruthy();
-  });
+	it('should work with real data', () => {
+		// Use testPictographData - it's real and accurate
+		expect(testPictographData.letter).toBe(Letter.A);
+		expect(testPictographData.redMotionData?.handRotDir).toBeTruthy();
+	});
 });
 ```
 

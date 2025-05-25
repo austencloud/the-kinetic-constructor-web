@@ -9,15 +9,18 @@ We've made several targeted changes to fix the infinite loop issues in the appli
 ### 1. Arrow.svelte
 
 1. **Removed Reactive Effects**
+
    - Replaced multiple `safeEffect` calls with direct initialization
    - Initialized managers and state on component creation instead of using effects
    - Used local variables to avoid reactivity issues
 
 2. **Simplified Transform Calculation**
+
    - Calculated transform immediately instead of in a reactive effect
    - Applied transformations in a non-reactive way
 
 3. **Improved onMount Logic**
+
    - Simplified the onMount function to load SVGs immediately
    - Used local copies of data to avoid reactivity issues
    - Added flags to prevent multiple loads
@@ -31,12 +34,14 @@ We've made several targeted changes to fix the infinite loop issues in the appli
 ### 2. Pictograph.svelte
 
 1. **Enhanced Grid Loading**
+
    - Made local copies of data to avoid reactivity issues
    - Used longer timeouts to break reactivity chains
    - Added additional timeouts for component creation
    - Improved state tracking to prevent duplicate processing
 
 2. **Improved Component Creation**
+
    - Removed nested untrack calls that were causing issues
    - Used longer timeouts to break reactivity chains
    - Added sequential timeouts for multi-step operations
@@ -52,45 +57,49 @@ We've made several targeted changes to fix the infinite loop issues in the appli
 The key techniques used to fix the infinite loops were:
 
 1. **Local Variables**: Using local copies of reactive state to avoid reactivity issues
+
    ```javascript
    const localArrowData = effectiveArrowData;
    ```
 
 2. **Longer Timeouts**: Using longer timeouts to break reactivity chains
+
    ```javascript
    setTimeout(() => {
-     // Code that updates state
+   	// Code that updates state
    }, 100); // Increased from 10ms to 100ms
    ```
 
 3. **Sequential Timeouts**: Using sequential timeouts for multi-step operations
+
    ```javascript
    setTimeout(() => {
-     // First step
-     setTimeout(() => {
-       // Second step
-     }, 50);
+   	// First step
+   	setTimeout(() => {
+   		// Second step
+   	}, 50);
    }, 100);
    ```
 
 4. **Initialization vs. Effects**: Initializing state on component creation instead of using effects
+
    ```javascript
    // BEFORE
    safeEffect(() => {
-     mirrorManager = effectiveArrowData ? new ArrowSvgMirrorManager(effectiveArrowData) : null;
+   	mirrorManager = effectiveArrowData ? new ArrowSvgMirrorManager(effectiveArrowData) : null;
    });
 
    // AFTER
    if (effectiveArrowData) {
-     mirrorManager = new ArrowSvgMirrorManager(effectiveArrowData);
+   	mirrorManager = new ArrowSvgMirrorManager(effectiveArrowData);
    }
    ```
 
 5. **State Flags**: Using flags to prevent duplicate processing
    ```javascript
    if (isProcessingGrid) {
-     console.log('[DEBUG] Already processing grid, skipping');
-     return;
+   	console.log('[DEBUG] Already processing grid, skipping');
+   	return;
    }
    isProcessingGrid = true;
    ```
