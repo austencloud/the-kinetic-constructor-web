@@ -31,18 +31,12 @@
 	let redPulseEffect = $state(false);
 
 	// Import the sequence container to check if this beat is selected
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 
-	// Update isSelected when the selection changes
+	// Update isSelected when the selection changes - NO STORES!
 	$effect(() => {
-		// Create a subscription to the sequenceContainer state
-		const unsubscribe = sequenceContainer.subscribe((state) => {
-			// Update the selection state immediately when it changes
-			isSelected = state.selectedBeatIds.includes('start-position');
-		});
-
-		// Clean up the subscription when the component is destroyed or the effect is re-run
-		return unsubscribe;
+		// Watch the sequenceContainer state directly
+		isSelected = sequenceContainer.state.selectedBeatIds.includes('start-position');
 	});
 
 	// Accessibility

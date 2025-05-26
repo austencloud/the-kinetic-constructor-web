@@ -6,7 +6,7 @@
  */
 
 import { browser } from '$app/environment';
-import { stateRegistry } from './registry';
+import { runesStateRegistry } from './runesRegistry.svelte';
 
 /**
  * Create a reactive state with actions using Svelte 5 runes
@@ -103,7 +103,8 @@ export function createRunesState<T, A extends Record<string, Function>>(
 
 	// Register with the state registry (simplified for runes)
 	try {
-		stateRegistry.registerStore(id, stateObject as any, {
+		runesStateRegistry.register(id, stateObject as any, {
+			type: 'state',
 			persist: options.persist,
 			description: options.description
 		});
@@ -141,7 +142,8 @@ export function createDerivedState<T>(
 
 	// Register with the state registry
 	try {
-		stateRegistry.registerStore(id, derivedObject as any, {
+		runesStateRegistry.register(id, derivedObject as any, {
+			type: 'state',
 			persist: false, // Derived values should not be persisted
 			description: options.description
 		});
@@ -232,7 +234,8 @@ export function createPersistentRunesState<T>(
 
 	// Register with the state registry
 	try {
-		stateRegistry.registerStore(id, persistentState as any, {
+		runesStateRegistry.register(id, persistentState as any, {
+			type: 'state',
 			persist: true,
 			description: options.description
 		});

@@ -5,7 +5,7 @@
 	import type { PictographService } from '../PictographService';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { untrack } from 'svelte';
-	import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
+	import { svgPreloadingService } from '$lib/services/SvgPreloadingService.svelte';
 
 	const props = $props<{
 		service: PictographService | null;

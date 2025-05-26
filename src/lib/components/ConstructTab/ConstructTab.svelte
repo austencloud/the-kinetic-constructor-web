@@ -1,9 +1,9 @@
 <!-- src/lib/components/ConstructTab/ConstructTab.svelte -->
 <script lang="ts">
 	import SharedWorkbench from '$lib/components/SequenceWorkbench/SharedWorkbench.svelte';
-	import { setActiveTab } from '$lib/state/stores/workbenchStore.svelte';
+	import { setActiveTab } from '$lib/state/stores/workbenchState.svelte';
 	import type { ButtonDefinition } from '$lib/components/SequenceWorkbench/ButtonPanel/types';
-	import { uiStore } from '$lib/state/stores/uiStore';
+	import { uiStore } from '$lib/state/stores/ui/globalUIState.svelte';
 
 	interface Props {
 		isGenerateMode?: boolean;

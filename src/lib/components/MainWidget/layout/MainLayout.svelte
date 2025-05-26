@@ -7,22 +7,32 @@
 	import { appService } from '$lib/state/machines/app/app.machine';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut, quintOut } from 'svelte/easing';
-	import { uiStore } from '$lib/state/stores/uiStore';
+	// No need for uiStore import for this functionality
 
 	const isSettingsOpenStore = useSelector(appService, (state) => state.context.isSettingsOpen);
 	const isSettingsDialogOpen = $derived($isSettingsOpenStore);
 
 	let buttonSize = $state(50);
+	let windowWidth = $state(0);
 
+	// Track window width reactively
 	$effect(() => {
-		if ($uiStore && $uiStore.windowWidth) {
-			buttonSize = Math.max(30, Math.min(50, $uiStore.windowWidth / 12));
+		if (typeof window !== 'undefined') {
+			const updateSize = () => {
+				windowWidth = window.innerWidth;
+				buttonSize = Math.max(30, Math.min(50, windowWidth / 12));
+			};
+
+			updateSize();
+			window.addEventListener('resize', updateSize);
+
+			return () => window.removeEventListener('resize', updateSize);
 		}
 	});
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
-			buttonSize = Math.max(30, Math.min(50, window.innerWidth / 12));
+			// Button size is now handled by the reactive effect above
 
 			// Ensure settings dialog is closed on page load
 			if (isSettingsDialogOpen) {

@@ -2,7 +2,7 @@
 import type { PictographData } from './mocks';
 import { DIAMOND, sequenceContainer } from './mocks';
 import { browser } from '$app/environment';
-import { turnsStore } from '$lib/state/stores/turnsStore.svelte';
+import { turnsStore } from '$lib/state/stores/turnsState.svelte';
 import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 
 // Define the type for the sequence container
@@ -379,20 +379,26 @@ export function createBeatDataHandler(
 	}
 
 	/**
-	 * Sets up a subscription to the sequence container to update pictograph data when selection changes
-	 * @returns Cleanup function to unsubscribe
+	 * Sets up a polling mechanism to update pictograph data when selection changes
+	 * @returns Cleanup function
 	 */
 	function setupSequenceSubscription() {
 		// Load selected beat data initially
 		loadSelectedBeatData();
 
-		// Subscribe to selection changes
-		const unsubscribe = sequenceContainer.subscribe(() => {
-			loadSelectedBeatData();
-		});
+		// Use polling to check for changes since we can't use runes in .ts files
+		let lastSelectedBeatIds = JSON.stringify(sequenceContainer.state.selectedBeatIds);
+
+		const intervalId = setInterval(() => {
+			const currentSelectedBeatIds = JSON.stringify(sequenceContainer.state.selectedBeatIds);
+			if (currentSelectedBeatIds !== lastSelectedBeatIds) {
+				lastSelectedBeatIds = currentSelectedBeatIds;
+				loadSelectedBeatData();
+			}
+		}, 100); // Check every 100ms
 
 		// Return cleanup function
-		return unsubscribe;
+		return () => clearInterval(intervalId);
 	}
 
 	return {

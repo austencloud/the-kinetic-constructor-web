@@ -8,7 +8,7 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { SortMethod } from './config';
 	import { getSorter, determineGroupKey, getSortedGroupKeys } from './services/OptionsService';
-	import transitionLoading from '$lib/state/stores/ui/transitionLoadingStore';
+	import transitionLoading from '$lib/state/stores/ui/transitionLoadingStore.svelte';
 
 	// Start Position Picker imports
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';

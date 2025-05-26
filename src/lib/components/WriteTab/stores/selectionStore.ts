@@ -46,23 +46,4 @@ class SelectionState {
 // Create and export the singleton instance
 export const selectionState = new SelectionState();
 
-// Legacy exports for backward compatibility during migration
-export const selectionStore = {
-	subscribe: () => {
-		console.warn(
-			'selectionStore.subscribe is deprecated. Use selectionState directly with Svelte 5 runes.'
-		);
-		return () => {};
-	},
-	selectBeat: (row: number, col: number) => selectionState.selectBeat(row, col),
-	clearSelection: () => selectionState.clearSelection()
-};
-
-export const selectedBeat = {
-	subscribe: () => {
-		console.warn(
-			'selectedBeat.subscribe is deprecated. Use selectionState.selectedBeat directly with Svelte 5 runes.'
-		);
-		return () => {};
-	}
-};
+// Only export the modern runes-based state

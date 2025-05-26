@@ -15,7 +15,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 
 	import {
 		verifyBeatFrameElements,

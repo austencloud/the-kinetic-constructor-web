@@ -1,5 +1,4 @@
-import { get } from 'svelte/store';
-import { performanceMetrics, qualityMode } from '../store';
+import { performanceMetrics, qualityMode } from '../snowfallState.svelte';
 
 export const createPerformanceMonitor = () => {
 	let lastTime = 0;
@@ -24,7 +23,7 @@ export const createPerformanceMonitor = () => {
 
 				if (warnings.length > 5) warnings.shift();
 
-				if (fps < 30 && get(qualityMode) !== 'low') {
+				if (fps < 30 && qualityMode.value !== 'low') {
 					qualityMode.update((current) => (current === 'high' ? 'medium' : 'low'));
 				}
 			} else if (fps > 55) {

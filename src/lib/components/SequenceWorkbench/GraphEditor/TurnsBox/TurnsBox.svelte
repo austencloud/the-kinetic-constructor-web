@@ -5,10 +5,10 @@
 		getBlueTurns,
 		getRedTurns,
 		type Direction
-	} from '$lib/state/stores/turnsStore.svelte';
+	} from '$lib/state/stores/turnsState.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 
 	// Import sub-components
 	import TurnsHeader from './components/TurnsHeader.svelte';

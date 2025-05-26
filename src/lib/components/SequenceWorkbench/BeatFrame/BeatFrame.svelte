@@ -5,7 +5,7 @@
 	import BeatFrameLayoutManager from './managers/BeatFrameLayoutManager.svelte';
 	import BeatFrameElementManager from './managers/BeatFrameElementManager.svelte';
 	import BeatFrameGrid from './components/BeatFrameGrid.svelte';
-	import { useResizeObserver } from '$lib/composables/useResizeObserver';
+	import { useResizeObserver } from '$lib/composables/useResizeObserver.svelte';
 	import { browser } from '$app/environment';
 
 	// Props using Svelte 5 runes
@@ -26,7 +26,7 @@
 	}>();
 
 	// Set up resize observer for container dimensions
-	const { size: sizeStore, resizeObserver } = useResizeObserver({
+	const { resizeObserver } = useResizeObserver({
 		width: browser ? window.innerWidth : 800,
 		height: browser ? window.innerHeight : 600
 	});

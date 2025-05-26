@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useService } from '$lib/core/di/useService';
+	import { useService } from '$lib/core/di/useService.svelte';
 	import { SERVICE_TOKENS } from '$lib/core/di/ServiceTokens';
 	import type { BackgroundService } from '$lib/core/services/BackgroundService';
 	import type { ErrorHandler } from '$lib/core/services/ErrorHandling';
@@ -22,9 +22,9 @@
 
 	// Load available backgrounds when services are ready
 	$effect(() => {
-		if ($backgroundReady) {
-			availableBackgrounds = $backgroundService!.getAvailableBackgrounds();
-			currentBackground = $backgroundService!.getCurrentBackground();
+		if (backgroundReady()) {
+			availableBackgrounds = backgroundService()!.getAvailableBackgrounds();
+			currentBackground = backgroundService()!.getCurrentBackground();
 		}
 	});
 
@@ -34,8 +34,8 @@
 		currentBackground = type;
 
 		// Log change with DI error handler
-		if ($errorReady) {
-			$errorHandler!.log({
+		if (errorReady()) {
+			errorHandler()!.log({
 				source: 'BackgroundSettings',
 				message: `Background changed to: ${type}`,
 				severity: ErrorSeverity.INFO
@@ -61,7 +61,7 @@
 <div class="background-settings">
 	<h3>Background Settings</h3>
 
-	{#if $backgroundReady}
+	{#if backgroundReady()}
 		<div class="setting-group">
 			<label for="background-type">Background Type:</label>
 			<select id="background-type" bind:value={currentBackground} onchange={handleBackgroundChange}>

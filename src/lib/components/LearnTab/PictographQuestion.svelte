@@ -1,5 +1,5 @@
 <script lang="ts">
-	// No longer need writable with Svelte 5 approach
+	// Using modern Svelte 5 runes approach
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 	import type { PictographData } from '$lib/types/PictographData';

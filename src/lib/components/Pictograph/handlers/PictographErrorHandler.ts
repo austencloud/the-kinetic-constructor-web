@@ -4,7 +4,7 @@
  * This module provides error handling functionality for the Pictograph component.
  */
 
-import type { Writable } from 'svelte/store';
+// NO STORES - RUNES ONLY!
 import type { PictographData } from '$lib/types/PictographData';
 import { errorService, ErrorSeverity } from '../../../services/ErrorHandlingService';
 import { logger } from '$lib/core/logging';
@@ -12,10 +12,10 @@ import type { PropData } from '../../objects/Prop/PropData';
 import type { ArrowData } from '../../objects/Arrow/ArrowData';
 
 /**
- * Context for error handling
+ * MODERNIZED: Context for error handling with runes - NO STORES!
  */
 export interface ErrorHandlerContext {
-	pictographDataStore: Writable<PictographData>;
+	pictographData: PictographData;
 	dispatch: (event: string, detail?: any) => void;
 	state: {
 		set: (value: string) => void;

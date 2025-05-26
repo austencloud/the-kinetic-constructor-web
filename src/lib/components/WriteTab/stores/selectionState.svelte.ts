@@ -58,12 +58,18 @@ export const selectionActions = {
 	}
 };
 
-// Derived states for convenience
-export const selectedRow = $derived(selectionState.selectedRow);
-export const selectedCol = $derived(selectionState.selectedCol);
-export const hasSelection = $derived(
-	selectionState.selectedRow !== null && selectionState.selectedCol !== null
-);
+// Derived states for convenience as functions (Svelte 5 requirement)
+export function selectedRow() {
+	return selectionState.selectedRow;
+}
+
+export function selectedCol() {
+	return selectionState.selectedCol;
+}
+
+export function hasSelection() {
+	return selectionState.selectedRow !== null && selectionState.selectedCol !== null;
+}
 
 // Create derived state for the currently selected beat
 // This will be imported and used where needed to avoid circular dependencies

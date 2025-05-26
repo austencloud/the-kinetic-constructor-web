@@ -99,7 +99,7 @@
 					isTransitioning = false;
 					previousOptionsMap = new Map();
 				},
-				$prefersReducedMotion ? 50 : transitionDuration
+				prefersReducedMotion() ? 50 : transitionDuration
 			);
 		}
 	}
@@ -133,7 +133,7 @@
 		const isNewOption = !previousOption;
 
 		return {
-			duration: $prefersReducedMotion ? 50 : transitionDuration,
+			duration: prefersReducedMotion() ? 50 : transitionDuration,
 			delay: isNewOption ? 50 : 0,
 			opacity: { from: isNewOption ? 0 : 1, to: 1 },
 			transform: isNewOption

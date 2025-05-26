@@ -40,7 +40,7 @@ export function setupLocalStorageMock() {
 	// Use Object.defineProperty to avoid "Cannot assign to read only property" error
 	Object.defineProperty(window, 'localStorage', {
 		value: mockStorage,
-		writable: true
+		configurable: true
 	});
 
 	// Also mock global.localStorage for environments where window.localStorage isn't used
@@ -54,7 +54,7 @@ export function setupLocalStorageMock() {
 			// Restore the original localStorage
 			Object.defineProperty(window, 'localStorage', {
 				value: originalLocalStorage,
-				writable: true
+				configurable: true
 			});
 			global.localStorage = originalGlobalStorage;
 		}

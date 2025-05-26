@@ -5,7 +5,7 @@
  * These selectors replace the deprecated pictograph.selectors.ts.
  */
 
-import { createDerived } from '$lib/state/core/container';
+import { createDerived } from '$lib/state/core/container.svelte';
 import { pictographContainer } from './pictographContainer';
 
 // Basic selectors

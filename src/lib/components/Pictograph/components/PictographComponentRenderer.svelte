@@ -16,7 +16,7 @@
 
 	// Utility imports
 	import { shouldShowBeatLabel, shouldShowMotionComponents } from '../utils/PictographRenderUtils';
-	import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
+	import { svgPreloadingService } from '$lib/services/SvgPreloadingService.svelte';
 
 	// Define props using Svelte 5 runes syntax
 	const props = $props<{

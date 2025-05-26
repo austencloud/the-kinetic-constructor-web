@@ -6,7 +6,7 @@
 	import ButtonsContainer from './components/ButtonsContainer.svelte';
 
 	// Import Stores
-	import { panelStore, buttonSizeStore } from './stores/panelStore';
+	import { panelState, calculateButtonSizeForDimensions } from './stores/panelState.svelte';
 	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
 	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 
@@ -27,7 +27,7 @@
 	}>();
 
 	// State from Store using $derived
-	const layoutFromStore = $derived($panelStore.layout);
+	const layoutFromStore = $derived(panelState.state.layout);
 
 	// Derived Values using $derived
 	const isContainerPortrait = $derived(containerHeight > containerWidth);
@@ -38,13 +38,14 @@
 	// Update the central store only if the calculated layout differs from the stored one using $effect
 	$effect(() => {
 		if (browser && newLayout !== layoutFromStore) {
-			panelStore.setLayout(newLayout);
+			panelState.setLayout(newLayout);
 		}
 	});
 
 	// Calculate button size using the calculated orientation
-	const buttonSizeFn = $derived($buttonSizeStore);
-	const buttonSize = $derived(buttonSizeFn(containerWidth, containerHeight, isContainerPortrait));
+	const buttonSize = $derived(
+		calculateButtonSizeForDimensions(containerWidth, containerHeight, isContainerPortrait)
+	);
 
 	// --- Event Handlers ---
 	async function handleButtonClick(detail: ActionEventDetail) {

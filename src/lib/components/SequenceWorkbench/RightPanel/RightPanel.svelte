@@ -1,26 +1,17 @@
 <!-- src/lib/components/SequenceWorkbench/RightPanel/RightPanel.svelte -->
 <script lang="ts">
-	import { isGenerateTabActive } from '$lib/state/stores/workbenchStore.svelte';
+	import { isGenerateTabActive } from '$lib/state/stores/workbenchState.svelte';
 	import ModernGenerationControls from './ModernGenerationControls.svelte';
 	// StartPosPicker is now integrated into OptionPicker
 	import GraphEditor from '$lib/components/SequenceWorkbench/GraphEditor/GraphEditor.svelte';
 	// sequenceState no longer needed - OptionPicker handles sequence state internally
 	import { fade, fly } from 'svelte/transition';
 	import { cubicInOut } from 'svelte/easing';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 	import OptionPicker from '$lib/components/ConstructTab/OptionPicker';
 
-	// Local state
-	let hasSelectedBeats = $state(false);
-
-	// Subscribe to the sequence container to check for selected beats
-	$effect(() => {
-		const unsubscribe = sequenceContainer.subscribe((state) => {
-			hasSelectedBeats = state.selectedBeatIds.length > 0;
-		});
-
-		return unsubscribe;
-	});
+	// Derived state for selected beats
+	let hasSelectedBeats = $derived(sequenceContainer.state.selectedBeatIds.length > 0);
 
 	// Transition parameters - faster for snappier feel
 	const transitionDuration = 200; // Reduced from 400ms to 200ms for snappier transitions
@@ -33,7 +24,7 @@
 </script>
 
 <div class="right-panel">
-	{#if isGenerateTabActive}
+	{#if isGenerateTabActive()}
 		<div in:fly={flyParams} out:fade={fadeParams}>
 			<ModernGenerationControls />
 		</div>

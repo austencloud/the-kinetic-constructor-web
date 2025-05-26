@@ -1,56 +1,63 @@
 // src/lib/components/ConstructTab/OptionPicker/components/OptionPickerHeader/useResponsiveLayout.ts
-import { writable, get } from 'svelte/store';
 import { onMount } from 'svelte';
 
 /**
- * Hook to manage responsive layout state
+ * Hook to manage responsive layout state using Svelte 5 runes
  * @param getLayoutContext The layout context getter function for Svelte 5 runes
  * @returns An object containing responsive layout state and functions
  */
 export function useResponsiveLayout(getLayoutContext: (() => any) | null) {
-	// Local state as Svelte stores
-	const isMobileDevice = writable(false);
-	const useShortLabels = writable(false);
-	const tabsContainerRef = writable<HTMLDivElement | null>(null);
-	const isScrollable = writable(false);
-	const compactMode = writable(false);
-	const showScrollIndicator = writable(false);
+	// Local state using Svelte 5 runes
+	let isMobileDevice = $state(false);
+	let useShortLabels = $state(false);
+	let tabsContainerRef = $state<HTMLDivElement | null>(null);
+	let isScrollable = $state(false);
+	let compactMode = $state(false);
+	let showScrollIndicator = $state(false);
 
-	let currentTabsContainerRef: HTMLDivElement | null = null;
-	const unsubscribetabsContainerRef = tabsContainerRef.subscribe((value) => {
-		currentTabsContainerRef = value;
+	// Reactive reference tracking
+	$effect(() => {
+		// This effect runs whenever tabsContainerRef changes
+		if (tabsContainerRef) {
+			checkTabsOverflow();
+		}
 	});
 
 	// Function to check if tabs are overflowing
 	function checkTabsOverflow() {
-		if (!currentTabsContainerRef) return;
+		if (!tabsContainerRef) return;
 
-		const { scrollWidth, clientWidth } = currentTabsContainerRef;
+		const { scrollWidth, clientWidth } = tabsContainerRef;
 		const newIsScrollable = scrollWidth > clientWidth;
-		isScrollable.set(newIsScrollable);
+		isScrollable = newIsScrollable;
 
 		const isNearlyOverflowing = scrollWidth > clientWidth - 20;
 
-		if ((newIsScrollable || isNearlyOverflowing) && !get(compactMode)) {
-			compactMode.set(true);
+		if ((newIsScrollable || isNearlyOverflowing) && !compactMode) {
+			compactMode = true;
 			// DISABLED: Force a re-check after a short delay to see if compact mode fixed the overflow
 			// setTimeout(() => {
-			// 	if (currentTabsContainerRef) {
-			// 		const { scrollWidth, clientWidth } = currentTabsContainerRef;
-			// 		isScrollable.set(scrollWidth > clientWidth);
-			// 		showScrollIndicator.set(get(isScrollable));
+			// 	if (tabsContainerRef) {
+			// 		const { scrollWidth, clientWidth } = tabsContainerRef;
+			// 		isScrollable = scrollWidth > clientWidth;
+			// 		showScrollIndicator = isScrollable;
 			// 	}
 			// }, 50);
 
 			// Do a direct check instead of using setTimeout
-			if (currentTabsContainerRef) {
-				const { scrollWidth, clientWidth } = currentTabsContainerRef;
-				isScrollable.set(scrollWidth > clientWidth);
-				showScrollIndicator.set(get(isScrollable));
+			if (tabsContainerRef) {
+				const { scrollWidth, clientWidth } = tabsContainerRef;
+				isScrollable = scrollWidth > clientWidth;
+				showScrollIndicator = isScrollable;
 			}
 		}
-		showScrollIndicator.set(newIsScrollable);
+		showScrollIndicator = newIsScrollable;
 	}
+
+	// Reactive effect for short labels
+	$effect(() => {
+		useShortLabels = isMobileDevice || compactMode;
+	});
 
 	onMount(() => {
 		const updateMobileState = () => {
@@ -65,9 +72,9 @@ export function useResponsiveLayout(getLayoutContext: (() => any) | null) {
 			} else {
 				mobile = window.innerWidth <= 640;
 			}
-			isMobileDevice.set(mobile);
+			isMobileDevice = mobile;
 			if (mobile) {
-				compactMode.set(true);
+				compactMode = true;
 			}
 		};
 
@@ -75,63 +82,48 @@ export function useResponsiveLayout(getLayoutContext: (() => any) | null) {
 
 		const handleResize = () => {
 			updateMobileState();
-			if (currentTabsContainerRef) {
+			if (tabsContainerRef) {
 				checkTabsOverflow();
 			}
 		};
 
 		window.addEventListener('resize', handleResize);
 
-		// Determine when to use short labels
-		const unsubscribeIsMobileDevice = isMobileDevice.subscribe((value) => {
-			useShortLabels.set(value || get(compactMode));
-		});
-		const unsubscribeCompactMode = compactMode.subscribe((value) => {
-			useShortLabels.set(get(isMobileDevice) || value);
-		});
-
-		// DISABLED: Check if tabs are scrollable when tabsContainerRef changes or on mount
-		// We'll do a single check on mount instead of using a ResizeObserver
-		const unsubscribeTabsRefForOverflow = tabsContainerRef.subscribe((ref) => {
-			if (ref) {
-				// Do a single check on mount
-				checkTabsOverflow();
-
-				// DISABLED: Add resize observer to check for overflow
-				// const resizeObserver = new ResizeObserver(() => {
-				// 	checkTabsOverflow();
-				// });
-				// resizeObserver.observe(ref);
-				// // Cleanup observer on new ref or unmount
-				// return () => {
-				// 	resizeObserver.disconnect();
-				// };
-			}
-		});
-
 		return () => {
 			window.removeEventListener('resize', handleResize);
-			unsubscribeIsMobileDevice();
-			unsubscribeCompactMode();
-			unsubscribetabsContainerRef();
-			unsubscribeTabsRefForOverflow();
 		};
 	});
 
 	// Handle scroll events to update scroll indicator
 	function handleScroll() {
-		if (!currentTabsContainerRef) return;
-		const { scrollLeft, scrollWidth, clientWidth } = currentTabsContainerRef;
-		showScrollIndicator.set(scrollLeft + clientWidth < scrollWidth - 10);
+		if (!tabsContainerRef) return;
+		const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef;
+		showScrollIndicator = scrollLeft + clientWidth < scrollWidth - 10;
 	}
 
+	// Return getters for reactive state access
 	return {
-		isMobileDevice,
-		useShortLabels,
-		tabsContainerRef,
-		isScrollable,
-		compactMode,
-		showScrollIndicator,
+		get isMobileDevice() {
+			return isMobileDevice;
+		},
+		get useShortLabels() {
+			return useShortLabels;
+		},
+		get tabsContainerRef() {
+			return tabsContainerRef;
+		},
+		set tabsContainerRef(value: HTMLDivElement | null) {
+			tabsContainerRef = value;
+		},
+		get isScrollable() {
+			return isScrollable;
+		},
+		get compactMode() {
+			return compactMode;
+		},
+		get showScrollIndicator() {
+			return showScrollIndicator;
+		},
 		handleScroll,
 		checkTabsOverflow
 	};

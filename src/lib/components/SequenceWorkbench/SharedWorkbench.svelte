@@ -4,7 +4,7 @@
 		getWorkbenchState,
 		toggleToolsPanel,
 		setToolsPanelOpen
-	} from '$lib/state/stores/workbenchStore.svelte';
+	} from '$lib/state/stores/workbenchState.svelte';
 
 	// Get the workbench state
 	const workbenchState = getWorkbenchState();

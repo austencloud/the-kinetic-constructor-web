@@ -2,10 +2,10 @@
 <script lang="ts">
 	import type { PictographData } from '$lib/types/PictographData';
 	import { DIAMOND } from '$lib/types/Constants';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
-	import { editModeStore } from '$lib/state/stores/editModeStore';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
+	import { editModeState } from '$lib/state/stores/editModeState.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import { panelStore } from '$lib/components/SequenceWorkbench/ButtonPanel/stores/panelStore';
+	import { panelState } from '$lib/components/SequenceWorkbench/ButtonPanel/stores/panelState.svelte';
 	import { fade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 
@@ -49,8 +49,8 @@
 		grid: ''
 	});
 
-	// Get panel layout from store
-	const panelLayout = $derived($panelStore.layout);
+	// Get panel layout from state
+	const panelLayout = $derived(panelState.state.layout);
 
 	// Create responsive state manager
 	const editorState = $derived(createGraphEditorState(containerElement, panelLayout));
@@ -69,7 +69,7 @@
 
 	// Create event handlers and extract functions
 	const { handleExitClick, handleTurnsChanged, handleDirectionChanged } = $derived(
-		createEventHandlers(editModeStore, hapticFeedbackService, beatDataHandler, {
+		createEventHandlers(editModeState, hapticFeedbackService, beatDataHandler, {
 			onTurnsChanged: props.onTurnsChanged,
 			onDirectionChanged: props.onDirectionChanged
 		})

@@ -3,7 +3,7 @@
 	import { onDestroy, getContext } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { LAYOUT_CONTEXT_KEY } from '../../layoutContext';
-	import { activeLayoutRule } from '../layoutUtils';
+	import { activeLayoutRule } from '../layoutUtils.svelte';
 
 	// Import components
 	import DebugToggleButton from './components/DebugToggleButton.svelte';
@@ -43,7 +43,7 @@
 				&times;
 			</button>
 			<div class="rule-card">
-				<ActiveRulePanel activeRule={$activeLayoutRule} />
+				<ActiveRulePanel activeRule={activeLayoutRule()} />
 
 				<CurrentStatePanel layoutContext={getLayoutContext?.()} />
 

@@ -1,29 +1,19 @@
 <!-- src/lib/components/SequenceWorkbench/EditButton.svelte -->
 <script lang="ts">
-	import { editModeStore } from '$lib/state/stores/editModeStore';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { editModeState } from '$lib/state/stores/editModeState.svelte';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 
 	// Local state
-	let isEditMode = $state(false);
-	let isSelectionMode = $state(false);
-	let showTooltip = $state(false);
-	let tooltipPosition = $state<{ x: number; y: number } | null>(null);
 	let buttonElement = $state<HTMLButtonElement | null>(null);
 
-	// Subscribe to the store
-	$effect(() => {
-		const unsubscribe = editModeStore.subscribe((state) => {
-			isEditMode = state.isEditMode;
-			isSelectionMode = state.isSelectionMode;
-			showTooltip = state.showTooltip;
-			tooltipPosition = state.tooltipPosition;
-		});
-
-		return unsubscribe;
-	});
+	// Derived state from edit mode store
+	const isEditMode = $derived(editModeState.state.isEditMode);
+	const isSelectionMode = $derived(editModeState.state.isSelectionMode);
+	const showTooltip = $derived(editModeState.state.showTooltip);
+	const tooltipPosition = $derived(editModeState.state.tooltipPosition);
 
 	function handleClick(event: MouseEvent) {
 		// Provide haptic feedback when toggling edit mode
@@ -33,14 +23,14 @@
 
 		// Set tooltip position if needed
 		if (!isEditMode && sequenceContainer.state.selectedBeatIds.length === 0) {
-			editModeStore.setTooltipPosition({
+			editModeState.setTooltipPosition({
 				x: event.clientX,
 				y: event.clientY
 			});
 		}
 
 		// Toggle edit mode
-		editModeStore.toggleEditMode();
+		editModeState.toggleEditMode();
 	}
 
 	// Handle document click to exit selection mode if clicking outside
@@ -48,7 +38,7 @@
 		if (isSelectionMode && buttonElement && !buttonElement.contains(event.target as Node)) {
 			// Only exit if not clicking on a beat (which would be handled by the beat selection)
 			if (!(event.target as HTMLElement).closest('.beat-cell')) {
-				editModeStore.exitSelectionMode();
+				editModeState.exitSelectionMode();
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-import { sequenceStore } from '$lib/state/stores/sequenceStore';
+import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 
 /**
  * Interface for sequence metadata
@@ -30,14 +30,16 @@ export function useSequenceMetadata(
 		difficulty: 0
 	};
 
-	// Subscribe to the sequence store for metadata updates
-	const unsubscribe = sequenceStore.subscribe((store) => {
-		metadata.name = store.metadata.name;
-		metadata.difficulty = store.metadata.difficulty;
+	// Use the modern container for metadata updates - NO STORES!
+	// Since we're using runes, we can directly access the state
+	metadata.name = sequenceContainer.state.metadata.name;
+	metadata.difficulty = sequenceContainer.state.metadata.difficulty;
 
-		// Call the update callback with the new metadata
-		onUpdate(metadata);
-	});
+	// Call the update callback with the initial metadata
+	onUpdate(metadata);
+
+	// Return a no-op unsubscribe function for compatibility
+	const unsubscribe = () => {};
 
 	return {
 		metadata,

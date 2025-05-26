@@ -1,6 +1,6 @@
 <script lang="ts">
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import { isMinTurns, isMaxTurns, type TurnsValue } from '$lib/state/stores/turnsStore.svelte';
+	import { isMinTurns, isMaxTurns, type TurnsValue } from '$lib/state/stores/turnsState.svelte';
 	import { browser } from '$app/environment';
 
 	// Define props using Svelte 5 runes syntax

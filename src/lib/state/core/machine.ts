@@ -6,7 +6,7 @@
  */
 
 import { createMachine, type AnyActorRef, type AnyStateMachine } from 'xstate';
-import { stateRegistry } from './registry';
+import { runesStateRegistry } from './runesRegistry.svelte';
 import {
 	type SupervisedActorOptions,
 	type Supervisor,
@@ -32,7 +32,7 @@ export function createAppMachine<TMachine extends AnyStateMachine>(
 		description?: string;
 	} = {}
 ): AnyActorRef {
-	return stateRegistry.registerMachine(id, machine, {
+	return runesStateRegistry.registerMachine(id, machine, {
 		persist: options.persist,
 		description: options.description
 	});
@@ -91,7 +91,7 @@ export function createSupervisedMachine<TMachine extends AnyStateMachine>(
 	 * `SupervisedActor` to callers) – this satisfies the compiler and keeps
 	 * supervision/registry behaviour unchanged.
 	 */
-	stateRegistry.register(id, actor.ref, {
+	runesStateRegistry.register(id, actor.ref, {
 		type: 'machine',
 		persist: options.persist,
 		description: options.description
@@ -251,7 +251,7 @@ export function createAsyncMachine<TData, TError = Error, TInput = void>(
 	);
 
 	// Register and return the machine
-	return stateRegistry.registerMachine(id, asyncMachine, {
+	return runesStateRegistry.registerMachine(id, asyncMachine, {
 		persist: options.persist,
 		description: options.description
 	});

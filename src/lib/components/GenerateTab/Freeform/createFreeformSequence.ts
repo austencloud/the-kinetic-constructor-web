@@ -1,5 +1,5 @@
 import { type CAPType } from '../store/settings';
-import { generatorStore } from '../store/generator';
+import { generatorStore } from '../state/generatorState.svelte';
 import { determineRotationDirection } from '../utils/rotationDeterminer';
 import { validateFreeformSequence } from './validators';
 

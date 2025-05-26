@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { setContext, onMount, onDestroy, untrack, type Snippet } from 'svelte';
 	import { LAYOUT_CONTEXT_KEY, type LayoutContextValue } from '../layoutContext';
-	import { getResponsiveLayout, getEnhancedDeviceType } from '../utils/layoutUtils';
+	import { getResponsiveLayout, getEnhancedDeviceType } from '../utils/layoutUtils.svelte';
 	import { getContainerAspect, BREAKPOINTS } from '../config';
 	import { resize } from '../actions/resize';
 	import type { PictographData } from '$lib/types/PictographData';

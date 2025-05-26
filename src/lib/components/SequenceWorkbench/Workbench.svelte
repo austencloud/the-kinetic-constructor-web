@@ -1,6 +1,6 @@
 <script lang="ts">
 	import SequenceWidget from './SequenceWidget.svelte';
-	import { useResizeObserver } from '$lib/composables/useResizeObserver';
+	import { useResizeObserver } from '$lib/composables/useResizeObserver.svelte';
 
 	const { resizeObserver } = useResizeObserver();
 </script>

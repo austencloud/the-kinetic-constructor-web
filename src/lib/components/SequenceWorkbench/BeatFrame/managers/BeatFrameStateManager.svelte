@@ -24,7 +24,7 @@
 	} from '$lib/state/sequence/selectionState.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { BeatData as LegacyBeatData } from '../BeatData';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 	import { createSafePictographCopy } from '$lib/utils/pictographUtils';
 
@@ -47,12 +47,10 @@
 	let startPosition = $state<PictographData | null>(null);
 	let sequenceIsEmpty = $state(true);
 
-	// Subscribe to sequence container changes
+	// Watch for sequence container changes using runes - NO STORES!
 	$effect(() => {
-		const unsubscribe = sequenceContainer.subscribe((state) => {
-			sequence = state;
-		});
-		return unsubscribe;
+		// Directly watch the container state
+		sequence = sequenceContainer.state;
 	});
 
 	// Derived values

@@ -1,14 +1,14 @@
 // src/lib/utils/appInitializer.ts
-import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 import { checkForSequenceInUrl } from '$lib/components/SequenceWorkbench/share/utils/ShareUtils';
 import { logger } from '$lib/core/logging';
-import { resourcePreloader } from '$lib/services/ResourcePreloader';
+import { resourcePreloader } from '$lib/services/ResourcePreloader.svelte';
 import { glyphContainer } from '$lib/stores/glyphContainer.svelte';
 import { toAppError } from '$lib/types/ErrorTypes';
 import SvgManager from '$lib/components/SvgManager/SvgManager';
 import { PropType } from '$lib/types/Types';
 import { preloadCommonArrows } from '$lib/utils/embeddedArrowSvgs';
-import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
+import { svgPreloadingService } from '$lib/services/SvgPreloadingService.svelte';
 
 /**
  * Initialize the application, reporting progress via callback for XState
@@ -68,7 +68,7 @@ export async function initializeApplication(
 				{ propType: PropType.FAN, color: 'red' },
 				{ propType: PropType.FAN, color: 'blue' },
 				{ propType: PropType.TRIAD, color: 'red' },
-				{ propType: PropType.TRIAD, color: 'blue' },
+				{ propType: PropType.TRIAD, color: 'blue' }
 			]);
 
 			reportProgress(20, 'Preloading all arrow SVGs...');

@@ -1,7 +1,7 @@
 /**
  * Utilities for decoding sequences from compact formats
  */
-import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer';
+import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 import type { MotionData } from '$lib/components/objects/Motion/MotionData';
 import type { MotionType, Loc, PropRotDir, TKATurns, Orientation } from '$lib/types/Types';
 

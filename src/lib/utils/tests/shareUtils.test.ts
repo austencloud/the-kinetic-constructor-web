@@ -2,7 +2,7 @@
  * Tests for shareUtils.ts
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer';
+import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 import {
 	generateShareableUrl,
 	isWebShareSupported,

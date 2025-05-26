@@ -8,7 +8,7 @@
 import type { PictographData } from '$lib/types/PictographData';
 import { Letter } from '$lib/types/Letter';
 import type { Beat } from '$lib/types/Beat';
-import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer';
+import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 import type { TKAPosition } from '$lib/types/TKAPosition';
 import type { VTGTiming, VTGDir } from '$lib/types/Types';
 import { getPictographTestDataLoader } from './pictographTestDataLoader';

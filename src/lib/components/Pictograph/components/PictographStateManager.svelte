@@ -4,7 +4,7 @@
 	import type { PictographData } from '$lib/types/PictographData';
 	import { PictographService } from '../PictographService';
 	import { defaultPictographData } from '../utils/defaultPictographData';
-	import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
+	import { svgPreloadingService } from '$lib/services/SvgPreloadingService.svelte';
 
 	// Define props using Svelte 5 runes syntax
 	const props = $props<{

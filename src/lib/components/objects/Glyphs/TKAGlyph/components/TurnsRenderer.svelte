@@ -1,6 +1,6 @@
 <!-- src/lib/components/objects/Glyphs/TKAGlyph/components/TurnsRenderer.svelte -->
 <script lang="ts">
-	import { assetCache, fetchSVGDimensions, type Rect } from '$lib/stores/glyphStore';
+	import { assetCache, fetchSVGDimensions, type Rect } from '$lib/stores/glyphState.svelte';
 	import type { TKATurns } from '$lib/types/Types';
 
 	// Props using Svelte 5 runes
@@ -59,7 +59,7 @@
 
 		// Check cache
 		const cacheKey = typeof value === 'number' ? value.toString() : value;
-		if ($assetCache.numberSVGs.has(cacheKey)) return;
+		if (assetCache.state.numberSVGs.has(cacheKey)) return;
 
 		try {
 			const dimensions = await fetchSVGDimensions(path);
@@ -88,7 +88,7 @@
 		if (!value) return null;
 
 		const cacheKey = typeof value === 'number' ? value.toString() : value;
-		const cached = $assetCache.numberSVGs.get(cacheKey);
+		const cached = assetCache.state.numberSVGs.get(cacheKey);
 
 		if (!cached) return null;
 

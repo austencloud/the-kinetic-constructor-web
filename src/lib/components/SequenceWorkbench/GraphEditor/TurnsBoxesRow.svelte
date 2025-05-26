@@ -3,7 +3,7 @@
 	import TurnsBox from './TurnsBox/TurnsBox.svelte';
 	import { fade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
-	import type { Direction } from '$lib/stores/sequence/turnsStore';
+	import type { Direction } from '$lib/state/stores/turnsStore.svelte';
 	import type { PropRotDir } from '$lib/types/Types';
 
 	// Define props using Svelte 5 runes syntax

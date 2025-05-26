@@ -8,7 +8,7 @@
  */
 
 import { createMachine, assign } from 'xstate';
-import { stateRegistry } from '../core/registry';
+import { runesStateRegistry } from '../core/runesRegistry.svelte';
 
 // ─────────────────────────────────────────────────────────────
 // Machine definition
@@ -69,7 +69,7 @@ export const appMachine = createMachine({
 // Actor registration
 // ─────────────────────────────────────────────────────────────
 
-export const appActor = stateRegistry.registerMachine('app', appMachine, {
+export const appActor = runesStateRegistry.registerMachine('app', appMachine, {
 	persist: true,
 	description: 'Main application state'
 });

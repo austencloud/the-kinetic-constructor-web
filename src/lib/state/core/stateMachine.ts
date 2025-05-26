@@ -12,8 +12,8 @@ import {
 	type AnyStateMachine,
 	type ActorOptions
 } from 'xstate';
-import { stateRegistry } from './registry';
-import { createContainer } from './container';
+import { runesStateRegistry } from './runesRegistry.svelte';
+import { createContainer } from './container.svelte';
 
 /**
  * Creates an XState machine with improved ergonomics
@@ -164,7 +164,7 @@ export function registerModernMachine<TMachine extends AnyStateMachine>(
 	actor.start();
 
 	// Register with the registry
-	stateRegistry.registerMachine(id, machine, {
+	runesStateRegistry.registerMachine(id, machine, {
 		persist: options.persist,
 		description: options.description
 	});

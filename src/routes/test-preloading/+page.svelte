@@ -1,8 +1,8 @@
 <!-- Test page for SVG preloading performance -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
-	import { pictographRenderingService } from '$lib/services/PictographRenderingService';
+	import { svgPreloadingService } from '$lib/services/SvgPreloadingService.svelte';
+	import { pictographRenderingService } from '$lib/services/PictographRenderingService.svelte';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 
@@ -58,9 +58,12 @@
 
 		loadTestData();
 
-		// Subscribe to preloading status
-		const unsubscribePreloading = svgPreloadingService.getStatus().subscribe((status) => {
-			preloadingStatus = status;
+		// Get reactive preloading status
+		const preloadingStatusRef = svgPreloadingService.getStatus();
+
+		// Use $effect to watch for changes
+		$effect(() => {
+			preloadingStatus = preloadingStatusRef;
 		});
 
 		// Update rendering stats periodically
@@ -69,7 +72,6 @@
 		}, 1000);
 
 		return () => {
-			unsubscribePreloading();
 			clearInterval(statsInterval);
 		};
 	});

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 
 	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from '../context/ElementContext';
 	import { getContext } from 'svelte';

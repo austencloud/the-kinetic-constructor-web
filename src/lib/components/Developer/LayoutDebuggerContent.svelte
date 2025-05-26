@@ -5,16 +5,15 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { writable } from 'svelte/store';
 
-	// State
-	const deviceInfo = writable({
+	// State using runes
+	let deviceInfo = $state({
 		width: 0,
 		height: 0,
 		pixelRatio: 1,
-		orientation: 'landscape',
+		orientation: 'landscape' as 'landscape' | 'portrait',
 		userAgent: '',
-		deviceType: 'desktop'
+		deviceType: 'desktop' as 'desktop' | 'mobile' | 'tablet'
 	});
 
 	// Update device info
@@ -26,21 +25,21 @@
 		const userAgent = navigator.userAgent;
 
 		// Determine device type
-		let deviceType = 'desktop';
+		let deviceType: 'desktop' | 'mobile' | 'tablet' = 'desktop';
 		if (/Mobi|Android/i.test(userAgent)) {
 			deviceType = width < 768 ? 'mobile' : 'tablet';
 		} else if (width < 768) {
 			deviceType = 'tablet';
 		}
 
-		deviceInfo.set({
+		deviceInfo = {
 			width,
 			height,
 			pixelRatio,
 			orientation,
 			userAgent,
 			deviceType
-		});
+		};
 	}
 
 	// Initialize on mount
@@ -74,32 +73,32 @@
 		<div class="info-grid">
 			<div class="info-label">Device Type:</div>
 			<div class="info-value">
-				{$deviceInfo.deviceType}
-				{$deviceInfo.deviceType === 'mobile'
+				{deviceInfo.deviceType}
+				{deviceInfo.deviceType === 'mobile'
 					? '📱'
-					: $deviceInfo.deviceType === 'tablet'
+					: deviceInfo.deviceType === 'tablet'
 						? '📟'
 						: '💻'}
 			</div>
 
 			<div class="info-label">Orientation:</div>
 			<div class="info-value">
-				{$deviceInfo.orientation}
-				{$deviceInfo.orientation === 'portrait' ? '📸' : '🌄'}
+				{deviceInfo.orientation}
+				{deviceInfo.orientation === 'portrait' ? '📸' : '🌄'}
 			</div>
 
 			<div class="info-label">Dimensions:</div>
 			<div class="info-value">
-				{$deviceInfo.width}×{$deviceInfo.height}px (Aspect: {(
-					$deviceInfo.width / $deviceInfo.height
+				{deviceInfo.width}×{deviceInfo.height}px (Aspect: {(
+					deviceInfo.width / deviceInfo.height
 				).toFixed(2)})
 			</div>
 
 			<div class="info-label">Pixel Ratio:</div>
-			<div class="info-value">{$deviceInfo.pixelRatio}</div>
+			<div class="info-value">{deviceInfo.pixelRatio}</div>
 
 			<div class="info-label">User Agent:</div>
-			<div class="info-value user-agent">{formatUserAgent($deviceInfo.userAgent)}</div>
+			<div class="info-value user-agent">{formatUserAgent(deviceInfo.userAgent)}</div>
 		</div>
 	</div>
 
@@ -109,9 +108,9 @@
 			<div
 				class="device-frame"
 				style="
-          width: {Math.min(400, $deviceInfo.width / 4)}px;
-          height: {Math.min(400, $deviceInfo.height / 4)}px;
-          aspect-ratio: {$deviceInfo.width / $deviceInfo.height};
+          width: {Math.min(400, deviceInfo.width / 4)}px;
+          height: {Math.min(400, deviceInfo.height / 4)}px;
+          aspect-ratio: {deviceInfo.width / deviceInfo.height};
         "
 			>
 				<div class="screen">
@@ -129,23 +128,23 @@
 	<div class="section">
 		<h3>Responsive Breakpoints</h3>
 		<div class="breakpoints">
-			<div class="breakpoint" class:active={$deviceInfo.width < 576}>
+			<div class="breakpoint" class:active={deviceInfo.width < 576}>
 				<span class="name">XS</span>
 				<span class="range">&lt; 576px</span>
 			</div>
-			<div class="breakpoint" class:active={$deviceInfo.width >= 576 && $deviceInfo.width < 768}>
+			<div class="breakpoint" class:active={deviceInfo.width >= 576 && deviceInfo.width < 768}>
 				<span class="name">SM</span>
 				<span class="range">≥ 576px</span>
 			</div>
-			<div class="breakpoint" class:active={$deviceInfo.width >= 768 && $deviceInfo.width < 992}>
+			<div class="breakpoint" class:active={deviceInfo.width >= 768 && deviceInfo.width < 992}>
 				<span class="name">MD</span>
 				<span class="range">≥ 768px</span>
 			</div>
-			<div class="breakpoint" class:active={$deviceInfo.width >= 992 && $deviceInfo.width < 1200}>
+			<div class="breakpoint" class:active={deviceInfo.width >= 992 && deviceInfo.width < 1200}>
 				<span class="name">LG</span>
 				<span class="range">≥ 992px</span>
 			</div>
-			<div class="breakpoint" class:active={$deviceInfo.width >= 1200}>
+			<div class="breakpoint" class:active={deviceInfo.width >= 1200}>
 				<span class="name">XL</span>
 				<span class="range">≥ 1200px</span>
 			</div>

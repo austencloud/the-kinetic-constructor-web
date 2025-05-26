@@ -7,7 +7,7 @@
 	import type { PropData } from './PropData';
 	import type { PropSvgData } from '../../SvgManager/PropSvgData';
 	import PropRotAngleManager from './PropRotAngleManager';
-	import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
+	import { svgPreloadingService } from '$lib/services/SvgPreloadingService.svelte';
 
 	function safeBase64Encode(str: string): string {
 		try {
@@ -48,7 +48,7 @@
 	// Initialize services immediately
 	if (effectivePropData) {
 		svgManager = new SvgManager();
-		
+
 		// CRITICAL FIX: Calculate rotation angle once, not reactively
 		try {
 			const rotAngleManager = new PropRotAngleManager({
@@ -56,7 +56,7 @@
 				ori: effectivePropData.ori
 			});
 			rotationAngle = rotAngleManager.getRotationAngle();
-			
+
 			// Update prop data with calculated angle
 			if (effectivePropData) {
 				effectivePropData.rotAngle = rotationAngle;
@@ -84,9 +84,9 @@
 
 		try {
 			const cacheKey = getPropCacheKey(effectivePropData.propType, effectivePropData.color);
-			
+
 			let cachedSvgData = propSvgCache.get(cacheKey);
-			
+
 			if (cachedSvgData) {
 				untrack(() => {
 					svgData = cachedSvgData;
@@ -104,7 +104,7 @@
 
 			if (cachedSvg) {
 				const { viewBox, center } = parsePropSvg(cachedSvg, effectivePropData.color);
-				
+
 				const newSvgData = {
 					imageSrc: `data:image/svg+xml;base64,${safeBase64Encode(cachedSvg)}`,
 					viewBox,
@@ -113,7 +113,7 @@
 
 				// Cache and update state
 				propSvgCache.set(cacheKey, newSvgData);
-				
+
 				untrack(() => {
 					svgData = newSvgData;
 					isReady = true;
@@ -128,7 +128,6 @@
 			} else {
 				throw new Error('Failed to load prop SVG');
 			}
-
 		} catch (error: any) {
 			handleLoadError(error);
 		}
@@ -175,7 +174,7 @@
 			// Check preloading status once, then load
 			const isPreloaded = svgPreloadingService.arePropsReady();
 			const delay = isPreloaded ? 0 : 50;
-			
+
 			if (delay === 0) {
 				loadSvg();
 			} else {

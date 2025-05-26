@@ -5,14 +5,15 @@
  * It exports all the core functionality for state management.
  */
 
-// Export the registry
-export * from './registry';
+// Export the modern runes registry
+export * from './runesRegistry.svelte';
 
-// Export store factories
-export * from './store';
+// Export modern selector utilities
+export * from './selectors.svelte';
+
+// No more store factories - runes only!
 
 // Export machine factories
 export * from './machine';
 
-// Export testing utilities
-export * from './testing';
+// Testing utilities removed - use direct imports from test files

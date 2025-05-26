@@ -1,6 +1,6 @@
 // src/lib/components/SequenceWorkbench/BeatFrame/composables/useBeatFrameState.svelte.ts
 
-import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 import { createSafePictographCopy } from '$lib/utils/pictographUtils';
@@ -27,18 +27,15 @@ export function useBeatFrameState() {
 	let isUpdatingFromContainer = false;
 	let isUpdatingFromModernState = false;
 
-	// CRITICAL FIX: Subscribe to sequence container with loop prevention
+	// CRITICAL FIX: Watch sequence container with loop prevention - NO STORES!
 	$effect(() => {
-		const unsubscribe = sequenceContainer.subscribe((state) => {
-			if (!isUpdatingFromModernState) {
-				untrack(() => {
-					isUpdatingFromContainer = true;
-					sequence = state;
-					isUpdatingFromContainer = false;
-				});
-			}
-		});
-		return unsubscribe;
+		if (!isUpdatingFromModernState) {
+			untrack(() => {
+				isUpdatingFromContainer = true;
+				sequence = sequenceContainer.state;
+				isUpdatingFromContainer = false;
+			});
+		}
 	});
 
 	// CRITICAL FIX: React to modern sequence state changes with debouncing and guards

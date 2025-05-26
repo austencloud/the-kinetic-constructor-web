@@ -6,6 +6,7 @@
 	import { initializeStateManagement } from '$lib/state';
 	import { browser } from '$app/environment';
 	import SettingsManager from '$lib/components/SettingsManager/SettingsManager.svelte';
+	import EffectsInitializer from './EffectsInitializer.svelte';
 
 	// Props
 	let {
@@ -40,7 +41,9 @@
 			await import('$lib/state/machines/sequenceMachine');
 
 			// Import the sequence container to ensure it's available
-			const { sequenceContainer } = await import('$lib/state/stores/sequence/SequenceContainer');
+			const { sequenceContainer } = await import(
+				'$lib/state/stores/sequence/SequenceContainer.svelte'
+			);
 
 			// Explicitly try to load sequence from localStorage
 			try {
@@ -48,6 +51,8 @@
 			} catch (error) {
 				console.error('ServiceProvider: Error loading sequence from localStorage:', error);
 			}
+
+			// Note: Effects initialization is now handled by EffectsInitializer component
 
 			// Add a small delay to prevent rapid state changes that could cause reactive loops
 			await new Promise((resolve) => setTimeout(resolve, 50));
@@ -73,6 +78,8 @@
 {#if isStateInitialized || !browser}
 	<!-- Include the SettingsManager component to handle settings lifecycle -->
 	<SettingsManager />
+	<!-- Include the EffectsInitializer component to handle $effect initialization -->
+	<EffectsInitializer />
 	{#if children}
 		{@render children()}
 	{/if}

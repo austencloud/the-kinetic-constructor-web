@@ -1,9 +1,9 @@
 <!-- src/lib/components/SequenceWorkbench/GraphEditor/ConstructButton.svelte -->
 <script lang="ts">
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
-	import { setActiveTab } from '$lib/state/stores/workbenchStore.svelte';
+	import { setActiveTab } from '$lib/state/stores/workbenchState.svelte';
 
 	// Define props using Svelte 5 runes syntax
 	const props = $props<{

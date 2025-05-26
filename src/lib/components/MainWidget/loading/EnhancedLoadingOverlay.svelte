@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
 	import LoadingSpinner from './LoadingSpinner.svelte';
-	import { resourceLoadingStatus } from '$lib/services/ResourcePreloader';
+	import { getResourceLoadingStatus } from '$lib/services/ResourcePreloader.svelte';
 
 	// Props using Svelte 5 runes
 	const {
@@ -17,6 +17,9 @@
 		message?: string;
 		errorMessage?: string | null;
 	}>();
+
+	// Get resource loading status reactively
+	const resourceLoadingStatus = $derived(getResourceLoadingStatus());
 
 	// Local state
 	let animatedProgress = $state(0);
@@ -96,25 +99,25 @@
 			<div class="loading-details">
 				<p class="loading-text">{getFormattedMessage(message)}</p>
 
-				{#if $resourceLoadingStatus.inProgress}
+				{#if resourceLoadingStatus.inProgress}
 					<div class="resource-loading-info" in:fade={{ duration: 200 }}>
 						<div class="resource-category">
-							<span class="category-icon">{getCategoryIcon($resourceLoadingStatus.category)}</span>
+							<span class="category-icon">{getCategoryIcon(resourceLoadingStatus.category)}</span>
 							<span class="category-text">
-								{$resourceLoadingStatus.category
-									? `Loading ${$resourceLoadingStatus.category}`
+								{resourceLoadingStatus.category
+									? `Loading ${resourceLoadingStatus.category}`
 									: 'Preparing resources'}
 							</span>
 						</div>
 
 						<div class="resource-stats">
-							<span class="loaded-count">{$resourceLoadingStatus.loaded}</span>
+							<span class="loaded-count">{resourceLoadingStatus.loaded}</span>
 							<span class="separator">/</span>
-							<span class="total-count">{$resourceLoadingStatus.total}</span>
+							<span class="total-count">{resourceLoadingStatus.total}</span>
 
-							{#if $resourceLoadingStatus.failed > 0}
+							{#if resourceLoadingStatus.failed > 0}
 								<span class="failed-count" in:scale={{ duration: 200 }}>
-									({$resourceLoadingStatus.failed} failed)
+									({resourceLoadingStatus.failed} failed)
 								</span>
 							{/if}
 						</div>

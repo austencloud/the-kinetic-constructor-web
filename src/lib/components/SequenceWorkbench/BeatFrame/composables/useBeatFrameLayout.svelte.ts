@@ -2,7 +2,6 @@
 
 import { browser } from '$app/environment';
 import { autoAdjustLayout, calculateCellSize } from '../beatFrameHelpers';
-import { layoutStore } from '$lib/stores/layout/layoutStore';
 import { debounce } from '../utils/beatFrameUtils';
 
 /**
@@ -31,7 +30,7 @@ export function useBeatFrameLayout(
 		[beatRows, beatCols] = autoAdjustLayout(Math.max(1, beatCount));
 
 		if (beatRows !== prevRows || beatCols !== prevCols) {
-			layoutStore.updateLayout(beatRows, beatCols, beatCount);
+			layoutState.updateLayout(beatRows, beatCols, beatCount);
 
 			prevRows = beatRows;
 			prevCols = beatCols;

@@ -5,7 +5,7 @@
  * background state in the application.
  */
 
-import { createContainer } from '$lib/state/core/container';
+import { createContainer } from '$lib/state/core/container.svelte';
 import type {
 	BackgroundType,
 	QualityLevel,
@@ -159,15 +159,12 @@ if (browser) {
 		}
 	};
 
-	// Set up a subscription to save state changes
-	const unsubscribe = backgroundContainer.subscribe(() => {
+	// Set up a reactive effect to save state changes - NO STORES!
+	$effect(() => {
+		// Watch for any changes in the background container state
+		backgroundContainer.state;
 		saveState();
 	});
-
-	// Clean up subscription when the page unloads
-	if (typeof window !== 'undefined') {
-		window.addEventListener('beforeunload', unsubscribe);
-	}
 }
 
 // Export types

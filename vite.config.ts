@@ -2,7 +2,9 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [sveltekit()],
+	plugins: [
+		sveltekit()
+	],
 	optimizeDeps: {
 		include: [
 			'clsx',
@@ -38,7 +40,12 @@ export default defineConfig({
 	},
 	// Increase server timeout for dependency optimization
 	server: {
+		port: 5179, // DEDICATED PORT for the-kinetic-constructor-web - ALWAYS USE 5179!
+		strictPort: true, // STRICT: Always use port 5179, fail if not available
+		open: 'http://localhost:5179', // Always open to the exact URL
+		host: true, // Listen on all addresses (0.0.0.0)
 		hmr: {
+			port: 5179, // HMR also uses the same port
 			timeout: 120000 // 120 seconds timeout for HMR
 		},
 		// Increase the timeout for dependency optimization

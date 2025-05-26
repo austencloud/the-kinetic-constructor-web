@@ -11,7 +11,7 @@ import {
 } from '$lib/utils/tests/pictographTestHelpers';
 
 // Mock the sequence container
-vi.mock('$lib/state/stores/sequence/SequenceContainer', () => ({
+vi.mock('$lib/state/stores/sequence/SequenceContainer.svelte', () => ({
 	sequenceContainer: {
 		state: { beats: [], selectedBeatIds: [] },
 		subscribe: vi.fn((callback) => {

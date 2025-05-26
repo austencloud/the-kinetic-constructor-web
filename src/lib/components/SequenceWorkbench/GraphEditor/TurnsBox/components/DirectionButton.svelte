@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Direction } from '$lib/stores/sequence/turnsStore';
+	import type { Direction } from '$lib/state/stores/turnsStore.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 

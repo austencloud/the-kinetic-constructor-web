@@ -7,7 +7,7 @@
 	import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 	import type { PictographService } from '../PictographService';
 	import { untrack } from 'svelte';
-	import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
+	import { svgPreloadingService } from '$lib/services/SvgPreloadingService.svelte';
 
 	const props = $props<{
 		service: PictographService | null;
@@ -92,7 +92,7 @@
 
 				// CRITICAL FIX: Smart callback timing
 				const svgsPreloaded = svgPreloadingService.isReady();
-				
+
 				if (svgsPreloaded) {
 					// CRITICAL FIX: Immediate callback when ready, no timeout needed
 					queueMicrotask(() => {

@@ -6,7 +6,7 @@ import {
 	type Orientation,
 	type TKATurns
 } from '$lib/types/Types';
-import { resourceCache } from '$lib/services/ResourceCache';
+import { resourceCache } from '$lib/services/ResourceCache.svelte';
 import { getEmbeddedPropSvg } from '$lib/utils/embeddedSvgs';
 import { getEmbeddedArrowSvg } from '$lib/utils/embeddedArrowSvgs';
 import { logger } from '$lib/core/logging';

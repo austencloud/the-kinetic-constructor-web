@@ -10,7 +10,6 @@
 -->
 <script lang="ts">
 	import { setContext, onMount, onDestroy } from 'svelte';
-	import { writable, type Writable } from 'svelte/store';
 	import {
 		logger,
 		type Logger,
@@ -56,12 +55,12 @@
 		})
 	);
 
-	// Create a store for the logs
-	const logs = writable<any[]>([]);
+	// Create reactive state for the logs
+	let logs = $state<any[]>([]);
 
 	// Subscribe to memory transport logs
 	const unsubscribe = memoryTransport.addListener((entries) => {
-		logs.set(entries);
+		logs = entries;
 	});
 
 	// Track render count
@@ -139,7 +138,7 @@
 	): Logger {
 		const contextLogger = getContext<{
 			logger: Logger;
-			logs: Writable<any[]>;
+			logs: any[];
 			options: ComponentLoggerOptions;
 		}>(LOGGER_CONTEXT_KEY);
 
@@ -211,7 +210,7 @@
 		observer.observe(node);
 
 		return {
-			update(newParams: { elementName: string; trackRenders?: boolean }) {
+			update(_newParams: { elementName: string; trackRenders?: boolean }) {
 				// Update params if needed
 			},
 			destroy() {

@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 	import { getSelectedStartPosition } from '$lib/state/sequence/selectionState.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { autoAdjustLayout } from '../BeatFrame/beatFrameHelpers';

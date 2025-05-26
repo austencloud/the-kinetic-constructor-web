@@ -1,6 +1,6 @@
 <script lang="ts">
 	import DirectionButton from './DirectionButton.svelte';
-	import type { Direction } from '$lib/stores/sequence/turnsStore';
+	import type { Direction } from '$lib/state/stores/turnsStore.svelte';
 
 	// Define props using Svelte 5 runes syntax
 	const props = $props<{

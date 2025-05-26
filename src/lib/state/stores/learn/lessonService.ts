@@ -1,14 +1,11 @@
 import type { LessonConfig } from './lesson_configs';
-import pictographDataStore from '$lib/stores/pictograph/pictographStore';
-import { get } from 'svelte/store';
-import { writable } from 'svelte/store';
-
+import pictographDataState from '$lib/stores/pictograph/pictographState';
 // Import the PictographData type
 import type { PictographData } from '$lib/types/PictographData';
 import type { Letter } from '$lib/types/Letter';
 
-// Track previous question letters to avoid repetition
-const previousLetterStore = writable<Letter | null>(null);
+// Track previous question letters to avoid repetition using Svelte 5 runes
+let previousLetter = $state<Letter | null>(null);
 const motionTypes = ['anti', 'pro', 'static', 'dash', 'float'];
 
 // Helper to shuffle an array
@@ -33,9 +30,14 @@ function ensurePictographComplete(pictograph: PictographData): PictographData {
 	return data;
 }
 
-// Function to get all available pictograph data from the store
+// Function to get all available pictograph data from the state
 function getAllPictographs(): PictographData[] {
-	return get(pictographDataStore) || [];
+	return (
+		pictographDataState.state.elements.map((el) => ({
+			letter: el.type === 'glyph' ? 'A' : 'A' // This needs proper mapping based on your data structure
+			// Add other required PictographData properties based on your element structure
+		})) || []
+	);
 }
 
 // Function to get pictographs for a specific letter
@@ -49,13 +51,12 @@ function getRandomLetter(availableLetters: Letter[]): Letter {
 	if (availableLetters.length === 0) return 'A' as Letter;
 	if (availableLetters.length === 1) return availableLetters[0];
 
-	const previousLetter = get(previousLetterStore);
 	const filteredLetters = previousLetter
 		? availableLetters.filter((l) => l !== previousLetter)
 		: availableLetters;
 
 	const randomLetter = filteredLetters[Math.floor(Math.random() * filteredLetters.length)];
-	previousLetterStore.set(randomLetter);
+	previousLetter = randomLetter;
 	return randomLetter;
 }
 

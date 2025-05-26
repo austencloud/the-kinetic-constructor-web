@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout';
+	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout.svelte';
 	import { onMount, onDestroy, getContext } from 'svelte';
-	import { useResizeObserver } from '$lib/composables/useResizeObserver';
+	import { useResizeObserver } from '$lib/composables/useResizeObserver.svelte';
 	import { browser } from '$app/environment';
 	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from './context/ElementContext';
 
@@ -11,12 +11,12 @@
 		calculateButtonSizeFactor
 	} from './utils/SequenceLayoutCalculator';
 	import { useSequenceMetadata } from './utils/SequenceMetadataManager';
-	import { openSequenceOverlay } from '$lib/state/sequenceOverlay/sequenceOverlayState';
+	import { openSequenceOverlay } from '$lib/state/sequenceOverlay/sequenceOverlayState.svelte';
 
 	import type { ActionEventDetail } from './ButtonPanel/types';
 	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
 	import { appActions } from '$lib/state/machines/app/app.actions';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 
 	import SequenceContent from './content/SequenceContent.svelte';
 	import SequenceOverlay from './components/SequenceOverlay.svelte';
@@ -143,25 +143,21 @@
 
 	// Emit the full sequence widget dimensions whenever they change
 	$effect(() => {
-		if ($size && $size.width > 0 && $size.height > 0) {
+		if (size && size.width > 0 && size.height > 0) {
 			const event = new CustomEvent('sequence-widget-dimensions', {
 				bubbles: true,
 				detail: {
-					width: $size.width,
-					height: $size.height
+					width: size.width,
+					height: size.height
 				}
 			});
 			document.dispatchEvent(event);
 		}
 	});
 
-	const workbenchIsPortrait = $derived(
-		calculateWorkbenchIsPortrait($dimensions.width, $size.height)
-	);
+	const workbenchIsPortrait = $derived(calculateWorkbenchIsPortrait(dimensions.width, size.height));
 
-	const buttonSizeFactor = $derived(
-		calculateButtonSizeFactor($dimensions.width, $dimensions.height)
-	);
+	const buttonSizeFactor = $derived(calculateButtonSizeFactor(dimensions.width, dimensions.height));
 
 	let sequenceName = $state('');
 
@@ -172,26 +168,11 @@
 		return unsubscribe;
 	});
 
-	// Check if there's a selected beat
-	// Use $state and a direct subscription for immediate reactivity
-	let hasSelectedBeat = $state(false);
-	let isStartPositionSelected = $state(false);
-
-	// Create a more reactive subscription to the selection state
-	// This ensures immediate UI updates when selection changes
-	$effect(() => {
-		// Create a direct subscription to the sequenceContainer
-		const unsubscribe = sequenceContainer.subscribe((state) => {
-			// Update the hasSelectedBeat state immediately when selection changes
-			hasSelectedBeat = state.selectedBeatIds.length > 0;
-
-			// Check if the start position is specifically selected
-			isStartPositionSelected = state.selectedBeatIds.includes('start-position');
-		});
-
-		// Clean up the subscription when the component is destroyed or the effect is re-run
-		return unsubscribe;
-	});
+	// Check if there's a selected beat using derived state
+	let hasSelectedBeat = $derived(sequenceContainer.state.selectedBeatIds.length > 0);
+	let isStartPositionSelected = $derived(
+		sequenceContainer.state.selectedBeatIds.includes('start-position')
+	);
 
 	function handleButtonActionWrapper(event: CustomEvent<ActionEventDetail>) {
 		handleButtonAction({
@@ -423,14 +404,14 @@
 		<div
 			class="main-layout"
 			class:portrait={workbenchIsPortrait}
-			style="--container-width: {$dimensions.width}px;
-			   --container-height: {$dimensions.height}px;
+			style="--container-width: {dimensions.width}px;
+			   --container-height: {dimensions.height}px;
 			   --button-size-factor: {buttonSizeFactor};"
 		>
 			<div class="left-vbox">
 				<SequenceContent
-					containerHeight={$size.height}
-					containerWidth={$dimensions.width}
+					containerHeight={size.height}
+					containerWidth={dimensions.width}
 					onBeatSelected={(beatId) => {
 						// Create a custom event to match the expected format
 						const customEvent = new CustomEvent<{ beatId: string }>('beatselected', {

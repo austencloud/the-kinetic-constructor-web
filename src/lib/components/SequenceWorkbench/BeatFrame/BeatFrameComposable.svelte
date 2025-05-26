@@ -3,7 +3,7 @@
 	import type { BeatFrameLayoutOptions } from '$lib/types/BeatFrameLayoutOptions';
 	import type { BeatData as LegacyBeatData } from './BeatData';
 	import BeatFrameGrid from './components/BeatFrameGrid.svelte';
-	import { useResizeObserver } from '$lib/composables/useResizeObserver';
+	import { useResizeObserver } from '$lib/composables/useResizeObserver.svelte';
 	import { browser } from '$app/environment';
 	import { useBeatFrameState } from './composables/useBeatFrameState.svelte';
 	import { useBeatFrameLayout } from './composables/useBeatFrameLayout.svelte';
@@ -30,8 +30,8 @@
 	});
 
 	const size = $derived({
-		width: $sizeStore?.width || 0,
-		height: $sizeStore?.height || 0
+		width: sizeStore?.width || 0,
+		height: sizeStore?.height || 0
 	});
 
 	// Container element reference

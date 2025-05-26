@@ -1,7 +1,7 @@
 /**
  * Type definitions for the sequence state machine
  */
-import type { BeatData as StoreBeatData } from '../../stores/sequenceStore';
+import type { BeatData as StoreBeatData } from '../../stores/sequence/SequenceContainer.svelte';
 
 // Types for sequence generation options
 export interface SequenceGenerationOptions {

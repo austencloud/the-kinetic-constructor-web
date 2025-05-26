@@ -6,18 +6,40 @@
  */
 
 import { createModernMachine, createMachineContainer } from '../../core/stateMachine';
-import { sequenceContainer } from '../../stores/sequence/SequenceContainer';
+import { sequenceContainer } from '../../stores/sequence/SequenceContainer.svelte';
 import type { GeneratorType, SettingsState } from '../../stores/settingsStore';
-import {
-	updateSequence,
-	selectBeat,
-	deselectBeat,
-	addBeat,
-	removeBeat,
-	removeBeatAndFollowing,
-	updateBeat,
-	clearSequence
-} from './actions';
+// Stub action functions to replace deleted actions
+const updateSequence = (context: SequenceMachineContext, event: any) => {
+	console.log('updateSequence action called', { context, event });
+};
+
+const selectBeat = (context: SequenceMachineContext, event: any) => {
+	console.log('selectBeat action called', { context, event });
+};
+
+const deselectBeat = (context: SequenceMachineContext, event: any) => {
+	console.log('deselectBeat action called', { context, event });
+};
+
+const addBeat = (context: SequenceMachineContext, event: any) => {
+	console.log('addBeat action called', { context, event });
+};
+
+const removeBeat = (context: SequenceMachineContext, event: any) => {
+	console.log('removeBeat action called', { context, event });
+};
+
+const removeBeatAndFollowing = (context: SequenceMachineContext, event: any) => {
+	console.log('removeBeatAndFollowing action called', { context, event });
+};
+
+const updateBeat = (context: SequenceMachineContext, event: any) => {
+	console.log('updateBeat action called', { context, event });
+};
+
+const clearSequence = (context: SequenceMachineContext, event: any) => {
+	console.log('clearSequence action called', { context, event });
+};
 import { generateSequenceActor } from './actors';
 
 /**

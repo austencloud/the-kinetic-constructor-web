@@ -11,7 +11,7 @@
 	import ArrowSvgMirrorManager from './ArrowSvgMirrorManager';
 	import type { PictographService } from '$lib/components/Pictograph/PictographService';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
+	import { svgPreloadingService } from '$lib/services/SvgPreloadingService.svelte';
 
 	// Props
 	const props = $props<{
@@ -48,14 +48,17 @@
 		svgManager = new SvgManager();
 		svgLoader = new ArrowSvgLoader(svgManager);
 		mirrorManager = new ArrowSvgMirrorManager(effectiveArrowData);
-		
+
 		if (props.pictographData) {
-			rotAngleManager = new ArrowRotAngleManager(props.pictographData, props.pictographService || undefined);
+			rotAngleManager = new ArrowRotAngleManager(
+				props.pictographData,
+				props.pictographService || undefined
+			);
 		}
 
 		// Calculate everything upfront
 		rotationAngle = getRotationAngle();
-		
+
 		if (effectiveArrowData.coords) {
 			const mirrorTransform = effectiveArrowData.svgMirrored ? 'scale(-1, 1)' : '';
 			componentState.transform = `
@@ -86,13 +89,13 @@
 
 		try {
 			const cacheKey = `arrow-${effectiveArrowData.motionType}-${effectiveArrowData.startOri}-${effectiveArrowData.turns}-${effectiveArrowData.color}-${effectiveArrowData.svgMirrored}`;
-			
+
 			let svgData = svgDataCache.get(cacheKey);
-			
+
 			if (!svgData) {
 				// Update mirror state before loading
 				mirrorManager?.updateMirror();
-				
+
 				const result = await svgLoader.loadSvg(
 					effectiveArrowData.motionType,
 					effectiveArrowData.startOri,
@@ -100,7 +103,7 @@
 					effectiveArrowData.color,
 					effectiveArrowData.svgMirrored
 				);
-				
+
 				svgData = result.svgData;
 				svgDataCache.set(cacheKey, svgData);
 			}
@@ -113,7 +116,6 @@
 
 			// CRITICAL FIX: Simplified callback - no setTimeout chains
 			notifyLoaded();
-
 		} catch (error) {
 			handleLoadError(error);
 		}
@@ -121,7 +123,7 @@
 
 	function handleLoadError(error: unknown) {
 		console.error('Arrow load error:', error);
-		
+
 		untrack(() => {
 			componentState.svgData = svgLoader.getFallbackSvgData();
 			componentState.isReady = true;
@@ -148,7 +150,7 @@
 			// CRITICAL FIX: Check preloading status once, then load immediately or with minimal delay
 			const isPreloaded = svgPreloadingService.areArrowsReady();
 			const delay = isPreloaded ? 0 : 50;
-			
+
 			if (delay === 0) {
 				loadArrowSvg();
 			} else {
@@ -181,11 +183,12 @@
 			aria-label="Arrow showing {effectiveArrowData.motionType} motion in {effectiveArrowData.color} direction"
 			role="img"
 			onload={() => props.imageLoaded?.()}
-			onerror={() => props.error?.({
-				message: 'Image failed to load',
-				component: 'Arrow',
-				color: effectiveArrowData?.color || 'unknown'
-			})}
+			onerror={() =>
+				props.error?.({
+					message: 'Image failed to load',
+					component: 'Arrow',
+					color: effectiveArrowData?.color || 'unknown'
+				})}
 		/>
 	</g>
 {/if}

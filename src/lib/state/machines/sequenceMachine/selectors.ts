@@ -1,8 +1,8 @@
 /**
  * Selectors for the sequence state machine
  */
-import type { BeatData as StoreBeatData } from '../../stores/sequenceStore';
-import { sequenceStore } from '../../stores/sequenceStore';
+import type { BeatData as StoreBeatData } from '../../stores/sequence/SequenceContainer.svelte';
+import { sequenceContainer } from '../../stores/sequence/SequenceContainer.svelte';
 import type { Actor } from 'xstate';
 
 /**
@@ -45,43 +45,29 @@ export function createSequenceSelectors(sequenceActor: Actor<any>) {
 
 		// Beat selectors (using sequenceStore)
 		selectedBeatIds: () => {
-			let selectedIds: string[] = [];
-			sequenceStore.subscribe((state) => {
-				selectedIds = state.selectedBeatIds;
-			})();
-			return selectedIds;
+			// Use the modern container - NO STORES!
+			return sequenceContainer.state.selectedBeatIds;
 		},
 
 		selectedBeats: () => {
-			let selected: StoreBeatData[] = [];
-			sequenceStore.subscribe((state) => {
-				selected = state.beats.filter((beat) => state.selectedBeatIds.includes(beat.id));
-			})();
-			return selected;
+			// Use the modern container - NO STORES!
+			const state = sequenceContainer.state;
+			return state.beats.filter((beat) => state.selectedBeatIds.includes(beat.id));
 		},
 
 		currentBeatIndex: () => {
-			let index = 0;
-			sequenceStore.subscribe((state) => {
-				index = state.currentBeatIndex;
-			})();
-			return index;
+			// Use the modern container - NO STORES!
+			return sequenceContainer.state.currentBeatIndex;
 		},
 
 		beats: () => {
-			let beats: StoreBeatData[] = [];
-			sequenceStore.subscribe((state) => {
-				beats = state.beats;
-			})();
-			return beats;
+			// Use the modern container - NO STORES!
+			return sequenceContainer.state.beats;
 		},
 
 		beatCount: () => {
-			let count = 0;
-			sequenceStore.subscribe((state) => {
-				count = state.beats.length;
-			})();
-			return count;
+			// Use the modern container - NO STORES!
+			return sequenceContainer.state.beats.length;
 		}
 	};
 }

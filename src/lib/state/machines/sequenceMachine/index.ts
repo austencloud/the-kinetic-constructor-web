@@ -11,9 +11,9 @@
  * should gradually migrate to using the container directly.
  */
 
-// Import legacy dependencies for backward compatibility
-import { stateRegistry } from '../../core/registry';
-import { initializePersistence } from './persistence';
+// Import modern dependencies
+import { runesStateRegistry } from '../../core/runesRegistry.svelte';
+import { initializePersistence } from './persistence.svelte';
 
 // Re-export types from the legacy implementation for backward compatibility
 export * from './types';
@@ -30,15 +30,13 @@ import {
 export const sequenceMachine = modernSequenceMachine;
 
 // Register the modern machine with the registry for backward compatibility
-export const sequenceActor = stateRegistry.registerMachine('sequence', modernSequenceMachine, {
+export const sequenceActor = runesStateRegistry.registerMachine('sequence', modernSequenceMachine, {
 	persist: true,
 	description: 'Manages sequence generation and related operations'
 });
 
-// Initialize persistence
-if (typeof window !== 'undefined') {
-	initializePersistence(sequenceActor);
-}
+// Export the initialization function for use in components
+export { initializePersistence };
 
 // Re-export the modern selectors and actions
 export const sequenceSelectors = modernSequenceSelectors;

@@ -1,7 +1,7 @@
 /**
  * Utilities for encoding sequences into compact formats for sharing
  */
-import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer';
+import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 import type { MotionData } from '$lib/components/objects/Motion/MotionData';
 
 import { logger } from '$lib/core/logging';

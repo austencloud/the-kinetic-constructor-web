@@ -1,7 +1,7 @@
 <!-- src/lib/components/SettingsDialog/ImageExportTab/ImageExportPreviewPanel.svelte -->
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 
 	import type { ImageExportSettings } from '$lib/state/image-export-settings.svelte';
 

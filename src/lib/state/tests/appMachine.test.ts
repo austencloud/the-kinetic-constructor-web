@@ -2,7 +2,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createActor, waitFor } from 'xstate';
-import { stateRegistry } from '../core/registry';
+import { runesStateRegistry } from '../core/runesRegistry.svelte';
 
 // --- Mocking Strategy ---
 // We need the actual machine definition, but can mock the initializer
@@ -25,7 +25,7 @@ describe('App State Machine', () => {
 
 	beforeEach(() => {
 		vi.resetAllMocks(); // Reset mocks, not spies on console etc.
-		stateRegistry.clear();
+		runesStateRegistry.clear();
 
 		// Create a fresh actor using the *real* machine definition
 		appActor = createActor(appMachine);

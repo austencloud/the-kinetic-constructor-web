@@ -15,21 +15,21 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
-	import { useResizeObserver } from '$lib/composables/useResizeObserver';
+	import { useResizeObserver } from '$lib/composables/useResizeObserver.svelte';
 	import { autoAdjustLayout, calculateCellSize } from '../beatFrameHelpers';
-	import { layoutStore } from '$lib/stores/layout/layoutStore';
+	import { layoutState } from '$lib/stores/layout/layoutState.svelte';
 	import type { BeatFrameLayoutOptions } from '$lib/types/BeatFrameLayoutOptions';
 
 	// Use Svelte 5 runes for reactive state
-	const { size: sizeStore, resizeObserver } = useResizeObserver({
+	const { size: sizeStore } = useResizeObserver({
 		width: browser ? window.innerWidth : 800,
 		height: browser ? window.innerHeight : 600
 	});
 
-	// Convert the size store to a reactive value
+	// Convert the size to a reactive value
 	const size = $derived({
-		width: $sizeStore?.width || 0,
-		height: $sizeStore?.height || 0
+		width: sizeStore?.width || 0,
+		height: sizeStore?.height || 0
 	});
 
 	// Props
@@ -74,8 +74,8 @@
 
 		// Check if the layout has changed
 		if (beatRows !== prevRows || beatCols !== prevCols) {
-			// Update the layout store
-			layoutStore.updateLayout(beatRows, beatCols, beatCount);
+			// Update the layout state
+			layoutState.updateLayout(beatRows, beatCols, beatCount);
 
 			// Update previous values
 			prevRows = beatRows;

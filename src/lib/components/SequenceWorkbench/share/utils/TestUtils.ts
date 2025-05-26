@@ -1,7 +1,7 @@
 /**
  * Test utilities for sequence sharing
  */
-import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer';
+import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 import { generateShareableUrl } from './UrlUtils';
 import { decodeSequenceCompact } from './SequenceDecoder';
 

@@ -85,6 +85,11 @@ if (browser) {
 	initializeSequenceMachineState();
 }
 
-// Export reactive getters for components that need to access the state
-export const startPositionState = $derived(selectedStartPosition);
-export const sequenceEmptyState = $derived(isSequenceEmpty);
+// Export reactive getters for components that need to access the state as functions (Svelte 5 requirement)
+export function startPositionState() {
+	return selectedStartPosition;
+}
+
+export function sequenceEmptyState() {
+	return isSequenceEmpty;
+}

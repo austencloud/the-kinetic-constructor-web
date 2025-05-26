@@ -1,7 +1,7 @@
 <!-- src/lib/components/SequenceWorkbench/SequenceOverlayButton.svelte -->
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { openSequenceOverlay } from '$lib/state/sequenceOverlay/sequenceOverlayState';
+	import { openSequenceOverlay } from '$lib/state/sequenceOverlay/sequenceOverlayState.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 

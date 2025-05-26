@@ -1,9 +1,8 @@
 import {
 	isSequenceFullScreen,
-	openSequenceFullScreen,
-	closeSequenceFullScreen
-} from '$lib/stores/sequence/sequenceOverlayStore';
-import { onDestroy } from 'svelte';
+	enterSequenceFullScreen,
+	exitSequenceFullScreen
+} from '$lib/stores/sequence/sequenceOverlayState';
 
 /**
  * Interface for the full screen manager return value
@@ -15,36 +14,23 @@ export interface FullScreenManagerResult {
 }
 
 /**
- * Manages the full screen state for the sequence widget
+ * Manages the full screen state for the sequence widget using Svelte 5 runes
  * @returns Object with full screen state and functions
  */
 export function useFullScreenManager(): FullScreenManagerResult {
-	// Create a variable to hold the current state
-	let isFullScreen = false;
-
-	// Subscribe to the store to keep the value updated
-	const unsubscribe = isSequenceFullScreen.subscribe((value) => {
-		isFullScreen = value;
-	});
-
-	// Clean up subscription on component destroy
-	onDestroy(() => {
-		unsubscribe();
-	});
-
 	// Define the functions to open and close fullscreen
 	function openFullScreen() {
-		openSequenceFullScreen();
+		enterSequenceFullScreen();
 	}
 
 	function closeFullScreen() {
-		closeSequenceFullScreen();
+		exitSequenceFullScreen();
 	}
 
-	// Return the manager object
+	// Return the manager object with reactive getter
 	return {
 		get isFullScreen() {
-			return isFullScreen;
+			return isSequenceFullScreen();
 		},
 		openFullScreen,
 		closeFullScreen

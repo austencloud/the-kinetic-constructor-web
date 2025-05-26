@@ -6,8 +6,8 @@
 	import { setContext } from 'svelte';
 	import { browser } from '$app/environment';
 	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from '../context/ElementContext';
-	import { editModeStore } from '$lib/state/stores/editModeStore';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { editModeState } from '$lib/state/stores/editModeState.svelte';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 
 	// Props with callback for beat selection
 	const {
@@ -83,17 +83,8 @@
 		beatFrameNaturalHeight = event.detail.height;
 	}
 
-	// Local state for selection mode
-	let isSelectionMode = $state(false);
-
-	// Subscribe to the edit mode store
-	$effect(() => {
-		const unsubscribe = editModeStore.subscribe((state) => {
-			isSelectionMode = state.isSelectionMode;
-		});
-
-		return unsubscribe;
-	});
+	// Local state for selection mode derived from edit mode state
+	const isSelectionMode = $derived(editModeState.state.isSelectionMode);
 
 	// Handle beat selected event
 	function handleBeatSelected(event: CustomEvent<{ beatId: string }>) {
@@ -108,7 +99,7 @@
 			sequenceContainer.selectBeat(beatId);
 
 			// Enter edit mode
-			editModeStore.setEditMode(true);
+			editModeState.setEditMode(true);
 		}
 	}
 

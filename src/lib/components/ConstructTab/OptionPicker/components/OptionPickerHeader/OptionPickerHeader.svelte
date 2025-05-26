@@ -30,7 +30,7 @@
 	} = useResponsiveLayout(getLayoutContext);
 </script>
 
-<div class="option-picker-header" class:mobile={$isMobileDevice} data-testid="option-picker-header">
+<div class="option-picker-header" class:mobile={isMobileDevice} data-testid="option-picker-header">
 	<div class="header-content">
 		<!-- TabsContainer or helper-message now comes first -->
 		{#if props.showTabs}
@@ -38,9 +38,9 @@
 			<TabsContainer
 				selectedTab={props.selectedTab}
 				categoryKeys={Array.isArray(props.categoryKeys) ? props.categoryKeys : []}
-				isScrollable={$isScrollable}
-				showScrollIndicator={$showScrollIndicator}
-				useShortLabels={$useShortLabels}
+				{isScrollable}
+				{showScrollIndicator}
+				{useShortLabels}
 				onScroll={handleScroll}
 			/>
 		{:else}
@@ -49,8 +49,8 @@
 		{/if}
 
 		<!-- ViewControl now comes second, will be on the right -->
-		<div class="view-controls" class:compact={$compactMode}>
-			<ViewControl compact={$compactMode} />
+		<div class="view-controls" class:compact={compactMode}>
+			<ViewControl compact={compactMode} />
 		</div>
 	</div>
 </div>

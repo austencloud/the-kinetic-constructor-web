@@ -9,7 +9,7 @@ import {
 } from '../utils/beatFrameUtils';
 
 // Mock dependencies
-vi.mock('$lib/state/stores/sequence/SequenceContainer', () => ({
+vi.mock('$lib/state/stores/sequence/SequenceContainer.svelte', () => ({
 	sequenceContainer: {
 		state: { beats: [], selectedBeatIds: [] },
 		subscribe: vi.fn(() => vi.fn()),
@@ -245,7 +245,7 @@ Object.defineProperty(window, 'localStorage', {
 		removeItem: vi.fn(),
 		clear: vi.fn()
 	},
-	writable: true
+	configurable: true
 });
 
 // Mock crypto for ID generation

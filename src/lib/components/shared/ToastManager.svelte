@@ -1,6 +1,4 @@
 <script lang="ts" context="module">
-	import { writable } from 'svelte/store';
-
 	// Define toast interface
 	export interface ToastItem {
 		id: string;
@@ -13,13 +11,18 @@
 		} | null;
 	}
 
-	// Create a writable store for toasts
-	export const toasts = writable<ToastItem[]>([]);
+	// Create reactive state for toasts using Svelte 5 runes
+	let toastState = $state<ToastItem[]>([]);
+
+	// Getter function for accessing toasts
+	export function getToasts(): ToastItem[] {
+		return toastState;
+	}
 
 	// Add a toast
 	export function addToast(toast: Omit<ToastItem, 'id'>) {
 		const id = Math.random().toString(36).substring(2, 9);
-		toasts.update((all) => [...all, { ...toast, id }]);
+		toastState = [...toastState, { ...toast, id }];
 
 		// Auto-remove toast after duration
 		if (toast.duration !== 0) {
@@ -34,7 +37,7 @@
 
 	// Remove a toast by ID
 	export function removeToast(id: string) {
-		toasts.update((all) => all.filter((t) => t.id !== id));
+		toastState = toastState.filter((t) => t.id !== id);
 	}
 
 	// Show a success toast
@@ -72,10 +75,13 @@
 
 <script lang="ts">
 	import Toast from './Toast.svelte';
+
+	// Get reactive access to toasts
+	const toasts = $derived(getToasts());
 </script>
 
 <div class="toast-manager">
-	{#each $toasts as toast (toast.id)}
+	{#each toasts as toast (toast.id)}
 		<div class="toast-wrapper">
 			<Toast
 				message={toast.message}

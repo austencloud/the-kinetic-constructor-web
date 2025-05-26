@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
 	import {
-		sequenceOverlayStore,
+		getSequenceOverlayState,
 		closeSequenceOverlay
-	} from '$lib/state/sequenceOverlay/sequenceOverlayState';
+	} from '$lib/state/sequenceOverlay/sequenceOverlayState.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 
@@ -14,8 +14,8 @@
 		sequenceName?: string;
 	}>();
 
-	// Use the store with Svelte 5 runes
-	const isOpen = $derived($sequenceOverlayStore.isOpen);
+	// Use the state with Svelte 5 runes
+	const isOpen = $derived(getSequenceOverlayState().isOpen);
 
 	// Truncate title to 8 characters if it's longer
 	const MAX_CHARS = 8;

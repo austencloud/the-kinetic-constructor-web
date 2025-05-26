@@ -6,11 +6,10 @@
  */
 
 // Export core utilities
-export * from './core/store';
-export * from './core/registry';
+export * from './core/runesRegistry.svelte';
 
 // Import at the top to avoid circular dependencies
-import { stateRegistry } from './core/registry';
+import { runesStateRegistry } from './core/runesRegistry.svelte';
 import { appActions } from './machines/app/app.actions';
 import * as appSelectors from './machines/app/app.selectors';
 import { appService as appActor } from './machines/app/app.machine';
@@ -19,9 +18,7 @@ import { sequenceActor, sequenceActions, sequenceSelectors } from './machines/se
 // Export state machines (excluding sequenceContainer to avoid ambiguity)
 export { appMachine } from './machines';
 
-// Export stores
-export * from './stores/sequenceStore';
-export * from './stores/uiStore';
+// Modern runes-based state - no legacy stores
 
 // Re-export specific machines for convenience
 export { appActions, appSelectors, appActor };
@@ -33,44 +30,14 @@ export { sequenceActions, sequenceSelectors, sequenceActor };
  */
 export function initializeStateManagement(): void {
 	// Verify actors are registered before adding dependencies
-	const registeredContainers = stateRegistry.getAll().map((container) => container.id);
+	const registeredContainers = runesStateRegistry.getAll().map((container) => container.id);
 	const hasSequenceActor = registeredContainers.includes('sequenceActor');
 	const hasAppActor = registeredContainers.includes('appActor');
 
-	// If actors aren't registered yet, try to register them directly
-	if (!hasSequenceActor || !hasAppActor) {
-		try {
-			// Check again after attempted registration
-			const updatedContainers = stateRegistry.getAll().map((container) => container.id);
-			const nowHasSequenceActor = updatedContainers.includes('sequenceActor');
-			const nowHasAppActor = updatedContainers.includes('appActor');
-
-			// Define dependencies between actors and stores if now registered
-			if (nowHasSequenceActor && nowHasAppActor) {
-				stateRegistry.addDependency('sequenceActor', 'appActor');
-			}
-		} catch (error) {
-			console.error('Error registering actors:', error);
-		}
-	} else {
-		// Both actors are already registered, add the dependency
-		stateRegistry.addDependency('sequenceActor', 'appActor');
-	}
-
-	// Get the topologically sorted initialization order
-	const initOrder = stateRegistry.getInitializationOrder();
-
-	// Start actors in dependency order
-	for (const id of initOrder) {
-		const container = stateRegistry.get(id);
-		// Check if it's an actor (has getSnapshot and start methods)
-		if (container && 'getSnapshot' in container && typeof (container as any).start === 'function') {
-			const actor = container as typeof appActor;
-			if (actor.getSnapshot().status !== 'active') {
-				actor.start();
-			}
-		}
-	}
+	// Modern runes registry doesn't need complex dependency management
+	// Just ensure actors are started
+	console.log('🚀 Initializing state management with runes registry');
+	console.log('📊 Registry stats:', runesStateRegistry.getStats());
 
 	// Explicitly start critical actors that must be running
 	try {
@@ -95,29 +62,20 @@ export function initializeStateManagement(): void {
 	// Add global access for debugging in development
 	if (import.meta.env.DEV && typeof window !== 'undefined') {
 		(window as any).__STATE__ = {
-			registry: stateRegistry,
+			registry: runesStateRegistry,
 			appActor,
 			sequenceActor,
 			appActions,
 			sequenceActions,
 			getState: (id: string) => {
-				const container = stateRegistry.get(id);
+				const container = runesStateRegistry.get(id);
 				if (!container) return undefined;
 
-				if ('getSnapshot' in container) {
-					return container.getSnapshot();
-				} else if ('subscribe' in container) {
-					// It's a store
-					const { subscribe } = container as { subscribe: any };
-					let value: any;
-					const unsubscribe = subscribe((v: any) => {
-						value = v;
-					});
-					unsubscribe();
-					return value;
+				if (container.instance && 'getSnapshot' in container.instance) {
+					return container.instance.getSnapshot();
 				}
 
-				return undefined;
+				return container.instance;
 			}
 		};
 	}

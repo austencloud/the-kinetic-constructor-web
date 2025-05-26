@@ -5,7 +5,7 @@ import { wrapBenchWithBudget, type PerformanceBudget } from './utils';
 import { createSupervisedMachine } from '../machine';
 import { RestartStrategy, EscalateStrategy } from '../supervision/strategies';
 import { RootSupervisor } from '../supervision/RootSupervisor';
-import { stateRegistry } from '../registry';
+import { runesStateRegistry } from '../runesRegistry.svelte';
 
 interface BenchContext {
 	task: (fn: () => void) => Promise<void>;
@@ -21,7 +21,7 @@ const actorBudget: PerformanceBudget = {
 describe('State Management Performance', () => {
 	beforeEach(() => {
 		RootSupervisor.resetInstance();
-		stateRegistry.clear();
+		runesStateRegistry.clear();
 	});
 
 	describe('Actor Creation', () => {
@@ -89,7 +89,7 @@ describe('State Management Performance', () => {
 							states: { idle: {} }
 						})
 					);
-					stateRegistry.unregister('bench-reg');
+					runesStateRegistry.unregister('bench-reg');
 				});
 			})
 		);

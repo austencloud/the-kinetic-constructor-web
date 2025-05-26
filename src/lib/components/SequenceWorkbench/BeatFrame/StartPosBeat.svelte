@@ -8,7 +8,7 @@
 	import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 	import type { PictographData } from '$lib/types/PictographData';
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/BeatHoverEffect.svelte';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import AnimatedHighlight from './GoldSelectionBorder.svelte';
 	import { createSafePictographCopy } from '$lib/utils/pictographUtils';
@@ -33,20 +33,12 @@
 		localBeatData = { ...props.beatData };
 	});
 
-	// Update isSelected when the selection changes with guard to prevent loops
+	// Update isSelected when the selection changes with guard to prevent loops - NO STORES!
 	let isUpdatingSelection = false;
 	$effect(() => {
 		if (!isUpdatingSelection) {
-			// Create a subscription to the sequenceContainer state
-			const unsubscribe = sequenceContainer.subscribe((state) => {
-				if (!isUpdatingSelection) {
-					// Update the selection state immediately when it changes
-					isSelected = state.selectedBeatIds.includes('start-position');
-				}
-			});
-
-			// Clean up the subscription when the component is destroyed or the effect is re-run
-			return unsubscribe;
+			// Watch the sequenceContainer state directly
+			isSelected = sequenceContainer.state.selectedBeatIds.includes('start-position');
 		}
 	});
 

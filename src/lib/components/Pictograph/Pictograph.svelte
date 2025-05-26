@@ -4,7 +4,7 @@
 	import type { PropData } from '$lib/components/objects/Prop/PropData';
 	import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 	import { PictographService } from './PictographService';
-	import { svgPreloadingService } from '$lib/services/SvgPreloadingService';
+	import { svgPreloadingService } from '$lib/services/SvgPreloadingService.svelte';
 
 	import PictographError from './components/PictographError.svelte';
 	import PictographDebug from './components/PictographDebug.svelte';

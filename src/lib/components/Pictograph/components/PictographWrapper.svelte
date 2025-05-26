@@ -4,20 +4,19 @@
   This component provides the wrapper element for the pictograph.
 -->
 <script lang="ts">
-	import { get } from 'svelte/store';
+	// NO STORES - RUNES ONLY!
 	import type { PictographData } from '$lib/types/PictographData';
-	import type { Writable } from 'svelte/store';
 	import { getPictographElement, getPictographRole } from '../utils/PictographRenderUtils';
 	import { handleClick } from '../handlers/PictographEventHandler';
 
-	// Convert to Svelte 5 runes syntax
+	// MODERNIZED: Svelte 5 runes syntax with direct data prop - NO STORES!
 	const {
-		pictographDataStore,
+		pictographData,
 		onClick = undefined,
 		state,
 		children
 	} = $props<{
-		pictographDataStore: Writable<PictographData>;
+		pictographData: PictographData;
 		onClick?: (() => void) | undefined;
 		state: string;
 		children?: import('svelte').Snippet;
@@ -27,11 +26,13 @@
 	const element = $derived(getPictographElement(onClick));
 	const role = $derived(getPictographRole(onClick));
 
-	// Get the letter from the store safely
+	// MODERNIZED: Get the letter directly from data - NO STORES!
 	const letter = $derived(() => {
-		const data = get(pictographDataStore);
-		return data && typeof data === 'object' && data !== null && 'letter' in data
-			? data.letter
+		return pictographData &&
+			typeof pictographData === 'object' &&
+			pictographData !== null &&
+			'letter' in pictographData
+			? pictographData.letter
 			: null;
 	});
 

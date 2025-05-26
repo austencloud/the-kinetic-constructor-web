@@ -87,7 +87,7 @@
 					transitionKey = transitionKey + 1;
 
 					// Set timeout to end transition
-					const actualDuration = $prefersReducedMotion ? 50 : transitionDuration;
+					const actualDuration = prefersReducedMotion() ? 50 : transitionDuration;
 					transitionTimeout = setTimeout(() => {
 						isTransitioning = false;
 						previousOptions = []; // Clear previous options when transition ends
@@ -115,7 +115,7 @@
 
 	// Simple fade out only - no scaling/sliding that could cause layout issues
 	function cleanFadeOut(node: HTMLElement, { duration = transitionDuration } = {}) {
-		const actualDuration = $prefersReducedMotion ? 50 : duration;
+		const actualDuration = prefersReducedMotion() ? 50 : duration;
 
 		// Apply initial styles immediately to prevent layout shifts
 		node.style.position = 'absolute';
@@ -134,7 +134,7 @@
 
 	// Simple fade in only - clean and straightforward
 	function cleanFadeIn(node: HTMLElement, { duration = transitionDuration } = {}) {
-		const actualDuration = $prefersReducedMotion ? 50 : duration;
+		const actualDuration = prefersReducedMotion() ? 50 : duration;
 
 		// Apply initial styles immediately to prevent layout shifts
 		node.style.position = 'relative';

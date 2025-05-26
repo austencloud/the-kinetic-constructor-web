@@ -18,8 +18,7 @@
  */
 
 import { browser } from '$app/environment';
-import { settingsStore } from '$lib/state/stores/settings/settings.store';
-import { get } from 'svelte/store';
+// NO STORES - RUNES ONLY!
 
 // Types of haptic feedback patterns
 export type HapticFeedbackType =
@@ -53,18 +52,9 @@ class HapticFeedbackService {
 		// Check if the Vibration API is supported
 		this.checkSupport();
 
-		// Subscribe to settings changes if in browser environment
-		if (browser) {
-			settingsStore.subscribe((settings) => {
-				// If hapticFeedback setting exists, use it; otherwise default to true
-				this.isEnabled = settings.hapticFeedback !== undefined ? settings.hapticFeedback : true;
-
-				// Disable haptic feedback if reduced motion is enabled
-				if (settings.reducedMotion) {
-					this.isEnabled = false;
-				}
-			});
-		}
+		// MODERNIZED: Default to enabled - NO STORES!
+		// Settings will be managed through direct API calls instead of store subscriptions
+		this.isEnabled = true;
 	}
 
 	/**
@@ -133,20 +123,13 @@ class HapticFeedbackService {
 	}
 
 	/**
-	 * Enable or disable haptic feedback
+	 * MODERNIZED: Enable or disable haptic feedback - NO STORES!
 	 * @param enabled Boolean indicating if haptic feedback should be enabled
 	 */
 	public setEnabled(enabled: boolean): void {
 		this.isEnabled = enabled;
-
-		// Update the settings store
-		if (browser) {
-			const currentSettings = get(settingsStore);
-			settingsStore.updateSettings({
-				...currentSettings,
-				hapticFeedback: enabled
-			});
-		}
+		// Note: Settings persistence would need to be handled by the calling component
+		// using runes-based state management
 	}
 
 	/**

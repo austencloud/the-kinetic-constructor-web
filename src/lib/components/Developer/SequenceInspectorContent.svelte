@@ -5,18 +5,17 @@
   It's designed to be embedded in the DeveloperTools panel.
 -->
 <script lang="ts">
-	import { writable } from 'svelte/store';
 	import sequenceDataService from '$lib/services/SequenceDataService';
 	import { onDestroy } from 'svelte';
 
-	// State
-	let jsonText = '';
-	const error = writable(''); // For formatting/parsing errors
+	// State using runes
+	let jsonText = $state('');
+	let error = $state(''); // For formatting/parsing errors
 
 	// State for copy button feedback
 	type CopyStatus = 'idle' | 'copying' | 'copied' | 'error';
-	let copyStatus = writable<CopyStatus>('idle');
-	let copyError = writable<string | null>(null); // Specific error for copy action
+	let copyStatus = $state<CopyStatus>('idle');
+	let copyError = $state<string | null>(null); // Specific error for copy action
 
 	// Timeout ID for resetting copy status
 	let copyTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -69,11 +68,11 @@
 	function initializeJsonText() {
 		try {
 			jsonText = JSON.stringify(formatSequence(), null, 2);
-			error.set(''); // Clear formatting errors
-			copyError.set(null); // Clear copy errors
-			copyStatus.set('idle'); // Reset copy button state
+			error = ''; // Clear formatting errors
+			copyError = null; // Clear copy errors
+			copyStatus = 'idle'; // Reset copy button state
 		} catch (e) {
-			error.set('Error formatting sequence: ' + (e as Error).message);
+			error = 'Error formatting sequence: ' + (e as Error).message;
 			jsonText = 'Error generating JSON.';
 		}
 	}
@@ -85,12 +84,12 @@
 	async function handleCopy() {
 		// Clear previous timeout and errors
 		if (copyTimeoutId) clearTimeout(copyTimeoutId);
-		copyError.set(null);
-		copyStatus.set('copying'); // Indicate copying process start
+		copyError = null;
+		copyStatus = 'copying'; // Indicate copying process start
 
 		if (!navigator.clipboard) {
-			copyError.set('Clipboard API not available in this context.');
-			copyStatus.set('error');
+			copyError = 'Clipboard API not available in this context.';
+			copyStatus = 'error';
 			console.error('Clipboard API not available.');
 			resetCopyStatusAfterDelay();
 			return;
@@ -98,10 +97,10 @@
 
 		try {
 			await navigator.clipboard.writeText(jsonText);
-			copyStatus.set('copied'); // Set status to copied on success
+			copyStatus = 'copied'; // Set status to copied on success
 		} catch (err) {
-			copyError.set('Failed to copy JSON.'); // Set specific copy error
-			copyStatus.set('error'); // Set status to error on failure
+			copyError = 'Failed to copy JSON.'; // Set specific copy error
+			copyStatus = 'error'; // Set status to error on failure
 			console.error('Failed to copy text: ', err);
 		} finally {
 			resetCopyStatusAfterDelay(); // Reset status back to idle after delay
@@ -111,8 +110,8 @@
 	/** Resets the copy button status to 'idle' after a delay */
 	function resetCopyStatusAfterDelay(delay = 2000) {
 		copyTimeoutId = setTimeout(() => {
-			copyStatus.set('idle');
-			copyError.set(null); // Clear copy error when resetting
+			copyStatus = 'idle';
+			copyError = null; // Clear copy error when resetting
 			copyTimeoutId = null;
 		}, delay);
 	}
@@ -130,7 +129,7 @@
 
 <div class="sequence-inspector">
 	<div class="actions">
-		<button on:click={handleRefresh} class="refresh-button">
+		<button onclick={handleRefresh} class="refresh-button">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
 				width="16"
@@ -151,14 +150,14 @@
 		<div class="spacer"></div>
 		<button
 			class="copy-button"
-			class:copying={$copyStatus === 'copying'}
-			class:copied={$copyStatus === 'copied'}
-			class:error={$copyStatus === 'error'}
-			on:click={handleCopy}
-			disabled={$copyStatus !== 'idle'}
+			class:copying={copyStatus === 'copying'}
+			class:copied={copyStatus === 'copied'}
+			class:error={copyStatus === 'error'}
+			onclick={handleCopy}
+			disabled={copyStatus !== 'idle'}
 			aria-live="polite"
 		>
-			{#if $copyStatus === 'idle'}
+			{#if copyStatus === 'idle'}
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="16"
@@ -174,9 +173,9 @@
 					<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
 				</svg>
 				<span>Copy JSON</span>
-			{:else if $copyStatus === 'copying'}
+			{:else if copyStatus === 'copying'}
 				<span>Copying...</span>
-			{:else if $copyStatus === 'copied'}
+			{:else if copyStatus === 'copied'}
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="16"
@@ -191,7 +190,7 @@
 					<polyline points="20 6 9 17 4 12"></polyline>
 				</svg>
 				<span>Copied!</span>
-			{:else if $copyStatus === 'error'}
+			{:else if copyStatus === 'error'}
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="16"
@@ -212,19 +211,19 @@
 		</button>
 	</div>
 
-	{#if $error}
-		<p class="error-message">{$error}</p>
+	{#if error}
+		<p class="error-message">{error}</p>
 	{/if}
 
-	{#if $copyError && $copyStatus === 'error'}
-		<p class="error-message">{$copyError}</p>
+	{#if copyError && copyStatus === 'error'}
+		<p class="error-message">{copyError}</p>
 	{/if}
 
 	<textarea
 		bind:value={jsonText}
 		placeholder="Sequence JSON will appear here..."
 		spellcheck="false"
-		readonly={$copyStatus === 'copying'}
+		readonly={copyStatus === 'copying'}
 	></textarea>
 </div>
 

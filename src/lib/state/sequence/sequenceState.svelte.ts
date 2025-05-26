@@ -9,7 +9,7 @@ import type {
 	SequenceBeat,
 	SequenceMetadata,
 	SequenceStartPos
-} from '$lib/services/SequenceDataService';
+} from '$lib/services/SequenceDataService.svelte';
 import { LetterUtils } from '$lib/utils/LetterUtils';
 
 // Types for our modern sequence state
