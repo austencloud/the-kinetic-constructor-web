@@ -8,6 +8,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import { cubicInOut } from 'svelte/easing';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
+	// 🚨 NUCLEAR FIX: Using original OptionPicker with infinite loop fixes applied
 	import OptionPicker from '$lib/components/ConstructTab/OptionPicker';
 
 	// Derived state for selected beats
@@ -37,7 +38,7 @@
 			<GraphEditor />
 		</div>
 	{:else}
-		<!-- Unified OptionPicker (handles both start position and beat options internally) -->
+		<!-- 🚨 DEBUGGING: OptionPicker RE-ENABLED for systematic debugging -->
 		<div class="full-height-wrapper" in:fade={fadeParams} out:fade={fadeParams}>
 			<OptionPicker />
 		</div>

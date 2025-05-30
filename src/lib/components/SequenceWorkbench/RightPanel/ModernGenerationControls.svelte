@@ -1,6 +1,6 @@
 <!-- src/lib/components/SequenceWorkbench/RightPanel/ModernGenerationControls.svelte -->
 <script lang="ts">
-	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
+	import { sequenceState } from '$lib/state/simple/sequenceState.svelte';
 	import { settingsStore, type CAPType } from '$lib/state/stores/settingsStore';
 	import GenerateButton from '$lib/components/GenerateTab/components/GenerateButton.svelte';
 	import CircularSequencer from '$lib/components/GenerateTab/components/CircularSequencer.svelte';
@@ -27,11 +27,11 @@
 		{ id: 'random', label: 'Random' }
 	];
 
-	// State using Svelte 5 runes
-	const generatorType = $derived(sequenceSelectors.generationType());
-	const isGenerating = $derived(sequenceSelectors.isGenerating());
-	const hasError = $derived(sequenceSelectors.hasError());
-	const statusMessage = $derived(sequenceSelectors.message());
+	// MIGRATED: State using pure Svelte 5 runes
+	const generatorType = $derived(settingsStore.getSnapshot().generatorType || 'circular');
+	const isGenerating = $derived(sequenceState.isGenerating);
+	const hasError = $derived(sequenceState.error !== null);
+	const statusMessage = $derived(sequenceState.generationMessage || sequenceState.error || '');
 
 	// Get settings values using mutable state
 	let numBeats = $state(8); // Default value
@@ -123,7 +123,7 @@
 		}
 	}
 
-	// Handle generate click
+	// MIGRATED: Handle generate click with pure Svelte 5 runes
 	function handleGenerate() {
 		// Get current settings
 		const settings = {
@@ -134,8 +134,24 @@
 			level
 		};
 
-		// Use the sequence machine to generate the sequence
-		sequenceActions.generate(generatorType, settings);
+		// Start generation process
+		sequenceState.startGeneration(settings);
+
+		// Simulate generation (replace with actual generation logic later)
+		setTimeout(() => {
+			try {
+				// For now, just create empty beats as placeholder
+				const newSequence = Array.from({ length: numBeats }, (_, i) => ({
+					id: `beat-${i}`,
+					duration: 1
+					// Add other required Beat properties here
+				}));
+
+				sequenceState.completeGeneration(newSequence as any[]);
+			} catch (error) {
+				sequenceState.failGeneration(error instanceof Error ? error.message : 'Generation failed');
+			}
+		}, 1000);
 	}
 </script>
 

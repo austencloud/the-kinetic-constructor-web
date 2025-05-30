@@ -4,7 +4,7 @@
 	import { LAYOUT_CONTEXT_KEY } from '../../layoutContext';
 	import ViewControl from '../ViewControl/ViewControl.svelte';
 	import TabsContainer from './TabsContainer.svelte';
-	import { useResponsiveLayout } from './useResponsiveLayout';
+	import { useResponsiveLayout } from './useResponsiveLayout.svelte';
 
 	// --- Props using Svelte 5 runes ---
 	const props = $props<{

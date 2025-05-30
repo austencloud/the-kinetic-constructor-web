@@ -92,8 +92,14 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
 	let backgroundType = $state<BackgroundType>('nightSky');
 	let isInitialized = $state(false);
 
-	// Derived values
-	const shouldRender = $derived(isActive && performanceMetrics.fps > 30);
+	// NUCLEAR TEST: Disable potentially problematic $derived statement
+	// console.log('🧪 NUCLEAR TEST: Disabling shouldRender $derived in BackgroundContext');
+
+	// // Derived values
+	// const shouldRender = $derived(isActive && performanceMetrics.fps > 30);
+
+	// FALLBACK: Use a simple static value
+	const shouldRender = true;
 
 	// Create background system based on type and quality
 	let backgroundSystem = $state<BackgroundSystem | null>(null);
@@ -259,15 +265,18 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
 		window.addEventListener('resize', handleResize);
 		document.addEventListener('visibilitychange', handleVisibilityChange);
 
-		// Set up cleanup when component is destroyed
-		$effect(() => {
-			// Return cleanup function
-			return () => {
-				window.removeEventListener('resize', handleResize);
-				document.removeEventListener('visibilitychange', handleVisibilityChange);
-				stopAnimation();
-			};
-		});
+		// NUCLEAR TEST: Disable the cleanup $effect block
+		// console.log('🧪 NUCLEAR TEST: Disabling cleanup $effect in BackgroundContext');
+
+		// // Set up cleanup when component is destroyed
+		// $effect(() => {
+		// 	// Return cleanup function
+		// 	return () => {
+		// 		window.removeEventListener('resize', handleResize);
+		// 		document.removeEventListener('visibilitychange', handleVisibilityChange);
+		// 		stopAnimation();
+		// 	};
+		// });
 
 		isInitialized = true;
 
@@ -284,7 +293,9 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
 	// Performance tracker
 	const performanceTracker = PerformanceTracker.getInstance();
 
-	// Start animation
+	// EXACT REPLACEMENT for startAnimation function in BackgroundContext.svelte.ts
+
+	// Start animation - FIXED VERSION
 	function startAnimation(
 		renderFn: (ctx: CanvasRenderingContext2D, dimensions: Dimensions) => void,
 		reportFn?: (metrics: PerformanceMetrics) => void
@@ -305,26 +316,43 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
 
 		performanceTracker.reset();
 
+		// CRITICAL FIX: Capture reactive state values ONCE before starting animation loop
+		// to prevent accessing $state variables inside requestAnimationFrame
+		const initialStateSnapshot = {
+			isActiveSnapshot: isActive,
+			dimensionsSnapshot: { ...dimensions }
+		};
+
 		const animate = () => {
 			if (!ctx || !canvas) return;
 
 			performanceTracker.update();
 
 			const perfStatus = performanceTracker.getPerformanceStatus();
-			performanceMetrics = {
+
+			// CRITICAL FIX: Create non-reactive metrics object (don't update $state)
+			const currentMetrics = {
 				fps: perfStatus.fps,
 				warnings: perfStatus.warnings
 			};
 
+			// Report to callback without updating reactive state
 			if (reportCallback) {
-				reportCallback(performanceMetrics);
+				reportCallback(currentMetrics);
 			}
 
-			const shouldRenderNow = isActive && perfStatus.fps > 30;
+			// CRITICAL FIX: Use captured non-reactive values instead of accessing $state
+			// Only use performance-based rendering decision to avoid reactive state access
+			const shouldRenderNow = perfStatus.fps > 30;
 
 			if (shouldRenderNow) {
-				ctx.clearRect(0, 0, dimensions.width, dimensions.height);
-				renderFn(ctx, dimensions);
+				ctx.clearRect(
+					0,
+					0,
+					initialStateSnapshot.dimensionsSnapshot.width,
+					initialStateSnapshot.dimensionsSnapshot.height
+				);
+				renderFn(ctx, initialStateSnapshot.dimensionsSnapshot);
 			}
 
 			animationFrameId = requestAnimationFrame(animate);
@@ -332,7 +360,6 @@ export function createRunesBackgroundContext(): RunesBackgroundContext {
 
 		animationFrameId = requestAnimationFrame(animate);
 	}
-
 	// Stop animation
 	function stopAnimation(): void {
 		if (animationFrameId) {

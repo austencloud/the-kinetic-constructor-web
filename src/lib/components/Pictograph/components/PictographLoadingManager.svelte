@@ -32,20 +32,27 @@
 
 		// CRITICAL FIX: Set busy flags
 		isProcessingGridLoaded = true;
-		
+
 		try {
 			untrack(() => {
 				loadedComponents.add('grid');
 			});
 
-			// CRITICAL FIX: Check preloading once, then execute immediately or with minimal delay
+			// 🚨 NUCLEAR FIX: Use queueMicrotask instead of setTimeout to prevent infinite loops
 			const isPreloaded = svgPreloadingService.isReady();
-			const delay = props.disableAnimations || isPreloaded ? 0 : 100;
 
-			if (delay === 0) {
+			if (props.disableAnimations || isPreloaded) {
+				// Execute immediately for preloaded or disabled animations
 				executeGridCallback();
 			} else {
-				setTimeout(() => executeGridCallback(), delay);
+				// 🚨 NUCLEAR FIX: Use queueMicrotask instead of setTimeout to avoid reactive loops
+				queueMicrotask(() => {
+					// Additional guard to prevent execution if already processing
+					if (!isProcessingGridLoaded) {
+						return;
+					}
+					executeGridCallback();
+				});
 			}
 		} catch (error) {
 			console.error('Error handling grid loaded:', error);
@@ -90,7 +97,7 @@
 
 	function handleGlyphLoaded(_event: CustomEvent<boolean>) {
 		if (isProcessingCallback) return;
-		
+
 		// CRITICAL FIX: Set busy flag
 		isProcessingCallback = true;
 
@@ -111,18 +118,24 @@
 	function checkAllComponentsLoaded() {
 		if (isProcessingCallback) return;
 
-		const allLoaded = requiredComponents.every(comp => loadedComponents.has(comp));
-		
+		const allLoaded = requiredComponents.every((comp) => loadedComponents.has(comp));
+
 		if (allLoaded) {
 			try {
-				// CRITICAL FIX: Check preloading once and execute accordingly
+				// 🚨 NUCLEAR FIX: Use queueMicrotask instead of setTimeout to prevent infinite loops
 				const isPreloaded = svgPreloadingService.isReady();
-				const delay = props.disableAnimations || isPreloaded ? 0 : 100;
 
-				if (delay === 0) {
+				if (props.disableAnimations || isPreloaded) {
 					executeCompletionCallback();
 				} else {
-					setTimeout(() => executeCompletionCallback(), delay);
+					// 🚨 NUCLEAR FIX: Use queueMicrotask instead of setTimeout to avoid reactive loops
+					queueMicrotask(() => {
+						// Additional guard to prevent execution if already processing
+						if (!isProcessingCallback) {
+							return;
+						}
+						executeCompletionCallback();
+					});
 				}
 			} catch (error) {
 				console.error('Error checking component completion:', error);
@@ -139,7 +152,7 @@
 		try {
 			props.onShowPictograph(true);
 			props.onStateChange('complete');
-			
+
 			// CRITICAL FIX: Single callback execution with microtask
 			queueMicrotask(() => {
 				try {
@@ -160,7 +173,7 @@
 		requiredComponents = components;
 	}
 
-	function updateTotalComponentsToLoad(total: number) {
+	function updateTotalComponentsToLoad(_total: number) {
 		// CRITICAL FIX: Removed totalComponentsToLoad state to reduce reactivity
 		// Progress can be calculated from requiredComponents.length if needed
 	}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { uiStore } from '../stores/uiStore';
+	import { uiState } from '$lib/state/simple/uiState.svelte';
 
 	// Props using Svelte 5 runes
 	const { onResize } = $props<{
@@ -17,7 +17,7 @@
 	function handleMouseDown(event: MouseEvent) {
 		isDragging = true;
 		startX = event.clientX;
-		startWidth = $uiStore.browserPanelWidth;
+		startWidth = uiState.browserPanelWidth;
 
 		// Prevent text selection during drag
 		document.body.style.userSelect = 'none';
@@ -34,7 +34,7 @@
 	function handleKeyDown(event: KeyboardEvent) {
 		if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
 			const delta = event.key === 'ArrowLeft' ? 10 : -10;
-			const newWidth = $uiStore.browserPanelWidth - delta;
+			const newWidth = uiState.browserPanelWidth - delta;
 			onResize(newWidth);
 			event.preventDefault();
 		}

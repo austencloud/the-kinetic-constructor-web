@@ -13,7 +13,7 @@
 </script>
 
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { browser } from '$app/environment';
 	import { useResizeObserver } from '$lib/composables/useResizeObserver.svelte';
 	import { autoAdjustLayout, calculateCellSize } from '../beatFrameHelpers';
@@ -106,84 +106,114 @@
 		}
 	});
 
-	// Calculate natural grid height
-	$effect(() => {
-		if (!containerRef) return;
+	// NUCLEAR TEST: Disable the first problematic $effect block
+	// console.log('🧪 NUCLEAR TEST: Disabling natural grid height $effect');
 
-		const gridElement = containerRef.querySelector('.beat-frame');
-		if (gridElement) {
-			naturalGridHeight = gridElement.scrollHeight; // Use scrollHeight for the most accurate content height
-		} else {
-			// Fallback calculation if element not ready
-			naturalGridHeight = beatRows * cellSize + 20; // Add padding-bottom (20px) of the .beat-frame
-		}
+	// // Calculate natural grid height
+	// $effect(() => {
+	// 	if (!containerRef) return;
 
-		// Call natural height change callback
-		if (naturalGridHeight > 0) {
-			onnaturalheightchange?.({ height: naturalGridHeight });
-		}
+	// 	const gridElement = containerRef.querySelector('.beat-frame');
+	// 	if (gridElement) {
+	// 		naturalGridHeight = gridElement.scrollHeight; // Use scrollHeight for the most accurate content height
+	// 	} else {
+	// 		// Fallback calculation if element not ready
+	// 		naturalGridHeight = beatRows * cellSize + 20; // Add padding-bottom (20px) of the .beat-frame
+	// 	}
 
-		// Check for overflow after natural height is calculated
-		// This needs to be delayed to ensure DOM is updated
-		setTimeout(checkForOverflow, 50);
-	});
+	// 	// Call natural height change callback
+	// 	if (naturalGridHeight > 0) {
+	// 		onnaturalheightchange?.({ height: naturalGridHeight });
+	// 	}
 
-	// Calculate cell size based on the full sequence widget dimensions
-	$effect(() => {
-		// Only calculate if we have valid dimensions
-		if (sequenceWidgetWidth > 0 && sequenceWidgetHeight > 0) {
-			// Use the full sequence widget height instead of the beat frame's height
-			cellSize = calculateCellSize(
-				beatCount,
-				sequenceWidgetWidth,
-				sequenceWidgetHeight,
-				beatRows,
-				beatCols + 1, // Add 1 for start position column
-				0 // No gap
-			);
-		} else {
-			// Fallback to using the beat frame's dimensions if sequence widget dimensions aren't available
-			cellSize = calculateCellSize(
-				beatCount,
-				size.width,
-				size.height,
-				beatRows,
-				beatCols + 1, // Add 1 for start position column
-				0 // No gap
-			);
-		}
+	// 	// Check for overflow after natural height is calculated
+	// 	// This needs to be delayed to ensure DOM is updated
+	// 	// CRITICAL FIX: Use untrack to prevent setTimeout from triggering reactive updates
+	// 	untrack(() => {
+	// 		setTimeout(checkForOverflow, 50);
+	// 	});
+	// });
 
-		// Check for overflow after cell size is calculated
-		// This needs to be delayed to ensure DOM is updated
-		setTimeout(checkForOverflow, 100);
-	});
+	// FALLBACK: Set default natural grid height
+	naturalGridHeight = 400;
 
-	// Add an effect to check for overflow when beat count changes
-	$effect(() => {
-		// Just reference beatCount to make the effect depend on it
-		if (beatCount >= 0) {
-			// Delay the check to ensure DOM is updated
-			setTimeout(checkForOverflow, 150);
-		}
-	});
+	// NUCLEAR TEST: Disable the second problematic $effect block
+	// console.log('🧪 NUCLEAR TEST: Disabling cell size calculation $effect');
 
-	// Add an effect to check for overflow when layout changes
-	$effect(() => {
-		// Just reference these values to make the effect depend on them
-		if (beatRows > 0 && beatCols > 0) {
-			// Delay the check to ensure DOM is updated
-			setTimeout(checkForOverflow, 150);
-		}
-	});
+	// // Calculate cell size based on the full sequence widget dimensions
+	// $effect(() => {
+	// 	// Only calculate if we have valid dimensions
+	// 	if (sequenceWidgetWidth > 0 && sequenceWidgetHeight > 0) {
+	// 		// Use the full sequence widget height instead of the beat frame's height
+	// 		cellSize = calculateCellSize(
+	// 			beatCount,
+	// 			sequenceWidgetWidth,
+	// 			sequenceWidgetHeight,
+	// 			beatRows,
+	// 			beatCols + 1, // Add 1 for start position column
+	// 			0 // No gap
+	// 		);
+	// 	} else {
+	// 		// Fallback to using the beat frame's dimensions if sequence widget dimensions aren't available
+	// 		cellSize = calculateCellSize(
+	// 			beatCount,
+	// 			size.width,
+	// 			size.height,
+	// 			beatRows,
+	// 			beatCols + 1, // Add 1 for start position column
+	// 			0 // No gap
+	// 		);
+	// 	}
 
-	// Add an effect to check for overflow when size changes
-	$effect(() => {
-		// Just reference size to make the effect depend on it
-		if (size.width > 0 && size.height > 0) {
-			// Delay the check to ensure DOM is updated
-			setTimeout(checkForOverflow, 150);
-		}
-	});
+	// 	// Check for overflow after cell size is calculated
+	// 	// This needs to be delayed to ensure DOM is updated
+	// 	// CRITICAL FIX: Use untrack to prevent setTimeout from triggering reactive updates
+	// 	untrack(() => {
+	// 		setTimeout(checkForOverflow, 100);
+	// 	});
+	// });
+
+	// FALLBACK: Set default cell size
+	cellSize = 100;
+
+	// NUCLEAR TEST: Temporarily disable all $effect blocks to test if they cause infinite loops
+	// console.log('🧪 NUCLEAR TEST: BeatFrameLayoutManager $effect blocks completely disabled');
+
+	// // Add an effect to check for overflow when beat count changes
+	// $effect(() => {
+	// 	// Just reference beatCount to make the effect depend on it
+	// 	if (beatCount >= 0) {
+	// 		// Delay the check to ensure DOM is updated
+	// 		// CRITICAL FIX: Use untrack to prevent setTimeout from triggering reactive updates
+	// 		untrack(() => {
+	// 			setTimeout(checkForOverflow, 150);
+	// 		});
+	// 	}
+	// });
+
+	// // Add an effect to check for overflow when layout changes
+	// $effect(() => {
+	// 	// Just reference these values to make the effect depend on them
+	// 	if (beatRows > 0 && beatCols > 0) {
+	// 		// Delay the check to ensure DOM is updated
+	// 		// CRITICAL FIX: Use untrack to prevent setTimeout from triggering reactive updates
+	// 		untrack(() => {
+	// 			setTimeout(checkForOverflow, 150);
+	// 		});
+	// 	}
+	// });
+
+	// // Add an effect to check for overflow when size changes
+	// $effect(() => {
+	// 	// Just reference size to make the effect depend on it
+	// 	if (size.width > 0 && size.height > 0) {
+	// 		// Delay the check to ensure DOM is updated
+	// 		// CRITICAL FIX: Use untrack to prevent setTimeout from triggering reactive updates
+	// 		untrack(() => {
+	// 			setTimeout(checkForOverflow, 150);
+	// 		});
+	// 	}
+	// });
 
 	// Function to check if content overflows container and update state
 	function checkForOverflow() {
@@ -242,19 +272,25 @@
 
 		// Only update if the state has changed to avoid unnecessary re-renders
 		if (contentOverflows !== newOverflowState) {
-			contentOverflows = newOverflowState;
+			// CRITICAL FIX: Use untrack to prevent state update from triggering reactive effects
+			untrack(() => {
+				contentOverflows = newOverflowState;
+			});
 
 			// Force a layout recalculation after changing overflow state
-			setTimeout(() => {
-				if (beatFrame) {
-					// Update data-rows attribute to ensure CSS selectors work correctly
-					beatFrame.setAttribute('data-rows', String(beatRows));
+			// CRITICAL FIX: Use untrack to prevent setTimeout from triggering reactive updates
+			untrack(() => {
+				setTimeout(() => {
+					if (beatFrame) {
+						// Update data-rows attribute to ensure CSS selectors work correctly
+						beatFrame.setAttribute('data-rows', String(beatRows));
 
-					// Add a data attribute to indicate if we're in scrollable mode
-					// This will be used for CSS selectors to adjust alignment
-					beatFrame.setAttribute('data-scrollable', String(newOverflowState));
-				}
-			}, 0);
+						// Add a data attribute to indicate if we're in scrollable mode
+						// This will be used for CSS selectors to adjust alignment
+						beatFrame.setAttribute('data-scrollable', String(newOverflowState));
+					}
+				}, 0);
+			});
 		}
 	}
 
@@ -276,13 +312,19 @@
 
 		// Add window resize listener to check for overflow on window resize
 		const handleResize = () => {
-			setTimeout(checkForOverflow, 100);
+			// CRITICAL FIX: Use untrack to prevent setTimeout from triggering reactive updates
+			untrack(() => {
+				setTimeout(checkForOverflow, 100);
+			});
 		};
 		window.addEventListener('resize', handleResize);
 
 		// Check for overflow after component is mounted
 		// Delay to ensure DOM is fully rendered
-		setTimeout(checkForOverflow, 200);
+		// CRITICAL FIX: Use untrack to prevent setTimeout from triggering reactive updates
+		untrack(() => {
+			setTimeout(checkForOverflow, 200);
+		});
 
 		return () => {
 			// Remove the event listeners when the component is destroyed

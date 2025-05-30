@@ -73,24 +73,41 @@ export class BackgroundManager {
 
 		this.performanceTracker.reset();
 
+		// CRITICAL FIX: Capture reactive state values ONCE before starting animation loop
+		const initialStateSnapshot = {
+			dimensionsSnapshot: { ...this.dimensions }
+		};
+
 		const animate = () => {
 			if (!this.ctx || !this.canvas) return;
 
 			this.performanceTracker.update();
 
 			const perfStatus = this.performanceTracker.getPerformanceStatus();
-			this.performanceMetrics = {
+
+			// CRITICAL FIX: Don't update reactive state inside animation loop
+			// this.performanceMetrics = {
+			// 	fps: perfStatus.fps,
+			// 	warnings: perfStatus.warnings
+			// };
+
+			// CRITICAL FIX: Create non-reactive metrics object for callback
+			const currentMetrics = {
 				fps: perfStatus.fps,
 				warnings: perfStatus.warnings
 			};
 
 			if (this.reportCallback) {
-				this.reportCallback(this.performanceMetrics);
+				this.reportCallback(currentMetrics);
 			}
 
-			const dimensions = this.dimensions;
+			// CRITICAL FIX: Use captured dimensions instead of reactive this.dimensions
+			const dimensions = initialStateSnapshot.dimensionsSnapshot;
 
-			if (this.shouldRender) {
+			// CRITICAL FIX: Use performance-based rendering decision instead of reactive shouldRender
+			const shouldRenderNow = perfStatus.fps > 30;
+
+			if (shouldRenderNow) {
 				this.ctx.clearRect(0, 0, dimensions.width, dimensions.height);
 
 				renderFn(this.ctx, dimensions);

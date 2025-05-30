@@ -2,12 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { fade, fly, scale } from 'svelte/transition';
 	import { elasticOut, cubicOut } from 'svelte/easing';
-	import {
-		learnStore,
-		currentQuestion,
-		currentAnswers,
-		quizProgress
-	} from '$lib/state/stores/learn/learnStore';
+	import { learnState, quizProgress } from '$lib/state/simple/learnState.svelte';
 	import QuestionDisplay from './QuestionDisplay.svelte';
 	import AnswerOptions from './AnswerOptions.svelte';
 	import ProgressIndicator from './ProgressIndicator.svelte';

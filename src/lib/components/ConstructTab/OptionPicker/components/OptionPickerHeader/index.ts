@@ -2,4 +2,4 @@
 export { default } from './OptionPickerHeader.svelte';
 export * from './types';
 export * from './tabLabelFormatter';
-export * from './useResponsiveLayout';
+export * from './useResponsiveLayout.svelte';

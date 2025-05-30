@@ -1,6 +1,6 @@
 <!-- src/lib/components/SequenceWorkbench/BeatFrame/components/BeatFrameGrid.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import StartPosBeat from '../StartPosBeat.svelte';
 	import AnimatedBeat from '../AnimatedBeat.svelte';
 	import ReversalGlyph from '../ReversalGlyph.svelte';
@@ -56,13 +56,18 @@
 			}
 		}
 
-		newlyAddedBeatIds = newIds;
-		previousBeatIds = currentBeatIds;
+		// 🔧 FIX: Use untrack() to prevent infinite reactive loops
+		untrack(() => {
+			newlyAddedBeatIds = newIds;
+			previousBeatIds = currentBeatIds;
+		});
 
 		// Clear newly added status after animation duration
 		if (newIds.size > 0) {
 			setTimeout(() => {
-				newlyAddedBeatIds = new Set();
+				untrack(() => {
+					newlyAddedBeatIds = new Set();
+				});
 			}, 500); // Clear after animation completes
 		}
 	});
@@ -72,7 +77,10 @@
 		const handleBeatAdded = (event: CustomEvent) => {
 			const addedBeat = event.detail?.beat;
 			if (addedBeat?.id) {
-				newlyAddedBeatIds = new Set([...newlyAddedBeatIds, addedBeat.id]);
+				// 🔧 FIX: Use untrack() to prevent reactive loops from event handlers
+				untrack(() => {
+					newlyAddedBeatIds = new Set([...newlyAddedBeatIds, addedBeat.id]);
+				});
 			}
 		};
 

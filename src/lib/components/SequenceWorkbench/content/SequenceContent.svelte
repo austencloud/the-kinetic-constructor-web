@@ -43,11 +43,13 @@
 				}
 
 				// Dispatch a custom event for components that don't use context
-				const event = new CustomEvent('beatframe-element-available', {
-					bubbles: true,
-					detail: { element: el }
-				});
-				document.dispatchEvent(event);
+				if (browser) {
+					const event = new CustomEvent('beatframe-element-available', {
+						bubbles: true,
+						detail: { element: el }
+					});
+					document.dispatchEvent(event);
+				}
 
 				return true;
 			}
@@ -142,11 +144,13 @@
 							}
 
 							// Dispatch a custom event for components that don't use context
-							const event = new CustomEvent('beatframe-element-available', {
-								bubbles: true,
-								detail: { element: el }
-							});
-							document.dispatchEvent(event);
+							if (browser) {
+								const event = new CustomEvent('beatframe-element-available', {
+									bubbles: true,
+									detail: { element: el }
+								});
+								document.dispatchEvent(event);
+							}
 						}
 					}}
 				/>

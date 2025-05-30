@@ -287,8 +287,8 @@ export async function initializeApplication(
 		// Phase 4: Final Preparations
 		reportProgress(90, 'Preparing user interface...');
 		if (isBrowser) {
-			// Small delay to ensure UI is ready
-			await new Promise((resolve) => setTimeout(resolve, 100));
+			// CRITICAL FIX: Remove setTimeout that was causing infinite reactive loops
+			// The UI delay is not necessary and was triggering Svelte's reactive system infinitely
 		}
 
 		// Phase 5: Complete

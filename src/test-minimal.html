@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Option → Beat Frame Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+        }
+        
+        .option-picker {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+        
+        .beat-frame {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex: 1;
+        }
+        
+        .option {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .option:hover {
+            background: #bbdefb;
+            transform: translateY(-1px);
+        }
+        
+        .beat {
+            background: #f3e5f5;
+            border: 2px solid #9c27b0;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            min-height: 60px;
+        }
+        
+        .beat.empty {
+            background: #fafafa;
+            border: 2px dashed #ccc;
+            color: #999;
+            text-align: center;
+            line-height: 60px;
+        }
+        
+        .debug {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .effect-counter {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Minimal Option → Beat Frame Test</h1>
+    <p>This tests the core functionality: click option → update beat frame</p>
+    
+    <div class="container">
+        <div class="option-picker">
+            <h3>Options</h3>
+            <div id="options-container"></div>
+            <div class="debug">
+                <div>Selection Count: <span id="selection-count">0</span></div>
+                <div>Last Selected: <span id="last-selected">None</span></div>
+            </div>
+        </div>
+        
+        <div class="beat-frame">
+            <h3>Beat Frame</h3>
+            <div id="beats-container"></div>
+            <div class="debug">
+                <div>Beat Count: <span id="beat-count">0</span></div>
+                <div>Update Count: <span id="update-count">0</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="effect-counter">
+        Effect Executions: <span id="effect-count">0</span>
+    </div>
+
+    <script>
+        // Simple state management without any reactive frameworks
+        class MinimalState {
+            constructor() {
+                this.beats = [];
+                this.selectionCount = 0;
+                this.updateCount = 0;
+                this.effectCount = 0;
+                this.lastSelected = 'None';
+                
+                // Simple options data
+                this.options = [
+                    { id: 'A', letter: 'A', name: 'Option A' },
+                    { id: 'B', letter: 'B', name: 'Option B' },
+                    { id: 'C', letter: 'C', name: 'Option C' },
+                    { id: 'D', letter: 'D', name: 'Option D' },
+                    { id: 'E', letter: 'E', name: 'Option E' }
+                ];
+            }
+            
+            selectOption(option) {
+                console.log('🔧 Selecting option:', option.letter);
+                
+                // Increment counters
+                this.selectionCount++;
+                this.effectCount++;
+                this.lastSelected = option.letter;
+                
+                // Add beat to sequence
+                const newBeat = {
+                    id: `beat-${Date.now()}`,
+                    letter: option.letter,
+                    name: option.name,
+                    timestamp: new Date().toLocaleTimeString()
+                };
+                
+                this.beats.push(newBeat);
+                this.updateCount++;
+                
+                // Update UI
+                this.render();
+                
+                console.log('🔧 Option selection completed. Beats:', this.beats.length);
+            }
+            
+            render() {
+                this.effectCount++;
+                
+                // Render options
+                const optionsContainer = document.getElementById('options-container');
+                optionsContainer.innerHTML = this.options.map(option => 
+                    `<div class="option" onclick="state.selectOption(${JSON.stringify(option).replace(/"/g, '&quot;')})">
+                        ${option.letter}: ${option.name}
+                    </div>`
+                ).join('');
+                
+                // Render beats
+                const beatsContainer = document.getElementById('beats-container');
+                if (this.beats.length === 0) {
+                    beatsContainer.innerHTML = '<div class="beat empty">No beats selected</div>';
+                } else {
+                    beatsContainer.innerHTML = this.beats.map(beat => 
+                        `<div class="beat">
+                            <strong>${beat.letter}</strong>: ${beat.name}
+                            <br><small>Added at: ${beat.timestamp}</small>
+                        </div>`
+                    ).join('');
+                }
+                
+                // Update counters
+                document.getElementById('selection-count').textContent = this.selectionCount;
+                document.getElementById('last-selected').textContent = this.lastSelected;
+                document.getElementById('beat-count').textContent = this.beats.length;
+                document.getElementById('update-count').textContent = this.updateCount;
+                document.getElementById('effect-count').textContent = this.effectCount;
+            }
+        }
+        
+        // Initialize
+        const state = new MinimalState();
+        state.render();
+        
+        // Make state globally available for onclick handlers
+        window.state = state;
+        
+        console.log('🔧 Minimal test initialized');
+    </script>
+</body>
+</html>

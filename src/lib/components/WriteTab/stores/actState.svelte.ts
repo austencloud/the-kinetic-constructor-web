@@ -87,20 +87,14 @@ export const actState = {
 		}
 		newAct.sequences[sectionIndex].cue = cue;
 		newAct.sequences[sectionIndex].timestamp = timestamp;
-		actState = {
-			...actState,
-			act: newAct,
-			isDirty: true
-		};
+		internalState.act = newAct;
+		internalState.isDirty = true;
 	},
 
 	// Populate from dropped data
 	populateFromDroppedData(data: any) {
-		actState = {
-			...actState,
-			act: { ...internalState.act, ...data },
-			isDirty: true
-		};
+		internalState.act = { ...internalState.act, ...data };
+		internalState.isDirty = true;
 	},
 
 	// Populate from drop (alias for the test)
@@ -135,11 +129,8 @@ export const actState = {
 			});
 		}
 
-		actState = {
-			...actState,
-			act: newAct,
-			isDirty: true
-		};
+		internalState.act = newAct;
+		internalState.isDirty = true;
 	},
 
 	// Save to localStorage
@@ -151,11 +142,9 @@ export const actState = {
 
 	// Reset to empty act
 	reset() {
-		actState = {
-			act: createEmptyAct(),
-			isDirty: true,
-			isLoading: false,
-			error: null
-		};
+		internalState.act = createEmptyAct();
+		internalState.isDirty = true;
+		internalState.isLoading = false;
+		internalState.error = null;
 	}
 };

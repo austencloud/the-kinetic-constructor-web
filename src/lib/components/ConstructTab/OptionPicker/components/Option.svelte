@@ -34,70 +34,27 @@
 
 	const ariaLabel = $derived(`Select option ${props.pictographData.letter || 'Unnamed'}`);
 
-	// Create a stable copy of the pictograph data to prevent reactivity loops
-	// This is crucial for preventing the Pictograph component from re-rendering unnecessarily
-	let stablePictographData = $state<PictographData | null>(null);
-
-	// Initialize the stable copy once
-	$effect(() => {
-		if (!stablePictographData && props.pictographData) {
-			// Create a safe copy that handles circular references (Motion objects)
-			// Instead of JSON.parse(JSON.stringify()) which fails with circular references,
-			// we create a shallow copy with safe handling of motion data
-			stablePictographData = {
-				...props.pictographData,
-				// Create safe copies of motion data to avoid circular references
-				blueMotionData: props.pictographData.blueMotionData
-					? {
-							...props.pictographData.blueMotionData
-						}
-					: null,
-				redMotionData: props.pictographData.redMotionData
-					? {
-							...props.pictographData.redMotionData
-						}
-					: null,
-				// Exclude any Motion objects that might have circular references
-				redMotion: null,
-				blueMotion: null,
-				motions: []
-			};
-		}
-	});
+	// Create a stable copy of the pictograph data using $derived
+	const stablePictographData = $derived(props.pictographData);
 
 	// Show border state
 	let showBorder = $state(false);
 
-	// Track if component is mounted to prevent unnecessary updates
-	let isMounted = $state(false);
-	$effect(() => {
-		isMounted = true;
-		return () => {
-			isMounted = false;
-		};
-	});
-
 	function handleSelect() {
-		if (!isMounted) return;
-
 		// Call the callback if provided (new Svelte 5 approach)
 		if (props.onoptionselect) {
 			props.onoptionselect(props.pictographData);
 		} else {
 			// Fallback to the modern option picker state
-			untrack(() => {
-				optionPickerState.selectOption(props.pictographData);
-			});
+			optionPickerState.selectOption(props.pictographData);
 		}
 	}
 
 	function handleMouseEnter() {
-		if (!isMounted) return;
 		showBorder = true;
 	}
 
 	function handleMouseLeave() {
-		if (!isMounted) return;
 		showBorder = false;
 	}
 </script>
@@ -107,6 +64,7 @@
 	class:mobile={isMobileDevice}
 	class:selected={isSelected}
 	class:two-item-option={isPartOfTwoItems}
+	class:hovered={showBorder}
 	role="button"
 	tabindex="0"
 	onclick={handleSelect}
@@ -164,8 +122,8 @@
 		justify-content: center;
 		align-items: center;
 	}
-	/* In Option.svelte */
-	.option:hover {
+	/* In Option.svelte - Use JavaScript state instead of CSS :hover to prevent infinite loops */
+	.option.hovered {
 		transform: scale(1.05); /* Reduced from 1.1 to make it less bouncy */
 		background-color: rgba(243, 244, 246, 0.5);
 		z-index: 20; /* Add this to ensure it rises above siblings */
@@ -179,13 +137,13 @@
 	.option.two-item-option {
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 	}
-	.option.two-item-option:hover {
+	.option.two-item-option.hovered {
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 	}
 	.option.mobile {
 		transition: transform 0.15s ease-in-out;
 	}
-	.option.mobile:hover {
+	.option.mobile.hovered {
 		transform: scale(1.03);
 	}
 	.option:focus-visible {

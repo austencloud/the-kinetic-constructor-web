@@ -6,6 +6,19 @@
 	import ServiceProvider from '$lib/providers/ServiceProvider.svelte';
 	import ToastManager from '$lib/components/shared/ToastManager.svelte';
 	import '$lib/styles/safe-area.css';
+	import '$lib/utils/automatedReactiveTesting';
+
+	// Nuclear debugging suite (development only)
+	import '$lib/debug';
+
+	// Reactivity testing functions (development only)
+	import {
+		testReactivityChain,
+		testArrowVisibility,
+		testStartPositionClick,
+		testCurrentState
+	} from '$lib/components/SequenceWorkbench/__tests__/reactivityChainTest';
+	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 
 	let {
 		data,
@@ -33,6 +46,18 @@
 		} else {
 			console.warn('Layout onMount: No CSV data or error found in props.');
 			initialized = true;
+		}
+
+		// Make test functions available globally for debugging
+		if (typeof window !== 'undefined') {
+			(window as any).testReactivityChain = testReactivityChain;
+			(window as any).testArrowVisibility = testArrowVisibility;
+			(window as any).testStartPositionClick = testStartPositionClick;
+			(window as any).testCurrentState = testCurrentState;
+			(window as any).sequenceState = sequenceState;
+			console.log(
+				'🧪 Test functions available: testReactivityChain(), testArrowVisibility(), testStartPositionClick(), testCurrentState()'
+			);
 		}
 	});
 </script>

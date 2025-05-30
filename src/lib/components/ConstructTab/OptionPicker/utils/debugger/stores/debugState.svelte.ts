@@ -148,7 +148,7 @@ export async function copyToClipboard(textBuilder: () => string, isCurrentState:
 			debugState[statusKey] = 'error';
 		});
 		isProcessing = false;
-		console.error('Failed to copy text:', err);
+		// Silently handle copy errors
 	} finally {
 		resetStatusAfterDelay(isCurrentState);
 	}

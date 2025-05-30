@@ -3,9 +3,8 @@
 	import { fly, fade, scale } from 'svelte/transition';
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
 	import { uiActions, confirmDeletions } from '$lib/components/WriteTab/stores/uiState.svelte';
-	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
+	import { sequenceState } from '$lib/state/simple/sequenceState.svelte';
 
 	// State for confirmation modal
 	let isConfirmationModalOpen = $state(false);
@@ -29,17 +28,14 @@
 		if (showConfirmation) {
 			isConfirmationModalOpen = true;
 		} else {
-			await clearSequence();
+			clearSequence();
 		}
 	}
 
-	async function clearSequence() {
+	function clearSequence() {
 		try {
-			// Clear the new Svelte 5 runes sequence state first (this handles all synchronization)
-			await sequenceState.clearSequence();
-
-			// Clear the legacy sequence machine for backward compatibility
-			sequenceActions.clearSequence();
+			// MIGRATED: Clear using pure Svelte 5 runes sequence state
+			sequenceState.clearSequence();
 
 			// Provide haptic feedback for deletion
 			if (browser) {
@@ -62,7 +58,7 @@
 		}
 
 		// Clear the sequence
-		await clearSequence();
+		clearSequence();
 
 		// Close the modal
 		closeModal();

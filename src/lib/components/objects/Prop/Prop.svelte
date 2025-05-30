@@ -19,7 +19,6 @@
 				);
 				return btoa(binaryString);
 			} catch (fallbackError) {
-				console.error('Base64 encoding failed:', fallbackError);
 				return encodeURIComponent(str);
 			}
 		}
@@ -56,13 +55,7 @@
 				ori: effectivePropData.ori
 			});
 			rotationAngle = rotAngleManager.getRotationAngle();
-
-			// Update prop data with calculated angle
-			if (effectivePropData) {
-				effectivePropData.rotAngle = rotationAngle;
-			}
 		} catch (error) {
-			console.warn('Error calculating rotation angle:', error);
 			rotationAngle = 0;
 		}
 	}
@@ -80,11 +73,12 @@
 
 	// CRITICAL FIX: Simplified loading without cascading timeouts
 	async function loadSvg() {
-		if (!effectivePropData || isReady) return;
+		if (!effectivePropData || isReady) {
+			return;
+		}
 
 		try {
 			const cacheKey = getPropCacheKey(effectivePropData.propType, effectivePropData.color);
-
 			let cachedSvgData = propSvgCache.get(cacheKey);
 
 			if (cachedSvgData) {
@@ -134,8 +128,6 @@
 	}
 
 	function handleLoadError(error: any) {
-		console.error('Error loading prop SVG:', error);
-
 		// Create fallback SVG
 		const fallbackColor = effectivePropData?.color === 'red' ? '#ED1C24' : '#2E3192';
 		const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
@@ -168,23 +160,47 @@
 		});
 	}
 
+	// 🚨 NUCLEAR FIX: Prevent infinite loops with mounting guard
+	let isMounted = $state(false);
+	let hasInitialized = $state(false);
+
 	// CRITICAL FIX: Simple onMount - no reactive dependencies
 	onMount(() => {
+		// 🚨 NUCLEAR FIX: Prevent multiple initializations
+		if (hasInitialized) {
+			return;
+		}
+		hasInitialized = true;
+		isMounted = true;
+
 		if (effectivePropData?.propType) {
 			// Check preloading status once, then load
 			const isPreloaded = svgPreloadingService.arePropsReady();
-			const delay = isPreloaded ? 0 : 50;
 
-			if (delay === 0) {
-				loadSvg();
+			if (isPreloaded) {
+				// 🚨 NUCLEAR FIX: Use queueMicrotask instead of setTimeout to avoid reactive loops
+				queueMicrotask(() => {
+					if (isMounted && !isReady) {
+						loadSvg();
+					}
+				});
 			} else {
-				setTimeout(() => loadSvg(), delay);
+				// 🚨 NUCLEAR FIX: Use queueMicrotask with a flag check instead of setTimeout
+				queueMicrotask(() => {
+					if (isMounted && !isReady) {
+						loadSvg();
+					}
+				});
 			}
 		} else {
 			// No prop data - mark as ready immediately
 			isReady = true;
 			notifyLoaded(true);
 		}
+
+		return () => {
+			isMounted = false;
+		};
 	});
 
 	function handleImageLoad() {
@@ -196,7 +212,7 @@
 	}
 </script>
 
-<!-- CRITICAL FIX: Simplified template -->
+<!-- CRITICAL FIX: Simplified template with reactive loop prevention -->
 {#if svgData && isReady && effectivePropData}
 	<g>
 		<image

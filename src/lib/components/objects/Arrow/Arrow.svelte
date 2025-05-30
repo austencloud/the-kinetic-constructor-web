@@ -144,23 +144,47 @@
 		});
 	}
 
+	// 🚨 NUCLEAR FIX: Prevent infinite loops with mounting guard
+	let isMounted = $state(false);
+	let hasInitialized = $state(false);
+
 	// CRITICAL FIX: Simple onMount - no reactive dependencies or complex timing
 	onMount(() => {
+		// 🚨 NUCLEAR FIX: Prevent multiple initializations
+		if (hasInitialized) {
+			return;
+		}
+		hasInitialized = true;
+		isMounted = true;
+
 		if (effectiveArrowData?.motionType) {
 			// CRITICAL FIX: Check preloading status once, then load immediately or with minimal delay
 			const isPreloaded = svgPreloadingService.areArrowsReady();
-			const delay = isPreloaded ? 0 : 50;
 
-			if (delay === 0) {
-				loadArrowSvg();
+			if (isPreloaded) {
+				// 🚨 NUCLEAR FIX: Use queueMicrotask instead of setTimeout to avoid reactive loops
+				queueMicrotask(() => {
+					if (isMounted && !componentState.isReady) {
+						loadArrowSvg();
+					}
+				});
 			} else {
-				setTimeout(() => loadArrowSvg(), delay);
+				// 🚨 NUCLEAR FIX: Use queueMicrotask with a flag check instead of setTimeout
+				queueMicrotask(() => {
+					if (isMounted && !componentState.isReady) {
+						loadArrowSvg();
+					}
+				});
 			}
 		} else {
 			// No arrow data - mark as ready immediately
 			componentState.isReady = true;
 			notifyLoaded();
 		}
+
+		return () => {
+			isMounted = false;
+		};
 	});
 </script>
 

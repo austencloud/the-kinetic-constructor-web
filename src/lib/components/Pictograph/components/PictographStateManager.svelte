@@ -52,9 +52,10 @@
 	});
 
 	// Watch for prop changes with enhanced protection against reactivity loops
+	let isProcessingUpdate = false;
 	$effect(() => {
-		// Skip if not initialized
-		if (!isInitialized) return;
+		// Skip if not initialized or already processing
+		if (!isInitialized || isProcessingUpdate) return;
 
 		// Use untrack to read the current props without creating dependencies
 		untrack(() => {
@@ -64,10 +65,14 @@
 				return;
 			}
 
+			// Set processing flag to prevent re-entry
+			isProcessingUpdate = true;
+
 			const currentHash = createDataHash(props.pictographData);
 
 			// Skip if data hasn't actually changed
 			if (currentHash === lastDataHash) {
+				isProcessingUpdate = false; // Reset flag before returning
 				return;
 			}
 
@@ -91,6 +96,9 @@
 						if (pictographData) {
 							updatePictographData(pictographData);
 						}
+
+						// Reset processing flag
+						isProcessingUpdate = false;
 					});
 				}, delay);
 			} else {
@@ -103,6 +111,9 @@
 						if (pictographData) {
 							updatePictographData(pictographData);
 						}
+
+						// Reset processing flag
+						isProcessingUpdate = false;
 					});
 				}, 150);
 			}
@@ -111,6 +122,7 @@
 		// Cleanup function
 		return () => {
 			if (updateTimer) clearTimeout(updateTimer);
+			isProcessingUpdate = false; // Reset flag on cleanup
 		};
 	});
 
@@ -198,12 +210,9 @@
 		return Boolean(data.redMotionData || data.blueMotionData);
 	}
 
-	// Expose state and methods to parent component
-	$effect(() => {
-		if (props.onStateChange && currentState) {
-			props.onStateChange(currentState);
-		}
-	});
+	// REMOVED: This $effect was causing infinite loops by duplicating state change notifications
+	// The state changes are already handled in the initialize() and handleError() functions
+	// This redundant effect was triggering on every state change and causing cascading updates
 </script>
 
 <!-- This component doesn't render anything, it just manages state -->

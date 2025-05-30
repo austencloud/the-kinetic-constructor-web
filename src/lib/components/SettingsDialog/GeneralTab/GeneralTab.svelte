@@ -9,9 +9,7 @@
 		getImageExportSettings,
 		updateImageExportSettings
 	} from '$lib/state/image-export-settings.svelte';
-	import { appActions } from '$lib/state/machines/app/app.actions';
-	import { useSelector } from '@xstate/svelte';
-	import { appService } from '$lib/state/machines/app/app.machine';
+	import { appState } from '$lib/state/simple/appState.svelte';
 	import type { BackgroundType } from '$lib/components/Backgrounds/types/types';
 
 	// Get current settings
@@ -19,9 +17,8 @@
 	const user = $state(userContainer.state);
 	let username = $state(user.currentUser || 'User');
 
-	// Background settings from app machine
-	const currentBackgroundStore = useSelector(appService, (state) => state.context.background);
-	const currentBackground = $derived($currentBackgroundStore as BackgroundType);
+	// MIGRATED: Background settings from pure Svelte 5 runes app state
+	const currentBackground = $derived(appState.background as BackgroundType);
 
 	// Available backgrounds (hardcoded for now, could be made dynamic)
 	const availableBackgrounds: BackgroundType[] = ['snowfall', 'nightSky', 'deepOcean'];
@@ -93,7 +90,7 @@
 		const select = event.target as HTMLSelectElement;
 		const newBackground = select.value as BackgroundType;
 
-		appActions.updateBackground(newBackground);
+		appState.setBackground(newBackground);
 
 		// Provide haptic feedback
 		if (browser) {

@@ -22,14 +22,29 @@
 
 	// Properly extract the layout config values from the context getter
 	const layoutData = $derived(getLayoutContext?.() ?? {});
-	const contextGridColumns = $derived(layoutData.layoutConfig?.gridColumns ?? 3);
-	const optionSize = $derived(layoutData.layoutConfig?.optionSize ?? 100);
-	const gridGap = $derived(layoutData.layoutConfig?.gridGap ?? 8);
+	const contextGridColumns = $derived(layoutData.layoutConfig?.gridColumns ?? 'repeat(4, 1fr)');
+	const optionSize = $derived(layoutData.layoutConfig?.optionSize ?? '100px');
+	const gridGap = $derived(layoutData.layoutConfig?.gridGap ?? '8px');
 	const gridClass = $derived(layoutData.layoutConfig?.gridClass ?? '');
 	const aspectClass = $derived(layoutData.layoutConfig?.aspectClass ?? '');
 	const isMobileDevice = $derived(layoutData.isMobile ?? false);
 	const isTabletDevice = $derived(layoutData.isTablet ?? false);
 	const isPortraitMode = $derived(layoutData.isPortrait ?? false);
+
+	// DISABLED: Debug logging that may cause reactive loops
+	// $effect(() => {
+	// 	console.log('🔍 LAYOUT CONTEXT DEBUG:', {
+	// 		hasLayoutContext: !!getLayoutContext,
+	// 		layoutData: layoutData,
+	// 		contextGridColumns,
+	// 		optionSize,
+	// 		gridGap,
+	// 		optionsCount: options.length,
+	// 		isMobileDevice,
+	// 		isTabletDevice,
+	// 		isPortraitMode
+	// 	});
+	// });
 
 	// --- Get Sort Method from Option Picker State ---
 	const currentSortMethod = $derived(optionPickerState.sortMethod);

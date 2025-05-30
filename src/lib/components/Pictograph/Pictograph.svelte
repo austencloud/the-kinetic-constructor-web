@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { GridData } from '$lib/components/objects/Grid/GridData';
 	import type { PropData } from '$lib/components/objects/Prop/PropData';
@@ -36,16 +37,17 @@
 
 	let currentState = $state(shouldStartReady ? 'complete' : 'initializing');
 	let errorMessage = $state<string | null>(null);
-	let showPictograph = $state(shouldStartReady);
+	// 🎯 FIX: Force showPictograph to true for start positions to ensure visual elements are visible
+	let showPictograph = $state(shouldStartReady || props.isStartPosition);
 	let loadProgress = $state(shouldStartReady ? 100 : 0);
-	
+
 	let gridData = $state<GridData | null>(null);
 	let redPropData = $state<PropData | null>(null);
 	let bluePropData = $state<PropData | null>(null);
 	let redArrowData = $state<ArrowData | null>(null);
 	let blueArrowData = $state<ArrowData | null>(null);
 	let service = $state<PictographService | null>(null);
-	
+
 	let renderCount = $state(0);
 	let componentsLoaded = $state(shouldStartReady ? 1 : 0);
 	let totalComponentsToLoad = $state(1);
@@ -106,7 +108,8 @@
 	}
 
 	function handleShowPictograph(show: boolean) {
-		showPictograph = show || shouldStartReady;
+		// 🎯 FIX: Always show pictograph for start positions, regardless of loading state
+		showPictograph = show || shouldStartReady || props.isStartPosition;
 	}
 
 	function createAndPositionComponents() {
@@ -137,10 +140,13 @@
 		renderCount++;
 	}
 
+	// FIXED: Use untrack to prevent infinite loops when loadingManager changes
 	$effect(() => {
-		if (loadingManager) {
-			loadProgress = (loadingManager as any).getLoadProgress?.() ?? (shouldStartReady ? 100 : 0);
-		}
+		untrack(() => {
+			if (loadingManager) {
+				loadProgress = (loadingManager as any).getLoadProgress?.() ?? (shouldStartReady ? 100 : 0);
+			}
+		});
 	});
 </script>
 
@@ -181,7 +187,13 @@
 
 {#if props.onClick}
 	<button type="button" class="pictograph-wrapper clickable" onclick={props.onClick}>
-		<svg class="pictograph" viewBox="0 0 950 950" xmlns="http://www.w3.org/2000/svg">
+		<svg
+			class="pictograph"
+			viewBox="0 0 950 950"
+			xmlns="http://www.w3.org/2000/svg"
+			width="100%"
+			height="100%"
+		>
 			{#if currentState === 'initializing' && !shouldStartReady}
 				{#if props.showLoadingIndicator ?? true}
 					<InitializingSpinner animationDuration={props.animationDuration ?? 200} />
@@ -227,7 +239,13 @@
 	</button>
 {:else}
 	<div class="pictograph-wrapper">
-		<svg class="pictograph" viewBox="0 0 950 950" xmlns="http://www.w3.org/2000/svg">
+		<svg
+			class="pictograph"
+			viewBox="0 0 950 950"
+			xmlns="http://www.w3.org/2000/svg"
+			width="100%"
+			height="100%"
+		>
 			{#if currentState === 'initializing' && !shouldStartReady}
 				{#if props.showLoadingIndicator ?? true}
 					<InitializingSpinner animationDuration={props.animationDuration ?? 200} />
@@ -286,6 +304,8 @@
 	.pictograph {
 		width: 100%;
 		height: 100%;
+		min-width: 80px; /* 🎯 FIX: Ensure minimum dimensions for start position beats */
+		min-height: 80px; /* 🎯 FIX: Ensure minimum dimensions for start position beats */
 		overflow: visible;
 		background: white;
 		border-radius: 4px;

@@ -2,6 +2,7 @@
 	import { fade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+	import { untrack } from 'svelte';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
@@ -17,7 +18,7 @@
 	// Local state using $state
 	let showPulse = $state(false);
 
-	// Handle pulse effect with guard to prevent infinite loops
+	// 🔧 SYSTEMATIC TEST 14: Re-enable GoldSelectionBorder pulse effect - WATCHING FOR LOOPS
 	let isPulsing = false;
 	$effect(() => {
 		if (pulseEffect && active && !isPulsing) {
@@ -25,13 +26,18 @@
 			showPulse = true;
 			hapticFeedbackService.trigger('selection');
 
-			// Reset pulse after animation completes
+			// CRITICAL FIX: Use untrack around the state mutations inside setTimeout
 			setTimeout(() => {
-				showPulse = false;
-				isPulsing = false;
+				untrack(() => {
+					showPulse = false;
+					isPulsing = false;
+				});
 			}, 500);
 		}
 	});
+	console.log(
+		'🔧 SYSTEMATIC TEST 14: GoldSelectionBorder pulse effect re-enabled - WATCHING FOR LOOPS'
+	);
 </script>
 
 <div class="highlight-container" class:active>

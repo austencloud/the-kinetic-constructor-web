@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
-	import { learnStore } from '$lib/state/stores/learn/learnStore';
+	import { learnState } from '$lib/state/simple/learnState.svelte';
 	import LessonSelector from './LessonSelector.svelte';
 	import LessonWidget from './LessonWidget.svelte';
 	import LessonResults from './LessonResults.svelte';
@@ -11,14 +11,14 @@
 	let isFirstRender = $state(true);
 
 	// Track the current view for transition effects
-	let currentView = $state($learnStore.currentView);
+	let currentView = $state(learnState.currentView);
 	let previousView = $state<string | null>(null);
 
 	// Handle view transitions using $effect
 	$effect(() => {
-		if ($learnStore.currentView !== currentView) {
+		if (learnState.currentView !== currentView) {
 			previousView = currentView;
-			currentView = $learnStore.currentView;
+			currentView = learnState.currentView;
 		}
 	});
 

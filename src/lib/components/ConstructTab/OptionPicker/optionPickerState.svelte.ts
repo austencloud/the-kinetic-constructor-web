@@ -1,9 +1,10 @@
 /**
- * SIMPLE VERSION: OptionPicker state management without reactive effects
- * Uses direct method calls instead of reactive patterns to avoid infinite loops
+ * FIXED VERSION: OptionPicker state management with reactive loop prevention
+ * Uses proper reactive isolation and prevents circular dependencies
  */
 
 import { browser } from '$app/environment';
+import { untrack } from 'svelte';
 import type { PictographData } from '$lib/types/PictographData';
 import type { SortMethod } from './config';
 import type { Orientation } from '$lib/types/Types';
@@ -39,9 +40,9 @@ function getStoredState() {
 	}
 }
 
-// Simple runes-based OptionPicker state manager - NO REACTIVE EFFECTS
+// Enhanced OptionPicker state manager with reactive loop prevention
 class OptionPickerStateManager {
-	// Core reactive state
+	// Core reactive state - these are the ONLY reactive properties
 	options = $state<PictographData[]>([]);
 	sequence = $state<PictographData[]>([]);
 	isLoading = $state(false);
@@ -51,18 +52,26 @@ class OptionPickerStateManager {
 	sortMethod = $state<SortMethodOrAll>('all');
 	lastSelectedTab = $state<LastSelectedTabState>({});
 
-	// Simple flags - no fancy reactive stuff
+	// Internal flags for preventing loops and rapid calls
 	private isCurrentlyLoading = false;
+	private isCurrentlySelecting = false;
+	private lastRefreshTime = 0;
+	private lastSelectionTime = 0;
+	private refreshDebounceMs = 150;
+	private selectionDebounceMs = 300;
+	private lastSelectedOptionLetter: string | null = null;
 
 	constructor() {
-		// Initialize from localStorage
+		// Initialize from localStorage without triggering reactive effects
 		const storedState = getStoredState();
-		this.sortMethod = storedState.sortMethod as SortMethodOrAll;
-		this.lastSelectedTab = storedState.lastSelectedTab;
-		console.log('[OptionPicker] Simple constructor - no reactive effects');
+
+		untrack(() => {
+			this.sortMethod = storedState.sortMethod as SortMethodOrAll;
+			this.lastSelectedTab = storedState.lastSelectedTab;
+		});
 	}
 
-	// NO reactive effects - just manual persistence
+	// ===== PERSISTENCE =====
 	private persistToLocalStorage() {
 		if (!browser) return;
 
@@ -73,177 +82,237 @@ class OptionPickerStateManager {
 			};
 			localStorage.setItem('optionPickerUIState', JSON.stringify(saveData));
 		} catch (e) {
-			console.error('[OptionPicker] Error writing to localStorage:', e);
+			// Silently handle localStorage errors
 		}
 	}
 
-	// Computed properties
-	get filteredOptions() {
-		const options = [...this.options];
+	// ===== COMPUTED PROPERTIES (NON-REACTIVE) =====
+	// These are called manually when needed, not reactive
 
-		if (this.sortMethod !== 'all') {
-			options.sort(getSorter(this.sortMethod as SortMethod, this.sequence));
-		} else {
-			options.sort((a, b) => (a.letter ?? '').localeCompare(b.letter ?? ''));
-		}
-		return options;
+	get filteredOptions() {
+		return untrack(() => {
+			const options = [...this.options];
+			const currentSortMethod = this.sortMethod;
+			const currentSequence = this.sequence;
+
+			if (currentSortMethod !== 'all') {
+				options.sort(getSorter(currentSortMethod as SortMethod, currentSequence));
+			} else {
+				options.sort((a, b) => (a.letter ?? '').localeCompare(b.letter ?? ''));
+			}
+			return options;
+		});
 	}
 
 	get groupedOptions() {
-		if (this.sortMethod === 'all') {
-			return {};
-		}
+		return untrack(() => {
+			const currentSortMethod = this.sortMethod;
 
-		const groups: Record<string, PictographData[]> = {};
-		this.filteredOptions.forEach((option) => {
-			const groupKey = determineGroupKey(option, this.sortMethod as SortMethod, this.sequence);
-			if (!groups[groupKey]) groups[groupKey] = [];
-			groups[groupKey].push(option);
-		});
-
-		const sortedKeys = getSortedGroupKeys(Object.keys(groups), this.sortMethod as SortMethod);
-		const sortedGroups: Record<string, PictographData[]> = {};
-		sortedKeys.forEach((key) => {
-			if (groups[key]) {
-				sortedGroups[key] = groups[key];
+			if (currentSortMethod === 'all') {
+				return {};
 			}
+
+			const filteredOpts = this.filteredOptions;
+			const currentSequence = this.sequence;
+			const groups: Record<string, PictographData[]> = {};
+
+			filteredOpts.forEach((option) => {
+				const groupKey = determineGroupKey(
+					option,
+					currentSortMethod as SortMethod,
+					currentSequence
+				);
+				if (!groups[groupKey]) groups[groupKey] = [];
+				groups[groupKey].push(option);
+			});
+
+			const sortedKeys = getSortedGroupKeys(Object.keys(groups), currentSortMethod as SortMethod);
+			const sortedGroups: Record<string, PictographData[]> = {};
+			sortedKeys.forEach((key) => {
+				if (groups[key]) {
+					sortedGroups[key] = groups[key];
+				}
+			});
+			return sortedGroups;
 		});
-		return sortedGroups;
 	}
 
-	// Simple actions - no reactive loops
+	// ===== CORE ACTIONS =====
+
 	async loadOptions(sequence: PictographData[]) {
-		console.log('[OptionPicker] loadOptions called with sequence length:', sequence.length);
-		
-		// Simple guard
-		if (this.isCurrentlyLoading) {
-			console.log('[OptionPicker] Already loading, skipping');
+		// Enhanced guard against concurrent loading
+		if (this.isCurrentlyLoading || this.isCurrentlySelecting) {
 			return;
 		}
 
+		// Handle empty sequence case
 		if (!sequence || sequence.length === 0) {
-			this.options = [];
-			this.sequence = [];
-			this.isLoading = false;
-			this.error = null;
+			untrack(() => {
+				this.options = [];
+				this.sequence = [];
+				this.isLoading = false;
+				this.error = null;
+			});
 			return;
 		}
 
-		// Check pictograph data
+		// Check pictograph data availability
 		if (!pictographData.isInitialized || pictographData.isEmpty) {
 			const initialized = await pictographData.waitForInitialization(5000);
 			if (!initialized || pictographData.isEmpty) {
-				this.options = [];
-				this.sequence = sequence;
-				this.isLoading = false;
-				this.error = 'No pictograph data available';
+				untrack(() => {
+					this.options = [];
+					this.sequence = sequence;
+					this.isLoading = false;
+					this.error = 'No pictograph data available';
+				});
 				return;
 			}
 		}
 
-		this.sequence = sequence;
-		this.isLoading = true;
 		this.isCurrentlyLoading = true;
-		this.error = null;
+
+		// Set loading state immediately
+		untrack(() => {
+			this.sequence = sequence;
+			this.isLoading = true;
+			this.error = null;
+		});
 
 		try {
 			const nextOptions = getNextOptions(sequence);
-			console.log('[OptionPicker] Got', nextOptions?.length || 0, 'options');
 
-			this.options = nextOptions || [];
-			this.isLoading = false;
+			// Update state atomically using untrack
+			untrack(() => {
+				this.options = nextOptions || [];
+				this.isLoading = false;
+			});
 
-			// Simple tab handling
+			// Debug log to track option loading
+			console.log(
+				'✅ OptionPickerState: Loaded',
+				nextOptions?.length || 0,
+				'options for sequence of length',
+				sequence.length
+			);
+
+			// Handle tab state (only if needed and without triggering reactive loops)
 			if (
 				typeof document !== 'undefined' &&
 				(!this.lastSelectedTab[this.sortMethod] || this.lastSelectedTab[this.sortMethod] === null)
 			) {
-				this.setLastSelectedTabForSort(this.sortMethod, 'all');
-
-				// Simple event dispatch - no timeouts
-				const viewChangeEvent = new CustomEvent('viewchange', {
-					detail: { mode: 'all' },
-					bubbles: true
+				untrack(() => {
+					this.setLastSelectedTabForSort(this.sortMethod, 'all');
 				});
-				document.dispatchEvent(viewChangeEvent);
+
+				// Dispatch event with small delay to break reactive chain
+				setTimeout(() => {
+					const viewChangeEvent = new CustomEvent('viewchange', {
+						detail: { mode: 'all' },
+						bubbles: true
+					});
+					document.dispatchEvent(viewChangeEvent);
+				}, 50);
 			}
 		} catch (error) {
 			console.error('[OptionPicker] Error loading options:', error);
-			this.isLoading = false;
-			this.error = error instanceof Error ? error.message : 'Unknown error loading options';
-			this.options = [];
+			untrack(() => {
+				this.isLoading = false;
+				this.error = error instanceof Error ? error.message : 'Unknown error loading options';
+				this.options = [];
+			});
 		} finally {
 			this.isCurrentlyLoading = false;
 		}
 	}
 
 	setSortMethod(method: SortMethodOrAll) {
-		this.sortMethod = method;
+		untrack(() => {
+			this.sortMethod = method;
+		});
 		this.persistToLocalStorage();
 	}
 
 	setLastSelectedTabForSort(sortMethod: SortMethodOrAll, tabKey: string | null) {
-		if (this.lastSelectedTab[sortMethod] === tabKey) {
-			return;
+		const currentTab = this.lastSelectedTab[sortMethod];
+		if (currentTab === tabKey) {
+			return; // No change needed
 		}
 
-		this.lastSelectedTab = {
-			...this.lastSelectedTab,
-			[sortMethod]: tabKey
-		};
+		untrack(() => {
+			this.lastSelectedTab = {
+				...this.lastSelectedTab,
+				[sortMethod]: tabKey
+			};
+		});
 
 		this.persistToLocalStorage();
 	}
 
+	// ===== OPTION SELECTION (ENHANCED LOOP PREVENTION) =====
 	async selectOption(option: PictographData) {
-		console.log('[OptionPicker] selectOption called for letter:', option.letter);
-		
-		try {
-			await sequenceState.addBeat(option);
-			console.log('[OptionPicker] Beat added successfully');
+		const now = Date.now();
 
-			// Simple event dispatch
-			if (typeof document !== 'undefined') {
-				const beatAddedEvent = new CustomEvent('beat-added', {
-					detail: { beat: option },
-					bubbles: true
-				});
-				document.dispatchEvent(beatAddedEvent);
-			}
-
-			// Directly reload options based on new sequence state
-			// No reactive effects - just manual update
-			this.refreshOptionsFromCurrentSequence();
-		} catch (error) {
-			console.error('[OptionPicker] Error selecting option:', error);
-			this.error = error instanceof Error ? error.message : 'Failed to select option';
-		}
-	}
-
-	reset() {
-		console.log('[OptionPicker] Reset called');
-		this.isCurrentlyLoading = false;
-		this.options = [];
-		this.sequence = [];
-		this.isLoading = false;
-		this.error = null;
-		this.setLastSelectedTabForSort(this.sortMethod, 'all');
-	}
-
-	// Manual refresh method - called explicitly instead of reactive effects
-	async refreshOptionsFromCurrentSequence() {
-		console.log('[OptionPicker] Manually refreshing options from sequence');
-		
-		if (this.isCurrentlyLoading) {
-			console.log('[OptionPicker] Already loading, skipping refresh');
+		// Enhanced protection against rapid/duplicate selections
+		if (
+			this.isCurrentlySelecting ||
+			this.isCurrentlyLoading ||
+			(this.lastSelectedOptionLetter === option.letter &&
+				now - this.lastSelectionTime < this.selectionDebounceMs)
+		) {
 			return;
 		}
 
+		this.isCurrentlySelecting = true;
+		this.lastSelectedOptionLetter = option.letter;
+		this.lastSelectionTime = now;
+
 		try {
-			// Get current sequence state directly
-			const startPosition = sequenceState.startPosition;
-			const beats = sequenceState.beats;
-			const isSequenceLoading = sequenceState.isLoading;
+			await sequenceState.addBeat(option);
+
+			// NUCLEAR FIX: Completely disable beat-added event to stop infinite loops
+			// The setTimeout is causing infinite loops - disable it entirely
+			// if (typeof document !== 'undefined') {
+			// 	setTimeout(() => {
+			// 		const beatAddedEvent = new CustomEvent('beat-added', {
+			// 			detail: { beat: option },
+			// 			bubbles: true
+			// 		});
+			// 		document.dispatchEvent(beatAddedEvent);
+			// 	}, 100); // Increased delay for better loop prevention
+			// }
+		} catch (error) {
+			untrack(() => {
+				this.error = error instanceof Error ? error.message : 'Failed to select option';
+			});
+		} finally {
+			// Reset selection flag after sufficient delay
+			setTimeout(() => {
+				this.isCurrentlySelecting = false;
+			}, 350);
+		}
+	}
+
+	// ===== MANUAL REFRESH (ENHANCED DEBOUNCING) =====
+	async refreshOptionsFromCurrentSequence() {
+		const now = Date.now();
+
+		// Enhanced protection against rapid successive calls
+		if (
+			this.isCurrentlyLoading ||
+			this.isCurrentlySelecting ||
+			now - this.lastRefreshTime < this.refreshDebounceMs
+		) {
+			return;
+		}
+
+		this.lastRefreshTime = now;
+
+		try {
+			// Use untrack to read sequence state without creating reactive dependencies
+			const startPosition = untrack(() => sequenceState.startPosition);
+			const beats = untrack(() => sequenceState.beats);
+			const isSequenceLoading = untrack(() => sequenceState.isLoading);
 
 			if (isSequenceLoading) {
 				return;
@@ -313,25 +382,57 @@ class OptionPickerStateManager {
 		}
 	}
 
-	// Manual method to be called when sequence changes (instead of reactive effect)
+	// ===== UTILITY METHODS =====
+	reset() {
+		this.isCurrentlyLoading = false;
+		this.isCurrentlySelecting = false;
+
+		untrack(() => {
+			this.options = [];
+			this.sequence = [];
+			this.isLoading = false;
+			this.error = null;
+			this.setLastSelectedTabForSort(this.sortMethod, 'all');
+		});
+	}
+
+	// Manual event handlers (called explicitly, no reactive effects)
 	onSequenceChanged() {
-		console.log('[OptionPicker] Sequence changed, refreshing options');
-		// Small delay to let sequence state settle
-		setTimeout(() => {
-			this.refreshOptionsFromCurrentSequence();
-		}, 50);
+		if (!this.isCurrentlyLoading && !this.isCurrentlySelecting) {
+			setTimeout(() => {
+				this.refreshOptionsFromCurrentSequence();
+			}, 100);
+		}
 	}
 
-	// Manual method to be called when start position is selected
 	onStartPositionSelected(startPosition: PictographData) {
-		console.log('[OptionPicker] Start position selected');
-		this.loadOptions([startPosition]);
+		if (!this.isCurrentlyLoading) {
+			this.loadOptions([startPosition]);
+		}
 	}
 
-	// Dummy method for backward compatibility - does nothing now
+	// DISABLED: Systematic test effect to prevent infinite loops
 	initializeReactiveEffects() {
-		console.log('[OptionPicker] initializeReactiveEffects called - but this is the simple version, so doing nothing');
-		// No-op - we don't use reactive effects anymore
+		// DISABLED: Reactive effect to prevent infinite loops
+		// $effect(() => {
+		// 	// Use untrack to prevent circular dependencies
+		// 	const currentBeats = untrack(() => sequenceState.beats);
+		// 	const currentStartPosition = untrack(() => sequenceState.startPosition);
+		// 	const isLoading = untrack(() => sequenceState.isLoading);
+		// 	// Only proceed if not already loading and state is stable
+		// 	if (!this.isCurrentlyLoading && !this.isCurrentlySelecting && !isLoading) {
+		// 		// Determine sequence for options
+		// 		const sequence = currentStartPosition
+		// 			? [currentStartPosition, ...currentBeats]
+		// 			: currentBeats;
+		// 		// Load options with debouncing
+		// 		setTimeout(() => {
+		// 			if (!this.isCurrentlyLoading && !this.isCurrentlySelecting) {
+		// 				this.loadOptions(sequence);
+		// 			}
+		// 		}, 100);
+		// 	}
+		// });
 	}
 }
 

@@ -2,32 +2,15 @@
 <script lang="ts">
 	// Import state management
 	import { onMount } from 'svelte';
-	import { settingsStore as newSettingsStore } from '$lib/state/stores/settingsStore';
-
-	// Import existing stores for backward compatibility during migration
-	import {
-		generatorType,
-		numBeats,
-		turnIntensity,
-		propContinuity,
-		capType,
-		level
-	} from '../store/settings';
+	import { settingsState } from '$lib/state/simple/settingsState.svelte';
 
 	// Import layout components
 	import GenerateTabContent from './GenerateTabContent.svelte';
 
 	// Initialization logic
 	onMount(() => {
-		// Initialize the sequence machine with the current settings
-
-		// Sync the modernized settings to the new settings store
-		newSettingsStore.setGeneratorType(generatorType);
-		newSettingsStore.setNumBeats(numBeats);
-		newSettingsStore.setTurnIntensity(turnIntensity);
-		newSettingsStore.setPropContinuity(propContinuity);
-		newSettingsStore.setCAPType(capType);
-		newSettingsStore.setLevel(level);
+		// Settings are already initialized in settingsState.svelte.ts
+		console.log('GenerateTab mounted with settings:', settingsState.getSnapshot());
 	});
 </script>
 

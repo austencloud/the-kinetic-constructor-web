@@ -1,6 +1,5 @@
 <!-- src/lib/components/SequenceWorkbench/BeatFrame/managers/BeatFrameStateManager.svelte -->
 <script lang="ts" module>
-	// Export the interface for the component
 	export interface BeatFrameStateManager {
 		getState: () => {
 			startPosition: any;
@@ -28,113 +27,103 @@
 	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 	import { createSafePictographCopy } from '$lib/utils/pictographUtils';
 
-	// We'll use custom events instead of Svelte's event dispatcher
-	// This function creates a custom event that will bubble up through the DOM
-	// without being dispatched directly on the document to avoid infinite recursion
 	const dispatchBeatSelectedEvent = (beatId: string) => {
-		// Create a custom event that will bubble up through the DOM
-		// We'll dispatch this on a DOM element, not directly on document
 		return new CustomEvent('beatselected', {
 			detail: { beatId },
 			bubbles: true
 		});
 	};
 
-	// Use reactive state for sequence container
 	let sequence = $state(sequenceContainer.state);
-
-	// Local state
 	let startPosition = $state<PictographData | null>(null);
 	let sequenceIsEmpty = $state(true);
 
-	// Watch for sequence container changes using runes - NO STORES!
 	$effect(() => {
-		// Directly watch the container state
 		sequence = sequenceContainer.state;
 	});
 
-	// Derived values
 	const beats = $derived(convertContainerBeatsToLegacyFormat(sequence.beats));
 	const selectedBeatIds = $derived(sequence.selectedBeatIds);
 	const selectedBeatIndex = $derived(
 		selectedBeatIds.length > 0 ? beats.findIndex((beat) => beat.id === selectedBeatIds[0]) : -1
 	);
 	const beatCount = $derived(beats.length);
-
-	// Create start position beat data
 	const startPosBeatData = $derived({
 		beatNumber: 0,
 		filled: !!startPosition,
 		pictographData: startPosition || defaultPictographData
 	});
 
-	// CRITICAL FIX: React to modern sequence state changes and sync to container
-	// This ensures BeatFrame UI updates when beats are added via OptionPicker
-	$effect(() => {
-		// Track modern sequence state changes
-		const modernBeats = sequenceState.beats;
-		const modernStartPos = sequenceState.startPosition;
+	// 🚨 EMERGENCY FIX: Add proper loop prevention with deep comparison
+	let lastStartPosId = $state<string | null>(null);
+	let isUpdatingStartPos = false;
 
-		// Update local state
-		sequenceIsEmpty = sequenceState.isEmpty;
+	// NUCLEAR DISABLE: Main reactive effect causing infinite loops - CONFIRMED CULPRIT
+	// $effect(() => {
+	// 	const modernBeats = sequenceState.beats;
+	// 	const modernStartPos = sequenceState.startPosition;
+	// 	const modernIsEmpty = sequenceState.isEmpty;
 
-		// Sync modern state to container if needed
-		// Check if sync is needed by comparing lengths and content
-		const needsSync =
-			modernBeats.length !== sequence.beats.length ||
-			modernBeats.some((modernBeat, index) => {
-				const containerBeat = sequence.beats[index];
-				return (
-					!containerBeat ||
-					containerBeat.metadata?.letter !== modernBeat.letter ||
-					containerBeat.metadata?.startPos !== modernBeat.startPos ||
-					containerBeat.metadata?.endPos !== modernBeat.endPos
-				);
-			});
+	// 	// Create a unique ID for the start position to detect actual changes
+	// 	const currentStartPosId = modernStartPos
+	// 		? `${modernStartPos.letter}-${modernStartPos.startPos}-${modernStartPos.endPos}`
+	// 		: null;
 
-		if (needsSync) {
-			// Prevent infinite loops by checking if we're already syncing
-			// Use a flag to prevent recursive updates
-			if (!sequenceContainer.state.isModified || modernBeats.length > 0) {
-				// Convert modern beats to container format and update
-				const containerBeats = modernBeats.map((beat, index) => {
-					return {
-						id: crypto.randomUUID(),
-						number: index + 1, // Set proper beat number
-						redPropData: beat.redPropData,
-						bluePropData: beat.bluePropData,
-						redMotionData: beat.redMotionData,
-						blueMotionData: beat.blueMotionData,
-						redArrowData: beat.redArrowData,
-						blueArrowData: beat.blueArrowData,
-						metadata: {
-							letter: beat.letter,
-							startPos: beat.startPos,
-							endPos: beat.endPos,
-							gridMode: beat.gridMode,
-							timing: beat.timing,
-							direction: beat.direction
-						}
-					};
-				});
+	// 	// Only update if the start position actually changed (not just a proxy update)
+	// 	if (currentStartPosId !== lastStartPosId && !isUpdatingStartPos) {
+	// 		isUpdatingStartPos = true;
 
-				// Use untrack to prevent this update from triggering the effect again
-				untrack(() => {
-					sequenceContainer.setSequence(containerBeats);
-				});
-			}
-		}
+	// 		untrack(() => {
+	// 			console.log('3️⃣ BeatFrameStateManager start position ACTUALLY changed:', currentStartPosId);
+	// 			startPosition = modernStartPos;
+	// 			sequenceIsEmpty = modernIsEmpty;
+	// 			lastStartPosId = currentStartPosId;
 
-		// Update start position if changed
-		if (modernStartPos !== startPosition) {
-			startPosition = modernStartPos;
-		}
-	});
+	// 			if (modernStartPos) {
+	// 				console.log(
+	// 					'✅ FIXED: Start position updated in BeatFrameStateManager',
+	// 					modernStartPos.letter
+	// 				);
+	// 			}
+	// 		});
 
-	// Convert container beats to legacy BeatData format
+	// 		// Reset flag after a short delay
+	// 		setTimeout(() => {
+	// 			isUpdatingStartPos = false;
+	// 		}, 50);
+	// 	}
+
+	// 	// Handle beats sync separately with its own guard
+	// 	const needsSync = modernBeats.length !== sequence.beats.length;
+
+	// 	if (needsSync && !sequenceContainer.state.isModified) {
+	// 		const containerBeats = modernBeats.map((beat, index) => ({
+	// 			id: crypto.randomUUID(),
+	// 			number: index + 1,
+	// 			redPropData: beat.redPropData,
+	// 			bluePropData: beat.bluePropData,
+	// 			redMotionData: beat.redMotionData,
+	// 			blueMotionData: beat.blueMotionData,
+	// 			redArrowData: beat.redArrowData,
+	// 			blueArrowData: beat.blueArrowData,
+	// 			metadata: {
+	// 				letter: beat.letter,
+	// 				startPos: beat.startPos,
+	// 				endPos: beat.endPos,
+	// 				gridMode: beat.gridMode,
+	// 				timing: beat.timing,
+	// 				direction: beat.direction
+	// 			}
+	// 		}));
+
+	// 		untrack(() => {
+	// 			sequenceContainer.setSequence(containerBeats);
+	// 		});
+	// 	}
+	// });
+
 	function convertContainerBeatsToLegacyFormat(containerBeats: any[]): LegacyBeatData[] {
 		return containerBeats.map((beat) => {
-			// Create a proper pictographData object from the container beat data
 			const pictographData = {
 				letter: beat.metadata?.letter || null,
 				startPos: beat.metadata?.startPos || null,
@@ -152,57 +141,80 @@
 			return {
 				id: beat.id,
 				beatNumber: beat.number,
-				filled: true, // Assume filled if it exists in the container
+				filled: true,
 				pictographData,
-				duration: 1, // Default duration
+				duration: 1,
 				metadata: beat.metadata
 			} as LegacyBeatData;
 		});
 	}
 
-	// Get the initial value from the selectedStartPosition state
 	onMount(() => {
-		// Initialize from the modern state
 		const currentStartPosition = getSelectedStartPosition();
 		if (currentStartPosition && !startPosition) {
-			// Create a safe copy to avoid reference issues
 			startPosition = createSafePictographCopy(currentStartPosition);
 		}
 
-		// Listen for the custom event when a start position is selected
 		const handleStartPosSelected = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
-				// Create a safe copy to avoid reference issues
 				const newStartPos = createSafePictographCopy(event.detail.startPosition);
 
-				// Update the local state only if we got a valid copy
 				if (newStartPos) {
 					startPosition = newStartPos;
-
-					// Update the modern state
 					setSelectedStartPosition(newStartPos);
 				}
 			}
 		};
 
-		// Listen for the start position refresh event (used when first beat is removed)
 		const handleStartPosRefresh = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
-				// Create a safe copy to avoid reference issues
 				const newStartPos = createSafePictographCopy(event.detail.startPosition);
 
-				// Update the local state only if we got a valid copy
 				if (newStartPos) {
 					startPosition = newStartPos;
-
-					// Update the modern state
 					setSelectedStartPosition(newStartPos);
 				}
 			}
+		};
+
+		// 🔄 NON-REACTIVE APPROACH: Listen for beat-added events and manually sync
+		const handleBeatAdded = (event: CustomEvent) => {
+			console.log('🔄 NON-REACTIVE: Beat added event received, manually syncing beats');
+
+			// 🔧 FIX: Use untrack() to prevent reactive loops when accessing sequenceState
+			const currentBeats = untrack(() => sequenceState.beats);
+
+			// Convert to container format
+			const containerBeats = currentBeats.map((beat, index) => ({
+				id: crypto.randomUUID(),
+				number: index + 1,
+				redPropData: beat.redPropData,
+				bluePropData: beat.bluePropData,
+				redMotionData: beat.redMotionData,
+				blueMotionData: beat.blueMotionData,
+				redArrowData: beat.redArrowData,
+				blueArrowData: beat.blueArrowData,
+				metadata: {
+					letter: beat.letter,
+					startPos: beat.startPos,
+					endPos: beat.endPos,
+					gridMode: beat.gridMode,
+					timing: beat.timing,
+					direction: beat.direction
+				}
+			}));
+
+			// Update the container without reactive effects
+			sequenceContainer.setSequence(containerBeats);
+
+			console.log('🔄 NON-REACTIVE: Beats synced to container', {
+				beatsCount: containerBeats.length
+			});
 		};
 
 		document.addEventListener('start-position-selected', handleStartPosSelected as EventListener);
 		document.addEventListener('start-position-refresh', handleStartPosRefresh as EventListener);
+		document.addEventListener('beat-added', handleBeatAdded as EventListener);
 
 		return () => {
 			document.removeEventListener(
@@ -213,40 +225,30 @@
 				'start-position-refresh',
 				handleStartPosRefresh as EventListener
 			);
+			document.removeEventListener('beat-added', handleBeatAdded as EventListener);
 		};
 	});
 
-	// Event handlers
 	export function handleStartPosBeatClick() {
-		// Make the start position selectable like a regular beat
-		// First, select the start position in the container
 		sequenceContainer.selectBeat('start-position');
 
-		// Then dispatch a custom event for the start position selection
-		// Create a safe copy of startPosition to avoid reference issues
 		const startPosCopy = startPosition ? createSafePictographCopy(startPosition) : null;
 
-		// Dispatch the event for the start position selector
 		const selectStartPosEvent = new CustomEvent('select-start-pos', {
 			bubbles: true,
 			detail: { currentStartPos: startPosCopy }
 		});
 		document.dispatchEvent(selectStartPosEvent);
 
-		// Also dispatch a beat selected event for the deletion mode
 		const beatSelectedEvent = dispatchBeatSelectedEvent('start-position');
 		document.querySelector('.beat-frame-state-manager')?.dispatchEvent(beatSelectedEvent);
 
-		// Also dispatch a global event for components that aren't direct parents
 		const globalEvent = new CustomEvent('beat-selected', {
 			bubbles: true,
 			detail: { beatId: 'start-position' }
 		});
 		document.dispatchEvent(globalEvent);
 
-		// Trigger the animated highlight effect for both blue and red
-		// This will make the animated highlight appear when the start position is selected
-		// Use a small delay to ensure the component has time to update its selected state
 		setTimeout(() => {
 			const blueHighlightEvent = new CustomEvent('beat-highlight', {
 				bubbles: true,
@@ -254,7 +256,6 @@
 			});
 			document.dispatchEvent(blueHighlightEvent);
 
-			// Add a small delay before triggering the red highlight for a staggered effect
 			setTimeout(() => {
 				const redHighlightEvent = new CustomEvent('beat-highlight', {
 					bubbles: true,
@@ -265,86 +266,66 @@
 		}, 50);
 	}
 
-	// Track if shift key is pressed
 	let isShiftKeyPressed = $state(false);
 	let isCtrlKeyPressed = $state(false);
 
-	// Set up event listeners for modifier keys using effect
-	$effect(() => {
-		if (typeof window === 'undefined') return;
+	// NUCLEAR DISABLE: Keyboard effect - may contribute to loops
+	// $effect(() => {
+	// 	if (typeof window === 'undefined') return;
 
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === 'Shift') {
-				isShiftKeyPressed = true;
-			}
-			if (e.key === 'Control' || e.key === 'Meta') {
-				// Meta for Mac
-				isCtrlKeyPressed = true;
-			}
-		};
+	// 	const handleKeyDown = (e: KeyboardEvent) => {
+	// 		if (e.key === 'Shift') {
+	// 			isShiftKeyPressed = true;
+	// 		}
+	// 		if (e.key === 'Control' || e.key === 'Meta') {
+	// 			isCtrlKeyPressed = true;
+	// 		}
+	// 	};
 
-		const handleKeyUp = (e: KeyboardEvent) => {
-			if (e.key === 'Shift') {
-				isShiftKeyPressed = false;
-			}
-			if (e.key === 'Control' || e.key === 'Meta') {
-				isCtrlKeyPressed = false;
-			}
-		};
+	// 	const handleKeyUp = (e: KeyboardEvent) => {
+	// 		if (e.key === 'Shift') {
+	// 			isShiftKeyPressed = false;
+	// 		}
+	// 		if (e.key === 'Control' || e.key === 'Meta') {
+	// 			isCtrlKeyPressed = false;
+	// 		}
+	// 	};
 
-		// Handle window blur to reset key states
-		const handleBlur = () => {
-			isShiftKeyPressed = false;
-			isCtrlKeyPressed = false;
-		};
+	// 	const handleBlur = () => {
+	// 		isShiftKeyPressed = false;
+	// 		isCtrlKeyPressed = false;
+	// 	};
 
-		window.addEventListener('keydown', handleKeyDown);
-		window.addEventListener('keyup', handleKeyUp);
-		window.addEventListener('blur', handleBlur);
+	// 	window.addEventListener('keydown', handleKeyDown);
+	// 	window.addEventListener('keyup', handleKeyUp);
+	// 	window.addEventListener('blur', handleBlur);
 
-		// Clean up event listeners
-		return () => {
-			window.removeEventListener('keydown', handleKeyDown);
-			window.removeEventListener('keyup', handleKeyUp);
-			window.removeEventListener('blur', handleBlur);
-		};
-	});
+	// 	return () => {
+	// 		window.removeEventListener('keydown', handleKeyDown);
+	// 		window.removeEventListener('keyup', handleKeyUp);
+	// 		window.removeEventListener('blur', handleBlur);
+	// 	};
+	// });
 
 	export function handleBeatClick(beatIndex: number) {
-		// Get the beat ID from the index
 		if (beatIndex >= 0 && beatIndex < beats.length) {
 			const beat = beats[beatIndex];
 			const beatId = beat.id;
 
 			if (beatId) {
-				// Use the tracked modifier key states for multi-select
-				// Either Shift or Ctrl/Cmd can be used for multi-select
 				const multiSelect = isShiftKeyPressed || isCtrlKeyPressed;
 
-				// Select the beat in the container with multi-select if a modifier key is pressed
 				sequenceContainer.selectBeat(beatId, multiSelect);
 
-				// Create a custom event for the beat selection
-				// This will be used by the deletion mode
 				const beatSelectedEvent = dispatchBeatSelectedEvent(beatId);
-
-				// Dispatch the event on the current element, not on document
-				// This allows it to bubble up naturally through the DOM
-				// without causing infinite recursion
 				document.querySelector('.beat-frame-state-manager')?.dispatchEvent(beatSelectedEvent);
 
-				// Also dispatch a global event for components that aren't direct parents
-				// This is a different event type ('beat-selected' vs 'beatselected')
-				// so it won't cause recursion
 				const event = new CustomEvent('beat-selected', {
 					bubbles: true,
 					detail: { beatId, multiSelect }
 				});
 				document.dispatchEvent(event);
 
-				// Trigger the animated highlight effect for both blue and red
-				// This will make the animated highlight appear when a beat is selected
-				// Use a small delay to ensure the component has time to update its selected state
 				setTimeout(() => {
 					const blueHighlightEvent = new CustomEvent('beat-highlight', {
 						bubbles: true,
@@ -352,7 +333,6 @@
 					});
 					document.dispatchEvent(blueHighlightEvent);
 
-					// Add a small delay before triggering the red highlight for a staggered effect
 					setTimeout(() => {
 						const redHighlightEvent = new CustomEvent('beat-highlight', {
 							bubbles: true,
@@ -365,14 +345,11 @@
 		}
 	}
 
-	// Public methods that can be called from parent components
 	export function addBeat(beatData: LegacyBeatData) {
-		// Ensure the beat has an ID
 		const beatWithId = beatData.id ? beatData : { ...beatData, id: crypto.randomUUID() };
 
-		// Convert from legacy BeatData to container BeatData format
 		const containerBeat = {
-			id: beatWithId.id || crypto.randomUUID(), // Ensure ID is never undefined
+			id: beatWithId.id || crypto.randomUUID(),
 			number: beatWithId.beatNumber,
 			redPropData: beatWithId.pictographData.redPropData,
 			bluePropData: beatWithId.pictographData.bluePropData,
@@ -389,10 +366,8 @@
 			}
 		};
 
-		// Add the beat to the sequence container
-		sequenceContainer.addBeat(containerBeat as any); // Use type assertion to bypass TypeScript error
+		sequenceContainer.addBeat(containerBeat as any);
 
-		// Dispatch a custom event to notify components that a beat was added
 		if (typeof document !== 'undefined') {
 			const beatAddedEvent = new CustomEvent('beat-added', {
 				bubbles: true,
@@ -402,12 +377,9 @@
 		}
 	}
 
-	// Add a method to clear beats (could be called from parent)
 	export function clearBeats() {
-		// Use the sequence container to clear the sequence
 		sequenceContainer.setSequence([]);
 
-		// Dispatch a custom event to notify components that the sequence was cleared
 		if (typeof document !== 'undefined') {
 			const sequenceClearedEvent = new CustomEvent('sequence-cleared', {
 				bubbles: true,
@@ -417,9 +389,7 @@
 		}
 	}
 
-	// Add a test method to verify persistence
 	export function testPersistence() {
-		// Force a save
 		sequenceContainer.saveToLocalStorage();
 
 		return {
@@ -428,7 +398,6 @@
 		};
 	}
 
-	// Export methods for parent components
 	export function getState() {
 		return {
 			startPosition,
@@ -441,13 +410,10 @@
 		};
 	}
 
-	// Export startPosBeatData for direct access
 	export { startPosBeatData };
 </script>
 
-<!-- This is an invisible component that just manages state -->
 <div class="beat-frame-state-manager" style="display: none;" aria-hidden="true">
-	<!-- Status for debugging -->
 	{#if beats.length >= 0}
 		<!-- State manager initialized -->
 	{/if}

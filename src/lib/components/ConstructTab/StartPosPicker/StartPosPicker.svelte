@@ -10,9 +10,7 @@
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import LoadingOverlay from './LoadingOverlay.svelte';
-	import transitionLoading, {
-		transitionLoadingStore
-	} from '$lib/state/stores/ui/transitionLoadingStore';
+	import { transitionLoadingState } from '$lib/state/simple/uiState.svelte';
 
 	let gridMode = 'diamond';
 	let startPositionPictographs = $state<PictographData[]>([]);
@@ -22,13 +20,9 @@
 	let loadingError = $state(false);
 	let isTransitioning = $state(false); // Local state for the loading overlay
 
-	// Subscribe to the global loading state
+	// Subscribe to the global loading state using pure runes
 	$effect(() => {
-		const unsubscribe = transitionLoadingStore.subscribe((value) => {
-			isTransitioning = value;
-		});
-
-		return unsubscribe;
+		isTransitioning = transitionLoadingState.isLoading;
 	});
 
 	let initialDataTimeout: number | null = null;
@@ -187,7 +181,7 @@
 		try {
 			// Immediately show loading state
 			isTransitioning = true;
-			transitionLoading.start();
+			transitionLoadingState.setLoading(true);
 
 			// Provide haptic feedback when selecting a start position
 			if (browser) {
@@ -235,7 +229,7 @@
 			console.error('StartPosPicker: Error setting start position:', error);
 			// Reset loading state on error
 			isTransitioning = false;
-			transitionLoading.end();
+			transitionLoadingState.setLoading(false);
 		}
 	};
 </script>

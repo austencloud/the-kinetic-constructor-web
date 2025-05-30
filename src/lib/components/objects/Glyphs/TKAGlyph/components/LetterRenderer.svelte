@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { glyphContainer, type Rect } from '$lib/stores/glyphContainer.svelte';
 	import type { Letter } from '$lib/types/Letter';
 
@@ -15,7 +16,7 @@
 		onloadingComplete?: (success: boolean) => void;
 	}>();
 
-	// Local state using Svelte 5 runes
+	// Local state using Svelte 5 runes with reactive loop prevention
 	let svgPath = $state('');
 	let dimensions = $state({ width: 0, height: 0 });
 	let imageElement = $state<SVGImageElement | null>(null);
@@ -24,10 +25,17 @@
 	let hasDispatchedLetterLoaded = $state(false);
 	let isLoadingInProgress = $state(false);
 
+	// CRITICAL FIX: Prevent infinite reactive loops
+	let lastProcessedLetter = $state<Letter | null>(null);
+	let isProcessingEffect = false;
+
 	// Load SVG with proper caching strategy
 	// This function is async, so it's called within an $effect
 	async function loadLetterSVG(currentLetter: Letter) {
-		if (!currentLetter) return;
+		// CRITICAL FIX: Prevent loading with undefined/null letters
+		if (!currentLetter || currentLetter === undefined || currentLetter === null) {
+			return;
+		}
 
 		// Signal that loading has started
 		isLoadingInProgress = true;
@@ -70,19 +78,53 @@
 		}
 	}
 
-	// React to letter changes using $effect
+	// CRITICAL FIX: React to letter changes with infinite loop prevention
 	$effect(() => {
-		if (letter) {
-			isLoaded = false; // Reset loading state
-			isFetchFailed = false; // Reset error state
-			hasDispatchedLetterLoaded = false; // Reset dispatch state
-			loadLetterSVG(letter);
-		} else {
-			// Reset if letter becomes null
-			svgPath = '';
-			dimensions = { width: 0, height: 0 };
-			isLoaded = false;
-			isFetchFailed = false;
+		// Prevent infinite loops by checking if we're already processing
+		if (isProcessingEffect) {
+			return;
+		}
+
+		// Check if the letter actually changed to prevent unnecessary processing
+		if (letter === lastProcessedLetter) {
+			return;
+		}
+
+		// Set processing flag to prevent re-entry
+		isProcessingEffect = true;
+
+		try {
+			if (letter) {
+				// Only process if letter is different from last processed
+				lastProcessedLetter = letter;
+
+				// Use untrack to prevent reactive loops when resetting state
+				untrack(() => {
+					isLoaded = false; // Reset loading state
+					isFetchFailed = false; // Reset error state
+					hasDispatchedLetterLoaded = false; // Reset dispatch state
+				});
+
+				// Load the SVG (this is async but doesn't trigger reactive updates)
+				loadLetterSVG(letter);
+			} else {
+				// Handle null/undefined letter
+				lastProcessedLetter = null;
+
+				// Use untrack to prevent reactive loops when resetting state
+				untrack(() => {
+					svgPath = '';
+					dimensions = { width: 0, height: 0 };
+					isLoaded = false;
+					isFetchFailed = false;
+					hasDispatchedLetterLoaded = false;
+				});
+			}
+		} finally {
+			// Always reset the processing flag after a delay to prevent permanent blocking
+			setTimeout(() => {
+				isProcessingEffect = false;
+			}, 10);
 		}
 	});
 

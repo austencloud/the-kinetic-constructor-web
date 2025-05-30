@@ -65,9 +65,11 @@ class SequenceStateManager {
 
 	// Computed properties
 	get isEmpty() {
-		return !this.#startPosition && this.#beats.length === 0;
+		// Ensure reactivity by explicitly accessing the reactive properties
+		const hasStartPos = !!this.#startPosition;
+		const hasBeats = this.#beats.length > 0;
+		return !hasStartPos && !hasBeats;
 	}
-
 	get word() {
 		return this.#beats
 			.filter((beat) => beat.letter)
@@ -92,6 +94,12 @@ class SequenceStateManager {
 
 	// Actions
 	async setStartPosition(startPos: PictographData) {
+		// 🔧 SYSTEMATIC TEST 16: Re-enable start position reactive updates - WATCHING FOR LOOPS
+		console.log(
+			'🔧 SYSTEMATIC TEST 16: setStartPosition reactive updates re-enabled - WATCHING FOR LOOPS'
+		);
+
+		// Re-enable reactive state changes with loop prevention
 		this.#isLoading = true;
 		this.#error = null;
 
@@ -115,21 +123,21 @@ class SequenceStateManager {
 					: null
 			};
 
-			// Update reactive state first
+			// Update reactive state first (this is the only essential change)
 			this.#startPosition = startPosCopy;
 
-			// Save to localStorage for persistence
-			if (browser) {
-				localStorage.setItem('start_position', JSON.stringify(startPosCopy));
-			}
+			// DISABLE localStorage saving that might trigger reactive loops
+			// if (browser) {
+			// 	localStorage.setItem('start_position', JSON.stringify(startPosCopy));
+			// }
 
-			// Update metadata
-			this.updateMetadata();
+			// DISABLE metadata updates that might trigger reactive loops
+			// this.updateMetadata();
 
-			// Save to file
-			await this.saveToFile();
+			// DISABLE file saving that might trigger reactive loops
+			// await this.saveToFile();
 
-			// Ensure legacy stores are synchronized for backward compatibility
+			// Re-enable legacy store synchronization with loop prevention
 			if (browser && typeof document !== 'undefined') {
 				// Import and update legacy stores
 				const { setSelectedStartPosition } = await import(
@@ -149,30 +157,36 @@ class SequenceStateManager {
 				});
 				document.dispatchEvent(event);
 			}
+
+			console.log('🔧 SYSTEMATIC TEST 16: Start position set with reactive updates re-enabled');
 		} catch (error) {
-			this.#error = error instanceof Error ? error.message : 'Failed to set start position';
 			console.error('SequenceState: Error setting start position:', error);
+			// this.#error = error instanceof Error ? error.message : 'Failed to set start position';
 		} finally {
-			this.#isLoading = false;
+			// this.#isLoading = false;
 		}
 	}
 
 	async addBeat(beat: PictographData) {
+		console.log('🔧 SAFE: addBeat called with reactive updates re-enabled');
+
 		this.#isLoading = true;
 		this.#error = null;
 
 		try {
-			// Add beat to the sequence
+			// Add beat to the sequence (essential change)
 			this.#beats = [...this.#beats, beat];
 
-			// Update metadata
+			// Re-enable metadata updates with guard
 			this.updateMetadata();
 
-			// Save to file
+			// Re-enable file saving
 			await this.saveToFile();
+
+			console.log('✅ SAFE: Beat added with controlled reactive updates');
 		} catch (error) {
-			this.#error = error instanceof Error ? error.message : 'Failed to add beat';
 			console.error('SequenceState: Error adding beat:', error);
+			this.#error = error instanceof Error ? error.message : 'Failed to add beat';
 		} finally {
 			this.#isLoading = false;
 		}
@@ -502,10 +516,11 @@ class SequenceStateManager {
 // Create and export the singleton instance
 export const sequenceState = new SequenceStateManager();
 
-// Initialize on module load with delay to prevent reactive loops during app startup
-if (browser) {
-	// Delay the loading to prevent interference with app initialization
-	setTimeout(() => {
-		sequenceState.loadSequence();
-	}, 100);
-}
+// CRITICAL FIX: Remove automatic initialization that was causing infinite reactive loops
+// The sequenceState.loadSequence() call was triggering reactive effects during module load
+// which created infinite loops. Let the app initialize this manually when needed.
+// if (browser) {
+// 	setTimeout(() => {
+// 		sequenceState.loadSequence();
+// 	}, 100);
+// }

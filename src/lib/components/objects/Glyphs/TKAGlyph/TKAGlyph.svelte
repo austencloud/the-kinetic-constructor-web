@@ -1,6 +1,6 @@
 <!-- src/lib/components/objects/Glyphs/TKAGlyph/TKAGlyph.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { parseTurnsTupleString } from './utils/parseTurnsTuple';
 	import { glyphContainer, type Rect } from '$lib/stores/glyphContainer.svelte';
 	import type { Letter } from '$lib/types/Letter';
@@ -29,9 +29,12 @@
 		onloading?: () => void;
 	}>();
 
-	// Local state using Svelte 5 runes
+	// Local state using Svelte 5 runes with reactive loop prevention
 	let letterRect = $state<Rect | null>(null);
 	let letterLoaded = $state(false);
+
+	// CRITICAL FIX: Prevent infinite reactive loops in glyph rendering
+	let isProcessingLetter = false;
 
 	// Parse the turnsTuple using $derived
 	const parsedTurns = $derived(parseTurnsTuple(turnsTuple));
@@ -64,9 +67,24 @@
 
 	// Handle letter loading events
 	function handleLetterLoaded(rect: Rect) {
-		letterRect = rect;
-		letterLoaded = true;
+		// CRITICAL FIX: Prevent infinite reactive loops
+		if (isProcessingLetter) {
+			return;
+		}
+		isProcessingLetter = true;
+
+		// Use untrack to prevent reactive loops
+		untrack(() => {
+			letterRect = rect;
+			letterLoaded = true;
+		});
+
 		onloaded?.(true);
+
+		// Reset processing flag after a delay
+		setTimeout(() => {
+			isProcessingLetter = false;
+		}, 100);
 	}
 
 	function handleLoadingStarted() {
@@ -84,19 +102,21 @@
 	}
 </script>
 
-<g class="tka-glyph" transform={`translate(${x}, ${y}) scale(${scale})`}>
-	<LetterRenderer
-		{letter}
-		onletterLoaded={handleLetterLoaded}
-		onloadingStarted={handleLoadingStarted}
-		onloadingComplete={handleLoadingComplete}
-	/>
+{#if letter && letter !== undefined}
+	<g class="tka-glyph" transform={`translate(${x}, ${y}) scale(${scale})`}>
+		<LetterRenderer
+			{letter}
+			onletterLoaded={handleLetterLoaded}
+			onloadingStarted={handleLoadingStarted}
+			onloadingComplete={handleLoadingComplete}
+		/>
 
-	{#if letterLoaded && letterRect}
-		<DashRenderer {letter} {letterRect} />
+		{#if letterLoaded && letterRect}
+			<DashRenderer {letter} {letterRect} />
 
-		<DotsRenderer {direction} {letterRect} {letter} {shouldShowDots} />
+			<DotsRenderer {direction} {letterRect} {letter} {shouldShowDots} />
 
-		<TurnsRenderer topValue={topTurn} bottomValue={bottomTurn} {letterRect} />
-	{/if}
-</g>
+			<TurnsRenderer topValue={topTurn} bottomValue={bottomTurn} {letterRect} />
+		{/if}
+	</g>
+{/if}

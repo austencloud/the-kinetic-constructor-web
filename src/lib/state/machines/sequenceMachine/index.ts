@@ -1,46 +1,48 @@
 /**
- * Sequence Machine
- *
- * This is the main entry point for the sequence state machine. It re-exports
- * the sequence machine from the modern implementation, which provides backward
- * compatibility with the legacy machine API while using the new container-based
- * implementation.
- *
- * MIGRATION NOTE: This file maintains the same API as the original sequence machine
- * but uses the new container-based implementation under the hood. Components
- * should gradually migrate to using the container directly.
+ * Sequence Machine - Svelte 5 Runes Implementation
+ * Provides compatibility layer for sequence state management
  */
 
-// Import modern dependencies
-import { runesStateRegistry } from '../../core/runesRegistry.svelte';
-import { initializePersistence } from './persistence.svelte';
+import { sequenceState } from '$lib/state/simple/sequenceState.svelte';
 
-// Re-export types from the legacy implementation for backward compatibility
-export * from './types';
+/**
+ * Sequence actions using simple state management
+ */
+export const sequenceActions = {
+	addBeat: (beat: any) => sequenceState.addBeat(beat),
+	removeBeat: (index: number) => sequenceState.removeBeat(index),
+	updateBeat: (index: number, beat: any) => sequenceState.updateBeat(index, beat),
+	clearSequence: () => sequenceState.clearSequence(),
+	selectBeat: (beatId: string) => sequenceState.selectBeat(beatId),
+	generate: (generatorType: string, settings: any) => {
+		console.log('Generate sequence:', { generatorType, settings });
+		// Mock implementation for now
+	}
+};
 
-// Import from the modern implementation
-import {
-	modernSequenceMachine,
-	modernSequenceContainer,
-	sequenceSelectors as modernSequenceSelectors,
-	sequenceActions as modernSequenceActions
-} from './SequenceMachine';
+/**
+ * Sequence selectors using simple state management
+ */
+export const sequenceSelectors = {
+	getBeats: () => sequenceState.beats,
+	getBeatCount: () => sequenceState.beatCount,
+	getSelectedBeat: () => sequenceState.selectedBeat,
+	isEmpty: () => sequenceState.isEmpty,
+	isValid: () => sequenceState.isValid
+};
 
-// Re-export the modern machine as the legacy machine
-export const sequenceMachine = modernSequenceMachine;
-
-// Register the modern machine with the registry for backward compatibility
-export const sequenceActor = runesStateRegistry.registerMachine('sequence', modernSequenceMachine, {
-	persist: true,
-	description: 'Manages sequence generation and related operations'
-});
-
-// Export the initialization function for use in components
-export { initializePersistence };
-
-// Re-export the modern selectors and actions
-export const sequenceSelectors = modernSequenceSelectors;
-export const sequenceActions = modernSequenceActions;
-
-// Export the modern container for direct use
-export const sequenceContainer = modernSequenceContainer;
+/**
+ * Sequence machine compatibility
+ */
+export const sequenceMachine = {
+	id: 'sequence',
+	getSnapshot() {
+		return {
+			value: 'idle',
+			context: {
+				beats: sequenceState.beats,
+				selectedBeat: sequenceState.selectedBeat
+			}
+		};
+	}
+};

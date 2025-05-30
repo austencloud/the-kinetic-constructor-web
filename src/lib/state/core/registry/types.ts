@@ -41,3 +41,11 @@ export interface RegistryState {
 
 // Export for backward compatibility
 export type StateRegistryType = 'store' | 'machine' | 'container';
+
+// Add missing exports for compatibility
+export interface StateContainer<T = any> {
+	getSnapshot(): T;
+	subscribe(callback: (state: T) => void): () => void;
+}
+
+export type StateContainerType = 'runes' | 'store' | 'machine';

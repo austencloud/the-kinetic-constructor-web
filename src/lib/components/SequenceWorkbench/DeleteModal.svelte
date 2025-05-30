@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
+	import { browser } from '$app/environment';
 	// Props using Svelte 5 runes
 	const {
 		isOpen = false,
@@ -62,7 +63,7 @@
 
 	// Update popup position when buttonRect changes
 	$effect(() => {
-		if (!buttonRect) return;
+		if (!buttonRect || !browser) return;
 
 		// Get viewport dimensions
 		const viewportHeight = window.innerHeight;

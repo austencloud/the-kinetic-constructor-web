@@ -77,9 +77,10 @@
 		}
 	}
 
-	$effect(() => {
-		setActiveTab(isGenerateMode ? 'generate' : 'construct');
-	});
+	// 🧪 NUCLEAR TEST: Disable tab effect to prevent loops
+	// $effect(() => {
+	//     setActiveTab(isGenerateMode ? 'generate' : 'construct');
+	// });
 </script>
 
 <div class="construct-tab">

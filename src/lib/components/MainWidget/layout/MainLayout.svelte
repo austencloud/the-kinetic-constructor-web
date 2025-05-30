@@ -2,41 +2,40 @@
 	import TabContent from '../tabs/TabContent.svelte';
 	import { onMount } from 'svelte';
 	import SettingsContent from '$lib/components/SettingsDialog/SettingsDialog.svelte';
-	import { appActions } from '$lib/state/machines/app/app.actions';
-	import { useSelector } from '@xstate/svelte';
-	import { appService } from '$lib/state/machines/app/app.machine';
+	import { appState } from '$lib/state/simple/appState.svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut, quintOut } from 'svelte/easing';
 	// No need for uiStore import for this functionality
 
-	const isSettingsOpenStore = useSelector(appService, (state) => state.context.isSettingsOpen);
-	const isSettingsDialogOpen = $derived($isSettingsOpenStore);
+	// MIGRATED: Direct access to app state using pure Svelte 5 runes
+	const isSettingsDialogOpen = $derived(appState.isSettingsOpen);
 
 	let buttonSize = $state(50);
 	let windowWidth = $state(0);
+	// 🧪 NUCLEAR TEST: Disable window resize effect to prevent loops
 
-	// Track window width reactively
-	$effect(() => {
-		if (typeof window !== 'undefined') {
-			const updateSize = () => {
-				windowWidth = window.innerWidth;
-				buttonSize = Math.max(30, Math.min(50, windowWidth / 12));
-			};
+	// // Track window width reactively
+	// $effect(() => {
+	// 	if (typeof window !== 'undefined') {
+	// 		const updateSize = () => {
+	// 			windowWidth = window.innerWidth;
+	// 			buttonSize = Math.max(30, Math.min(50, windowWidth / 12));
+	// 		};
 
-			updateSize();
-			window.addEventListener('resize', updateSize);
+	// 		updateSize();
+	// 		window.addEventListener('resize', updateSize);
 
-			return () => window.removeEventListener('resize', updateSize);
-		}
-	});
+	// 		return () => window.removeEventListener('resize', updateSize);
+	// 	}
+	// });
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
 			// Button size is now handled by the reactive effect above
 
-			// Ensure settings dialog is closed on page load
+			// MIGRATED: Ensure settings dialog is closed on page load
 			if (isSettingsDialogOpen) {
-				appActions.closeSettings();
+				appState.closeSettings();
 			}
 
 			// Also check localStorage directly to ensure settings dialog state is reset
@@ -57,12 +56,13 @@
 				console.error('Error resetting settings dialog state:', error);
 			}
 		}
-		appActions.changeTab(0);
+		// 🧪 NUCLEAR TEST: Disable duplicate tab setting to prevent reactive loops
+		// appState.setTab(0); // DISABLED - tab setting handled elsewhere
 	});
 
 	function handleBackdropKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
-			appActions.closeSettings();
+			appState.closeSettings();
 		}
 	}
 </script>
@@ -76,7 +76,7 @@
 		<div
 			class="settingsBackdrop"
 			transition:fade={{ duration: 300, easing: cubicOut }}
-			onclick={() => appActions.closeSettings()}
+			onclick={() => appState.closeSettings()}
 			onkeydown={handleBackdropKeydown}
 			role="button"
 			tabindex="0"
@@ -87,7 +87,7 @@
 			in:fly={{ y: 20, duration: 400, delay: 100, easing: quintOut }}
 			out:fade={{ duration: 200, easing: cubicOut }}
 		>
-			<SettingsContent onClose={() => appActions.closeSettings()} />
+			<SettingsContent onClose={() => appState.closeSettings()} />
 		</div>
 	{/if}
 </div>
@@ -135,6 +135,6 @@
 		border-radius: 12px;
 		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 		z-index: 10;
-		overflow: hidden;
+		overflow: hidden
 	}
 </style>

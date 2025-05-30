@@ -1,187 +1,57 @@
 /**
- * Modern Runes-Based State Registry
- *
- * This replaces the deprecated StateRegistry with a pure Svelte 5 runes implementation.
- * NO STORES - RUNES ONLY!
+ * Runes State Registry - Pure Svelte 5 Implementation
+ * Replaces XState with simple reactive state management
  */
 
-import { createActor, type AnyStateMachine, type AnyActorRef } from 'xstate';
+import { browser } from '$app/environment';
 
-// Modern registry entry type
-interface RunesRegistryEntry {
-	id: string;
-	type: 'machine' | 'container' | 'state';
-	instance: any;
-	metadata: {
-		persist?: boolean;
-		description?: string;
-		created: number;
-	};
-}
-
-// Registry state using runes
-let _registryEntries = $state<Map<string, RunesRegistryEntry>>(new Map());
-let _registryConfig = $state({
-	enablePersistence: true,
-	enableDebug: false,
-	maxEntries: 100
-});
+// Registry for tracking state instances
+const stateRegistry = new Map<string, any>();
 
 /**
- * Modern runes-based registry for state management
+ * Register a state instance in the global registry
  */
-export class RunesStateRegistry {
-	/**
-	 * Register a machine with the registry
-	 */
-	registerMachine<TMachine extends AnyStateMachine>(
-		id: string,
-		machine: TMachine,
-		options: {
-			persist?: boolean;
-			description?: string;
-		} = {}
-	): AnyActorRef {
-		// Create the actor
-		const actor = createActor(machine);
-
-		// Register the entry
-		const entry: RunesRegistryEntry = {
-			id,
-			type: 'machine',
-			instance: actor,
-			metadata: {
-				persist: options.persist,
-				description: options.description,
-				created: Date.now()
-			}
-		};
-
-		_registryEntries.set(id, entry);
-
-		// Start the actor
-		actor.start();
-
-		return actor;
-	}
-
-	/**
-	 * Register a generic state container
-	 */
-	register(
-		id: string,
-		instance: any,
-		options: {
-			type?: 'machine' | 'container' | 'state';
-			persist?: boolean;
-			description?: string;
-		} = {}
-	): void {
-		const entry: RunesRegistryEntry = {
-			id,
-			type: options.type || 'state',
-			instance,
-			metadata: {
-				persist: options.persist,
-				description: options.description,
-				created: Date.now()
-			}
-		};
-
-		_registryEntries.set(id, entry);
-	}
-
-	/**
-	 * Get a registered entry by ID
-	 */
-	get(id: string): RunesRegistryEntry | undefined {
-		return _registryEntries.get(id);
-	}
-
-	/**
-	 * Get all registered entries
-	 */
-	getAll(): RunesRegistryEntry[] {
-		return Array.from(_registryEntries.values());
-	}
-
-	/**
-	 * Get entries by type
-	 */
-	getAllByType(type: 'machine' | 'container' | 'state'): RunesRegistryEntry[] {
-		return this.getAll().filter((entry) => entry.type === type);
-	}
-
-	/**
-	 * Unregister an entry
-	 */
-	unregister(id: string): boolean {
-		const entry = _registryEntries.get(id);
-		if (entry) {
-			// Stop the actor if it's a machine
-			if (entry.type === 'machine' && entry.instance?.stop) {
-				entry.instance.stop();
-			}
-			return _registryEntries.delete(id);
-		}
-		return false;
-	}
-
-	/**
-	 * Clear all entries
-	 */
-	clear(): void {
-		// Stop all machines before clearing
-		for (const entry of _registryEntries.values()) {
-			if (entry.type === 'machine' && entry.instance?.stop) {
-				entry.instance.stop();
-			}
-		}
-		_registryEntries.clear();
-	}
-
-	/**
-	 * Get registry statistics
-	 */
-	getStats() {
-		const entries = this.getAll();
-		return {
-			total: entries.length,
-			machines: entries.filter((e) => e.type === 'machine').length,
-			containers: entries.filter((e) => e.type === 'container').length,
-			states: entries.filter((e) => e.type === 'state').length,
-			persisted: entries.filter((e) => e.metadata.persist).length
-		};
-	}
-
-	/**
-	 * Debug information
-	 */
-	debug(): void {
-		if (_registryConfig.enableDebug) {
-			console.group('🔧 Runes State Registry Debug');
-			console.log('📊 Stats:', this.getStats());
-			console.log('📋 Entries:', this.getAll());
-			console.groupEnd();
-		}
+export function registerState(key: string, state: any): void {
+	if (browser) {
+		stateRegistry.set(key, state);
 	}
 }
 
-// Create singleton instance
-export const runesStateRegistry = new RunesStateRegistry();
-
-// Export getter functions for reactive access
-export function getRegistryEntries(): RunesRegistryEntry[] {
-	return Array.from(_registryEntries.values());
+/**
+ * Get a state instance from the registry
+ */
+export function getState<T>(key: string): T | undefined {
+	return stateRegistry.get(key);
 }
 
-export function getRegistryStats() {
-	return runesStateRegistry.getStats();
+/**
+ * Remove a state instance from the registry
+ */
+export function unregisterState(key: string): void {
+	stateRegistry.delete(key);
 }
 
-export function getRegistryConfig() {
-	return _registryConfig;
+/**
+ * Clear all registered states
+ */
+export function clearRegistry(): void {
+	stateRegistry.clear();
 }
 
-// Backward compatibility - export as stateRegistry
-export const stateRegistry = runesStateRegistry;
+/**
+ * Get all registered state keys
+ */
+export function getRegisteredKeys(): string[] {
+	return Array.from(stateRegistry.keys());
+}
+
+/**
+ * Runes State Registry - Main export
+ */
+export const runesStateRegistry = {
+	register: registerState,
+	get: getState,
+	unregister: unregisterState,
+	clear: clearRegistry,
+	getKeys: getRegisteredKeys
+};

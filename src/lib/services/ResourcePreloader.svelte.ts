@@ -704,10 +704,9 @@ export class ResourcePreloader {
 					message: `${overallProgress}% complete - Finished loading ${phase.name}`
 				});
 
-				// Small delay between phases for UI updates
-				if (typeof window !== 'undefined') {
-					await new Promise((resolve) => setTimeout(resolve, 100));
-				}
+				// CRITICAL FIX: Remove setTimeout that was causing infinite reactive loops
+				// The delay between phases is not necessary and was triggering Svelte's reactive system infinitely
+				// when called within the XState machine's fromPromise actor context
 			}
 
 			// Log completion with resource counts

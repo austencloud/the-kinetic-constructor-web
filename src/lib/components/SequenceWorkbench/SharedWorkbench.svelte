@@ -27,6 +27,9 @@
 	let closeToolsPanelListener: (event: Event) => void;
 
 	onMount(() => {
+		console.log('🔧 SharedWorkbench mounted - Construct tab should be visible');
+		console.log('🔧 Workbench state:', workbenchState);
+
 		// Toggle tools panel listener
 		toggleToolsPanelListener = () => {
 			toggleToolsPanel();

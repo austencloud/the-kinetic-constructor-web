@@ -1,6 +1,6 @@
 <!-- src/lib/components/SequenceWorkbench/BeatFrame/StartPosBeat.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import Beat from './Beat.svelte';
 	import type { BeatData } from './BeatData';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
@@ -13,6 +13,7 @@
 	import AnimatedHighlight from './GoldSelectionBorder.svelte';
 	import { createSafePictographCopy } from '$lib/utils/pictographUtils';
 	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
+	import { trackEffect } from '$lib/debug/effectTracker.svelte';
 
 	// Props using Svelte 5 runes
 	const props = $props<{
@@ -28,32 +29,49 @@
 	let bluePulseEffect = $state(false);
 	let redPulseEffect = $state(false);
 
-	// Update local beat data when props change
-	$effect(() => {
-		localBeatData = { ...props.beatData };
-	});
+	// 🚨 LOOP PREVENTION: Track the last processed start position by reference
+	let lastProcessedStartPosition: PictographData | null = null;
 
-	// Update isSelected when the selection changes with guard to prevent loops - NO STORES!
-	let isUpdatingSelection = false;
-	$effect(() => {
-		if (!isUpdatingSelection) {
-			// Watch the sequenceContainer state directly
-			isSelected = sequenceContainer.state.selectedBeatIds.includes('start-position');
-		}
-	});
+	// DISABLED: Update local beat data when props change - CAUSING INFINITE LOOPS
+	// $effect(() => {
+	// 	trackEffect('StartPosBeat', 'props-beatData-update', {
+	// 		beatNumber: props.beatData.beatNumber,
+	// 		filled: props.beatData.filled
+	// 	});
+	// 	localBeatData = { ...props.beatData };
+	// });
 
-	// Initialize pictographData from props with guard
-	let isInitializingData = false;
-	$effect(() => {
-		if (props.beatData && props.beatData.pictographData && !isInitializingData) {
-			isInitializingData = true;
-			pictographData = safeCopyPictographData(props.beatData.pictographData);
-			// Reset flag after a short delay
-			setTimeout(() => {
-				isInitializingData = false;
-			}, 10);
-		}
-	});
+	// DISABLED: Update isSelected when the selection changes - CAUSING INFINITE LOOPS
+	// let isUpdatingSelection = false;
+	// $effect(() => {
+	// 	trackEffect('StartPosBeat', 'selection-update', {
+	// 		selectedBeatIds: sequenceContainer.state.selectedBeatIds,
+	// 		isUpdatingSelection
+	// 	});
+	// 	if (!isUpdatingSelection) {
+	// 		// Watch the sequenceContainer state directly
+	// 		isSelected = sequenceContainer.state.selectedBeatIds.includes('start-position');
+	// 	}
+	// });
+
+	// NUCLEAR DISABLE: Initialize pictographData from props - CONFIRMED CAUSING INFINITE LOOPS
+	// let isInitializingData = false;
+	// $effect(() => {
+	// 	if (props.beatData && props.beatData.pictographData && !isInitializingData) {
+	// 		console.log('🔄 StartPosBeat: Initializing pictograph data from props');
+	// 		isInitializingData = true;
+	// 		pictographData = safeCopyPictographData(props.beatData.pictographData);
+	// 		// Reset flag after a short delay
+	// 		setTimeout(() => {
+	// 			isInitializingData = false;
+	// 		}, 10);
+	// 	}
+	// });
+
+	// 🔄 NON-REACTIVE APPROACH: Initialize pictographData directly from props
+	if (props.beatData && props.beatData.pictographData) {
+		pictographData = safeCopyPictographData(props.beatData.pictographData);
+	}
 
 	// Helper function to safely copy pictograph data without circular references
 	// Also ensures the data is valid for a start position (start and end locations must be the same)
@@ -91,28 +109,87 @@
 		return safeCopy;
 	}
 
-	// Flag to prevent circular updates
-	let isUpdatingFromStartPos = false;
+	// DISABLED: Update pictographData when localBeatData changes - CAUSING INFINITE LOOPS
+	// $effect(() => {
+	// 	if (localBeatData && localBeatData.pictographData) {
+	// 		pictographData = safeCopyPictographData(localBeatData.pictographData);
+	// 	}
+	// });
 
-	// Update pictographData when localBeatData changes, but only if not already updating from selectedStartPos
-	$effect(() => {
-		if (!isUpdatingFromStartPos && localBeatData && localBeatData.pictographData) {
-			pictographData = safeCopyPictographData(localBeatData.pictographData);
-		}
-	});
+	// DISABLED: Re-enable reactive effect watching beatData prop changes - CAUSING INFINITE LOOPS
+	// $effect(() => {
+	// 	// Watch for changes in the beatData prop (from BeatFrameStateManager)
+	// 	if (props.beatData && props.beatData.pictographData) {
+	// 		// Update local state from the prop
+	// 		localBeatData = { ...props.beatData };
+	// 		pictographData = safeCopyPictographData(props.beatData.pictographData);
+	// 	}
+	// });
+	// console.log(
+	// 	'🔧 SYSTEMATIC TEST 19: StartPosBeat beatData prop watcher re-enabled - WATCHING FOR LOOPS'
+	// );
 
-	// Note: Removed reactive effect watching sequenceState.startPosition to prevent infinite loops
-	// The component now relies on event-based updates and legacy store subscriptions
+	// DISABLED: Infinite loop fix reactive effect - STILL CAUSING LOOPS
+	// $effect(() => {
+	// 	trackEffect('StartPosBeat', 'sequence-state-sync', {
+	// 		hasStartPosition: !!sequenceState.startPosition,
+	// 		lastProcessedRef: !!lastProcessedStartPosition
+	// 	});
 
-	// Initialize from the modern selectedStartPosition state
+	// 	const currentStartPosition = sequenceState.startPosition;
+
+	// 	// Only process if this is truly a different start position (by reference comparison)
+	// 	if (currentStartPosition !== lastProcessedStartPosition) {
+	// 		trackEffect('StartPosBeat', 'start-position-change', {
+	// 			oldRef: !!lastProcessedStartPosition,
+	// 			newRef: !!currentStartPosition
+	// 		});
+
+	// 		console.log('🔧 LOOP-SAFE: Processing new start position reference');
+
+	// 		// Update the reference tracker first
+	// 		lastProcessedStartPosition = currentStartPosition;
+
+	// 		if (currentStartPosition) {
+	// 			console.log('✅ LOOP-SAFE: StartPosBeat updating from sequence state');
+
+	// 			// Use untrack to prevent this update from triggering reactive effects
+	// 			untrack(() => {
+	// 				// Create safe copy and update states
+	// 				const startPosCopy = safeCopyPictographData(currentStartPosition);
+	// 				pictographData = startPosCopy;
+
+	// 				// Update beat data
+	// 				localBeatData = {
+	// 					...localBeatData,
+	// 					pictographData: startPosCopy,
+	// 					filled: true
+	// 				};
+
+	// 				// Update pictograph container
+	// 				pictographContainer.setData(startPosCopy);
+	// 			});
+	// 		} else {
+	// 			// Handle start position being cleared
+	// 			console.log('🔧 LOOP-SAFE: Start position cleared');
+	// 			untrack(() => {
+	// 				pictographData = defaultPictographData;
+	// 				localBeatData = {
+	// 					...localBeatData,
+	// 					pictographData: defaultPictographData,
+	// 					filled: false
+	// 				};
+	// 			});
+	// 		}
+	// 	}
+	// });
+
+	// Fallback initialization from selection state for backward compatibility
 	onMount(() => {
-		// Initialize from the modern state if available
-		const currentStartPosition = getSelectedStartPosition();
-		if (currentStartPosition && !sequenceState.startPosition && !isUpdatingFromStartPos) {
-			// Set flag to prevent circular updates
-			isUpdatingFromStartPos = true;
-
-			try {
+		// Only initialize if sequence state doesn't have a start position
+		if (!sequenceState.startPosition) {
+			const currentStartPosition = getSelectedStartPosition();
+			if (currentStartPosition) {
 				// Create a safe copy to avoid reference issues
 				const startPosCopy = safeCopyPictographData(currentStartPosition);
 
@@ -128,9 +205,6 @@
 					pictographData: startPosCopy,
 					filled: true
 				};
-			} finally {
-				// Reset flag after updates are complete
-				isUpdatingFromStartPos = false;
 			}
 		}
 	});
@@ -188,134 +262,126 @@
 			const { beatId } = event.detail;
 			if (beatId !== 'start-position') return;
 
-			// Set flag to prevent circular updates
-			isUpdatingFromStartPos = true;
+			// Force a re-render by creating a shallow copy
+			localBeatData = { ...localBeatData };
 
-			try {
-				// Force a re-render by creating a shallow copy
-				localBeatData = { ...localBeatData };
+			// Update the pictograph data if needed
+			if (event.detail.property === 'turns' || event.detail.property === 'direction') {
+				// Always force a complete redraw for turns and direction changes
+				const { color, property, value } = event.detail;
 
-				// Update the pictograph data if needed
-				if (event.detail.property === 'turns' || event.detail.property === 'direction') {
-					// Always force a complete redraw for turns and direction changes
-					const { color, property, value } = event.detail;
+				// Create a new copy of the pictograph data
+				const updatedPictographData = { ...pictographData };
 
-					// Create a new copy of the pictograph data
-					const updatedPictographData = { ...pictographData };
+				// If changing direction, we may need to update the motion type
+				if (property === 'direction') {
+					// Convert from Direction to PropRotDir
+					const propRotDir =
+						value === 'clockwise' ? 'cw' : value === 'counterclockwise' ? 'ccw' : 'no_rot';
 
-					// If changing direction, we may need to update the motion type
-					if (property === 'direction') {
-						// Convert from Direction to PropRotDir
-						const propRotDir =
-							value === 'clockwise' ? 'cw' : value === 'counterclockwise' ? 'ccw' : 'no_rot';
-
-						// Update the appropriate motion data
-						if (color === 'blue' && updatedPictographData.blueMotionData) {
-							// Update motion type based on direction change
-							if (
-								updatedPictographData.blueMotionData.motionType === 'pro' ||
-								updatedPictographData.blueMotionData.motionType === 'anti'
-							) {
-								// If changing from clockwise to counterclockwise or vice versa,
-								// switch between pro and anti motion types
-								if (updatedPictographData.blueMotionData.propRotDir !== propRotDir) {
-									updatedPictographData.blueMotionData = {
-										...updatedPictographData.blueMotionData,
-										motionType:
-											updatedPictographData.blueMotionData.motionType === 'pro' ? 'anti' : 'pro',
-										[property]: value
-									};
-								} else {
-									updatedPictographData.blueMotionData = {
-										...updatedPictographData.blueMotionData,
-										[property]: value
-									};
-								}
+					// Update the appropriate motion data
+					if (color === 'blue' && updatedPictographData.blueMotionData) {
+						// Update motion type based on direction change
+						if (
+							updatedPictographData.blueMotionData.motionType === 'pro' ||
+							updatedPictographData.blueMotionData.motionType === 'anti'
+						) {
+							// If changing from clockwise to counterclockwise or vice versa,
+							// switch between pro and anti motion types
+							if (updatedPictographData.blueMotionData.propRotDir !== propRotDir) {
+								updatedPictographData.blueMotionData = {
+									...updatedPictographData.blueMotionData,
+									motionType:
+										updatedPictographData.blueMotionData.motionType === 'pro' ? 'anti' : 'pro',
+									[property]: value
+								};
 							} else {
 								updatedPictographData.blueMotionData = {
 									...updatedPictographData.blueMotionData,
 									[property]: value
 								};
 							}
-						} else if (color === 'red' && updatedPictographData.redMotionData) {
-							// Update motion type based on direction change
-							if (
-								updatedPictographData.redMotionData.motionType === 'pro' ||
-								updatedPictographData.redMotionData.motionType === 'anti'
-							) {
-								// If changing from clockwise to counterclockwise or vice versa,
-								// switch between pro and anti motion types
-								if (updatedPictographData.redMotionData.propRotDir !== propRotDir) {
-									updatedPictographData.redMotionData = {
-										...updatedPictographData.redMotionData,
-										motionType:
-											updatedPictographData.redMotionData.motionType === 'pro' ? 'anti' : 'pro',
-										[property]: value
-									};
-								} else {
-									updatedPictographData.redMotionData = {
-										...updatedPictographData.redMotionData,
-										[property]: value
-									};
-								}
+						} else {
+							updatedPictographData.blueMotionData = {
+								...updatedPictographData.blueMotionData,
+								[property]: value
+							};
+						}
+					} else if (color === 'red' && updatedPictographData.redMotionData) {
+						// Update motion type based on direction change
+						if (
+							updatedPictographData.redMotionData.motionType === 'pro' ||
+							updatedPictographData.redMotionData.motionType === 'anti'
+						) {
+							// If changing from clockwise to counterclockwise or vice versa,
+							// switch between pro and anti motion types
+							if (updatedPictographData.redMotionData.propRotDir !== propRotDir) {
+								updatedPictographData.redMotionData = {
+									...updatedPictographData.redMotionData,
+									motionType:
+										updatedPictographData.redMotionData.motionType === 'pro' ? 'anti' : 'pro',
+									[property]: value
+								};
 							} else {
 								updatedPictographData.redMotionData = {
 									...updatedPictographData.redMotionData,
 									[property]: value
 								};
 							}
-						}
-					} else {
-						// For turns updates, just update the property
-						if (color === 'blue' && updatedPictographData.blueMotionData) {
-							updatedPictographData.blueMotionData = {
-								...updatedPictographData.blueMotionData,
-								[property]: value
-							};
-						} else if (color === 'red' && updatedPictographData.redMotionData) {
+						} else {
 							updatedPictographData.redMotionData = {
 								...updatedPictographData.redMotionData,
 								[property]: value
 							};
 						}
 					}
-
-					// For turns changes, we need to be more efficient
-					if (property === 'turns') {
-						// Instead of setting arrow data to null, update only the necessary properties
-						// This is more efficient than forcing a complete recreation
-						if (color === 'blue' && updatedPictographData.blueArrowData) {
-							// Update the turns value directly in the arrow data
-							updatedPictographData.blueArrowData = {
-								...updatedPictographData.blueArrowData,
-								turns: value
-							};
-						} else if (color === 'red' && updatedPictographData.redArrowData) {
-							// Update the turns value directly in the arrow data
-							updatedPictographData.redArrowData = {
-								...updatedPictographData.redArrowData,
-								turns: value
-							};
-						}
+				} else {
+					// For turns updates, just update the property
+					if (color === 'blue' && updatedPictographData.blueMotionData) {
+						updatedPictographData.blueMotionData = {
+							...updatedPictographData.blueMotionData,
+							[property]: value
+						};
+					} else if (color === 'red' && updatedPictographData.redMotionData) {
+						updatedPictographData.redMotionData = {
+							...updatedPictographData.redMotionData,
+							[property]: value
+						};
 					}
-
-					// Update the pictograph data
-					pictographData = updatedPictographData;
-
-					// Use requestAnimationFrame to schedule the update for the next frame
-					// This helps avoid blocking the main thread and reduces jank
-					requestAnimationFrame(() => {
-						pictographContainer.setData(updatedPictographData);
-					});
 				}
 
-				// Also trigger the pulse effect for the updated prop
-				const { color } = event.detail;
-				handleBeatHighlight({ detail: { color } } as CustomEvent);
-			} finally {
-				// Reset flag after updates are complete
-				isUpdatingFromStartPos = false;
+				// For turns changes, we need to be more efficient
+				if (property === 'turns') {
+					// Instead of setting arrow data to null, update only the necessary properties
+					// This is more efficient than forcing a complete recreation
+					if (color === 'blue' && updatedPictographData.blueArrowData) {
+						// Update the turns value directly in the arrow data
+						updatedPictographData.blueArrowData = {
+							...updatedPictographData.blueArrowData,
+							turns: value
+						};
+					} else if (color === 'red' && updatedPictographData.redArrowData) {
+						// Update the turns value directly in the arrow data
+						updatedPictographData.redArrowData = {
+							...updatedPictographData.redArrowData,
+							turns: value
+						};
+					}
+				}
+
+				// Update the pictograph data
+				pictographData = updatedPictographData;
+
+				// Use requestAnimationFrame to schedule the update for the next frame
+				// This helps avoid blocking the main thread and reduces jank
+				requestAnimationFrame(() => {
+					pictographContainer.setData(updatedPictographData);
+				});
 			}
+
+			// Also trigger the pulse effect for the updated prop
+			const { color } = event.detail;
+			handleBeatHighlight({ detail: { color } } as CustomEvent);
 		}, 50); // Use a shorter throttle time for data updates
 
 		// Listen for the custom events
@@ -333,68 +399,49 @@
 		// Handler for start position selected event
 		const handleStartPosSelectedEvent = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
-				// Set flag to prevent circular updates
-				isUpdatingFromStartPos = true;
+				// Create a safe copy to avoid reference issues
+				const newStartPos = safeCopyPictographData(event.detail.startPosition);
 
+				// Update the pictograph data
+				pictographData = newStartPos;
+
+				// Also update the pictographContainer
+				pictographContainer.setData(pictographData);
+
+				// Save to localStorage directly to ensure it's available during hot reloads
 				try {
-					// Create a safe copy to avoid reference issues
-					const newStartPos = safeCopyPictographData(event.detail.startPosition);
-
-					// Update the pictograph data
-					pictographData = newStartPos;
-
-					// Also update the pictographContainer
-					pictographContainer.setData(pictographData);
-
-					// Save to localStorage directly to ensure it's available during hot reloads
-					try {
-						localStorage.setItem('start_position', JSON.stringify(pictographData));
-					} catch (error) {
-						// Silently handle localStorage errors
-					}
-
-					// Update the local beat data
-					localBeatData = {
-						...localBeatData,
-						pictographData: newStartPos,
-						filled: true
-					};
-				} finally {
-					// Reset flag after updates are complete
-					isUpdatingFromStartPos = false;
+					localStorage.setItem('start_position', JSON.stringify(pictographData));
+				} catch (error) {
+					// Silently handle localStorage errors
 				}
+
+				// Update the local beat data
+				localBeatData = {
+					...localBeatData,
+					pictographData: newStartPos,
+					filled: true
+				};
 			}
 		};
 
 		// Handler for start position refresh event (used when first beat is removed)
 		const handleStartPosRefreshEvent = (event: CustomEvent) => {
 			if (event.detail?.startPosition) {
-				// Set flag to prevent circular updates
-				isUpdatingFromStartPos = true;
+				// Create a safe copy to avoid reference issues
+				const newStartPos = safeCopyPictographData(event.detail.startPosition);
 
-				try {
-					// Create a safe copy to avoid reference issues
-					const newStartPos = safeCopyPictographData(event.detail.startPosition);
+				// Update the pictograph data
+				pictographData = newStartPos;
 
-					// Update the pictograph data
-					pictographData = newStartPos;
+				// Also update the pictographContainer
+				pictographContainer.setData(pictographData);
 
-					// Also update the pictographContainer
-					pictographContainer.setData(pictographData);
-
-					// Update the modern state with a safe copy
-					// Note: We don't need to import setSelectedStartPosition here since this is event-driven
-
-					// Update the local beat data
-					localBeatData = {
-						...localBeatData,
-						pictographData: newStartPos,
-						filled: true
-					};
-				} finally {
-					// Reset flag after updates are complete
-					isUpdatingFromStartPos = false;
-				}
+				// Update the local beat data
+				localBeatData = {
+					...localBeatData,
+					pictographData: newStartPos,
+					filled: true
+				};
 			}
 		};
 

@@ -3,12 +3,8 @@
 	import ConstructTab from '$lib/components/ConstructTab/ConstructTab.svelte';
 	import { fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
-	import { appActions } from '$lib/state/machines/app/app.actions';
+	import { appState } from '$lib/state/simple/appState.svelte';
 
-	// Force the app to always show the Construct tab (index 0)
-	onMount(() => {
-		appActions.changeTab(0);
-	});
 
 	// We're always in Construct mode
 	const isGenerateTab = false;

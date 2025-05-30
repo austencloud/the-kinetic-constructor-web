@@ -42,21 +42,44 @@ export interface StateTransition {
 }
 
 // Create individual state variables using Svelte 5 runes
-export const pictographStatus = $state<PictographStatus>('idle');
-export const pictographData = $state<PictographData | null>(null);
-export const pictographError = $state<PictographError | null>(null);
-export const loadProgress = $state(0);
-export const components = $state<PictographComponents>({
+let pictographStatus = $state<PictographStatus>('idle');
+let pictographData = $state<PictographData | null>(null);
+let pictographError = $state<PictographError | null>(null);
+let loadProgress = $state(0);
+let components = $state<PictographComponents>({
 	grid: false,
 	redProp: false,
 	blueProp: false,
 	redArrow: false,
 	blueArrow: false
 });
-export const stateHistory = $state<StateTransition[]>([]);
+let stateHistory = $state<StateTransition[]>([]);
+let skippedCount = $state(0);
 
 // Pictograph data store for CSV data
 export const pictographDataState = $state<PictographData[]>([]);
+
+// Export getters for the state variables
+export const pictographState = {
+	get status() {
+		return pictographStatus;
+	},
+	get data() {
+		return pictographData;
+	},
+	get error() {
+		return pictographError;
+	},
+	get progress() {
+		return loadProgress;
+	},
+	get components() {
+		return components;
+	},
+	get history() {
+		return stateHistory;
+	}
+};
 
 // Helper functions
 function toCamelCase(str: string): string {

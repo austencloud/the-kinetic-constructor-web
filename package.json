@@ -6,6 +6,9 @@
 		"clean:deep": "node scripts/clear-vite-cache.js",
 		"clean:windows": "node scripts/windows-cache-fix.js",
 		"ensure-proxy": "node scripts/ensure-proxy-layout.js",
+		"console-bridge": "node scripts/console-bridge-server.cjs",
+		"test:reactive": "node scripts/automated-reactive-testing.js",
+		"test:reactive:full": "concurrently \"npm run console-bridge\" \"npm run dev\" \"npm run test:reactive\"",
 		"dev": "npm run ensure-proxy && echo 'Starting dev server on PORT 5179...' && npx vite dev --host --port 5179 --open",
 		"dev:nocheck": "npm run ensure-proxy && cross-env VITE_SKIP_TYPECHECK=true vite dev --host --port 5179 --open --force",
 		"dev:clean": "npm run clean && npm run ensure-proxy && node scripts/dev.js",
@@ -69,11 +72,13 @@
 		"@typescript-eslint/parser": "^8.32.1",
 		"@vitest/ui": "^3.1.1",
 		"autoprefixer": "^10.4.20",
+		"concurrently": "^9.1.2",
 		"cross-env": "^7.0.3",
 		"eslint": "^9.23.0",
 		"eslint-plugin-svelte": "^3.8.2",
 		"eslint-plugin-unused-imports": "^4.1.4",
 		"jsdom": "^26.0.0",
+		"playwright": "^1.52.0",
 		"prettier": "^3.4.2",
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.10",
@@ -86,12 +91,11 @@
 		"typescript-eslint": "^8.32.1",
 		"vite": "^6.0.0",
 		"vite-plugin-pwa": "^1.0.0",
-		"vitest": "^3.1.1"
+		"vitest": "^3.1.1",
+		"ws": "^8.18.2"
 	},
 	"dependencies": {
-		"@xstate/svelte": "^4.0.3",
 		"lz-string": "^1.5.0",
-		"suncalc": "^1.9.0",
-		"xstate": "^5.19.2"
+		"suncalc": "^1.9.0"
 	}
 }

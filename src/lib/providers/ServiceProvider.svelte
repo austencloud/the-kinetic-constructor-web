@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { getContainer } from '$lib/core/di/ContainerProvider';
 	import { setServiceContainer } from '$lib/core/di/serviceContext';
 	import { registerServices } from '$lib/core/di/registerServices';
@@ -15,62 +15,69 @@
 		children?: import('svelte').Snippet;
 	} = $props();
 
-	// State tracking
+	// State tracking with better guards
 	let isStateInitialized = $state(false);
 	let isInitializing = $state(false);
+	let hasAttemptedInit = $state(false); // NEW: Prevent multiple attempts
 
-	/**
-	 * Initialize the state management system
-	 * This function ensures we only initialize once
-	 */
+	// CRITICAL FIX: Initialize DI container during component initialization (synchronous)
+	const container = getContainer();
+	registerServices(container);
+	setServiceContainer(container);
+
 	async function initializeState() {
-		// Guard against multiple initializations
-		if (isStateInitialized || isInitializing || !browser) return;
+		// CRITICAL: Enhanced guards to prevent any double initialization
+		if (isStateInitialized || isInitializing || !browser || hasAttemptedInit) return;
 
+		console.log('🔧 ServiceProvider: Starting state initialization...');
 		isInitializing = true;
+		hasAttemptedInit = true;
 
 		try {
-			// Initialize dependency injection
-			const container = getContainer();
-			registerServices(container);
-			setServiceContainer(container);
+			// Add delay at the start to let other components settle
+			await new Promise((resolve) => setTimeout(resolve, 150));
 
-			// Explicitly import the state machines to ensure proper registration order
-			// We need to await these imports to ensure they're fully loaded
-			await import('$lib/state/machines/app/app.machine');
-			await import('$lib/state/machines/sequenceMachine');
+			// MIGRATED: XState imports removed - using pure Svelte 5 runes now
+			// No need to import state machines anymore
 
-			// Import the sequence container to ensure it's available
+			// Import and handle sequence container safely
 			const { sequenceContainer } = await import(
 				'$lib/state/stores/sequence/SequenceContainer.svelte'
 			);
 
-			// Explicitly try to load sequence from localStorage
-			try {
-				sequenceContainer.loadFromLocalStorage();
-			} catch (error) {
-				console.error('ServiceProvider: Error loading sequence from localStorage:', error);
-			}
+			// Use untrack to prevent reactive cascades during initialization
+			untrack(() => {
+				try {
+					sequenceContainer.loadFromLocalStorage();
+				} catch (error) {
+					console.error('ServiceProvider: Error loading sequence:', error);
+				}
+			});
 
-			// Note: Effects initialization is now handled by EffectsInitializer component
+			// CRITICAL: Add substantial delay before state management initialization
+			await new Promise((resolve) => setTimeout(resolve, 200));
 
-			// Add a small delay to prevent rapid state changes that could cause reactive loops
-			await new Promise((resolve) => setTimeout(resolve, 50));
+			// Initialize state management in untracked context
+			untrack(() => {
+				initializeStateManagement();
+			});
 
-			// Now initialize state management
-			initializeStateManagement();
 			isStateInitialized = true;
+			console.log('✅ ServiceProvider: State initialization completed successfully');
 		} catch (error) {
 			console.error('Error initializing state management:', error);
+			hasAttemptedInit = false; // Allow retry on error
 		} finally {
 			isInitializing = false;
 		}
 	}
 
-	// Only initialize in onMount to prevent double initialization and reactive loops
-	onMount(() => {
-		if (!isStateInitialized && browser && !isInitializing) {
-			initializeState();
+	// CRITICAL: Only initialize in onMount, with better guards
+	onMount(async () => {
+		if (!isStateInitialized && browser && !isInitializing && !hasAttemptedInit) {
+			// FIXED: Remove setTimeout to prevent reactive loops
+			// Initialize immediately in onMount to avoid delayed reactive updates
+			await initializeState();
 		}
 	});
 </script>
@@ -78,8 +85,9 @@
 {#if isStateInitialized || !browser}
 	<!-- Include the SettingsManager component to handle settings lifecycle -->
 	<SettingsManager />
-	<!-- Include the EffectsInitializer component to handle $effect initialization -->
-	<EffectsInitializer />
+	<!-- NUCLEAR TEST: Temporarily disable EffectsInitializer to test if it causes infinite loops -->
+	<!-- <EffectsInitializer /> -->
+	<!-- <div style="display: none;">🧪 NUCLEAR TEST: EffectsInitializer disabled</div> -->
 	{#if children}
 		{@render children()}
 	{/if}

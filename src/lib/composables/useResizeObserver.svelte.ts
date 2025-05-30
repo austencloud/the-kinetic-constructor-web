@@ -1,5 +1,7 @@
 // src/lib/composables/useResizeObserver.ts
 
+import { browser } from '$app/environment';
+
 export interface ElementSize {
 	width: number;
 	height: number;
@@ -25,6 +27,15 @@ export function useResizeObserver(defaultSize: Partial<ElementSize> = {}) {
 
 	// Create a Svelte action for the resize observer
 	function resizeObserver(node: HTMLElement) {
+		// Only run in browser environment
+		if (!browser) {
+			return {
+				destroy() {
+					// No-op for SSR
+				}
+			};
+		}
+
 		// Initialize with current dimensions if available
 		const rect = node.getBoundingClientRect();
 		if (rect.width > 0 && rect.height > 0) {

@@ -8,7 +8,7 @@ interface WorkbenchState {
 
 const initialState: WorkbenchState = {
 	toolsPanelOpen: false,
-	activeTab: 'generate'
+	activeTab: 'construct'
 };
 
 // Create reactive state using Svelte 5 runes

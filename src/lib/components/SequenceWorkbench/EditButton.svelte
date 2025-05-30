@@ -44,12 +44,14 @@
 	}
 
 	onMount(() => {
-		// Add document click listener
-		document.addEventListener('click', handleDocumentClick);
+		if (browser) {
+			// Add document click listener
+			document.addEventListener('click', handleDocumentClick);
 
-		return () => {
-			document.removeEventListener('click', handleDocumentClick);
-		};
+			return () => {
+				document.removeEventListener('click', handleDocumentClick);
+			};
+		}
 	});
 </script>
 

@@ -44,18 +44,20 @@
 	let layoutInfo = $state<any>({});
 
 	// Event handlers for manager events
-	function handleNaturalHeightChange(event: CustomEvent) {
+	function handleNaturalHeightChange(data: { height: number }) {
+		// Create a CustomEvent from the data for backward compatibility
+		const event = new CustomEvent('naturalheightchange', {
+			detail: data,
+			bubbles: true
+		});
+
 		// Call the callback prop if provided
 		if (onnaturalheightchange) {
 			onnaturalheightchange(event);
 		}
 
 		// Re-dispatch the event to maintain the external API for backward compatibility
-		const customEvent = new CustomEvent('naturalheightchange', {
-			detail: event.detail,
-			bubbles: true
-		});
-		beatFrameContainerRef?.dispatchEvent(customEvent);
+		beatFrameContainerRef?.dispatchEvent(event);
 	}
 
 	function handleBeatSelected(event: CustomEvent) {
@@ -72,7 +74,7 @@
 		beatFrameContainerRef?.dispatchEvent(customEvent);
 	}
 
-	// Update state from managers
+	// ESSENTIAL: Re-enable with loop protection
 	$effect(() => {
 		if (stateManager) {
 			stateData = stateManager.getState();
@@ -84,6 +86,21 @@
 			layoutInfo = layoutManager.getLayoutInfo();
 		}
 	});
+
+	// 🔧 SAFE: Re-enable reactive effects for manager state
+	// $effect(() => {
+	// 	if (stateManager) {
+	// 		stateData = stateManager.getState();
+	// 	}
+	// });
+
+	// $effect(() => {
+	// 	if (layoutManager) {
+	// 		layoutInfo = layoutManager.getLayoutInfo();
+	// 	}
+	// });
+
+	// console.log('🧪 NUCLEAR TEST: BeatFrame reactive effects disabled');
 
 	// Public API methods that delegate to the state manager
 	export function addBeat(beatData: LegacyBeatData) {
@@ -109,7 +126,7 @@
 	{isScrollable}
 	{layoutOverride}
 	{fullScreenMode}
-	on:naturalheightchange={handleNaturalHeightChange}
+	onnaturalheightchange={handleNaturalHeightChange}
 />
 
 <BeatFrameElementManager

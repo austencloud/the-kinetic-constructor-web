@@ -113,9 +113,14 @@
 						}
 					});
 				} else {
-					// Traditional timeout for non-preloaded scenarios
-					setTimeout(() => {
+					// 🚨 NUCLEAR FIX: Use queueMicrotask instead of setTimeout to avoid reactive loops
+					queueMicrotask(() => {
 						try {
+							// 🚨 NUCLEAR FIX: Additional guard to prevent multiple calls
+							if (!isCreatingComponents) {
+								return;
+							}
+
 							props.onUpdateComponents({
 								redPropData: newRedPropData,
 								bluePropData: newBluePropData,
@@ -130,7 +135,7 @@
 							// CRITICAL FIX: Always clear the busy flag
 							isCreatingComponents = false;
 						}
-					}, 100);
+					});
 				}
 			});
 		} catch (error) {

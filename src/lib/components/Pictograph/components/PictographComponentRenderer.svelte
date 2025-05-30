@@ -79,7 +79,7 @@
 				}
 			: undefined}
 	>
-		{#if props.pictographData?.letter}
+		{#if props.pictographData?.letter && props.pictographData.letter !== undefined}
 			<TKAGlyph
 				letter={props.pictographData.letter}
 				turnsTuple="(s, 0, 0)"
@@ -108,6 +108,7 @@
 				/>
 			{/if}
 
+			<!-- ✅ ARROWS RE-ENABLED: Testing with improved reactive loop prevention -->
 			{#if arrowData}
 				{#each [`${arrowData.id}-${arrowData.turns}-${arrowData.propRotDir}-${arrowData.motionType}-${color}`] as arrowKey (arrowKey)}
 					<Arrow

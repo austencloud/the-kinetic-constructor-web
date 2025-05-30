@@ -587,7 +587,7 @@ export class ResourceCache {
 	 * Get cache statistics
 	 */
 	getStats(): CacheStats {
-		return cacheStatus.stats;
+		return _cacheStatus.stats;
 	}
 }
 

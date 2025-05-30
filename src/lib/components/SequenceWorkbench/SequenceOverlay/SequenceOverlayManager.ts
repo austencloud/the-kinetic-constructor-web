@@ -1,5 +1,5 @@
 import {
-	sequenceOverlayState,
+	sequenceOverlayStore,
 	openSequenceOverlay,
 	closeSequenceOverlay
 } from '$lib/state/sequenceOverlay/sequenceOverlayState';

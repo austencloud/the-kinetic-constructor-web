@@ -6,6 +6,7 @@
 	import { getSelectedStartPosition } from '$lib/state/sequence/selectionState.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import { autoAdjustLayout } from '../BeatFrame/beatFrameHelpers';
+	import { browser } from '$app/environment';
 
 	// Props
 	const { title = $bindable('') } = $props<{
@@ -14,8 +15,8 @@
 
 	// Local state
 	let gridRef: HTMLDivElement;
-	let viewportWidth = $state(window.innerWidth);
-	let viewportHeight = $state(window.innerHeight);
+	let viewportWidth = $state(browser ? window.innerWidth : 1024);
+	let viewportHeight = $state(browser ? window.innerHeight : 768);
 	let startPosition = $state<PictographData | null>(null);
 	let rows = $state(1);
 	let cols = $state(1);
@@ -117,18 +118,27 @@
 		}
 
 		// Get safe area insets from CSS variables
-		const safeInsetTop = parseFloat(
-			getComputedStyle(document.documentElement).getPropertyValue('--safe-inset-top') || '0px'
-		);
-		const safeInsetRight = parseFloat(
-			getComputedStyle(document.documentElement).getPropertyValue('--safe-inset-right') || '0px'
-		);
-		const safeInsetBottom = parseFloat(
-			getComputedStyle(document.documentElement).getPropertyValue('--safe-inset-bottom') || '0px'
-		);
-		const safeInsetLeft = parseFloat(
-			getComputedStyle(document.documentElement).getPropertyValue('--safe-inset-left') || '0px'
-		);
+		const safeInsetTop = browser
+			? parseFloat(
+					getComputedStyle(document.documentElement).getPropertyValue('--safe-inset-top') || '0px'
+				)
+			: 0;
+		const safeInsetRight = browser
+			? parseFloat(
+					getComputedStyle(document.documentElement).getPropertyValue('--safe-inset-right') || '0px'
+				)
+			: 0;
+		const safeInsetBottom = browser
+			? parseFloat(
+					getComputedStyle(document.documentElement).getPropertyValue('--safe-inset-bottom') ||
+						'0px'
+				)
+			: 0;
+		const safeInsetLeft = browser
+			? parseFloat(
+					getComputedStyle(document.documentElement).getPropertyValue('--safe-inset-left') || '0px'
+				)
+			: 0;
 
 		// Calculate available space (95% of viewport width, 90% of viewport height) accounting for safe area insets
 		const availableWidth = (viewportWidth - safeInsetLeft - safeInsetRight) * 0.95;
