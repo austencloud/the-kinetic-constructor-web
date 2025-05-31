@@ -1,5 +1,5 @@
-import type { ButtonDefinition } from './types';
-import { sequenceState } from '$lib/state/simple/sequenceState.svelte';
+import type { ButtonDefinition, ActionEventDetail } from './types';
+import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
 import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
 /**
@@ -102,15 +102,14 @@ export function handleButtonAction(params: ButtonActionHandlerParams): void {
 			break;
 		case 'deleteBeat':
 			hapticFeedbackService.trigger('warning');
-			// MIGRATED: Use pure Svelte 5 runes sequence state
-			const selectedBeatIds = sequenceState.selectedBeatIds;
+			const selectedBeatIds = sequenceSelectors.selectedBeatIds();
 			if (selectedBeatIds.length > 0) {
-				sequenceState.removeBeatAndFollowing(selectedBeatIds[0]);
+				sequenceActions.removeBeatAndFollowing(selectedBeatIds[0]);
 			}
 			break;
 		case 'clearSequence':
 			hapticFeedbackService.trigger('error');
-			sequenceState.clearSequence();
+			sequenceActions.clearSequence();
 			break;
 	}
 

@@ -1,28 +1,24 @@
 <script lang="ts">
+	import { createEventDispatcher } from 'svelte';
 	import ActionButton from './ActionButton.svelte';
 	import type { ButtonDefinition, ActionEventDetail, LayoutOrientation } from '../types';
 	import { ANIMATION_DURATIONS } from '../utils/animations';
 
-	// Props using Svelte 5 runes
-	const {
-		buttons,
-		buttonSize,
-		layout, // Receive layout from parent (ActionToolbar)
-		onaction
-	} = $props<{
-		buttons: ButtonDefinition[];
-		buttonSize: number;
-		layout: LayoutOrientation;
-		onaction?: (detail: ActionEventDetail) => void;
-	}>();
+	// Props
+	export let buttons: ButtonDefinition[];
+	export let buttonSize: number;
+	export let layout: LayoutOrientation; // Receive layout from parent (ActionToolbar)
 
 	// Always visible now
 	const isVisible = true;
 	const isAnimatingOut = false;
 
+	// Event dispatcher
+	const dispatch = createEventDispatcher<{ action: ActionEventDetail }>();
+
 	// Forward the click event
 	function handleButtonClick(detail: ActionEventDetail) {
-		onaction?.(detail);
+		dispatch('action', detail);
 	}
 
 	// Calculate total animation time for the wrapper fade-out/in

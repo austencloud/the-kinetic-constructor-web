@@ -1,7 +1,7 @@
 <script lang="ts">
 	import TitleLabel from './TitleLabel.svelte';
-	import { actState } from '../../state/actState.svelte';
-	import { uiState } from '../../state/uiState.svelte';
+	import { actStore } from '../../stores/actStore';
+	import { uiStore } from '../../stores/uiStore';
 	import ConfirmationModal from '../../../shared/ConfirmationModal.svelte';
 	import SettingsPanel from '../../settings/SettingsPanel.svelte';
 
@@ -21,16 +21,16 @@
 
 	// Handle erase act button click
 	function handleEraseAct() {
-		if (uiState.showConfirmDeletions) {
+		if ($uiStore.preferences.confirmDeletions) {
 			isEraseActModalOpen = true;
 		} else {
-			actState.eraseAct();
+			actStore.eraseAct();
 		}
 	}
 
 	// Handle confirmation from modal
 	function confirmEraseAct() {
-		actState.eraseAct();
+		actStore.eraseAct();
 		isEraseActModalOpen = false;
 	}
 
@@ -47,7 +47,7 @@
 		<div class="header-actions">
 			<button
 				class="settings-button"
-				onclick={toggleSettings}
+				on:click={toggleSettings}
 				aria-label="Open settings"
 				title="Open settings"
 			>
@@ -72,7 +72,7 @@
 
 			<button
 				class="erase-act-button"
-				onclick={handleEraseAct}
+				on:click={handleEraseAct}
 				aria-label="Erase entire act"
 				title="Erase entire act"
 			>
@@ -109,8 +109,8 @@
 	confirmText="Erase Act"
 	cancelText="Cancel"
 	confirmButtonClass="danger"
-	onconfirm={confirmEraseAct}
-	onclose={() => (isEraseActModalOpen = false)}
+	on:confirm={confirmEraseAct}
+	on:close={() => (isEraseActModalOpen = false)}
 />
 
 <SettingsPanel bind:isOpen={isSettingsPanelOpen} />

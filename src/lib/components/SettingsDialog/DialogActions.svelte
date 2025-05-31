@@ -1,12 +1,9 @@
 <script lang="ts">
-	// Props using Svelte 5 runes
-	const { onClose } = $props<{
-		onClose: () => void;
-	}>();
+	export let onClose: () => void;
 </script>
 
 <div class="dialog-actions" role="group" aria-label="Dialog actions">
-	<button class="btn close-btn" onclick={onClose}>Close</button>
+	<button class="btn close-btn" on:click={onClose}>Close</button>
 </div>
 
 <style>

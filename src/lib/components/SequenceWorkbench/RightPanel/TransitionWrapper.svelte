@@ -35,17 +35,18 @@
 		showStartPosPicker = true;
 		showOptionPicker = true;
 
-		// DISABLED: Initialize heights after a short delay to ensure DOM is ready
-		// Use a direct approach without setTimeout to prevent reactivity loops
-		preInitializeComponents();
-		updateHeights();
+		// Initialize heights after a short delay to ensure DOM is ready
+		setTimeout(() => {
+			preInitializeComponents();
+			updateHeights();
 
-		// Hide the component that shouldn't be visible initially
-		if (props.isSequenceEmpty) {
-			showOptionPicker = false;
-		} else {
-			showStartPosPicker = false;
-		}
+			// Hide the component that shouldn't be visible initially
+			if (props.isSequenceEmpty) {
+				showOptionPicker = false;
+			} else {
+				showStartPosPicker = false;
+			}
+		}, 50);
 	});
 
 	// Update container height when component dimensions change
@@ -196,13 +197,14 @@
 		if (containerElement) {
 			containerElement.style.height = `${containerHeight}px`;
 
-			// DISABLED: Animate to the new height
-			// Use a direct approach without setTimeout to prevent reactivity loops
-			const newHeight = props.isSequenceEmpty ? startPosPickerHeight : optionPickerHeight;
-			if (containerElement) {
-				containerElement.style.height = `${newHeight}px`;
-				containerHeight = newHeight;
-			}
+			// Animate to the new height
+			setTimeout(() => {
+				const newHeight = props.isSequenceEmpty ? startPosPickerHeight : optionPickerHeight;
+				if (containerElement) {
+					containerElement.style.height = `${newHeight}px`;
+					containerHeight = newHeight;
+				}
+			}, 50); // Small delay to ensure DOM is ready
 		}
 
 		// If transitioning to StartPosPicker
@@ -215,10 +217,11 @@
 				void startPosPickerElement.offsetHeight;
 			}
 
-			// DISABLED: Hide OptionPicker after transition completes
-			// Use a direct approach without setTimeout to prevent reactivity loops
-			showOptionPicker = false;
-			isTransitioning = false;
+			// Hide OptionPicker after transition completes
+			setTimeout(() => {
+				showOptionPicker = false;
+				isTransitioning = false;
+			}, props.transitionDuration + 50); // Add a small buffer to ensure animation completes
 		}
 		// If transitioning to OptionPicker
 		else {
@@ -230,10 +233,11 @@
 				void optionPickerElement.offsetHeight;
 			}
 
-			// DISABLED: Hide StartPosPicker after transition completes
-			// Use a direct approach without setTimeout to prevent reactivity loops
-			showStartPosPicker = false;
-			isTransitioning = false;
+			// Hide StartPosPicker after transition completes
+			setTimeout(() => {
+				showStartPosPicker = false;
+				isTransitioning = false;
+			}, props.transitionDuration + 50); // Add a small buffer to ensure animation completes
 		}
 	}
 

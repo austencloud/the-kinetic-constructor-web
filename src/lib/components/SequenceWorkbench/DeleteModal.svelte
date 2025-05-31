@@ -2,43 +2,36 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
-	import { browser } from '$app/environment';
-	// Props using Svelte 5 runes
-	const {
-		isOpen = false,
-		hasSelectedBeat = false,
-		buttonRect = null,
-		onclearSequence,
-		onremoveBeat,
-		onenterDeletionMode,
-		onclose
-	} = $props<{
-		isOpen?: boolean;
-		hasSelectedBeat?: boolean;
-		buttonRect?: DOMRect | null;
-		onclearSequence?: () => void;
-		onremoveBeat?: () => void;
-		onenterDeletionMode?: () => void;
-		onclose?: () => void;
+	import { createEventDispatcher } from 'svelte';
+
+	// Props
+	const { isOpen = false, hasSelectedBeat = false, buttonRect = null } = $props();
+
+	// Event dispatcher
+	const dispatch = createEventDispatcher<{
+		clearSequence: void;
+		removeBeat: void;
+		enterDeletionMode: void;
+		close: void;
 	}>();
 
 	function handleClearSequence() {
-		onclearSequence?.();
+		dispatch('clearSequence');
 		close();
 	}
 
 	function handleRemoveBeat() {
 		if (hasSelectedBeat) {
-			onremoveBeat?.();
+			dispatch('removeBeat');
 			close();
 		} else {
-			onenterDeletionMode?.();
+			dispatch('enterDeletionMode');
 			close();
 		}
 	}
 
 	function close() {
-		onclose?.();
+		dispatch('close');
 	}
 
 	function handleBackdropClick(event: MouseEvent) {
@@ -63,7 +56,7 @@
 
 	// Update popup position when buttonRect changes
 	$effect(() => {
-		if (!buttonRect || !browser) return;
+		if (!buttonRect) return;
 
 		// Get viewport dimensions
 		const viewportHeight = window.innerHeight;

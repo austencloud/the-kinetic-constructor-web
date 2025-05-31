@@ -1,11 +1,10 @@
 <!-- src/lib/components/ConstructTab/OptionPicker/components/OptionPickerHeader/OptionPickerHeader.svelte -->
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { LAYOUT_CONTEXT_KEY } from '../../layoutContext';
-	import ViewControl from '../ViewControl/ViewControl.svelte';
+	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../../layoutContext';
+	import ViewControl from '../ViewControl';
 	import TabsContainer from './TabsContainer.svelte';
-	import { useResponsiveLayout } from './useResponsiveLayout.svelte';
-
+	import { useResponsiveLayout } from './useResponsiveLayout';
 	// --- Props using Svelte 5 runes ---
 	const props = $props<{
 		selectedTab: string | null;
@@ -14,43 +13,93 @@
 	}>();
 
 	// --- Context ---
-	const getLayoutContext = getContext<() => any>(LAYOUT_CONTEXT_KEY);
-
-	// --- State ---
+	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 
 	// --- Responsive Layout ---
-	// Destructure stores from the hook - pass the getter function
+	// Destructure stores from the hook
 	const {
 		isMobileDevice,
 		useShortLabels,
+		tabsContainerRef,
 		isScrollable,
 		compactMode,
 		showScrollIndicator,
-		handleScroll // Make sure to get all needed functions/stores
-	} = useResponsiveLayout(getLayoutContext);
+		handleScroll, // Make sure to get all needed functions/stores
+		checkTabsOverflow
+	} = useResponsiveLayout(layoutContext);
+
+	// --- Event Handlers & Helpers ---
+	// Set up event listener for viewChange events (note the capital C)
+	$effect(() => {
+		if (!$tabsContainerRef) return; // Access store value with $
+
+		// Function to handle viewChange events
+		const viewChangeHandler = (event: Event) => {
+			// Check if this is a CustomEvent with detail
+			if (event instanceof CustomEvent && event.detail) {
+				console.log('Received viewChange event with detail:', event.detail);
+
+				// IMPORTANT: Check if the event is already from the header element
+				// This prevents infinite recursion by not re-dispatching events that originated from the header
+				const target = event.target as HTMLElement;
+				const isFromHeader = target && target.closest('.option-picker-header');
+
+				// Only forward events that didn't originate from the header
+				if (!isFromHeader) {
+					// Forward the event to the parent component using a custom event
+					// that doesn't trigger the document listeners again
+					const headerElement = document.querySelector('.option-picker-header');
+					if (headerElement) {
+						// Create a new event with a different name to avoid recursion
+						const customEvent = new CustomEvent('optionPickerViewChange', {
+							detail: event.detail,
+							bubbles: true
+						});
+						headerElement.dispatchEvent(customEvent);
+					}
+				}
+			}
+		};
+
+		// Add event listener for both lowercase and capitalized versions
+		// This ensures we catch events regardless of how they're dispatched
+		document.addEventListener('viewchange', viewChangeHandler);
+		document.addEventListener('viewChange', viewChangeHandler);
+
+		// Clean up on destroy
+		return () => {
+			document.removeEventListener('viewchange', viewChangeHandler);
+			document.removeEventListener('viewChange', viewChangeHandler);
+		};
+	});
+
+	// We'll use a different approach to handle events
+	// Instead of using custom events, we'll pass callbacks to the TabsContainer component
 </script>
 
-<div class="option-picker-header" class:mobile={isMobileDevice} data-testid="option-picker-header">
+<div class="option-picker-header" class:mobile={$isMobileDevice} data-testid="option-picker-header">
 	<div class="header-content">
 		<!-- TabsContainer or helper-message now comes first -->
 		{#if props.showTabs}
-			<!-- Show tabs when not in "Show All" mode -->
 			<TabsContainer
 				selectedTab={props.selectedTab}
-				categoryKeys={Array.isArray(props.categoryKeys) ? props.categoryKeys : []}
-				{isScrollable}
-				{showScrollIndicator}
-				{useShortLabels}
+				categoryKeys={props.categoryKeys || []}
+				isScrollable={$isScrollable}
+				showScrollIndicator={$showScrollIndicator}
+				useShortLabels={$useShortLabels}
+				isMobileDevice={$isMobileDevice}
+				compactMode={$compactMode}
+				tabsContainerRefStore={tabsContainerRef}
 				onScroll={handleScroll}
 			/>
 		{:else}
-			<!-- Show helper message when in "Show All" mode -->
-			<div class="helper-message">Showing all options - select a filter to see sections</div>
+			<!-- Message shown when tabs are hidden (e.g., showing all) -->
+			<div class="helper-message">Showing all - filter to see sections</div>
 		{/if}
 
 		<!-- ViewControl now comes second, will be on the right -->
-		<div class="view-controls" class:compact={compactMode}>
-			<ViewControl compact={compactMode} />
+		<div class="view-controls" class:compact={$compactMode}>
+			<ViewControl compact={$compactMode} />
 		</div>
 	</div>
 </div>

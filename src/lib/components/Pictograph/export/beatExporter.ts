@@ -63,6 +63,8 @@ export async function exportBeatAsImage(
 	}
 
 	try {
+		console.log('BeatExporter: Starting export process');
+
 		// Default options
 		const defaultOptions: Required<BeatExportOptions> = {
 			pictographData: options.pictographData,
@@ -88,6 +90,12 @@ export async function exportBeatAsImage(
 			format: mergedOptions.format,
 			width: mergedOptions.width,
 			height: mergedOptions.height
+		});
+
+		console.log('BeatExporter: Export completed successfully', {
+			width: result.width,
+			height: result.height,
+			dataUrlLength: result.dataUrl.length
 		});
 
 		// Return the result

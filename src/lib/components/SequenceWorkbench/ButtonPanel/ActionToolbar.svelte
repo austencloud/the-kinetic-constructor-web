@@ -1,63 +1,56 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import { browser } from '$app/environment'; // Import browser check for SSR safety
 
 	// Import Child Components
 	import ButtonsContainer from './components/ButtonsContainer.svelte';
 
 	// Import Stores
-	import { panelState, calculateButtonSizeForDimensions } from './stores/panelState.svelte';
+	import { panelStore, buttonSizeStore } from './stores/panelStore';
 	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
-	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 
 	// Import Types
 	import type { ButtonDefinition, ActionEventDetail, LayoutOrientation } from './types';
 
-	// Props using Svelte 5 runes
-	const {
-		containerWidth = 0,
-		containerHeight = 0,
-		buttons = [],
-		onaction
-	} = $props<{
-		containerWidth?: number;
-		containerHeight?: number;
-		buttons?: ButtonDefinition[];
-		onaction?: (detail: ActionEventDetail) => void;
+	// --- Component Props ---
+	export let containerWidth = 0;
+	export let containerHeight = 0;
+	export let buttons: ButtonDefinition[] = [];
+
+	// --- Event Dispatcher ---
+	const dispatch = createEventDispatcher<{
+		action: ActionEventDetail;
 	}>();
 
-	// State from Store using $derived
-	const layoutFromStore = $derived(panelState.state.layout);
+	// --- State from Store ---
+	// Read layout from store primarily for potential external listeners,
+	// but internal logic will use the calculated newLayout directly.
+	$: ({ layout: layoutFromStore } = $panelStore);
 
-	// Derived Values using $derived
-	const isContainerPortrait = $derived(containerHeight > containerWidth);
-	const newLayout = $derived(
-		isContainerPortrait ? 'horizontal' : ('vertical' as LayoutOrientation)
-	);
+	// --- Derived Values ---
+	// Calculate orientation based on received container dimensions
+	$: isContainerPortrait = containerHeight > containerWidth;
+	// Determine the desired layout based on the container's orientation
+	$: newLayout = isContainerPortrait ? 'horizontal' : ('vertical' as LayoutOrientation);
 
-	// Update the central store only if the calculated layout differs from the stored one using $effect
-	$effect(() => {
-		if (browser && newLayout !== layoutFromStore) {
-			panelState.setLayout(newLayout);
-		}
-	});
+	// Update the central store only if the calculated layout differs from the stored one
+	$: if (browser && newLayout !== layoutFromStore) {
+		panelStore.setLayout(newLayout);
+	}
 
 	// Calculate button size using the calculated orientation
-	const buttonSize = $derived(
-		calculateButtonSizeForDimensions(containerWidth, containerHeight, isContainerPortrait)
-	);
+	$: buttonSizeFn = $buttonSizeStore;
+	$: buttonSize = buttonSizeFn(containerWidth, containerHeight, isContainerPortrait);
 
 	// --- Event Handlers ---
-	async function handleButtonClick(detail: ActionEventDetail) {
-		const { id } = detail;
-		onaction?.({ id });
+	function handleButtonClick(event: CustomEvent<ActionEventDetail>) {
+		const { id } = event.detail;
+		dispatch('action', { id });
 
 		if (id === 'clearSequence') {
-			// Clear both the legacy sequence machine and the new sequence state
+			// Use the sequence actions to clear the sequence
+			// This will also reset the start position
 			sequenceActions.clearSequence();
-
-			// Also clear the new Svelte 5 runes sequence state
-			await sequenceState.clearSequence();
 
 			if (browser) {
 				const customEvent = new CustomEvent('sequence-cleared', { bubbles: true });
@@ -67,7 +60,7 @@
 	}
 
 	// --- Lifecycle ---
-	let buttonsReady = $state(false);
+	let buttonsReady = false;
 
 	onMount(() => {
 		if (!browser) return;
@@ -124,7 +117,7 @@
 	class:vertical={newLayout === 'vertical'}
 	style="--button-size: {buttonSize}px;"
 >
-	<ButtonsContainer {buttons} {buttonSize} layout={newLayout} onaction={handleButtonClick} />
+	<ButtonsContainer {buttons} {buttonSize} layout={newLayout} on:action={handleButtonClick} />
 </div>
 
 <style>

@@ -1,13 +1,22 @@
 <!-- src/lib/components/SequenceWorkbench/SimpleEditButton.svelte -->
 <script lang="ts">
-	import { editModeState } from '$lib/state/stores/editModeState.svelte';
+	import { editModeStore } from '$lib/state/stores/editModeStore';
 
-	// Derived state from edit mode store
-	const isEditMode = $derived(editModeState.state.isEditMode);
+	// Local state
+	let isEditMode = $state(false);
+
+	// Subscribe to the store
+	$effect(() => {
+		const unsubscribe = editModeStore.subscribe((state) => {
+			isEditMode = state.isEditMode;
+		});
+
+		return unsubscribe;
+	});
 
 	function handleClick() {
 		// Toggle edit mode
-		editModeState.toggleEditMode();
+		editModeStore.toggleEditMode();
 	}
 </script>
 

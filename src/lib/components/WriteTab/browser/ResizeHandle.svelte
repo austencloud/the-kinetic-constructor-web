@@ -1,23 +1,21 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { uiState } from '$lib/state/simple/uiState.svelte';
+	import { uiStore } from '../stores/uiStore';
 
-	// Props using Svelte 5 runes
-	const { onResize } = $props<{
-		onResize: (width: number) => void;
-	}>();
+	// Props
+	export let onResize: (width: number) => void;
 
-	// State using Svelte 5 runes
-	let isDragging = $state(false);
-	let startX = $state(0);
-	let startWidth = $state(0);
-	let handle = $state<HTMLDivElement>();
+	// State
+	let isDragging = false;
+	let startX = 0;
+	let startWidth = 0;
+	let handle: HTMLDivElement;
 
 	// Set up drag handlers
 	function handleMouseDown(event: MouseEvent) {
 		isDragging = true;
 		startX = event.clientX;
-		startWidth = uiState.browserPanelWidth;
+		startWidth = $uiStore.browserPanelWidth;
 
 		// Prevent text selection during drag
 		document.body.style.userSelect = 'none';
@@ -34,7 +32,7 @@
 	function handleKeyDown(event: KeyboardEvent) {
 		if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
 			const delta = event.key === 'ArrowLeft' ? 10 : -10;
-			const newWidth = uiState.browserPanelWidth - delta;
+			const newWidth = $uiStore.browserPanelWidth - delta;
 			onResize(newWidth);
 			event.preventDefault();
 		}
@@ -74,8 +72,8 @@
 <div
 	class="resize-handle"
 	bind:this={handle}
-	onmousedown={handleMouseDown}
-	onkeydown={handleKeyDown}
+	on:mousedown={handleMouseDown}
+	on:keydown={handleKeyDown}
 	class:dragging={isDragging}
 	title="Drag to resize"
 	role="button"

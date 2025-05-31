@@ -6,14 +6,14 @@
 	import { setContext } from 'svelte';
 	import { browser } from '$app/environment';
 	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from '../context/ElementContext';
-	import { editModeState } from '$lib/state/stores/editModeState.svelte';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
+	import { editModeStore } from '$lib/state/stores/editModeStore';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 
 	// Props with callback for beat selection
 	const {
 		containerHeight = $bindable(0),
 		containerWidth = $bindable(0),
-		onBeatSelected = (_beatId: string) => {}
+		onBeatSelected = (beatId: string) => {}
 	} = $props<{
 		containerHeight?: number;
 		containerWidth?: number;
@@ -43,13 +43,11 @@
 				}
 
 				// Dispatch a custom event for components that don't use context
-				if (browser) {
-					const event = new CustomEvent('beatframe-element-available', {
-						bubbles: true,
-						detail: { element: el }
-					});
-					document.dispatchEvent(event);
-				}
+				const event = new CustomEvent('beatframe-element-available', {
+					bubbles: true,
+					detail: { element: el }
+				});
+				document.dispatchEvent(event);
 
 				return true;
 			}
@@ -85,8 +83,17 @@
 		beatFrameNaturalHeight = event.detail.height;
 	}
 
-	// Local state for selection mode derived from edit mode state
-	const isSelectionMode = $derived(editModeState.state.isSelectionMode);
+	// Local state for selection mode
+	let isSelectionMode = $state(false);
+
+	// Subscribe to the edit mode store
+	$effect(() => {
+		const unsubscribe = editModeStore.subscribe((state) => {
+			isSelectionMode = state.isSelectionMode;
+		});
+
+		return unsubscribe;
+	});
 
 	// Handle beat selected event
 	function handleBeatSelected(event: CustomEvent<{ beatId: string }>) {
@@ -101,7 +108,10 @@
 			sequenceContainer.selectBeat(beatId);
 
 			// Enter edit mode
-			editModeState.setEditMode(true);
+			editModeStore.setEditMode(true);
+
+			// Log for debugging
+			console.log('Selection mode: Selected beat and entered edit mode', { beatId });
 		}
 	}
 
@@ -127,8 +137,8 @@
 			<div class="beat-frame-wrapper" class:scroll-mode-active={beatFrameShouldScroll}>
 				<!-- Pass the scrollable state to BeatFrame to let it handle scrolling -->
 				<BeatFrame
-					onnaturalheightchange={handleBeatFrameHeightChange}
-					onbeatselected={handleBeatSelected}
+					on:naturalheightchange={handleBeatFrameHeightChange}
+					on:beatselected={handleBeatSelected}
 					isScrollable={beatFrameShouldScroll}
 					elementReceiver={function (el: HTMLElement | null) {
 						// Use a function to update the element reference
@@ -144,13 +154,11 @@
 							}
 
 							// Dispatch a custom event for components that don't use context
-							if (browser) {
-								const event = new CustomEvent('beatframe-element-available', {
-									bubbles: true,
-									detail: { element: el }
-								});
-								document.dispatchEvent(event);
-							}
+							const event = new CustomEvent('beatframe-element-available', {
+								bubbles: true,
+								detail: { element: el }
+							});
+							document.dispatchEvent(event);
 						}
 					}}
 				/>

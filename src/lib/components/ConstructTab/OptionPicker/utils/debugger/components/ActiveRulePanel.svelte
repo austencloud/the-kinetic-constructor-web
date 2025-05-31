@@ -1,9 +1,6 @@
 <!-- src/lib/components/OptionPicker/utils/debugger/components/ActiveRulePanel.svelte -->
 <script lang="ts">
-	// Props using Svelte 5 runes
-	const { activeRule } = $props<{
-		activeRule: any;
-	}>();
+	export let activeRule: any;
 </script>
 
 <h3>Active Layout Rule:</h3>

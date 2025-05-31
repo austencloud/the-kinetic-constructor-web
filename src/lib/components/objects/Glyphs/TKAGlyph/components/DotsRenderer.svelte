@@ -1,32 +1,32 @@
 <!-- src/lib/components/objects/Glyphs/TKAGlyph/components/DotsRenderer.svelte -->
 <script lang="ts">
-	import { glyphContainer, type Rect } from '$lib/stores/glyphContainer.svelte';
+	import { assetCache, type Rect } from '$lib/stores/glyphStore';
 	import { LetterType } from '$lib/types/LetterType';
 	import type { Letter } from '$lib/types/Letter';
 	import type { DirRelation, PropRotDir } from '$lib/types/Types';
 
-	// Props using Svelte 5 runes
-	const props = $props<{
+	// Props interface
+	interface DotsRendererProps {
 		direction: DirRelation | PropRotDir | null;
 		letterRect: Rect;
 		letter: Letter | null;
 		shouldShowDots: boolean;
-	}>();
+	}
+
+	// Props
+	export let direction: DotsRendererProps['direction'] = null;
+	export let letterRect: DotsRendererProps['letterRect'];
+	export let letter: DotsRendererProps['letter'] = null;
+	export let shouldShowDots: DotsRendererProps['shouldShowDots'] = true;
 
 	// Config
 	const DOT_PADDING = 20;
 
-	// Calculate positions using functional approach with $derived
-	const dotPositions = $derived(
-		calculateDotPositions(props.letterRect, glyphContainer.cache.dotSVG?.dimensions)
-	);
-	const canShowDots = $derived(
-		props.letter && LetterType.getLetterType(props.letter) !== LetterType.Type1
-	);
-	const dotsAvailable = $derived(glyphContainer.cache.dotSVG !== null);
-	const dotsVisible = $derived(
-		canShowDots && dotsAvailable && props.direction !== null && props.shouldShowDots
-	);
+	// Calculate positions using functional approach
+	$: dotPositions = calculateDotPositions(letterRect, $assetCache.dotSVG?.dimensions);
+	$: canShowDots = letter && LetterType.getLetterType(letter) !== LetterType.Type1;
+	$: dotsAvailable = $assetCache.dotSVG !== null;
+	$: dotsVisible = canShowDots && dotsAvailable && direction !== null && shouldShowDots;
 
 	// Pure functions for calculations
 	function calculateDotPositions(rect: Rect, dimensions?: { width: number; height: number }) {
@@ -57,14 +57,14 @@
 		<g
 			class="tka-dot"
 			transform={`translate(${dotPositions.same.x}, ${dotPositions.same.y})`}
-			opacity={props.direction === 's' ? 1 : 0}
+			opacity={direction === 's' ? 1 : 0}
 		>
 			<image
-				href={glyphContainer.cache.dotSVG?.svg}
-				width={glyphContainer.cache.dotSVG?.dimensions.width || 0}
-				height={glyphContainer.cache.dotSVG?.dimensions.height || 0}
-				x={-(glyphContainer.cache.dotSVG?.dimensions.width || 0) / 2}
-				y={-(glyphContainer.cache.dotSVG?.dimensions.height || 0) / 2}
+				href={$assetCache.dotSVG?.svg}
+				width={$assetCache.dotSVG?.dimensions.width || 0}
+				height={$assetCache.dotSVG?.dimensions.height || 0}
+				x={-($assetCache.dotSVG?.dimensions.width || 0) / 2}
+				y={-($assetCache.dotSVG?.dimensions.height || 0) / 2}
 			/>
 		</g>
 
@@ -72,14 +72,14 @@
 		<g
 			class="tka-dot"
 			transform={`translate(${dotPositions.opposite.x}, ${dotPositions.opposite.y})`}
-			opacity={props.direction === 'o' ? 1 : 0}
+			opacity={direction === 'o' ? 1 : 0}
 		>
 			<image
-				href={glyphContainer.cache.dotSVG?.svg}
-				width={glyphContainer.cache.dotSVG?.dimensions.width || 0}
-				height={glyphContainer.cache.dotSVG?.dimensions.height || 0}
-				x={-(glyphContainer.cache.dotSVG?.dimensions.width || 0) / 2}
-				y={-(glyphContainer.cache.dotSVG?.dimensions.height || 0) / 2}
+				href={$assetCache.dotSVG?.svg}
+				width={$assetCache.dotSVG?.dimensions.width || 0}
+				height={$assetCache.dotSVG?.dimensions.height || 0}
+				x={-($assetCache.dotSVG?.dimensions.width || 0) / 2}
+				y={-($assetCache.dotSVG?.dimensions.height || 0) / 2}
 			/>
 		</g>
 	{/if}

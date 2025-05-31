@@ -176,13 +176,3 @@ export function saveImageExportSettings(): void {
 		console.error('Failed to save image export settings', error);
 	}
 }
-
-// Reset settings to defaults
-export function resetImageExportSettings(): void {
-	try {
-		imageExportState = structuredClone(defaultImageExportSettings);
-		saveImageExportSettings();
-	} catch (error) {
-		console.error('Failed to reset image export settings', error);
-	}
-}

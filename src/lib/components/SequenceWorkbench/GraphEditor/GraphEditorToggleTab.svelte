@@ -1,25 +1,25 @@
 <!-- src/lib/components/SequenceWorkbench/GraphEditor/GraphEditorToggleTab.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 
-	// Props using Svelte 5 runes
-	const { isExpanded, animationDuration, graphEditorHeight, onclick } = $props<{
-		isExpanded: boolean;
-		animationDuration: number;
-		graphEditorHeight: number;
-		onclick?: () => void;
+	// Props
+	export let isExpanded: boolean;
+	export let animationDuration: number;
+	export let graphEditorHeight: number;
+
+	// Create event dispatcher
+	const dispatch = createEventDispatcher<{
+		click: void; // No payload needed
 	}>();
 
-	// Label derived from state using Svelte 5 runes
-	const label = $derived(isExpanded ? 'Collapse' : 'Expand');
+	// Label derived from state
+	$: label = isExpanded ? 'Collapse' : 'Expand';
 
-	// Update CSS custom properties when values change using $effect
-	$effect(() => {
-		if (typeof window !== 'undefined') {
-			document.documentElement.style.setProperty('--graph-editor-offset', `${graphEditorHeight}px`);
-			document.documentElement.style.setProperty('--animation-duration', `${animationDuration}ms`);
-		}
-	});
+	// Update CSS custom properties when values change
+	$: if (typeof window !== 'undefined') {
+		document.documentElement.style.setProperty('--graph-editor-offset', `${graphEditorHeight}px`);
+		document.documentElement.style.setProperty('--animation-duration', `${animationDuration}ms`);
+	}
 
 	// Set initial values on mount
 	onMount(() => {
@@ -29,11 +29,11 @@
 
 	// Event handler
 	function handleClick() {
-		onclick?.();
+		dispatch('click');
 	}
 </script>
 
-<button class="toggle-tab" onclick={handleClick} aria-expanded={isExpanded} aria-label={label}>
+<button class="toggle-tab" on:click={handleClick} aria-expanded={isExpanded} aria-label={label}>
 	<span class="icon" class:expanded={isExpanded}>▲</span>
 	{label}
 </button>

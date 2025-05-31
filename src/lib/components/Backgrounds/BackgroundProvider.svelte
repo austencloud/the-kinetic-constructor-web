@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { setBackgroundContext } from './contexts/BackgroundContext';
 	import { setRunesBackgroundContext } from './contexts/BackgroundContext.svelte';
 	import type { BackgroundType, QualityLevel } from './types/types';
 	import { browser } from '$app/environment';
@@ -28,6 +29,7 @@
 		}
 	});
 
+	let backgroundContext = $state<ReturnType<typeof setBackgroundContext> | null>(null);
 	let runesContext = $state<ReturnType<typeof setRunesBackgroundContext> | null>(null);
 	let contextsInitialized = $state(false);
 
@@ -35,6 +37,7 @@
 		if (browser && !contextsInitialized) {
 			const runesCtx = setRunesBackgroundContext();
 			runesContext = runesCtx;
+			backgroundContext = setBackgroundContext();
 			contextsInitialized = true;
 
 			if (typeof window !== 'undefined') {
@@ -54,7 +57,7 @@
 
 	$effect(() => {
 		if (!browser) return;
-		if (!runesContext) return;
+		if (!backgroundContext) return;
 		if (isUpdatingFromContext) return;
 
 		const newKey = getBackgroundTypeKey(backgroundType);
@@ -66,7 +69,7 @@
 		if (backgroundType) {
 			isUpdatingFromContext = true;
 			try {
-				runesContext.setBackgroundType(backgroundType);
+				backgroundContext.setBackgroundType(backgroundType);
 			} finally {
 				isUpdatingFromContext = false;
 			}
@@ -75,7 +78,7 @@
 
 	$effect(() => {
 		if (!browser) return;
-		if (!runesContext) return;
+		if (!backgroundContext) return;
 		if (isUpdatingFromContext) return;
 
 		const newKey = String(isLoading);
@@ -86,21 +89,21 @@
 
 		isUpdatingFromContext = true;
 		try {
-			runesContext.setLoading(isLoading);
+			backgroundContext.setLoading(isLoading);
 		} finally {
 			isUpdatingFromContext = false;
 		}
 	});
 
 	function handleBackgroundChange(event: CustomEvent) {
-		if (!browser || !runesContext) return;
+		if (!browser || !backgroundContext) return;
 
 		if (event.detail && typeof event.detail === 'string') {
 			const newBackgroundType = event.detail as BackgroundType;
 
 			if (backgroundType !== newBackgroundType) {
 				backgroundType = newBackgroundType;
-				runesContext.setBackgroundType(newBackgroundType);
+				backgroundContext.setBackgroundType(newBackgroundType);
 			}
 		}
 	}
@@ -112,23 +115,23 @@
 			return;
 		}
 
-		if (!runesContext) {
+		if (!backgroundContext) {
 			console.error('No background context available!');
 			return;
 		}
 
 		if (initialQuality) {
-			runesContext.setQuality(initialQuality);
+			backgroundContext.setQuality(initialQuality);
 		}
 
 		window.addEventListener('changeBackground', handleBackgroundChange as EventListener);
 	});
 
 	onDestroy(() => {
-		if (!browser || !runesContext) return;
+		if (!browser || !backgroundContext) return;
 
 		window.removeEventListener('changeBackground', handleBackgroundChange as EventListener);
-		runesContext.cleanup();
+		backgroundContext.cleanup();
 	});
 
 	const derivedType = $derived(backgroundType);
@@ -142,18 +145,18 @@
 			return derivedIsLoading;
 		},
 		setType: (type: BackgroundType) => {
-			if (!browser || !runesContext) return;
+			if (!browser || !backgroundContext) return;
 			backgroundType = type;
-			runesContext.setBackgroundType(type);
+			backgroundContext.setBackgroundType(type);
 		},
 		setLoading: (loading: boolean) => {
-			if (!browser || !runesContext) return;
+			if (!browser || !backgroundContext) return;
 			isLoading = loading;
-			runesContext.setLoading(loading);
+			backgroundContext.setLoading(loading);
 		},
 		setQuality: (quality: QualityLevel) => {
-			if (!browser || !runesContext) return;
-			runesContext.setQuality(quality);
+			if (!browser || !backgroundContext) return;
+			backgroundContext.setQuality(quality);
 		}
 	};
 </script>

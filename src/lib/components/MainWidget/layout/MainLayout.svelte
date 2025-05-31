@@ -2,40 +2,33 @@
 	import TabContent from '../tabs/TabContent.svelte';
 	import { onMount } from 'svelte';
 	import SettingsContent from '$lib/components/SettingsDialog/SettingsDialog.svelte';
-	import { appState } from '$lib/state/simple/appState.svelte';
+	import { appActions } from '$lib/state/machines/app/app.actions';
+	import { useSelector } from '@xstate/svelte';
+	import { appService } from '$lib/state/machines/app/app.machine';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut, quintOut } from 'svelte/easing';
-	// No need for uiStore import for this functionality
+	import { uiStore } from '$lib/state/stores/uiStore';
 
-	// MIGRATED: Direct access to app state using pure Svelte 5 runes
-	const isSettingsDialogOpen = $derived(appState.isSettingsOpen);
+	const isSettingsOpenStore = useSelector(appService, (state) => state.context.isSettingsOpen);
+	$: isSettingsDialogOpen = $isSettingsOpenStore;
 
-	let buttonSize = $state(50);
-	let windowWidth = $state(0);
-	// 🧪 NUCLEAR TEST: Disable window resize effect to prevent loops
+	let buttonSize = 50;
+	let iconSize = 38;
 
-	// // Track window width reactively
-	// $effect(() => {
-	// 	if (typeof window !== 'undefined') {
-	// 		const updateSize = () => {
-	// 			windowWidth = window.innerWidth;
-	// 			buttonSize = Math.max(30, Math.min(50, windowWidth / 12));
-	// 		};
-
-	// 		updateSize();
-	// 		window.addEventListener('resize', updateSize);
-
-	// 		return () => window.removeEventListener('resize', updateSize);
-	// 	}
-	// });
+	$: if ($uiStore && $uiStore.windowWidth) {
+		buttonSize = Math.max(30, Math.min(50, $uiStore.windowWidth / 12));
+		iconSize = buttonSize * 0.75;
+	}
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
-			// Button size is now handled by the reactive effect above
+			buttonSize = Math.max(30, Math.min(50, window.innerWidth / 12));
+			iconSize = buttonSize * 0.75;
 
-			// MIGRATED: Ensure settings dialog is closed on page load
+			// Ensure settings dialog is closed on page load
 			if (isSettingsDialogOpen) {
-				appState.closeSettings();
+				console.log('Closing settings dialog on page load');
+				appActions.closeSettings();
 			}
 
 			// Also check localStorage directly to ensure settings dialog state is reset
@@ -48,6 +41,7 @@
 
 					// If the stored data includes isSettingsOpen, ensure it's set to false
 					if (parsedData && parsedData.context && parsedData.context.isSettingsOpen === true) {
+						console.log('Resetting persisted settings dialog state on page load');
 						parsedData.context.isSettingsOpen = false;
 						localStorage.setItem(storageKey, JSON.stringify(parsedData));
 					}
@@ -56,13 +50,20 @@
 				console.error('Error resetting settings dialog state:', error);
 			}
 		}
-		// 🧪 NUCLEAR TEST: Disable duplicate tab setting to prevent reactive loops
-		// appState.setTab(0); // DISABLED - tab setting handled elsewhere
+		appActions.changeTab(0);
 	});
+
+	function handleToggleSettings() {
+		if (isSettingsDialogOpen) {
+			appActions.closeSettings();
+		} else {
+			appActions.openSettings();
+		}
+	}
 
 	function handleBackdropKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
-			appState.closeSettings();
+			appActions.closeSettings();
 		}
 	}
 </script>
@@ -76,8 +77,8 @@
 		<div
 			class="settingsBackdrop"
 			transition:fade={{ duration: 300, easing: cubicOut }}
-			onclick={() => appState.closeSettings()}
-			onkeydown={handleBackdropKeydown}
+			on:click={() => appActions.closeSettings()}
+			on:keydown={handleBackdropKeydown}
 			role="button"
 			tabindex="0"
 			aria-label="Close settings"
@@ -87,7 +88,7 @@
 			in:fly={{ y: 20, duration: 400, delay: 100, easing: quintOut }}
 			out:fade={{ duration: 200, easing: cubicOut }}
 		>
-			<SettingsContent onClose={() => appState.closeSettings()} />
+			<SettingsContent onClose={() => appActions.closeSettings()} />
 		</div>
 	{/if}
 </div>
@@ -135,6 +136,6 @@
 		border-radius: 12px;
 		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 		z-index: 10;
-		overflow: hidden
+		overflow: hidden;
 	}
 </style>

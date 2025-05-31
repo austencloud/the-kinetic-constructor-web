@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { uiActions, cellSize } from '../../stores/uiState.svelte';
+	import { uiStore } from '../../stores/uiStore';
 
 	// Zoom levels in pixels (min and max)
 	const MIN_ZOOM = 40;
@@ -8,17 +8,17 @@
 
 	// Zoom in function
 	function zoomIn() {
-		uiActions.zoomIn();
+		uiStore.zoomIn();
 	}
 
 	// Zoom out function
 	function zoomOut() {
-		uiActions.zoomOut();
+		uiStore.zoomOut();
 	}
 
 	// Reset zoom function
 	function resetZoom() {
-		uiActions.updateCellSize(DEFAULT_ZOOM);
+		uiStore.updateCellSize(DEFAULT_ZOOM);
 	}
 </script>
 
@@ -26,7 +26,7 @@
 	<button
 		class="zoom-button"
 		on:click={zoomOut}
-		disabled={cellSize() <= MIN_ZOOM}
+		disabled={$uiStore.gridSettings.cellSize <= MIN_ZOOM}
 		aria-label="Zoom out"
 	>
 		<svg
@@ -46,12 +46,16 @@
 		</svg>
 	</button>
 
-	<span class="zoom-level">{cellSize()}px ({Math.round((cellSize() / DEFAULT_ZOOM) * 100)}%)</span>
+	<span class="zoom-level"
+		>{$uiStore.gridSettings.cellSize}px ({Math.round(
+			($uiStore.gridSettings.cellSize / DEFAULT_ZOOM) * 100
+		)}%)</span
+	>
 
 	<button
 		class="zoom-button"
 		on:click={zoomIn}
-		disabled={cellSize() >= MAX_ZOOM}
+		disabled={$uiStore.gridSettings.cellSize >= MAX_ZOOM}
 		aria-label="Zoom in"
 	>
 		<svg

@@ -79,10 +79,12 @@ export function isMobileDevice(): boolean {
  */
 export async function shareSequence(shareData: ShareData): Promise<boolean> {
 	if (!browser) {
+		console.log('shareUtils: Not in browser environment, returning false');
 		return false;
 	}
 
 	if (!isWebShareSupported()) {
+		console.log('shareUtils: Web Share API not supported, returning false');
 		showError("Your device doesn't support sharing");
 		return false;
 	}
@@ -91,6 +93,9 @@ export async function shareSequence(shareData: ShareData): Promise<boolean> {
 	const now = Date.now();
 	const timeSinceLastAttempt = now - lastShareApiCallTime;
 	if (timeSinceLastAttempt < MIN_SHARE_API_INTERVAL_MS) {
+		console.log(
+			`shareUtils: Share API called too soon (${timeSinceLastAttempt}ms since last attempt)`
+		);
 		showError('Please wait a moment before sharing again');
 		return false;
 	}
@@ -103,12 +108,14 @@ export async function shareSequence(shareData: ShareData): Promise<boolean> {
 		await new Promise((resolve) => setTimeout(resolve, 100));
 
 		await navigator.share(shareData);
+		console.log('shareUtils: Share completed successfully');
 		logger.info('Sequence shared successfully');
 		showSuccess('Sequence shared successfully');
 		return true;
 	} catch (error) {
 		// Don't show error for user cancellation
 		if (error instanceof Error && error.name === 'AbortError') {
+			console.log('shareUtils: User cancelled sharing');
 			logger.info('User cancelled sharing');
 			return false;
 		}
@@ -138,12 +145,16 @@ export async function shareSequenceWithImage(
 	sequenceName: string,
 	shareUrl: string
 ): Promise<boolean> {
+	console.log('shareSequenceWithImage called with:', { sequenceName, shareUrl });
+
 	if (!browser) {
+		console.log('shareUtils: Not in browser environment, returning false');
 		return false;
 	}
 
 	// First check if Web Share API is supported at all
 	if (!isWebShareSupported()) {
+		console.log('shareUtils: Web Share API not supported, returning false');
 		showError("Your device doesn't support sharing");
 		return false;
 	}
@@ -152,6 +163,9 @@ export async function shareSequenceWithImage(
 	const now = Date.now();
 	const timeSinceLastAttempt = now - lastShareApiCallTime;
 	if (timeSinceLastAttempt < MIN_SHARE_API_INTERVAL_MS) {
+		console.log(
+			`shareUtils: Share API called too soon (${timeSinceLastAttempt}ms since last attempt)`
+		);
 		showError('Please wait a moment before sharing again');
 		return false;
 	}
@@ -166,13 +180,16 @@ export async function shareSequenceWithImage(
 
 		// First try to share with image if file sharing is supported
 		const fileShareSupported = isFileShareSupported();
+		console.log('shareUtils: File sharing supported:', fileShareSupported);
 
 		if (fileShareSupported && imageResult && imageResult.dataUrl) {
 			try {
 				// Convert the data URL to a Blob
+				console.log('shareUtils: Converting data URL to Blob');
 				const blob = dataURLtoBlob(imageResult.dataUrl);
 
 				// Create a File from the Blob
+				console.log('shareUtils: Creating File from Blob');
 				const fileName = `${sequenceName || 'TKA_sequence'}.png`;
 				const file = new File([blob], fileName, { type: 'image/png' });
 
@@ -186,25 +203,36 @@ export async function shareSequenceWithImage(
 
 				// Check if the device can share this content with files
 				if (navigator.canShare && navigator.canShare(shareData)) {
+					console.log('shareUtils: Device can share with files, calling navigator.share');
+
 					// Use a small timeout to ensure the browser is ready
 					await new Promise((resolve) => setTimeout(resolve, 100));
 
 					await navigator.share(shareData);
+					console.log('shareUtils: Share with files completed successfully');
 					showSuccess('Sequence shared successfully');
 					return true;
 				} else {
+					console.log('shareUtils: Device cannot share with files, falling back to text+URL only');
 					// Fall through to text+URL sharing
 				}
 			} catch (fileError) {
-				// If there's an error with file sharing, fall back to text+URL sharing
+				// If there's an error with file sharing, log it and fall back to text+URL sharing
 				if (fileError instanceof Error && fileError.name === 'AbortError') {
+					console.log('shareUtils: User cancelled file sharing');
 					return false;
 				}
+
+				console.warn(
+					'shareUtils: Error sharing with file, falling back to text+URL only:',
+					fileError
+				);
 				// Fall through to text+URL sharing
 			}
 		}
 
 		// Fallback to sharing just the text and URL
+		console.log('shareUtils: Attempting to share with text and URL only');
 		const textOnlyShareData: ShareData = {
 			title: shareTitle,
 			text: shareText,
@@ -215,11 +243,13 @@ export async function shareSequenceWithImage(
 		await new Promise((resolve) => setTimeout(resolve, 100));
 
 		await navigator.share(textOnlyShareData);
+		console.log('shareUtils: Text+URL share completed successfully');
 		showSuccess('Sequence shared successfully');
 		return true;
 	} catch (error) {
 		// Don't show error for user cancellation
 		if (error instanceof Error && error.name === 'AbortError') {
+			console.log('shareUtils: User cancelled sharing');
 			return false;
 		}
 

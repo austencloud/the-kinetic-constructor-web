@@ -1,24 +1,15 @@
 <!-- src/lib/components/SequenceWorkbench/SharedWorkbench.svelte -->
 <script lang="ts">
-	import {
-		getWorkbenchState,
-		toggleToolsPanel,
-		setToolsPanelOpen
-	} from '$lib/state/stores/workbenchState.svelte';
-
-	// Get the workbench state
-	const workbenchState = getWorkbenchState();
+	import { workbenchStore } from '$lib/state/stores/workbenchStore';
 	import SequenceWidget from './SequenceWidget.svelte';
 	import RightPanel from './RightPanel/RightPanel.svelte';
 	import ToolsPanel from './ToolsPanel/ToolsPanel.svelte';
 	import { fly } from 'svelte/transition';
 	import type { ButtonDefinition } from './ButtonPanel/types';
 
-	// Props using Svelte 5 runes
-	const { toolsPanelButtons, onToolsPanelAction } = $props<{
-		toolsPanelButtons: ButtonDefinition[];
-		onToolsPanelAction: (id: string) => void;
-	}>();
+	// Props
+	export let toolsPanelButtons: ButtonDefinition[];
+	export let onToolsPanelAction: (id: string) => void;
 
 	// Listen for toggleToolsPanel events
 	import { onMount, onDestroy } from 'svelte';
@@ -27,18 +18,15 @@
 	let closeToolsPanelListener: (event: Event) => void;
 
 	onMount(() => {
-		console.log('🔧 SharedWorkbench mounted - Construct tab should be visible');
-		console.log('🔧 Workbench state:', workbenchState);
-
 		// Toggle tools panel listener
 		toggleToolsPanelListener = () => {
-			toggleToolsPanel();
+			workbenchStore.update((state) => ({ ...state, toolsPanelOpen: !state.toolsPanelOpen }));
 		};
 		document.addEventListener('toggleToolsPanel', toggleToolsPanelListener);
 
 		// Close tools panel listener
 		closeToolsPanelListener = () => {
-			setToolsPanelOpen(false);
+			workbenchStore.update((state) => ({ ...state, toolsPanelOpen: false }));
 		};
 		document.addEventListener('close-tools-panel', closeToolsPanelListener);
 
@@ -66,14 +54,14 @@
 	<div class="sequenceWorkbenchContainer">
 		<SequenceWidget />
 	</div>
-	<div class="optionPickerContainer" class:tools-panel-active={workbenchState.toolsPanelOpen}>
-		{#if workbenchState.toolsPanelOpen}
+	<div class="optionPickerContainer" class:tools-panel-active={$workbenchStore.toolsPanelOpen}>
+		{#if $workbenchStore.toolsPanelOpen}
 			<div class="tools-panel-overlay" transition:fly={{ duration: 300, x: 20 }}>
 				<ToolsPanel
 					buttons={toolsPanelButtons}
-					activeMode={workbenchState.activeTab}
+					activeMode={$workbenchStore.activeTab}
 					onAction={(id) => onToolsPanelAction(id)}
-					onClose={() => setToolsPanelOpen(false)}
+					onClose={() => workbenchStore.update((state) => ({ ...state, toolsPanelOpen: false }))}
 				/>
 			</div>
 		{:else}

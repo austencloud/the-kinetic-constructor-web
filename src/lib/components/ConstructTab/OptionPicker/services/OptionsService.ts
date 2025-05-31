@@ -1,7 +1,8 @@
 // src/lib/components/OptionPicker/services/optionsService.ts
+import { get } from 'svelte/store';
 import type { PictographData } from '$lib/types/PictographData';
 import type { SortMethod, ReversalFilter } from '../config';
-import { pictographData } from '$lib/state/pictograph/pictographDataState.svelte';
+import pictographDataStore from '$lib/stores/pictograph/pictographStore';
 import { memoizeLRU } from '$lib/utils/memoizationUtils';
 import { NO_ROT } from '$lib/types/Constants';
 import type { PropRotDir, Orientation } from '$lib/types/Types';
@@ -13,50 +14,25 @@ import { MotionOriCalculator } from '$lib/components/objects/Motion/MotionOriCal
 // ===== Option Data Fetching =====
 
 /**
- * Gets the next possible pictograph options based on the sequence structure.
- *
- * Sequence Structure:
- * - sequence.length === 0: No beats, may have start position (use start position orientations)
- * - sequence.length === 1: One beat + start position (use ending orientations of the beat)
- * - sequence.length > 1: Multiple beats + start position (use ending orientations of last beat)
+ * Gets the next possible pictograph options based on the last pictograph in a sequence.
+ * Returns an empty array for an empty sequence (initial state).
  */
 export function getNextOptions(sequence: PictographData[]): PictographData[] {
+	const lastPictograph = sequence.at(-1);
+
 	// If sequence is empty, return initial options (currently none defined)
-	if (sequence.length === 0) {
+	if (!lastPictograph) {
 		return [];
 	}
 
-	// For any sequence with beats (length >= 1), use the ending orientations of the last beat
-	const lastBeat = sequence[sequence.length - 1];
+	// Calculate the actual end orientations using MotionOriCalculator
+	const blueEndOri = calculateActualEndOrientation(lastPictograph.blueMotionData);
+	const redEndOri = calculateActualEndOrientation(lastPictograph.redMotionData);
 
-	// Check if this is actually a start position (has isStartPosition flag)
-	// This handles the edge case where a start position is passed as the only element
-	if (sequence.length === 1 && lastBeat.isStartPosition === true) {
-		// This is a start position, not a beat - use start position logic
-		const targetPosition = lastBeat.startPos ?? lastBeat.endPos;
-		const targetPositionString = targetPosition ? String(targetPosition) : undefined;
-
-		// For start positions, don't constrain by orientation - show all possible moves
-		const options = findOptionsWithMatchingPositionAndOrientation(
-			targetPositionString,
-			undefined, // Don't constrain by orientation for start positions
-			undefined // Don't constrain by orientation for start positions
-		);
-
-		return options;
-	}
-
-	// Normal case: This is a beat (or sequence of beats)
-	// CRITICAL FIX: Use the orientations that are already calculated and stored in the motion data
-	// optionPickerState.svelte.ts creates synthetic position objects with calculated orientations
-	// stored in startOri/endOri, so we should use those directly instead of recalculating
-	const blueEndOri = lastBeat.blueMotionData?.startOri || lastBeat.blueMotionData?.endOri;
-	const redEndOri = lastBeat.redMotionData?.startOri || lastBeat.redMotionData?.endOri;
-
-	// Find options where start position matches end position of last beat
-	// AND start orientations match calculated end orientations of the last beat
+	// Find options where start position matches end position of last pictograph
+	// AND start orientations match calculated end orientations of the last pictograph
 	const options = findOptionsWithMatchingPositionAndOrientation(
-		lastBeat.endPos ?? undefined,
+		lastPictograph.endPos ?? undefined,
 		blueEndOri,
 		redEndOri
 	);
@@ -65,7 +41,26 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 }
 
 /**
- * Finds all pictographs from the modern pictograph data service that match a specific position and orientations.
+ * Calculate the actual end orientation of a motion using the MotionOriCalculator
+ */
+function calculateActualEndOrientation(motionData: any): Orientation | undefined {
+	if (!motionData) return undefined;
+
+	// Create temporary calculator to get the correct end orientation
+	try {
+		const calculator = new MotionOriCalculator(motionData);
+		const calculatedEndOri = calculator.calculateEndOri();
+
+		return calculatedEndOri;
+	} catch (error) {
+		console.warn('Error calculating end orientation:', error);
+		// Fall back to the stored end orientation
+		return motionData.endOri;
+	}
+}
+
+/**
+ * Finds all pictographs from the global store that match a specific position and orientations.
  * If orientations don't match, it adjusts the pictographs to have the correct orientations.
  */
 export function findOptionsWithMatchingPositionAndOrientation(
@@ -78,16 +73,10 @@ export function findOptionsWithMatchingPositionAndOrientation(
 		return [];
 	}
 
-	// Check if pictograph data is available and initialized
-	if (!pictographData.isInitialized || pictographData.isEmpty) {
-		console.warn('Pictograph data not available or not initialized yet.');
-		return [];
-	}
-
-	const allPictographs = pictographData.data;
+	const allPictographs = get(pictographDataStore); // Use get() as this is outside a Svelte component/store context
 
 	if (!Array.isArray(allPictographs) || !allPictographs.length) {
-		console.warn('No pictographs available in the pictograph data service.');
+		console.warn('No pictographs available in the global store.');
 		return [];
 	}
 
@@ -143,6 +132,7 @@ export function findOptionsWithMatchingPositionAndOrientation(
 			// Adjust blue motion data if needed
 			if (!blueMatches && adjustedPictograph.blueMotionData && blueEndOri) {
 				// Set the start orientation to match the required orientation
+				const originalOri = adjustedPictograph.blueMotionData.startOri;
 				adjustedPictograph.blueMotionData.startOri = blueEndOri;
 
 				// Recalculate the end orientation
@@ -158,6 +148,7 @@ export function findOptionsWithMatchingPositionAndOrientation(
 			// Adjust red motion data if needed
 			if (!redMatches && adjustedPictograph.redMotionData && redEndOri) {
 				// Set the start orientation to match the required orientation
+				const originalOri = adjustedPictograph.redMotionData.startOri;
 				adjustedPictograph.redMotionData.startOri = redEndOri;
 
 				// Recalculate the end orientation

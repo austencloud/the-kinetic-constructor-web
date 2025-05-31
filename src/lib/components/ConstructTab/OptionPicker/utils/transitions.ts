@@ -1,7 +1,8 @@
 // src/lib/components/ConstructTab/OptionPicker/utils/transitions.ts
 import { cubicOut, quintOut } from 'svelte/easing';
-import type { NavigationDirection } from '../store/navigationStore.svelte';
+import type { NavigationDirection } from '../store/navigationStore';
 import { prefersReducedMotion } from './a11y';
+import { get } from 'svelte/store';
 
 type TransitionParams = {
 	duration?: number;
@@ -32,7 +33,7 @@ export function directionTransition(node: HTMLElement, params: DirectionTransiti
 	} = params;
 
 	// Skip animations if user prefers reduced motion
-	if (prefersReducedMotion()) {
+	if (get(prefersReducedMotion)) {
 		return {
 			duration: 0,
 			css: () => 'opacity: 1'
@@ -83,7 +84,7 @@ export function emptyStateTransition(node: HTMLElement, params: TransitionParams
 	const { duration = 400, delay = 0, easing = quintOut } = params;
 
 	// Skip animations if user prefers reduced motion
-	if (prefersReducedMotion()) {
+	if (get(prefersReducedMotion)) {
 		return {
 			duration: 0,
 			css: () => 'opacity: 1'
@@ -113,7 +114,7 @@ export function staggeredItemTransition(
 	const { index, total, duration = 350, easing = quintOut } = params;
 
 	// Skip animations if user prefers reduced motion
-	if (prefersReducedMotion()) {
+	if (get(prefersReducedMotion)) {
 		return {
 			duration: 0,
 			css: () => 'opacity: 1'
@@ -152,7 +153,7 @@ export function optionGridTransition(
 	const { duration = 300, delay = 0, easing = cubicOut, isEntering = true } = params;
 
 	// Skip animations if user prefers reduced motion
-	if (prefersReducedMotion()) {
+	if (get(prefersReducedMotion)) {
 		return {
 			duration: 0,
 			css: () => 'opacity: 1'
@@ -196,7 +197,7 @@ export function swipeFeedbackTransition(
 	const { percent, direction } = params;
 
 	// Skip animations if user prefers reduced motion
-	if (prefersReducedMotion()) {
+	if (get(prefersReducedMotion)) {
 		return {
 			duration: 0,
 			css: () => ''

@@ -1,25 +1,16 @@
 <script lang="ts">
-	import { actState } from '../../state/actState.svelte';
+	import { actStore } from '../../stores/actStore';
 
-	// Props using Svelte 5 runes
-	const {
-		row,
-		col,
-		label = ''
-	} = $props<{
-		row: number;
-		col: number;
-		label?: string;
-	}>();
+	export let row: number;
+	export let col: number;
+	export let label: string = '';
 
-	let isEditing = $state(false);
-	let inputElement = $state<HTMLInputElement>();
-	let currentLabel = $state(label);
+	let isEditing = false;
+	let inputElement: HTMLInputElement;
+	let currentLabel = label;
 
 	// Update the current label when the prop changes
-	$effect(() => {
-		currentLabel = label;
-	});
+	$: currentLabel = label;
 
 	function startEditing() {
 		isEditing = true;
@@ -34,7 +25,7 @@
 	}
 
 	function saveLabel() {
-		actState.updateBeat(row, col, { step_label: currentLabel });
+		actStore.updateBeat(row, col, { step_label: currentLabel });
 		isEditing = false;
 	}
 
@@ -69,8 +60,8 @@
 
 <div
 	class="step-label"
-	onclick={handleClick}
-	onkeydown={handleKeyPress}
+	on:click={handleClick}
+	on:keydown={handleKeyPress}
 	tabindex="0"
 	role="button"
 	aria-label="Edit step label"
@@ -79,12 +70,12 @@
 		<input
 			bind:this={inputElement}
 			bind:value={currentLabel}
-			onkeydown={handleKeyDown}
-			onblur={handleBlur}
+			on:keydown={handleKeyDown}
+			on:blur={handleBlur}
 			class="label-input"
 			type="text"
 			placeholder="Step label"
-			onclick={(e) => e.stopPropagation()}
+			on:click={(e) => e.stopPropagation()}
 		/>
 	{:else}
 		<div class="label-text">

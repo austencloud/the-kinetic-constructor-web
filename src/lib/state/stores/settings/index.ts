@@ -1,9 +1,12 @@
 /**
- * Settings State - MODERNIZED WITH SVELTE 5 RUNES
+ * Settings State
  *
  * This is the entry point for the settings state.
- * NO STORES - RUNES ONLY!
+ * It exports the store and selectors.
  */
 
-// Export the modern settings (no more stores!)
-export * from '../../settings.svelte';
+// Export the store
+export * from './settings.store';
+
+// Export selectors
+export * from './settings.selectors';

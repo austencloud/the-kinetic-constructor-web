@@ -7,15 +7,15 @@
 	import StartOverButton from './shared/StartOverButton.svelte';
 	import { tweened } from 'svelte/motion';
 
-	// Calculate percentage score using $derived
-	const percentage = $derived(Math.round(($quizResults.score / $quizResults.total) * 100));
-	const isPassing = $derived(percentage >= 70);
+	// Calculate percentage score
+	$: percentage = Math.round(($quizResults.score / $quizResults.total) * 100);
+	$: isPassing = percentage >= 70;
 
 	type AchievementLevel = 'excellent' | 'great' | 'good' | 'fair' | 'needs-practice';
 
-	// Determine achievement level using $derived
-	const achievementLevel = $derived(
-		(percentage >= 90
+	// Determine achievement level
+	$: achievementLevel = (
+		percentage >= 90
 			? 'excellent'
 			: percentage >= 80
 				? 'great'
@@ -23,8 +23,8 @@
 					? 'good'
 					: percentage >= 60
 						? 'fair'
-						: 'needs-practice') as AchievementLevel
-	);
+						: 'needs-practice'
+	) as AchievementLevel;
 
 	// Achievement messages
 	const achievementMessages = {
@@ -81,23 +81,20 @@
 		}, 300);
 	});
 
-	// Calculate circle progress using $derived
-	const circleRadius = $derived(70);
-	const circleCircumference = $derived(2 * Math.PI * circleRadius);
-	const strokeDashoffset = $derived(
-		circleCircumference - ($animatedPercentage / 100) * circleCircumference
-	);
+	// Calculate circle progress
+	$: circleRadius = 70;
+	$: circleCircumference = 2 * Math.PI * circleRadius;
+	$: strokeDashoffset = circleCircumference - ($animatedPercentage / 100) * circleCircumference;
 
-	// Get color based on score using $derived
-	const scoreColor = $derived(
+	// Get color based on score
+	$: scoreColor =
 		percentage >= 90
 			? '#4CAF50'
 			: percentage >= 70
 				? '#2196F3'
 				: percentage >= 60
 					? '#FF9800'
-					: '#F44336'
-	);
+					: '#F44336';
 </script>
 
 <div class="lesson-results">
@@ -198,8 +195,8 @@
 		</div>
 
 		<div class="actions" in:fly={{ y: 20, duration: 600, delay: 1000, easing: cubicOut }}>
-			<BackButton onclick={() => learnStore.goBackToSelector()} />
-			<StartOverButton onclick={() => learnStore.startOver()} />
+			<BackButton on:click={() => learnStore.goBackToSelector()}>Back to Lessons</BackButton>
+			<StartOverButton on:click={() => learnStore.startOver()}>Try Again</StartOverButton>
 		</div>
 	</div>
 

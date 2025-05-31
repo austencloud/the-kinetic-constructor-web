@@ -1,72 +1,30 @@
 /**
- * Pictograph Component with Svelte 5 Runes
+ * Pictograph Component with Svelte 5 Runes Integration
  *
- * This file provides pure Svelte 5 runes utilities for the Pictograph component.
- * It uses only runes-based state management without any store integration.
+ * This file provides the Svelte 5 runes integration for the Pictograph component.
+ * It's used by the Pictograph.svelte component to access the modern container.
  */
 
-import { untrack } from 'svelte';
+import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
+import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 import type { PictographData } from '$lib/types/PictographData';
 
 /**
- * Creates a pictograph state with update methods using pure Svelte 5 runes
+ * Hook to use the pictograph container with Svelte 5 runes
  */
-export function createPictographState(initialData?: PictographData) {
-	// Create state using pure runes
-	const state = $state({
-		data: initialData || null,
-		isLoading: false,
-		error: null,
-		components: {
-			grid: { loaded: false },
-			redProp: { loaded: false },
-			blueProp: { loaded: false },
-			redArrow: { loaded: false },
-			blueArrow: { loaded: false },
-			glyph: { loaded: false }
-		}
-	});
-
-	// Create update function
-	const update = (newState: Partial<typeof state>) => {
-		untrack(() => {
-			Object.assign(state, newState);
-		});
-	};
-
-	// Create reset function
-	const reset = () => {
-		untrack(() => {
-			state.data = initialData || null;
-			state.isLoading = false;
-			state.error = null;
-			state.components = {
-				grid: { loaded: false },
-				redProp: { loaded: false },
-				blueProp: { loaded: false },
-				redArrow: { loaded: false },
-				blueArrow: { loaded: false },
-				glyph: { loaded: false }
-			};
-		});
-	};
-
-	return { state, update, reset };
+export function usePictographContainer() {
+	return useContainer(pictographContainer);
 }
 
 /**
- * Creates an effect for handling pictograph data changes
+ * Hook to use a local pictograph data with the container
  */
-export function createPictographEffect(
-	data: PictographData | undefined,
-	onDataChange: (data: PictographData) => void
-) {
-	// Use a regular effect with untrack to prevent infinite loops
+export function useLocalPictographData(data: PictographData) {
+	// Set the data in the container
 	$effect(() => {
-		if (data) {
-			untrack(() => {
-				onDataChange(data);
-			});
-		}
+		pictographContainer.setData(data);
 	});
+
+	// Return the container state
+	return useContainer(pictographContainer);
 }

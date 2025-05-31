@@ -6,12 +6,12 @@
 	import MusicPlayer from './player/MusicPlayer.svelte';
 	import ResizeHandle from './browser/ResizeHandle.svelte';
 	import * as ToastManager from '../shared/ToastManager.svelte';
-	import { actState } from './state/actState.svelte';
-	import { uiState } from './state/uiState.svelte';
+	import { actStore } from './stores/actStore';
+	import { uiStore } from './stores/uiStore';
 
 	// Handle resize
 	function handleResize(width: number) {
-		uiState.setBrowserPanelWidth(width);
+		uiStore.updateBrowserPanelWidth(width);
 	}
 
 	// Handle keyboard shortcuts
@@ -22,12 +22,12 @@
 		// Undo: Ctrl/Cmd + Z
 		if (isCtrlOrCmd && event.key === 'z' && !event.shiftKey) {
 			event.preventDefault();
-			const actionDescription = actState.undo();
+			const actionDescription = actStore.undo();
 			if (actionDescription) {
 				ToastManager.showInfo(`Undid: ${actionDescription}`, {
 					action: {
 						label: 'Redo',
-						onClick: () => actState.redo()
+						onClick: () => actStore.redo()
 					}
 				});
 			}
@@ -39,21 +39,21 @@
 			(isCtrlOrCmd && event.key === 'y')
 		) {
 			event.preventDefault();
-			const actionDescription = actState.redo();
+			const actionDescription = actStore.redo();
 			if (actionDescription) {
 				ToastManager.showInfo(`Redid: ${actionDescription}`, {
 					action: {
 						label: 'Undo',
-						onClick: () => actState.undo()
+						onClick: () => actStore.undo()
 					}
 				});
 			}
 		}
 	}
 
-	// Initialize the act state on mount
+	// Initialize the act store on mount
 	onMount(() => {
-		actState.initialize();
+		actStore.initialize();
 
 		// Add global keyboard event listener
 		window.addEventListener('keydown', handleKeyDown);
@@ -71,7 +71,7 @@
 			<SheetPanel />
 		</div>
 
-		{#if uiState.isBrowserPanelOpen}
+		{#if $uiStore.isBrowserPanelOpen}
 			<div class="browser-panel-container" transition:fade={{ duration: 200 }}>
 				<div class="resize-handle-wrapper">
 					<ResizeHandle onResize={handleResize} />
@@ -81,7 +81,7 @@
 		{:else}
 			<button
 				class="open-browser-button"
-				onclick={() => uiState.setBrowserPanelOpen(true)}
+				on:click={() => uiStore.setBrowserPanelOpen(true)}
 				aria-label="Open browser panel"
 			>
 				<svg

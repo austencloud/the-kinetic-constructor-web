@@ -2,8 +2,8 @@
 <script lang="ts">
 	import { onDestroy, getContext } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { LAYOUT_CONTEXT_KEY } from '../../layoutContext';
-	import { activeLayoutRule } from '../layoutUtils.svelte';
+	import { LAYOUT_CONTEXT_KEY, type LayoutContext } from '../../layoutContext';
+	import { activeLayoutRule } from '../layoutUtils';
 
 	// Import components
 	import DebugToggleButton from './components/DebugToggleButton.svelte';
@@ -12,8 +12,8 @@
 	import FoldableControls from './components/FoldableControls.svelte';
 	import DebugActions from './components/DebugActions.svelte';
 
-	// Get layout context - now using the getter function approach for Svelte 5 runes
-	const getLayoutContext = getContext<() => any>(LAYOUT_CONTEXT_KEY);
+	// Get layout context
+	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 
 	// State
 	let showInfo = false;
@@ -43,13 +43,13 @@
 				&times;
 			</button>
 			<div class="rule-card">
-				<ActiveRulePanel activeRule={activeLayoutRule()} />
+				<ActiveRulePanel activeRule={$activeLayoutRule} />
 
-				<CurrentStatePanel layoutContext={getLayoutContext?.()} />
+				<CurrentStatePanel layoutContext={$layoutContext} />
 
 				<FoldableControls />
 
-				<DebugActions layoutContext={getLayoutContext?.()} />
+				<DebugActions layoutContext={$layoutContext} />
 			</div>
 		</div>
 	{/if}

@@ -36,6 +36,8 @@ The Kinetic Constructor is a powerful web-based tool designed for creating and v
 - **Styling**: [TailwindCSS](https://tailwindcss.com/) for utility-first styling
 - **Deployment**: [Netlify](https://www.netlify.com/) for hosting and serverless functions
 - **Testing**: [Vitest](https://vitest.dev/) for unit and integration testing
+- **Icons**: [FontAwesome](https://fontawesome.com/) and [Lucide](https://lucide.dev/)
+- **Animation**: [Svelte Motion](https://svelte-motion.gradientdescent.de/) for fluid animations
 
 ## Architecture
 

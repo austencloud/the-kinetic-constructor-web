@@ -4,7 +4,8 @@
   A simplified log viewer that doesn't rely on context.
 -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { writable, derived } from 'svelte/store';
 	import {
 		LogLevel,
 		LogDomain,
@@ -14,62 +15,61 @@
 		type LogEntry
 	} from '$lib/core/logging';
 
-	// Props using Svelte 5 runes
-	const { maxHeight = '400px' } = $props<{
-		maxHeight?: string;
-	}>();
+	// Props
+	export let maxHeight: string = '400px';
 
-	// State using Svelte 5 runes
-	let logs = $state<LogEntry[]>([]);
-	let levelFilter = $state<LogLevel>(LogLevel.INFO);
-	let domainFilter = $state<LogDomain | null>(null);
-	let sourceFilter = $state<string>('');
-	let searchQuery = $state<string>('');
+	// State
+	const logs = writable<LogEntry[]>([]);
+	const levelFilter = writable<LogLevel>(LogLevel.INFO);
+	const domainFilter = writable<LogDomain | null>(null);
+	const sourceFilter = writable<string>('');
+	const searchQuery = writable<string>('');
 
-	// Filtered logs using $derived
-	const filteredLogs = $derived(
-		logs.filter((log) => {
-			// Filter by level
-			if (log.level < levelFilter) return false;
+	// Filtered logs
+	const filteredLogs = derived(
+		[logs, levelFilter, domainFilter, sourceFilter, searchQuery],
+		([$logs, $levelFilter, $domainFilter, $sourceFilter, $searchQuery]) => {
+			return $logs.filter((log) => {
+				// Filter by level
+				if (log.level < $levelFilter) return false;
 
-			// Filter by domain
-			if (domainFilter && log.domain !== domainFilter) return false;
+				// Filter by domain
+				if ($domainFilter && log.domain !== $domainFilter) return false;
 
-			// Filter by source
-			if (sourceFilter && !log.source.includes(sourceFilter)) return false;
+				// Filter by source
+				if ($sourceFilter && !log.source.includes($sourceFilter)) return false;
 
-			// Filter by search query
-			if (searchQuery) {
-				const query = searchQuery.toLowerCase();
-				const message = log.message.toLowerCase();
-				const source = log.source.toLowerCase();
-				const domain = log.domain?.toLowerCase() || '';
+				// Filter by search query
+				if ($searchQuery) {
+					const query = $searchQuery.toLowerCase();
+					const message = log.message.toLowerCase();
+					const source = log.source.toLowerCase();
+					const domain = log.domain?.toLowerCase() || '';
 
-				return (
-					message.includes(query) ||
-					source.includes(query) ||
-					domain.includes(query) ||
-					JSON.stringify(log.data).toLowerCase().includes(query)
-				);
-			}
+					return (
+						message.includes(query) ||
+						source.includes(query) ||
+						domain.includes(query) ||
+						JSON.stringify(log.data).toLowerCase().includes(query)
+					);
+				}
 
-			return true;
-		})
+				return true;
+			});
+		}
 	);
 
 	// Reference to the log container for auto-scrolling
 	let logContainer: HTMLDivElement;
-	let isScrolledToBottom = $state(true);
-	let autoScroll = $state(true);
+	let isScrolledToBottom = true;
+	let autoScroll = true;
 
-	// Auto-scroll when new logs are added using $effect
-	$effect(() => {
-		if (autoScroll && isScrolledToBottom && logContainer && filteredLogs.length > 0) {
-			setTimeout(() => {
-				logContainer.scrollTop = logContainer.scrollHeight;
-			}, 0);
-		}
-	});
+	// Auto-scroll when new logs are added
+	$: if (autoScroll && isScrolledToBottom && logContainer && $filteredLogs.length > 0) {
+		setTimeout(() => {
+			logContainer.scrollTop = logContainer.scrollHeight;
+		}, 0);
+	}
 
 	// Handle scroll events to determine if we're at the bottom
 	function handleScroll() {
@@ -87,18 +87,19 @@
 
 	// Clear logs
 	function clearLogs() {
-		logs = [];
+		logs.set([]);
 	}
 
 	// Memory transport callback
 	function handleNewLog(entry: LogEntry) {
-		// Keep only the last 1000 logs to prevent memory issues
-		const newLogs = [...logs, entry];
-		if (newLogs.length > 1000) {
-			logs = newLogs.slice(newLogs.length - 1000);
-		} else {
-			logs = newLogs;
-		}
+		logs.update((currentLogs) => {
+			// Keep only the last 1000 logs to prevent memory issues
+			const newLogs = [...currentLogs, entry];
+			if (newLogs.length > 1000) {
+				return newLogs.slice(newLogs.length - 1000);
+			}
+			return newLogs;
+		});
 	}
 
 	// Set up logging
@@ -131,7 +132,7 @@
 <div class="log-viewer">
 	<div class="toolbar">
 		<div class="filters">
-			<select bind:value={levelFilter}>
+			<select bind:value={$levelFilter}>
 				<option value={LogLevel.TRACE}>TRACE</option>
 				<option value={LogLevel.DEBUG}>DEBUG</option>
 				<option value={LogLevel.INFO}>INFO</option>
@@ -140,20 +141,20 @@
 				<option value={LogLevel.FATAL}>FATAL</option>
 			</select>
 
-			<select bind:value={domainFilter}>
+			<select bind:value={$domainFilter}>
 				<option value={null}>All Domains</option>
 				{#each Object.values(LogDomain) as domain}
 					<option value={domain}>{domain}</option>
 				{/each}
 			</select>
 
-			<input type="text" placeholder="Filter by source..." bind:value={sourceFilter} />
+			<input type="text" placeholder="Filter by source..." bind:value={$sourceFilter} />
 
-			<input type="text" placeholder="Search logs..." bind:value={searchQuery} />
+			<input type="text" placeholder="Search logs..." bind:value={$searchQuery} />
 		</div>
 
 		<div class="actions">
-			<button onclick={clearLogs}>Clear</button>
+			<button on:click={clearLogs}>Clear</button>
 			<label>
 				<input type="checkbox" bind:checked={autoScroll} />
 				Auto-scroll
@@ -164,13 +165,13 @@
 	<div
 		class="log-container"
 		bind:this={logContainer}
-		onscroll={handleScroll}
+		on:scroll={handleScroll}
 		style="max-height: {maxHeight};"
 	>
-		{#if filteredLogs.length === 0}
+		{#if $filteredLogs.length === 0}
 			<div class="empty-state">No logs to display</div>
 		{:else}
-			{#each filteredLogs as log (log.id)}
+			{#each $filteredLogs as log (log.id)}
 				<div
 					class="log-entry"
 					data-level={log.level === LogLevel.ERROR

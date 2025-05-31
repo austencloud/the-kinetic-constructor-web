@@ -4,15 +4,16 @@
   This component provides the SVG element for the pictograph.
 -->
 <script lang="ts">
+	import { get } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
+	import type { Writable } from 'svelte/store';
 	import { getPictographAriaLabel } from '../utils/componentPositioning';
 
-	// Props using Svelte 5 runes
-	const { pictographData, state, errorMessage, children } = $props<{
-		pictographData: PictographData;
+	// Convert to Svelte 5 runes syntax
+	const { pictographDataStore, state, errorMessage } = $props<{
+		pictographDataStore: Writable<PictographData>;
 		state: string;
 		errorMessage: string | null;
-		children?: import('svelte').Snippet;
 	}>();
 </script>
 
@@ -21,11 +22,9 @@
 	viewBox="0 0 950 950"
 	xmlns="http://www.w3.org/2000/svg"
 	role="img"
-	aria-label={getPictographAriaLabel(state, errorMessage, pictographData)}
+	aria-label={getPictographAriaLabel(state, errorMessage, get(pictographDataStore))}
 >
-	{#if children}
-		{@render children()}
-	{/if}
+	<slot />
 </svg>
 
 <style>

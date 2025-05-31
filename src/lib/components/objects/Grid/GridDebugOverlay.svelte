@@ -2,32 +2,20 @@
 	import { onMount } from 'svelte';
 	import type { GridData } from '$lib/components/objects/Grid/GridData';
 
-	// Props using Svelte 5 runes
-	const {
-		gridData = null,
-		visible = true,
-		showLabels = true
-	} = $props<{
-		gridData?: GridData | null;
-		visible?: boolean;
-		showLabels?: boolean;
-	}>();
+	export let gridData: GridData | null = null;
+	export let visible: boolean = true;
+	export let showLabels: boolean = true;
 
-	let gridPoints = $state<
-		{
-			key: string;
-			x: number;
-			y: number;
-			color: string;
-		}[]
-	>([]);
+	let gridPoints: {
+		key: string;
+		x: number;
+		y: number;
+		color: string;
+	}[] = [];
 
-	// React to changes using $effect
-	$effect(() => {
-		if (gridData && visible) {
-			generateGridPoints();
-		}
-	});
+	$: if (gridData && visible) {
+		generateGridPoints();
+	}
 
 	function generateGridPoints() {
 		if (!gridData) return;

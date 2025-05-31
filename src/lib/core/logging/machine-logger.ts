@@ -5,25 +5,15 @@
  * - Type-safe option merge (TS18048 & TS2339 fixed)
  */
 
-// DISABLED: XState removed from project
-// import {
-// 	type AnyStateMachine,
-// 	type InspectionEvent,
-// 	type InspectedEventEvent,
-// 	type InspectedSnapshotEvent,
-// 	type InspectedActorEvent,
-// 	type Actor,
-// 	type ActorOptions
-// } from 'xstate';
-
-// Stub types for disabled XState functionality
-type AnyStateMachine = any;
-type InspectionEvent = any;
-type InspectedEventEvent = any;
-type InspectedSnapshotEvent = any;
-type InspectedActorEvent = any;
-type Actor<T> = any;
-type ActorOptions<T> = any;
+import {
+	type AnyStateMachine,
+	type InspectionEvent,
+	type InspectedEventEvent,
+	type InspectedSnapshotEvent,
+	type InspectedActorEvent,
+	type Actor,
+	type ActorOptions
+} from 'xstate';
 import { logger } from './logger';
 import { LogLevel, type MachineLoggerOptions } from './types';
 import { createStateContext } from './context';
@@ -224,8 +214,11 @@ export function withLogging<T extends AnyStateMachine>(
 	machine: T,
 	opts?: Partial<MachineLoggerOptions>
 ): T {
-	// DISABLED: XState functionality stubbed
-	return machine;
+	return {
+		...machine,
+		__logging: true,
+		__loggingOptions: opts
+	} as T;
 }
 
 export function createLoggedActor<T extends AnyStateMachine>(
@@ -236,20 +229,26 @@ export function createLoggedActor<T extends AnyStateMachine>(
 		snapshot?: any;
 	} = {}
 ): Actor<T> {
-	// DISABLED: XState functionality stubbed
-	return createActor(machine, options);
-}
+	const machineId = options.id || machine.id || `machine-${Date.now()}`;
+	const stored = (machine as any).__loggingOptions as Partial<MachineLoggerOptions> | undefined;
 
-// DISABLED: XState removed from project
-// late import to dodge circular dep
-// import { createActor } from 'xstate';
+	const loggingOptions = mergeOptions({
+		name: machineId,
+		...(stored || {}),
+		...(options.logging || {})
+	});
 
-// Stub function for disabled XState functionality
-function createActor(machine: any, options: any): any {
-	return {
-		start: () => {},
-		stop: () => {},
-		send: () => {},
-		subscribe: () => () => {}
+	const inspector = createMachineInspector(machineId, loggingOptions);
+	const actorOptions: ActorOptions<T> = {
+		id: machineId,
+		snapshot: options.snapshot,
+		inspect: inspector
 	};
+
+	const actor = createActor(machine, actorOptions);
+	actor.start();
+	return actor;
 }
+
+// late import to dodge circular dep
+import { createActor } from 'xstate';

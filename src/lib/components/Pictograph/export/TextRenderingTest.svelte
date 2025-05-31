@@ -1,11 +1,8 @@
 <script lang="ts">
 	import { exportSequenceImage } from './SequenceImageExporter';
+	import type { Beat } from '$lib/types/Beat';
 	import { Letter } from '$lib/types/Letter';
 	import { onMount } from 'svelte';
-	import {
-		initializeTestDataLoader,
-		createTestSequence
-	} from '$lib/utils/tests/pictographTestHelpers';
 
 	// Test parameters - focusing on realistic export sizes
 	let testSizes = [
@@ -55,8 +52,33 @@
 	let isRunningTests = false;
 	let testContainer: HTMLDivElement;
 
-	// Real test data will be loaded from CSV
-	let testDataInitialized = false;
+	// Create a dummy beat for testing
+	function createDummyBeat(index: number): Beat {
+		return {
+			id: `test-beat-${index}`,
+			beatNumber: index,
+			filled: true,
+			pictographData: {
+				letter: Letter.A,
+				startPos: null,
+				endPos: null,
+				timing: null,
+				direction: null,
+				gridMode: 'diamond',
+				gridData: null,
+				blueMotionData: null,
+				redMotionData: null,
+				redPropData: null,
+				bluePropData: null,
+				redArrowData: null,
+				blueArrowData: null,
+				grid: 'diamond'
+			},
+			metadata: {
+				tags: [`beat-${index}`]
+			}
+		};
+	}
 
 	// Run tests for all combinations
 	async function runTests() {
@@ -65,12 +87,6 @@
 		testResults = [];
 
 		try {
-			// Initialize test data if not already done
-			if (!testDataInitialized) {
-				await initializeTestDataLoader();
-				testDataInitialized = true;
-			}
-
 			for (const size of testSizes) {
 				for (const sequence of testSequences) {
 					await runTest(size, sequence);
@@ -129,28 +145,13 @@
 			// Add container to the document
 			document.body.appendChild(container);
 
-			// Create real test sequence
-			const letters = [
-				Letter.A,
-				Letter.B,
-				Letter.C,
-				Letter.D,
-				Letter.E,
-				Letter.F,
-				Letter.G,
-				Letter.H,
-				Letter.I
-			];
-			const sequenceLetters = Array.from(
-				{ length: sequence.beats },
-				(_, i) => letters[i % letters.length]
-			);
-			const testSequence = await createTestSequence(sequenceLetters, true);
+			// Create dummy beats
+			const beats: Beat[] = Array.from({ length: sequence.beats }, (_, i) => createDummyBeat(i));
 
 			// Export image
 			const result = await exportSequenceImage(container, {
-				beats: testSequence.beats,
-				startPosition: testSequence.startPosition,
+				beats,
+				startPosition: sequence.beats > 0 ? createDummyBeat(0) : null,
 				includeStartPosition: true,
 				addWord: true,
 				addUserInfo: true,

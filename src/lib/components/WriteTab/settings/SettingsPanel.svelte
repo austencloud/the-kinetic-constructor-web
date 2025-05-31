@@ -1,11 +1,8 @@
 <script lang="ts">
-	import { uiActions, confirmDeletions } from '../stores/uiState.svelte';
+	import { uiStore } from '../stores/uiStore';
 	import { fade } from 'svelte/transition';
 
-	// Props using Svelte 5 runes
-	let { isOpen = $bindable(false) } = $props<{
-		isOpen?: boolean;
-	}>();
+	export let isOpen: boolean = false;
 
 	function handleClose() {
 		isOpen = false;
@@ -15,8 +12,8 @@
 {#if isOpen}
 	<div
 		class="settings-backdrop"
-		onclick={(e) => e.target === e.currentTarget && handleClose()}
-		onkeydown={(e) => e.key === 'Escape' && handleClose()}
+		on:click|self={handleClose}
+		on:keydown={(e) => e.key === 'Escape' && handleClose()}
 		role="dialog"
 		tabindex="-1"
 		aria-modal="true"
@@ -26,7 +23,7 @@
 		<div class="settings-panel" transition:fade={{ duration: 150 }}>
 			<div class="settings-header">
 				<h2 id="settings-title">Settings</h2>
-				<button class="close-button" onclick={handleClose} aria-label="Close settings">
+				<button class="close-button" on:click={handleClose} aria-label="Close settings">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="20"
@@ -52,8 +49,8 @@
 						<label class="toggle-switch">
 							<input
 								type="checkbox"
-								checked={confirmDeletions()}
-								onchange={() => uiActions.toggleConfirmDeletions()}
+								checked={$uiStore.preferences.confirmDeletions}
+								on:change={() => uiStore.toggleConfirmDeletions()}
 							/>
 							<span class="toggle-slider"></span>
 						</label>

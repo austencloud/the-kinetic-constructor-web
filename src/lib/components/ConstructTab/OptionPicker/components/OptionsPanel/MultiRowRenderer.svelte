@@ -3,37 +3,32 @@
 	import SectionHeader from '../SectionHeader.svelte';
 	import OptionGroupGrid from '../OptionGroupGrid.svelte';
 	import type { Action } from 'svelte/action';
+	import { onMount, onDestroy } from 'svelte'; // Import onMount and onDestroy for cleanup
 
 	// Props
-	const props = $props<{
-		groups: Array<{ key: string; options: PictographData[] }>;
-		transitionKey: string | number;
-		rowIndex: number;
-		onoptionselect?: (option: PictographData) => void;
-	}>();
+	export let groups: Array<{ key: string; options: PictographData[] }>;
+	export let transitionKey: string | number;
+	export let rowIndex: number;
 
-	// Handle option selection events from OptionGroupGrid
-	function handleOptionSelect(option: PictographData) {
-		// Call the callback if provided
-		if (props.onoptionselect) {
-			props.onoptionselect(option);
-		}
-	}
-
-	// Debounce function for performance
+	/**
+	 * Debounce utility function.
+	 * Creates a debounced function that delays invoking the input function until
+	 * after 'delay' milliseconds have elapsed since the last time the debounced
+	 * function was invoked.
+	 */
 	function debounce<T extends (...args: any[]) => any>(
 		func: T,
-		wait: number
+		delay: number
 	): (...args: Parameters<T>) => void {
-		let timeout: ReturnType<typeof setTimeout> | null = null;
-		return function (...args: Parameters<T>) {
-			if (timeout !== null) {
-				clearTimeout(timeout);
+		let timeoutId: ReturnType<typeof setTimeout> | null = null;
+		return (...args: Parameters<T>) => {
+			if (timeoutId !== null) {
+				clearTimeout(timeoutId);
 			}
-			timeout = setTimeout(() => {
+			timeoutId = setTimeout(() => {
 				func(...args);
-				timeout = null;
-			}, wait);
+				timeoutId = null;
+			}, delay);
 		};
 	}
 
@@ -55,27 +50,46 @@
 			}
 		}
 
-		// Function to check if the multi-group row would overflow
+		// Function to get margin and padding values based on screen size
+		function getSpacingValues() {
+			// Assuming 1rem = 16px for calculations
+			const remInPx = 16;
+			if (typeof window === 'undefined') {
+				// SSR safety
+				return {
+					margin: 0.25 * remInPx * 2,
+					padding: 0.25 * remInPx * 2,
+					gap: 0.25 * remInPx
+				};
+			}
+			if (window.innerWidth <= 640) {
+				return {
+					margin: 0.1 * remInPx * 2,
+					padding: 0.1 * remInPx * 2,
+					gap: 0.1 * remInPx
+				};
+			} else {
+				return {
+					margin: 0.25 * remInPx * 2,
+					padding: 0.25 * remInPx * 2,
+					gap: 0.25 * remInPx
+				};
+			}
+		}
+
+		// Function to check and handle overflow
 		function checkOverflow() {
-			// Get all group items in this row
-			const groupItems = Array.from(node.querySelectorAll('.multi-group-item'));
-			if (groupItems.length <= 1) return; // No need to check with only one item
+			if (!node) return; // Ensure node is still available
 
-			// Get the container width
+			const groupItems = node.querySelectorAll<HTMLElement>('.multi-group-item');
+			if (groupItems.length < 2) return;
+
 			const containerWidth = node.clientWidth;
-			if (containerWidth <= 0) return; // Skip if container has no width
-
-			// Calculate the minimum width each group should have
 			const minGroupWidth = getMinGroupWidth();
-
-			// Calculate the total width needed for all groups to fit side by side
-			// Include a small gap between items (e.g., 10px per item)
-			const gapPerItem = 10;
-			const totalWidthNeeded =
-				groupItems.length * minGroupWidth + (groupItems.length - 1) * gapPerItem;
-
-			// Determine if the groups would overflow
-			const wouldOverflow = totalWidthNeeded > containerWidth;
+			const { margin, padding, gap } = getSpacingValues();
+			const itemWidth = minGroupWidth + margin + padding;
+			const totalMinWidth = itemWidth * groupItems.length + gap * (groupItems.length - 1);
+			const wouldOverflow = totalMinWidth > containerWidth;
 
 			groupItems.forEach((item, index) => {
 				// Force new row only on the *last* item if it would overflow
@@ -123,18 +137,14 @@
 </script>
 
 <div class="multi-group-row" use:setupMultiGroupRow>
-	{#each props.groups as group, groupIndex (props.transitionKey + '-multi-' + group.key)}
+	{#each groups as group, groupIndex (transitionKey + '-multi-' + group.key)}
 		<div class="multi-group-item" data-group-index={groupIndex}>
 			<SectionHeader
 				groupKey={group.key}
-				isFirstHeader={props.rowIndex === 0 && groupIndex === 0}
+				isFirstHeader={rowIndex === 0 && groupIndex === 0}
 				isCompact={true}
 			/>
-			<OptionGroupGrid
-				options={group.options}
-				key={props.transitionKey + '-multiopt-' + group.key}
-				onoptionselect={handleOptionSelect}
-			/>
+			<OptionGroupGrid options={group.options} key={transitionKey + '-multiopt-' + group.key} />
 		</div>
 	{/each}
 </div>

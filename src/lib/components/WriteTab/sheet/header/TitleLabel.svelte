@@ -1,14 +1,12 @@
 <script lang="ts">
-	import { actState } from '../../state/actState.svelte';
+	import { actStore } from '../../stores/actStore';
 
-	let isEditing = $state(false);
-	let titleInput = $state<HTMLInputElement>();
-	let currentTitle = $state('');
+	let isEditing = false;
+	let titleInput: HTMLInputElement;
+	let currentTitle = '';
 
-	// Reactive title from act state
-	$effect(() => {
-		currentTitle = actState.act.title;
-	});
+	// Subscribe to the act title
+	$: currentTitle = $actStore.act.title;
 
 	function startEditing() {
 		isEditing = true;
@@ -27,7 +25,7 @@
 			currentTitle = 'Untitled Act';
 		}
 
-		actState.updateTitle(currentTitle);
+		actStore.updateTitle(currentTitle);
 		isEditing = false;
 	}
 
@@ -36,7 +34,7 @@
 			saveTitle();
 		} else if (event.key === 'Escape') {
 			// Revert to the original title
-			currentTitle = actState.act.title;
+			currentTitle = $actStore.act.title;
 			isEditing = false;
 		}
 	}
@@ -51,14 +49,14 @@
 		<input
 			bind:this={titleInput}
 			bind:value={currentTitle}
-			onkeydown={handleKeyDown}
-			onblur={handleBlur}
+			on:keydown={handleKeyDown}
+			on:blur={handleBlur}
 			class="title-input"
 			type="text"
 			placeholder="Enter act title"
 		/>
 	{:else}
-		<button class="title-text" onclick={startEditing} aria-label="Edit act title" type="button">
+		<button class="title-text" on:click={startEditing} aria-label="Edit act title" type="button">
 			{currentTitle || 'Untitled Act'}
 		</button>
 	{/if}

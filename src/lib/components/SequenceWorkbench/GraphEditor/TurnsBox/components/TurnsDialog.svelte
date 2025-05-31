@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	// Define TURNS_VALUES locally since it's a simple constant
-	const TURNS_VALUES = ['fl', 0, 0.5, 1, 1.5, 2, 2.5, 3];
+	import { TURNS_VALUES } from '$lib/stores/sequence/turnsStore';
 	import { browser } from '$app/environment';
 
 	// Define props using Svelte 5 runes syntax
@@ -27,7 +26,7 @@
 	}
 
 	// Handle turns selection
-	function handleSelectTurns(value: string | number) {
+	function handleSelectTurns(value: string) {
 		// Provide haptic feedback
 		if (browser && hapticFeedbackService.isAvailable()) {
 			hapticFeedbackService.trigger('selection');

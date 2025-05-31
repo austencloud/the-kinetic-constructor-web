@@ -1,232 +1,158 @@
-<!-- src/lib/components/objects/Prop/Prop.svelte -->
-<!-- FIXED: Eliminated reactive loops and simplified state management -->
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { parsePropSvg } from '../../SvgManager/PropSvgParser';
 	import SvgManager from '../../SvgManager/SvgManager';
 	import type { PropData } from './PropData';
 	import type { PropSvgData } from '../../SvgManager/PropSvgData';
 	import PropRotAngleManager from './PropRotAngleManager';
-	import { svgPreloadingService } from '$lib/services/SvgPreloadingService.svelte';
+	import { sequenceStore } from '$lib/state/stores/sequenceStore';
+	import { derived } from 'svelte/store';
 
-	function safeBase64Encode(str: string): string {
-		try {
-			return btoa(str);
-		} catch (e) {
+	// Props - we support both direct propData and store-based approach
+	export let propData: PropData | undefined = undefined;
+	export let beatId: string | undefined = undefined;
+	export let color: 'red' | 'blue' | undefined = undefined;
+	// Animation duration is passed from parent but not used directly in this component
+	export const animationDuration = 200;
+
+	// Component state
+	let svgData: PropSvgData | null = null;
+	let isLoaded = false;
+	let loadTimeout: ReturnType<typeof setTimeout>;
+	let rotAngle = 0;
+
+	// Services
+	const dispatch = createEventDispatcher();
+	const svgManager = new SvgManager();
+
+	// Get prop data from the sequence store if beatId and color are provided
+	const propDataFromStore = derived(sequenceStore, ($sequenceStore) => {
+		if (!beatId || !color) return null;
+
+		const beat = $sequenceStore.beats.find((b) => b.id === beatId);
+		if (!beat) return null;
+
+		return color === 'red' ? beat.redPropData : beat.bluePropData;
+	});
+
+	// Use either the prop data from store or the directly provided prop data
+	$: effectivePropData = $propDataFromStore || propData;
+
+	// Reactive statement to compute rotation angle
+	$: {
+		// Ensure we have both loc and ori, and the SVG is loaded
+		if (effectivePropData) {
+			// Always try to calculate, even if loc or ori might be undefined
 			try {
-				const binaryString = encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) =>
-					String.fromCharCode(parseInt(p1, 16))
-				);
-				return btoa(binaryString);
-			} catch (fallbackError) {
-				return encodeURIComponent(str);
-			}
-		}
-	}
-
-	const props = $props<{
-		propData?: PropData;
-		beatId?: string;
-		color?: 'red' | 'blue';
-		animationDuration?: number;
-		loaded?: (event: { timeout?: boolean; error?: boolean }) => void;
-		error?: (event: { message: string }) => void;
-		imageLoaded?: () => void;
-	}>();
-
-	// CRITICAL FIX: Simplified state - no reactive dependencies
-	let svgData = $state<PropSvgData | null>(null);
-	let isReady = $state(false);
-
-	// CRITICAL FIX: Initialize everything upfront, no derived reactivity
-	const effectivePropData = props.propData;
-	const animationDuration = props.animationDuration ?? 200;
-	let rotationAngle = $state(0);
-	let svgManager: SvgManager;
-
-	// Initialize services immediately
-	if (effectivePropData) {
-		svgManager = new SvgManager();
-
-		// CRITICAL FIX: Calculate rotation angle once, not reactively
-		try {
-			const rotAngleManager = new PropRotAngleManager({
-				loc: effectivePropData.loc,
-				ori: effectivePropData.ori
-			});
-			rotationAngle = rotAngleManager.getRotationAngle();
-		} catch (error) {
-			rotationAngle = 0;
-		}
-	}
-
-	// Simple cache - no reactive management
-	const propSvgCache = new Map<string, PropSvgData>();
-
-	function isInOptionPicker() {
-		return animationDuration === 0 || (props.beatId === undefined && props.color === undefined);
-	}
-
-	function getPropCacheKey(propType: string, propColor: string) {
-		return `prop-${propType}-${propColor}`;
-	}
-
-	// CRITICAL FIX: Simplified loading without cascading timeouts
-	async function loadSvg() {
-		if (!effectivePropData || isReady) {
-			return;
-		}
-
-		try {
-			const cacheKey = getPropCacheKey(effectivePropData.propType, effectivePropData.color);
-			let cachedSvgData = propSvgCache.get(cacheKey);
-
-			if (cachedSvgData) {
-				untrack(() => {
-					svgData = cachedSvgData;
-					isReady = true;
-				});
-				notifyLoaded();
-				return;
-			}
-
-			// Try to get from resource cache first
-			const cachedSvg = await svgManager.getPropSvg(
-				effectivePropData.propType,
-				effectivePropData.color
-			);
-
-			if (cachedSvg) {
-				const { viewBox, center } = parsePropSvg(cachedSvg, effectivePropData.color);
-
-				const newSvgData = {
-					imageSrc: `data:image/svg+xml;base64,${safeBase64Encode(cachedSvg)}`,
-					viewBox,
-					center
-				};
-
-				// Cache and update state
-				propSvgCache.set(cacheKey, newSvgData);
-
-				untrack(() => {
-					svgData = newSvgData;
-					isReady = true;
+				const rotAngleManager = new PropRotAngleManager({
+					loc: effectivePropData.loc,
+					ori: effectivePropData.ori
 				});
 
-				// Update center in prop data
-				if (effectivePropData) {
-					effectivePropData.svgCenter = center;
+				// Update rotAngle even if loc or ori are potentially undefined
+				rotAngle = rotAngleManager.getRotationAngle();
+
+				// Update the rotation angle in the prop data
+				if (propData) {
+					propData.rotAngle = rotAngle;
 				}
 
-				notifyLoaded();
-			} else {
-				throw new Error('Failed to load prop SVG');
-			}
-		} catch (error: any) {
-			handleLoadError(error);
-		}
-	}
-
-	function handleLoadError(error: any) {
-		// Create fallback SVG
-		const fallbackColor = effectivePropData?.color === 'red' ? '#ED1C24' : '#2E3192';
-		const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-			<rect width="100" height="100" fill="#f8f8f8" />
-			<circle cx="50" cy="50" r="30" fill="${fallbackColor}" opacity="0.3" />
-			<circle id="centerPoint" cx="50" cy="50" r="2" fill="${fallbackColor}" />
-		</svg>`;
-
-		untrack(() => {
-			svgData = {
-				imageSrc: `data:image/svg+xml;base64,${safeBase64Encode(fallbackSvg)}`,
-				viewBox: { width: 100, height: 100 },
-				center: { x: 50, y: 50 }
-			};
-			isReady = true;
-		});
-
-		notifyLoaded(true);
-	}
-
-	// CRITICAL FIX: Single callback function, no complex timing
-	function notifyLoaded(hasError = false) {
-		// Use microtask to avoid immediate reactivity
-		queueMicrotask(() => {
-			try {
-				props.loaded?.({ error: hasError });
+				// If using store data and we need to update it, we would do it here
+				// This would require implementing an update function that uses sequenceStore.updateBeat
 			} catch (error) {
-				console.error('Error in Prop loaded callback:', error);
+				console.warn('Error calculating rotation angle:', error);
 			}
-		});
+		}
 	}
 
-	// 🚨 NUCLEAR FIX: Prevent infinite loops with mounting guard
-	let isMounted = $state(false);
-	let hasInitialized = $state(false);
-
-	// CRITICAL FIX: Simple onMount - no reactive dependencies
 	onMount(() => {
-		// 🚨 NUCLEAR FIX: Prevent multiple initializations
-		if (hasInitialized) {
-			return;
-		}
-		hasInitialized = true;
-		isMounted = true;
-
 		if (effectivePropData?.propType) {
-			// Check preloading status once, then load
-			const isPreloaded = svgPreloadingService.arePropsReady();
-
-			if (isPreloaded) {
-				// 🚨 NUCLEAR FIX: Use queueMicrotask instead of setTimeout to avoid reactive loops
-				queueMicrotask(() => {
-					if (isMounted && !isReady) {
-						loadSvg();
-					}
-				});
-			} else {
-				// 🚨 NUCLEAR FIX: Use queueMicrotask with a flag check instead of setTimeout
-				queueMicrotask(() => {
-					if (isMounted && !isReady) {
-						loadSvg();
-					}
-				});
-			}
+			loadSvg();
 		} else {
-			// No prop data - mark as ready immediately
-			isReady = true;
-			notifyLoaded(true);
+			isLoaded = true;
+			dispatch('loaded', { error: true });
 		}
 
 		return () => {
-			isMounted = false;
+			clearTimeout(loadTimeout);
 		};
 	});
 
-	function handleImageLoad() {
-		props.imageLoaded?.();
+	async function loadSvg() {
+		try {
+			// Safety check
+			if (!effectivePropData) {
+				throw new Error('No prop data available');
+			}
+
+			loadTimeout = setTimeout(() => {
+				if (!isLoaded) {
+					isLoaded = true;
+					dispatch('loaded', { timeout: true });
+				}
+			}, 10);
+
+			const svgText = await svgManager.getPropSvg(
+				effectivePropData.propType,
+				effectivePropData.color
+			);
+			const { viewBox, center } = parsePropSvg(svgText, effectivePropData.color);
+
+			svgData = {
+				imageSrc: `data:image/svg+xml;base64,${btoa(svgText)}`,
+				viewBox,
+				center
+			};
+
+			// Update the center in the prop data if it's directly provided
+			if (propData) {
+				propData.svgCenter = center;
+			}
+
+			clearTimeout(loadTimeout);
+			isLoaded = true;
+			dispatch('loaded');
+		} catch (error: any) {
+			console.error('Error loading prop SVG:', error);
+
+			// Fallback SVG for error state
+			svgData = {
+				imageSrc:
+					'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZiIgLz48dGV4dCB4PSIyMCIgeT0iNTAiIGZpbGw9IiNmMDAiPkVycm9yPC90ZXh0Pjwvc3ZnPg==',
+				viewBox: { width: 100, height: 100 },
+				center: { x: 50, y: 50 }
+			};
+
+			clearTimeout(loadTimeout);
+			isLoaded = true;
+			dispatch('loaded', { error: true });
+			dispatch('error', { message: (error as Error)?.message || 'Unknown error' });
+		}
 	}
 
+	function handleImageLoad() {
+		dispatch('imageLoaded');
+	}
 	function handleImageError() {
-		props.error?.({ message: 'Image failed to load' });
+		dispatch('error', { message: 'Image failed to load' });
 	}
 </script>
 
-<!-- CRITICAL FIX: Simplified template with reactive loop prevention -->
-{#if svgData && isReady && effectivePropData}
+<!-- No nested transforms - just directly place everything with proper attributes -->
+{#if svgData && isLoaded && effectivePropData}
 	<g>
 		<image
 			href={svgData.imageSrc}
 			transform="
 				translate({effectivePropData.coords.x}, {effectivePropData.coords.y})
-				rotate({rotationAngle})
+				rotate({rotAngle})
 				translate({-svgData.center.x}, {-svgData.center.y})
 			"
 			width={svgData.viewBox.width}
 			height={svgData.viewBox.height}
 			preserveAspectRatio="xMidYMid meet"
-			onload={handleImageLoad}
-			onerror={handleImageError}
+			on:load={handleImageLoad}
+			on:error={handleImageError}
 		/>
 	</g>
 {/if}

@@ -10,4 +10,4 @@ export { default as CopyButton } from './components/CopyButton.svelte';
 export { default as DebugActions } from './components/DebugActions.svelte';
 
 // Export store and types
-export { debugActions, type CopyStatus } from './stores/debugStore.svelte';
+export { debugActions, type CopyStatus } from './stores/debugStore';

@@ -4,42 +4,35 @@
 	import { formatTabName, formatShortTabName } from './tabLabelFormatter';
 	import { fly } from 'svelte/transition';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
+
 	// Props
-	const props = $props<{
-		categoryKey: string;
-		isActive: boolean;
-		isFirstTab: boolean;
-		isLastTab: boolean;
-		useShortLabels: boolean;
-		tabFlexBasis: string;
-		index: number;
-		totalTabs: number;
-	}>();
+	const props = $props();
 
 	// Local state for hover effect
 	let isHovered = $state(false);
 
-	// Event handler for click
-	function handleClick(event: MouseEvent) {
+	// Event handler
+	function handleClick() {
 		// Provide haptic feedback when selecting a category tab
 		if (typeof window !== 'undefined' && hapticFeedbackService.isAvailable()) {
 			hapticFeedbackService.trigger('navigation');
 		}
 
-		// Stop the original click event from bubbling to prevent duplicate handling
-		event.stopPropagation();
-
-		// Dispatch a custom event that parent components can listen for
-		const tabSelectedEvent = new CustomEvent('tab-selected', {
-			detail: {
-				categoryKey: props.categoryKey
-			},
-			bubbles: true
+		// Create a custom event that will bubble up to the parent component
+		const customEvent = new CustomEvent('tabSelect', {
+			detail: props.categoryKey,
+			bubbles: true,
+			composed: true // Allows the event to cross the shadow DOM boundary
 		});
 
 		// Dispatch the event from the button element
-		if (event.currentTarget) {
-			event.currentTarget.dispatchEvent(tabSelectedEvent);
+		const buttonElement = document.getElementById(`tab-${props.categoryKey}`);
+		if (buttonElement) {
+			buttonElement.dispatchEvent(customEvent);
+		} else {
+			// Fallback to document if button element is not found
+			console.warn('Button element not found, using document for event dispatch');
+			document.dispatchEvent(customEvent);
 		}
 	}
 
@@ -66,7 +59,6 @@
 	aria-selected={props.isActive}
 	aria-controls={`options-panel-${props.categoryKey}`}
 	id="tab-{props.categoryKey}"
-	data-category-key={props.categoryKey}
 	title={formatTabName(props.categoryKey)}
 	style="--tab-flex-basis: {props.tabFlexBasis}"
 >
@@ -157,17 +149,18 @@
 		transform: translateY(-2px); /* Slight lift effect */
 	}
 
-	/* Hover indicator styling */
+	/* Active indicator - the dot at the bottom */
+
+	/* Hover indicator - subtle line at the bottom */
 	.hover-indicator {
 		position: absolute;
 		bottom: -2px;
 		left: 50%;
 		transform: translateX(-50%);
-		width: 6px;
-		height: 6px;
-		background-color: #60a5fa;
-		border-radius: 50%;
-		z-index: 2;
+		width: 20px;
+		height: 2px;
+		background-color: rgba(255, 204, 0, 0.4); /* Subtle gold color */
+		border-radius: 1px;
 	}
 
 	/* Hover state for non-active tabs */

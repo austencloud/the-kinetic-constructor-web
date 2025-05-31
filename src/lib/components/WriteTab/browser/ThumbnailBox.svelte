@@ -1,13 +1,11 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import ThumbnailImage from './ThumbnailImage.svelte';
 
-	// Props using Svelte 5 runes
-	const { word, thumbnails = [] } = $props<{
-		word: string;
-		thumbnails?: string[];
-	}>();
+	export let word: string;
+	export let thumbnails: string[] = [];
 
-	let currentIndex = $state(0);
+	let currentIndex = 0;
 
 	function nextThumbnail() {
 		if (thumbnails.length > 1) {
@@ -28,11 +26,13 @@
 
 		{#if thumbnails.length > 1}
 			<div class="thumbnail-nav">
-				<button class="nav-button" onclick={prevThumbnail} aria-label="Previous thumbnail">
+				<button class="nav-button" on:click={prevThumbnail} aria-label="Previous thumbnail">
 					◀
 				</button>
 				<span class="thumbnail-counter">{currentIndex + 1}/{thumbnails.length}</span>
-				<button class="nav-button" onclick={nextThumbnail} aria-label="Next thumbnail"> ▶ </button>
+				<button class="nav-button" on:click={nextThumbnail} aria-label="Next thumbnail">
+					▶
+				</button>
 			</div>
 		{/if}
 	</div>

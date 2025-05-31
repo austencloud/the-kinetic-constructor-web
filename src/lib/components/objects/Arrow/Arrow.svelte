@@ -1,7 +1,6 @@
 <!-- src/lib/components/objects/Arrow/Arrow.svelte -->
-<!-- FIXED: Eliminated reactive loops and simplified state management -->
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import type { ArrowData } from './ArrowData';
 	import type { ArrowSvgData } from '../../SvgManager/ArrowSvgData';
 	import { ArrowSvgLoader } from './services/ArrowSvgLoader';
@@ -11,187 +10,240 @@
 	import ArrowSvgMirrorManager from './ArrowSvgMirrorManager';
 	import type { PictographService } from '$lib/components/Pictograph/PictographService';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { svgPreloadingService } from '$lib/services/SvgPreloadingService.svelte';
+	import { sequenceStore } from '$lib/state/stores/sequenceStore';
+	import { derived } from 'svelte/store';
 
-	// Props
-	const props = $props<{
-		arrowData?: ArrowData;
-		beatId?: string;
-		color?: 'red' | 'blue';
-		motion?: Motion | null;
-		pictographData?: PictographData | null;
-		pictographService?: PictographService | null;
-		loadTimeoutMs?: number;
-		animationDuration?: number;
-		loaded?: (event: { timeout?: boolean; error?: boolean }) => void;
-		error?: (event: { message: string; component: string; color: string }) => void;
-		imageLoaded?: () => void;
-	}>();
+	// Props - we support both direct arrowData and store-based approach
+	export let arrowData: ArrowData | undefined = undefined;
+	export let beatId: string | undefined = undefined;
+	export let color: 'red' | 'blue' | undefined = undefined;
+	export let motion: Motion | null = null;
+	export let pictographData: PictographData | null = null;
+	export let pictographService: PictographService | null = null;
+	export let loadTimeoutMs = 1000; // Configurable timeout
+	// Animation duration is passed from parent but not used directly in this component
+	export const animationDuration = 200;
 
-	// CRITICAL FIX: Simplified state management - single state object with minimal reactivity
-	let componentState = $state({
-		svgData: null as ArrowSvgData | null,
-		transform: '',
-		isReady: false // Single flag instead of multiple reactive booleans
+	// Get arrow data from the sequence store if beatId and color are provided
+	const arrowDataFromStore = derived(sequenceStore, ($sequenceStore) => {
+		if (!beatId || !color) return null;
+
+		const beat = $sequenceStore.beats.find((b) => b.id === beatId);
+		if (!beat) return null;
+
+		return color === 'red' ? beat.redArrowData : beat.blueArrowData;
 	});
 
-	// CRITICAL FIX: Initialize everything in constructor, not reactively
-	const effectiveArrowData = props.arrowData;
-	let rotationAngle = 0;
-	let svgManager: SvgManager;
-	let svgLoader: ArrowSvgLoader;
-	let mirrorManager: ArrowSvgMirrorManager | null = null;
+	// Use either the arrow data from store or the directly provided arrow data
+	$: effectiveArrowData = $arrowDataFromStore || arrowData;
+
+	// Component state
+	let svgData: ArrowSvgData | null = null;
+	let transform = '';
+	let isLoaded = false;
+	let hasErrored = false;
+	let loadTimeout: NodeJS.Timeout;
 	let rotAngleManager: ArrowRotAngleManager | null = null;
 
-	// Initialize services immediately - no reactive dependencies
-	if (effectiveArrowData) {
-		svgManager = new SvgManager();
-		svgLoader = new ArrowSvgLoader(svgManager);
-		mirrorManager = new ArrowSvgMirrorManager(effectiveArrowData);
+	// Services
+	const dispatch = createEventDispatcher();
+	const svgManager = new SvgManager();
+	const svgLoader = new ArrowSvgLoader(svgManager);
 
-		if (props.pictographData) {
-			rotAngleManager = new ArrowRotAngleManager(
-				props.pictographData,
-				props.pictographService || undefined
-			);
-		}
+	// Create mirror manager only when we have arrow data
+	$: mirrorManager = effectiveArrowData ? new ArrowSvgMirrorManager(effectiveArrowData) : null;
 
-		// Calculate everything upfront
-		rotationAngle = getRotationAngle();
-
-		if (effectiveArrowData.coords) {
-			const mirrorTransform = effectiveArrowData.svgMirrored ? 'scale(-1, 1)' : '';
-			componentState.transform = `
-				translate(${effectiveArrowData.coords.x}, ${effectiveArrowData.coords.y})
-				rotate(${rotationAngle})
-				${mirrorTransform}
-			`.trim();
-		}
+	// Initialize the rotation angle manager when pictograph data is available
+	$: if (pictographData) {
+		rotAngleManager = new ArrowRotAngleManager(pictographData, pictographService || undefined);
 	}
 
-	// Simple cache - no complex reactive management
+	// Update mirror state whenever motion data or arrow data changes
+	$: if (effectiveArrowData && mirrorManager) {
+		mirrorManager.updateMirror();
+	}
+
+	// Calculate rotation angle (memoized)
+	$: rotationAngle = getRotationAngle();
+
+	// Transform calculation (memoized)
+	$: if (svgData && effectiveArrowData?.coords) {
+		// Apply transformations in the correct order
+		const mirrorTransform = effectiveArrowData.svgMirrored ? 'scale(-1, 1)' : '';
+
+		transform = `
+			translate(${effectiveArrowData.coords.x}, ${effectiveArrowData.coords.y})
+			rotate(${rotationAngle})
+			${mirrorTransform}
+		`.trim();
+	}
+
+	/**
+	 * Helper function to detect mobile devices
+	 */
+	function isMobile(): boolean {
+		return (
+			typeof window !== 'undefined' &&
+			(window.innerWidth <= 768 ||
+				/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
+		);
+	}
+
+	/**
+	 * Simple in-memory component-level cache for SVG data
+	 */
 	const svgDataCache = new Map<string, ArrowSvgData>();
 
-	function getRotationAngle(): number {
-		if (props.motion && rotAngleManager && effectiveArrowData) {
-			return rotAngleManager.calculateRotationAngle(
-				props.motion,
-				effectiveArrowData.loc,
-				effectiveArrowData.svgMirrored
-			);
-		}
-		return effectiveArrowData?.rotAngle || 0;
+	/**
+	 * Get cached SVG data if available
+	 */
+	function getCachedSvgData(key: string): ArrowSvgData | undefined {
+		return svgDataCache.get(key);
 	}
 
-	// CRITICAL FIX: Simplified loading without cascading timeouts
+	/**
+	 * Cache SVG data for future use
+	 */
+	function cacheSvgData(key: string, data: ArrowSvgData): void {
+		svgDataCache.set(key, data);
+		// Limit cache size to prevent memory issues
+		if (svgDataCache.size > 50) {
+			const firstKey = svgDataCache.keys().next().value;
+			if (firstKey) {
+				svgDataCache.delete(firstKey);
+			}
+		}
+	}
+
+	/**
+	 * Loads the arrow SVG with error handling and timeout
+	 */
 	async function loadArrowSvg() {
-		if (!effectiveArrowData || componentState.isReady) return;
-
 		try {
-			const cacheKey = `arrow-${effectiveArrowData.motionType}-${effectiveArrowData.startOri}-${effectiveArrowData.turns}-${effectiveArrowData.color}-${effectiveArrowData.svgMirrored}`;
-
-			let svgData = svgDataCache.get(cacheKey);
-
-			if (!svgData) {
-				// Update mirror state before loading
-				mirrorManager?.updateMirror();
-
-				const result = await svgLoader.loadSvg(
-					effectiveArrowData.motionType,
-					effectiveArrowData.startOri,
-					effectiveArrowData.turns,
-					effectiveArrowData.color,
-					effectiveArrowData.svgMirrored
-				);
-
-				svgData = result.svgData;
-				svgDataCache.set(cacheKey, svgData);
+			// Safety check
+			if (!effectiveArrowData) {
+				throw new Error('No arrow data available');
 			}
 
-			// CRITICAL FIX: Single state update, no cascading reactions
-			untrack(() => {
-				componentState.svgData = svgData;
-				componentState.isReady = true;
-			});
+			// Adjust timeout for mobile devices
+			const timeoutDuration = isMobile() ? loadTimeoutMs * 2 : loadTimeoutMs;
 
-			// CRITICAL FIX: Simplified callback - no setTimeout chains
-			notifyLoaded();
+			// Set safety timeout
+			loadTimeout = setTimeout(() => {
+				if (!isLoaded) {
+					// Use less verbose logging in production
+					if (import.meta.env.DEV) {
+						console.warn(`Arrow loading timed out after ${timeoutDuration}ms`);
+					}
+					isLoaded = true;
+					dispatch('loaded', { timeout: true });
+				}
+			}, timeoutDuration);
+
+			// Update mirror state before loading SVG
+			if (mirrorManager) {
+				mirrorManager.updateMirror();
+			}
+
+			// Check component-level cache first
+			const cacheKey = `arrow-${effectiveArrowData.motionType}-${effectiveArrowData.startOri}-${effectiveArrowData.turns}-${effectiveArrowData.color}-${effectiveArrowData.svgMirrored}`;
+			const cachedData = getCachedSvgData(cacheKey);
+
+			if (cachedData) {
+				// Use cached data
+				svgData = cachedData;
+				clearTimeout(loadTimeout);
+				isLoaded = true;
+				dispatch('loaded');
+				return;
+			}
+
+			// Load the SVG with current configuration
+			const result = await svgLoader.loadSvg(
+				effectiveArrowData.motionType,
+				effectiveArrowData.startOri,
+				effectiveArrowData.turns,
+				effectiveArrowData.color,
+				effectiveArrowData.svgMirrored
+			);
+
+			// Update state and notify
+			svgData = result.svgData;
+
+			// Cache the result for future use
+			cacheSvgData(cacheKey, svgData);
+
+			clearTimeout(loadTimeout);
+			isLoaded = true;
+			dispatch('loaded');
 		} catch (error) {
 			handleLoadError(error);
 		}
 	}
 
+	/**
+	 * Handles SVG loading errors with fallback
+	 */
 	function handleLoadError(error: unknown) {
-		console.error('Arrow load error:', error);
-
-		untrack(() => {
-			componentState.svgData = svgLoader.getFallbackSvgData();
-			componentState.isReady = true;
-		});
-
-		notifyLoaded(true);
-	}
-
-	// CRITICAL FIX: Single callback function, no complex timing
-	function notifyLoaded(hasError = false) {
-		// Use microtask to avoid immediate reactivity
-		queueMicrotask(() => {
-			try {
-				props.loaded?.({ error: hasError });
-			} catch (error) {
-				console.error('Error in Arrow loaded callback:', error);
-			}
-		});
-	}
-
-	// 🚨 NUCLEAR FIX: Prevent infinite loops with mounting guard
-	let isMounted = $state(false);
-	let hasInitialized = $state(false);
-
-	// CRITICAL FIX: Simple onMount - no reactive dependencies or complex timing
-	onMount(() => {
-		// 🚨 NUCLEAR FIX: Prevent multiple initializations
-		if (hasInitialized) {
-			return;
-		}
-		hasInitialized = true;
-		isMounted = true;
-
-		if (effectiveArrowData?.motionType) {
-			// CRITICAL FIX: Check preloading status once, then load immediately or with minimal delay
-			const isPreloaded = svgPreloadingService.areArrowsReady();
-
-			if (isPreloaded) {
-				// 🚨 NUCLEAR FIX: Use queueMicrotask instead of setTimeout to avoid reactive loops
-				queueMicrotask(() => {
-					if (isMounted && !componentState.isReady) {
-						loadArrowSvg();
-					}
-				});
-			} else {
-				// 🚨 NUCLEAR FIX: Use queueMicrotask with a flag check instead of setTimeout
-				queueMicrotask(() => {
-					if (isMounted && !componentState.isReady) {
-						loadArrowSvg();
-					}
-				});
-			}
+		// Minimal logging in production
+		if (import.meta.env.DEV) {
+			console.error('Arrow load error:', error);
 		} else {
-			// No arrow data - mark as ready immediately
-			componentState.isReady = true;
-			notifyLoaded();
+			console.error('Arrow load error: ' + ((error as Error)?.message || 'Unknown error'));
 		}
 
-		return () => {
-			isMounted = false;
-		};
+		hasErrored = true;
+		svgData = svgLoader.getFallbackSvgData();
+		clearTimeout(loadTimeout);
+		isLoaded = true;
+		dispatch('loaded', { error: true });
+		dispatch('error', {
+			message: (error as Error)?.message || 'Unknown error',
+			component: 'Arrow',
+			color: effectiveArrowData?.color || 'unknown'
+		});
+	}
+
+	/**
+	 * Calculates the arrow rotation angle using the manager
+	 */
+	function getRotationAngle(): number {
+		if (motion && rotAngleManager && effectiveArrowData) {
+			// Use the rotation angle manager directly
+			return rotAngleManager.calculateRotationAngle(
+				motion,
+				effectiveArrowData.loc,
+				effectiveArrowData.svgMirrored
+			);
+		}
+		// Fall back to the arrow data's rotation angle
+		return effectiveArrowData?.rotAngle || 0;
+	}
+
+	// Lifecycle hooks
+	onMount(() => {
+		if (effectiveArrowData?.motionType) {
+			loadArrowSvg();
+		} else {
+			isLoaded = true;
+			dispatch('loaded', { error: true });
+		}
+
+		// Cleanup
+		return () => clearTimeout(loadTimeout);
 	});
+
+	// Reactive loading
+	$: {
+		if (effectiveArrowData?.motionType && !isLoaded && !hasErrored) {
+			loadArrowSvg();
+		}
+	}
 </script>
 
-<!-- CRITICAL FIX: Simplified template with minimal conditional logic -->
-{#if componentState.svgData && componentState.isReady && effectiveArrowData}
+{#if svgData && isLoaded && effectiveArrowData}
 	<g
-		transform={componentState.transform}
+		{transform}
 		data-testid="arrow-{effectiveArrowData.color}"
 		data-motion-type={effectiveArrowData.motionType}
 		data-mirrored={effectiveArrowData.svgMirrored ? 'true' : 'false'}
@@ -199,20 +251,15 @@
 		data-rot-angle={rotationAngle}
 	>
 		<image
-			href={componentState.svgData.imageSrc}
-			width={componentState.svgData.viewBox.width}
-			height={componentState.svgData.viewBox.height}
-			x={-componentState.svgData.center.x}
-			y={-componentState.svgData.center.y}
+			href={svgData.imageSrc}
+			width={svgData.viewBox.width}
+			height={svgData.viewBox.height}
+			x={-svgData.center.x}
+			y={-svgData.center.y}
 			aria-label="Arrow showing {effectiveArrowData.motionType} motion in {effectiveArrowData.color} direction"
 			role="img"
-			onload={() => props.imageLoaded?.()}
-			onerror={() =>
-				props.error?.({
-					message: 'Image failed to load',
-					component: 'Arrow',
-					color: effectiveArrowData?.color || 'unknown'
-				})}
+			on:load={() => dispatch('imageLoaded')}
+			on:error={() => dispatch('error', { message: 'Image failed to load' })}
 		/>
 	</g>
 {/if}

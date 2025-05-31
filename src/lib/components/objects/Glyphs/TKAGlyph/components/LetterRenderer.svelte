@@ -1,22 +1,21 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
-	import { glyphContainer, type Rect } from '$lib/stores/glyphContainer.svelte';
+	import { createEventDispatcher } from 'svelte';
+	import { getLetterPath, assetCache, fetchSVGDimensions, type Rect } from '$lib/stores/glyphStore';
 	import type { Letter } from '$lib/types/Letter';
 
-	// Props using Svelte 5 runes
-	const {
-		letter = null,
-		onletterLoaded,
-		onloadingStarted,
-		onloadingComplete
-	} = $props<{
-		letter?: Letter | null;
-		onletterLoaded?: (rect: Rect) => void;
-		onloadingStarted?: () => void;
-		onloadingComplete?: (success: boolean) => void;
+	// Props
+	let { letter = null } = $props<{
+		letter: Letter | null;
 	}>();
 
-	// Local state using Svelte 5 runes with reactive loop prevention
+	// Event dispatcher
+	const dispatch = createEventDispatcher<{
+		letterLoaded: Rect;
+		loadingStarted: void;
+		loadingComplete: boolean;
+	}>();
+
+	// Local state using Svelte 5 Runes
 	let svgPath = $state('');
 	let dimensions = $state({ width: 0, height: 0 });
 	let imageElement = $state<SVGImageElement | null>(null);
@@ -25,106 +24,68 @@
 	let hasDispatchedLetterLoaded = $state(false);
 	let isLoadingInProgress = $state(false);
 
-	// CRITICAL FIX: Prevent infinite reactive loops
-	let lastProcessedLetter = $state<Letter | null>(null);
-	let isProcessingEffect = false;
-
 	// Load SVG with proper caching strategy
 	// This function is async, so it's called within an $effect
 	async function loadLetterSVG(currentLetter: Letter) {
-		// CRITICAL FIX: Prevent loading with undefined/null letters
-		if (!currentLetter || currentLetter === undefined || currentLetter === null) {
-			return;
-		}
+		if (!currentLetter) return;
 
 		// Signal that loading has started
 		isLoadingInProgress = true;
-		onloadingStarted?.();
+		dispatch('loadingStarted');
 
-		const path = glyphContainer.getLetterPath(currentLetter);
+		const path = getLetterPath(currentLetter);
 		svgPath = path; // Update state
 
 		// Check cache first
 		const cacheKey = currentLetter.toString();
-		let cachedSVG = glyphContainer.cache.letters_trimmed.get(cacheKey);
+		let cachedSVG = $assetCache.letterSVGs.get(cacheKey);
 
 		if (cachedSVG) {
 			dimensions = cachedSVG.dimensions; // Update state
 			isLoaded = true; // Update state
 			isLoadingInProgress = false;
-			onloadingComplete?.(true);
+			dispatch('loadingComplete', true);
 			return;
 		}
 
 		try {
 			// Fetch dimensions if not in cache
-			const fetchedDimensions = await glyphContainer.fetchSVGDimensions(path);
+			const fetchedDimensions = await fetchSVGDimensions(path);
 			dimensions = fetchedDimensions; // Update state
 
-			// Update cache directly (no need for update function with runes)
-			glyphContainer.cache.letters_trimmed.set(cacheKey, {
-				svg: path, // svgPath is already set
-				dimensions: fetchedDimensions
+			// Update cache
+			assetCache.update((cache: any) => {
+				cache.letterSVGs.set(cacheKey, {
+					svg: path, // svgPath is already set
+					dimensions: fetchedDimensions
+				});
+				return cache;
 			});
 
 			isLoaded = true; // Update state
 			isLoadingInProgress = false;
-			onloadingComplete?.(true);
+			dispatch('loadingComplete', true);
 		} catch (error) {
 			console.error(`Failed to load letter SVG for ${currentLetter}:`, error);
 			isFetchFailed = true; // Update state
 			isLoadingInProgress = false;
-			onloadingComplete?.(false);
+			dispatch('loadingComplete', false);
 		}
 	}
 
-	// CRITICAL FIX: React to letter changes with infinite loop prevention
+	// Effect to react to letter changes
 	$effect(() => {
-		// Prevent infinite loops by checking if we're already processing
-		if (isProcessingEffect) {
-			return;
-		}
-
-		// Check if the letter actually changed to prevent unnecessary processing
-		if (letter === lastProcessedLetter) {
-			return;
-		}
-
-		// Set processing flag to prevent re-entry
-		isProcessingEffect = true;
-
-		try {
-			if (letter) {
-				// Only process if letter is different from last processed
-				lastProcessedLetter = letter;
-
-				// Use untrack to prevent reactive loops when resetting state
-				untrack(() => {
-					isLoaded = false; // Reset loading state
-					isFetchFailed = false; // Reset error state
-					hasDispatchedLetterLoaded = false; // Reset dispatch state
-				});
-
-				// Load the SVG (this is async but doesn't trigger reactive updates)
-				loadLetterSVG(letter);
-			} else {
-				// Handle null/undefined letter
-				lastProcessedLetter = null;
-
-				// Use untrack to prevent reactive loops when resetting state
-				untrack(() => {
-					svgPath = '';
-					dimensions = { width: 0, height: 0 };
-					isLoaded = false;
-					isFetchFailed = false;
-					hasDispatchedLetterLoaded = false;
-				});
-			}
-		} finally {
-			// Always reset the processing flag after a delay to prevent permanent blocking
-			setTimeout(() => {
-				isProcessingEffect = false;
-			}, 10);
+		if (letter) {
+			isLoaded = false; // Reset loading state
+			isFetchFailed = false; // Reset error state
+			hasDispatchedLetterLoaded = false; // Reset dispatch state
+			loadLetterSVG(letter);
+		} else {
+			// Reset if letter becomes null
+			svgPath = '';
+			dimensions = { width: 0, height: 0 };
+			isLoaded = false;
+			isFetchFailed = false;
 		}
 	});
 
@@ -147,8 +108,8 @@
 			// Set flag to prevent multiple dispatches
 			hasDispatchedLetterLoaded = true; // Update state
 
-			// Emit the event
-			onletterLoaded?.(rect);
+			// Dispatch the event
+			dispatch('letterLoaded', rect);
 		} catch (error) {
 			console.error('Error calculating letter bounding box:', error);
 		}

@@ -2,61 +2,34 @@
 <script lang="ts">
 	import { settingsStore } from '../store/settings';
 
-	// Props with bindable value
-	let { value = $bindable(8) } = $props<{
-		value?: number;
-	}>();
-
-	// Create local state that we can modify
-	let currentValue = $state(value);
+	// Export the value property for binding
+	export let value: number = 8;
 
 	// Constants
 	const MIN_BEATS = 1;
 	const MAX_BEATS = 32;
 
 	// Local state for input validation
-	let inputValue = $state('');
+	let inputValue = value.toString();
 
-	// Initialize inputValue
-	$effect(() => {
-		inputValue = currentValue.toString();
-	});
-
-	// Update the input value when the prop value changes
-	$effect(() => {
-		if (value !== undefined && value !== currentValue) {
-			currentValue = value;
-			inputValue = currentValue.toString();
-		}
-	});
-
-	// Function to update the value and notify parent
-	function updateValue(newValue: number) {
-		if (newValue !== currentValue) {
-			currentValue = newValue;
-			value = newValue; // Update the bindable prop
-			settingsStore.setNumBeats(newValue);
-
-			// Dispatch event using modern approach
-			const event = new CustomEvent('change', {
-				detail: { value: newValue },
-				bubbles: true
-			});
-			dispatchEvent(event);
-		}
+	// Update the input value when the value prop changes
+	$: {
+		inputValue = value.toString();
 	}
 
 	// Handle increment
 	function increment() {
-		if (currentValue < MAX_BEATS) {
-			updateValue(currentValue + 1);
+		if (value < MAX_BEATS) {
+			value = value + 1;
+			settingsStore.setNumBeats(value);
 		}
 	}
 
 	// Handle decrement
 	function decrement() {
-		if (currentValue > MIN_BEATS) {
-			updateValue(currentValue - 1);
+		if (value > MIN_BEATS) {
+			value = value - 1;
+			settingsStore.setNumBeats(value);
 		}
 	}
 
@@ -72,13 +45,14 @@
 
 		if (isNaN(parsed)) {
 			// Reset to current value if invalid
-			inputValue = currentValue.toString();
+			inputValue = value.toString();
 			return;
 		}
 
 		// Clamp within range
 		const clamped = Math.max(MIN_BEATS, Math.min(MAX_BEATS, parsed));
-		updateValue(clamped);
+		value = clamped;
+		settingsStore.setNumBeats(clamped);
 	}
 
 	// Handle keydown events
@@ -86,15 +60,6 @@
 		if (e.key === 'Enter') {
 			processInput();
 			(e.target as HTMLInputElement).blur();
-		}
-	}
-
-	// Handle range input change
-	function handleRangeChange(e: Event) {
-		const target = e.target as HTMLInputElement;
-		const newValue = parseInt(target.value, 10);
-		if (!isNaN(newValue)) {
-			updateValue(newValue);
 		}
 	}
 </script>
@@ -105,8 +70,8 @@
 	<div class="control-group">
 		<button
 			class="control-button decrement"
-			onclick={decrement}
-			disabled={currentValue <= MIN_BEATS}
+			on:click={decrement}
+			disabled={value <= MIN_BEATS}
 			aria-label="Decrease beats"
 		>
 			-
@@ -117,9 +82,9 @@
 			type="text"
 			class="beat-input"
 			value={inputValue}
-			oninput={handleInput}
-			onblur={processInput}
-			onkeydown={handleKeyDown}
+			on:input={handleInput}
+			on:blur={processInput}
+			on:keydown={handleKeyDown}
 			min={MIN_BEATS}
 			max={MAX_BEATS}
 			aria-label="Number of beats"
@@ -127,8 +92,8 @@
 
 		<button
 			class="control-button increment"
-			onclick={increment}
-			disabled={currentValue >= MAX_BEATS}
+			on:click={increment}
+			disabled={value >= MAX_BEATS}
 			aria-label="Increase beats"
 		>
 			+
@@ -137,14 +102,7 @@
 
 	<div class="range">
 		<span class="min">{MIN_BEATS}</span>
-		<input
-			type="range"
-			min={MIN_BEATS}
-			max={MAX_BEATS}
-			value={currentValue}
-			oninput={handleRangeChange}
-			class="range-input"
-		/>
+		<input type="range" min={MIN_BEATS} max={MAX_BEATS} bind:value class="range-input" />
 		<span class="max">{MAX_BEATS}</span>
 	</div>
 </div>

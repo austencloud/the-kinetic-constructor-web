@@ -35,6 +35,7 @@ export async function shareSequence(options: ShareOptions): Promise<boolean> {
 	const { sequenceBeats, sequenceName, imageResult } = options;
 
 	if (!browser) {
+		console.log('ShareHandler: Not in browser environment, returning false');
 		return false;
 	}
 
@@ -54,6 +55,9 @@ export async function shareSequence(options: ShareOptions): Promise<boolean> {
 	const now = Date.now();
 	const timeSinceLastAttempt = now - lastShareApiCallTime;
 	if (timeSinceLastAttempt < MIN_SHARE_API_INTERVAL_MS) {
+		console.log(
+			`ShareHandler: Share API called too soon (${timeSinceLastAttempt}ms since last attempt)`
+		);
 		showError('Please wait a moment before sharing again');
 		return false;
 	}
@@ -90,22 +94,32 @@ export async function shareSequence(options: ShareOptions): Promise<boolean> {
 					await new Promise((resolve) => setTimeout(resolve, 100));
 
 					await navigator.share(shareData);
+					console.log('ShareHandler: Share with files completed successfully');
 					showSuccess('Sequence shared successfully');
 					return true;
 				} else {
+					console.log(
+						'ShareHandler: Device cannot share with files, falling back to text+URL only'
+					);
 					// Fall through to text+URL sharing
 				}
 			} catch (fileError) {
 				// If there's an error with file sharing, log it and fall back to text+URL sharing
 				if (fileError instanceof Error && fileError.name === 'AbortError') {
+					console.log('ShareHandler: User cancelled file sharing');
 					return false;
 				}
 
+				console.warn(
+					'ShareHandler: Error sharing with file, falling back to text+URL only:',
+					fileError
+				);
 				// Fall through to text+URL sharing
 			}
 		}
 
 		// Fall back to sharing just the text and URL
+		console.log('ShareHandler: Attempting to share with text and URL only');
 		const textOnlyShareData = {
 			title: shareData.title,
 			text: shareData.text,
@@ -116,13 +130,17 @@ export async function shareSequence(options: ShareOptions): Promise<boolean> {
 		await new Promise((resolve) => setTimeout(resolve, 100));
 
 		await navigator.share(textOnlyShareData);
+		console.log('ShareHandler: Text+URL share completed successfully');
 		showSuccess('Sequence shared successfully');
 		return true;
 	} catch (error) {
 		// Don't show error for user cancellation
 		if (error instanceof Error && error.name === 'AbortError') {
+			console.log('ShareHandler: User cancelled sharing');
 			return false;
 		}
+
+		console.error('ShareHandler: Error in shareSequence:', error);
 		logger.error('Error sharing sequence', {
 			error: error instanceof Error ? error : new Error(String(error))
 		});

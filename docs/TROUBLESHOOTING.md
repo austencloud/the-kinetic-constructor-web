@@ -42,6 +42,57 @@ If you encounter a "504 Outdated Optimize Dep" error in your Vite application, t
 
 4. **Avoid Dynamic Imports for Problematic Libraries**:
    - Use direct imports instead of dynamic imports for libraries that cause issues.
+   - For example, use `import html2canvas from 'html2canvas'` instead of `const html2canvas = await import('html2canvas')`.
+
+## html2canvas Specific Issues
+
+html2canvas is a complex library that can cause issues with Vite's dependency optimization system. Here are some specific troubleshooting steps:
+
+### Loading Failures
+
+If html2canvas fails to load, try these approaches:
+
+1. **Use Direct Import**:
+
+   ```typescript
+   import html2canvas from 'html2canvas';
+   ```
+
+2. **CDN Fallback**:
+
+   ```typescript
+   // If the bundled version fails, load from CDN
+   const loadFromCDN = () => {
+   	const script = document.createElement('script');
+   	script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+   	document.head.appendChild(script);
+   	return new Promise((resolve) => {
+   		script.onload = () => resolve(window.html2canvas);
+   	});
+   };
+   ```
+
+3. **Pre-bundle the Library**:
+   - Add html2canvas to the `optimizeDeps.include` array in `vite.config.ts`.
+   - Use the `build.rollupOptions.output.manualChunks` option to create a separate chunk for html2canvas.
+
+### Rendering Issues
+
+If html2canvas renders incorrectly or not at all:
+
+1. **Check Element Visibility**:
+
+   - Make sure the element you're trying to render is visible in the DOM.
+   - Elements with `display: none` or zero dimensions won't render properly.
+
+2. **Cross-Origin Issues**:
+
+   - Set `useCORS: true` and `allowTaint: true` in the html2canvas options.
+   - Make sure any images or resources used in the element have proper CORS headers.
+
+3. **Styling Issues**:
+   - Some CSS features may not be supported by html2canvas.
+   - Test with simpler styling to isolate the issue.
 
 ## Dynamic Import Failures
 
@@ -86,6 +137,6 @@ If you've tried all the above and still have issues:
 
 1. **Create a Minimal Reproduction**: Create a minimal project that reproduces the issue.
 
-2. **Check GitHub Issues**: Check if others have reported similar issues on the Vite GitHub repository.
+2. **Check GitHub Issues**: Check if others have reported similar issues on the Vite or html2canvas GitHub repositories.
 
 3. **Ask for Help**: Post your issue on Stack Overflow or the Vite Discord server with a clear description and reproduction steps.

@@ -18,8 +18,9 @@
 	// This function is primarily for the on:select event from LetterTypePicker
 	// If binding selectedTypes directly, this specific handler might not be needed
 	// unless additional logic is required on selection change.
-	function handleLetterTypesChange(_event: CustomEvent<string[]>) {
+	function handleLetterTypesChange(event: CustomEvent<string[]>) {
 		// selectedLetterTypes is already updated by bind:selectedTypes
+		// console.log('Selected letter types in FreeformSequencer:', selectedLetterTypes);
 	}
 </script>
 

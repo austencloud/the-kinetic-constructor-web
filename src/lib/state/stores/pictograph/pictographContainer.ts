@@ -5,8 +5,8 @@
  * the container-based approach with Svelte 5 runes.
  */
 
-import { createContainer } from '$lib/state/core/container.svelte';
-import { createDerived } from '$lib/state/core/container.svelte';
+import { createContainer } from '$lib/state/core/container';
+import { createDerived } from '$lib/state/core/container';
 import type { PictographData } from '$lib/types/PictographData';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
 import type { GridData } from '$lib/components/objects/Grid/GridData';

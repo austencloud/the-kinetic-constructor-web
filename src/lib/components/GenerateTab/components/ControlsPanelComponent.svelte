@@ -1,6 +1,7 @@
 <!-- src/lib/components/GenerateTab/layout/ControlsPanelComponent.svelte -->
 <script lang="ts">
-	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
+	import { sequenceActions, sequenceSelectors } from '$lib/state/machines/sequenceMachine';
+	import { settingsStore as newSettingsStore } from '$lib/state/stores/settingsStore';
 	import {
 		settingsStore,
 		numBeats,
@@ -15,10 +16,8 @@
 	import GeneratorOptionsSection from '../controls/GeneratorOptionsSection.svelte';
 	import GenerateButtonSection from '../controls/GenerateButtonSection.svelte';
 
-	// Props using Svelte 5 runes
-	const { useNewStateManagement = true } = $props<{
-		useNewStateManagement?: boolean;
-	}>();
+	// Use both old and new state management during migration
+	export let useNewStateManagement = true;
 
 	// Generator types for the toggle
 	const generatorTypes = [

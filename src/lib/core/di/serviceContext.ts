@@ -1,5 +1,6 @@
 import { getContext, setContext } from 'svelte';
 import type { ServiceContainer } from './ServiceContainer';
+import type { ServiceToken } from './ServiceTokens';
 
 const CONTAINER_KEY = Symbol('SERVICE_CONTAINER');
 

@@ -123,8 +123,11 @@ class SequenceStateManager {
 					: null
 			};
 
+			// Generate complete pictograph data with arrows and props
+			const completeStartPos = await this.generateCompletePictographData(startPosCopy);
+
 			// Update reactive state first (this is the only essential change)
-			this.#startPosition = startPosCopy;
+			this.#startPosition = completeStartPos;
 
 			// DISABLE localStorage saving that might trigger reactive loops
 			// if (browser) {
@@ -147,12 +150,12 @@ class SequenceStateManager {
 					'$lib/state/stores/pictograph/pictographContainer'
 				);
 
-				setSelectedStartPosition(startPosCopy);
-				pictographContainer.setData(startPosCopy);
+				setSelectedStartPosition(completeStartPos);
+				pictographContainer.setData(completeStartPos);
 
 				// Dispatch event for components that still rely on events
 				const event = new CustomEvent('start-position-selected', {
-					detail: { startPosition: startPosCopy },
+					detail: { startPosition: completeStartPos },
 					bubbles: true
 				});
 				document.dispatchEvent(event);
@@ -174,8 +177,11 @@ class SequenceStateManager {
 		this.#error = null;
 
 		try {
+			// Generate complete pictograph data with arrows and props
+			const completeBeat = await this.generateCompletePictographData(beat);
+
 			// Add beat to the sequence (essential change)
-			this.#beats = [...this.#beats, beat];
+			this.#beats = [...this.#beats, completeBeat];
 
 			// Re-enable metadata updates with guard
 			this.updateMetadata();
@@ -183,7 +189,9 @@ class SequenceStateManager {
 			// Re-enable file saving
 			await this.saveToFile();
 
-			console.log('✅ SAFE: Beat added with controlled reactive updates');
+			console.log(
+				'✅ SAFE: Beat added with controlled reactive updates and complete pictograph data'
+			);
 		} catch (error) {
 			console.error('SequenceState: Error adding beat:', error);
 			this.#error = error instanceof Error ? error.message : 'Failed to add beat';
@@ -216,6 +224,14 @@ class SequenceStateManager {
 	}
 
 	async clearSequence() {
+		console.log('🧹 CLEAR SEQUENCE: Starting clear operation...');
+		console.log(
+			'🧹 CLEAR SEQUENCE: Before clear - beats:',
+			this.#beats.length,
+			'startPosition:',
+			!!this.#startPosition
+		);
+
 		this.#isLoading = true;
 		this.#error = null;
 
@@ -225,13 +241,22 @@ class SequenceStateManager {
 			this.#beats = [];
 			this.#metadata = { ...defaultMetadata };
 
+			console.log(
+				'🧹 CLEAR SEQUENCE: State reset - beats:',
+				this.#beats.length,
+				'startPosition:',
+				!!this.#startPosition
+			);
+
 			// Clear localStorage
 			if (browser) {
 				localStorage.removeItem('start_position');
+				console.log('🧹 CLEAR SEQUENCE: localStorage cleared');
 			}
 
 			// Save to file
 			await this.saveToFile();
+			console.log('🧹 CLEAR SEQUENCE: File saved');
 
 			// Ensure legacy stores are synchronized for backward compatibility
 			if (browser && typeof document !== 'undefined') {
@@ -267,10 +292,22 @@ class SequenceStateManager {
 					bubbles: true
 				});
 				document.dispatchEvent(resetOptionPickerEvent);
+
+				console.log('🧹 CLEAR SEQUENCE: Legacy stores synchronized');
 			}
+
+			console.log('✅ CLEAR SEQUENCE: Sequence cleared successfully!');
+			console.log(
+				'🧹 CLEAR SEQUENCE: Final state - beats:',
+				this.#beats.length,
+				'startPosition:',
+				!!this.#startPosition,
+				'isEmpty:',
+				this.isEmpty
+			);
 		} catch (error) {
 			this.#error = error instanceof Error ? error.message : 'Failed to clear sequence';
-			console.error('SequenceState: Error clearing sequence:', error);
+			console.error('❌ CLEAR SEQUENCE: Error clearing sequence:', error);
 		} finally {
 			this.#isLoading = false;
 		}
@@ -318,6 +355,50 @@ class SequenceStateManager {
 	}
 
 	// Private helper methods
+	private async generateCompletePictographData(beat: PictographData): Promise<PictographData> {
+		try {
+			// Import PictographService dynamically to avoid circular dependencies
+			const { PictographService } = await import('$lib/components/Pictograph/PictographService');
+
+			// Create a copy of the beat to avoid modifying the original
+			const completeBeat: PictographData = {
+				...beat,
+				// Ensure grid is set
+				grid: beat.grid || beat.gridMode || 'diamond'
+			};
+
+			// Generate arrows and props using PictographService
+			const service = new PictographService(completeBeat);
+
+			// Generate arrow data for red and blue performers
+			if (completeBeat.redMotionData && !completeBeat.redArrowData) {
+				completeBeat.redArrowData = service.createArrowData(completeBeat.redMotionData, 'red');
+			}
+
+			if (completeBeat.blueMotionData && !completeBeat.blueArrowData) {
+				completeBeat.blueArrowData = service.createArrowData(completeBeat.blueMotionData, 'blue');
+			}
+
+			// Generate prop data for red and blue performers
+			if (completeBeat.redMotionData && !completeBeat.redPropData) {
+				completeBeat.redPropData = service.createPropData(completeBeat.redMotionData, 'red');
+			}
+
+			if (completeBeat.blueMotionData && !completeBeat.bluePropData) {
+				completeBeat.bluePropData = service.createPropData(completeBeat.blueMotionData, 'blue');
+			}
+
+			console.log(
+				'🎨 Generated complete pictograph data with arrows and props for beat:',
+				completeBeat.letter
+			);
+			return completeBeat;
+		} catch (error) {
+			console.warn('Failed to generate complete pictograph data, using original beat:', error);
+			return beat;
+		}
+	}
+
 	private updateMetadata() {
 		this.#metadata = {
 			...this.#metadata,

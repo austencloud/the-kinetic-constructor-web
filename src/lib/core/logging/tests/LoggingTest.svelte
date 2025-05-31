@@ -1,6 +1,6 @@
 <!--
   Logging System Test Component
-
+  
   This component demonstrates the various features of the logging system.
 -->
 <script lang="ts">
@@ -8,6 +8,7 @@
 	import {
 		logger,
 		LogLevel,
+		LogDomain,
 		createPictographContext,
 		createSequenceContext,
 		createSvgContext,

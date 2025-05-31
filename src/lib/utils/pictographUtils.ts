@@ -24,17 +24,37 @@ export function createSafePictographCopy(data: PictographData | null): Pictograp
 
 		// Handle SVG data in arrow data
 		if (safeCopy.redArrowData?.svgData) {
+			// Create a safe copy without DOM elements
+			const originalSvgData = safeCopy.redArrowData.svgData;
 			safeCopy.redArrowData = {
 				...safeCopy.redArrowData,
-				svgData: { ...safeCopy.redArrowData.svgData, element: null, paths: null }
+				svgData: { ...originalSvgData }
 			};
+
+			// Remove DOM elements and non-serializable properties
+			if ((safeCopy.redArrowData.svgData as any).element) {
+				(safeCopy.redArrowData.svgData as any).element = null;
+			}
+			if ((safeCopy.redArrowData.svgData as any).paths) {
+				(safeCopy.redArrowData.svgData as any).paths = null;
+			}
 		}
 
 		if (safeCopy.blueArrowData?.svgData) {
+			// Create a safe copy without DOM elements
+			const originalSvgData = safeCopy.blueArrowData.svgData;
 			safeCopy.blueArrowData = {
 				...safeCopy.blueArrowData,
-				svgData: { ...safeCopy.blueArrowData.svgData, element: null, paths: null }
+				svgData: { ...originalSvgData }
 			};
+
+			// Remove DOM elements and non-serializable properties
+			if ((safeCopy.blueArrowData.svgData as any).element) {
+				(safeCopy.blueArrowData.svgData as any).element = null;
+			}
+			if ((safeCopy.blueArrowData.svgData as any).paths) {
+				(safeCopy.blueArrowData.svgData as any).paths = null;
+			}
 		}
 
 		// Handle grid data which might contain non-serializable objects

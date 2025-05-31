@@ -8,9 +8,59 @@
 import { describe, it, expect } from 'vitest';
 import { calculateDimensions } from './CanvasDimensionsCalculator';
 import type { EnhancedExportOptions } from './exportTypes';
-import { createMockBeat, createMockStartPosition } from '$lib/utils/tests/pictographTestHelpers';
+import type { Beat } from '$lib/types/Beat';
+import { Letter } from '$lib/types/Letter';
+import type { TKAPosition } from '$lib/types/TKAPosition';
 
-// Test data will be loaded from real CSV data
+// Create a mock beat for testing
+function createMockBeat(beatNumber: number): Beat {
+	return {
+		id: `beat-${beatNumber}`,
+		beatNumber,
+		filled: true,
+		pictographData: {
+			letter: Letter.A,
+			startPos: null,
+			endPos: null,
+			timing: null,
+			direction: null,
+			gridMode: 'diamond',
+			gridData: null,
+			blueMotionData: null,
+			redMotionData: null,
+			redPropData: null,
+			bluePropData: null,
+			redArrowData: null,
+			blueArrowData: null,
+			grid: 'diamond'
+		}
+	};
+}
+
+// Create a mock start position beat
+function createMockStartPosition(): Beat {
+	return {
+		id: 'start-position',
+		beatNumber: 0,
+		filled: true,
+		pictographData: {
+			letter: Letter.S,
+			startPos: 'alpha1' as TKAPosition,
+			endPos: null,
+			timing: null,
+			direction: null,
+			gridMode: 'diamond',
+			gridData: null,
+			blueMotionData: null,
+			redMotionData: null,
+			redPropData: null,
+			bluePropData: null,
+			redArrowData: null,
+			blueArrowData: null,
+			grid: 'diamond'
+		}
+	};
+}
 
 // Create mock export options
 function createMockOptions(

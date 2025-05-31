@@ -21,16 +21,7 @@
 		selectedTab: string | null;
 		optionsToDisplay?: PictographData[];
 		hasCategories: boolean;
-		onoptionselect?: (option: PictographData) => void;
 	}>();
-
-	// Handle option selection events from OptionsPanel
-	function handleOptionSelect(option: PictographData) {
-		// Call the callback if provided
-		if (props.onoptionselect) {
-			props.onoptionselect(option);
-		}
-	}
 
 	// Set default values
 	$effect(() => {
@@ -42,23 +33,26 @@
 	let displayState = $state<'loading' | 'empty' | 'options'>('loading');
 	let messageText = $state('');
 
-	// Simplify display state logic - FIXED: Removed untrack() to enable reactivity
+	// Update display state based on props
 	$effect(() => {
-		const options = Array.isArray(props.optionsToDisplay) ? props.optionsToDisplay : [];
+		// Update hasOptions
+		hasOptions = props.optionsToDisplay && props.optionsToDisplay.length > 0;
 
-		hasOptions = options.length > 0;
-
+		// Determine display state
 		if (props.isLoading) {
 			displayState = 'loading';
 			messageText = 'Loading options...';
 		} else if (!hasOptions) {
 			displayState = 'empty';
-			const currentTab = String(props.selectedTab || '');
-			const isShowAllView = !props.hasCategories || currentTab === 'all';
 
-			messageText = isShowAllView
-				? 'No options available for the current position.'
-				: `No options available in the "${currentTab}" category.`;
+			// Set appropriate message text
+			if (props.selectedTab === 'all') {
+				messageText = 'No options available for the current position.';
+			} else if (props.selectedTab) {
+				messageText = `No options available in the "${props.selectedTab}" category.`;
+			} else {
+				messageText = 'No options available.';
+			}
 		} else {
 			displayState = 'options';
 		}
@@ -93,7 +87,6 @@
 					options={props.optionsToDisplay}
 					selectedTab={props.selectedTab}
 					transitionKey={props.selectedTab}
-					onoptionselect={handleOptionSelect}
 				/>
 			</div>
 		{/if}

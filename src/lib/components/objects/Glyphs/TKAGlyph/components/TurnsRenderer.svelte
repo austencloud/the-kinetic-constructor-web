@@ -1,25 +1,20 @@
 <!-- src/lib/components/objects/Glyphs/TKAGlyph/components/TurnsRenderer.svelte -->
 <script lang="ts">
-	import { assetCache, fetchSVGDimensions, type Rect } from '$lib/stores/glyphState.svelte';
+	import { onMount } from 'svelte';
+	import { assetCache, fetchSVGDimensions, type Rect } from '$lib/stores/glyphStore';
 	import type { TKATurns } from '$lib/types/Types';
 
-	// Props using Svelte 5 runes
-	const {
-		topValue = 0,
-		bottomValue = 0,
-		letterRect
-	} = $props<{
-		topValue?: TKATurns;
-		bottomValue?: TKATurns;
-		letterRect: Rect;
-	}>();
+	// Props
+	export let topValue: TKATurns = 0;
+	export let bottomValue: TKATurns = 0;
+	export let letterRect: Rect;
 
 	// Constants
 	const PADDING_X = 15;
 	const PADDING_Y = 5;
 
-	// Calculated positioning using $derived
-	const turnsPositions = $derived(calculateTurnsPositions(letterRect, PADDING_X, PADDING_Y));
+	// Calculated positioning
+	$: turnsPositions = calculateTurnsPositions(letterRect, PADDING_X, PADDING_Y);
 
 	// Pure functions for calculations
 	function calculateTurnsPositions(rect: Rect, paddingX: number, paddingY: number) {
@@ -59,7 +54,7 @@
 
 		// Check cache
 		const cacheKey = typeof value === 'number' ? value.toString() : value;
-		if (assetCache.state.numberSVGs.has(cacheKey)) return;
+		if ($assetCache.numberSVGs.has(cacheKey)) return;
 
 		try {
 			const dimensions = await fetchSVGDimensions(path);
@@ -77,18 +72,18 @@
 		}
 	}
 
-	// Ensure numbers are loaded using $effect
-	$effect(() => {
+	// Ensure numbers are loaded
+	$: {
 		if (topValue !== 0) ensureNumberLoaded(topValue);
 		if (bottomValue !== 0) ensureNumberLoaded(bottomValue);
-	});
+	}
 
 	// Helpers for rendering
 	function getNumberSVGDetails(value: TKATurns) {
 		if (!value) return null;
 
 		const cacheKey = typeof value === 'number' ? value.toString() : value;
-		const cached = assetCache.state.numberSVGs.get(cacheKey);
+		const cached = $assetCache.numberSVGs.get(cacheKey);
 
 		if (!cached) return null;
 

@@ -1,11 +1,17 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { onMount } from 'svelte';
 	import DifficultyCircle from './DifficultyCircle.svelte';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 
-	const { currentWord = 'Word', width = 100, difficultyLevel = 1 } = $props();
+	const { currentWord = 'Word', width = 100 } = $props();
+
+	// Use the sequence container to get difficulty level
+	const sequence = useContainer(sequenceContainer);
+	const difficultyLevel = $derived(sequence.metadata?.difficulty || 1);
 
 	let wordDisplay: HTMLSpanElement;
-	let fontSize = $state(Math.max(width / 40, 30));
+	let fontSize = Math.max(width / 40, 30);
 	let parentWidth: number;
 
 	const MAX_CHARS = 8;
@@ -36,25 +42,14 @@
 		// Get parent element width for sizing calculations
 		parentWidth = wordDisplay?.parentElement?.clientWidth ?? 0;
 		// Initial size adjustment
-		adjustFontSize();
+		setTimeout(adjustFontSize, 0);
 	});
 
-	// Use an effect to trigger font size adjustments when dependencies change
-	// This prevents infinite loops by using untrack and microtasks
+	// Respond to changes in word or container width
 	$effect(() => {
-		// Track dependencies
-		currentWord;
-		width;
-
-		// Use untrack to prevent the adjustment from being tracked
-		untrack(() => {
-			// Use a microtask to ensure DOM is updated
-			queueMicrotask(() => {
-				if (wordDisplay && parentWidth) {
-					adjustFontSize();
-				}
-			});
-		});
+		if (currentWord || width) {
+			setTimeout(adjustFontSize, 0);
+		}
 	});
 </script>
 

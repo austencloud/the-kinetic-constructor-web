@@ -1,31 +1,22 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { fade } from 'svelte/transition';
 
-	// Props using Svelte 5 runes
-	const {
-		text = '', // Default to empty string
-		width = 100 // Default width in pixels
-	} = $props<{
-		text?: string;
-		width?: number;
-	}>();
-
+	export let text = ''; // Default to empty string
+	export let width = 100; // Default width in pixels
 	const minFontSize = 18; // Minimum font size in pixels
 
-	// State variables using Svelte 5 runes
-	let visible = $state(false);
-	let message = $state('');
-	let timeoutId = $state<number | null>(null);
+	// State variables
+	let visible = false;
+	let message = '';
+	let timeoutId: number | null = null;
 
-	// Derived values using Svelte 5 runes
-	const fontSize = $derived(`${Math.max(width / 80, minFontSize)}px`);
+	$: fontSize = `${Math.max(width / 80, minFontSize)}px`; // Adjust the multiplier as needed
 
-	// Watch for changes to the text prop using $effect
-	$effect(() => {
-		if (text && text !== message) {
-			showMessage(text);
-		}
-	});
+	// Watch for changes to the text prop
+	$: if (text && text !== message) {
+		showMessage(text);
+	}
 
 	// Function to show a message temporarily
 	function showMessage(newMessage: string): void {
@@ -44,13 +35,11 @@
 		}, 4000);
 	}
 
-	// Clean up on component destroy using Svelte 5 effect cleanup
-	$effect(() => {
-		return () => {
-			if (timeoutId !== null) {
-				clearTimeout(timeoutId);
-			}
-		};
+	// Clean up on component destroy
+	onDestroy(() => {
+		if (timeoutId !== null) {
+			clearTimeout(timeoutId);
+		}
 	});
 </script>
 

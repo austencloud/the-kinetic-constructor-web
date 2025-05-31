@@ -1,16 +1,17 @@
 <script lang="ts">
+	import { createEventDispatcher } from 'svelte';
 	import type { LessonMode } from '$lib/state/stores/learn/learnStore';
 
-	// Props using Svelte 5 runes
-	let { selected = $bindable('fixed_question'), onchange } = $props<{
-		selected?: LessonMode;
-		onchange?: (mode: LessonMode) => void;
+	export let selected: LessonMode = 'fixed_question';
+
+	const dispatch = createEventDispatcher<{
+		change: LessonMode;
 	}>();
 
 	function handleSelect(mode: LessonMode) {
 		if (mode !== selected) {
 			selected = mode;
-			onchange?.(mode);
+			dispatch('change', mode);
 		}
 	}
 </script>
@@ -18,7 +19,7 @@
 <div class="mode-toggle">
 	<button
 		class="toggle-button {selected === 'fixed_question' ? 'selected' : ''}"
-		onclick={() => handleSelect('fixed_question')}
+		on:click={() => handleSelect('fixed_question')}
 		aria-pressed={selected === 'fixed_question'}
 	>
 		Fixed Questions
@@ -26,7 +27,7 @@
 
 	<button
 		class="toggle-button {selected === 'countdown' ? 'selected' : ''}"
-		onclick={() => handleSelect('countdown')}
+		on:click={() => handleSelect('countdown')}
 		aria-pressed={selected === 'countdown'}
 	>
 		Countdown

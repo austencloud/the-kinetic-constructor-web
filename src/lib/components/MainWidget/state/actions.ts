@@ -1,6 +1,6 @@
 // src/lib/components/MainWidget/state/actions.ts
 import { appService } from './store';
-// Keep for tab id
+import { tabs } from './appState'; // Keep for tab id
 
 // Define event types more explicitly (if needed, often inferred)
 export type TabChangeEventDetail = {

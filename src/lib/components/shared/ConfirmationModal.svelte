@@ -1,40 +1,33 @@
 <script lang="ts">
 	import Modal from './Modal.svelte';
-	import { uiState } from '../../components/WriteTab/state/uiState.svelte';
+	import { uiStore } from '../../components/WriteTab/stores/uiStore';
 
-	// Props using Svelte 5 runes
-	const {
-		isOpen = false,
-		title = 'Confirm Action',
-		message = 'Are you sure you want to proceed?',
-		confirmText = 'Confirm',
-		cancelText = 'Cancel',
-		confirmButtonClass = 'danger',
-		showDontAskOption = true,
-		onconfirm,
-		onclose
-	} = $props<{
-		isOpen?: boolean;
-		title?: string;
-		message?: string;
-		confirmText?: string;
-		cancelText?: string;
-		confirmButtonClass?: string;
-		showDontAskOption?: boolean;
-		onconfirm?: (event: { dontAskAgain: boolean }) => void;
-		onclose?: () => void;
-	}>();
+	// Define props using Svelte 5 syntax
+	const props = $props();
+
+	// Calculate defaults
+	const isOpen = props.isOpen ?? false;
+	const title = props.title ?? 'Confirm Action';
+	const message = props.message ?? 'Are you sure you want to proceed?';
+	const confirmText = props.confirmText ?? 'Confirm';
+	const cancelText = props.cancelText ?? 'Cancel';
+	const confirmButtonClass = props.confirmButtonClass ?? 'danger';
+	const showDontAskOption = props.showDontAskOption ?? true;
+	const onConfirm = props.onConfirm;
+	const onClose = props.onClose;
 
 	// State variables
 	let dontAskAgain = $state(false);
 
 	function handleConfirm() {
 		if (dontAskAgain && showDontAskOption) {
-			uiState.toggleConfirmDeletions(false);
+			uiStore.toggleConfirmDeletions(false);
 		}
 
-		// Call the onconfirm callback if provided
-		onconfirm?.({ dontAskAgain });
+		// Call the onConfirm callback if provided
+		if (typeof onConfirm === 'function') {
+			onConfirm({ dontAskAgain });
+		}
 
 		close();
 	}
@@ -43,37 +36,35 @@
 		// Reset the checkbox when closing
 		dontAskAgain = false;
 
-		// Call the onclose callback if provided
-		onclose?.();
+		// Call the onClose callback if provided
+		if (typeof onClose === 'function') {
+			onClose();
+		}
 	}
 </script>
 
 <Modal {isOpen} {title} onClose={close}>
-	{#snippet children()}
-		<!-- Content goes in the default slot -->
-		<div class="confirmation-content">
-			<p>{message}</p>
+	<!-- Content goes in the default slot -->
+	<div class="confirmation-content">
+		<p>{message}</p>
 
-			{#if showDontAskOption}
-				<label class="dont-ask-option">
-					<input type="checkbox" bind:checked={dontAskAgain} />
-					<span>Don't ask me again</span>
-				</label>
-			{/if}
-		</div>
-	{/snippet}
+		{#if showDontAskOption}
+			<label class="dont-ask-option">
+				<input type="checkbox" bind:checked={dontAskAgain} />
+				<span>Don't ask me again</span>
+			</label>
+		{/if}
+	</div>
 
-	{#snippet footer()}
-		<!-- Footer content goes in the named footer slot -->
-		<div class="modal-footer-buttons">
-			<button class="cancel-button" onclick={close}>
-				{cancelText}
-			</button>
-			<button class="confirm-button {confirmButtonClass}" onclick={handleConfirm}>
-				{confirmText}
-			</button>
-		</div>
-	{/snippet}
+	<!-- Footer content goes in the named footer slot -->
+	<div class="modal-footer-buttons" slot="footer">
+		<button class="cancel-button" onclick={close}>
+			{cancelText}
+		</button>
+		<button class="confirm-button {confirmButtonClass}" onclick={handleConfirm}>
+			{confirmText}
+		</button>
+	</div>
 </Modal>
 
 <style>

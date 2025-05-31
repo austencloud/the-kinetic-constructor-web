@@ -9,10 +9,13 @@ import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
 import {
 	isFileSystemAccessSupported,
+	isMobileDevice,
+	getDefaultPicturesPath,
 	createExportFileName,
 	createVersionedFileName,
 	createCategoryFolderName,
 	createWordFolderName,
+	parseVersionNumber,
 	getNextVersionNumber,
 	saveDirHandleToLocalStorage,
 	getDirHandleFromLocalStorage,

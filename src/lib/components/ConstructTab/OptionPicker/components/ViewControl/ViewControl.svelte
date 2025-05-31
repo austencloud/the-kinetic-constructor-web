@@ -2,21 +2,22 @@
 	import { onDestroy } from 'svelte';
 	import type { SortMethod } from '../../config';
 	import { viewOptions } from './viewOptions';
-	import type { ViewOption } from './types';
+	import type { ViewModeDetail, ViewOption } from './types';
 	import ViewButton from './ViewButton.svelte';
 	import ViewDropdown from './ViewDropdown.svelte';
-	import { optionPickerState } from '../../optionPickerState.svelte';
+	import { optionPickerContainer } from '$lib/state/stores/optionPicker/optionPickerContainer';
 
-	// --- Props using Svelte 5 runes ---
-	const { compact = false } = $props<{
+	// --- Props ---
+	const props = $props<{
+		initialSortMethod?: SortMethod;
 		compact?: boolean;
 	}>();
 
 	// --- State ---
 	let isOpen = $state(false);
-	// Initialize with the current sort method from the option picker state
+	// Initialize with the current sort method from the container
 	let selectedViewOption = $state<ViewOption>(
-		viewOptions.find((opt) => opt.value === optionPickerState.sortMethod) ||
+		viewOptions.find((opt) => opt.value === optionPickerContainer.state.sortMethod) ||
 			viewOptions.find((opt) => opt.value === 'all') ||
 			viewOptions[0]
 	);
@@ -27,12 +28,12 @@
 	$effect(() => {
 		// Force compact mode on mobile devices
 		const isMobile = window.innerWidth <= 640;
-		isCompact = compact || isMobile || false;
+		isCompact = props.compact || isMobile || false;
 
 		// Add resize listener to update compact mode when window size changes
 		const handleResize = () => {
 			const isMobile = window.innerWidth <= 640;
-			isCompact = compact || isMobile || false;
+			isCompact = props.compact || isMobile || false;
 		};
 
 		window.addEventListener('resize', handleResize);
@@ -44,35 +45,72 @@
 
 	// --- Lifecycle ---
 	$effect(() => {
-		// Keep the selected option in sync with the option picker state
-		const currentSortMethod = optionPickerState.sortMethod;
-		const currentSelectedTab = optionPickerState.lastSelectedTab[currentSortMethod] || 'all';
+		// Keep the selected option in sync with the container state
+		const currentSortMethod = optionPickerContainer.state.sortMethod;
+		const selectedTab = optionPickerContainer.state.selectedTab;
 
-		// Always update the selectedViewOption to match the current sorting state
-		if (currentSelectedTab === 'all') {
-			// If we're showing all, select the "All" option
+		// Check if we should show "All" based on the selected tab
+		if (selectedTab === 'all') {
+			// If the selected tab is 'all', always show the "All" view option
 			const allOption = viewOptions.find((opt) => opt.value === 'all');
-			if (allOption && selectedViewOption.value !== 'all') {
+			if (allOption) {
 				selectedViewOption = allOption;
 			}
-		} else if (currentSortMethod !== selectedViewOption.value) {
-			// If we're using a specific sort method, find the matching option
-			const methodOption = viewOptions.find((opt) => opt.value === currentSortMethod);
-			if (methodOption) {
-				selectedViewOption = methodOption;
+		}
+		// Otherwise, sync with the current sort method
+		else if (currentSortMethod) {
+			// Find the matching option for the current sort method
+			const matchingOption = viewOptions.find((opt) => opt.value === currentSortMethod);
+			if (matchingOption) {
+				selectedViewOption = matchingOption;
+			} else {
+				// If no matching option is found, default to 'all'
+				const allOption = viewOptions.find((opt) => opt.value === 'all');
+				if (allOption) {
+					selectedViewOption = allOption;
+				}
+			}
+		} else {
+			// If no sort method is set (or it's null/undefined), default to 'all'
+			const allOption = viewOptions.find((opt) => opt.value === 'all');
+			if (allOption) {
+				selectedViewOption = allOption;
 			}
 		}
 
 		// Add click outside listener
 		document.addEventListener('click', handleClickOutside);
 
+		// Add listener for update-view-control event
+		const handleUpdateViewControl = (event: Event) => {
+			if (event instanceof CustomEvent) {
+				const detail = event.detail;
+				if (detail.mode === 'all') {
+					const allOption = viewOptions.find((opt) => opt.value === 'all');
+					if (allOption) {
+						selectedViewOption = allOption;
+					}
+				} else if (detail.mode === 'group' && detail.method) {
+					const methodOption = viewOptions.find((opt) => opt.value === detail.method);
+					if (methodOption) {
+						console.log(`Updating view control to "${methodOption.label}" from event`);
+						selectedViewOption = methodOption;
+					}
+				}
+			}
+		};
+
+		document.addEventListener('update-view-control', handleUpdateViewControl);
+
 		return () => {
 			document.removeEventListener('click', handleClickOutside);
+			document.removeEventListener('update-view-control', handleUpdateViewControl);
 		};
 	});
 
 	onDestroy(() => {
 		document.removeEventListener('click', handleClickOutside);
+		document.removeEventListener('update-view-control', () => {});
 	});
 
 	// --- Dropdown Management ---
@@ -101,7 +139,9 @@
 
 	// --- Option Selection ---
 	function handleViewSelect(option: ViewOption) {
+		// Set the selected view option first
 		selectedViewOption = option;
+		console.log('Selected view option:', option.label, option.value);
 
 		// Add haptic feedback on mobile devices
 		if ('vibrate' in window.navigator) {
@@ -112,41 +152,53 @@
 			}
 		}
 
-		// Update the option picker state directly
+		// Create the event detail
+		const detail: ViewModeDetail =
+			option.value === 'all'
+				? { mode: 'all' }
+				: { mode: 'group', method: option.value as SortMethod };
+
+		// Update the optionPickerContainer state directly
+		// This ensures the container state is always in sync with the UI
 		if (option.value === 'all') {
-			// For "Show All" view, we need to set the sort method to 'all'
-			// This is critical for the UI to know we're in "Show All" mode
-
-			// First update the sort method to ensure we're in the right mode
-			optionPickerState.setSortMethod('all');
-
-			// Set the last selected tab to 'all' for all sort methods
-			// This ensures proper display when switching back to other views
-			['type', 'endPos', 'reversals'].forEach((method) => {
-				optionPickerState.setLastSelectedTabForSort(method as SortMethod, 'all');
-			});
-		} else {
-			// For other views, update the sort method
-			optionPickerState.setSortMethod(option.value as SortMethod);
-
-			// Get the last selected tab for this sort method
-			const lastSelectedTab = optionPickerState.lastSelectedTab[option.value as SortMethod];
-
-			// If there's no last selected tab or it's 'all', we need to select the first tab
-			// This ensures the tabs are displayed properly
-			if (!lastSelectedTab || lastSelectedTab === 'all') {
-				// Do a direct update instead of using setTimeout
-				// Get the grouped options for this sort method
-				const groupedOptions = optionPickerState.groupedOptions;
-
-				if (groupedOptions && Object.keys(groupedOptions).length > 0) {
-					// Get the first category key
-					const firstCategoryKey = Object.keys(groupedOptions)[0];
-
-					// Set the last selected tab to the first category key
-					optionPickerState.setLastSelectedTabForSort(option.value as SortMethod, firstCategoryKey);
-				}
+			// When "Show All" is selected, we need to:
+			// 1. Set the selected tab to 'all'
+			optionPickerContainer.setSelectedTab('all');
+			// 2. Store 'all' as the last selected tab for the current sort method
+			optionPickerContainer.setLastSelectedTabForSort(
+				optionPickerContainer.state.sortMethod,
+				'all'
+			);
+			// 3. Make sure the view option is set to "All"
+			const allOption = viewOptions.find((opt) => opt.value === 'all');
+			if (allOption) {
+				selectedViewOption = allOption;
 			}
+		} else {
+			// For other sort methods, update as before
+			optionPickerContainer.setSortMethod(option.value as SortMethod);
+			// Ensure the selected view option matches the sort method
+			const matchingOption = viewOptions.find((opt) => opt.value === option.value);
+			if (matchingOption) {
+				selectedViewOption = matchingOption;
+			}
+		}
+
+		// Create a DOM event that will bubble up
+		const customEvent = new CustomEvent('viewChange', {
+			detail,
+			bubbles: true,
+			composed: true
+		});
+
+		// Dispatch the event from the button element if available
+		if (buttonElement) {
+			console.log('Dispatching viewChange event with detail:', detail);
+			buttonElement.dispatchEvent(customEvent);
+		} else {
+			// Fallback to dispatching from the document
+			console.warn('Button element not available, using document for event dispatch');
+			document.dispatchEvent(customEvent);
 		}
 
 		closeDropdown();
@@ -206,7 +258,7 @@
 	}
 </script>
 
-<div class="view-control" class:compact={isCompact} data-sort-method={selectedViewOption.value}>
+<div class="view-control" class:compact={isCompact}>
 	<ViewButton
 		{selectedViewOption}
 		{isOpen}

@@ -6,6 +6,8 @@
 	import { saveImageExportSettings } from '$lib/state/image-export-settings.svelte';
 	import type { ImageExportSettings } from '$lib/state/image-export-settings.svelte';
 	import { userContainer } from '$lib/state/stores/user/UserContainer';
+	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
+	import { isMobileDevice as checkMobileDevice } from '$lib/utils/fileSystemUtils';
 	import ImageExportToggleButton from './ImageExportToggleButton.svelte';
 
 	// Props
@@ -15,9 +17,10 @@
 	}>();
 
 	// Local state
+	let isMobileDevice = $state(false);
 
-	// Use the user container state directly
-	const user = $state(userContainer.state);
+	// Use the user container with Svelte 5 runes
+	const user = useContainer(userContainer);
 
 	// Button settings configuration
 	const buttonSettings = [
@@ -49,6 +52,11 @@
 	onMount(() => {
 		if (browser) {
 			try {
+				// Detect if we're on a mobile device
+				isMobileDevice = checkMobileDevice();
+
+				console.log('Device detection:', { isMobileDevice });
+
 				// Get current user from container
 				const currentUser = user.currentUser;
 
@@ -70,6 +78,12 @@
 		if (browser && hapticFeedbackService.isAvailable()) {
 			hapticFeedbackService.trigger('selection');
 		}
+
+		console.log(`Toggle ${key}:`, {
+			currentValue: settings[key],
+			newValue: newValue,
+			type: typeof newValue
+		});
 
 		// For rememberLastSaveDirectory, ensure strict boolean conversion
 		if (key === 'rememberLastSaveDirectory') {

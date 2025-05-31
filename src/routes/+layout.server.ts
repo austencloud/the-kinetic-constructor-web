@@ -40,7 +40,7 @@ export const load: LayoutServerLoad = async ({ fetch: eventFetch }) => {
 			csvData: dataCache,
 			error: null // Indicate success
 		};
-	} catch {
+	} catch (error) {
 		// Silent error handling
 		return {
 			csvData: {

@@ -1,8 +1,5 @@
 <script lang="ts">
-	// Props using Svelte 5 runes
-	const { customStyles = '' } = $props<{
-		customStyles?: string; // Optional additional styles
-	}>();
+	export let customStyles: string = ''; // Optional additional styles
 </script>
 
 <div class="label" style={customStyles}>Choose your start position</div>

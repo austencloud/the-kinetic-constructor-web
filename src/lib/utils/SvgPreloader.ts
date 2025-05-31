@@ -1,7 +1,7 @@
 // src/lib/utils/SvgPreloader.ts
 import type { Color, MotionType, Orientation, TKATurns } from '$lib/types/Types';
 import { PropType } from '$lib/types/Types';
-import { resourceCache } from '$lib/services/ResourceCache.svelte';
+import { resourceCache } from '$lib/services/ResourceCache';
 import { logger } from '$lib/core/logging';
 import { toAppError } from '$lib/types/ErrorTypes';
 

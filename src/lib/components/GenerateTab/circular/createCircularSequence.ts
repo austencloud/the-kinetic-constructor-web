@@ -1,5 +1,5 @@
-import { type CAPType } from '../store/settings';
-import { generatorStore } from '../state/generatorState.svelte';
+import { settingsStore, type CAPType } from '../store/settings';
+import { generatorStore } from '../store/generator';
 import { capExecutors } from './capExecutors';
 import { validateCircularSequence } from './validators';
 import { determineRotationDirection } from '../utils/rotationDeterminer';

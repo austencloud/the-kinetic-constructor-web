@@ -2,10 +2,10 @@
 <script lang="ts">
 	import type { PictographData } from '$lib/types/PictographData';
 	import { DIAMOND } from '$lib/types/Constants';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
-	import { editModeState } from '$lib/state/stores/editModeState.svelte';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { editModeStore } from '$lib/state/stores/editModeStore';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import { panelState } from '$lib/components/SequenceWorkbench/ButtonPanel/stores/panelState.svelte';
+	import { panelStore } from '$lib/components/SequenceWorkbench/ButtonPanel/stores/panelStore';
 	import { fade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 
@@ -15,7 +15,6 @@
 	import TurnsBoxesRow from './TurnsBoxesRow.svelte';
 	import TurnsContainer from './TurnsContainer.svelte';
 	import ConstructButton from './ConstructButton.svelte';
-	import UShapedLayout from './UShapedLayout.svelte';
 
 	// Import utility functions
 	import { createGraphEditorState } from './utils/GraphEditorState';
@@ -49,8 +48,8 @@
 		grid: ''
 	});
 
-	// Get panel layout from state
-	const panelLayout = $derived(panelState.state.layout);
+	// Get panel layout from store
+	const panelLayout = $derived($panelStore.layout);
 
 	// Create responsive state manager
 	const editorState = $derived(createGraphEditorState(containerElement, panelLayout));
@@ -69,7 +68,7 @@
 
 	// Create event handlers and extract functions
 	const { handleExitClick, handleTurnsChanged, handleDirectionChanged } = $derived(
-		createEventHandlers(editModeState, hapticFeedbackService, beatDataHandler, {
+		createEventHandlers(editModeStore, hapticFeedbackService, beatDataHandler, {
 			onTurnsChanged: props.onTurnsChanged,
 			onDirectionChanged: props.onDirectionChanged
 		})
@@ -111,17 +110,9 @@
 				onTurnsChanged={handleTurnsChanged}
 				onDirectionChanged={handleDirectionChanged}
 			/>
-		{:else if isPortrait && isSmallScreen}
-			<!-- Mobile portrait mode: Use U-shaped layout -->
-			<UShapedLayout
-				{pictographData}
-				{pictographSize}
-				onTurnsChanged={handleTurnsChanged}
-				onDirectionChanged={handleDirectionChanged}
-			/>
 		{:else}
 			<!-- Panel is vertical (right) layout: Show Pictograph and TurnsBox components -->
-			<!-- Use vertical layout with pictograph on top and turns boxes below -->
+			<!-- Always use vertical layout with pictograph on top and turns boxes below -->
 
 			<!-- Pictograph section at the top -->
 			<div class="pictograph-container-wrapper" in:fade={{ duration: 200, easing: cubicOut }}>

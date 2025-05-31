@@ -1,47 +1,43 @@
 <script lang="ts">
-	import { actState } from '../../state/actState.svelte';
-	import { uiState } from '../../state/uiState.svelte';
+	import { createEventDispatcher } from 'svelte';
+	import { actStore } from '../../stores/actStore';
+	import { uiStore } from '../../stores/uiStore';
 	import CueBox from './CueBox.svelte';
 
-	// Props using Svelte 5 runes
-	const { onscroll } = $props<{
-		onscroll?: (event: { scrollTop: number }) => void;
-	}>();
+	const dispatch = createEventDispatcher();
 
 	// Grid dimensions
 	const ROWS = 24;
 
-	let scrollElement = $state<HTMLDivElement>();
+	let scrollElement: HTMLDivElement;
 
 	// Handle scroll events
 	function handleScroll() {
 		if (scrollElement) {
-			onscroll?.({ scrollTop: scrollElement.scrollTop });
+			dispatch('scroll', { scrollTop: scrollElement.scrollTop });
 		}
 	}
 
 	// Handle cue updates
-	function handleCueUpdate(event: { row: number; cue: string; timestamp: string }) {
-		const { row, cue, timestamp } = event;
-		actState.updateCueAndTimestamp(row, cue, timestamp);
+	function handleCueUpdate(event: CustomEvent) {
+		const { row, cue, timestamp } = event.detail;
+		actStore.updateCueAndTimestamp(row, cue, timestamp);
 	}
 
-	// Sync scroll position when the UI state updates
-	$effect(() => {
-		if (scrollElement && uiState.cueScrollPosition !== undefined) {
-			scrollElement.scrollTop = uiState.cueScrollPosition;
-		}
-	});
+	// Sync scroll position when the store updates
+	$: if (scrollElement && $uiStore.scrollPosition.cueScroll !== undefined) {
+		scrollElement.scrollTop = $uiStore.scrollPosition.cueScroll;
+	}
 </script>
 
-<div class="cue-scroll" bind:this={scrollElement} onscroll={handleScroll}>
+<div class="cue-scroll" bind:this={scrollElement} on:scroll={handleScroll}>
 	<div class="cue-container">
 		{#each Array(ROWS) as _, rowIndex}
 			<CueBox
 				row={rowIndex}
-				cue={actState.act.sequences[rowIndex]?.cue || ''}
-				timestamp={actState.act.sequences[rowIndex]?.timestamp || ''}
-				onupdate={handleCueUpdate}
+				cue={$actStore.act.sequences[rowIndex]?.cue || ''}
+				timestamp={$actStore.act.sequences[rowIndex]?.timestamp || ''}
+				on:update={handleCueUpdate}
 			/>
 		{/each}
 	</div>

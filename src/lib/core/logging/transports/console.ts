@@ -1,3 +1,9 @@
+/**
+ * Console Transport
+ *
+ * Outputs logs to the browser console with formatting.
+ */
+
 import { LogLevel, type LogEntry, type LogTransport } from '../types';
 import { CONSOLE_COLORS, CONSOLE_SYMBOLS } from '../constants';
 
@@ -81,6 +87,7 @@ export class ConsoleTransport implements LogTransport {
 
 		message += `: ${entry.message}`;
 
+		// Log the message and data
 		if (entry.data || entry.error) {
 			console[method](message, { ...entry.data, error: entry.error });
 		} else {
@@ -95,8 +102,10 @@ export class ConsoleTransport implements LogTransport {
 		const color = CONSOLE_COLORS[entry.level] || '#000000';
 		const symbol = CONSOLE_SYMBOLS[entry.level] || '';
 
+		// Build the styled message parts
 		const parts: string[] = [];
 
+		// Timestamp
 		if (this.options.includeTimestamps) {
 			const date = new Date(entry.timestamp);
 			const timeString = date.toISOString().split('T')[1].split('.')[0];
@@ -104,9 +113,11 @@ export class ConsoleTransport implements LogTransport {
 			parts.push('color: #888; font-weight: normal;');
 		}
 
+		// Level with symbol
 		parts.push(`%c${symbol} ${entry.levelName.toUpperCase()}`);
 		parts.push(`color: ${color}; font-weight: bold;`);
 
+		// Source and domain
 		let sourceText = '';
 		if (this.options.includeSource) {
 			sourceText += entry.source;
@@ -119,28 +130,34 @@ export class ConsoleTransport implements LogTransport {
 			parts.push('color: #0066cc; font-weight: bold;');
 		}
 
+		// Correlation ID
 		if (this.options.includeCorrelationId && entry.correlationId) {
 			parts.push(`%c[${entry.correlationId}]`);
 			parts.push('color: #6610f2; font-weight: normal;');
 		}
 
+		// Message
 		parts.push('%c' + entry.message);
 		parts.push('color: inherit; font-weight: normal;');
 
+		// Performance info
 		if (entry.duration !== undefined) {
 			parts.push(`%c(${entry.duration.toFixed(2)}ms)`);
 
+			// Color based on performance
 			if (entry.duration < 50) {
-				parts.push('color: #28a745; font-weight: normal;');
+				parts.push('color: #28a745; font-weight: normal;'); // Green for fast
 			} else if (entry.duration < 200) {
-				parts.push('color: #ffc107; font-weight: normal;');
+				parts.push('color: #ffc107; font-weight: normal;'); // Yellow for medium
 			} else {
-				parts.push('color: #dc3545; font-weight: normal;');
+				parts.push('color: #dc3545; font-weight: normal;'); // Red for slow
 			}
 		}
 
+		// Log the message
 		console[method](...parts);
 
+		// Log additional data in a group if present
 		if (entry.data || entry.error || entry.renderMetrics) {
 			console.groupCollapsed('Details');
 

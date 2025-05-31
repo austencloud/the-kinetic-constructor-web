@@ -80,7 +80,7 @@ export function calculateOptimalFontSize(
 ): number {
 	// Start with the maximum size
 	let size = maxSize;
-	const currentOptions = { ...fontOptions, size };
+	let currentOptions = { ...fontOptions, size };
 
 	// Binary search for optimal size
 	let low = minSize;

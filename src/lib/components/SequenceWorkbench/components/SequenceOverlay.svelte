@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
 	import {
-		getSequenceOverlayState,
+		sequenceOverlayStore,
 		closeSequenceOverlay
-	} from '$lib/state/sequenceOverlay/sequenceOverlayState.svelte';
+	} from '$lib/state/sequenceOverlay/sequenceOverlayState';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 
@@ -14,8 +14,8 @@
 		sequenceName?: string;
 	}>();
 
-	// Use the state with Svelte 5 runes
-	const isOpen = $derived(getSequenceOverlayState().isOpen);
+	// Use the store with Svelte 5 runes
+	const isOpen = $derived($sequenceOverlayStore.isOpen);
 
 	// Truncate title to 8 characters if it's longer
 	const MAX_CHARS = 8;
@@ -42,6 +42,7 @@
 
 	// Handle background click - this is the main function to close when clicking on blank areas
 	function handleBackgroundClick() {
+		console.log('Background clicked, closing overlay');
 		handleClose();
 	}
 

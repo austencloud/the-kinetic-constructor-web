@@ -64,77 +64,53 @@ async function main() {
 	console.clear();
 
 	// Show startup message
-	console.log(
-		`${colors.bright}${colors.cyan}Starting development server on PORT 5179...${colors.reset}\n`
-	);
+	console.log(`${colors.bright}${colors.cyan}Starting development server...${colors.reset}\n`);
 
-	// Use dedicated port 5179 for the-kinetic-constructor-web
-	const port = 5179;
+	// Find available port
+	const port = await findAvailablePort(5173);
 
-	// Prepare Vite command - ALWAYS use port 5179
-	const args = ['dev', '--host', '--port', '5179', '--open'];
+	// Prepare Vite command
+	const args = ['dev', '--logLevel=error'];
 
 	// Add any command line arguments passed to this script
 	process.argv.slice(2).forEach((arg) => {
-		if (arg !== '--logLevel=error' && !arg.startsWith('--port') && arg !== '--open') {
+		if (arg !== '--logLevel=error') {
 			args.push(arg);
 		}
 	});
 
 	// Start Vite
-	console.log(`${colors.cyan}Starting Vite with args: ${args.join(' ')}${colors.reset}`);
-
-	const vite = spawn('npx', ['vite', ...args], {
-		stdio: ['inherit', 'pipe', 'inherit'],
+	const vite = spawn('vite', args, {
+		stdio: ['inherit', 'pipe', 'pipe'],
 		shell: true
 	});
 
-	// Check if spawn was successful
-	if (!vite) {
-		throw new Error('Failed to spawn Vite process');
-	}
-
 	// Handle Vite output
 	let serverStarted = false;
-	let actualPort = port;
 
 	vite.stdout.on('data', (data) => {
 		const output = data.toString();
 
-		// Show all Vite output but capture the port
-		process.stdout.write(output);
+		// Only show the URL when the server is ready
+		if (output.includes('VITE') && output.includes('ready')) {
+			serverStarted = true;
 
-		// Extract the actual port from Vite's output
-		const portMatch = output.match(/Local:\s+http:\/\/localhost:(\d+)/);
-		if (portMatch) {
-			actualPort = parseInt(portMatch[1]);
+			// Show the localhost URL
+			console.log(`\n${colors.bright}${colors.green}Server running at:${colors.reset}`);
+			console.log(
+				`${colors.bright}${colors.yellow}➜ Local:   ${colors.cyan}http://localhost:${port}/${colors.reset}`
+			);
+			console.log(`\n${colors.bright}${colors.green}Ready for development!${colors.reset}`);
+		}
 
-			if (!serverStarted) {
-				serverStarted = true;
-				// Show our custom message after Vite's output
-				setTimeout(() => {
-					console.log(
-						`\n${colors.bright}${colors.green}✅ Server running on dedicated port:${colors.reset}`
-					);
-					console.log(
-						`${colors.bright}${colors.yellow}➜ Local:   ${colors.cyan}http://localhost:5179/${colors.reset}`
-					);
-					console.log(`\n${colors.bright}${colors.green}🚀 Ready for development!${colors.reset}`);
-				}, 100);
-			}
+		// Show any error messages
+		if (output.includes('ERROR')) {
+			console.error(output);
 		}
 	});
 
 	vite.stderr.on('data', (data) => {
 		console.error(data.toString());
-	});
-
-	// Handle spawn errors
-	vite.on('error', (err) => {
-		console.error(
-			`${colors.bright}${colors.red}Failed to start Vite: ${err.message}${colors.reset}`
-		);
-		process.exit(1);
 	});
 
 	// Handle process exit
@@ -152,7 +128,15 @@ async function main() {
 		});
 	});
 
-	// No timeout fallback needed since we show Vite's output directly
+	// Show URL after a timeout if it hasn't been shown yet
+	setTimeout(() => {
+		if (!serverStarted) {
+			console.log(`\n${colors.bright}${colors.green}Server should be running at:${colors.reset}`);
+			console.log(
+				`${colors.bright}${colors.yellow}➜ Local:   ${colors.cyan}http://localhost:${port}/${colors.reset}`
+			);
+		}
+	}, 3000);
 }
 
 main().catch((err) => {

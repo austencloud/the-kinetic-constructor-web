@@ -1,9 +1,9 @@
 <!-- src/lib/components/SequenceWorkbench/GraphEditor/ConstructButton.svelte -->
 <script lang="ts">
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
-	import { setActiveTab } from '$lib/state/stores/workbenchState.svelte';
+	import { workbenchStore } from '$lib/state/stores/workbenchStore';
 
 	// Define props using Svelte 5 runes syntax
 	const props = $props<{
@@ -21,12 +21,15 @@
 		sequenceContainer.clearSelection();
 
 		// Switch to construct tab
-		setActiveTab('construct');
+		workbenchStore.update((state) => ({ ...state, activeTab: 'construct' }));
 
 		// Call the onClick callback if provided
 		if (props.onClick) {
 			props.onClick();
 		}
+
+		// Log for debugging
+		console.log('ConstructButton: Returning to construct mode');
 	}
 </script>
 

@@ -1,56 +1,116 @@
 /**
- * State Management System - MIGRATED TO PURE SVELTE 5 RUNES
+ * State Management System
  *
  * This is the main entry point for the state management system.
- * MIGRATION: Replaced XState machines with simple Svelte 5 runes state.
+ * It exports all the necessary components for managing application state.
  */
 
-// MIGRATION: Export simple runes-based state instead of XState
-import { appState } from './simple/appState.svelte';
-import { sequenceState } from './simple/sequenceState.svelte';
+// Export core utilities
+export * from './core/store';
+export * from './core/registry';
 
-// Export simple state
-export { appState };
-export { sequenceState };
+// Import at the top to avoid circular dependencies
+import { stateRegistry } from './core/registry';
+import { appService as appActor } from './machines/app/app.machine';
+import { appActions } from './machines/app/app.actions';
+import * as appSelectors from './machines/app/app.selectors';
+import { sequenceActor, sequenceActions, sequenceSelectors } from './machines/sequenceMachine';
 
-// LEGACY: XState exports (commented out during migration)
-// export * from './core/runesRegistry.svelte';
-// import { runesStateRegistry } from './core/runesRegistry.svelte';
-// import { appActions } from './machines/app/app.actions';
-// import * as appSelectors from './machines/app/app.selectors';
-// import { appService as appActor } from './machines/app/app.machine';
-// import { sequenceActor, sequenceActions, sequenceSelectors } from './machines/sequenceMachine';
-// export { appMachine } from './machines';
-// export { appActions, appSelectors, appActor };
-// export { sequenceActions, sequenceSelectors, sequenceActor };
+// Export state machines (excluding sequenceContainer to avoid ambiguity)
+export { appMachine } from './machines';
+
+// Export stores
+export * from './stores/sequenceStore';
+export * from './stores/uiStore';
+
+// Re-export specific machines for convenience
+export { appActions, appSelectors, appActor };
+export { sequenceActions, sequenceSelectors, sequenceActor };
 
 /**
- * Initialize the state management system - SIMPLIFIED FOR RUNES
+ * Initialize the state management system
  * This should be called early in the application lifecycle
  */
 export function initializeStateManagement(): void {
-	// MIGRATION: Simple runes-based state doesn't need complex initialization
-	// Just log that we're using the new system - DISABLED FOR DEBUGGING
-	// console.log('🚀 Initializing state management with runes registry');
-	// console.log('📊 Registry stats: {total: 2, machines: 0, containers: 0, states: 2, persisted: 0}');
+	// Verify actors are registered before adding dependencies
+	const registeredContainers = stateRegistry.getAll().map((container) => container.id);
+	const hasSequenceActor = registeredContainers.includes('sequenceActor');
+	const hasAppActor = registeredContainers.includes('appActor');
+
+	// If actors aren't registered yet, try to register them directly
+	if (!hasSequenceActor || !hasAppActor) {
+		try {
+			// Check again after attempted registration
+			const updatedContainers = stateRegistry.getAll().map((container) => container.id);
+			const nowHasSequenceActor = updatedContainers.includes('sequenceActor');
+			const nowHasAppActor = updatedContainers.includes('appActor');
+
+			// Define dependencies between actors and stores if now registered
+			if (nowHasSequenceActor && nowHasAppActor) {
+				stateRegistry.addDependency('sequenceActor', 'appActor');
+			}
+		} catch (error) {
+			console.error('Error registering actors:', error);
+		}
+	} else {
+		// Both actors are already registered, add the dependency
+		stateRegistry.addDependency('sequenceActor', 'appActor');
+	}
+
+	// Get the topologically sorted initialization order
+	const initOrder = stateRegistry.getInitializationOrder();
+
+	// Start actors in dependency order
+	for (const id of initOrder) {
+		const container = stateRegistry.get(id);
+		// Check if it's an actor (has getSnapshot and start methods)
+		if (container && 'getSnapshot' in container && typeof (container as any).start === 'function') {
+			const actor = container as typeof appActor;
+			if (actor.getSnapshot().status !== 'active') {
+				actor.start();
+			}
+		}
+	}
+
+	// Explicitly start critical actors that must be running
+	if (appActor && appActor.getSnapshot().status !== 'active') {
+		appActor.start();
+	}
+
+	if (sequenceActor && sequenceActor.getSnapshot().status !== 'active') {
+		sequenceActor.start();
+	}
+
+	// Signal that the background is ready to start the app initialization
+	appActions.backgroundReady();
 
 	// Add global access for debugging in development
 	if (import.meta.env.DEV && typeof window !== 'undefined') {
 		(window as any).__STATE__ = {
-			appState,
-			sequenceState,
-			getAppState: () => ({
-				currentTab: appState.currentTab,
-				isLoading: appState.isLoading,
-				isSettingsOpen: appState.isSettingsOpen,
-				backgroundIsReady: appState.backgroundIsReady
-			}),
-			getSequenceState: () => ({
-				beatCount: sequenceState.beatCount,
-				isEmpty: sequenceState.isEmpty,
-				isGenerating: sequenceState.isGenerating,
-				hasSelection: sequenceState.hasSelection
-			})
+			registry: stateRegistry,
+			appActor,
+			sequenceActor,
+			appActions,
+			sequenceActions,
+			getState: (id: string) => {
+				const container = stateRegistry.get(id);
+				if (!container) return undefined;
+
+				if ('getSnapshot' in container) {
+					return container.getSnapshot();
+				} else if ('subscribe' in container) {
+					// It's a store
+					const { subscribe } = container as { subscribe: any };
+					let value: any;
+					const unsubscribe = subscribe((v: any) => {
+						value = v;
+					});
+					unsubscribe();
+					return value;
+				}
+
+				return undefined;
+			}
 		};
 	}
 }

@@ -6,7 +6,7 @@ export const createSnowflakeSystem = () => {
 	const config = SnowfallConfig;
 	let windStrength = 0;
 	let windChangeTimer = 0;
-	let currentQuality = 'medium'; // Add missing variable declaration
+	let currentQuality = 'medium';
 
 	const generateSnowflakeShape = (size: number): Path2D => {
 		const path = new Path2D();
@@ -155,8 +155,8 @@ export const createSnowflakeSystem = () => {
 		return flakes;
 	};
 
-	const setQuality = (_quality: string): void => {
-		// Quality setting functionality can be implemented here if needed
+	const setQuality = (quality: string): void => {
+		currentQuality = quality;
 	};
 
 	return {

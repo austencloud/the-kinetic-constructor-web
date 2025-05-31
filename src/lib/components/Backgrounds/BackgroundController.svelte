@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { backgroundContainer } from '$lib/state/stores/background/BackgroundContainer';
-
+	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 	import { getService } from '$lib/core/di/serviceContext';
 	import { SERVICE_TOKENS } from '$lib/core/di/ServiceTokens';
 	import type { BackgroundService } from '$lib/core/services/BackgroundService';
@@ -9,23 +9,24 @@
 	import type {
 		BackgroundSystem,
 		BackgroundType,
+		QualityLevel,
 		Dimensions
 	} from '$lib/components/Backgrounds/types/types';
 
-	// Use the background container state directly
-	const background = $state(backgroundContainer.state);
+	// Use the background container with Svelte 5 runes
+	const background = useContainer(backgroundContainer);
 
 	// Props using Svelte 5 runes
-	const { dimensions, onready, onerror, onperformanceReport } = $props<{
-		dimensions: Dimensions;
-		onready?: () => void;
-		onerror?: (data: { message: string }) => void;
-		onperformanceReport?: (data: { fps: number }) => void;
-	}>();
-
-	// Ensure dimensions have default values
+	const dimensions = $props() as Dimensions;
 	dimensions.width = dimensions.width || 0;
 	dimensions.height = dimensions.height || 0;
+
+	// Event dispatcher
+	const dispatch = createEventDispatcher<{
+		ready: undefined;
+		error: { message: string };
+		performanceReport: { fps: number };
+	}>();
 
 	// Services (initialized in onMount)
 	let backgroundService: BackgroundService;
@@ -64,9 +65,6 @@
 			backgroundService = getService<BackgroundService>(SERVICE_TOKENS.BACKGROUND_SERVICE);
 			errorHandler = getService<ErrorHandler>(SERVICE_TOKENS.ERROR_HANDLER);
 
-			// Set the initial background type to track changes
-			previousBackgroundType = background.currentBackground;
-
 			// Load background
 			await loadBackground(background.currentBackground);
 
@@ -82,7 +80,7 @@
 
 			// Update ready state
 			backgroundContainer.setReady(true);
-			onready?.();
+			dispatch('ready');
 		} catch (error) {
 			handleError('Failed to initialize background', error);
 		}
@@ -97,15 +95,8 @@
 	});
 
 	// Watch for background type changes
-	let previousBackgroundType = $state<BackgroundType | null>(null);
 	$effect(() => {
-		// Only load background if the type has actually changed and we have services initialized
-		if (
-			backgroundService &&
-			background.currentBackground &&
-			background.currentBackground !== previousBackgroundType
-		) {
-			previousBackgroundType = background.currentBackground;
+		if (backgroundSystem && background.currentBackground) {
 			loadBackground(background.currentBackground);
 		}
 	});
@@ -159,7 +150,7 @@
 			if (backgroundSystem.getMetrics) {
 				const metrics = backgroundSystem.getMetrics();
 				backgroundContainer.updatePerformanceMetrics(metrics);
-				onperformanceReport?.({ fps: metrics.fps });
+				dispatch('performanceReport', { fps: metrics.fps });
 			}
 
 			// Schedule next frame
@@ -188,7 +179,7 @@
 		});
 
 		backgroundContainer.setError(errorObj);
-		onerror?.({ message });
+		dispatch('error', { message });
 	}
 </script>
 

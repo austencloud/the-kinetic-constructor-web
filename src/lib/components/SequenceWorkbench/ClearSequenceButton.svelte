@@ -3,22 +3,22 @@
 	import { fly, fade, scale } from 'svelte/transition';
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import { uiActions, confirmDeletions } from '$lib/components/WriteTab/stores/uiState.svelte';
-	import { sequenceState } from '$lib/state/simple/sequenceState.svelte';
+	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
+	import { uiStore } from '$lib/components/WriteTab/stores/uiStore';
 
 	// State for confirmation modal
 	let isConfirmationModalOpen = $state(false);
 	let dontAskAgain = $state(false);
 
-	// Get confirmation preference from uiState
-	let showConfirmation = $derived(confirmDeletions());
+	// Get confirmation preference from uiStore
+	let showConfirmation = $derived($uiStore.preferences.confirmDeletions);
 
 	// Track confirmation preference changes
 	$effect(() => {
 		// Confirmation preference is derived from uiStore
 	});
 
-	async function handleClick() {
+	function handleClick() {
 		// Provide haptic feedback
 		if (browser) {
 			hapticFeedbackService.trigger('warning');
@@ -33,28 +33,19 @@
 	}
 
 	function clearSequence() {
-		try {
-			// MIGRATED: Clear using pure Svelte 5 runes sequence state
-			sequenceState.clearSequence();
+		// Clear the sequence directly using the sequence actions
+		sequenceActions.clearSequence();
 
-			// Provide haptic feedback for deletion
-			if (browser) {
-				hapticFeedbackService.trigger('error');
-			}
-		} catch (error) {
-			console.error('ClearSequenceButton: Error during sequence clear:', error);
-
-			// Still provide haptic feedback even if there was an error
-			if (browser) {
-				hapticFeedbackService.trigger('error');
-			}
+		// Provide haptic feedback for deletion
+		if (browser) {
+			hapticFeedbackService.trigger('error');
 		}
 	}
 
-	async function handleConfirm() {
-		// Update the uiState preference if "Don't ask again" is checked
+	function handleConfirm() {
+		// Update the uiStore preference if "Don't ask again" is checked
 		if (dontAskAgain) {
-			uiActions.toggleConfirmDeletions(false);
+			uiStore.toggleConfirmDeletions(false);
 		}
 
 		// Clear the sequence

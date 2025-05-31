@@ -15,7 +15,14 @@ import {
 	DIAMOND,
 	BOX
 } from '$lib/types/Constants';
-import type { Loc, PropRotDir, Orientation } from '$lib/types/Types';
+import type {
+	Loc,
+	PropRotDir,
+	Orientation,
+	TKATurns,
+	HandRotDir,
+	GridMode
+} from '$lib/types/Types';
 import type { Motion } from '../Motion/Motion';
 import { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';

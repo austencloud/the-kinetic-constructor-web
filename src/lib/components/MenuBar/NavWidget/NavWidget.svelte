@@ -3,20 +3,25 @@
 	import NavButton from './NavButton.svelte';
 	import { scale } from 'svelte/transition';
 	import { elasticOut } from 'svelte/easing';
-	import { appState } from '$lib/state/simple/appState.svelte';
+	import { useSelector } from '@xstate/svelte';
+	import { appService } from '$lib/state/machines/app/app.machine';
 	import { uiStore } from '$lib/state/stores/uiStore';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
 
-	// Props using Svelte 5 runes - currently unused but kept for future extensibility
-	// const { onChangeBackground = () => {}, onSettingsClick = () => {} } = $props<{
-	// 	onChangeBackground?: (background: string) => void;
-	// 	onSettingsClick?: () => void;
-	// }>();
+	// Props using Svelte 5 runes
+	const { onChangeBackground = () => {}, onSettingsClick = () => {} } = $props<{
+		onChangeBackground?: (background: string) => void;
+		onSettingsClick?: () => void;
+	}>();
 
-	// MIGRATED: Get state from pure Svelte 5 runes app state
-	const activeTab = $derived(appState.currentTab);
-	const previousTab = $derived(appState.previousTab);
+	// Get state from the app state machine
+	const currentTabStore = useSelector(appService, (state) => state.context.currentTab);
+	const previousTabStore = useSelector(appService, (state) => state.context.previousTab);
+
+	// Use $derived instead of $: reactive declarations
+	const activeTab = $derived($currentTabStore as number);
+	const previousTab = $derived($previousTabStore as number);
 
 	// Get device information from the UI store
 	const isMobileDevice = $derived($uiStore.isMobile);
@@ -52,8 +57,8 @@
 			hapticFeedbackService.trigger('navigation');
 		}
 
-		// MIGRATED: Update app state directly with pure Svelte 5 runes
-		appState.setTab(index);
+		// Update the app state machine
+		appService.send({ type: 'CHANGE_TAB', tab: index });
 	}
 
 	// Update device/orientation state if UI store is not available

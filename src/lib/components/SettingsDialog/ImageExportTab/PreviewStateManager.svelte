@@ -15,8 +15,8 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
-
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 	import {
 		verifyBeatFrameElements,
 		calculateSettingsHash
@@ -40,8 +40,8 @@
 	// Constants
 	const MAX_VERIFICATION_ATTEMPTS = 5;
 
-	// Use the sequence container state directly
-	const sequence = $state(sequenceContainer.state);
+	// Use the sequence container
+	const sequence = useContainer(sequenceContainer);
 
 	// Get the current sequence data
 	const sequenceBeats = $derived(sequence.beats || []);

@@ -1,17 +1,15 @@
 <!-- src/lib/components/OptionPicker/utils/debugger/components/CurrentStatePanel.svelte -->
 <script lang="ts">
-	import { activeLayoutRule } from '../../layoutUtils.svelte';
+	import { activeLayoutRule } from '../../layoutUtils';
+	import { get } from 'svelte/store';
 	import CopyButton from './CopyButton.svelte';
 
-	// Props using Svelte 5 runes
-	const { layoutContext } = $props<{
-		layoutContext: any;
-	}>();
+	export let layoutContext: any;
 
 	// Function to build the current state text for copying
 	async function buildCurrentStateText(): Promise<string> {
 		// Get active rule info
-		const activeRule = activeLayoutRule();
+		const activeRule = get(activeLayoutRule);
 		const ruleName = activeRule ? activeRule.description : 'No rule matched';
 
 		// Get foldable info from context
@@ -54,7 +52,7 @@
 	<ul class="state-list">
 		<li class="highlight-rule">
 			<strong>Rule Applied:</strong>
-			{activeLayoutRule() ? activeLayoutRule().description : 'None matched'}
+			{$activeLayoutRule ? $activeLayoutRule.description : 'None matched'}
 		</li>
 		<li>
 			<strong>Columns:</strong>

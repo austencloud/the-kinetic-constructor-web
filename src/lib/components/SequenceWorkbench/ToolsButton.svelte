@@ -1,31 +1,23 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 
-	// Props using Svelte 5 runes
-	const { isToolsPanelOpen = false, ontoggle } = $props<{
-		isToolsPanelOpen?: boolean;
-		ontoggle?: () => void;
-	}>();
+	// Props
+	export let isToolsPanelOpen = false;
 
 	// Handle click event
 	function handleClick() {
-		// Use the modern callback if provided, otherwise fall back to custom event
-		if (ontoggle) {
-			ontoggle();
-		} else {
-			// Create and dispatch a custom event for backward compatibility
-			const event = new CustomEvent('toggleToolsPanel', {
-				bubbles: true,
-				composed: true
-			});
-			document.dispatchEvent(event);
-		}
+		// Create and dispatch a custom event
+		const event = new CustomEvent('toggleToolsPanel', {
+			bubbles: true,
+			composed: true
+		});
+		document.dispatchEvent(event);
 	}
 </script>
 
 <button
 	class="tools-button ripple"
-	onclick={handleClick}
+	on:click={handleClick}
 	aria-label={isToolsPanelOpen ? 'Close Tools Panel' : 'Open Tools Panel'}
 	aria-expanded={isToolsPanelOpen}
 	data-mdb-ripple="true"

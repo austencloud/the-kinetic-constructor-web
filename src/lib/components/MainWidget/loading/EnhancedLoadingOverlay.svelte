@@ -1,29 +1,18 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
 	import LoadingSpinner from './LoadingSpinner.svelte';
-	import { getResourceLoadingStatus } from '$lib/services/ResourcePreloader.svelte';
+	import { resourceLoadingStatus } from '$lib/services/ResourcePreloader';
 
-	// Props using Svelte 5 runes
-	const {
-		onRetry,
-		showInitializationError = false,
-		progress = 0,
-		message = 'Loading...',
-		errorMessage = null
-	} = $props<{
-		onRetry: () => void;
-		showInitializationError?: boolean;
-		progress?: number;
-		message?: string;
-		errorMessage?: string | null;
-	}>();
-
-	// Get resource loading status reactively
-	const resourceLoadingStatus = $derived(getResourceLoadingStatus());
+	// --- Props ---
+	export let onRetry: () => void;
+	export let showInitializationError: boolean = false;
+	export let progress: number = 0;
+	export let message: string = 'Loading...';
+	export let errorMessage: string | null = null;
 
 	// Local state
-	let animatedProgress = $state(0);
-	let dotCount = $state(0);
+	let animatedProgress = 0;
+	let dotCount = 0;
 	let animationInterval: number;
 
 	// Animate the progress bar and loading dots
@@ -79,12 +68,10 @@
 		}
 	});
 
-	// React to progress changes using $effect
-	$effect(() => {
-		if (progress !== animatedProgress && typeof window !== 'undefined') {
-			startAnimation();
-		}
-	});
+	// React to progress changes
+	$: if (progress !== animatedProgress && typeof window !== 'undefined') {
+		startAnimation();
+	}
 </script>
 
 <div class="loading-overlay">
@@ -99,25 +86,25 @@
 			<div class="loading-details">
 				<p class="loading-text">{getFormattedMessage(message)}</p>
 
-				{#if resourceLoadingStatus.inProgress}
+				{#if $resourceLoadingStatus.inProgress}
 					<div class="resource-loading-info" in:fade={{ duration: 200 }}>
 						<div class="resource-category">
-							<span class="category-icon">{getCategoryIcon(resourceLoadingStatus.category)}</span>
+							<span class="category-icon">{getCategoryIcon($resourceLoadingStatus.category)}</span>
 							<span class="category-text">
-								{resourceLoadingStatus.category
-									? `Loading ${resourceLoadingStatus.category}`
+								{$resourceLoadingStatus.category
+									? `Loading ${$resourceLoadingStatus.category}`
 									: 'Preparing resources'}
 							</span>
 						</div>
 
 						<div class="resource-stats">
-							<span class="loaded-count">{resourceLoadingStatus.loaded}</span>
+							<span class="loaded-count">{$resourceLoadingStatus.loaded}</span>
 							<span class="separator">/</span>
-							<span class="total-count">{resourceLoadingStatus.total}</span>
+							<span class="total-count">{$resourceLoadingStatus.total}</span>
 
-							{#if resourceLoadingStatus.failed > 0}
+							{#if $resourceLoadingStatus.failed > 0}
 								<span class="failed-count" in:scale={{ duration: 200 }}>
-									({resourceLoadingStatus.failed} failed)
+									({$resourceLoadingStatus.failed} failed)
 								</span>
 							{/if}
 						</div>
@@ -130,7 +117,7 @@
 					<p class="error-text">
 						{errorMessage ?? 'An error occurred during initialization.'}
 					</p>
-					<button class="retry-button" onclick={onRetry}>Retry</button>
+					<button class="retry-button" on:click={onRetry}>Retry</button>
 				</div>
 			{/if}
 		</div>

@@ -2,11 +2,14 @@
 	import { browser } from '$app/environment';
 	import { fade, scale } from 'svelte/transition';
 	import { userContainer } from '$lib/state/stores/user/UserContainer';
-
+	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 
+	// Use the user container with Svelte 5 runes
+	const user = useContainer(userContainer);
+
 	// Local state
-	let username = $state(userContainer.state.currentUser || '');
+	let username = $state(user.currentUser || '');
 	let isVisible = $state(userContainer.isFirstVisit());
 
 	// Function to show the dialog

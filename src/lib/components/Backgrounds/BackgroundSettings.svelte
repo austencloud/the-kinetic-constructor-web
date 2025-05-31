@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { backgroundContainer } from '$lib/state/stores/background/BackgroundContainer';
+	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 	import type { BackgroundType, QualityLevel } from './types/types';
 
-	// Use the background container state directly
-	const background = $state(backgroundContainer.state);
+	// Use the background container with Svelte 5 runes
+	const background = useContainer(backgroundContainer);
 
 	// Event handlers
 	function handleBackgroundChange(event: Event) {
@@ -19,20 +20,6 @@
 	function handleToggleVisibility() {
 		backgroundContainer.setVisible(!background.isVisible);
 	}
-
-	// Function to get a user-friendly display name for each background
-	function getDisplayName(type: BackgroundType): string {
-		switch (type) {
-			case 'snowfall':
-				return 'Snowfall';
-			case 'nightSky':
-				return 'Night Sky';
-			case 'deepOcean':
-				return 'Deep Ocean';
-			default:
-				return type;
-		}
-	}
 </script>
 
 <div class="background-settings">
@@ -43,17 +30,17 @@
 		<select
 			id="background-select"
 			value={background.currentBackground}
-			onchange={handleBackgroundChange}
+			on:change={handleBackgroundChange}
 		>
 			{#each background.availableBackgrounds as bg}
-				<option value={bg}>{getDisplayName(bg)}</option>
+				<option value={bg}>{bg}</option>
 			{/each}
 		</select>
 	</div>
 
 	<div class="settings-group">
 		<label for="quality-select">Quality:</label>
-		<select id="quality-select" value={background.quality} onchange={handleQualityChange}>
+		<select id="quality-select" value={background.quality} on:change={handleQualityChange}>
 			<option value="low">Low</option>
 			<option value="medium">Medium</option>
 			<option value="high">High</option>
@@ -66,7 +53,7 @@
 			id="visibility-toggle"
 			class="toggle-button"
 			class:active={background.isVisible}
-			onclick={handleToggleVisibility}
+			on:click={handleToggleVisibility}
 		>
 			{background.isVisible ? 'Visible' : 'Hidden'}
 		</button>

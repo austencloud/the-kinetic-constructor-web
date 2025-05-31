@@ -1,53 +1,45 @@
 <script lang="ts">
-	import { actState } from '../../state/actState.svelte';
-	import { uiState } from '../../state/uiState.svelte';
+	import { createEventDispatcher } from 'svelte';
+	import { actStore } from '../../stores/actStore';
+	import { uiStore } from '../../stores/uiStore';
 	import ConfirmationModal from '../../../shared/ConfirmationModal.svelte';
 
-	// Props using Svelte 5 runes
-	const {
-		row,
-		cue = '',
-		timestamp = '',
-		onupdate
-	} = $props<{
-		row: number;
-		cue?: string;
-		timestamp?: string;
-		onupdate?: (event: { row: number; cue: string; timestamp: string }) => void;
-	}>();
+	export let row: number;
+	export let cue: string = '';
+	export let timestamp: string = '';
+
+	const dispatch = createEventDispatcher();
 
 	// Modal state
-	let isEraseSequenceModalOpen = $state(false);
+	let isEraseSequenceModalOpen = false;
 
 	// Handle erase sequence button click
 	function handleEraseSequence() {
-		if (uiState.showConfirmDeletions) {
+		if ($uiStore.preferences.confirmDeletions) {
 			isEraseSequenceModalOpen = true;
 		} else {
-			actState.eraseSequence(row);
+			actStore.eraseSequence(row);
 		}
 	}
 
 	// Handle confirmation from modal
 	function confirmEraseSequence() {
-		actState.eraseSequence(row);
+		actStore.eraseSequence(row);
 		isEraseSequenceModalOpen = false;
 	}
 
-	let isEditingCue = $state(false);
-	let isEditingTimestamp = $state(false);
-	let cueInput = $state<HTMLInputElement>();
-	let timestampInput = $state<HTMLInputElement>();
-	let currentCue = $state(cue);
-	let currentTimestamp = $state(timestamp);
+	let isEditingCue = false;
+	let isEditingTimestamp = false;
+	let cueInput: HTMLInputElement;
+	let timestampInput: HTMLInputElement;
+	let currentCue = cue;
+	let currentTimestamp = timestamp;
 	// Define the timestamp pattern for validation
 	const timestampPattern = '\\d{1,2}:\\d{2}';
 
 	// Update the current values when the props change
-	$effect(() => {
-		currentCue = cue;
-		currentTimestamp = timestamp;
-	});
+	$: currentCue = cue;
+	$: currentTimestamp = timestamp;
 
 	function startEditingCue() {
 		isEditingCue = true;
@@ -74,7 +66,7 @@
 	}
 
 	function saveCue() {
-		onupdate?.({ row, cue: currentCue, timestamp: currentTimestamp });
+		dispatch('update', { row, cue: currentCue, timestamp: currentTimestamp });
 		isEditingCue = false;
 	}
 
@@ -85,7 +77,7 @@
 			currentTimestamp = timestamp;
 		}
 
-		onupdate?.({ row, cue: currentCue, timestamp: currentTimestamp });
+		dispatch('update', { row, cue: currentCue, timestamp: currentTimestamp });
 		isEditingTimestamp = false;
 	}
 
@@ -125,14 +117,14 @@
 				<input
 					bind:this={cueInput}
 					bind:value={currentCue}
-					onkeydown={handleCueKeyDown}
-					onblur={handleCueBlur}
+					on:keydown={handleCueKeyDown}
+					on:blur={handleCueBlur}
 					class="cue-input"
 					type="text"
 					placeholder="Enter cue"
 				/>
 			{:else}
-				<button class="cue-text" onclick={startEditingCue} type="button" aria-label="Edit cue">
+				<button class="cue-text" on:click={startEditingCue} type="button" aria-label="Edit cue">
 					{currentCue || 'Add cue...'}
 				</button>
 			{/if}
@@ -143,8 +135,8 @@
 				<input
 					bind:this={timestampInput}
 					bind:value={currentTimestamp}
-					onkeydown={handleTimestampKeyDown}
-					onblur={handleTimestampBlur}
+					on:keydown={handleTimestampKeyDown}
+					on:blur={handleTimestampBlur}
 					class="timestamp-input"
 					type="text"
 					placeholder="MM:SS"
@@ -153,7 +145,7 @@
 			{:else}
 				<button
 					class="timestamp-text"
-					onclick={startEditingTimestamp}
+					on:click={startEditingTimestamp}
 					type="button"
 					aria-label="Edit timestamp"
 				>
@@ -164,7 +156,7 @@
 
 		<button
 			class="erase-sequence-button"
-			onclick={handleEraseSequence}
+			on:click={handleEraseSequence}
 			aria-label="Erase sequence"
 			title="Erase this sequence"
 		>
@@ -195,8 +187,8 @@
 	confirmText="Erase"
 	cancelText="Cancel"
 	confirmButtonClass="danger"
-	onconfirm={confirmEraseSequence}
-	onclose={() => (isEraseSequenceModalOpen = false)}
+	on:confirm={confirmEraseSequence}
+	on:close={() => (isEraseSequenceModalOpen = false)}
 />
 
 <style>

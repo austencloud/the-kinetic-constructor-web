@@ -1,6 +1,7 @@
 import { ErrorSeverity, type AppError, type ErrorHandler } from '$lib/core/services/ErrorHandling';
 import { Injectable } from '$lib/core/di/ServiceDecorator';
 import { SERVICE_TOKENS } from '$lib/core/di/ServiceTokens';
+import { browser } from '$app/environment';
 import { errorLogger, ErrorSeverity as LogErrorSeverity } from '$lib/core/logging/error-logger';
 
 /**

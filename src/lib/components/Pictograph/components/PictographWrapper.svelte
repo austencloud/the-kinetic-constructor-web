@@ -4,35 +4,32 @@
   This component provides the wrapper element for the pictograph.
 -->
 <script lang="ts">
-	// NO STORES - RUNES ONLY!
+	import { get } from 'svelte/store';
 	import type { PictographData } from '$lib/types/PictographData';
+	import type { Writable } from 'svelte/store';
 	import { getPictographElement, getPictographRole } from '../utils/PictographRenderUtils';
 	import { handleClick } from '../handlers/PictographEventHandler';
 
-	// MODERNIZED: Svelte 5 runes syntax with direct data prop - NO STORES!
+	// Convert to Svelte 5 runes syntax
 	const {
-		pictographData,
+		pictographDataStore,
 		onClick = undefined,
-		state,
-		children
+		state
 	} = $props<{
-		pictographData: PictographData;
+		pictographDataStore: Writable<PictographData>;
 		onClick?: (() => void) | undefined;
 		state: string;
-		children?: import('svelte').Snippet;
 	}>();
 
 	// Derived values
 	const element = $derived(getPictographElement(onClick));
 	const role = $derived(getPictographRole(onClick));
 
-	// MODERNIZED: Get the letter directly from data - NO STORES!
+	// Get the letter from the store safely
 	const letter = $derived(() => {
-		return pictographData &&
-			typeof pictographData === 'object' &&
-			pictographData !== null &&
-			'letter' in pictographData
-			? pictographData.letter
+		const data = get(pictographDataStore);
+		return data && typeof data === 'object' && data !== null && 'letter' in data
+			? data.letter
 			: null;
 	});
 
@@ -57,9 +54,7 @@
 	data-letter={dataLetter}
 	{...buttonProps}
 >
-	{#if children}
-		{@render children()}
-	{/if}
+	<slot />
 </svelte:element>
 
 <style>

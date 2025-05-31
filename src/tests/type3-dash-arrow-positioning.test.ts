@@ -1,19 +1,16 @@
 // src/tests/type3-dash-arrow-positioning.test.ts
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { PictographService } from '$lib/components/Pictograph/PictographService';
 import type { PictographData } from '$lib/types/PictographData';
+import type { MotionData } from '$lib/components/objects/Motion/MotionData';
 import type { ArrowData } from '$lib/components/objects/Arrow/ArrowData';
+import { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
-import { RED, BLUE } from '$lib/types/Constants';
+import { DASH, PRO, RED, BLUE } from '$lib/types/Constants';
 import ArrowLocationManager, {
 	calculateDashLocation
 } from '$lib/components/objects/Arrow/ArrowLocationManager';
 import { Motion } from '$lib/components/objects/Motion/Motion';
-import {
-	initializeTestDataLoader,
-	getType3TestPictograph,
-	resetTestData
-} from '$lib/utils/tests/pictographTestHelpers';
 
 // Mock grid data
 const mockGridData = {
@@ -34,8 +31,56 @@ const mockGridData = {
 	centerPoint: { coordinates: { x: 475, y: 475 } }
 };
 
-// Real Type 3 pictograph data will be loaded in beforeEach
-let testType3PictographData: PictographData;
+// Create a Type 3 letter pictograph data
+const createType3PictographData = (): PictographData => {
+	// Using W- as a Type 3 letter
+	return {
+		letter: Letter.W_DASH,
+		gridMode: 'diamond',
+		startPos: null,
+		endPos: null,
+		timing: null,
+		direction: null,
+		gridData: mockGridData,
+		redMotionData: {
+			id: 'red-motion',
+			color: RED,
+			motionType: DASH,
+			startLoc: 'n',
+			endLoc: 's',
+			startOri: 'in',
+			endOri: 'in',
+			turns: 0,
+			propRotDir: 'cw',
+			leadState: null,
+			prefloatMotionType: null,
+			prefloatPropRotDir: null
+		},
+		blueMotionData: {
+			id: 'blue-motion',
+			color: BLUE,
+			motionType: PRO,
+			startLoc: 'e',
+			endLoc: 'w',
+			startOri: 'in',
+			endOri: 'in',
+			turns: 0,
+			propRotDir: 'cw',
+			leadState: null,
+			prefloatMotionType: null,
+			prefloatPropRotDir: null
+		},
+		redPropData: null,
+		bluePropData: null,
+		redArrowData: null,
+		blueArrowData: null,
+		redMotion: null,
+		blueMotion: null,
+		motions: [],
+		props: [],
+		grid: 'diamond'
+	};
+};
 
 describe('Type 3 Dash Arrow Positioning', () => {
 	let pictographData: PictographData;
@@ -43,22 +88,9 @@ describe('Type 3 Dash Arrow Positioning', () => {
 	let redArrowData: ArrowData;
 	let blueArrowData: ArrowData;
 
-	beforeEach(async () => {
-		// Initialize test data loader with real CSV data
-		await initializeTestDataLoader();
-
-		// Get real Type 3 pictograph data (dash motion)
-		const type3Pictograph = await getType3TestPictograph();
-		if (!type3Pictograph) {
-			throw new Error('Failed to load Type 3 test pictograph data');
-		}
-
-		// Add grid data to the real pictograph data
-		testType3PictographData = {
-			...type3Pictograph,
-			gridData: mockGridData
-		};
-		pictographData = testType3PictographData;
+	beforeEach(() => {
+		// Create fresh pictograph data for each test
+		pictographData = createType3PictographData();
 
 		// Create a new PictographService with the pictograph data
 		pictographService = new PictographService(pictographData);
@@ -80,10 +112,6 @@ describe('Type 3 Dash Arrow Positioning', () => {
 		if (pictographData.blueMotionData) {
 			blueArrowData = pictographService.createArrowData(pictographData.blueMotionData, BLUE);
 		}
-	});
-
-	afterEach(() => {
-		resetTestData();
 	});
 
 	it('should correctly identify Type 3 letters', () => {
@@ -110,6 +138,10 @@ describe('Type 3 Dash Arrow Positioning', () => {
 
 		// Verify the red arrow location matches the expected location
 		expect(redArrowData.loc).toBe(expectedLocation);
+
+		// Log the locations for debugging
+		console.log('Expected dash location:', expectedLocation);
+		console.log('Actual red arrow location:', redArrowData.loc);
 	});
 
 	it('should correctly position the dash arrow in the beat frame', () => {
@@ -137,6 +169,10 @@ describe('Type 3 Dash Arrow Positioning', () => {
 		// Verify the coordinates are not at the origin
 		expect(redArrowData.coords.x).not.toBe(0);
 		expect(redArrowData.coords.y).not.toBe(0);
+
+		// Log the final positions for debugging
+		console.log('Final red arrow location:', redArrowData.loc);
+		console.log('Final red arrow coordinates:', redArrowData.coords);
 	});
 
 	it('should use calculateDashLocationBasedOnShift for Type 3 dash motions', () => {
@@ -157,6 +193,10 @@ describe('Type 3 Dash Arrow Positioning', () => {
 
 		// Verify the red arrow location matches the calculated dash location
 		expect(redArrowData.loc).toBe(dashLocation);
+
+		// Log the locations for debugging
+		console.log('Calculated dash location:', dashLocation);
+		console.log('Red arrow location:', redArrowData.loc);
 	});
 
 	it('should maintain the correct dash location after updateData is called', () => {
@@ -172,5 +212,9 @@ describe('Type 3 Dash Arrow Positioning', () => {
 
 		// Verify the location is still correct
 		expect(newRedArrowData.loc).toBe(initialLocation);
+
+		// Log the locations for debugging
+		console.log('Initial location:', initialLocation);
+		console.log('New location after update:', newRedArrowData.loc);
 	});
 });

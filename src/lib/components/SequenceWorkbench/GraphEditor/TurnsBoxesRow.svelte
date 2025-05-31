@@ -3,7 +3,7 @@
 	import TurnsBox from './TurnsBox/TurnsBox.svelte';
 	import { fade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
-	import type { Direction } from '$lib/state/stores/turnsStore.svelte';
+	import type { Direction } from '$lib/stores/sequence/turnsStore';
 	import type { PropRotDir } from '$lib/types/Types';
 
 	// Define props using Svelte 5 runes syntax
@@ -61,12 +61,10 @@
 	.turns-boxes-row {
 		display: flex;
 		flex-direction: row;
-		justify-content: space-between; /* Changed to space-between for better spacing */
+		justify-content: center; /* Center boxes horizontally */
 		align-items: stretch; /* Stretch boxes to equal height */
 		width: 100%;
-		gap: 1rem; /* Reduced gap for better space utilization */
-		padding: 0 0.5rem; /* Added padding to prevent boxes from touching edges */
-		box-sizing: border-box; /* Ensure padding is included in width */
+		gap: 1.5rem; /* Increased gap for better spacing */
 		/* Ensure proper containment */
 		contain: layout;
 		/* Add minimum height to ensure visibility */
@@ -102,8 +100,7 @@
 	/* Responsive adjustments for different screen sizes */
 	@media (max-width: 768px) {
 		.turns-boxes-row {
-			gap: 0.75rem; /* Further reduced gap on smaller screens */
-			padding: 0 0.375rem; /* Reduced padding */
+			gap: 1rem; /* Reduced gap on smaller screens */
 		}
 
 		.turns-box-container {
@@ -113,8 +110,7 @@
 
 	@media (max-width: 480px) {
 		.turns-boxes-row {
-			gap: 0.5rem; /* Minimal gap on mobile */
-			padding: 0 0.25rem; /* Minimal padding */
+			gap: 0.75rem; /* Further reduced gap on mobile */
 		}
 
 		.turns-box-container {

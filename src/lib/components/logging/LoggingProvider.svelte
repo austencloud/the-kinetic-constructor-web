@@ -1,15 +1,16 @@
 <!-- Import at the end to avoid circular dependencies -->
-<script module lang="ts">
+<script context="module" lang="ts">
 	import { getContext } from 'svelte';
 </script>
 
 <!--
   Logging Provider Component
-
+  
   Provides logging context to Svelte components and initializes the logging system.
 -->
 <script lang="ts">
 	import { setContext, onMount, onDestroy } from 'svelte';
+	import { writable, type Writable } from 'svelte/store';
 	import {
 		logger,
 		type Logger,
@@ -20,20 +21,13 @@
 	} from '$lib/core/logging';
 
 	// Props
-	let {
-		name = 'app',
-		options = {
-			enableTiming: true,
-			trackLifecycle: true,
-			trackRenders: false,
-			trackErrors: true
-		},
-		children
-	}: {
-		name?: string;
-		options?: ComponentLoggerOptions;
-		children?: import('svelte').Snippet;
-	} = $props();
+	export let name: string = 'app';
+	export let options: ComponentLoggerOptions = {
+		enableTiming: true,
+		trackLifecycle: true,
+		trackRenders: false,
+		trackErrors: true
+	};
 
 	// Context key for the logger
 	const LOGGER_CONTEXT_KEY = Symbol('logger');
@@ -51,16 +45,16 @@
 		name,
 		createComponentContext({
 			component: name,
-			props: { name, options }
+			props: $$props
 		})
 	);
 
-	// Create reactive state for the logs
-	let logs = $state<any[]>([]);
+	// Create a store for the logs
+	const logs = writable<any[]>([]);
 
 	// Subscribe to memory transport logs
 	const unsubscribe = memoryTransport.addListener((entries) => {
-		logs = entries;
+		logs.set(entries);
 	});
 
 	// Track render count
@@ -75,7 +69,7 @@
 				domain: LogDomain.COMPONENT,
 				data: {
 					renderCount,
-					props: { name, options }
+					props: $$props
 				}
 			});
 		}
@@ -138,7 +132,7 @@
 	): Logger {
 		const contextLogger = getContext<{
 			logger: Logger;
-			logs: any[];
+			logs: Writable<any[]>;
 			options: ComponentLoggerOptions;
 		}>(LOGGER_CONTEXT_KEY);
 
@@ -210,7 +204,7 @@
 		observer.observe(node);
 
 		return {
-			update(_newParams: { elementName: string; trackRenders?: boolean }) {
+			update(newParams: { elementName: string; trackRenders?: boolean }) {
 				// Update params if needed
 			},
 			destroy() {
@@ -221,6 +215,4 @@
 	}
 </script>
 
-{#if children}
-	{@render children()}
-{/if}
+<slot />

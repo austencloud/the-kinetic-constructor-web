@@ -3,11 +3,8 @@
 	import PictographQuestion from './PictographQuestion.svelte';
 	import type { QuestionFormat } from '$lib/state/stores/learn/lesson_configs';
 
-	// Props using Svelte 5 runes
-	const { questionFormat = 'text', questionData = null } = $props<{
-		questionFormat?: QuestionFormat;
-		questionData?: any;
-	}>();
+	export let questionFormat: QuestionFormat = 'text';
+	export let questionData: any = null;
 </script>
 
 <div class="question-display">

@@ -1,76 +1,52 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
+	import { type Readable } from 'svelte/store';
+	import { fade, scale } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 	import Option from './Option.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
-	import { LAYOUT_CONTEXT_KEY } from '../layoutContext';
-	import { optionPickerState } from '../optionPickerState.svelte';
+	import {
+		LAYOUT_CONTEXT_KEY,
+		type LayoutContext,
+		type LayoutContextValue
+	} from '../layoutContext';
+	import { uiState } from '../store';
 
 	// --- Props ---
-	const props = $props<{
-		options?: PictographData[];
-		key?: string;
-		onoptionselect?: (option: PictographData) => void;
-	}>();
-
-	// Set defaults
-	const options = $derived(props.options ?? []);
-	const key = $derived(props.key ?? '');
+	export let options: PictographData[] = [];
+	export let key: string = ''; // Key for parent transitions if needed
 
 	// --- Context ---
-	// Get the context using the getter function approach for Svelte 5 runes
-	const getLayoutContext = getContext<() => any>(LAYOUT_CONTEXT_KEY);
+	// Get the context as a Readable<LayoutContextValue>
+	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 
-	// Properly extract the layout config values from the context getter
-	const layoutData = $derived(getLayoutContext?.() ?? {});
-	const contextGridColumns = $derived(layoutData.layoutConfig?.gridColumns ?? 'repeat(4, 1fr)');
-	const optionSize = $derived(layoutData.layoutConfig?.optionSize ?? '100px');
-	const gridGap = $derived(layoutData.layoutConfig?.gridGap ?? '8px');
-	const gridClass = $derived(layoutData.layoutConfig?.gridClass ?? '');
-	const aspectClass = $derived(layoutData.layoutConfig?.aspectClass ?? '');
-	const isMobileDevice = $derived(layoutData.isMobile ?? false);
-	const isTabletDevice = $derived(layoutData.isTablet ?? false);
-	const isPortraitMode = $derived(layoutData.isPortrait ?? false);
+	// Properly extract the layout config values from the context store
+	$: ({
+		layoutConfig: { gridColumns: contextGridColumns, optionSize, gridGap, gridClass, aspectClass },
+		isMobile: isMobileDevice,
+		isTablet: isTabletDevice,
+		isPortrait: isPortraitMode
+	} = $layoutContext);
 
-	// DISABLED: Debug logging that may cause reactive loops
-	// $effect(() => {
-	// 	console.log('🔍 LAYOUT CONTEXT DEBUG:', {
-	// 		hasLayoutContext: !!getLayoutContext,
-	// 		layoutData: layoutData,
-	// 		contextGridColumns,
-	// 		optionSize,
-	// 		gridGap,
-	// 		optionsCount: options.length,
-	// 		isMobileDevice,
-	// 		isTabletDevice,
-	// 		isPortraitMode
-	// 	});
-	// });
-
-	// --- Get Sort Method from Option Picker State ---
-	const currentSortMethod = $derived(optionPickerState.sortMethod);
+	// --- Get Sort Method from Store ---
+	let currentSortMethod: string | null;
+	uiState.subscribe((state) => {
+		currentSortMethod = state.sortMethod;
+	});
 
 	// --- Layout Overrides for Single/Two Items ---
 	// Determine if special single/two item styling should apply based on sorting context
-	const isTypeSortContext = $derived(currentSortMethod === 'type');
-	const applySingleItemClass = $derived(options.length === 1 && isTypeSortContext);
-	const applyTwoItemClass = $derived(options.length === 2 && isTypeSortContext);
+	$: isTypeSortContext = currentSortMethod === 'type';
+	$: applySingleItemClass = options.length === 1 && isTypeSortContext;
+	$: applyTwoItemClass = options.length === 2 && isTypeSortContext;
 
 	// Override grid columns if only one or two items are present in this specific grid
-	const actualGridColumns = $derived(
+	$: actualGridColumns =
 		options.length === 1
 			? '1fr' // Force single column for single item
 			: options.length === 2
 				? 'repeat(2, 1fr)' // Force two columns for two items
-				: contextGridColumns // Use the layout context's column definition otherwise
-	);
-
-	// Handle option selection
-	function handleOptionSelect(option: PictographData) {
-		// Call the callback if provided
-		if (props.onoptionselect) {
-			props.onoptionselect(option);
-		}
-	}
+				: contextGridColumns; // Use the layout context's column definition otherwise
 </script>
 
 <div
@@ -90,11 +66,7 @@
 			class:single-item={applySingleItemClass}
 			class:two-item={applyTwoItemClass}
 		>
-			<Option
-				pictographData={option}
-				isPartOfTwoItems={applyTwoItemClass}
-				onoptionselect={handleOptionSelect}
-			/>
+			<Option pictographData={option} isPartOfTwoItems={applyTwoItemClass} />
 		</div>
 	{/each}
 </div>
@@ -117,9 +89,15 @@
 		transition: height 0.3s ease-out; /* Smooth height transitions */
 		will-change: transform; /* Optimize for animations */
 		transform: translateZ(0); /* Force GPU acceleration */
-		backface-visibility: hidden; /* Prevent flickering during animations */
-		grid-gap: var(--grid-gap, 0.5rem); /* Use gap from layout context */
-		padding: 0.5rem; /* Add padding around the grid */
+	}
+
+	/* Add top margin only if it's NOT part of a multi-group item */
+	:global(.options-panel > .options-grid) {
+		margin-top: 0.5rem; /* Adjust as needed */
+	}
+	/* Remove extra top margin if it directly follows a header in single layout */
+	:global(.options-panel > .section-header-container + .options-grid) {
+		margin-top: 0;
 	}
 
 	/* --- Grid Item Wrapper --- */
@@ -154,7 +132,11 @@
 		padding: 0.25rem;
 	}
 
+	/* Force minimum spacing between items with desktop square aspect */
+
 	/* Smaller grid items on small screens */
+
+	/* Even smaller for very small screens */
 	@media (max-width: 380px) {
 		.grid-item-wrapper {
 			width: calc(var(--option-size, 100px) * 0.8);

@@ -1,10 +1,11 @@
-import { performanceMetrics, qualityMode } from '../snowfallState.svelte';
+import { get } from 'svelte/store';
+import { performanceMetrics, qualityMode } from '../store';
 
 export const createPerformanceMonitor = () => {
 	let lastTime = 0;
 	let frameCount = 0;
 	let fps = 60;
-	const warnings: string[] = [];
+	let warnings: string[] = [];
 	let particleCount = 0;
 	let reportCallback: ((fps: number, particleCount: number) => void) | null = null;
 
@@ -23,7 +24,7 @@ export const createPerformanceMonitor = () => {
 
 				if (warnings.length > 5) warnings.shift();
 
-				if (fps < 30 && qualityMode.value !== 'low') {
+				if (fps < 30 && get(qualityMode) !== 'low') {
 					qualityMode.update((current) => (current === 'high' ? 'medium' : 'low'));
 				}
 			} else if (fps > 55) {

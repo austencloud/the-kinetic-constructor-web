@@ -1,26 +1,18 @@
 <!-- src/lib/components/OptionPicker/utils/debugger/components/CopyButton.svelte -->
 <script lang="ts">
 	import { onDestroy } from 'svelte';
+	import { writable } from 'svelte/store';
 
-	// Props using Svelte 5 runes
-	const {
-		text = '',
-		iconOnly = false,
-		className = 'copy-button',
-		smallIcon = false,
-		onClick
-	} = $props<{
-		text?: string;
-		iconOnly?: boolean;
-		className?: string;
-		smallIcon?: boolean;
-		onClick: () => Promise<string>; // Function to get text to copy
-	}>();
+	export let text: string = '';
+	export let iconOnly: boolean = false;
+	export let className: string = 'copy-button';
+	export let smallIcon: boolean = false;
+	export let onClick: () => Promise<string>; // Function to get text to copy
 
-	// Button state using Svelte 5 runes
+	// Button state
 	type CopyStatus = 'idle' | 'copying' | 'copied' | 'error';
-	let status = $state<CopyStatus>('idle');
-	let error = $state<string | null>(null);
+	let status = writable<CopyStatus>('idle');
+	let error = writable<string | null>(null);
 	let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
 	async function handleClick() {
@@ -29,25 +21,25 @@
 
 		// Check for Clipboard API availability
 		if (!navigator.clipboard) {
-			error = 'Clipboard API not available.';
-			status = 'error';
+			error.set('Clipboard API not available.');
+			status.set('error');
 			console.error('Clipboard API not available.');
 			resetStatusAfterDelay();
 			return;
 		}
 
 		// Set initial state for copying
-		status = 'copying';
-		error = null;
+		status.set('copying');
+		error.set(null);
 
 		try {
 			// Get the text to copy by calling the function
 			const textToCopy = await onClick();
 			await navigator.clipboard.writeText(textToCopy);
-			status = 'copied'; // Success
+			status.set('copied'); // Success
 		} catch (err) {
-			error = 'Failed to copy.'; // Set specific error
-			status = 'error'; // Set error state
+			error.set('Failed to copy.'); // Set specific error
+			status.set('error'); // Set error state
 			console.error('Failed to copy text: ', err);
 		} finally {
 			// Always reset the status after a delay
@@ -58,8 +50,8 @@
 	function resetStatusAfterDelay(delay = 2000) {
 		// Create the timeout
 		timeoutId = setTimeout(() => {
-			status = 'idle';
-			error = null;
+			status.set('idle');
+			error.set(null);
 			timeoutId = null;
 		}, delay);
 	}
@@ -72,16 +64,16 @@
 
 <button
 	class="copy-button-base {className}"
-	class:copying={status === 'copying'}
-	class:copied={status === 'copied'}
-	class:error={status === 'error'}
-	onclick={handleClick}
-	disabled={status !== 'idle'}
+	class:copying={$status === 'copying'}
+	class:copied={$status === 'copied'}
+	class:error={$status === 'error'}
+	on:click={handleClick}
+	disabled={$status !== 'idle'}
 	aria-live="polite"
 	title={text || 'Copy to clipboard'}
 	aria-label={text || 'Copy to clipboard'}
 >
-	{#if status === 'idle'}
+	{#if $status === 'idle'}
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
 			width={smallIcon ? '12' : '14'}
@@ -99,12 +91,12 @@
 		{#if !iconOnly}
 			<span>{text}</span>
 		{/if}
-	{:else if status === 'copying'}
+	{:else if $status === 'copying'}
 		<span class="spinner"></span>
 		{#if !iconOnly}
 			<span>Copying...</span>
 		{/if}
-	{:else if status === 'copied'}
+	{:else if $status === 'copied'}
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
 			width={smallIcon ? '12' : '14'}
@@ -119,7 +111,7 @@
 		{#if !iconOnly}
 			<span>Copied!</span>
 		{/if}
-	{:else if status === 'error'}
+	{:else if $status === 'error'}
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
 			width={smallIcon ? '12' : '14'}
@@ -138,8 +130,8 @@
 	{/if}
 </button>
 
-{#if error && status === 'error'}
-	<span class="copy-error-message">{error}</span>
+{#if $error && $status === 'error'}
+	<span class="copy-error-message">{$error}</span>
 {/if}
 
 <style>

@@ -1,3 +1,4 @@
+import type { Motion } from '../../objects/Motion/Motion';
 import type {
 	Color,
 	Loc,

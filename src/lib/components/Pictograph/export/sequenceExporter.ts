@@ -7,8 +7,75 @@
 
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
+import type { Beat } from '$lib/types/Beat';
+import type { PictographData } from '$lib/types/PictographData';
 import { renderSvgToImage } from './svgRenderer';
-import type { EnhancedExportOptions, EnhancedExportResult } from './exportTypes';
+import { downloadImage } from './downloadUtils';
+
+/**
+ * Options for exporting a single beat as an image
+ */
+export interface BeatExportOptions {
+	// Content options
+	pictographData: PictographData;
+	beatNumber?: number;
+	isStartPosition?: boolean;
+
+	// Visual options
+	backgroundColor?: string;
+	scale?: number;
+	quality?: number;
+	format?: 'png' | 'jpeg';
+
+	// Dimensions
+	width?: number;
+	height?: number;
+}
+
+/**
+ * Result of exporting a beat as an image
+ */
+export interface BeatExportResult {
+	dataUrl: string;
+	width: number;
+	height: number;
+	format: string;
+}
+
+/**
+ * Options for exporting a sequence as an image
+ */
+export interface SequenceExportOptions {
+	// Content options
+	beats: Beat[];
+	startPosition?: Beat | null;
+
+	// Layout options
+	columns?: number;
+	spacing?: number;
+	includeStartPosition?: boolean;
+
+	// Visual options
+	backgroundColor?: string;
+	scale?: number;
+	quality?: number;
+	format?: 'png' | 'jpeg';
+
+	// Metadata options
+	title?: string;
+	showBeatNumbers?: boolean;
+	showReversals?: boolean;
+}
+
+/**
+ * Result of exporting a sequence as an image
+ */
+export interface SequenceExportResult {
+	dataUrl: string;
+	width: number;
+	height: number;
+	format: string;
+}
 
 /**
  * Exports a sequence of beats as an image
@@ -19,8 +86,8 @@ import type { EnhancedExportOptions, EnhancedExportResult } from './exportTypes'
  */
 export async function exportSequenceAsImage(
 	containerElement: HTMLElement,
-	options: EnhancedExportOptions
-): Promise<EnhancedExportResult> {
+	options: SequenceExportOptions
+): Promise<SequenceExportResult> {
 	// Validate environment
 	if (!browser) {
 		return Promise.reject(new Error('Cannot export: not in browser environment'));
@@ -32,8 +99,10 @@ export async function exportSequenceAsImage(
 	}
 
 	try {
+		console.log('SequenceExporter: Starting export process');
+
 		// Default options with required fields
-		const defaultOptions: Required<Omit<EnhancedExportOptions, 'beats' | 'startPosition'>> = {
+		const defaultOptions: Required<Omit<SequenceExportOptions, 'beats' | 'startPosition'>> = {
 			backgroundColor: '#FFFFFF',
 			scale: 2,
 			quality: 0.92,
@@ -41,16 +110,9 @@ export async function exportSequenceAsImage(
 			columns: 4,
 			spacing: 20,
 			includeStartPosition: true,
-			addBeatNumbers: true,
-			addReversalSymbols: true,
-			addWord: false,
-			addUserInfo: false,
-			addDifficultyLevel: false,
-			title: '',
-			userName: '',
-			notes: '',
-			exportDate: '',
-			difficultyLevel: 1
+			showBeatNumbers: true,
+			showReversals: true,
+			title: ''
 		};
 
 		// Merge options with type safety
@@ -68,6 +130,8 @@ export async function exportSequenceAsImage(
 			throw new Error('No SVG elements found in container');
 		}
 
+		console.log(`SequenceExporter: Found ${svgElements.length} SVG elements`);
+
 		// Calculate dimensions
 		const beatSize = 950; // Base size of each beat
 		const spacing = mergedOptions.spacing;
@@ -81,6 +145,15 @@ export async function exportSequenceAsImage(
 		// Calculate canvas dimensions
 		const canvasWidth = columns * beatSize + (columns - 1) * spacing;
 		const canvasHeight = rows * beatSize + (rows - 1) * spacing;
+
+		console.log('SequenceExporter: Calculated dimensions', {
+			beatSize,
+			columns,
+			rows,
+			canvasWidth,
+			canvasHeight,
+			totalBeats
+		});
 
 		// Create a canvas
 		const canvas = document.createElement('canvas');
@@ -136,6 +209,10 @@ export async function exportSequenceAsImage(
 
 				// Increment processed count
 				processedCount++;
+
+				console.log(
+					`SequenceExporter: Processed SVG element ${processedCount}/${svgElements.length}`
+				);
 			} catch (error) {
 				console.error(`SequenceExporter: Error processing SVG element ${index}:`, error);
 				throw error;
@@ -148,6 +225,12 @@ export async function exportSequenceAsImage(
 		// Convert canvas to data URL
 		const format = mergedOptions.format === 'jpeg' ? 'image/jpeg' : 'image/png';
 		const dataUrl = canvas.toDataURL(format, mergedOptions.quality);
+
+		console.log('SequenceExporter: Export completed successfully', {
+			width: canvas.width,
+			height: canvas.height,
+			dataUrlLength: dataUrl.length
+		});
 
 		// Return the result
 		return {

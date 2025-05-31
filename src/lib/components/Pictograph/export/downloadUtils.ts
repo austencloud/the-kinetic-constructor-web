@@ -39,6 +39,9 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 	}
 
 	try {
+		console.log(`DownloadUtils: Downloading image as "${options.filename}"`);
+		console.log(`DownloadUtils: Data URL length: ${options.dataUrl.length}`);
+
 		// Validate the data URL format
 		if (!options.dataUrl || !options.dataUrl.startsWith('data:')) {
 			throw new Error('Invalid data URL format');
@@ -48,11 +51,14 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 		const mimeType =
 			options.mimeType || options.dataUrl.split(',')[0].match(/:(.*?);/)?.[1] || 'image/png';
 
+		console.log(`DownloadUtils: Using MIME type: ${mimeType}`);
+
 		// Try to use the File System Access API for a better download experience
 		if (window.showSaveFilePicker) {
 			try {
 				// Convert data URL to Blob
 				const blob = dataURLtoBlob(options.dataUrl);
+				console.log(`DownloadUtils: Created blob of size: ${blob.size} bytes`);
 
 				// Set up options for the save dialog - removed 'mode' property which was causing issues
 				const opts = {
@@ -76,9 +82,12 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 						| 'videos'
 				};
 
+				console.log(`DownloadUtils: Opening save dialog with options:`, opts);
+
 				try {
 					// Show the save file picker
 					const fileHandle = await window.showSaveFilePicker(opts);
+					console.log(`DownloadUtils: User selected file:`, fileHandle);
 
 					try {
 						// Create a writable stream
@@ -109,6 +118,10 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 								if (fileHandle.directoryHandle && fileHandle.directoryHandle.name) {
 									// @ts-ignore
 									folderPath = fileHandle.directoryHandle.name;
+									console.log(
+										'DownloadUtils: Got folder path from directoryHandle.name:',
+										folderPath
+									);
 								}
 
 								// Approach 2: Try to get the parent directory from the file path
@@ -119,6 +132,7 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 									const lastSlashIndex = path.lastIndexOf('/');
 									if (lastSlashIndex > 0) {
 										folderPath = path.substring(0, lastSlashIndex);
+										console.log('DownloadUtils: Got folder path from fileHandle.path:', folderPath);
 									}
 								}
 
@@ -130,6 +144,10 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 										const parentDir = await fileHandle.getParentDirectory();
 										if (parentDir && parentDir.name) {
 											folderPath = parentDir.name;
+											console.log(
+												'DownloadUtils: Got folder path from getParentDirectory():',
+												folderPath
+											);
 										}
 									} catch (parentDirError) {
 										console.warn('DownloadUtils: Error getting parent directory:', parentDirError);
@@ -139,6 +157,7 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 								// If we still don't have a folder path, use a default
 								if (!folderPath) {
 									folderPath = 'Downloads'; // Default to Downloads folder
+									console.log('DownloadUtils: Using default Downloads folder path');
 								}
 							} catch (pathError) {
 								console.warn('DownloadUtils: Could not get file path details:', pathError);
@@ -146,6 +165,7 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 								folderPath = 'Downloads';
 							}
 
+							console.log(`DownloadUtils: File saved successfully to ${folderPath}/${fileName}`);
 							return {
 								success: true,
 								fileName,
@@ -169,6 +189,7 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 							pickerError.message.includes('cancelled') ||
 							pickerError.message.includes('canceled'))
 					) {
+						console.log('DownloadUtils: User cancelled the save dialog');
 						throw new Error('USER_CANCELLED_OPERATION');
 					}
 
@@ -184,6 +205,7 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 						fsaError.message.includes('cancelled') ||
 						fsaError.message.includes('canceled'))
 				) {
+					console.log('DownloadUtils: User cancelled the save dialog');
 					// Throw a standardized cancellation error that can be caught by the caller
 					throw new Error('USER_CANCELLED_OPERATION');
 				}
@@ -205,15 +227,23 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 				// Fall through to traditional approach for other errors
 			}
 		} else {
+			console.log(
+				`DownloadUtils: File System Access API not supported, using traditional approach`
+			);
 		}
 
 		// Traditional download approach using a link element
 		try {
+			// Log the filename for debugging
+			console.log(`DownloadUtils: Preparing to download file as "${options.filename}"`);
+
 			// Convert data URL to Blob using the dataURLtoBlob function
 			const blob = dataURLtoBlob(options.dataUrl);
+			console.log(`DownloadUtils: Created blob of size: ${blob.size} bytes`);
 
 			// Create object URL from blob
 			const url = URL.createObjectURL(blob);
+			console.log(`DownloadUtils: Created object URL: ${url}`);
 
 			// Create download link
 			const link = document.createElement('a');
@@ -236,7 +266,9 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 
 			// Trigger click with a try/catch to handle any browser restrictions
 			try {
+				console.log(`DownloadUtils: Clicking download link for "${options.filename}"`);
 				link.click();
+				console.log(`DownloadUtils: Download link clicked`);
 			} catch (clickError) {
 				console.error(`DownloadUtils: Error clicking link:`, clickError);
 				throw clickError;
@@ -248,6 +280,7 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 					document.body.removeChild(link);
 				}
 				URL.revokeObjectURL(url);
+				console.log(`DownloadUtils: Cleaned up resources`);
 			}, 500);
 
 			// For traditional download, we can't get the exact path
@@ -332,6 +365,8 @@ export async function downloadImage(options: DownloadOptions): Promise<DownloadR
 				link.setAttribute('type', 'application/octet-stream');
 
 				// Log the attempt
+				console.log(`DownloadUtils: Last resort attempt to download "${options.filename}"`);
+
 				document.body.appendChild(link);
 				await new Promise((resolve) => setTimeout(resolve, 100));
 				link.click();

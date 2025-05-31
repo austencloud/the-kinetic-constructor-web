@@ -20,7 +20,9 @@
 	let currentScreenSize = $state<'mobile' | 'tablet' | 'desktop'>('desktop');
 	let windowWidth = $state(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
-	// --- XState Integration (Mocked for this example) ---
+	// --- XState Integration (Assumed selectors & actions) ---
+	// Example: import { sequenceSelectors, sequenceActions } from '$lib/state/machines/sequenceMachine';
+	// Mocked for this example
 	const mockSequenceSelectors = {
 		generationType: () => generatorType,
 		isGenerating: () => isGenerating,
@@ -28,7 +30,8 @@
 		message: () => statusMessage
 	};
 	const mockSequenceActions = {
-		generate: (_settings: any, _type: string) => {
+		generate: (settings: any, type: string) => {
+			console.log('Generate action called with:', settings, type);
 			isGenerating = true;
 			statusMessage = 'Generating...';
 			setTimeout(() => {

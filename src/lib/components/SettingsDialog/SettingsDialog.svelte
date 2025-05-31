@@ -1,17 +1,14 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import {
-		saveImageExportSettings,
-		resetImageExportSettings
-	} from '$lib/state/image-export-settings.svelte';
+	// Image export settings imports temporarily removed
 	import { showSuccess, showError } from '$lib/components/shared/ToastManager.svelte';
 	import { onMount } from 'svelte';
 
 	// Import tab components
 	import SettingsTabs from './SettingsTabs.svelte';
 	import GeneralTab from './GeneralTab/GeneralTab.svelte';
-	import ImageExportTab from './ImageExportTab/ImageExportTab.svelte';
+	// ImageExportTab import temporarily removed
 
 	// Constants for localStorage keys
 	const SETTINGS_ACTIVE_TAB_KEY = 'settings_active_tab';
@@ -22,10 +19,10 @@
 		onClose: () => void;
 	}>();
 
-	// Define tabs
+	// Define tabs - temporarily removed Image Export tab
 	const tabs = [
-		{ id: 'general', label: 'General', icon: 'fa-sliders' },
-		{ id: 'imageExport', label: 'Image Export', icon: 'fa-image' }
+		{ id: 'general', label: 'General', icon: 'fa-sliders' }
+		// Image Export tab temporarily removed
 	];
 
 	// Load the last active tab from localStorage or default to 'general'
@@ -93,6 +90,8 @@
 
 	// Save all settings
 	function saveAllSettings() {
+		console.log('saveAllSettings called');
+
 		// Prevent multiple save operations
 		if (isSaving) return;
 
@@ -104,14 +103,14 @@
 		}
 
 		try {
-			// Save image export settings
-			saveImageExportSettings();
+			// Image export settings saving temporarily removed
 
 			// Save general settings
 			if (browser && localStorage) {
 				try {
 					const settings = JSON.parse(localStorage.getItem('settings') || '{}');
 					localStorage.setItem('settings', JSON.stringify(settings));
+					console.log('General settings saved');
 				} catch (error) {
 					console.error('Failed to save general settings:', error);
 				}
@@ -121,6 +120,7 @@
 			if (browser && contentContainer) {
 				try {
 					localStorage.setItem(SETTINGS_SCROLL_POSITION_KEY, contentContainer.scrollTop.toString());
+					console.log('Scroll position saved:', contentContainer.scrollTop);
 				} catch (error) {
 					console.error('Failed to save settings scroll position:', error);
 				}
@@ -130,6 +130,7 @@
 			if (browser) {
 				try {
 					localStorage.setItem(SETTINGS_ACTIVE_TAB_KEY, activeTab);
+					console.log('Active tab saved:', activeTab);
 				} catch (error) {
 					console.error('Failed to save active tab:', error);
 				}
@@ -164,8 +165,7 @@
 		}
 
 		try {
-			// Reset image export settings
-			resetImageExportSettings();
+			// Image export settings reset temporarily removed
 
 			// Reset general settings
 			if (browser && localStorage) {
@@ -200,10 +200,12 @@
 				// Save scroll position
 				if (contentContainer) {
 					localStorage.setItem(SETTINGS_SCROLL_POSITION_KEY, contentContainer.scrollTop.toString());
+					console.log('Scroll position saved on close:', contentContainer.scrollTop);
 				}
 
 				// Save active tab
 				localStorage.setItem(SETTINGS_ACTIVE_TAB_KEY, activeTab);
+				console.log('Active tab saved on close:', activeTab);
 			} catch (error) {
 				console.error('Failed to save settings state on close:', error);
 			}
@@ -237,9 +239,8 @@
 	<div class="settings-content" bind:this={contentContainer}>
 		{#if activeTab === 'general'}
 			<GeneralTab />
-		{:else if activeTab === 'imageExport'}
-			<ImageExportTab />
 		{/if}
+		<!-- Image Export tab temporarily removed -->
 	</div>
 
 	<div class="settings-footer">

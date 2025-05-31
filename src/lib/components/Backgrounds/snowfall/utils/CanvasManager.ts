@@ -1,4 +1,4 @@
-import { dimensions } from '../snowfallState.svelte';
+import { dimensions } from '../store';
 
 export const createCanvasManager = () => {
 	let canvas: HTMLCanvasElement | null = null;

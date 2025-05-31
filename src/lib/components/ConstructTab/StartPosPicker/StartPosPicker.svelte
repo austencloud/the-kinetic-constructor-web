@@ -3,55 +3,50 @@
 	import { onMount } from 'svelte';
 	import type { PictographData } from '$lib/types/PictographData.js';
 	import LoadingSpinner from '$lib/components/MainWidget/loading/LoadingSpinner.svelte';
-	// Import the modern runes-based sequence state
-	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
-	// Import the modern runes-based pictograph data
-	import { pictographData } from '$lib/state/pictograph/pictographDataState.svelte';
+	import { selectedStartPos } from '$lib/stores/sequence/selectionStore';
+	import pictographDataStore from '$lib/stores/pictograph/pictographStore';
+	import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
+	import startPositionService from '$lib/services/StartPositionService';
+	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import LoadingOverlay from './LoadingOverlay.svelte';
-	import { transitionLoadingState } from '$lib/state/simple/uiState.svelte';
+	import transitionLoading, {
+		transitionLoadingStore
+	} from '$lib/state/stores/ui/transitionLoadingStore';
 
 	let gridMode = 'diamond';
-	let startPositionPictographs = $state<PictographData[]>([]);
-	let filteredDataAvailable = $state(false);
-	let dataInitializationChecked = $state(false);
-	let isLoading = $state(true);
-	let loadingError = $state(false);
-	let isTransitioning = $state(false); // Local state for the loading overlay
+	let startPositionPictographs: PictographData[] = [];
+	let filteredDataAvailable = false;
+	let dataInitializationChecked = false;
+	let isLoading = true;
+	let loadingError = false;
+	let isTransitioning = false; // Local state for the loading overlay
 
-	// Subscribe to the global loading state using pure runes
+	// Subscribe to the global loading state
 	$effect(() => {
-		isTransitioning = transitionLoadingState.isLoading;
+		const unsubscribe = transitionLoadingStore.subscribe((value) => {
+			isTransitioning = value;
+		});
+
+		return unsubscribe;
 	});
 
 	let initialDataTimeout: number | null = null;
 
-	// Modern runes-based reactive effect to watch pictograph data changes
-	$effect(() => {
+	const unsubscribe = pictographDataStore.subscribe((data) => {
 		if (!browser) return;
 
-		const data = pictographData.data;
-		const isInitialized = pictographData.isInitialized;
-		const isPictographLoading = pictographData.isLoading;
-		const pictographError = pictographData.error;
-
-		if (pictographError) {
-			console.error('StartPosPicker: Pictograph data error:', pictographError);
-			loadingError = true;
-			isLoading = false;
-			return;
-		}
-
-		if (isInitialized && data && data.length > 0) {
+		if (data && data.length > 0) {
 			dataInitializationChecked = true;
 
+			const pictographData = data as PictographData[];
 			const defaultStartPosKeys =
 				gridMode === 'diamond'
 					? ['alpha1_alpha1', 'beta5_beta5', 'gamma11_gamma11']
 					: ['alpha2_alpha2', 'beta4_beta4', 'gamma12_gamma12'];
 
-			const filteredPictographs = data.filter(
+			const filteredPictographs = pictographData.filter(
 				(entry) =>
 					entry.redMotionData &&
 					entry.blueMotionData &&
@@ -63,8 +58,7 @@
 
 			isLoading = false;
 			if (initialDataTimeout) clearTimeout(initialDataTimeout);
-		} else if (dataInitializationChecked && !isPictographLoading) {
-			// Only set empty state if we've checked and we're not loading
+		} else if (dataInitializationChecked) {
 			startPositionPictographs = [];
 			filteredDataAvailable = false;
 			isLoading = false;
@@ -83,32 +77,15 @@
 	onMount(() => {
 		document.addEventListener('start-position-click', handleStartPosClick as EventListener);
 
-		// Async initialization
-		const initializePictographData = async () => {
-			// Check if pictograph data is already initialized
-			if (!pictographData.isInitialized && !pictographData.isLoading) {
-				// Wait for pictograph data to be initialized
-				const initialized = await pictographData.waitForInitialization(10000);
-				if (!initialized) {
-					console.error('StartPosPicker: Pictograph data initialization timeout');
-					loadingError = true;
-					isLoading = false;
-				}
-			}
-		};
-
-		// Start the async initialization
-		initializePictographData();
-
 		initialDataTimeout = window.setTimeout(() => {
 			if (isLoading && !dataInitializationChecked) {
-				console.warn('StartPosPicker: Data initialization timeout after 5 seconds');
 				isLoading = false;
 				loadingError = true;
 			}
 		}, 5000);
 
 		return () => {
+			unsubscribe();
 			document.removeEventListener('start-position-click', handleStartPosClick as EventListener);
 			if (initialDataTimeout) {
 				clearTimeout(initialDataTimeout);
@@ -181,18 +158,19 @@
 		try {
 			// Immediately show loading state
 			isTransitioning = true;
-			transitionLoadingState.setLoading(true);
+			transitionLoading.start();
 
 			// Provide haptic feedback when selecting a start position
 			if (browser) {
 				hapticFeedbackService.trigger('selection');
 			}
 
-			// Create a safe copy of the start position data
+			await startPositionService.addStartPosition(startPosPictograph);
+
 			const startPosCopy = safeCopyPictographData(startPosPictograph);
+
 			startPosCopy.isStartPosition = true;
 
-			// Ensure motion data is set to static for start positions
 			if (startPosCopy.redMotionData) {
 				startPosCopy.redMotionData.motionType = 'static';
 				startPosCopy.redMotionData.endLoc = startPosCopy.redMotionData.startLoc;
@@ -207,11 +185,19 @@
 				startPosCopy.blueMotionData.turns = 0;
 			}
 
-			// Use the modern sequence state to set the start position
-			await sequenceState.setStartPosition(startPosCopy);
+			selectedStartPos.set(startPosCopy);
+
+			pictographContainer.setData(startPosCopy);
+
+			isSequenceEmpty.set(false);
+
+			try {
+				localStorage.setItem('start_position', JSON.stringify(startPosCopy));
+			} catch (error) {
+				console.error('Failed to save start position to localStorage:', error);
+			}
 
 			if (browser) {
-				// Dispatch event for backward compatibility with existing components
 				const customEvent = new CustomEvent('start-position-selected', {
 					detail: {
 						startPosition: startPosCopy,
@@ -224,12 +210,13 @@
 
 				// Provide success haptic feedback when the start position is successfully set
 				hapticFeedbackService.trigger('success');
+
+				// Note: We don't reset the loading state here because we want it to persist
+				// during the transition to the OptionPicker. The OptionPicker will reset it
+				// when it's done loading.
 			}
 		} catch (error) {
-			console.error('StartPosPicker: Error setting start position:', error);
-			// Reset loading state on error
-			isTransitioning = false;
-			transitionLoadingState.setLoading(false);
+			console.error('Error adding start position:', error);
 		}
 	};
 </script>
@@ -244,7 +231,7 @@
 		<div class="error-container">
 			<p>Unable to load start positions. Please try refreshing the page.</p>
 			<button
-				onclick={() => {
+				on:click={() => {
 					if (browser) window.location.reload();
 				}}>Refresh</button
 			>
@@ -260,10 +247,10 @@
 					class="pictograph-container"
 					role="button"
 					tabindex="0"
-					onclick={() => {
+					on:click={() => {
 						handleSelect(pictograph);
 					}}
-					onkeydown={(e) => {
+					on:keydown={(e) => {
 						if (e.key === 'Enter' || e.key === ' ') {
 							e.preventDefault();
 							handleSelect(pictograph);

@@ -1,5 +1,5 @@
-// src/lib/components/GenerateTab/store/settings.ts - Modern Svelte 5 Runes
-import { browser } from '$app/environment';
+// src/lib/components/GenerateTab/store/settings.ts
+import { writable, derived } from 'svelte/store';
 
 // Generator types
 export type GeneratorType = 'circular' | 'freeform';
@@ -27,100 +27,60 @@ const DEFAULT_SETTINGS = {
 	level: 1 // Difficulty level 1-5
 };
 
-// Storage key
-const SETTINGS_STORAGE_KEY = 'generate_settings';
+// Create writable store with defaults
+const { subscribe, set, update } = writable({ ...DEFAULT_SETTINGS });
 
-// Create reactive state with Svelte 5 runes
-export let settings = $state({ ...DEFAULT_SETTINGS });
+// Derived stores for individual settings
+export const generatorType = derived({ subscribe }, ($settings) => $settings.generatorType);
 
-// Derived values for individual settings
-export const generatorType = $derived(settings.generatorType);
-export const numBeats = $derived(settings.numBeats);
-export const turnIntensity = $derived(settings.turnIntensity);
-export const propContinuity = $derived(settings.propContinuity);
-export const capType = $derived(settings.capType);
-export const level = $derived(settings.level);
+export const numBeats = derived({ subscribe }, ($settings) => $settings.numBeats);
+
+export const turnIntensity = derived({ subscribe }, ($settings) => $settings.turnIntensity);
+
+export const propContinuity = derived({ subscribe }, ($settings) => $settings.propContinuity);
+
+export const capType = derived({ subscribe }, ($settings) => $settings.capType);
+
+export const level = derived({ subscribe }, ($settings) => $settings.level);
 
 // Helper functions to update individual settings
-export function setGeneratorType(type: GeneratorType) {
-	settings.generatorType = type;
-	saveSettings();
+function setGeneratorType(type: GeneratorType) {
+	update((settings) => ({ ...settings, generatorType: type }));
 }
 
-export function setNumBeats(beats: number) {
+function setNumBeats(beats: number) {
 	if (beats < 1) beats = 1;
 	if (beats > 32) beats = 32;
-	settings.numBeats = beats;
-	saveSettings();
+	update((settings) => ({ ...settings, numBeats: beats }));
 }
 
-export function setTurnIntensity(intensity: number) {
+function setTurnIntensity(intensity: number) {
 	if (intensity < 1) intensity = 1;
 	if (intensity > 5) intensity = 5;
-	settings.turnIntensity = intensity;
-	saveSettings();
+	update((settings) => ({ ...settings, turnIntensity: intensity }));
 }
 
-export function setPropContinuity(continuity: PropContinuityType) {
-	settings.propContinuity = continuity;
-	saveSettings();
+function setPropContinuity(continuity: PropContinuityType) {
+	update((settings) => ({ ...settings, propContinuity: continuity }));
 }
 
-export function setCAPType(type: CAPType) {
-	settings.capType = type;
-	saveSettings();
+function setCAPType(type: CAPType) {
+	update((settings) => ({ ...settings, capType: type }));
 }
 
-export function setLevel(newLevel: number) {
+function setLevel(newLevel: number) {
 	if (newLevel < 1) newLevel = 1;
 	if (newLevel > 5) newLevel = 5;
-	settings.level = newLevel;
-	saveSettings();
+	update((settings) => ({ ...settings, level: newLevel }));
 }
 
-export function resetSettings() {
-	Object.assign(settings, { ...DEFAULT_SETTINGS });
-	saveSettings();
+function resetSettings() {
+	set({ ...DEFAULT_SETTINGS });
 }
 
-// Persistence functions
-function saveSettings() {
-	if (browser) {
-		try {
-			localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-		} catch (error) {
-			console.warn('Failed to save settings to localStorage:', error);
-		}
-	}
-}
-
-function loadSettings() {
-	if (browser) {
-		try {
-			const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
-			if (saved) {
-				const parsed = JSON.parse(saved);
-				Object.assign(settings, { ...DEFAULT_SETTINGS, ...parsed });
-			}
-		} catch (error) {
-			console.warn('Failed to load settings from localStorage:', error);
-		}
-	}
-}
-
-// Initialize settings on module load
-if (browser) {
-	loadSettings();
-}
-
-// Export the modern settings API
+// Export the store and its actions
 export const settingsStore = {
-	// For backward compatibility, provide a subscribe-like function
-	subscribe: (callback: (value: typeof settings) => void) => {
-		// This is a simplified compatibility layer
-		callback(settings);
-		return { unsubscribe: () => {} };
-	},
+	subscribe,
 	setGeneratorType,
 	setNumBeats,
 	setTurnIntensity,

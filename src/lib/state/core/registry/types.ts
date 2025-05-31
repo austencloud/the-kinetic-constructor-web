@@ -1,51 +1,54 @@
 /**
- * DEPRECATED: Registry Types
- *
- * This file provides type definitions for the deprecated registry system.
- * These types are kept for backward compatibility only.
- * NO STORES - RUNES ONLY!
+ * Type definitions for the state registry
  */
+import type { AnyActorRef, AnyStateMachine, Actor, SnapshotFrom } from 'xstate';
+import type { Readable, Writable } from 'svelte/store';
 
-/**
- * DEPRECATED: State registry entry type
- */
-export interface StateRegistryEntry {
+// Types for the registry
+export type StateContainerType = 'machine' | 'store';
+
+export interface StateContainer {
 	id: string;
-	type: 'store' | 'machine' | 'container';
-	instance: any;
-	dependencies: string[];
-	metadata: {
-		persist?: boolean;
-		description?: string;
-		created: number;
+	type: StateContainerType;
+	instance: AnyActorRef | Readable<any>;
+	persist?: boolean;
+	description?: string;
+	subscriptions?: Set<() => void>; // Track subscriptions for cleanup
+}
+
+// Options for registering state containers
+export interface RegisterOptions {
+	type: StateContainerType;
+	persist?: boolean;
+	description?: string;
+}
+
+// Options for registering machines
+export interface RegisterMachineOptions<T extends AnyStateMachine> {
+	persist?: boolean;
+	description?: string;
+	snapshot?: SnapshotFrom<T>;
+}
+
+// Options for registering stores
+export interface RegisterStoreOptions<T> {
+	persist?: boolean;
+	description?: string;
+	persistFields?: string[]; // Add support for selective field persistence
+}
+
+// Persistence data structure
+export interface PersistedData {
+	[id: string]: {
+		type: StateContainerType;
+		snapshot?: any; // For machines
+		value?: any; // For stores
 	};
 }
 
-/**
- * DEPRECATED: Registry configuration
- */
-export interface RegistryConfig {
-	enablePersistence?: boolean;
-	enableDebug?: boolean;
-	maxEntries?: number;
+// Cache for tracking last persisted state
+export interface PersistedStateCache {
+	[id: string]: {
+		value?: any;
+	};
 }
-
-/**
- * DEPRECATED: Registry state
- */
-export interface RegistryState {
-	entries: Map<string, StateRegistryEntry>;
-	dependencies: Map<string, Set<string>>;
-	config: RegistryConfig;
-}
-
-// Export for backward compatibility
-export type StateRegistryType = 'store' | 'machine' | 'container';
-
-// Add missing exports for compatibility
-export interface StateContainer<T = any> {
-	getSnapshot(): T;
-	subscribe(callback: (state: T) => void): () => void;
-}
-
-export type StateContainerType = 'runes' | 'store' | 'machine';

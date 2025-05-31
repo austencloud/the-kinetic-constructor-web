@@ -12,28 +12,21 @@
 		groups: Array<{ key: string; options: PictographData[] }>;
 	};
 
-	const props = $props<{
+	const {
+		selectedTab = null,
+		options = [],
+		transitionKey = 'default'
+	} = $props<{
 		selectedTab?: string | null;
 		options?: PictographData[];
 		transitionKey?: string | number;
-		onoptionselect?: (option: PictographData) => void;
 	}>();
-
-	const selectedTab = $derived(props.selectedTab ?? null);
-	const options = $derived(props.options ?? []);
-	const transitionKey = $derived(props.transitionKey ?? 'default');
 
 	let panelElement: HTMLElement | undefined = $state(); // Use $state for reactive updates
 	let contentIsShort = $state(false); // Use $state for reactive updates
 	let layoutRows: LayoutRow[] = $state([]); // Use $state for reactive updates
 	let previousTab: string | null = $state(null); // Use $state for reactive updates
 	let isReady = $state(false); // Track if component is ready to be shown, use $state
-
-	// Optimization: Force immediate rendering for better performance
-	// This prevents the sequential loading effect
-	setTimeout(() => {
-		isReady = true;
-	}, 10);
 
 	const MAX_ITEMS_FOR_SMALL_GROUP = 2;
 
@@ -124,14 +117,6 @@
 		layoutRows = rows;
 	});
 
-	// Handle option selection events from child components
-	function handleOptionSelect(option: PictographData) {
-		// Call the callback if provided
-		if (props.onoptionselect) {
-			props.onoptionselect(option);
-		}
-	}
-
 	const debouncedCheckContentHeight = (() => {
 		let timeoutId: ReturnType<typeof setTimeout> | null = null;
 		let lastCheckTime = 0;
@@ -217,16 +202,15 @@
 	});
 
 	onMount(() => {
-		// Optimization: Use a much shorter timeout for faster rendering
-		// This prevents the sequential loading effect
 		let initialCheckTimeout: ReturnType<typeof setTimeout> | null = setTimeout(() => {
 			if (panelElement) {
 				debouncedCheckContentHeight();
-				// Set isReady immediately instead of waiting
-				isReady = true;
+				setTimeout(() => {
+					isReady = true;
+				}, 50);
 			}
 			initialCheckTimeout = null;
-		}, 10); // Reduced from 200ms to 10ms for faster rendering
+		}, 200);
 
 		return () => {
 			if (initialCheckTimeout) {
@@ -250,19 +234,9 @@
 	<div class="panel-content">
 		{#each layoutRows as row, rowIndex (transitionKey + '-row-' + rowIndex)}
 			{#if row.type === 'single'}
-				<SingleRowRenderer
-					groups={row.groups}
-					{transitionKey}
-					{rowIndex}
-					onoptionselect={handleOptionSelect}
-				/>
+				<SingleRowRenderer groups={row.groups} {transitionKey} {rowIndex} />
 			{:else if row.type === 'multi'}
-				<MultiRowRenderer
-					groups={row.groups}
-					{transitionKey}
-					{rowIndex}
-					onoptionselect={handleOptionSelect}
-				/>
+				<MultiRowRenderer groups={row.groups} {transitionKey} {rowIndex} />
 			{/if}
 		{/each}
 	</div>
@@ -309,7 +283,8 @@
 		transform: translate(-50%, -50%);
 	}
 
-	/* Scrollbar styling */
+	/* Styles for multi-group-row and multi-group-item have been moved to MultiRowRenderer.svelte */
+
 	.options-panel {
 		scrollbar-width: thin;
 		scrollbar-color: rgba(100, 116, 139, 0.7) rgba(30, 41, 59, 0.1);

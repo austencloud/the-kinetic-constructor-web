@@ -1,24 +1,17 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 
-	// Props
-	let {
-		ontoggleFullscreen,
-		children
-	}: {
-		ontoggleFullscreen?: (isFull: boolean) => void;
-		children?: import('svelte').Snippet<[{ isFull: boolean }]>;
-	} = $props();
-
-	let isFull = $state(false);
+	let isFull = false;
 	let fsContainer: HTMLDivElement | null = null;
-	let fullscreenSupport = $state(false);
+	let fullscreenSupport = false;
 	let exitFullscreen: () => Promise<void> = async () => {
 		console.warn('Exit fullscreen not supported');
 	}; // Default fallback
 	let requestFullscreen: () => Promise<void> = async () => {
 		console.warn('Request fullscreen not supported on element');
 	}; // Default fallback
+
+	const dispatch = createEventDispatcher<{ toggleFullscreen: boolean }>();
 
 	onMount(() => {
 		// --- Fullscreen API Detection Logic ---
@@ -37,6 +30,7 @@
 			doc.mozFullScreenEnabled ||
 			doc.msFullscreenEnabled
 		);
+		// console.log('FullScreen onMount. Support:', fullscreenSupport);
 
 		// Assign the correct exit function, ensuring it's called on document
 		const exitFn =
@@ -88,7 +82,8 @@
 			const currentlyFull = !!fullscreenElement;
 			if (isFull !== currentlyFull) {
 				isFull = currentlyFull;
-				ontoggleFullscreen?.(isFull);
+				dispatch('toggleFullscreen', isFull);
+				// console.log("Fullscreen state changed externally:", isFull);
 			}
 		};
 
@@ -125,7 +120,7 @@
 				isFull = true;
 			}
 			// Dispatch state change regardless of listener (more immediate feedback)
-			ontoggleFullscreen?.(isFull);
+			dispatch('toggleFullscreen', isFull);
 			// Trigger resize after state change seems complete
 			setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
 		} catch (err) {
@@ -138,14 +133,12 @@
 </script>
 
 <div class="fullscreen-container {isFull ? 'isFull' : ''}" bind:this={fsContainer}>
-	{#if children}
-		{@render children({ isFull })}
-	{/if}
+	<slot {isFull} />
 
 	{#if fullscreenSupport}
 		<button
 			class="app-fullscreen-btn"
-			onclick={fsToggle}
+			on:click={fsToggle}
 			aria-label={isFull ? 'Exit browser fullscreen' : 'Enter browser fullscreen'}
 		>
 			<i class="fa-solid {isFull ? 'fa-compress-arrows-alt' : 'fa-expand-arrows-alt'} fs-icon"></i>

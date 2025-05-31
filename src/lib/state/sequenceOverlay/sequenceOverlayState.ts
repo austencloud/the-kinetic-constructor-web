@@ -1,45 +1,71 @@
+// src/lib/state/sequenceOverlay/sequenceOverlayState.ts
+import { writable } from 'svelte/store';
+
 /**
- * Sequence Overlay State - Svelte 5 Runes Implementation
+ * Interface for the sequence overlay state
  */
-
-interface SequenceOverlayState {
+export interface SequenceOverlayState {
 	isOpen: boolean;
-	content: any;
 }
 
-function createSequenceOverlayState() {
-	let isOpen = $state(false);
-	let content = $state(null);
+/**
+ * Centralized state for the sequence overlay using Svelte stores
+ * This state is maintained across hot module reloads
+ */
+export const sequenceOverlayStore = writable<SequenceOverlayState>({
+	isOpen: false
+});
 
-	return {
-		get isOpen() { return isOpen; },
-		get content() { return content; },
-		
-		open(overlayContent?: any) {
-			content = overlayContent;
-			isOpen = true;
-		},
-		
-		close() {
-			isOpen = false;
-			content = null;
-		},
-		
-		subscribe(callback: (state: SequenceOverlayState) => void) {
-			// Simple subscription pattern
-			const unsubscribe = () => {};
-			callback({ isOpen, content });
-			return unsubscribe;
-		}
-	};
+// Create a singleton object that can be used in non-Svelte contextsLet me shut it off of I'm going to shut a little metal You're an absolute wonderful Significant oK significant love Simply you're looking simply from your human from your together don't love you forever I love you forever I love you forever we're always What's the joke with a little cat I love you I love you it's true it's true I love you Yeah
+// and will be properly reactive in Svelte components
+export const sequenceOverlayState = {
+	get isOpen() {
+		let value = false;
+		const unsubscribe = sequenceOverlayStore.subscribe((state) => {
+			value = state.isOpen;
+		});
+		unsubscribe();
+		return value;
+	},
+	set isOpen(value: boolean) {
+		sequenceOverlayStore.update((state) => ({
+			...state,
+			isOpen: value
+		}));
+	}
+};
+
+/**
+ * Opens the sequence overlay
+ */
+export function openSequenceOverlay() {
+	console.log('Opening sequence overlay');
+	sequenceOverlayStore.update((state) => ({
+		...state,
+		isOpen: true
+	}));
 }
 
-export const sequenceOverlayStore = createSequenceOverlayState();
-
-export function openSequenceOverlay(content?: any) {
-	sequenceOverlayStore.open(content);
-}
-
+/**
+ * Closes the sequence overlay
+ */
 export function closeSequenceOverlay() {
-	sequenceOverlayStore.close();
+	console.log('Closing sequence overlay');
+	sequenceOverlayStore.update((state) => ({
+		...state,
+		isOpen: false
+	}));
+}
+
+/**
+ * Toggles the sequence overlay
+ */
+export function toggleSequenceOverlay() {
+	sequenceOverlayStore.update((state) => {
+		console.log('Toggling sequence overlay, current value:', state.isOpen);
+		return {
+			...state,
+			isOpen: !state.isOpen
+		};
+	});
 }

@@ -1,21 +1,30 @@
 <!-- src/lib/components/SequenceWorkbench/RightPanel/RightPanel.svelte -->
 <script lang="ts">
-	import { isGenerateTabActive } from '$lib/state/stores/workbenchState.svelte';
+	import { workbenchStore } from '$lib/state/stores/workbenchStore';
 	import ModernGenerationControls from './ModernGenerationControls.svelte';
-	// StartPosPicker is now integrated into OptionPicker
+	import OptionPickerWithDebug from '$lib/components/ConstructTab/OptionPicker/OptionPickerWithDebug.svelte';
+	import StartPosPicker from '$lib/components/ConstructTab/StartPosPicker/StartPosPicker.svelte';
 	import GraphEditor from '$lib/components/SequenceWorkbench/GraphEditor/GraphEditor.svelte';
-	// sequenceState no longer needed - OptionPicker handles sequence state internally
+	import TransitionWrapper from './TransitionWrapper.svelte';
+	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicInOut } from 'svelte/easing';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
-	// 🚨 NUCLEAR FIX: Using original OptionPicker with infinite loop fixes applied
-	import OptionPicker from '$lib/components/ConstructTab/OptionPicker';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 
-	// Derived state for selected beats
-	let hasSelectedBeats = $derived(sequenceContainer.state.selectedBeatIds.length > 0);
+	// Local state
+	let hasSelectedBeats = $state(false);
 
-	// Transition parameters - faster for snappier feel
-	const transitionDuration = 200; // Reduced from 400ms to 200ms for snappier transitions
+	// Subscribe to the sequence container to check for selected beats
+	$effect(() => {
+		const unsubscribe = sequenceContainer.subscribe((state) => {
+			hasSelectedBeats = state.selectedBeatIds.length > 0;
+		});
+
+		return unsubscribe;
+	});
+
+	// Transition parameters
+	const transitionDuration = 400;
 	const fadeParams = { duration: transitionDuration, easing: cubicInOut };
 	const flyParams = {
 		duration: transitionDuration,
@@ -25,7 +34,7 @@
 </script>
 
 <div class="right-panel">
-	{#if isGenerateTabActive()}
+	{#if $workbenchStore.activeTab === 'generate'}
 		<div in:fly={flyParams} out:fade={fadeParams}>
 			<ModernGenerationControls />
 		</div>
@@ -38,10 +47,14 @@
 			<GraphEditor />
 		</div>
 	{:else}
-		<!-- 🚨 DEBUGGING: OptionPicker RE-ENABLED for systematic debugging -->
-		<div class="full-height-wrapper" in:fade={fadeParams} out:fade={fadeParams}>
-			<OptionPicker />
-		</div>
+		<TransitionWrapper isSequenceEmpty={$isSequenceEmpty} {transitionDuration}>
+			<div slot="startPosPicker" class="full-height-wrapper">
+				<StartPosPicker />
+			</div>
+			<div slot="optionPicker" class="full-height-wrapper">
+				<OptionPickerWithDebug />
+			</div>
+		</TransitionWrapper>
 	{/if}
 </div>
 
@@ -75,6 +88,4 @@
 		/* Ensure the graph editor wrapper doesn't interfere with BeatFrame sizing */
 		isolation: isolate;
 	}
-
-	/* Transition loading styles removed - no longer needed with unified component */
 </style>

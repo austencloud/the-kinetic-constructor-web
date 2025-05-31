@@ -1,9 +1,7 @@
 <!-- src/lib/components/GenerateTab/ui/HeaderLabel.svelte -->
 <script lang="ts">
-	// Props using Svelte 5 runes
-	const { text = 'Customize Your Sequence' } = $props<{
-		text?: string;
-	}>();
+	// Header text can be customized via prop
+	export let text = 'Customize Your Sequence';
 </script>
 
 <div class="header-container">

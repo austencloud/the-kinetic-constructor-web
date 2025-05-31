@@ -1,29 +1,23 @@
 // src/lib/components/ConstructTab/OptionPicker/utils/a11y.ts
+import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
 /**
- * Reactive state to track user's preference for reduced motion using Svelte 5 runes
+ * Store to track user's preference for reduced motion
  */
-let reducedMotionState = $state(false);
+export const prefersReducedMotion = writable(false);
 
-/**
- * Getter function for accessing the reduced motion preference
- */
-export function prefersReducedMotion(): boolean {
-	return reducedMotionState;
-}
-
-// Initialize the state based on user's system preference
+// Initialize the store based on user's system preference
 if (browser) {
 	// Check if the user prefers reduced motion
 	const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 	// Set initial value
-	reducedMotionState = mediaQuery.matches;
+	prefersReducedMotion.set(mediaQuery.matches);
 
 	// Update when preference changes
 	mediaQuery.addEventListener('change', () => {
-		reducedMotionState = mediaQuery.matches;
+		prefersReducedMotion.set(mediaQuery.matches);
 	});
 }
 

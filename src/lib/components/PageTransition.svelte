@@ -1,15 +1,15 @@
 <!-- src/lib/components/PageTransition.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { cubicInOut } from 'svelte/easing';
 
-	const { active = false, direction = 'right' } = $props<{
-		active?: boolean;
-		direction?: 'right' | 'left';
-	}>();
+	export let active = false;
+	export let direction = 'right'; // 'right' or 'left'
 
 	let pageTransition: HTMLDivElement;
 	let isAnimating = false;
+
+	const dispatch = createEventDispatcher();
 
 	onMount(() => {
 		if (active && pageTransition) {
@@ -17,34 +17,34 @@
 		}
 	});
 
-	$effect(() => {
-		if (active && pageTransition && !isAnimating) {
-			startTransition();
-		}
-	});
+	$: if (active && pageTransition && !isAnimating) {
+		startTransition();
+	}
 
 	function startTransition() {
 		isAnimating = true;
 
+		// Reset any existing animations
 		pageTransition.style.animation = 'none';
 
+		// Force reflow
 		void pageTransition.offsetWidth;
 
+		// Start animation
 		pageTransition.style.animation = `page-transition-${direction} 0.8s ${cubicInOut} forwards`;
+		pageTransition.addEventListener('animationend', handleAnimationEnd, { once: true });
+
+		// Dispatch animation start event
+		dispatch('transitionstart');
 	}
 
 	function handleAnimationEnd() {
 		isAnimating = false;
+		dispatch('transitionend');
 	}
 </script>
 
-<div
-	class="page-transition"
-	bind:this={pageTransition}
-	onanimationend={handleAnimationEnd}
-	ontransitionstart={() => dispatchEvent(new CustomEvent('transitionstart'))}
-	ontransitionend={() => dispatchEvent(new CustomEvent('transitionend'))}
-></div>
+<div class="page-transition" bind:this={pageTransition}></div>
 
 <style>
 	.page-transition {

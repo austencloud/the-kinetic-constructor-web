@@ -2,16 +2,10 @@
 	import { fade } from 'svelte/transition';
 	import LoadingSpinner from '$lib/components/MainWidget/loading/LoadingSpinner.svelte';
 
-	// Props using Svelte 5 runes
-	const {
-		visible = false,
-		message = 'Loading options...',
-		transitionDuration = 200
-	} = $props<{
-		visible?: boolean;
-		message?: string;
-		transitionDuration?: number;
-	}>();
+	// Props
+	export let visible: boolean = false;
+	export let message: string = 'Loading options...';
+	export let transitionDuration: number = 200;
 </script>
 
 {#if visible}

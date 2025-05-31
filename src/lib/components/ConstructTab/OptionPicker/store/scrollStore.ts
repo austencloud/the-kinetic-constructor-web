@@ -1,24 +1,8 @@
-// src/lib/components/ConstructTab/OptionPicker/store/scrollStore.ts - Modern Non-Runes Store
+// src/lib/components/ConstructTab/OptionPicker/store/scrollStore.ts
+import { writable } from 'svelte/store';
 
-// Simple state management without runes (since this is a .ts file)
-let scrollPositions: Record<string, number> = {};
-
-// Helper functions for managing scroll positions
-export function setScrollPosition(key: string, position: number) {
-	scrollPositions[key] = position;
-}
-
-export function getScrollPosition(key: string): number {
-	return scrollPositions[key] || 0;
-}
-
-export function clearScrollPosition(key: string) {
-	delete scrollPositions[key];
-}
-
-export function clearAllScrollPositions() {
-	scrollPositions = {};
-}
+// Store to track scroll positions for different tabs/views
+export const scrollPositions = writable<Record<string, number>>({});
 
 /**
  * Helper functions for managing scroll positions
@@ -30,7 +14,10 @@ export const scrollActions = {
 	 * @param position Scroll position to save
 	 */
 	savePosition(key: string, position: number) {
-		setScrollPosition(key, position);
+		scrollPositions.update((positions) => ({
+			...positions,
+			[key]: position
+		}));
 	},
 
 	/**
@@ -39,7 +26,12 @@ export const scrollActions = {
 	 * @returns The saved scroll position or 0 if not found
 	 */
 	getPosition(key: string): number {
-		return getScrollPosition(key);
+		let position = 0;
+		const unsubscribe = scrollPositions.subscribe((positions) => {
+			position = positions[key] || 0;
+		});
+		unsubscribe();
+		return position;
 	},
 
 	/**
@@ -63,6 +55,6 @@ export const scrollActions = {
 	 * Clear all saved scroll positions
 	 */
 	clearAll() {
-		clearAllScrollPositions();
+		scrollPositions.set({});
 	}
 };

@@ -66,6 +66,11 @@ export {
 } from './ImageUtils';
 
 export {
+	// Test utilities
+	testSequenceUrlEncoding
+} from './TestUtils';
+
+export {
 	// Element finder utilities
 	findBeatFrameElement,
 	listenForBeatFrameElement

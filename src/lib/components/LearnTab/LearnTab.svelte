@@ -2,25 +2,23 @@
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
-	import { learnState } from '$lib/state/simple/learnState.svelte';
+	import { learnStore } from '$lib/state/stores/learn/learnStore';
 	import LessonSelector from './LessonSelector.svelte';
 	import LessonWidget from './LessonWidget.svelte';
 	import LessonResults from './LessonResults.svelte';
 
 	// Track whether this is the first render
-	let isFirstRender = $state(true);
+	let isFirstRender = true;
 
 	// Track the current view for transition effects
-	let currentView = $state(learnState.currentView);
-	let previousView = $state<string | null>(null);
+	let currentView = $learnStore.currentView;
+	let previousView: string | null = null;
 
-	// Handle view transitions using $effect
-	$effect(() => {
-		if (learnState.currentView !== currentView) {
-			previousView = currentView;
-			currentView = learnState.currentView;
-		}
-	});
+	// Handle view transitions
+	$: if ($learnStore.currentView !== currentView) {
+		previousView = currentView;
+		currentView = $learnStore.currentView;
+	}
 
 	// After initial mount, set first render to false
 	onMount(() => {
@@ -29,8 +27,8 @@
 		}, 100);
 	});
 
-	// Determine transition direction using $derived
-	const transitionDirection = $derived(getTransitionDirection(previousView, currentView));
+	// Determine transition direction
+	$: transitionDirection = getTransitionDirection(previousView, currentView);
 
 	function getTransitionDirection(from: string | null, to: string): 'forward' | 'backward' {
 		if (!from) return 'forward';

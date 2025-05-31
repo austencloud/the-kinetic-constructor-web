@@ -1,7 +1,7 @@
 /**
  * Utilities for URL handling and sequence URL generation
  */
-import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer.svelte';
+import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer';
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
 import { showSuccess } from '$lib/components/shared/ToastManager.svelte';

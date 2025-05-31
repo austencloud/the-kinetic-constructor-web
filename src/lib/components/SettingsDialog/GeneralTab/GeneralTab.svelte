@@ -1,34 +1,35 @@
 <script lang="ts">
 	import { settingsStore } from '$lib/state/stores/settings/settings.store';
 	import { userContainer } from '$lib/state/stores/user/UserContainer';
-
+	import { useContainer } from '$lib/state/core/svelte5-integration.svelte';
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import { uiActions, confirmDeletions } from '$lib/components/WriteTab/stores/uiState.svelte';
+	import { uiStore } from '$lib/components/WriteTab/stores/uiStore';
 	import {
 		getImageExportSettings,
 		updateImageExportSettings
 	} from '$lib/state/image-export-settings.svelte';
-	import { appState } from '$lib/state/simple/appState.svelte';
-	import type { BackgroundType } from '$lib/components/Backgrounds/types/types';
 
 	// Get current settings
 	const settings = $derived(settingsStore.getSnapshot());
-	const user = $state(userContainer.state);
+	const user = useContainer(userContainer);
 	let username = $state(user.currentUser || 'User');
 
-	// MIGRATED: Background settings from pure Svelte 5 runes app state
-	const currentBackground = $derived(appState.background as BackgroundType);
-
-	// Available backgrounds (hardcoded for now, could be made dynamic)
-	const availableBackgrounds: BackgroundType[] = ['snowfall', 'nightSky', 'deepOcean'];
-
 	// Get UI preferences
+	let confirmDeletions = $state(true);
 	let rememberLastSaveDirectory = $state(true);
 
 	// Initialize state from stores
 	$effect(() => {
 		if (browser) {
+			// Get confirmation dialog preference
+			try {
+				const uiState = $uiStore;
+				confirmDeletions = uiState.preferences.confirmDeletions;
+			} catch (error) {
+				console.error('Failed to load confirmation dialog preference:', error);
+			}
+
 			// Get remember save location preference
 			try {
 				const exportSettings = getImageExportSettings();
@@ -49,8 +50,11 @@
 	function toggleConfirmDeletions() {
 		if (browser) hapticFeedbackService.trigger('selection');
 
-		// Update the store using the modern runes system
-		uiActions.toggleConfirmDeletions();
+		// Toggle the state
+		confirmDeletions = !confirmDeletions;
+
+		// Update the store
+		uiStore.toggleConfirmDeletions(confirmDeletions);
 	}
 
 	// Toggle remember save location
@@ -64,6 +68,9 @@
 		const exportSettings = getImageExportSettings();
 		exportSettings.rememberLastSaveDirectory = rememberLastSaveDirectory;
 		updateImageExportSettings(exportSettings);
+
+		// Log for debugging
+		console.log('Remember save location toggled:', rememberLastSaveDirectory);
 	}
 
 	// Update username
@@ -82,33 +89,6 @@
 			userContainer.setUsername('User');
 			username = 'User';
 			input.value = 'User';
-		}
-	}
-
-	// Background change handlers
-	function handleBackgroundChange(event: Event) {
-		const select = event.target as HTMLSelectElement;
-		const newBackground = select.value as BackgroundType;
-
-		appState.setBackground(newBackground);
-
-		// Provide haptic feedback
-		if (browser) {
-			hapticFeedbackService.trigger('selection');
-		}
-	}
-
-	// Function to get a user-friendly display name for each background
-	function getDisplayName(type: BackgroundType): string {
-		switch (type) {
-			case 'snowfall':
-				return 'Snowfall';
-			case 'nightSky':
-				return 'Night Sky';
-			case 'deepOcean':
-				return 'Deep Ocean';
-			default:
-				return type;
 		}
 	}
 </script>
@@ -132,29 +112,6 @@
 					class="username-input"
 					maxlength="50"
 				/>
-			</div>
-		</div>
-	</div>
-
-	<div class="settings-section">
-		<h3>Background</h3>
-
-		<div class="setting-item">
-			<div class="setting-info">
-				<span class="setting-label">Background Type</span>
-				<span class="setting-description">Choose the animated background for the application</span>
-			</div>
-			<div class="setting-control">
-				<select
-					value={currentBackground}
-					onchange={handleBackgroundChange}
-					aria-label="Select background type"
-					class="background-select"
-				>
-					{#each availableBackgrounds as bg}
-						<option value={bg}>{getDisplayName(bg)}</option>
-					{/each}
-				</select>
 			</div>
 		</div>
 	</div>
@@ -192,7 +149,7 @@
 				<label class="switch">
 					<input
 						type="checkbox"
-						checked={confirmDeletions()}
+						checked={confirmDeletions}
 						onchange={toggleConfirmDeletions}
 						aria-label="Toggle confirmation dialogs"
 					/>
@@ -355,30 +312,5 @@
 		border-color: #167bf4;
 		box-shadow: 0 0 0 2px rgba(22, 123, 244, 0.3);
 		outline: none;
-	}
-
-	.background-select {
-		padding: 0.5rem 0.75rem;
-		border-radius: 6px;
-		background: linear-gradient(to bottom, #1f1f24, #2a2a30);
-		border: 1px solid rgba(108, 156, 233, 0.3);
-		color: var(--color-text-primary, white);
-		font-size: 0.95rem;
-		transition: all 0.2s ease;
-		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-		min-width: 120px;
-		cursor: pointer;
-	}
-
-	.background-select:focus {
-		border-color: #167bf4;
-		box-shadow: 0 0 0 2px rgba(22, 123, 244, 0.3);
-		outline: none;
-	}
-
-	.background-select option {
-		background: #2a2a30;
-		color: white;
-		padding: 0.5rem;
 	}
 </style>

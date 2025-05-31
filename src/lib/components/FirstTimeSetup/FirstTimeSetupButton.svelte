@@ -1,6 +1,6 @@
 <script lang="ts">
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import { sequenceOverlayStore } from '$lib/state/sequenceOverlay/sequenceOverlayState.svelte';
+	import { sequenceOverlayStore } from '$lib/state/sequenceOverlay/sequenceOverlayState';
 	import { browser } from '$app/environment';
 
 	// Create a function to show the first-time setup dialog
@@ -11,10 +11,14 @@
 	// Track if the sequence overlay is open
 	let isOverlayOpen = $state(false);
 
-	// Subscribe to the sequence overlay store using pure runes
+	// Subscribe to the sequence overlay store
 	$effect(() => {
 		if (browser) {
-			isOverlayOpen = sequenceOverlayStore.value.isOpen;
+			const unsubscribe = sequenceOverlayStore.subscribe((state) => {
+				isOverlayOpen = state.isOpen;
+			});
+
+			return unsubscribe;
 		}
 	});
 

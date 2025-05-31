@@ -4,7 +4,7 @@
  * This module provides error handling functionality for the Pictograph component.
  */
 
-// NO STORES - RUNES ONLY!
+import type { Writable } from 'svelte/store';
 import type { PictographData } from '$lib/types/PictographData';
 import { errorService, ErrorSeverity } from '../../../services/ErrorHandlingService';
 import { logger } from '$lib/core/logging';
@@ -12,10 +12,10 @@ import type { PropData } from '../../objects/Prop/PropData';
 import type { ArrowData } from '../../objects/Arrow/ArrowData';
 
 /**
- * MODERNIZED: Context for error handling with runes - NO STORES!
+ * Context for error handling
  */
 export interface ErrorHandlerContext {
-	pictographData: PictographData;
+	pictographDataStore: Writable<PictographData>;
 	dispatch: (event: string, detail?: any) => void;
 	state: {
 		set: (value: string) => void;
@@ -56,24 +56,15 @@ export interface FallbackDataContext {
  * @param error The error object or message
  * @param context The error handler context containing necessary data and functions
  */
-/**
- * Creates a safe error message from any error type
- */
-function createSafeErrorMessage(error: any): string {
-	return error instanceof Error
-		? error.message
-		: typeof error === 'string'
-			? error
-			: 'Unknown error';
-}
-
 export function handlePictographError(
 	source: string,
 	error: any,
 	context: ErrorHandlerContext
 ): void {
 	try {
-		const errorMsg = createSafeErrorMessage(error);
+		// Create a safe error message that won't have circular references
+		const errorMsg =
+			error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
 
 		// Log the error
 		logger.error(`Pictograph error in ${source}: ${errorMsg}`, {
@@ -121,7 +112,9 @@ export function handlePictographComponentError(
 	fallbackData: FallbackDataContext
 ): void {
 	try {
-		const errorMsg = createSafeErrorMessage(error);
+		// Create a safe error message
+		const errorMsg =
+			error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
 
 		// Log the error
 		logger.warn(`Pictograph component error in ${component}: ${errorMsg}`, {

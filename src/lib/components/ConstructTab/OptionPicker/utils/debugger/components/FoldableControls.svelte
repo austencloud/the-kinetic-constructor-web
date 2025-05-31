@@ -1,44 +1,45 @@
 <script lang="ts">
+	import { writable, get } from 'svelte/store'; // Import get
 	import { FoldableDeviceUtils } from '$lib/utils/deviceDetection';
-	import { onMount } from 'svelte';
+	import { onMount } from 'svelte'; // Import onMount
 
-	// Local state for simulation controls using runes
-	let simulateFoldable = $state(false);
-	let simulatedFoldableType = $state<'zfold' | 'other'>('zfold');
-	let simulatedFoldState = $state<boolean>(true); // Default to unfolded
+	// Local state for simulation controls
+	let simulateFoldable = writable(false); // Initialize to false
+	let simulatedFoldableType = writable<'zfold' | 'other'>('zfold');
+	let simulatedFoldState = writable<boolean>(true); // Default to unfolded
 
 	// Track if an override is currently active (read from localStorage on mount)
-	let isOverrideActive = $state(false);
+	let isOverrideActive = writable(false);
 
 	onMount(() => {
 		try {
 			const existingOverride = localStorage.getItem('foldableDeviceOverride');
 			if (existingOverride) {
-				isOverrideActive = true;
-				simulateFoldable = true; // Sync toggle state if override exists
+				isOverrideActive.set(true);
+				simulateFoldable.set(true); // Sync toggle state if override exists
 				const settings = JSON.parse(existingOverride);
-				simulatedFoldableType = settings.foldableType || 'zfold';
-				simulatedFoldState = settings.isUnfolded ?? true; // Use ?? true for default
+				simulatedFoldableType.set(settings.foldableType || 'zfold');
+				simulatedFoldState.set(settings.isUnfolded ?? true); // Use ?? true for default
 			} else {
-				isOverrideActive = false;
-				simulateFoldable = false; // Ensure toggle is off if no override
+				isOverrideActive.set(false);
+				simulateFoldable.set(false); // Ensure toggle is off if no override
 			}
 		} catch (e) {
 			console.error('Error reading existing foldable override:', e);
-			isOverrideActive = false;
-			simulateFoldable = false;
+			isOverrideActive.set(false);
+			simulateFoldable.set(false);
 		}
 	});
 
 	function handleApplyOrClear() {
-		const shouldSimulate = simulateFoldable; // Get current toggle state
+		const shouldSimulate = get(simulateFoldable); // Get current toggle state
 
 		if (shouldSimulate) {
 			// Apply the override
 			FoldableDeviceUtils.setManualOverride({
 				isFoldable: true,
-				foldableType: simulatedFoldableType,
-				isUnfolded: simulatedFoldState
+				foldableType: get(simulatedFoldableType),
+				isUnfolded: get(simulatedFoldState)
 			});
 
 			// Message to user that reload is required
@@ -49,7 +50,7 @@
 				window.location.reload();
 			} else {
 				// If they don't reload, update the active state indicator
-				isOverrideActive = true;
+				isOverrideActive.set(true);
 			}
 		} else {
 			// Clear the override
@@ -61,45 +62,43 @@
 				window.location.reload();
 			} else {
 				// If they don't reload, update the active state indicator
-				isOverrideActive = false;
+				isOverrideActive.set(false);
 			}
 		}
 	}
 
-	// Derive button text and action message using $derived
-	const actionButtonText = $derived(simulateFoldable ? 'Apply Simulation' : 'Clear Simulation');
-	const actionMessage = $derived(
-		simulateFoldable
-			? 'Apply the selected foldable settings.'
-			: 'Remove any active foldable simulation.'
-	);
+	// Reactive statement to derive button text and action message
+	$: actionButtonText = $simulateFoldable ? 'Apply Simulation' : 'Clear Simulation';
+	$: actionMessage = $simulateFoldable
+		? 'Apply the selected foldable settings.'
+		: 'Remove any active foldable simulation.';
 </script>
 
 <div class="foldable-test-controls">
 	<div class="test-header">
 		Test Foldable Detection
-		{#if isOverrideActive}
+		{#if $isOverrideActive}
 			<span class="active-indicator">(Override Active)</span>
 		{/if}
 	</div>
 	<label class="switch">
-		<input type="checkbox" bind:checked={simulateFoldable} />
+		<input type="checkbox" bind:checked={$simulateFoldable} />
 		<span class="slider"></span>
 		<span class="label">Simulate Foldable Device</span>
 	</label>
 
-	{#if simulateFoldable}
+	{#if $simulateFoldable}
 		<div class="test-options">
 			<label>
 				<span>Type:</span>
-				<select bind:value={simulatedFoldableType}>
+				<select bind:value={$simulatedFoldableType}>
 					<option value="zfold">Z Fold</option>
 					<option value="other">Other</option>
 				</select>
 			</label>
 			<label>
 				<span>State:</span>
-				<select bind:value={simulatedFoldState}>
+				<select bind:value={$simulatedFoldState}>
 					<option value={true}>Unfolded</option>
 					<option value={false}>Folded</option>
 				</select>
@@ -107,7 +106,7 @@
 		</div>
 	{/if}
 
-	<button class="apply-button" onclick={handleApplyOrClear} title={actionMessage}>
+	<button class="apply-button" on:click={handleApplyOrClear} title={actionMessage}>
 		{actionButtonText} & Reload
 	</button>
 </div>

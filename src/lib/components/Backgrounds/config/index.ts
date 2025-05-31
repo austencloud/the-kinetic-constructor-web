@@ -4,7 +4,6 @@ import { SnowfallConfig } from './snowfall';
 import { SeasonalConfig } from './seasonal';
 import { SantaConfig } from './santa';
 import { NightSkyConfig } from './nightSky';
-import { DeepOceanConfig } from './deepOcean';
 import type { QualityLevel } from '../types/types';
 
 export {
@@ -13,7 +12,6 @@ export {
 	SeasonalConfig,
 	SantaConfig,
 	NightSkyConfig,
-	DeepOceanConfig,
 	detectAppropriateQuality,
 	isWebGL2Supported
 };
@@ -23,13 +21,12 @@ export function getOptimizedConfig(quality: QualityLevel) {
 	const qualitySettings = CoreConfig.quality[quality];
 
 	// Apply accessibility settings if enabled
-	const config = {
+	let config = {
 		core: { ...CoreConfig },
 		snowfall: { ...SnowfallConfig },
 		seasonal: { ...SeasonalConfig },
 		santa: { ...SantaConfig },
-		nightSky: { ...NightSkyConfig },
-		deepOcean: { ...DeepOceanConfig }
+		nightSky: { ...NightSkyConfig }
 	};
 
 	// --- Keep existing accessibility and seasonal logic ---
@@ -44,10 +41,6 @@ export function getOptimizedConfig(quality: QualityLevel) {
 		config.nightSky.shootingStar.maxSpeed *= speedFactor;
 		config.nightSky.spaceship.speedPercent *= speedFactor;
 		config.nightSky.celestialBody.driftSpeed *= speedFactor;
-		// Adjustments for deepOcean
-		config.deepOcean.fish.speed *= speedFactor;
-		config.deepOcean.jellyfish.speed *= speedFactor;
-		config.deepOcean.whale.speed *= speedFactor;
 	}
 
 	if (CoreConfig.accessibility.highContrast.enabled) {
@@ -57,13 +50,6 @@ export function getOptimizedConfig(quality: QualityLevel) {
 		config.nightSky.stars.colors = CoreConfig.accessibility.highContrast.colors.particles;
 		config.nightSky.shootingStar.colors = CoreConfig.accessibility.highContrast.colors.particles;
 		config.nightSky.celestialBody.color = '#FFFFFF'; // High contrast planet
-		// Adjustments for deepOcean
-		config.deepOcean.particles.bubbleColors =
-			CoreConfig.accessibility.highContrast.colors.particles;
-		config.deepOcean.particles.planktonColors =
-			CoreConfig.accessibility.highContrast.colors.particles;
-		config.deepOcean.fish.colors = CoreConfig.accessibility.highContrast.colors.particles;
-		config.deepOcean.jellyfish.colors = CoreConfig.accessibility.highContrast.colors.particles;
 	}
 
 	// Apply seasonal themes if enabled (Can be adapted or removed for nightSky)

@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { onMount, onDestroy, untrack } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { get } from 'svelte/store';
+	import { getBackgroundContext } from './contexts/BackgroundContext';
 	import { useBackgroundContext } from './contexts/BackgroundContext.svelte';
 	import { BackgroundFactory } from './core/BackgroundFactory';
 	import type {
@@ -18,76 +20,27 @@
 		onPerformanceReport?: (metrics: PerformanceMetrics) => void;
 	}>();
 
-	// NUCLEAR FIX: Use props directly, no internal state synchronization
-	let isInitialized = $state(false);
+	// Create mutable state variables from props with defaults
+	let backgroundType = $state(props.backgroundType || 'nightSky');
+	let appIsLoading = $state(props.appIsLoading !== undefined ? props.appIsLoading : true);
+
+	// Update state when props change
+	$effect(() => {
+		if (props.backgroundType !== undefined && props.backgroundType !== backgroundType) {
+			backgroundType = props.backgroundType;
+		}
+		if (props.appIsLoading !== undefined && props.appIsLoading !== appIsLoading) {
+			appIsLoading = props.appIsLoading;
+		}
+	});
+
+	// Get the context only once - don't recreate it on each render
 	let activeContext = browser ? useBackgroundContext() : null;
+	// Track the current background system
 	let currentBackgroundSystem: BackgroundSystem | null = null;
-	let hasCalledOnReady = false; // Prevent multiple onReady calls
 
-	// TEMPORARY: Disable this effect entirely to test
-	// $effect(() => {
-	// 	EffectLoopDetector.logEffect('BackgroundCanvas', 'prop-sync', {
-	// 		bgType: props.backgroundType,
-	// 		loading: props.appIsLoading,
-	// 		lastBgType: lastBackgroundType,
-	// 		lastLoading: lastAppIsLoading
-	// 	});
-
-	// 	// NUCLEAR: Capture props in completely isolated scope
-	// 	untrack(() => {
-	// 		const propBgType = props.backgroundType;
-	// 		const propLoading = props.appIsLoading;
-
-	// 		// Only update if props actually changed from external source
-	// 		if (propBgType !== undefined && propBgType !== lastBackgroundType) {
-	// 			lastBackgroundType = propBgType;
-	// 			// Use setTimeout to break reactive chain completely
-	// 			setTimeout(() => {
-	// 				backgroundType = propBgType;
-	// 			}, 0);
-	// 		}
-	// 		if (propLoading !== undefined && propLoading !== lastAppIsLoading) {
-	// 			lastAppIsLoading = propLoading;
-	// 			// Use setTimeout to break reactive chain completely
-	// 			setTimeout(() => {
-	// 				appIsLoading = propLoading;
-	// 			}, 0);
-	// 		}
-	// 	});
-	// });
-
-	// TEMPORARY: Completely disable this effect to test if it's the cause
-	// $effect(() => {
-	// 	EffectLoopDetector.logEffect('BackgroundCanvas', 'context-update', {
-	// 		initialized: isInitialized,
-	// 		hasContext: !!activeContext,
-	// 		contextBgType: activeContext?.backgroundType,
-	// 		localBgType: backgroundType
-	// 	});
-
-	// 	// NUCLEAR: Completely disable this effect during problematic initialization phase
-	// 	if (!browser || !isInitialized || !activeContext || isSettingContext) return;
-
-	// 	// NUCLEAR: Use untrack for everything and delay execution
-	// 	untrack(() => {
-	// 		const contextBgType = activeContext.backgroundType;
-	// 		const localBgType = backgroundType;
-
-	// 		if (contextBgType !== localBgType) {
-	// 			// NUCLEAR: Delay context update to break reactive chain completely
-	// 			isSettingContext = true;
-	// 			setTimeout(() => {
-	// 				try {
-	// 					if (activeContext && activeContext.backgroundType !== localBgType) {
-	// 						activeContext.setBackgroundType(localBgType);
-	// 					}
-	// 				} finally {
-	// 					isSettingContext = false;
-	// 				}
-	// 			}, 10); // Longer delay to ensure all effects complete
-	// 		}
-	// 	});
-	// });
+	// Flag to prevent changes during initialization
+	let isInitialized = $state(false);
 
 	// Use let for the canvas element
 	let canvas: HTMLCanvasElement | undefined;
@@ -98,118 +51,123 @@
 		}
 
 		if (!canvas) {
+			console.error('Canvas element not found!');
 			return;
 		}
 
+		// Add event listener for background changes
+		window.addEventListener('changeBackground', handleBackgroundChange as EventListener);
+
 		if (activeContext) {
-			// Test context operations with untrack() protection
-			untrack(() => {
-				// Set initial values from props to context once on mount
-				const propBgType = props.backgroundType || 'nightSky';
-				const propLoading = props.appIsLoading !== undefined ? props.appIsLoading : true;
+			// Set initial values from props to context once on mount
+			if (backgroundType && backgroundType !== activeContext.backgroundType) {
+				activeContext.setBackgroundType(backgroundType);
+			}
 
-				if (propBgType && propBgType !== activeContext.backgroundType) {
-					activeContext.setBackgroundType(propBgType);
+			if (appIsLoading !== undefined && appIsLoading !== activeContext.isLoading) {
+				activeContext.setLoading(appIsLoading);
+
+				const quality: QualityLevel = appIsLoading ? 'medium' : 'high';
+				if (quality !== activeContext.qualityLevel) {
+					activeContext.setQuality(quality);
 				}
-
-				if (propLoading !== undefined && propLoading !== activeContext.isLoading) {
-					activeContext.setLoading(propLoading);
-
-					const quality: QualityLevel = propLoading ? 'medium' : 'high';
-					if (quality !== activeContext.qualityLevel) {
-						activeContext.setQuality(quality);
-					}
-				}
-			});
+			}
 
 			// Get the background system if it exists
 			if ('backgroundSystem' in activeContext) {
 				currentBackgroundSystem = (activeContext as any).backgroundSystem;
 			}
 
-			// Test Three.js initialization with untrack() protection
-			untrack(() => {
-				if (canvas) {
-					activeContext.initializeCanvas(canvas, () => {
-						// Get updated background system after initialization
-						if ('backgroundSystem' in activeContext) {
-							currentBackgroundSystem = (activeContext as any).backgroundSystem;
-						}
-
-						// Call the onReady callback if provided (but only once)
-						if (props.onReady && !hasCalledOnReady) {
-							hasCalledOnReady = true;
-							props.onReady();
-						}
-						isInitialized = true;
-					});
+			// Use the active context for initialization and animation
+			activeContext.initializeCanvas(canvas, () => {
+				// Get updated background system after initialization
+				if ('backgroundSystem' in activeContext) {
+					currentBackgroundSystem = (activeContext as any).backgroundSystem;
 				}
-			});
 
-			// Create completely non-reactive snapshot of all state needed for animation
-			const reactiveFirewall = untrack(() => {
-				return {
-					// Capture background system reference once
-					backgroundSystem:
-						'backgroundSystem' in activeContext ? (activeContext as any).backgroundSystem : null,
-					// Capture any other reactive values that might be needed
-					isActive: true,
-					qualityLevel: activeContext.qualityLevel || 'medium'
-				};
+				// Call the onReady callback if provided
+				if (props.onReady) {
+					props.onReady();
+				}
+				isInitialized = true;
 			});
 
 			activeContext.startAnimation(
 				(ctx, dimensions) => {
-					// Just draw a simple gradient to test if animation loop itself causes issues
-					const gradient = ctx.createLinearGradient(0, 0, 0, dimensions.height);
-					gradient.addColorStop(0, '#0A0E2C');
-					gradient.addColorStop(1, '#4A5490');
-					ctx.fillStyle = gradient;
-					ctx.fillRect(0, 0, dimensions.width, dimensions.height);
+					// Always get latest background system for animation frame
+					if ('backgroundSystem' in activeContext) {
+						currentBackgroundSystem = (activeContext as any).backgroundSystem;
+					}
 
-					// NO BACKGROUND SYSTEM CALLS AT ALL
-					// if (reactiveFirewall.backgroundSystem) {
-					// 	reactiveFirewall.backgroundSystem.update(dimensions);
-					// 	reactiveFirewall.backgroundSystem.draw(ctx, dimensions);
-					// }
+					if (currentBackgroundSystem) {
+						currentBackgroundSystem.update(dimensions);
+						currentBackgroundSystem.draw(ctx, dimensions);
+					} else {
+						console.warn('No background system available for animation frame');
+					}
 				},
 				(metrics) => {
-					// PERFORMANCE MONITORING: Completely isolated from reactive state
-					// No reactive state access - just pure performance reporting
+					// Call the onPerformanceReport callback if provided
 					if (props.onPerformanceReport) {
-						// Create non-reactive metrics copy
-						const nonReactiveMetrics = {
-							fps: metrics.fps,
-							warnings: [...metrics.warnings]
-						};
-						props.onPerformanceReport(nonReactiveMetrics);
+						props.onPerformanceReport(metrics);
+					}
+				}
+			);
+		} else if (browser) {
+			// Fallback to direct instantiation for backward compatibility
+			const manager = createBackgroundManagerFallback();
+
+			manager.initializeCanvas(canvas, () => {
+				// Call the onReady callback if provided
+				if (props.onReady) {
+					props.onReady();
+				}
+				isInitialized = true;
+			});
+
+			manager.startAnimation(
+				(ctx, dimensions) => {
+					// For the legacy manager, create a background system if needed
+					if (!currentBackgroundSystem) {
+						currentBackgroundSystem = BackgroundFactory.createBackgroundSystem({
+							type: backgroundType,
+							initialQuality: 'medium'
+						});
+						currentBackgroundSystem.initialize(dimensions, 'medium');
+					}
+
+					if (currentBackgroundSystem) {
+						currentBackgroundSystem.update(dimensions);
+						currentBackgroundSystem.draw(ctx, dimensions);
+					}
+				},
+				(metrics) => {
+					// Call the onPerformanceReport callback if provided
+					if (props.onPerformanceReport) {
+						props.onPerformanceReport(metrics);
 					}
 				}
 			);
 		}
-
-		isInitialized = true;
 	});
 
 	// Listen for background change events - only in browser
 	function handleBackgroundChange(event: CustomEvent) {
 		if (!browser || !isInitialized) return;
 
-		// CRITICAL FIX: Use untrack() to prevent event handlers from triggering reactive updates
-		untrack(() => {
-			if (event.detail && typeof event.detail === 'string') {
-				const newBackgroundType = event.detail as BackgroundType;
-				const currentBgType = props.backgroundType || 'nightSky';
+		if (event.detail && typeof event.detail === 'string') {
+			const newBackgroundType = event.detail as BackgroundType;
 
-				// Only update context directly, no internal state
-				if (currentBgType !== newBackgroundType) {
-					// Update context directly
-					if (activeContext) {
-						activeContext.setBackgroundType(newBackgroundType);
-					}
+			// Only update if the background type has changed
+			if (backgroundType !== newBackgroundType) {
+				backgroundType = newBackgroundType;
+
+				// Update context directly
+				if (activeContext) {
+					activeContext.setBackgroundType(newBackgroundType);
 				}
 			}
-		});
+		}
 	}
 
 	onDestroy(() => {
@@ -241,8 +199,15 @@
 		}
 	}
 
-	// Note: BackgroundCanvas now requires BackgroundProvider context
-	// Legacy fallback has been removed in favor of the reactive firewall pattern
+	// Import the old manager for backward compatibility
+	// This is only used if the component is used outside of a BackgroundProvider
+	import { createBackgroundManager } from './core/BackgroundManager';
+	function createBackgroundManagerFallback() {
+		console.warn(
+			'BackgroundCanvas is being used without a BackgroundProvider. Consider updating your code to use the new context-based API.'
+		);
+		return createBackgroundManager();
+	}
 </script>
 
 <div class="background-canvas-container">

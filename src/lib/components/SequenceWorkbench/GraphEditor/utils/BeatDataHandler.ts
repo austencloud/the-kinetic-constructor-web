@@ -2,8 +2,6 @@
 import type { PictographData } from './mocks';
 import { DIAMOND, sequenceContainer } from './mocks';
 import { browser } from '$app/environment';
-import { turnsStore } from '$lib/state/stores/turnsState.svelte';
-import { pictographContainer } from '$lib/state/stores/pictograph/pictographContainer';
 
 // Define the type for the sequence container
 type SequenceContainer = typeof sequenceContainer;
@@ -63,7 +61,7 @@ export function createBeatDataHandler(
 							if (startPosData.grid) newData.grid = startPosData.grid;
 						}
 					} catch (error) {
-						// Error loading start position data - silently continue with defaults
+						console.error('Error loading start position data:', error);
 					}
 				}
 
@@ -95,70 +93,7 @@ export function createBeatDataHandler(
 
 					// Update the pictograph data
 					pictographData.value = newData;
-
-					// Sync with turnsStore to ensure UI controls reflect the correct values
-					syncTurnsStoreWithBeatData(newData);
 				}
-			}
-		}
-	}
-
-	/**
-	 * Synchronizes the turnsStore with the selected beat's motion data
-	 * @param data The pictograph data to sync with
-	 */
-	function syncTurnsStoreWithBeatData(data: PictographData) {
-		// Sync blue motion data
-		if (data.blueMotionData) {
-			// Sync turns value
-			if (data.blueMotionData.turns !== undefined && data.blueMotionData.turns !== null) {
-				// Ensure we have a valid TurnsValue (number or 'fl')
-				const turns =
-					typeof data.blueMotionData.turns === 'number' || data.blueMotionData.turns === 'fl'
-						? data.blueMotionData.turns
-						: 0;
-
-				turnsStore.setTurns('blue', turns);
-			}
-
-			// Sync direction value
-			if (data.blueMotionData.direction !== undefined) {
-				// Convert PropRotDir to Direction
-				const direction =
-					data.blueMotionData.direction === 'cw'
-						? 'clockwise'
-						: data.blueMotionData.direction === 'ccw'
-							? 'counterclockwise'
-							: null;
-
-				turnsStore.setDirection('blue', direction);
-			}
-		}
-
-		// Sync red motion data
-		if (data.redMotionData) {
-			// Sync turns value
-			if (data.redMotionData.turns !== undefined && data.redMotionData.turns !== null) {
-				// Ensure we have a valid TurnsValue (number or 'fl')
-				const turns =
-					typeof data.redMotionData.turns === 'number' || data.redMotionData.turns === 'fl'
-						? data.redMotionData.turns
-						: 0;
-
-				turnsStore.setTurns('red', turns);
-			}
-
-			// Sync direction value
-			if (data.redMotionData.direction !== undefined) {
-				// Convert PropRotDir to Direction
-				const direction =
-					data.redMotionData.direction === 'cw'
-						? 'clockwise'
-						: data.redMotionData.direction === 'ccw'
-							? 'counterclockwise'
-							: null;
-
-				turnsStore.setDirection('red', direction);
 			}
 		}
 	}
@@ -184,221 +119,43 @@ export function createBeatDataHandler(
 				if (color === 'blue') {
 					// Update blue motion data
 					if (beat.blueMotionData) {
-						// If changing direction, we may need to update the motion type
-						const updatedMotionData = {
-							...beat.blueMotionData,
-							[property]: value
-						};
-
-						// If changing direction, update motion type if needed
-						if (property === 'direction') {
-							// Convert from Direction to PropRotDir
-							const propRotDir =
-								value === 'clockwise' ? 'cw' : value === 'counterclockwise' ? 'ccw' : 'no_rot';
-
-							// Update motion type based on direction change
-							if (
-								beat.blueMotionData.motionType === 'pro' ||
-								beat.blueMotionData.motionType === 'anti'
-							) {
-								// If changing from clockwise to counterclockwise or vice versa,
-								// switch between pro and anti motion types
-								if (beat.blueMotionData.propRotDir !== propRotDir) {
-									updatedMotionData.motionType =
-										beat.blueMotionData.motionType === 'pro' ? 'anti' : 'pro';
-								}
-							}
-						}
-
-						// Update the beat in the sequence container
 						sequenceContainer.updateBeat(beatId, {
-							blueMotionData: updatedMotionData
+							blueMotionData: {
+								...beat.blueMotionData,
+								[property]: value
+							}
 						});
-
-						// Also update the pictograph data to ensure immediate visual updates
-						if (pictographData.value && pictographData.value.blueMotionData) {
-							// Create a deep copy of the pictograph data
-							const updatedPictographData = {
-								...pictographData.value,
-								blueMotionData: {
-									...pictographData.value.blueMotionData,
-									...updatedMotionData
-								}
-							};
-
-							// Force recreation of the pictograph to update arrow angles
-							// This will trigger a complete redraw of the pictograph
-							// which will update the arrow angles correctly
-
-							// Update arrow data for both turns and direction changes
-							// This ensures immediate visual feedback for all parameter changes
-							if (updatedPictographData.blueArrowData) {
-								if (property === 'turns') {
-									// Update the turns value directly in the arrow data
-									updatedPictographData.blueArrowData = {
-										...updatedPictographData.blueArrowData,
-										turns: value
-									};
-								} else if (property === 'direction') {
-									// Update the propRotDir value in the arrow data
-									const propRotDir =
-										value === 'clockwise' ? 'cw' : value === 'counterclockwise' ? 'ccw' : 'no_rot';
-									updatedPictographData.blueArrowData = {
-										...updatedPictographData.blueArrowData,
-										propRotDir: propRotDir,
-										// Also update the motion type to match the updated motion data
-										motionType: updatedMotionData.motionType
-									};
-								}
-							}
-
-							// Always force a complete redraw for immediate visual feedback
-							// This ensures real-time updates for both turns and direction changes
-							if (typeof window !== 'undefined') {
-								// Immediate update without requestAnimationFrame for better responsiveness
-								pictographContainer.setData(updatedPictographData as any);
-							} else {
-								// For SSR environments, update directly
-								pictographContainer.setData(updatedPictographData as any);
-							}
-						}
 					}
 				} else {
 					// Update red motion data
 					if (beat.redMotionData) {
-						// If changing direction, we may need to update the motion type
-						const updatedMotionData = {
-							...beat.redMotionData,
-							[property]: value
-						};
-
-						// If changing direction, update motion type if needed
-						if (property === 'direction') {
-							// Convert from Direction to PropRotDir
-							const propRotDir =
-								value === 'clockwise' ? 'cw' : value === 'counterclockwise' ? 'ccw' : 'no_rot';
-
-							// Update motion type based on direction change
-							if (
-								beat.redMotionData.motionType === 'pro' ||
-								beat.redMotionData.motionType === 'anti'
-							) {
-								// If changing from clockwise to counterclockwise or vice versa,
-								// switch between pro and anti motion types
-								if (beat.redMotionData.propRotDir !== propRotDir) {
-									updatedMotionData.motionType =
-										beat.redMotionData.motionType === 'pro' ? 'anti' : 'pro';
-								}
-							}
-						}
-
-						// Update the beat in the sequence container
 						sequenceContainer.updateBeat(beatId, {
-							redMotionData: updatedMotionData
+							redMotionData: {
+								...beat.redMotionData,
+								[property]: value
+							}
 						});
-
-						// Also update the pictograph data to ensure immediate visual updates
-						if (pictographData.value && pictographData.value.redMotionData) {
-							// Create a deep copy of the pictograph data
-							const updatedPictographData = {
-								...pictographData.value,
-								redMotionData: {
-									...pictographData.value.redMotionData,
-									...updatedMotionData
-								}
-							};
-
-							// Force recreation of the pictograph to update arrow angles
-							// This will trigger a complete redraw of the pictograph
-							// which will update the arrow angles correctly
-
-							// Update arrow data for both turns and direction changes
-							// This ensures immediate visual feedback for all parameter changes
-							if (updatedPictographData.redArrowData) {
-								if (property === 'turns') {
-									// Update the turns value directly in the arrow data
-									updatedPictographData.redArrowData = {
-										...updatedPictographData.redArrowData,
-										turns: value
-									};
-								} else if (property === 'direction') {
-									// Update the propRotDir value in the arrow data
-									const propRotDir =
-										value === 'clockwise' ? 'cw' : value === 'counterclockwise' ? 'ccw' : 'no_rot';
-									updatedPictographData.redArrowData = {
-										...updatedPictographData.redArrowData,
-										propRotDir: propRotDir,
-										// Also update the motion type to match the updated motion data
-										motionType: updatedMotionData.motionType
-									};
-								}
-							}
-
-							// Always force a complete redraw for immediate visual feedback
-							// This ensures real-time updates for both turns and direction changes
-							if (typeof window !== 'undefined') {
-								// Immediate update without requestAnimationFrame for better responsiveness
-								pictographContainer.setData(updatedPictographData as any);
-							} else {
-								// For SSR environments, update directly
-								pictographContainer.setData(updatedPictographData as any);
-							}
-						}
 					}
-				}
-
-				// Also update the turnsStore to ensure UI controls reflect the correct values
-				if (property === 'turns') {
-					// Ensure we have a valid TurnsValue (number or 'fl')
-					const turns = typeof value === 'number' || value === 'fl' ? value : 0;
-
-					turnsStore.setTurns(color, turns as any);
-				} else if (property === 'direction') {
-					// Convert PropRotDir to Direction
-					const direction =
-						value === 'cw' ? 'clockwise' : value === 'ccw' ? 'counterclockwise' : null;
-
-					turnsStore.setDirection(color, direction);
-				}
-
-				// Dispatch a custom event to notify components that the beat data has changed
-				if (typeof document !== 'undefined') {
-					const beatUpdatedEvent = new CustomEvent('beat-data-updated', {
-						detail: {
-							beatId,
-							color,
-							property,
-							value
-						},
-						bubbles: true
-					});
-					document.dispatchEvent(beatUpdatedEvent);
 				}
 			}
 		}
 	}
 
 	/**
-	 * Sets up a polling mechanism to update pictograph data when selection changes
-	 * @returns Cleanup function
+	 * Sets up a subscription to the sequence container to update pictograph data when selection changes
+	 * @returns Cleanup function to unsubscribe
 	 */
 	function setupSequenceSubscription() {
 		// Load selected beat data initially
 		loadSelectedBeatData();
 
-		// Use polling to check for changes since we can't use runes in .ts files
-		let lastSelectedBeatIds = JSON.stringify(sequenceContainer.state.selectedBeatIds);
-
-		const intervalId = setInterval(() => {
-			const currentSelectedBeatIds = JSON.stringify(sequenceContainer.state.selectedBeatIds);
-			if (currentSelectedBeatIds !== lastSelectedBeatIds) {
-				lastSelectedBeatIds = currentSelectedBeatIds;
-				loadSelectedBeatData();
-			}
-		}, 100); // Check every 100ms
+		// Subscribe to selection changes
+		const unsubscribe = sequenceContainer.subscribe(() => {
+			loadSelectedBeatData();
+		});
 
 		// Return cleanup function
-		return () => clearInterval(intervalId);
+		return unsubscribe;
 	}
 
 	return {

@@ -2,7 +2,8 @@
 import type { PictographData } from '$lib/types/PictographData';
 import type { GridData } from '$lib/components/objects/Grid/GridData';
 import type { PictographChecker } from '$lib/components/Pictograph/services/PictographChecker';
-import type { PropRotDir } from '$lib/types/Types';
+import type { GridMode, PropRotDir, ShiftHandRotDir, MotionType } from '$lib/types/Types';
+import type { Motion } from '$lib/components/objects/Motion/Motion';
 
 export type ArrowPlacementConfig = {
 	pictographData: PictographData;

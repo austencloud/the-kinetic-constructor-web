@@ -1,22 +1,15 @@
 <!-- src/lib/components/MenuBar/NavWidget/TabRipple.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 
-	const {
-		active = false,
-		index = 0,
-		previousIndex = 0
-	} = $props<{
-		active?: boolean;
-		index?: number;
-		previousIndex?: number;
-	}>();
+	export let active = false;
+	export let index = 0;
+	export let previousIndex = 0;
 
 	let rippleElement: HTMLDivElement;
 	let isAnimating = false;
 
-	// Use $derived for reactive values
-	const direction = $derived(index > previousIndex ? 'right' : 'left');
+	$: direction = index > previousIndex ? 'right' : 'left';
 
 	onMount(() => {
 		if (active && rippleElement) {
@@ -24,12 +17,9 @@
 		}
 	});
 
-	// Replace reactive if-block with $effect
-	$effect(() => {
-		if (active && rippleElement && !isAnimating) {
-			startRipple();
-		}
-	});
+	$: if (active && rippleElement && !isAnimating) {
+		startRipple();
+	}
 
 	function startRipple() {
 		isAnimating = true;
@@ -42,6 +32,9 @@
 
 		// Set animation based on direction
 		rippleElement.style.animation = `ripple-${direction} 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards`;
+
+		// Add event listener for animation end
+		rippleElement.addEventListener('animationend', handleAnimationEnd, { once: true });
 	}
 
 	function handleAnimationEnd() {
@@ -50,7 +43,7 @@
 </script>
 
 <div class="tab-ripple-container" class:active>
-	<div class="tab-ripple" bind:this={rippleElement} onanimationend={handleAnimationEnd}></div>
+	<div class="tab-ripple" bind:this={rippleElement}></div>
 </div>
 
 <style>

@@ -5,7 +5,7 @@
  * using the modern container-based approach with Svelte 5 runes.
  */
 
-import { createContainer } from '$lib/state/core/container.svelte';
+import { createContainer } from '$lib/state/core/container';
 import { browser } from '$app/environment';
 
 // Storage keys

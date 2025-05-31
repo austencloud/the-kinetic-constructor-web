@@ -1,7 +1,7 @@
 <!-- src/lib/components/GenerateTab/controls/GenerateButtonSection.svelte -->
 <script lang="ts">
 	import { sequenceSelectors } from '$lib/state/machines/sequenceMachine';
-	import { isGenerating, hasError, statusMessage } from '../store/generator.svelte';
+	import { isGenerating, hasError, statusMessage } from '../store/generator';
 	import GenerateButton from '../components/GenerateButton.svelte';
 
 	// Use Svelte 5 props rune
@@ -21,9 +21,9 @@
 
 <div class="generate-button-container">
 	<GenerateButton
-		isLoading={useNewStateManagement ? newIsGenerating : isGenerating()}
-		hasError={useNewStateManagement ? newHasError : hasError()}
-		statusMessage={useNewStateManagement ? newStatusMessage : statusMessage()}
+		isLoading={useNewStateManagement ? newIsGenerating : $isGenerating}
+		hasError={useNewStateManagement ? newHasError : $hasError}
+		statusMessage={useNewStateManagement ? newStatusMessage : $statusMessage}
 		onClick={props.onGenerateClick}
 	/>
 </div>

@@ -1,49 +1,67 @@
-/**
- * WriteTab Selection State - Modern Svelte 5 runes-based selection management
- */
+import { writable, derived } from 'svelte/store';
+import { actStore } from './actStore';
 
-import { actState } from '../state/actState.svelte';
-
-// Create reactive selection state using Svelte 5 runes
-class SelectionState {
-	selectedRow = $state<number | null>(null);
-	selectedCol = $state<number | null>(null);
-
-	// Derived state for the currently selected beat
-	selectedBeat = $derived(() => {
-		if (this.selectedRow === null || this.selectedCol === null) {
-			return null;
-		}
-
-		const sequences = actState.act.sequences;
-		if (this.selectedRow < sequences.length) {
-			const sequence = sequences[this.selectedRow];
-			if (this.selectedCol < sequence.beats.length) {
-				return {
-					beat: sequence.beats[this.selectedCol],
-					row: this.selectedRow,
-					col: this.selectedCol
-				};
-			}
-		}
-
-		return null;
-	});
-
-	// Select a beat at the specified row and column
-	selectBeat(row: number, col: number) {
-		this.selectedRow = row;
-		this.selectedCol = col;
-	}
-
-	// Clear the current selection
-	clearSelection() {
-		this.selectedRow = null;
-		this.selectedCol = null;
-	}
+// Define the selection state interface
+interface SelectionState {
+	selectedRow: number | null;
+	selectedCol: number | null;
 }
 
-// Create and export the singleton instance
-export const selectionState = new SelectionState();
+// Create the initial state
+const initialState: SelectionState = {
+	selectedRow: null,
+	selectedCol: null
+};
 
-// Only export the modern runes-based state
+// Create the writable store
+function createSelectionStore() {
+	const { subscribe, set, update } = writable<SelectionState>(initialState);
+
+	return {
+		subscribe,
+
+		/**
+		 * Select a beat at the specified row and column
+		 */
+		selectBeat: (row: number, col: number) => {
+			update((state) => ({
+				...state,
+				selectedRow: row,
+				selectedCol: col
+			}));
+		},
+
+		/**
+		 * Clear the current selection
+		 */
+		clearSelection: () => {
+			set(initialState);
+		}
+	};
+}
+
+// Create and export the store
+export const selectionStore = createSelectionStore();
+
+// Create derived store for the currently selected beat
+export const selectedBeat = derived([selectionStore, actStore], ([$selection, $actStore]) => {
+	const { selectedRow, selectedCol } = $selection;
+
+	if (selectedRow === null || selectedCol === null) {
+		return null;
+	}
+
+	const sequences = $actStore.act.sequences;
+	if (selectedRow < sequences.length) {
+		const sequence = sequences[selectedRow];
+		if (selectedCol < sequence.beats.length) {
+			return {
+				beat: sequence.beats[selectedCol],
+				row: selectedRow,
+				col: selectedCol
+			};
+		}
+	}
+
+	return null;
+});

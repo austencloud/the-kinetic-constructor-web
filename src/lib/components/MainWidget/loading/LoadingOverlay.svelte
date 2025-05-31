@@ -1,20 +1,15 @@
 <script lang="ts">
 	import LoadingSpinner from './LoadingSpinner.svelte';
 
-	// Props using Svelte 5 runes
-	const {
-		onRetry,
-		showInitializationError = false,
-		progress = 0, // Get progress from parent (MainWidget)
-		message = 'Loading...', // Get message from parent
-		errorMessage = null // Get error message from parent
-	} = $props<{
-		onRetry: () => void;
-		showInitializationError?: boolean;
-		progress?: number;
-		message?: string;
-		errorMessage?: string | null;
-	}>();
+	// Remove loadingStore import
+	// import { loadingState } from '$lib/stores/ui/loadingStore';
+
+	// --- Props ---
+	export let onRetry: () => void;
+	export let showInitializationError: boolean = false;
+	export let progress: number = 0; // Get progress from parent (MainWidget)
+	export let message: string = 'Loading...'; // Get message from parent
+	export let errorMessage: string | null = null; // Get error message from parent
 </script>
 
 <div class="loading-overlay">
@@ -29,7 +24,7 @@
 			{#if showInitializationError}
 				<p class="error-text">
 					{errorMessage ?? 'An error occurred during initialization.'}
-					<button class="retry-button" onclick={onRetry}> Retry </button>
+					<button class="retry-button" on:click={onRetry}> Retry </button>
 				</p>
 			{/if}
 		</div>

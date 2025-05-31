@@ -1,59 +1,48 @@
 <!-- src/lib/components/objects/Glyphs/TKAGlyph/TKAGlyph.svelte -->
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { parseTurnsTupleString } from './utils/parseTurnsTuple';
-	import { glyphContainer, type Rect } from '$lib/stores/glyphContainer.svelte';
+	import { preloadCommonAssets, assetCache, type Rect } from '$lib/stores/glyphStore';
 	import type { Letter } from '$lib/types/Letter';
-	import type { TKATurns } from '$lib/types/Types';
+	import type { DirRelation, PropRotDir, TKATurns } from '$lib/types/Types';
 	import LetterRenderer from './components/LetterRenderer.svelte';
 	import DashRenderer from './components/DashRenderer.svelte';
 	import DotsRenderer from './components/DotsRenderer.svelte';
 	import TurnsRenderer from './components/TurnsRenderer.svelte';
 
-	// Props using Svelte 5 runes
-	const {
-		letter = null,
-		turnsTuple = '',
-		x = 0,
-		y = 0,
-		scale = 1,
-		onloaded,
-		onloading
-	} = $props<{
-		letter?: Letter | null;
-		turnsTuple?: string;
-		x?: number;
-		y?: number;
-		scale?: number;
-		onloaded?: (success: boolean) => void;
-		onloading?: () => void;
+	// Props with TypeScript interface
+	export let letter: Letter | null = null;
+	export let turnsTuple: string = '';
+	export let x: number = 0;
+	export let y: number = 0;
+	export let scale: number = 1;
+
+	// Event dispatcher
+	const dispatch = createEventDispatcher<{
+		loaded: boolean;
+		loading: void;
 	}>();
 
-	// Local state using Svelte 5 runes with reactive loop prevention
-	let letterRect = $state<Rect | null>(null);
-	let letterLoaded = $state(false);
+	// Local state
+	let letterRect: Rect | null = null;
+	let letterLoaded = false;
+	let isLoading = false;
 
-	// CRITICAL FIX: Prevent infinite reactive loops in glyph rendering
-	let isProcessingLetter = false;
+	// Parse the turnsTuple
+	$: parsedTurns = parseTurnsTuple(turnsTuple);
 
-	// Parse the turnsTuple using $derived
-	const parsedTurns = $derived(parseTurnsTuple(turnsTuple));
-	const direction = $derived(parsedTurns?.direction || null);
-	const topTurn = $derived(parsedTurns?.top || (0 as TKATurns));
-	const bottomTurn = $derived(parsedTurns?.bottom || (0 as TKATurns));
-	const hasTurns = $derived(
-		(topTurn !== 'fl' && Number(topTurn) > 0) || (bottomTurn !== 'fl' && Number(bottomTurn) > 0)
-	);
-	const shouldShowDots = $derived(hasTurns);
+	// Destructure for easier access
+	$: direction = parsedTurns?.direction || null;
+	$: topTurn = parsedTurns?.top || (0 as TKATurns);
+	$: bottomTurn = parsedTurns?.bottom || (0 as TKATurns);
+	$: hasTurns =
+		(topTurn !== 'fl' && Number(topTurn) > 0) || (bottomTurn !== 'fl' && Number(bottomTurn) > 0);
+	$: shouldShowDots = hasTurns;
 
-	// Ensure common assets are loaded if needed
+	// Ensure common assets are loaded
 	onMount(() => {
-		// Only trigger preloading if dash and dot aren't loaded yet
-		if (!glyphContainer.cache.dotSVG || !glyphContainer.cache.dashSVG) {
-			// Only preload if not already in progress
-			if (!glyphContainer.loading.isPreloading && !glyphContainer.loading.preloadCompleted) {
-				glyphContainer.preloadCommonAssets();
-			}
+		if (!$assetCache.dotSVG || !$assetCache.dashSVG) {
+			preloadCommonAssets();
 		}
 	});
 
@@ -66,57 +55,42 @@
 	}
 
 	// Handle letter loading events
-	function handleLetterLoaded(rect: Rect) {
-		// CRITICAL FIX: Prevent infinite reactive loops
-		if (isProcessingLetter) {
-			return;
-		}
-		isProcessingLetter = true;
-
-		// Use untrack to prevent reactive loops
-		untrack(() => {
-			letterRect = rect;
-			letterLoaded = true;
-		});
-
-		onloaded?.(true);
-
-		// Reset processing flag after a delay
-		setTimeout(() => {
-			isProcessingLetter = false;
-		}, 100);
+	function handleLetterLoaded(event: CustomEvent<Rect>) {
+		letterRect = event.detail;
+		letterLoaded = true;
+		dispatch('loaded', true);
 	}
 
 	function handleLoadingStarted() {
-		onloading?.();
+		isLoading = true;
+		dispatch('loading');
 	}
 
-	function handleLoadingComplete(success: boolean) {
-		if (success) {
+	function handleLoadingComplete(event: CustomEvent<boolean>) {
+		isLoading = false;
+		if (event.detail) {
 			// Loading completed successfully, but we still need the letterRect
 			// The letterLoaded flag will be set when the image is fully rendered
 		} else {
 			// Loading failed
-			onloaded?.(false);
+			dispatch('loaded', false);
 		}
 	}
 </script>
 
-{#if letter && letter !== undefined}
-	<g class="tka-glyph" transform={`translate(${x}, ${y}) scale(${scale})`}>
-		<LetterRenderer
-			{letter}
-			onletterLoaded={handleLetterLoaded}
-			onloadingStarted={handleLoadingStarted}
-			onloadingComplete={handleLoadingComplete}
-		/>
+<g class="tka-glyph" transform={`translate(${x}, ${y}) scale(${scale})`}>
+	<LetterRenderer
+		{letter}
+		on:letterLoaded={handleLetterLoaded}
+		on:loadingStarted={handleLoadingStarted}
+		on:loadingComplete={handleLoadingComplete}
+	/>
 
-		{#if letterLoaded && letterRect}
-			<DashRenderer {letter} {letterRect} />
+	{#if letterLoaded && letterRect}
+		<DashRenderer {letter} {letterRect} />
 
-			<DotsRenderer {direction} {letterRect} {letter} {shouldShowDots} />
+		<DotsRenderer {direction} {letterRect} {letter} {shouldShowDots} />
 
-			<TurnsRenderer topValue={topTurn} bottomValue={bottomTurn} {letterRect} />
-		{/if}
-	</g>
-{/if}
+		<TurnsRenderer topValue={topTurn} bottomValue={bottomTurn} {letterRect} />
+	{/if}
+</g>

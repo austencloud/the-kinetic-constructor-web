@@ -1,24 +1,33 @@
 /**
- * Transition Loading Store - Svelte 5 Runes Implementation
+ * Store for managing the loading state during transitions between components
  */
+import { writable } from 'svelte/store';
 
-function createTransitionLoadingStore() {
-	let isLoading = $state(false);
+// Create a store for the transition loading state that can be accessed globally
+export const transitionLoadingStore = writable(false);
 
-	return {
-		get isLoading() { return isLoading; },
-		
-		setLoading(loading: boolean) {
-			isLoading = loading;
-		},
-		
-		subscribe(callback: (loading: boolean) => void) {
-			// Simple subscription pattern
-			const unsubscribe = () => {};
-			callback(isLoading);
-			return unsubscribe;
-		}
-	};
-}
+// Helper functions to manipulate the store
+export const transitionLoading = {
+	/**
+	 * Start the loading state
+	 */
+	start: () => {
+		transitionLoadingStore.set(true);
+	},
 
-export const transitionLoadingStore = createTransitionLoadingStore();
+	/**
+	 * End the loading state
+	 */
+	end: () => {
+		transitionLoadingStore.set(false);
+	},
+
+	/**
+	 * Toggle the loading state
+	 */
+	toggle: () => {
+		transitionLoadingStore.update((state) => !state);
+	}
+};
+
+export default transitionLoading;

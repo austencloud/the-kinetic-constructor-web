@@ -1,20 +1,16 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
+	import { createEventDispatcher } from 'svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import { browser } from '$app/environment';
-	import type { Snippet } from 'svelte';
 
-	// Props using Svelte 5 runes
-	const {
-		isOpen = false,
-		title = null,
-		onclose,
-		children
-	} = $props<{
-		isOpen?: boolean;
-		title?: string | null;
-		onclose?: () => void;
-		children: Snippet;
+	// Props
+	export let isOpen: boolean = false;
+	export let title: string | null = null;
+
+	// Event dispatcher
+	const dispatch = createEventDispatcher<{
+		close: void;
 	}>();
 
 	// Handle close action
@@ -24,7 +20,7 @@
 			hapticFeedbackService.trigger('selection');
 		}
 
-		onclose?.();
+		dispatch('close');
 	}
 
 	// Handle escape key press on the window
@@ -36,6 +32,7 @@
 
 	// Handle background click - this is the main function to close when clicking on blank areas
 	function handleBackgroundClick() {
+		console.log('Background clicked, closing overlay');
 		handleClose();
 	}
 
@@ -46,13 +43,13 @@
 	}
 
 	// Reference to the content element for focus management
-	let contentElement = $state<HTMLDivElement>();
+	let contentElement: HTMLDivElement;
 
 	// Focus the content element when the overlay opens
 	function handleOverlayOpen() {
 		if (contentElement) {
 			setTimeout(() => {
-				contentElement?.focus();
+				contentElement.focus();
 			}, 50);
 		}
 	}
@@ -65,12 +62,12 @@
 	<div
 		class="fullscreen-overlay-wrapper"
 		transition:fade={{ duration: 200 }}
-		onintroend={handleOverlayOpen}
+		on:introend={handleOverlayOpen}
 	>
 		<!-- Clickable background button - this is accessible and clickable -->
 		<button
 			class="background-button"
-			onclick={handleBackgroundClick}
+			on:click={handleBackgroundClick}
 			aria-label="Close fullscreen view"
 		></button>
 
@@ -78,8 +75,8 @@
 		<div
 			class="fullscreen-content"
 			transition:scale={{ duration: 200, start: 0.95 }}
-			onclick={handleContentClick}
-			onkeydown={() => {}}
+			on:click={handleContentClick}
+			on:keydown={() => {}}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby={title ? 'fullscreen-title' : undefined}
@@ -94,7 +91,7 @@
 
 			<button
 				class="close-button"
-				onclick={handleClose}
+				on:click={handleClose}
 				aria-label="Close fullscreen view"
 				title="Close fullscreen view"
 			>
@@ -118,7 +115,7 @@
 			<div class="fullscreen-body">
 				<!-- Wrap slot in a div to prevent clicks from closing the overlay -->
 				<div class="content-wrapper">
-					{@render children?.()}
+					<slot />
 				</div>
 			</div>
 		</div>

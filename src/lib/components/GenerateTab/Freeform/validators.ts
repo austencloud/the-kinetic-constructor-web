@@ -54,7 +54,7 @@ export function validateFreeformSequence(
 
 function validateSequenceLength(
 	sequence: BeatData[],
-	_selectedLetterTypes: string[]
+	selectedLetterTypes: string[]
 ): ValidationResult {
 	const errors: string[] = [];
 
@@ -94,7 +94,7 @@ function validateLetterTypeCompatibility(
 
 function validateOrientations(
 	sequence: BeatData[],
-	_selectedLetterTypes: string[]
+	selectedLetterTypes: string[]
 ): ValidationResult {
 	const errors: string[] = [];
 
@@ -113,7 +113,7 @@ function validateOrientations(
 	return { isValid: errors.length === 0, errors };
 }
 
-function validatePositions(sequence: BeatData[], _selectedLetterTypes: string[]): ValidationResult {
+function validatePositions(sequence: BeatData[], selectedLetterTypes: string[]): ValidationResult {
 	const errors: string[] = [];
 	const positions = new Set(sequence.map((beat) => beat.position));
 
@@ -133,7 +133,7 @@ function validatePositions(sequence: BeatData[], _selectedLetterTypes: string[])
 
 function validateTurnIntensity(
 	sequence: BeatData[],
-	_selectedLetterTypes: string[]
+	selectedLetterTypes: string[]
 ): ValidationResult {
 	const errors: string[] = [];
 

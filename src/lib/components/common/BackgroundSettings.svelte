@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useService } from '$lib/core/di/useService.svelte';
+	import { useService } from '$lib/core/di/useService';
 	import { SERVICE_TOKENS } from '$lib/core/di/ServiceTokens';
 	import type { BackgroundService } from '$lib/core/services/BackgroundService';
 	import type { ErrorHandler } from '$lib/core/services/ErrorHandling';
@@ -14,19 +14,17 @@
 	);
 
 	// Component props
-	let { onBackgroundChange = () => {} }: { onBackgroundChange?: (type: string) => void } = $props();
+	export let onBackgroundChange: (type: string) => void = () => {};
 
 	// Component state
-	let availableBackgrounds = $state<string[]>([]);
-	let currentBackground = $state('');
+	let availableBackgrounds: string[] = [];
+	let currentBackground = '';
 
 	// Load available backgrounds when services are ready
-	$effect(() => {
-		if (backgroundReady()) {
-			availableBackgrounds = backgroundService()!.getAvailableBackgrounds();
-			currentBackground = backgroundService()!.getCurrentBackground();
-		}
-	});
+	$: if ($backgroundReady) {
+		availableBackgrounds = $backgroundService!.getAvailableBackgrounds();
+		currentBackground = $backgroundService!.getCurrentBackground();
+	}
 
 	function handleBackgroundChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
@@ -34,8 +32,8 @@
 		currentBackground = type;
 
 		// Log change with DI error handler
-		if (errorReady()) {
-			errorHandler()!.log({
+		if ($errorReady) {
+			$errorHandler!.log({
 				source: 'BackgroundSettings',
 				message: `Background changed to: ${type}`,
 				severity: ErrorSeverity.INFO
@@ -47,24 +45,26 @@
 	}
 
 	// Function to get a user-friendly display name for each background
-	const displayNames: Record<string, string> = {
-		snowfall: 'Snowfall',
-		nightSky: 'Night Sky',
-		deepOcean: 'Deep Ocean'
-	};
-
 	function getDisplayName(type: string): string {
-		return displayNames[type] || type;
+		switch (type) {
+			case 'snowfall':
+				return 'Snowfall';
+			case 'nightSky':
+				return 'Night Sky';
+
+			default:
+				return type;
+		}
 	}
 </script>
 
 <div class="background-settings">
 	<h3>Background Settings</h3>
 
-	{#if backgroundReady()}
+	{#if $backgroundReady}
 		<div class="setting-group">
 			<label for="background-type">Background Type:</label>
-			<select id="background-type" bind:value={currentBackground} onchange={handleBackgroundChange}>
+			<select id="background-type" value={currentBackground} on:change={handleBackgroundChange}>
 				{#each availableBackgrounds as type}
 					<option value={type}>{getDisplayName(type)}</option>
 				{/each}

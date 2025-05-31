@@ -25,7 +25,7 @@ export function getSpecialAdjustment(
 
 		// 3. Get arrow key - EXACTLY like Python's attr_key_generator
 		const attrKeyGenerator = AttrKeyGenerator.getInstance();
-		const arrowKey = attrKeyGenerator.getKeyFromArrow(arrow, checker, pictographData);
+		let arrowKey = attrKeyGenerator.getKeyFromArrow(arrow, checker, pictographData);
 
 		// 4. Get special placement loader
 		const loader = SpecialPlacementLoader.getInstance();

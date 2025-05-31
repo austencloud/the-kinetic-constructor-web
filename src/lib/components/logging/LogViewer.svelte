@@ -1,11 +1,11 @@
 <!--
   Log Viewer Component
-
+  
   Displays logs from the memory transport in a filterable, searchable interface.
 -->
 <script lang="ts">
-	import { getContext } from 'svelte';
-	// NO STORES - RUNES ONLY!
+	import { getContext, onMount, onDestroy } from 'svelte';
+	import { writable, derived, type Writable } from 'svelte/store';
 	import {
 		LogLevel,
 		LogDomain,
@@ -14,85 +14,70 @@
 		type LogEntry
 	} from '$lib/core/logging';
 
-	// Props using Svelte 5 runes
-	const {
-		maxHeight = '400px',
-		showToolbar = true,
-		showTimestamps = true,
-		showSource = true,
-		showDomain = true,
-		autoScroll: autoScrollProp = true,
-		initialLevel = LogLevel.INFO
-	} = $props<{
-		maxHeight?: string;
-		showToolbar?: boolean;
-		showTimestamps?: boolean;
-		showSource?: boolean;
-		showDomain?: boolean;
-		autoScroll?: boolean;
-		initialLevel?: LogLevel;
-	}>();
+	// Props
+	export let maxHeight: string = '400px';
+	export let showToolbar: boolean = true;
+	export let showTimestamps: boolean = true;
+	export let showSource: boolean = true;
+	export let showDomain: boolean = true;
+	export let autoScroll: boolean = true;
+	export let initialLevel: LogLevel = LogLevel.INFO;
 
-	// MODERNIZED: Get the logs from context as runes - NO STORES!
+	// Get the logs from context
 	const { logs } = getContext<{
-		logs: LogEntry[];
+		logs: Writable<LogEntry[]>;
 	}>(Symbol('logger'));
 
-	// Filter state using Svelte 5 runes
-	let levelFilter = $state<LogLevel>(initialLevel);
-	let domainFilter = $state<LogDomain | null>(null);
-	let sourceFilter = $state('');
-	let searchQuery = $state('');
-	let autoScroll = $state(autoScrollProp);
+	// Filter state
+	const levelFilter = writable<LogLevel>(initialLevel);
+	const domainFilter = writable<LogDomain | null>(null);
+	const sourceFilter = writable<string>('');
+	const searchQuery = writable<string>('');
 
-	// MODERNIZED: Direct access to logs with runes - NO STORES!
-	// No need for subscription or currentLogs state
+	// Filtered logs
+	const filteredLogs = derived(
+		[logs, levelFilter, domainFilter, sourceFilter, searchQuery],
+		([$logs, $levelFilter, $domainFilter, $sourceFilter, $searchQuery]) => {
+			return $logs.filter((log) => {
+				// Filter by level
+				if (log.level < $levelFilter) return false;
 
-	// MODERNIZED: Filtered logs using derived state with direct logs access - NO STORES!
-	const filteredLogs = $derived(() => {
-		return logs.filter((log: LogEntry) => {
-			// Filter by level
-			if (log.level < levelFilter) return false;
+				// Filter by domain
+				if ($domainFilter && log.domain !== $domainFilter) return false;
 
-			// Filter by domain
-			if (domainFilter && log.domain !== domainFilter) return false;
+				// Filter by source
+				if ($sourceFilter && !log.source.includes($sourceFilter)) return false;
 
-			// Filter by source
-			if (sourceFilter && !log.source.includes(sourceFilter)) return false;
+				// Filter by search query
+				if ($searchQuery) {
+					const query = $searchQuery.toLowerCase();
+					const message = log.message.toLowerCase();
+					const source = log.source.toLowerCase();
+					const domain = log.domain?.toLowerCase() || '';
 
-			// Filter by search query
-			if (searchQuery) {
-				const query = searchQuery.toLowerCase();
-				const message = log.message.toLowerCase();
-				const source = log.source.toLowerCase();
-				const domain = log.domain?.toLowerCase() || '';
+					return (
+						message.includes(query) ||
+						source.includes(query) ||
+						domain.includes(query) ||
+						JSON.stringify(log.data).toLowerCase().includes(query)
+					);
+				}
 
-				return (
-					message.includes(query) ||
-					source.includes(query) ||
-					domain.includes(query) ||
-					JSON.stringify(log.data).toLowerCase().includes(query)
-				);
-			}
-
-			return true;
-		});
-	});
+				return true;
+			});
+		}
+	);
 
 	// Reference to the log container for auto-scrolling
-	let logContainer = $state<HTMLDivElement>();
-	let isScrolledToBottom = $state(true);
+	let logContainer: HTMLDivElement;
+	let isScrolledToBottom = true;
 
 	// Auto-scroll when new logs are added
-	$effect(() => {
-		if (autoScroll && isScrolledToBottom && logContainer && filteredLogs.length > 0) {
-			setTimeout(() => {
-				if (logContainer) {
-					logContainer.scrollTop = logContainer.scrollHeight;
-				}
-			}, 0);
-		}
-	});
+	$: if (autoScroll && isScrolledToBottom && logContainer && $filteredLogs.length > 0) {
+		setTimeout(() => {
+			logContainer.scrollTop = logContainer.scrollHeight;
+		}, 0);
+	}
 
 	// Handle scroll events to determine if we're at the bottom
 	function handleScroll() {
@@ -108,18 +93,14 @@
 		return date.toISOString().split('T')[1].split('.')[0];
 	}
 
-	// MODERNIZED: Clear logs with runes - NO STORES!
+	// Clear logs
 	function clearLogs() {
-		// Since logs is now a direct array from context, we need to modify it differently
-		// This would need to be handled by the logging context provider
-		console.warn(
-			'clearLogs: This function needs to be implemented by the logging context provider'
-		);
+		logs.set([]);
 	}
 
-	// MODERNIZED: Export logs as JSON with direct access - NO STORES!
+	// Export logs as JSON
 	function exportLogs() {
-		const json = JSON.stringify(logs, null, 2);
+		const json = JSON.stringify($logs, null, 2);
 		const blob = new Blob([json], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
 
@@ -134,8 +115,8 @@
 
 	// Copy logs to clipboard
 	function copyLogs() {
-		const text = filteredLogs()
-			.map((log: LogEntry) => {
+		const text = $filteredLogs
+			.map((log) => {
 				let line = '';
 				if (showTimestamps) line += `[${formatTimestamp(log.timestamp)}] `;
 				line += `[${log.levelName.toUpperCase()}]`;
@@ -155,7 +136,7 @@
 	{#if showToolbar}
 		<div class="toolbar">
 			<div class="filters">
-				<select bind:value={levelFilter}>
+				<select bind:value={$levelFilter}>
 					<option value={LogLevel.TRACE}>TRACE</option>
 					<option value={LogLevel.DEBUG}>DEBUG</option>
 					<option value={LogLevel.INFO}>INFO</option>
@@ -164,22 +145,22 @@
 					<option value={LogLevel.FATAL}>FATAL</option>
 				</select>
 
-				<select bind:value={domainFilter}>
+				<select bind:value={$domainFilter}>
 					<option value={null}>All Domains</option>
 					{#each Object.values(LogDomain) as domain}
 						<option value={domain}>{domain}</option>
 					{/each}
 				</select>
 
-				<input type="text" placeholder="Filter by source..." bind:value={sourceFilter} />
+				<input type="text" placeholder="Filter by source..." bind:value={$sourceFilter} />
 
-				<input type="text" placeholder="Search logs..." bind:value={searchQuery} />
+				<input type="text" placeholder="Search logs..." bind:value={$searchQuery} />
 			</div>
 
 			<div class="actions">
-				<button onclick={clearLogs}>Clear</button>
-				<button onclick={exportLogs}>Export</button>
-				<button onclick={copyLogs}>Copy</button>
+				<button on:click={clearLogs}>Clear</button>
+				<button on:click={exportLogs}>Export</button>
+				<button on:click={copyLogs}>Copy</button>
 				<label>
 					<input type="checkbox" bind:checked={autoScroll} />
 					Auto-scroll
@@ -191,13 +172,13 @@
 	<div
 		class="log-container"
 		bind:this={logContainer}
-		onscroll={handleScroll}
+		on:scroll={handleScroll}
 		style="max-height: {maxHeight};"
 	>
-		{#if filteredLogs().length === 0}
+		{#if $filteredLogs.length === 0}
 			<div class="empty-state">No logs to display</div>
 		{:else}
-			{#each filteredLogs() as log (log.id)}
+			{#each $filteredLogs as log (log.id)}
 				<div class="log-entry" data-level={log.levelName}>
 					{#if showTimestamps}
 						<span class="timestamp">{formatTimestamp(log.timestamp)}</span>

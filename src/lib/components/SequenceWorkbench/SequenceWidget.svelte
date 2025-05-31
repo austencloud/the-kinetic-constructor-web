@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout.svelte';
+	import { useResponsiveLayout } from '$lib/composables/useResponsiveLayout';
 	import { onMount, onDestroy, getContext } from 'svelte';
-	import { useResizeObserver } from '$lib/composables/useResizeObserver.svelte';
+	import { useResizeObserver } from '$lib/composables/useResizeObserver';
 	import { browser } from '$app/environment';
 	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from './context/ElementContext';
 
@@ -11,12 +11,12 @@
 		calculateButtonSizeFactor
 	} from './utils/SequenceLayoutCalculator';
 	import { useSequenceMetadata } from './utils/SequenceMetadataManager';
-	import { openSequenceOverlay } from '$lib/state/sequenceOverlay/sequenceOverlayState.svelte';
+	import { openSequenceOverlay } from '$lib/state/sequenceOverlay/sequenceOverlayState';
 
 	import type { ActionEventDetail } from './ButtonPanel/types';
-	import { sequenceState } from '$lib/state/simple/sequenceState.svelte';
-	import { appState } from '$lib/state/simple/appState.svelte';
-	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer.svelte';
+	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
+	import { appActions } from '$lib/state/machines/app/app.actions';
+	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
 
 	import SequenceContent from './content/SequenceContent.svelte';
 	import SequenceOverlay from './components/SequenceOverlay.svelte';
@@ -27,6 +27,7 @@
 	import RemoveBeatButton from './RemoveBeatButton.svelte';
 	import RemoveStartPositionButton from './RemoveStartPositionButton.svelte';
 	import ClearSequenceButton from './ClearSequenceButton.svelte';
+	import EditButton from './EditButton.svelte';
 	import ShareButton from './share/ShareButton.svelte';
 	import SettingsButton from '$lib/components/MenuBar/SettingsButton/SettingsButton.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
@@ -69,7 +70,7 @@
 				(window as any).__beatFrameElementRef = beatFrameElement;
 				(window as any).__pendingBeatFrameElement = beatFrameElement;
 			} catch (error) {
-				// Silently handle localStorage errors
+				console.error('SequenceWidget: Error storing beatFrameElement availability:', error);
 			}
 		}
 	});
@@ -99,43 +100,41 @@
 				}
 			};
 
-			if (browser) {
-				document.addEventListener(
+			document.addEventListener(
+				'beatframe-element-available',
+				handleBeatFrameElementAvailable as EventListener
+			);
+
+			// Set up a MutationObserver to detect when the BeatFrame element is added to the DOM
+			const observer = new MutationObserver(() => {
+				if (!beatFrameElement) {
+					// Try to find the BeatFrame element in the DOM
+					const beatFrameElements = document.querySelectorAll('.beat-frame-container');
+					if (beatFrameElements.length > 0) {
+						fallbackElement = beatFrameElements[0] as HTMLElement;
+
+						// If we don't have a primary element yet, use the fallback
+						if (!beatFrameElement) {
+							beatFrameElement = fallbackElement;
+						}
+					}
+				}
+			});
+
+			// Start observing the document body for DOM changes
+			observer.observe(document.body, {
+				childList: true,
+				subtree: true
+			});
+
+			return () => {
+				// Clean up the event listener and observer when the component is destroyed
+				document.removeEventListener(
 					'beatframe-element-available',
 					handleBeatFrameElementAvailable as EventListener
 				);
-
-				// Set up a MutationObserver to detect when the BeatFrame element is added to the DOM
-				const observer = new MutationObserver(() => {
-					if (!beatFrameElement) {
-						// Try to find the BeatFrame element in the DOM
-						const beatFrameElements = document.querySelectorAll('.beat-frame-container');
-						if (beatFrameElements.length > 0) {
-							fallbackElement = beatFrameElements[0] as HTMLElement;
-
-							// If we don't have a primary element yet, use the fallback
-							if (!beatFrameElement) {
-								beatFrameElement = fallbackElement;
-							}
-						}
-					}
-				});
-
-				// Start observing the document body for DOM changes
-				observer.observe(document.body, {
-					childList: true,
-					subtree: true
-				});
-
-				return () => {
-					// Clean up the event listener and observer when the component is destroyed
-					document.removeEventListener(
-						'beatframe-element-available',
-						handleBeatFrameElementAvailable as EventListener
-					);
-					observer.disconnect();
-				};
-			}
+				observer.disconnect();
+			};
 		}
 	});
 	let isDeleteModalOpen = $state(false);
@@ -145,39 +144,55 @@
 
 	// Emit the full sequence widget dimensions whenever they change
 	$effect(() => {
-		if (browser && size && size.width > 0 && size.height > 0) {
+		if ($size && $size.width > 0 && $size.height > 0) {
 			const event = new CustomEvent('sequence-widget-dimensions', {
 				bubbles: true,
 				detail: {
-					width: size.width,
-					height: size.height
+					width: $size.width,
+					height: $size.height
 				}
 			});
-			if (browser) {
-				document.dispatchEvent(event);
-			}
+			document.dispatchEvent(event);
 		}
 	});
 
-	const workbenchIsPortrait = $derived(calculateWorkbenchIsPortrait(dimensions.width, size.height));
+	const workbenchIsPortrait = $derived(
+		calculateWorkbenchIsPortrait($dimensions.width, $size.height)
+	);
 
-	const buttonSizeFactor = $derived(calculateButtonSizeFactor(dimensions.width, dimensions.height));
+	const buttonSizeFactor = $derived(
+		calculateButtonSizeFactor($dimensions.width, $dimensions.height)
+	);
 
 	let sequenceName = $state('');
 
-	// DISABLED: Systematic test effect to prevent infinite loops
-	// $effect(() => {
-	// 	const { unsubscribe } = useSequenceMetadata((metadata) => {
-	// 		sequenceName = metadata.name;
-	// 	});
-	// 	return unsubscribe;
-	// });
+	$effect(() => {
+		const { unsubscribe } = useSequenceMetadata((metadata) => {
+			sequenceName = metadata.name;
+		});
+		return unsubscribe;
+	});
 
-	// Check if there's a selected beat using derived state
-	let hasSelectedBeat = $derived(sequenceContainer.state.selectedBeatIds.length > 0);
-	let isStartPositionSelected = $derived(
-		sequenceContainer.state.selectedBeatIds.includes('start-position')
-	);
+	// Check if there's a selected beat
+	// Use $state and a direct subscription for immediate reactivity
+	let hasSelectedBeat = $state(false);
+	let isStartPositionSelected = $state(false);
+
+	// Create a more reactive subscription to the selection state
+	// This ensures immediate UI updates when selection changes
+	$effect(() => {
+		// Create a direct subscription to the sequenceContainer
+		const unsubscribe = sequenceContainer.subscribe((state) => {
+			// Update the hasSelectedBeat state immediately when selection changes
+			hasSelectedBeat = state.selectedBeatIds.length > 0;
+
+			// Check if the start position is specifically selected
+			isStartPositionSelected = state.selectedBeatIds.includes('start-position');
+		});
+
+		// Clean up the subscription when the component is destroyed or the effect is re-run
+		return unsubscribe;
+	});
 
 	function handleButtonActionWrapper(event: CustomEvent<ActionEventDetail>) {
 		handleButtonAction({
@@ -210,14 +225,8 @@
 			// Ensure the selection is cleared
 			sequenceContainer.clearSelection();
 		} else if (selectedBeatIds.length > 0) {
-			// MIGRATED: Use pure Svelte 5 runes sequence state
-			// For now, just remove the beat - we'll implement removeBeatAndFollowing later
-			const beatIndex = sequenceContainer.state.beats.findIndex(
-				(beat) => beat.id === selectedBeatIds[0]
-			);
-			if (beatIndex >= 0) {
-				sequenceState.removeBeat(beatIndex);
-			}
+			// Pass the beatId directly to the action
+			sequenceActions.removeBeatAndFollowing(selectedBeatIds[0]);
 
 			// Trigger haptic feedback for deletion
 			if (browser) {
@@ -226,22 +235,22 @@
 
 			// Clear the selection after removing the beat
 			sequenceContainer.clearSelection();
+		} else {
+			console.warn('No beat selected to remove');
 		}
 	}
 
 	function handleClearSequence() {
-		if (browser) {
-			const event = new CustomEvent<ActionEventDetail>('action', {
-				detail: { id: 'clearSequence' }
-			});
-			hapticFeedbackService.trigger('error');
+		const event = new CustomEvent<ActionEventDetail>('action', {
+			detail: { id: 'clearSequence' }
+		});
+		hapticFeedbackService.trigger('error');
 
-			handleButtonActionWrapper(event);
-		}
+		handleButtonActionWrapper(event);
 	}
 
 	function handleSettingsClick() {
-		appState.openSettings();
+		appActions.openSettings();
 	}
 
 	function handleDeleteButtonClick(buttonRect: DOMRect) {
@@ -262,49 +271,39 @@
 		// Close the modal
 		isDeleteModalOpen = false;
 
-		if (browser) {
-			// Change cursor to indicate deletion mode with an improved X cursor
-			if (beatFrameElement) {
-				beatFrameElement.style.cursor =
-					"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ff5555' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10' fill='rgba(255,85,85,0.2)'/%3E%3Cline x1='15' y1='9' x2='9' y2='15'%3E%3C/line%3E%3Cline x1='9' y1='9' x2='15' y2='15'%3E%3C/line%3E%3C/svg%3E\") 12 12, no-drop";
-			}
-
-			// Show tooltip
-			showDeletionModeTooltip();
-
-			// Add event listener to exit deletion mode when clicking outside the beat frame
-			if (browser) {
-				document.addEventListener('click', handleDocumentClick);
-				document.addEventListener('keydown', handleEscapeKey);
-			}
+		// Change cursor to indicate deletion mode with an improved X cursor
+		if (beatFrameElement) {
+			beatFrameElement.style.cursor =
+				"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ff5555' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10' fill='rgba(255,85,85,0.2)'/%3E%3Cline x1='15' y1='9' x2='9' y2='15'%3E%3C/line%3E%3Cline x1='9' y1='9' x2='15' y2='15'%3E%3C/line%3E%3C/svg%3E\") 12 12, no-drop";
 		}
+
+		// Show tooltip
+		showDeletionModeTooltip();
+
+		// Add event listener to exit deletion mode when clicking outside the beat frame
+		document.addEventListener('click', handleDocumentClick);
+		document.addEventListener('keydown', handleEscapeKey);
 	}
 
 	function exitDeletionMode() {
 		isInDeletionMode = false;
 
-		if (browser) {
-			// Reset cursor
-			if (beatFrameElement) {
-				beatFrameElement.style.cursor = '';
-			}
-
-			// Hide tooltip
-			hideDeletionModeTooltip();
-
-			// Remove event listeners
-			if (browser) {
-				document.removeEventListener('click', handleDocumentClick);
-				document.removeEventListener('keydown', handleEscapeKey);
-			}
+		// Reset cursor
+		if (beatFrameElement) {
+			beatFrameElement.style.cursor = '';
 		}
+
+		// Hide tooltip
+		hideDeletionModeTooltip();
+
+		// Remove event listeners
+		document.removeEventListener('click', handleDocumentClick);
+		document.removeEventListener('keydown', handleEscapeKey);
 	}
 
 	function showDeletionModeTooltip() {
-		if (!browser) return;
-
 		// Create tooltip element if it doesn't exist
-		if (!deletionModeTooltip && browser) {
+		if (!deletionModeTooltip) {
 			deletionModeTooltip = document.createElement('div');
 			deletionModeTooltip.className = 'deletion-mode-tooltip';
 			deletionModeTooltip.textContent =
@@ -332,25 +331,25 @@
 	}
 
 	function updateTooltipPosition() {
-		if (!browser || !deletionModeTooltip || !beatFrameElement) return;
-
-		// If the tooltip is appended to the body, we need to calculate absolute position
-		if (deletionModeTooltip.parentElement === document.body) {
-			const beatFrameRect = beatFrameElement.getBoundingClientRect();
-			deletionModeTooltip.style.position = 'fixed';
-			deletionModeTooltip.style.top = `${beatFrameRect.top - 8}px`;
-			deletionModeTooltip.style.left = `${beatFrameRect.left + beatFrameRect.width / 2}px`;
-			deletionModeTooltip.style.transform = 'translate(-50%, -100%)';
+		if (deletionModeTooltip && beatFrameElement) {
+			// If the tooltip is appended to the body, we need to calculate absolute position
+			if (deletionModeTooltip.parentElement === document.body) {
+				const beatFrameRect = beatFrameElement.getBoundingClientRect();
+				deletionModeTooltip.style.position = 'fixed';
+				deletionModeTooltip.style.top = `${beatFrameRect.top - 8}px`;
+				deletionModeTooltip.style.left = `${beatFrameRect.left + beatFrameRect.width / 2}px`;
+				deletionModeTooltip.style.transform = 'translate(-50%, -100%)';
+			}
+			// Otherwise, it's already positioned correctly with CSS
 		}
-		// Otherwise, it's already positioned correctly with CSS
 	}
 
 	function hideDeletionModeTooltip() {
-		if (!browser || !deletionModeTooltip) return;
-
-		deletionModeTooltip.style.display = 'none';
-		// Remove resize event listener
-		window.removeEventListener('resize', updateTooltipPosition);
+		if (deletionModeTooltip) {
+			deletionModeTooltip.style.display = 'none';
+			// Remove resize event listener
+			window.removeEventListener('resize', updateTooltipPosition);
+		}
 	}
 
 	function handleDocumentClick(event: MouseEvent) {
@@ -380,14 +379,17 @@
 						hapticFeedbackService.trigger('error');
 					}
 
+					// Log for debugging
+					console.log('Start position selected in deletion mode - clearing entire sequence');
+
 					// Clear the entire sequence including start position
 					handleClearSequence();
 				} else {
-					// MIGRATED: Use pure Svelte 5 runes sequence state
-					const beatIndex = sequenceContainer.state.beats.findIndex((beat) => beat.id === beatId);
-					if (beatIndex >= 0) {
-						sequenceState.removeBeat(beatIndex);
-					}
+					// Pass the beatId directly to the action
+					sequenceActions.removeBeatAndFollowing(beatId);
+
+					// Log for debugging
+					console.log('Removing beat in deletion mode with ID:', beatId);
 				}
 
 				// Exit deletion mode
@@ -399,34 +401,28 @@
 	let buttonActionListener: (event: CustomEvent) => void;
 
 	onMount(() => {
-		if (browser) {
-			buttonActionListener = (event: CustomEvent) => {
-				if (event.detail && event.detail.id) {
-					handleButtonActionWrapper(event);
-				}
-			};
-			if (browser) {
-				document.addEventListener('action', buttonActionListener as EventListener);
-				document.addEventListener('beat-selected', handleBeatSelected as EventListener);
+		buttonActionListener = (event: CustomEvent) => {
+			if (event.detail && event.detail.id) {
+				handleButtonActionWrapper(event);
 			}
-		}
+		};
+		document.addEventListener('action', buttonActionListener as EventListener);
+		document.addEventListener('beat-selected', handleBeatSelected as EventListener);
 	});
 
 	onDestroy(() => {
-		if (browser) {
-			if (buttonActionListener) {
-				document.removeEventListener('action', buttonActionListener as EventListener);
-			}
-			document.removeEventListener('beat-selected', handleBeatSelected as EventListener);
-			document.removeEventListener('click', handleDocumentClick);
-			document.removeEventListener('keydown', handleEscapeKey);
-			window.removeEventListener('resize', updateTooltipPosition);
+		if (buttonActionListener) {
+			document.removeEventListener('action', buttonActionListener as EventListener);
+		}
+		document.removeEventListener('beat-selected', handleBeatSelected as EventListener);
+		document.removeEventListener('click', handleDocumentClick);
+		document.removeEventListener('keydown', handleEscapeKey);
+		window.removeEventListener('resize', updateTooltipPosition);
 
-			// Clean up tooltip
-			if (deletionModeTooltip && deletionModeTooltip.parentNode) {
-				deletionModeTooltip.parentNode.removeChild(deletionModeTooltip);
-				deletionModeTooltip = null;
-			}
+		// Clean up tooltip
+		if (deletionModeTooltip && deletionModeTooltip.parentNode) {
+			deletionModeTooltip.parentNode.removeChild(deletionModeTooltip);
+			deletionModeTooltip = null;
 		}
 	});
 </script>
@@ -436,22 +432,20 @@
 		<div
 			class="main-layout"
 			class:portrait={workbenchIsPortrait}
-			style="--container-width: {dimensions.width}px;
-			   --container-height: {dimensions.height}px;
+			style="--container-width: {$dimensions.width}px;
+			   --container-height: {$dimensions.height}px;
 			   --button-size-factor: {buttonSizeFactor};"
 		>
 			<div class="left-vbox">
 				<SequenceContent
-					containerHeight={size.height}
-					containerWidth={dimensions.width}
+					containerHeight={$size.height}
+					containerWidth={$dimensions.width}
 					onBeatSelected={(beatId) => {
-						if (browser) {
-							// Create a custom event to match the expected format
-							const customEvent = new CustomEvent<{ beatId: string }>('beatselected', {
-								detail: { beatId }
-							});
-							handleBeatSelected(customEvent);
-						}
+						// Create a custom event to match the expected format
+						const customEvent = new CustomEvent<{ beatId: string }>('beatselected', {
+							detail: { beatId }
+						});
+						handleBeatSelected(customEvent);
 					}}
 				/>
 			</div>
@@ -474,6 +468,7 @@
 			{/if}
 
 			<!-- Edit button is always visible -->
+			<EditButton />
 		</div>
 
 		<SequenceOverlay title={sequenceName}>
@@ -484,10 +479,10 @@
 			isOpen={isDeleteModalOpen}
 			{hasSelectedBeat}
 			buttonRect={deleteButtonRect}
-			onclearSequence={() => handleClearSequence()}
-			onremoveBeat={() => handleRemoveBeat()}
-			onenterDeletionMode={() => enterDeletionMode()}
-			onclose={() => handleCloseModal()}
+			on:clearSequence={() => handleClearSequence()}
+			on:removeBeat={() => handleRemoveBeat()}
+			on:enterDeletionMode={() => enterDeletionMode()}
+			on:close={() => handleCloseModal()}
 		/>
 
 		{#if isInDeletionMode}
