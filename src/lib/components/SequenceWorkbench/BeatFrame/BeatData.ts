@@ -6,7 +6,7 @@ import type { PictographData } from '$lib/types/PictographData.js';
  */
 export interface BeatData {
 	/** Unique identifier for the beat */
-	id?: string;
+	id: string;
 
 	/** The beat's position in the sequence (0 for start position) */
 	beatNumber: number;

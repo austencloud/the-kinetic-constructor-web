@@ -5,7 +5,7 @@
 			"type": "chrome",
 			"request": "launch",
 			"name": "Launch Chrome",
-			"url": "http://localhost:5173", // Replace with your dev server URL
+			"url": "http://localhost:7734", // Replace with your dev server URL
 			"webRoot": "${workspaceFolder}/src",
 			"sourceMaps": true
 		}

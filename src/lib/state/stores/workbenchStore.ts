@@ -8,7 +8,7 @@ interface WorkbenchState {
 
 const initialState: WorkbenchState = {
 	toolsPanelOpen: false,
-	activeTab: 'generate'
+	activeTab: 'construct' // Default to construct tab for UI transition testing
 };
 
 export const workbenchStore = writable<WorkbenchState>(initialState);

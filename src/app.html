@@ -2,30 +2,232 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<meta
-			name="viewport"
-			content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
-		/>
-		<meta name="mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-		<meta name="theme-color" content="#0b1d2a" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
-		<link rel="apple-touch-icon" href="%sveltekit.assets%/favicon.png" />
-		<!-- PWA manifest temporarily disabled -->
-		<!-- <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" /> -->
-
-		<link
-			rel="stylesheet"
-			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-			integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
-			crossorigin="anonymous"
-			referrerpolicy="no-referrer"
-		/>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		%sveltekit.head%
+
+		<!-- ✨ Magical F5 Enhancement Script -->
+		<script>
+			// Magical F5 experience enhancements
+			(function() {
+				'use strict';
+
+				// ✨ Beautiful loading animation
+				function createMagicalLoader() {
+					const loader = document.createElement('div');
+					loader.id = 'magical-loader';
+					loader.innerHTML = `
+						<style>
+							#magical-loader {
+								position: fixed;
+								top: 0;
+								left: 0;
+								width: 100%;
+								height: 100%;
+								background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+								z-index: 10000;
+								display: flex;
+								flex-direction: column;
+								justify-content: center;
+								align-items: center;
+								color: white;
+								font-family: system-ui, -apple-system, sans-serif;
+								opacity: 0;
+								transition: opacity 0.3s ease;
+							}
+
+							.magical-spinner {
+								width: 60px;
+								height: 60px;
+								border: 4px solid rgba(255,255,255,0.3);
+								border-top: 4px solid white;
+								border-radius: 50%;
+								animation: magical-spin 1s linear infinite;
+							}
+
+							.magical-text {
+								margin-top: 20px;
+								font-size: 18px;
+								font-weight: 500;
+								animation: magical-pulse 2s ease-in-out infinite;
+							}
+
+							.magical-progress {
+								width: 200px;
+								height: 4px;
+								background: rgba(255,255,255,0.3);
+								border-radius: 2px;
+								margin-top: 20px;
+								overflow: hidden;
+							}
+
+							.magical-progress-bar {
+								width: 0%;
+								height: 100%;
+								background: linear-gradient(90deg, #00f5ff, #ff00ff, #00f5ff);
+								background-size: 200% 100%;
+								animation: magical-progress 2s ease-out, magical-rainbow 1s linear infinite;
+							}
+
+							@keyframes magical-spin {
+								0% { transform: rotate(0deg); }
+								100% { transform: rotate(360deg); }
+							}
+
+							@keyframes magical-pulse {
+								0%, 100% { opacity: 1; }
+								50% { opacity: 0.7; }
+							}
+
+							@keyframes magical-progress {
+								0% { width: 0%; }
+								100% { width: 100%; }
+							}
+
+							@keyframes magical-rainbow {
+								0% { background-position: 0% 50%; }
+								100% { background-position: 200% 50%; }
+							}
+						</style>
+						<div class="magical-spinner"></div>
+						<div class="magical-text">✨ Reloading with magic...</div>
+						<div class="magical-progress">
+							<div class="magical-progress-bar"></div>
+						</div>
+					`;
+					return loader;
+				}
+
+				// ✨ Enhanced F5 handling
+				let isReloading = false;
+
+				function handleMagicalReload(event) {
+					if (event.key === 'F5' || (event.ctrlKey && event.key === 'r')) {
+						if (isReloading) return;
+						isReloading = true;
+
+						event.preventDefault();
+
+						// Show magical loader
+						const loader = createMagicalLoader();
+						document.body.appendChild(loader);
+
+						// Smooth fade in
+						requestAnimationFrame(() => {
+							loader.style.opacity = '1';
+						});
+
+						// Add some magic delay for the animation
+						setTimeout(() => {
+							window.location.reload();
+						}, 500);
+					}
+				}
+
+				// ✨ Performance monitoring
+				function logPerformanceMetrics() {
+					if (window.performance && console.groupCollapsed) {
+						const navigation = performance.getEntriesByType('navigation')[0];
+						if (navigation) {
+							console.groupCollapsed('✨ Magical Performance Metrics');
+							console.log(`🚀 Total Load Time: ${Math.round(navigation.loadEventEnd - navigation.fetchStart)}ms`);
+							console.log(`🎯 DOM Ready: ${Math.round(navigation.domContentLoadedEventEnd - navigation.fetchStart)}ms`);
+							console.log(`💨 First Paint: ${Math.round(navigation.responseEnd - navigation.fetchStart)}ms`);
+
+							// Memory usage if available
+							if (performance.memory) {
+								console.log(`🧠 Memory Used: ${Math.round(performance.memory.usedJSHeapSize / 1024 / 1024)}MB`);
+							}
+							console.groupEnd();
+						}
+					}
+				}
+
+				// ✨ Welcome message for developers
+				function showDeveloperWelcome() {
+					const styles = [
+						'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+						'color: white',
+						'padding: 10px 20px',
+						'border-radius: 8px',
+						'font-size: 14px',
+						'font-weight: bold'
+					].join(';');
+
+					console.log('%c✨ Magical Development Mode Active!', styles);
+					console.log('🎯 Press F5 for enhanced reload experience');
+					console.log('🔥 Hot Module Replacement is active');
+					console.log('💡 Open DevTools for more magic');
+				}
+
+				// ✨ Initialize magical enhancements
+				document.addEventListener('DOMContentLoaded', function() {
+					// Add magical keyboard handling
+					document.addEventListener('keydown', handleMagicalReload);
+
+					// Show performance metrics in development
+					if (__MAGICAL_DEV__) {
+						setTimeout(logPerformanceMetrics, 1000);
+						showDeveloperWelcome();
+					}
+
+					// Add magical cursor effect for development
+					if (__MAGICAL_DEV__ && window.matchMedia('(min-width: 768px)').matches) {
+						let trail = [];
+						document.addEventListener('mousemove', function(e) {
+							trail.push({ x: e.clientX, y: e.clientY, time: Date.now() });
+							trail = trail.filter(point => Date.now() - point.time < 500);
+
+							// Create sparkle effect occasionally
+							if (Math.random() < 0.1 && trail.length > 5) {
+								const sparkle = document.createElement('div');
+								sparkle.style.cssText = `
+									position: fixed;
+									left: ${e.clientX}px;
+									top: ${e.clientY}px;
+									width: 4px;
+									height: 4px;
+									background: #00f5ff;
+									border-radius: 50%;
+									pointer-events: none;
+									z-index: 9999;
+									animation: sparkle 0.6s ease-out forwards;
+								`;
+
+								if (!document.querySelector('#sparkle-style')) {
+									const style = document.createElement('style');
+									style.id = 'sparkle-style';
+									style.textContent = `
+										@keyframes sparkle {
+											0% { opacity: 1; transform: scale(1); }
+											100% { opacity: 0; transform: scale(0); }
+										}
+									`;
+									document.head.appendChild(style);
+								}
+
+								document.body.appendChild(sparkle);
+								setTimeout(() => sparkle.remove(), 600);
+							}
+						});
+					}
+				});
+
+				// ✨ Hot reload enhancement
+				if (import.meta.hot) {
+					import.meta.hot.on('vite:beforeUpdate', () => {
+						console.log('🔥 Hot reloading...');
+					});
+
+					import.meta.hot.on('vite:afterUpdate', () => {
+						console.log('✅ Hot reload complete!');
+					});
+				}
+			})();
+		</script>
 	</head>
 	<body data-sveltekit-preload-data="hover">
-		<div>%sveltekit.body%</div>
+		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>
 

@@ -29,7 +29,7 @@ const colors = {
 	yellow: '\x1b[33m'
 };
 
-// Find an available port starting from 5173
+// Find an available port starting from 7734
 async function findAvailablePort(startPort) {
 	const net = await import('net');
 
@@ -67,7 +67,7 @@ async function main() {
 	console.log(`${colors.bright}${colors.cyan}Starting development server...${colors.reset}\n`);
 
 	// Find available port
-	const port = await findAvailablePort(5173);
+	const port = await findAvailablePort(7734);
 
 	// Prepare Vite command
 	const args = ['dev', '--logLevel=error'];

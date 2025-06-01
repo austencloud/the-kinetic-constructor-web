@@ -6,7 +6,7 @@
 
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
-import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
+import { showError, showSuccess } from '$lib/components/shared/toastUtils';
 import type { SequenceRenderResult } from './ImageUtils';
 import { dataURLtoBlob } from './ImageUtils';
 import { isWebShareSupported, isFileShareSupported } from './WebShareApi';

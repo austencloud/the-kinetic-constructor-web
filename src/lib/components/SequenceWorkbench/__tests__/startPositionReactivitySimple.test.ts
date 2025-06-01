@@ -5,10 +5,16 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
-import { getSelectedStartPosition, setSelectedStartPosition } from '$lib/state/sequence/selectionState.svelte';
+import {
+	getSelectedStartPosition,
+	setSelectedStartPosition
+} from '$lib/state/sequence/selectionState.svelte';
 import type { PictographData } from '$lib/types/PictographData';
+import { Letter } from '$lib/types/Letter';
+import type { TKAPosition } from '$lib/types/TKAPosition';
 
 // Mock browser environment
+const mockDispatchEvent = vi.fn();
 Object.defineProperty(global, 'window', {
 	value: {
 		localStorage: {
@@ -19,8 +25,18 @@ Object.defineProperty(global, 'window', {
 		document: {
 			addEventListener: vi.fn(),
 			removeEventListener: vi.fn(),
-			dispatchEvent: vi.fn()
+			dispatchEvent: mockDispatchEvent
 		}
+	},
+	writable: true
+});
+
+// Also mock global document
+Object.defineProperty(global, 'document', {
+	value: {
+		addEventListener: vi.fn(),
+		removeEventListener: vi.fn(),
+		dispatchEvent: mockDispatchEvent
 	},
 	writable: true
 });
@@ -32,11 +48,11 @@ vi.mock('$app/environment', () => ({
 
 describe('Start Position Reactivity Chain', () => {
 	const mockStartPosition: PictographData = {
-		letter: 'A',
+		letter: Letter.A,
 		startPos: 'alpha1',
 		endPos: 'alpha1',
-		timing: 'static',
-		direction: 'cw',
+		timing: 'split',
+		direction: 'same',
 		gridMode: 'diamond',
 		gridData: null,
 		redPropData: null,
@@ -77,10 +93,11 @@ describe('Start Position Reactivity Chain', () => {
 	beforeEach(() => {
 		// Reset all mocks
 		vi.clearAllMocks();
-		
+		mockDispatchEvent.mockClear();
+
 		// Clear sequence state
 		sequenceState.clearSequence();
-		
+
 		// Clear selection state
 		setSelectedStartPosition(null);
 	});
@@ -95,7 +112,7 @@ describe('Start Position Reactivity Chain', () => {
 
 		// Verify sequence state is updated
 		expect(sequenceState.startPosition).toBeTruthy();
-		expect(sequenceState.startPosition?.letter).toBe('A');
+		expect(sequenceState.startPosition?.letter).toBe(Letter.A);
 		expect(sequenceState.startPosition?.startPos).toBe('alpha1');
 
 		console.log('✅ TEST: Sequence state updated correctly');
@@ -108,16 +125,13 @@ describe('Start Position Reactivity Chain', () => {
 		// Verify selection state is synchronized
 		const selectedStartPos = getSelectedStartPosition();
 		expect(selectedStartPos).toBeTruthy();
-		expect(selectedStartPos?.letter).toBe('A');
+		expect(selectedStartPos?.letter).toBe(Letter.A);
 		expect(selectedStartPos?.startPos).toBe('alpha1');
 
 		console.log('✅ TEST: Selection state synchronized correctly');
 	});
 
 	it('should dispatch start-position-selected event', async () => {
-		const mockDispatchEvent = vi.fn();
-		global.window.document.dispatchEvent = mockDispatchEvent;
-
 		// Set start position
 		await sequenceState.setStartPosition(mockStartPosition);
 
@@ -127,7 +141,7 @@ describe('Start Position Reactivity Chain', () => {
 				type: 'start-position-selected',
 				detail: expect.objectContaining({
 					startPosition: expect.objectContaining({
-						letter: 'A',
+						letter: Letter.A,
 						startPos: 'alpha1'
 					})
 				})
@@ -138,28 +152,25 @@ describe('Start Position Reactivity Chain', () => {
 	});
 
 	it('should handle multiple start position updates', async () => {
-		const mockDispatchEvent = vi.fn();
-		global.window.document.dispatchEvent = mockDispatchEvent;
-
 		// Set first start position
 		await sequenceState.setStartPosition(mockStartPosition);
 
 		// Set second start position
-		const secondStartPosition = {
+		const secondStartPosition: PictographData = {
 			...mockStartPosition,
-			letter: 'B',
-			startPos: 'beta1',
-			endPos: 'beta1'
+			letter: Letter.B,
+			startPos: 'beta1' as TKAPosition,
+			endPos: 'beta1' as TKAPosition
 		};
 		await sequenceState.setStartPosition(secondStartPosition);
 
 		// Verify final state
-		expect(sequenceState.startPosition?.letter).toBe('B');
+		expect(sequenceState.startPosition?.letter).toBe(Letter.B);
 		expect(sequenceState.startPosition?.startPos).toBe('beta1');
 
 		// Verify selection state is updated
 		const selectedStartPos = getSelectedStartPosition();
-		expect(selectedStartPos?.letter).toBe('B');
+		expect(selectedStartPos?.letter).toBe(Letter.B);
 		expect(selectedStartPos?.startPos).toBe('beta1');
 
 		// Verify events were dispatched for both updates
@@ -191,7 +202,9 @@ describe('Start Position Reactivity Chain', () => {
 			// Verify execution count is within limits
 			expect(effectExecutionCount).toBeLessThanOrEqual(maxAllowedExecutions);
 
-			console.log(`✅ TEST: Reactive effects executed ${effectExecutionCount} times (within limit)`);
+			console.log(
+				`✅ TEST: Reactive effects executed ${effectExecutionCount} times (within limit)`
+			);
 		} finally {
 			// Restore console.log
 			console.log = originalConsoleLog;

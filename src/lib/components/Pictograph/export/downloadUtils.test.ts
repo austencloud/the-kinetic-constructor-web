@@ -30,7 +30,8 @@ describe('downloadUtils', () => {
 			download: '',
 			style: { display: 'none' },
 			click: vi.fn(),
-			getBoundingClientRect: vi.fn()
+			getBoundingClientRect: vi.fn(),
+			setAttribute: vi.fn()
 		};
 
 		// Mock document methods
@@ -93,7 +94,7 @@ describe('downloadUtils', () => {
 		expect(mockFileHandle.createWritable).toHaveBeenCalled();
 		expect(mockWritable.write).toHaveBeenCalled();
 		expect(mockWritable.close).toHaveBeenCalled();
-		expect(result).toBe(true);
+		expect(result.success).toBe(true);
 	});
 
 	it('should fall back to traditional download when File System Access API fails', async () => {
@@ -119,6 +120,6 @@ describe('downloadUtils', () => {
 		expect(mockLink.href).toBe('blob:mock-url');
 		expect(mockLink.download).toBe(filename);
 		expect(mockLink.click).toHaveBeenCalled();
-		expect(result).toBe(true);
+		expect(result.success).toBe(true);
 	}, 10000);
 });

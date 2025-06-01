@@ -12,6 +12,7 @@ import { pictographData } from '$lib/state/pictograph/pictographDataState.svelte
 import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 import {
 	getNextOptions,
+	getNextOptionsEnhanced,
 	determineGroupKey,
 	getSortedGroupKeys,
 	getSorter
@@ -180,6 +181,8 @@ class OptionPickerStateManager {
 		});
 
 		try {
+			// Use original method for now to ensure stability
+			// TODO: Re-enable enhanced method after testing
 			const nextOptions = getNextOptions(sequence);
 
 			// Update state atomically using untrack

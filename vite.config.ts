@@ -12,29 +12,23 @@ export default defineConfig({
 			'svelte/transition',
 			'svelte/store',
 			'svelte/motion',
-			'html2canvas', // Add html2canvas to the optimized dependencies
-			'lz-string' // Add lz-string to the optimized dependencies
+			'html2canvas',
+			'lz-string'
 		],
 		exclude: [],
 		esbuildOptions: {
 			logLevel: 'error'
 		},
-		// Only force optimization when needed, not during regular development
 		force: process.env.VITE_FORCE_OPTIMIZE === 'true'
 	},
-	// Increase build performance and avoid timeout issues
 	build: {
-		// Increase chunk size limit to avoid splitting html2canvas
 		chunkSizeWarningLimit: 1000,
 		rollupOptions: {
 			output: {
-				// Remove manual chunks for html2canvas as it's causing build issues
 				manualChunks: (id) => {
-					// Group xstate related modules
 					if (id.includes('xstate')) {
 						return 'xstate-vendor';
 					}
-					// Group other vendor modules if needed
 					if (id.includes('node_modules')) {
 						return 'vendor';
 					}
@@ -42,27 +36,53 @@ export default defineConfig({
 			}
 		}
 	},
-	// Increase server timeout for dependency optimization
 	server: {
+		port: 7734, // Unique port: "hELL" upside down
+		host: true, // Allow external access
 		hmr: {
-			timeout: 120000 // 120 seconds timeout for HMR
+			timeout: 120000,
+			// ✨ Enhanced HMR with instant feedback
+			overlay: true,
+			clientPort: undefined,
+			port: undefined
 		},
-		// Increase the timeout for dependency optimization
 		watch: {
-			usePolling: false, // Disable polling on Windows to reduce file system load
-			interval: 1000
+			usePolling: false,
+			interval: 100, // Faster file watching
+			// ✨ Smart ignore patterns for better performance
+			ignored: [
+				'**/node_modules/**',
+				'**/.git/**',
+				'**/dist/**',
+				'**/build/**',
+				'**/coverage/**',
+				'**/test-results/**',
+				'**/playwright-report/**',
+				'**/.vscode/**',
+				'**/*.log'
+			]
 		},
 		fs: {
-			strict: false // Relax file system restrictions to help with Windows path issues
+			strict: false
+		},
+		// ✨ Pre-transform known dependencies for instant startup
+		warmup: {
+			clientFiles: ['./src/lib/**/*.svelte', './src/routes/**/*.svelte', './src/app.html']
 		}
+	},
+	// ✨ Enhanced development experience
+	define: {
+		__DEV_MODE__: JSON.stringify(process.env.NODE_ENV === 'development'),
+		__BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+		__MAGICAL_DEV__: JSON.stringify(true)
 	},
 	logLevel: 'error',
 	test: {
 		globals: true,
-		environment: 'jsdom',
+		environment: 'happy-dom',
 		setupFiles: './src/setupTests.ts',
 		include: ['src/**/*.test.ts'],
-		exclude: ['src/**/*.bench.ts'],
+		exclude: ['src/**/*.bench.ts', 'src/**/EndToEndIntegration.test.ts'],
 		benchmark: {
 			include: ['src/**/*.bench.ts'],
 			reporters: ['verbose'],

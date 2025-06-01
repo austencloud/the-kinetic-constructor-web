@@ -6,6 +6,59 @@
 			"type": "shell",
 			"command": "npm run start",
 			"problemMatcher": []
+		},
+		{
+			"label": "✨ Magical F5 Start",
+			"type": "shell",
+			"command": "npm run f5",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": false,
+				"clear": true
+			},
+			"problemMatcher": [],
+			"options": {
+				"env": {
+					"FORCE_COLOR": "1"
+				}
+			}
+		},
+		{
+			"label": "🧹 Magic Clean Start",
+			"type": "shell",
+			"command": "npm run magic:clean",
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": false,
+				"clear": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "🔄 Magic Reset Start",
+			"type": "shell",
+			"command": "npm run magic:reset",
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": false,
+				"clear": true
+			},
+			"problemMatcher": []
 		}
 	]
 }

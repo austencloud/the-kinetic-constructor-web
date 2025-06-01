@@ -12,7 +12,7 @@ import {
 	TOKEN_STORAGE_KEYS,
 	type TokenData
 } from './SecureTokenStorage';
-import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
+import { showError, showSuccess } from '$lib/components/shared/toastUtils';
 
 // OAuth configuration
 interface OAuthConfig {

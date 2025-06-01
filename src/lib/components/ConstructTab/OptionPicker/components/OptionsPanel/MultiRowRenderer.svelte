@@ -3,19 +3,14 @@
 	import SectionHeader from '../SectionHeader.svelte';
 	import OptionGroupGrid from '../OptionGroupGrid.svelte';
 	import type { Action } from 'svelte/action';
-	import { onMount, onDestroy } from 'svelte'; // Import onMount and onDestroy for cleanup
 
-	// Props
-	export let groups: Array<{ key: string; options: PictographData[] }>;
-	export let transitionKey: string | number;
-	export let rowIndex: number;
+	const { groups, transitionKey, rowIndex, onoptionselect } = $props<{
+		groups: Array<{ key: string; options: PictographData[] }>;
+		transitionKey: string | number;
+		rowIndex: number;
+		onoptionselect?: (option: PictographData) => void;
+	}>();
 
-	/**
-	 * Debounce utility function.
-	 * Creates a debounced function that delays invoking the input function until
-	 * after 'delay' milliseconds have elapsed since the last time the debounced
-	 * function was invoked.
-	 */
 	function debounce<T extends (...args: any[]) => any>(
 		func: T,
 		delay: number
@@ -32,30 +27,24 @@
 		};
 	}
 
-	// Action to handle multi-group row overflow detection and prevention
 	const setupMultiGroupRow: Action<HTMLElement> = (node) => {
 		let resizeObserver: ResizeObserver | null = null;
 		let debouncedCheckOverflow: () => void;
 
-		// Function to get the minimum width based on screen size
 		function getMinGroupWidth(): number {
-			// Check if window is defined (for SSR safety, though less critical in action)
-			if (typeof window === 'undefined') return 140; // Default if no window
+			if (typeof window === 'undefined') return 140;
 			if (window.innerWidth <= 380) {
-				return 80; // Minimum width for very small screens
+				return 80;
 			} else if (window.innerWidth <= 640) {
-				return 100; // Minimum width for small screens
+				return 100;
 			} else {
-				return 140; // Default minimum width
+				return 140;
 			}
 		}
 
-		// Function to get margin and padding values based on screen size
 		function getSpacingValues() {
-			// Assuming 1rem = 16px for calculations
 			const remInPx = 16;
 			if (typeof window === 'undefined') {
-				// SSR safety
 				return {
 					margin: 0.25 * remInPx * 2,
 					padding: 0.25 * remInPx * 2,
@@ -77,9 +66,8 @@
 			}
 		}
 
-		// Function to check and handle overflow
 		function checkOverflow() {
-			if (!node) return; // Ensure node is still available
+			if (!node) return;
 
 			const groupItems = node.querySelectorAll<HTMLElement>('.multi-group-item');
 			if (groupItems.length < 2) return;
@@ -92,8 +80,6 @@
 			const wouldOverflow = totalMinWidth > containerWidth;
 
 			groupItems.forEach((item, index) => {
-				// Force new row only on the *last* item if it would overflow
-				// and remove from others.
 				if (wouldOverflow && index === groupItems.length - 1) {
 					item.classList.add('force-new-row');
 				} else {
@@ -102,24 +88,21 @@
 			});
 		}
 
-		// Debounce the checkOverflow function for window resize
 		debouncedCheckOverflow = debounce(checkOverflow, 150);
 
 		if (typeof ResizeObserver !== 'undefined') {
 			resizeObserver = new ResizeObserver(() => {
-				checkOverflow(); // ResizeObserver is usually already optimized
+				checkOverflow();
 			});
 			resizeObserver.observe(node);
 		}
 
-		// Listen for window resize events (debounced)
 		const handleWindowResize = () => {
 			debouncedCheckOverflow();
 		};
 
 		if (typeof window !== 'undefined') {
 			window.addEventListener('resize', handleWindowResize);
-			// Initial check
 			setTimeout(checkOverflow, 0);
 		}
 
@@ -144,7 +127,11 @@
 				isFirstHeader={rowIndex === 0 && groupIndex === 0}
 				isCompact={true}
 			/>
-			<OptionGroupGrid options={group.options} key={transitionKey + '-multiopt-' + group.key} />
+			<OptionGroupGrid
+				options={group.options}
+				key={transitionKey + '-multiopt-' + group.key}
+				{onoptionselect}
+			/>
 		</div>
 	{/each}
 </div>

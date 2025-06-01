@@ -10,15 +10,15 @@
 	// import '$lib/pwa';
 	// Import ServiceProvider for DI
 	import ServiceProvider from '$lib/providers/ServiceProvider.svelte';
+	// Import ModernServiceProvider for modern components
+	import ModernServiceProvider from '$lib/providers/ModernServiceProvider.svelte';
 	// Import ToastManager for notifications
 	import ToastManager from '$lib/components/shared/ToastManager.svelte';
 	// Import dev tools initializers
 	// Import safe area CSS
 	import '$lib/styles/safe-area.css';
-	// Import FixedCornerButtons for global positioning
 
-	// This prop receives the data returned from your +layout.server.ts load function
-	export let data: LayoutData;
+	let { data, children }: { data: LayoutData; children: any } = $props();
 
 	let initialized = false; // Flag to prevent running initialization multiple times
 
@@ -56,12 +56,14 @@
 		<p>Could not load essential data: {data.error}</p>
 		<p>Please try refreshing the page.</p>
 		{#if browser}
-			<button on:click={() => window.location.reload()}>Refresh</button>
+			<button onclick={() => window.location.reload()}>Refresh</button>
 		{/if}
 	</div>
 {:else}
 	<ServiceProvider>
-		<slot />
+		<ModernServiceProvider>
+			{@render children()}
+		</ModernServiceProvider>
 	</ServiceProvider>
 {/if}
 

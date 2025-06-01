@@ -2,17 +2,30 @@
 <script lang="ts">
 	import { workbenchStore } from '$lib/state/stores/workbenchStore';
 	import ModernGenerationControls from './ModernGenerationControls.svelte';
-	import OptionPickerWithDebug from '$lib/components/ConstructTab/OptionPicker/OptionPickerWithDebug.svelte';
-	import StartPosPicker from '$lib/components/ConstructTab/StartPosPicker/StartPosPicker.svelte';
+	import ModernOptionPicker from '$lib/components/ConstructTab/OptionPicker/modern/ModernOptionPicker.svelte';
+	import StartPositionPicker from '$lib/components/ConstructTab/OptionPicker/components/StartPositionPicker.svelte';
 	import GraphEditor from '$lib/components/SequenceWorkbench/GraphEditor/GraphEditor.svelte';
 	import TransitionWrapper from './TransitionWrapper.svelte';
-	import { isSequenceEmpty } from '$lib/state/machines/sequenceMachine/persistence';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicInOut } from 'svelte/easing';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import { getContext } from 'svelte';
+	import type { ISequenceService } from '$lib/services/core/ISequenceService';
+
+	// Get SequenceService from context (modern approach with getter pattern)
+	const sequenceServiceGetter = getContext<() => ISequenceService | null>('sequenceService');
+	const sequenceService = $derived(sequenceServiceGetter?.() || null);
 
 	// Local state
 	let hasSelectedBeats = $state(false);
+
+	// Modern reactive approach: Get sequence state from SequenceService
+	// Access the state directly to ensure proper reactivity
+	const isSequenceEmpty = $derived(
+		sequenceService
+			? sequenceService.state.beats.length === 0 && sequenceService.state.startPosition === null
+			: true
+	);
 
 	// Subscribe to the sequence container to check for selected beats
 	$effect(() => {
@@ -47,12 +60,18 @@
 			<GraphEditor />
 		</div>
 	{:else}
-		<TransitionWrapper isSequenceEmpty={$isSequenceEmpty} {transitionDuration}>
+		<TransitionWrapper {isSequenceEmpty} {transitionDuration}>
 			<div slot="startPosPicker" class="full-height-wrapper">
-				<StartPosPicker />
+				<StartPositionPicker />
 			</div>
 			<div slot="optionPicker" class="full-height-wrapper">
-				<OptionPickerWithDebug />
+				<ModernOptionPicker
+					autoLoadPositions={true}
+					enableFiltering={true}
+					enableSorting={true}
+					enableValidation={true}
+					showPreview={false}
+				/>
 			</div>
 		</TransitionWrapper>
 	{/if}

@@ -21,6 +21,7 @@
 		selectedTab: string | null;
 		optionsToDisplay?: PictographData[];
 		hasCategories: boolean;
+		onoptionselect?: (option: PictographData) => void;
 	}>();
 
 	// Set default values
@@ -87,6 +88,7 @@
 					options={props.optionsToDisplay}
 					selectedTab={props.selectedTab}
 					transitionKey={props.selectedTab}
+					onoptionselect={props.onoptionselect}
 				/>
 			</div>
 		{/if}

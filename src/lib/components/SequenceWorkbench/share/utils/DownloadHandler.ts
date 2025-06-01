@@ -6,7 +6,7 @@
 
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
-import { showError, showSuccess, showInfo } from '$lib/components/shared/ToastManager.svelte';
+import { showError, showSuccess, showInfo } from '$lib/components/shared/toastUtils';
 import {
 	downloadImage,
 	type DownloadResult

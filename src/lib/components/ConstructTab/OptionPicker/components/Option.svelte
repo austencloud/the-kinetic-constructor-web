@@ -10,6 +10,7 @@
 	const props = $props<{
 		pictographData: PictographData;
 		isPartOfTwoItems?: boolean;
+		onoptionselect?: (option: PictographData) => void;
 	}>();
 
 	// Default values for optional props
@@ -35,7 +36,11 @@
 	let showBorder = $state(false);
 
 	function handleSelect() {
-		optionPickerContainer.selectOption(props.pictographData);
+		if (props.onoptionselect) {
+			props.onoptionselect(props.pictographData);
+		} else {
+			optionPickerContainer.selectOption(props.pictographData);
+		}
 	}
 
 	function handleMouseEnter() {

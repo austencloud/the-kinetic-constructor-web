@@ -33,9 +33,13 @@ function getStoredState() {
 
 		const parsed = JSON.parse(stored);
 
+		// Validate sortMethod to ensure it's valid
+		const validSortMethods: SortMethod[] = ['type', 'endPosition', 'reversals'];
+		const sortMethod = validSortMethods.includes(parsed.sortMethod) ? parsed.sortMethod : 'type';
+
 		// Ensure we have a valid structure
 		return {
-			sortMethod: parsed.sortMethod || 'type',
+			sortMethod,
 			lastSelectedTab: parsed.lastSelectedTab || { type: 'all' }
 		};
 	} catch (e) {
@@ -134,6 +138,13 @@ export const actions = {
 	},
 
 	setSortMethod: (method: SortMethod) => {
+		// Validate the sort method to prevent invalid values
+		const validSortMethods: SortMethod[] = ['type', 'endPosition', 'reversals'];
+		if (!validSortMethods.includes(method)) {
+			console.warn(`Invalid sort method: ${method}. Defaulting to 'type'.`);
+			method = 'type';
+		}
+
 		// Only update the sortMethod here. The component will reactively
 		// update the selectedTab based on the new method and stored preferences.
 		uiState.update((state) => ({ ...state, sortMethod: method }));

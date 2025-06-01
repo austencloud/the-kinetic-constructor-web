@@ -1,74 +1,98 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { setContext } from 'svelte';
 	import { getContainer } from '$lib/core/di/ContainerProvider';
-	import { setServiceContainer } from '$lib/core/di/serviceContext';
 	import { registerServices } from '$lib/core/di/registerServices';
+	import { CONTAINER_KEY } from '$lib/core/di/serviceContext';
 	import { initializeStateManagement } from '$lib/state';
 	import { browser } from '$app/environment';
 	import SettingsManager from '$lib/components/SettingsManager/SettingsManager.svelte';
+	import type { Snippet } from 'svelte';
 
-	// State tracking
-	let isStateInitialized = false;
-	let isInitializing = false;
+	// Props interface for Svelte 5 children
+	interface Props {
+		children?: Snippet;
+	}
 
-	/**
-	 * Initialize the state management system
-	 * This function ensures we only initialize once
-	 */
-	async function initializeState() {
-		// Guard against multiple initializations
-		if (isStateInitialized || isInitializing || !browser) return;
+	let { children }: Props = $props();
 
-		isInitializing = true;
+	let isStateInitialized = $state(false);
+	let isInitializing = $state(false);
+	let initializationError = $state<string | null>(null);
 
-		try {
-			// Initialize dependency injection
-			const container = getContainer();
-			registerServices(container);
-			setServiceContainer(container);
+	// Create container synchronously and set context immediately
+	const container = getContainer();
+	registerServices(container);
 
-			// Explicitly import the state machines to ensure proper registration order
-			// We need to await these imports to ensure they're fully loaded
-			await import('$lib/state/machines/app/app.machine');
-			await import('$lib/state/machines/sequenceMachine');
+	// Set context synchronously during component initialization
+	setContext(CONTAINER_KEY, container);
 
-			// Import the sequence container to ensure it's available
-			const { sequenceContainer } = await import('$lib/state/stores/sequence/SequenceContainer');
+	// Use $effect for async initialization with proper cleanup
+	$effect(() => {
+		if (!browser || isStateInitialized || isInitializing) return;
 
-			// Explicitly try to load sequence from localStorage
+		// Async initialization function
+		async function initializeState() {
+			isInitializing = true;
+			initializationError = null;
+
 			try {
-				sequenceContainer.loadFromLocalStorage();
+				console.log('🔧 ServiceProvider: Initializing state management...');
+
+				// Add delay to prevent conflicts with ModernServiceProvider
+				await new Promise((resolve) => setTimeout(resolve, 200));
+
+				// Import state machines
+				await import('$lib/state/machines/app/app.machine');
+				await import('$lib/state/machines/sequenceMachine');
+
+				const { sequenceContainer } = await import('$lib/state/stores/sequence/SequenceContainer');
+
+				try {
+					sequenceContainer.loadFromLocalStorage();
+					console.log('✅ ServiceProvider: Loaded sequence from localStorage');
+				} catch (error) {
+					console.error('ServiceProvider: Error loading sequence from localStorage:', error);
+				}
+
+				// Initialize state management
+				initializeStateManagement();
+				isStateInitialized = true;
+
+				console.log('✅ ServiceProvider: State management initialized successfully');
 			} catch (error) {
-				console.error('ServiceProvider: Error loading sequence from localStorage:', error);
+				console.error('ServiceProvider: Error initializing state management:', error);
+				initializationError =
+					error instanceof Error ? error.message : 'Unknown initialization error';
+			} finally {
+				isInitializing = false;
 			}
-
-			// Now initialize state management
-			initializeStateManagement();
-			isStateInitialized = true;
-		} catch (error) {
-			console.error('Error initializing state management:', error);
-		} finally {
-			isInitializing = false;
 		}
-	}
 
-	// Start initialization in the script section for SSR compatibility
-	if (browser) {
+		// Start initialization
 		initializeState();
-	}
-
-	// Also try in onMount as a fallback
-	onMount(() => {
-		if (!isStateInitialized && browser) {
-			initializeState();
-		}
 	});
+
+	const showContent = $derived(isStateInitialized || !browser);
+
+	// Retry function for error handling
+	function retryInitialization() {
+		initializationError = null;
+		isStateInitialized = false;
+		isInitializing = false;
+		// The $effect will automatically re-run when isStateInitialized changes
+	}
 </script>
 
-{#if isStateInitialized || !browser}
-	<!-- Include the SettingsManager component to handle settings lifecycle -->
+{#if initializationError}
+	<div class="error">
+		<h2>Initialization Error</h2>
+		<p>{initializationError}</p>
+		<button onclick={retryInitialization}>Retry</button>
+		<button onclick={() => window.location.reload()}>Reload</button>
+	</div>
+{:else if showContent}
 	<SettingsManager />
-	<slot></slot>
+	{@render children?.()}
 {:else}
 	<div class="loading">Initializing application...</div>
 {/if}
@@ -83,5 +107,37 @@
 		background-color: rgb(11, 29, 42);
 		color: white;
 		font-size: 1.5rem;
+	}
+
+	.error {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		height: 100vh;
+		width: 100vw;
+		background-color: rgb(11, 29, 42);
+		color: white;
+		text-align: center;
+		padding: 2rem;
+	}
+
+	.error h2 {
+		color: #ff6b6b;
+		margin-bottom: 1rem;
+	}
+
+	.error button {
+		margin: 0.5rem;
+		padding: 0.5rem 1rem;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		background: #007acc;
+		color: white;
+	}
+
+	.error button:hover {
+		background: #005a9e;
 	}
 </style>

@@ -4,7 +4,7 @@
 import type { BeatData } from '$lib/state/stores/sequence/SequenceContainer';
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
-import { showSuccess } from '$lib/components/shared/ToastManager.svelte';
+import { showSuccess } from '$lib/components/shared/toastUtils';
 import { encodeSequenceCompact } from './SequenceEncoder';
 import { decodeSequenceCompact } from './SequenceDecoder';
 import { compressString, decompressString } from '$lib/utils/lzstring';

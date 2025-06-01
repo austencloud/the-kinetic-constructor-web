@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { downloadSequenceImage } from './DownloadHandler';
 import * as downloadUtils from '$lib/components/Pictograph/export/downloadUtils';
-import * as toastManager from '$lib/components/shared/ToastManager.svelte';
+import * as toastManager from '$lib/components/shared/toastUtils';
 
 // Mock browser environment
 vi.mock('$app/environment', () => ({
@@ -20,9 +20,10 @@ vi.mock('$lib/components/Pictograph/export/downloadUtils', () => ({
 }));
 
 // Mock the toast manager
-vi.mock('$lib/components/shared/ToastManager.svelte', () => ({
+vi.mock('$lib/components/shared/toastUtils', () => ({
 	showError: vi.fn(),
-	showSuccess: vi.fn()
+	showSuccess: vi.fn(),
+	showInfo: vi.fn()
 }));
 
 describe('DownloadHandler', () => {
@@ -37,6 +38,9 @@ describe('DownloadHandler', () => {
 			removeItem: vi.fn()
 		};
 		Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
+		// Reset the downloadImage mock to default behavior
+		vi.mocked(downloadUtils.downloadImage).mockReset();
 	});
 
 	afterEach(() => {
@@ -55,11 +59,11 @@ describe('DownloadHandler', () => {
 			}
 		};
 
-		// Mock downloadImage to return success
-		vi.mocked(downloadUtils.downloadImage).mockResolvedValue({
+		// Mock downloadImage to return success - set up fresh mock
+		vi.mocked(downloadUtils.downloadImage).mockImplementation(async () => ({
 			success: true,
 			fileName: 'AABB.png'
-		});
+		}));
 
 		// Act
 		const result = await downloadSequenceImage(options);
@@ -70,7 +74,9 @@ describe('DownloadHandler', () => {
 			dataUrl: options.imageResult.dataUrl,
 			filename: 'AABB.png'
 		});
-		expect(toastManager.showSuccess).toHaveBeenCalledWith('Image saved successfully');
+		expect(toastManager.showSuccess).toHaveBeenCalledWith(
+			'Image saved successfully to Downloads folder'
+		);
 	});
 
 	it('should handle download failure', async () => {

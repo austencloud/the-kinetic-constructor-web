@@ -3,7 +3,7 @@
  */
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
-import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
+import { showError, showSuccess } from '$lib/components/shared/toastUtils';
 import type { ShareData } from './types';
 
 // Track the last time a share was attempted to prevent issues with multiple rapid calls

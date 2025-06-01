@@ -417,7 +417,10 @@ export function updateBeat({ event }: { event: any }) {
  * 5. Return to the option picker (build) tab/view
  */
 export function clearSequence() {
-	console.log('Clearing sequence and start position');
+	// Reduced logging - only in debug mode
+	if (console.debug) {
+		console.debug('Clearing sequence and start position');
+	}
 
 	// Set an empty sequence
 	sequenceContainer.setSequence([]);
@@ -473,7 +476,10 @@ export function clearSequence() {
 				})
 			);
 
-			console.log('Saved empty sequence state to localStorage');
+			// Reduced logging
+			if (console.debug) {
+				console.debug('Saved empty sequence state to localStorage');
+			}
 		} catch (error) {
 			console.error('Error saving empty sequence state:', error);
 		}

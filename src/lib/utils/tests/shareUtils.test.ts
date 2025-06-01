@@ -27,13 +27,41 @@ const mockNavigator = {
 vi.stubGlobal('navigator', mockNavigator);
 
 // Mock window.URL
-const mockURL = vi.fn();
-mockURL.prototype.toString = vi.fn().mockReturnValue('https://test.com/?seq=test');
-mockURL.prototype.searchParams = {
+const mockSearchParams = {
 	set: vi.fn(),
 	get: vi.fn().mockReturnValue('test')
 };
+
+const mockURL = vi.fn().mockImplementation((url) => ({
+	toString: vi.fn().mockReturnValue('https://test.com/?seq=test'),
+	searchParams: mockSearchParams,
+	href: url || 'https://test.com'
+}));
+
+mockURL.prototype.toString = vi.fn().mockReturnValue('https://test.com/?seq=test');
+mockURL.prototype.searchParams = mockSearchParams;
+
 vi.stubGlobal('URL', mockURL);
+
+// Mock window.location
+Object.defineProperty(global, 'window', {
+	value: {
+		location: {
+			href: 'https://test.com'
+		}
+	},
+	writable: true
+});
+
+// Mock compression utilities
+vi.mock('$lib/utils/compression', () => ({
+	compressString: vi.fn().mockResolvedValue('compressed-data')
+}));
+
+// Mock sequence encoding
+vi.mock('$lib/components/SequenceWorkbench/share/utils/SequenceEncoder', () => ({
+	encodeSequenceCompact: vi.fn().mockReturnValue('encoded-sequence')
+}));
 
 // Mock showSuccess and showError
 vi.mock('$lib/components/shared/ToastManager.svelte', () => ({
@@ -192,12 +220,12 @@ describe('shareUtils', () => {
 			expect(mockResult.compressionRatio).toBeLessThan(1);
 		});
 
-		it('should generate a shareable URL', () => {
+		it('should generate a shareable URL', async () => {
 			const testSequence = generateTestSequence(2);
-			const url = generateShareableUrl(testSequence, 'Test Sequence');
+			const url = await generateShareableUrl(testSequence, 'Test Sequence');
 
 			expect(url).toBeTruthy();
-			expect(mockURL.prototype.searchParams.set).toHaveBeenCalledWith('seq', expect.any(String));
+			expect(mockSearchParams.set).toHaveBeenCalledWith('seq', expect.any(String));
 		});
 	});
 

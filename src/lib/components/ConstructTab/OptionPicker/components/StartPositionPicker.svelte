@@ -1,13 +1,26 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { onMount, untrack, getContext } from 'svelte';
 	import Pictograph from '$lib/components/Pictograph/Pictograph.svelte';
 	import LoadingSpinner from '$lib/components/MainWidget/loading/LoadingSpinner.svelte';
 	import { pictographData } from '$lib/state/pictograph/pictographDataState.svelte';
-	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
+	import type { SequenceService } from '$lib/services/SequenceService.svelte';
 	import { browser } from '$app/environment';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import SvgManager from '$lib/components/SvgManager/SvgManager';
 	import type { PictographData } from '$lib/types/PictographData';
+
+	// Get the modern sequence service getter from context
+	const getSequenceService = getContext<() => SequenceService | null>('sequenceService');
+
+	// Get the actual service using $derived properly
+	const sequenceService = $derived(getSequenceService?.() || null);
+
+	// Validate context injection
+	$effect(() => {
+		if (!sequenceService) {
+			console.error('❌ StartPositionPicker: sequenceService not found in context!');
+		}
+	});
 
 	// Start Position Picker state
 	let gridMode = 'diamond';
@@ -88,10 +101,7 @@
 				turns: any;
 				color: any;
 			}> = [];
-			const propConfigs: Array<{
-				propType: any;
-				color: any;
-			}> = [];
+			const propPromises: Promise<any>[] = [];
 
 			// Collect all SVG configurations from start position pictographs
 			pictographs.forEach((pictograph) => {
@@ -113,30 +123,24 @@
 					});
 				}
 
-				// Collect prop configurations (if any)
+				// Preload props individually since there's no bulk method
 				if (pictograph.redPropData) {
-					propConfigs.push({
-						propType: pictograph.redPropData.propType,
-						color: 'red'
-					});
+					propPromises.push(svgManager.getPropSvg(pictograph.redPropData.propType, 'red'));
 				}
 				if (pictograph.bluePropData) {
-					propConfigs.push({
-						propType: pictograph.bluePropData.propType,
-						color: 'blue'
-					});
+					propPromises.push(svgManager.getPropSvg(pictograph.bluePropData.propType, 'blue'));
 				}
 			});
 
 			// Preload all SVGs in parallel
 			await Promise.all([
 				arrowConfigs.length > 0 ? svgManager.preloadArrowSvgs(arrowConfigs) : Promise.resolve(),
-				propConfigs.length > 0 ? svgManager.preloadPropSvgs(propConfigs) : Promise.resolve()
+				propPromises.length > 0 ? Promise.all(propPromises) : Promise.resolve()
 			]);
 
 			console.debug('StartPositionPicker: Successfully preloaded start position SVGs:', {
 				arrows: arrowConfigs.length,
-				props: propConfigs.length
+				props: propPromises.length
 			});
 		} catch (error) {
 			console.warn('StartPositionPicker: SVG preloading failed:', error);
@@ -177,16 +181,13 @@
 
 	const handleStartPositionSelect = async (startPosPictograph: PictographData) => {
 		try {
-			// Provide haptic feedback when selecting a start position
 			if (browser) {
 				hapticFeedbackService.trigger('selection');
 			}
 
-			// Create a safe copy of the start position data
 			const startPosCopy = safeCopyPictographData(startPosPictograph);
 			startPosCopy.isStartPosition = true;
 
-			// Ensure motion data is set to static for start positions
 			if (startPosCopy.redMotionData) {
 				startPosCopy.redMotionData.motionType = 'static';
 				startPosCopy.redMotionData.endLoc = startPosCopy.redMotionData.startLoc;
@@ -200,22 +201,28 @@
 				startPosCopy.blueMotionData.turns = 0;
 			}
 
-			// Use the modern sequence state to set the start position
-			await sequenceState.setStartPosition(startPosCopy);
+			if (!sequenceService) {
+				console.error('❌ StartPositionPicker: sequenceService is null/undefined!');
+				return;
+			}
+
+			console.log('🎯 StartPositionPicker: Setting start position:', startPosCopy.letter);
+
+			// Set the start position in the sequence service
+			sequenceService.setStartPosition(startPosCopy);
+
+			// Dispatch a custom event to notify other components
+			if (browser) {
+				const startPosSelectedEvent = new CustomEvent('start-position-selected', {
+					bubbles: true,
+					detail: { startPosition: startPosCopy }
+				});
+				document.dispatchEvent(startPosSelectedEvent);
+			}
+
+			console.log('✅ StartPositionPicker: Start position set successfully');
 
 			if (browser) {
-				// Dispatch event for backward compatibility with existing components
-				const customEvent = new CustomEvent('start-position-selected', {
-					detail: {
-						startPosition: startPosCopy,
-						isTransitioning: false // No transition needed since we're in the same component
-					},
-					bubbles: true
-				});
-
-				document.dispatchEvent(customEvent);
-
-				// Provide success haptic feedback when the start position is successfully set
 				hapticFeedbackService.trigger('success');
 			}
 		} catch (error) {
@@ -304,10 +311,12 @@
 				>
 					<Pictograph
 						pictographData={pictograph}
-						showLoadingIndicator={false}
+						onClick={() => {}}
 						debug={false}
-						disableAnimations={true}
 						animationDuration={0}
+						showLoadingIndicator={false}
+						beatNumber={null}
+						isStartPosition={true}
 					/>
 				</div>
 			{/each}
@@ -412,7 +421,7 @@
 		}
 	}
 
-	/* Landscape orientation: arrange horizontally */
+	/* Landscape orientation: optimize for horizontal layout */
 	@media (orientation: landscape) {
 		.pictograph-row {
 			flex-direction: row;

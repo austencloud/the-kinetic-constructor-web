@@ -1,0 +1,578 @@
+🔧 ClearSequenceButton: sequenceService from context: null
+ClearSequenceButton.svelte:20 ❌ ClearSequenceButton: sequenceService not found in context!
+$effect @ ClearSequenceButton.svelte:20
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+setTimeout
+(anonymous) @ appInitializer.ts:71
+initializeApplication @ appInitializer.ts:71
+await in initializeApplication
+(anonymous) @ app.machine.ts:233
+start @ chunk-RARCMJW4.js?v=3ba98bce:2681
+start @ chunk-RARCMJW4.js?v=3ba98bce:780
+(anonymous) @ chunk-RARCMJW4.js?v=3ba98bce:1065
+update @ chunk-RARCMJW4.js?v=3ba98bce:581
+_process @ chunk-RARCMJW4.js?v=3ba98bce:820
+flush @ chunk-RARCMJW4.js?v=3ba98bce:73
+enqueue @ chunk-RARCMJW4.js?v=3ba98bce:67
+_send @ chunk-RARCMJW4.js?v=3ba98bce:913
+_relay @ chunk-RARCMJW4.js?v=3ba98bce:388
+send @ chunk-RARCMJW4.js?v=3ba98bce:924
+backgroundReady @ app.actions.ts:67
+initializeStateManagement @ index.ts:85
+initializeState @ ServiceProvider.svelte:58
+await in initializeState
+$effect @ ServiceProvider.svelte:72
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+flushSync @ chunk-73NERRIW.js?v=3ba98bce:1936
+Svelte4Component @ chunk-EEV7IJ6Y.js?v=3ba98bce:753
+(anonymous) @ chunk-EEV7IJ6Y.js?v=3ba98bce:701
+initialize @ client.js?v=3ba98bce:474
+_hydrate @ client.js?v=3ba98bce:2659
+await in _hydrate
+start @ client.js?v=3ba98bce:321
+await in start
+(anonymous) @ (index):7830
+Promise.then
+(anonymous) @ (index):7829Understand this error
+StartPositionPicker.svelte:20 🔧 StartPositionPicker: sequenceService from context: null
+StartPositionPicker.svelte:22 ❌ StartPositionPicker: sequenceService not found in context!
+$effect @ StartPositionPicker.svelte:22
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+setTimeout
+(anonymous) @ appInitializer.ts:71
+initializeApplication @ appInitializer.ts:71
+await in initializeApplication
+(anonymous) @ app.machine.ts:233
+start @ chunk-RARCMJW4.js?v=3ba98bce:2681
+start @ chunk-RARCMJW4.js?v=3ba98bce:780
+(anonymous) @ chunk-RARCMJW4.js?v=3ba98bce:1065
+update @ chunk-RARCMJW4.js?v=3ba98bce:581
+_process @ chunk-RARCMJW4.js?v=3ba98bce:820
+flush @ chunk-RARCMJW4.js?v=3ba98bce:73
+enqueue @ chunk-RARCMJW4.js?v=3ba98bce:67
+_send @ chunk-RARCMJW4.js?v=3ba98bce:913
+_relay @ chunk-RARCMJW4.js?v=3ba98bce:388
+send @ chunk-RARCMJW4.js?v=3ba98bce:924
+backgroundReady @ app.actions.ts:67
+initializeStateManagement @ index.ts:85
+initializeState @ ServiceProvider.svelte:58
+await in initializeState
+$effect @ ServiceProvider.svelte:72
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+flushSync @ chunk-73NERRIW.js?v=3ba98bce:1936
+Svelte4Component @ chunk-EEV7IJ6Y.js?v=3ba98bce:753
+(anonymous) @ chunk-EEV7IJ6Y.js?v=3ba98bce:701
+initialize @ client.js?v=3ba98bce:474
+_hydrate @ client.js?v=3ba98bce:2659
+await in _hydrate
+start @ client.js?v=3ba98bce:321
+await in start
+(anonymous) @ (index):7830
+Promise.then
+(anonymous) @ (index):7829Understand this error
+StartPositionPicker.svelte:241 🚨 NUCLEAR FIX: StartPositionPicker mounted with infinite loop fixes applied
+GridLayout.svelte:142 GridLayout: Layout changed {from: '1x1', to: '1x1', cellSize: 200, beatCount: 0}
+GridLayout.svelte:182 GridLayout: Overflow state changed {hasOverflow: false, direction: null, containerSize: '1384x1304', gridSize: '200pxx200px'}
+ModernBeatGrid.svelte:54 🔧 ModernBeatGrid: Props updated: {startPosition: 'null', containerWidth: 1384, containerHeight: 1304}
+ModernBeatGrid.svelte:194 ModernBeatGrid render: {beatCount: 0, selectedCount: 0, gridSize: '1x1', cellSize: 200, renderTime: '0.00ms'}
+StartPositionService.svelte.ts:109 StartPositionService: Loading start positions
+chunk-73NERRIW.js?v=3ba98bce:1516 Uncaught TypeError: sequenceService.on is not a function
+
+	in $effect
+	in ModernOptionPickerContainer.svelte
+	in ModernOptionPicker.svelte
+	in TransitionWrapper.svelte
+	in RightPanel.svelte
+	in ModernServiceProvider.svelte
+	in SharedWorkbench.svelte
+	in ConstructTab.svelte
+	in TabContent.svelte
+	in MainLayout.svelte
+	in AppFullScreen.svelte
+	in +page.svelte
+	in ModernServiceProvider.svelte
+	in ServiceProvider.svelte
+	in +layout.svelte
+	in root.svelte
+
+    at $effect (ModernOptionPickerContainer.svelte:165:50)
+    at update_reaction (chunk-73NERRIW.js?v=3ba98bce:1636:23)
+    at update_effect (chunk-73NERRIW.js?v=3ba98bce:1755:21)
+    at flush_queued_effects (chunk-73NERRIW.js?v=3ba98bce:1852:11)
+    at flush_queued_root_effects (chunk-73NERRIW.js?v=3ba98bce:1831:9)
+$effect @ ModernOptionPickerContainer.svelte:165
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+setTimeout
+(anonymous) @ appInitializer.ts:71
+initializeApplication @ appInitializer.ts:71
+await in initializeApplication
+(anonymous) @ app.machine.ts:233
+start @ chunk-RARCMJW4.js?v=3ba98bce:2681
+start @ chunk-RARCMJW4.js?v=3ba98bce:780
+(anonymous) @ chunk-RARCMJW4.js?v=3ba98bce:1065
+update @ chunk-RARCMJW4.js?v=3ba98bce:581
+_process @ chunk-RARCMJW4.js?v=3ba98bce:820
+flush @ chunk-RARCMJW4.js?v=3ba98bce:73
+enqueue @ chunk-RARCMJW4.js?v=3ba98bce:67
+_send @ chunk-RARCMJW4.js?v=3ba98bce:913
+_relay @ chunk-RARCMJW4.js?v=3ba98bce:388
+send @ chunk-RARCMJW4.js?v=3ba98bce:924
+backgroundReady @ app.actions.ts:67
+initializeStateManagement @ index.ts:85
+initializeState @ ServiceProvider.svelte:58
+await in initializeState
+$effect @ ServiceProvider.svelte:72
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+flushSync @ chunk-73NERRIW.js?v=3ba98bce:1936
+Svelte4Component @ chunk-EEV7IJ6Y.js?v=3ba98bce:753
+(anonymous) @ chunk-EEV7IJ6Y.js?v=3ba98bce:701
+initialize @ client.js?v=3ba98bce:474
+_hydrate @ client.js?v=3ba98bce:2659
+await in _hydrate
+start @ client.js?v=3ba98bce:321
+await in start
+(anonymous) @ (index):7830
+Promise.then
+(anonymous) @ (index):7829Understand this error
+ModernOptionPickerContainer.svelte:189 ModernOptionPickerContainer: Initializing...
+ModernOptionPickerContainer.svelte:191 ModernOptionPickerContainer: Initialization complete
+appInitializer.ts:71 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824
+setTimeout
+(anonymous) @ appInitializer.ts:71
+initializeApplication @ appInitializer.ts:71
+await in initializeApplication
+(anonymous) @ app.machine.ts:233
+start @ chunk-RARCMJW4.js?v=3ba98bce:2681
+start @ chunk-RARCMJW4.js?v=3ba98bce:780
+(anonymous) @ chunk-RARCMJW4.js?v=3ba98bce:1065
+update @ chunk-RARCMJW4.js?v=3ba98bce:581
+_process @ chunk-RARCMJW4.js?v=3ba98bce:820
+flush @ chunk-RARCMJW4.js?v=3ba98bce:73
+enqueue @ chunk-RARCMJW4.js?v=3ba98bce:67
+_send @ chunk-RARCMJW4.js?v=3ba98bce:913
+_relay @ chunk-RARCMJW4.js?v=3ba98bce:388
+send @ chunk-RARCMJW4.js?v=3ba98bce:924
+backgroundReady @ app.actions.ts:67
+initializeStateManagement @ index.ts:85
+initializeState @ ServiceProvider.svelte:58
+await in initializeState
+$effect @ ServiceProvider.svelte:72
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+flushSync @ chunk-73NERRIW.js?v=3ba98bce:1936
+Svelte4Component @ chunk-EEV7IJ6Y.js?v=3ba98bce:753
+(anonymous) @ chunk-EEV7IJ6Y.js?v=3ba98bce:701
+initialize @ client.js?v=3ba98bce:474
+_hydrate @ client.js?v=3ba98bce:2659
+await in _hydrate
+start @ client.js?v=3ba98bce:321
+await in start
+(anonymous) @ (index):7830
+Promise.then
+(anonymous) @ (index):7829Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824
+setTimeout
+(anonymous) @ appInitializer.ts:71
+initializeApplication @ appInitializer.ts:71
+await in initializeApplication
+(anonymous) @ app.machine.ts:233
+start @ chunk-RARCMJW4.js?v=3ba98bce:2681
+start @ chunk-RARCMJW4.js?v=3ba98bce:780
+(anonymous) @ chunk-RARCMJW4.js?v=3ba98bce:1065
+update @ chunk-RARCMJW4.js?v=3ba98bce:581
+_process @ chunk-RARCMJW4.js?v=3ba98bce:820
+flush @ chunk-RARCMJW4.js?v=3ba98bce:73
+enqueue @ chunk-RARCMJW4.js?v=3ba98bce:67
+_send @ chunk-RARCMJW4.js?v=3ba98bce:913
+_relay @ chunk-RARCMJW4.js?v=3ba98bce:388
+send @ chunk-RARCMJW4.js?v=3ba98bce:924
+backgroundReady @ app.actions.ts:67
+initializeStateManagement @ index.ts:85
+initializeState @ ServiceProvider.svelte:58
+await in initializeState
+$effect @ ServiceProvider.svelte:72
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+flushSync @ chunk-73NERRIW.js?v=3ba98bce:1936
+Svelte4Component @ chunk-EEV7IJ6Y.js?v=3ba98bce:753
+(anonymous) @ chunk-EEV7IJ6Y.js?v=3ba98bce:701
+initialize @ client.js?v=3ba98bce:474
+_hydrate @ client.js?v=3ba98bce:2659
+await in _hydrate
+start @ client.js?v=3ba98bce:321
+await in start
+(anonymous) @ (index):7830
+Promise.then
+(anonymous) @ (index):7829Understand this error
+ModernBeatGrid.svelte:54 🔧 ModernBeatGrid: Props updated: {startPosition: 'null', containerWidth: 1384, containerHeight: 1304}
+chunk-73NERRIW.js?v=3ba98bce:1783 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+GridLayout.svelte:201 GridLayout slow calculation: 68.00ms
+warn @ client.js?v=3ba98bce:2949
+(anonymous) @ GridLayout.svelte:201
+setTimeout
+$effect @ GridLayout.svelte:198
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+setTimeout
+(anonymous) @ appInitializer.ts:71
+initializeApplication @ appInitializer.ts:71
+await in initializeApplication
+(anonymous) @ app.machine.ts:233
+start @ chunk-RARCMJW4.js?v=3ba98bce:2681
+start @ chunk-RARCMJW4.js?v=3ba98bce:780
+(anonymous) @ chunk-RARCMJW4.js?v=3ba98bce:1065
+update @ chunk-RARCMJW4.js?v=3ba98bce:581
+_process @ chunk-RARCMJW4.js?v=3ba98bce:820
+flush @ chunk-RARCMJW4.js?v=3ba98bce:73
+enqueue @ chunk-RARCMJW4.js?v=3ba98bce:67
+_send @ chunk-RARCMJW4.js?v=3ba98bce:913
+_relay @ chunk-RARCMJW4.js?v=3ba98bce:388
+send @ chunk-RARCMJW4.js?v=3ba98bce:924
+backgroundReady @ app.actions.ts:67
+initializeStateManagement @ index.ts:85
+initializeState @ ServiceProvider.svelte:58
+await in initializeState
+$effect @ ServiceProvider.svelte:72
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+flushSync @ chunk-73NERRIW.js?v=3ba98bce:1936
+Svelte4Component @ chunk-EEV7IJ6Y.js?v=3ba98bce:753
+(anonymous) @ chunk-EEV7IJ6Y.js?v=3ba98bce:701
+initialize @ client.js?v=3ba98bce:474
+_hydrate @ client.js?v=3ba98bce:2659
+await in _hydrate
+start @ client.js?v=3ba98bce:321
+await in start
+(anonymous) @ (index):7830
+Promise.then
+(anonymous) @ (index):7829Understand this warning
+GridLayout.svelte:198 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824
+setTimeout
+$effect @ GridLayout.svelte:198
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+setTimeout
+(anonymous) @ appInitializer.ts:71
+initializeApplication @ appInitializer.ts:71
+await in initializeApplication
+(anonymous) @ app.machine.ts:233
+start @ chunk-RARCMJW4.js?v=3ba98bce:2681
+start @ chunk-RARCMJW4.js?v=3ba98bce:780
+(anonymous) @ chunk-RARCMJW4.js?v=3ba98bce:1065
+update @ chunk-RARCMJW4.js?v=3ba98bce:581
+_process @ chunk-RARCMJW4.js?v=3ba98bce:820
+flush @ chunk-RARCMJW4.js?v=3ba98bce:73
+enqueue @ chunk-RARCMJW4.js?v=3ba98bce:67
+_send @ chunk-RARCMJW4.js?v=3ba98bce:913
+_relay @ chunk-RARCMJW4.js?v=3ba98bce:388
+send @ chunk-RARCMJW4.js?v=3ba98bce:924
+backgroundReady @ app.actions.ts:67
+initializeStateManagement @ index.ts:85
+initializeState @ ServiceProvider.svelte:58
+await in initializeState
+$effect @ ServiceProvider.svelte:72
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+flushSync @ chunk-73NERRIW.js?v=3ba98bce:1936
+Svelte4Component @ chunk-EEV7IJ6Y.js?v=3ba98bce:753
+(anonymous) @ chunk-EEV7IJ6Y.js?v=3ba98bce:701
+initialize @ client.js?v=3ba98bce:474
+_hydrate @ client.js?v=3ba98bce:2659
+await in _hydrate
+start @ client.js?v=3ba98bce:321
+await in start
+(anonymous) @ (index):7830
+Promise.then
+(anonymous) @ (index):7829Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824
+setTimeout
+$effect @ GridLayout.svelte:198
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+setTimeout
+(anonymous) @ appInitializer.ts:71
+initializeApplication @ appInitializer.ts:71
+await in initializeApplication
+(anonymous) @ app.machine.ts:233
+start @ chunk-RARCMJW4.js?v=3ba98bce:2681
+start @ chunk-RARCMJW4.js?v=3ba98bce:780
+(anonymous) @ chunk-RARCMJW4.js?v=3ba98bce:1065
+update @ chunk-RARCMJW4.js?v=3ba98bce:581
+_process @ chunk-RARCMJW4.js?v=3ba98bce:820
+flush @ chunk-RARCMJW4.js?v=3ba98bce:73
+enqueue @ chunk-RARCMJW4.js?v=3ba98bce:67
+_send @ chunk-RARCMJW4.js?v=3ba98bce:913
+_relay @ chunk-RARCMJW4.js?v=3ba98bce:388
+send @ chunk-RARCMJW4.js?v=3ba98bce:924
+backgroundReady @ app.actions.ts:67
+initializeStateManagement @ index.ts:85
+initializeState @ ServiceProvider.svelte:58
+await in initializeState
+$effect @ ServiceProvider.svelte:72
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+flushSync @ chunk-73NERRIW.js?v=3ba98bce:1936
+Svelte4Component @ chunk-EEV7IJ6Y.js?v=3ba98bce:753
+(anonymous) @ chunk-EEV7IJ6Y.js?v=3ba98bce:701
+initialize @ client.js?v=3ba98bce:474
+_hydrate @ client.js?v=3ba98bce:2659
+await in _hydrate
+start @ client.js?v=3ba98bce:321
+await in start
+(anonymous) @ (index):7830
+Promise.then
+(anonymous) @ (index):7829Understand this error
+StartPositionCell.svelte:141 StartPositionCell slow render: 91.30ms
+warn @ client.js?v=3ba98bce:2949
+(anonymous) @ StartPositionCell.svelte:141
+setTimeout
+$effect @ StartPositionCell.svelte:138
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+setTimeout
+(anonymous) @ appInitializer.ts:71
+initializeApplication @ appInitializer.ts:71
+await in initializeApplication
+(anonymous) @ app.machine.ts:233
+start @ chunk-RARCMJW4.js?v=3ba98bce:2681
+start @ chunk-RARCMJW4.js?v=3ba98bce:780
+(anonymous) @ chunk-RARCMJW4.js?v=3ba98bce:1065
+update @ chunk-RARCMJW4.js?v=3ba98bce:581
+_process @ chunk-RARCMJW4.js?v=3ba98bce:820
+flush @ chunk-RARCMJW4.js?v=3ba98bce:73
+enqueue @ chunk-RARCMJW4.js?v=3ba98bce:67
+_send @ chunk-RARCMJW4.js?v=3ba98bce:913
+_relay @ chunk-RARCMJW4.js?v=3ba98bce:388
+send @ chunk-RARCMJW4.js?v=3ba98bce:924
+backgroundReady @ app.actions.ts:67
+initializeStateManagement @ index.ts:85
+initializeState @ ServiceProvider.svelte:58
+await in initializeState
+$effect @ ServiceProvider.svelte:72
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831
+flushSync @ chunk-73NERRIW.js?v=3ba98bce:1936
+Svelte4Component @ chunk-EEV7IJ6Y.js?v=3ba98bce:753
+(anonymous) @ chunk-EEV7IJ6Y.js?v=3ba98bce:701
+initialize @ client.js?v=3ba98bce:474
+_hydrate @ client.js?v=3ba98bce:2659
+await in _hydrate
+start @ client.js?v=3ba98bce:321
+await in start
+(anonymous) @ (index):7830
+Promise.then
+(anonymous) @ (index):7829Understand this warning
+StartPositionCell.svelte:138 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824
+setTimeout
+$effect @ StartPositionCell.svelte:138
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824
+setTimeout
+$effect @ StartPositionCell.svelte:138
+update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
+update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
+flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1831Understand this error
+ModernBeatGrid.svelte:185 ModernBeatGrid slow render: 115.40ms
+warn @ client.js?v=3ba98bce:2949
+(anonymous) @ ModernBeatGrid.svelte:185Understand this warning
+ModernBeatGrid.svelte:194 ModernBeatGrid render: {beatCount: 0, selectedCount: 0, gridSize: '1x1', cellSize: 200, renderTime: '115.40ms'}
+chunk-73NERRIW.js?v=3ba98bce:1783 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:1783 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:1783 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:1783 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:1783 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:1783 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:1783 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:1783 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:1783 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:1783 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
+log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+chunk-73NERRIW.js?v=3ba98bce:271 Uncaught Svelte error: effect_update_depth_exceeded
+Maximum update depth exceeded. This can happen when a reactive block or effect repeatedly sets a new value. Svelte limits the number of nested updates to prevent infinite loops
+https://svelte.dev/e/effect_update_depth_exceeded
+effect_update_depth_exceeded @ chunk-73NERRIW.js?v=3ba98bce:271
+infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1791
+flush_queued_root_effects @ chunk-73NERRIW.js?v=3ba98bce:1824Understand this error
+PictographDataLoader.ts:71 PictographDataLoader: Loaded 576 valid pictograph entries
+StartPositionContainer.svelte:160 StartPositionContainer: Service error: allPictographs.forEach is not a function
+(anonymous) @ StartPositionContainer.svelte:160
+(anonymous) @ StartPositionService.svelte.ts:312
+emit @ StartPositionService.svelte.ts:312
+loadPositions @ StartPositionService.svelte.ts:146Understand this error
+StartPositionService.svelte.ts:147 StartPositionService: Error loading positions: TypeError: allPictographs.forEach is not a function
+    at StartPositionService.getUniqueStartPositions (StartPositionService.svelte.ts:275:18)
+    at StartPositionService.loadPositions (StartPositionService.svelte.ts:115:33)
+    at async loadPositions (StartPositionContainer.svelte:59:7)
+    at async StartPositionContainer.svelte:173:48
+loadPositions @ StartPositionService.svelte.ts:147Understand this error
+StartPositionContainer.svelte:152 StartPositionContainer: Service event - validation completed: 0
+SequenceService.svelte.ts:40 🔧 SequenceService constructor called with config: {autoSave: true, autoSaveDelay: 1000, maxBeats: 100, enablePlayback: true, persistenceKey: 'modern_sequence_state'}
+SequenceService.svelte.ts:346 Auto-save disabled to prevent reactive loops
+SequenceService.svelte.ts:49 ✅ SequenceService initialized successfully
+WorkbenchService.svelte.ts:35 🔧 WorkbenchService constructor called with config: {defaultPanel: 'generate', enableFullscreen: true, persistLayout: true, persistenceKey: 'modern_workbench_layout', minCellSize: 60, …}
+WorkbenchService.svelte.ts:290 Responsive monitoring disabled to prevent reactive loops
+WorkbenchService.svelte.ts:48 ✅ WorkbenchService initialized successfully
+ModernServiceProvider.svelte:77 ✅ ModernServiceProvider: Services initialized and updated in state
+ModernBeatGrid.svelte:34 🔧 ModernBeatGrid: Services injected: {sequenceService: true, workbenchService: true}
+ModernBeatGrid.svelte:194 ModernBeatGrid render: {beatCount: 0, selectedCount: 0, gridSize: '1x1', cellSize: 200, renderTime: '115.40ms'}
+ClearSequenceButton.svelte:18 🔧 ClearSequenceButton: sequenceService from context: SequenceService {#_state: {…}, #selectedBeats: {…}, #isEmpty: {…}, #currentBeat: {…}, #beatCount: {…}, …}
+StartPositionPicker.svelte:20 🔧 StartPositionPicker: sequenceService from context: SequenceService {#_state: {…}, #selectedBeats: {…}, #isEmpty: {…}, #currentBeat: {…}, #beatCount: {…}, …}
+StartPositionPicker.svelte:24 ✅ StartPositionPicker: sequenceService found, current state: {startPosition: null, beats: 0, isEmpty: true}

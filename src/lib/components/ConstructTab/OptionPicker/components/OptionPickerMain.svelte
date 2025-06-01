@@ -1,14 +1,18 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { onMount, untrack, getContext } from 'svelte';
 	import { LayoutProvider } from '../layout';
 	import OptionPickerHeader from './OptionPickerHeader';
 	import OptionDisplayArea from './OptionDisplayArea.svelte';
-	import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
+	import type { SequenceService } from '$lib/services/SequenceService.svelte';
+	import { createBeat } from '$lib/components/SequenceWorkbench/BeatFrame/BeatData';
 	import { optionPickerState } from '../optionPickerState.svelte';
 	import type { PictographData } from '$lib/types/PictographData';
 	import type { SortMethod } from '../config';
 	import { getSorter, determineGroupKey, getSortedGroupKeys } from '../services/OptionsService';
 	import transitionLoading from '$lib/state/stores/ui/transitionLoadingStore.svelte';
+
+	// Get the modern sequence service from context
+	const sequenceService = getContext<SequenceService>('sequenceService');
 
 	// ===== REACTIVE ISOLATION LAYER =====
 	// Use untrack() to prevent circular dependencies and create isolated reactive contexts
@@ -24,9 +28,8 @@
 		return untrack(() => {
 			const currentSortMethod = sortMethod;
 			const currentLastSelectedTab = optionPickerState.lastSelectedTab;
-			return currentSortMethod === 'all'
-				? 'all'
-				: currentLastSelectedTab[currentSortMethod] || 'all';
+			// Fix: 'all' is not a valid sort method, only a filter value
+			return currentLastSelectedTab[currentSortMethod] || 'all';
 		});
 	});
 
@@ -36,11 +39,8 @@
 		const currentSortMethod = sortMethod;
 		const currentSequence = sequence;
 
-		if (currentSortMethod !== 'all') {
-			options.sort(getSorter(currentSortMethod as SortMethod, currentSequence));
-		} else {
-			options.sort((a, b) => (a.letter ?? '').localeCompare(b.letter ?? ''));
-		}
+		// Always apply proper sorting since 'all' is not a valid sort method
+		options.sort(getSorter(currentSortMethod as SortMethod, currentSequence));
 		return options;
 	});
 
@@ -50,10 +50,7 @@
 		const currentFilteredOptions = filteredOptions;
 		const currentSequence = sequence;
 
-		if (currentSortMethod === 'all') {
-			return {};
-		}
-
+		// Always create groups since we have valid sort methods
 		const groups: Record<string, PictographData[]> = {};
 		currentFilteredOptions.forEach((option) => {
 			const groupKey = determineGroupKey(option, currentSortMethod as SortMethod, currentSequence);
@@ -80,9 +77,9 @@
 
 	let showTabs = $derived.by(() => {
 		return untrack(() => {
-			const currentSortMethod = sortMethod;
 			const currentCategoryKeys = actualCategoryKeys;
-			return currentSortMethod !== 'all' && currentCategoryKeys.length > 0;
+			// Always show tabs if we have categories since all sort methods are valid
+			return currentCategoryKeys.length > 0;
 		});
 	});
 
@@ -91,9 +88,9 @@
 		const currentFilteredOptions = filteredOptions;
 		const currentSelectedTab = selectedTab;
 		const currentGroupedOptions = groupedOptions;
-		const currentSortMethod = sortMethod;
 
-		if (currentSortMethod === 'all' || currentSelectedTab === 'all') {
+		// If 'all' tab is selected, show all filtered options
+		if (currentSelectedTab === 'all') {
 			return currentFilteredOptions;
 		} else {
 			return (
@@ -221,7 +218,18 @@
 		isRefreshing = true;
 		try {
 			console.log('🔧 Refreshing options from current sequence');
-			await optionPickerState.refreshOptionsFromCurrentSequence();
+
+			// Get the current sequence from the modern SequenceService
+			const currentBeats = sequenceService.state.beats;
+
+			if (currentBeats.length > 0) {
+				// Use the last beat's pictograph data to determine next options
+				const lastBeat = currentBeats[currentBeats.length - 1];
+				await optionPickerState.loadOptions([lastBeat.pictographData]);
+			} else {
+				// No beats, load empty options
+				await optionPickerState.loadOptions([]);
+			}
 		} catch (error) {
 			console.error('OptionPickerMain: Error refreshing options:', error);
 		} finally {
@@ -246,7 +254,19 @@
 
 		try {
 			console.log('🔧 Selecting option:', option.letter);
-			await optionPickerState.selectOption(option);
+
+			// Get the current beat count to determine the beat number
+			const currentBeatCount = sequenceService.state.beats.length;
+
+			// Create proper BeatData using the createBeat helper
+			const beatData = createBeat(currentBeatCount + 1, option, {
+				filled: true,
+				duration: 1,
+				tags: [`letter-${option.letter || 'unknown'}`]
+			});
+
+			// Use the modern SequenceService instead of legacy optionPickerState
+			sequenceService.addBeats([beatData]);
 			console.log('🔧 Option selection completed');
 		} catch (error) {
 			console.error('OptionPickerMain: Error handling option selection:', error);
@@ -263,28 +283,22 @@
 		// Initialize option picker state reactive effects
 		optionPickerState.initializeReactiveEffects();
 
-		// Set initial tab state if needed
-		if (optionPickerState.sortMethod === 'all' && selectedTab !== 'all') {
-			untrack(() => {
-				optionPickerState.setLastSelectedTabForSort('all', 'all');
-			});
-		}
-
 		// ===== SAFE INITIALIZATION: Load options after mount using event-driven approach =====
 		// This runs after the component is fully mounted and uses event listeners instead of reactive effects
 		setTimeout(() => {
-			const currentStartPosition = untrack(() => sequenceState.startPosition);
+			// For now, just initialize with empty options since we're using the modern service
+			// The start position will be handled by the StartPositionPicker component
 			const currentOptions = untrack(() => optionPickerState.options);
 
-			if (currentStartPosition && currentOptions.length === 0) {
-				console.log('🔧 OptionPickerMain: onMount - loading options for start position');
+			if (currentOptions.length === 0) {
+				console.log('🔧 OptionPickerMain: onMount - initializing empty options');
 				hasInitiallyLoaded = true;
 
 				// Use untrack to prevent reactive loops
 				untrack(() => {
-					optionPickerState.loadOptions([currentStartPosition]);
+					optionPickerState.loadOptions([]);
 				});
-			} else if (currentOptions.length > 0) {
+			} else {
 				hasInitiallyLoaded = true;
 			}
 		}, 100);
@@ -380,9 +394,9 @@
 		const handleShowAllView = () => {
 			setTimeout(() => {
 				untrack(() => {
-					if (optionPickerState.sortMethod !== 'all') {
-						optionPickerState.setSortMethod('all');
-					}
+					// Set the selected tab to 'all' instead of trying to change sort method
+					const currentSortMethod = optionPickerState.sortMethod;
+					optionPickerState.setLastSelectedTabForSort(currentSortMethod, 'all');
 				});
 			}, 0);
 		};

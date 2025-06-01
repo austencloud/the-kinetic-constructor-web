@@ -3,7 +3,7 @@
  */
 import { browser } from '$app/environment';
 import { logger } from '$lib/core/logging';
-import { showError, showSuccess } from '$lib/components/shared/ToastManager.svelte';
+import { showError, showSuccess } from '$lib/components/shared/toastUtils';
 
 /**
  * Copy a URL to the clipboard

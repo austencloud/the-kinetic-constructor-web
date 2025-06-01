@@ -10,12 +10,14 @@ import type { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
 import { LetterUtils } from '$lib/utils/LetterUtils';
 import { MotionOriCalculator } from '$lib/components/objects/Motion/MotionOriCalculator';
+import { getValidTransitions } from '$lib/services/TransitionValidator';
 
 // ===== Option Data Fetching =====
 
 /**
  * Gets the next possible pictograph options based on the last pictograph in a sequence.
  * Returns an empty array for an empty sequence (initial state).
+ * Enhanced with TransitionValidator for authentic data-driven filtering.
  */
 export function getNextOptions(sequence: PictographData[]): PictographData[] {
 	const lastPictograph = sequence.at(-1);
@@ -38,6 +40,45 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 	);
 
 	return options;
+}
+
+/**
+ * Enhanced version that uses TransitionValidator for authentic data-driven filtering
+ * This is async and should be used when possible for better validation
+ */
+export async function getNextOptionsEnhanced(
+	sequence: PictographData[]
+): Promise<PictographData[]> {
+	const lastPictograph = sequence.at(-1);
+
+	// If sequence is empty, return initial options (currently none defined)
+	if (!lastPictograph) {
+		return [];
+	}
+
+	try {
+		// Use TransitionValidator for authentic data-driven filtering
+		const result = await getValidTransitions(lastPictograph, {
+			includeStaticMotions: true,
+			includeDashMotions: true,
+			strictValidation: true
+		});
+
+		if (!result.isValid) {
+			console.warn('No valid transitions found:', result.errors);
+			return [];
+		}
+
+		if (result.warnings.length > 0) {
+			console.warn('Transition warnings:', result.warnings);
+		}
+
+		return result.validTransitions;
+	} catch (error) {
+		console.error('Error getting enhanced options:', error);
+		// Fallback to original method
+		return getNextOptions(sequence);
+	}
 }
 
 /**
@@ -248,8 +289,19 @@ function checkColorContinuity(
 export function determineGroupKey(
 	option: PictographData,
 	sortMethod: SortMethod,
-	sequence: PictographData[] = [] // Sequence needed for 'reversals' grouping
+	sequence: PictographData[] = []
 ): string {
+	if (!sortMethod) {
+		return 'All Options';
+	}
+
+	// Handle invalid sort methods (like 'all' which is a tab key, not a sort method)
+	const validSortMethods: SortMethod[] = ['type', 'endPosition', 'reversals'];
+	if (!validSortMethods.includes(sortMethod)) {
+		console.warn(`Unknown sort method for grouping: ${sortMethod}`);
+		return 'All Options';
+	}
+
 	switch (sortMethod) {
 		case 'type': {
 			const parsedLetter = LetterUtils.tryFromString((option.letter as Letter) ?? undefined);
@@ -273,8 +325,7 @@ export function determineGroupKey(
 			return categoryLabels[reversalCategory];
 		}
 		default:
-			console.warn(`Unknown sort method for grouping: ${sortMethod}`);
-			return 'Unknown Group';
+			return 'All Options';
 	}
 }
 
@@ -282,6 +333,13 @@ export function determineGroupKey(
  * Sorts an array of group keys based on the sorting method.
  */
 export function getSortedGroupKeys(keys: string[], sortMethod: SortMethod): string[] {
+	// Handle invalid sort methods
+	const validSortMethods: SortMethod[] = ['type', 'endPosition', 'reversals'];
+	if (!validSortMethods.includes(sortMethod)) {
+		console.warn(`Unknown sort method for key sorting: ${sortMethod}`);
+		return keys.sort((a, b) => a.localeCompare(b));
+	}
+
 	return keys.sort((a, b) => {
 		if (sortMethod === 'type') {
 			// Extract Type number (e.g., from "Type1") for primary sort
@@ -311,6 +369,13 @@ export function getSortedGroupKeys(keys: string[], sortMethod: SortMethod): stri
  * Returns a comparison function for sorting PictographData arrays based on the specified method.
  */
 export function getSorter(method: SortMethod, sequence: PictographData[] = []) {
+	// Handle invalid sort methods
+	const validSortMethods: SortMethod[] = ['type', 'endPosition', 'reversals'];
+	if (!validSortMethods.includes(method)) {
+		console.warn(`Unknown sort method for sorting: ${method}`);
+		return (a: PictographData, b: PictographData) => (a.letter ?? '').localeCompare(b.letter ?? '');
+	}
+
 	const sorters = {
 		type: (a: PictographData, b: PictographData) => {
 			const typeA = getLetterTypeNumber(a.letter ?? undefined);

@@ -2,9 +2,24 @@
 <script lang="ts">
 	import { fly, fade, scale } from 'svelte/transition';
 	import { browser } from '$app/environment';
+	import { getContext } from 'svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import { sequenceActions } from '$lib/state/machines/sequenceMachine';
+	import type { SequenceService } from '$lib/services/SequenceService.svelte';
 	import { uiStore } from '$lib/components/WriteTab/stores/uiStore';
+
+	// Get the modern sequence service getter from context
+	const getSequenceService = getContext<() => SequenceService | null>('sequenceService');
+
+	// Get the actual service using $derived properly
+	const sequenceService = $derived(getSequenceService?.() || null);
+
+	// Debug logging - moved inside $effect to be reactive
+	$effect(() => {
+		console.log('🔧 ClearSequenceButton: sequenceService from context:', sequenceService);
+		if (!sequenceService) {
+			console.error('❌ ClearSequenceButton: sequenceService not found in context!');
+		}
+	});
 
 	// State for confirmation modal
 	let isConfirmationModalOpen = $state(false);
@@ -33,13 +48,37 @@
 	}
 
 	function clearSequence() {
-		// Clear the sequence directly using the sequence actions
-		sequenceActions.clearSequence();
+		// Debug logging
+		console.log('🗑️ ClearSequenceButton: Clearing sequence using modern SequenceService');
+
+		if (!sequenceService) {
+			console.error('❌ ClearSequenceButton: SequenceService not available in context');
+			return;
+		}
+
+		// Log state before clearing with null checks
+		console.log('🗑️ ClearSequenceButton: State before clear:', {
+			startPosition: sequenceService.state?.startPosition?.letter || 'null',
+			beats: sequenceService.state?.beats?.length || 0,
+			isEmpty: sequenceService.isEmpty ?? true
+		});
+
+		// Clear the sequence using the modern SequenceService
+		sequenceService.clearSequence();
+
+		// Log state after clearing with null checks
+		console.log('🗑️ ClearSequenceButton: State after clear:', {
+			startPosition: sequenceService.state?.startPosition?.letter || 'null',
+			beats: sequenceService.state?.beats?.length || 0,
+			isEmpty: sequenceService.isEmpty ?? true
+		});
 
 		// Provide haptic feedback for deletion
 		if (browser) {
 			hapticFeedbackService.trigger('error');
 		}
+
+		console.log('✅ ClearSequenceButton: Sequence cleared successfully');
 	}
 
 	function handleConfirm() {

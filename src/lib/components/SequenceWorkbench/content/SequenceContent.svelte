@@ -1,13 +1,29 @@
 <script lang="ts">
 	import { useSequenceMetadata } from '../utils/SequenceMetadataManager';
 	import CurrentWordLabel from '../Labels/CurrentWordLabel.svelte';
-	import BeatFrame from '../BeatFrame/BeatFrame.svelte';
+	import ModernBeatGrid from '../BeatFrame/modern/ModernBeatGrid.svelte';
 	import { calculateBeatFrameShouldScroll } from '../utils/SequenceLayoutCalculator';
-	import { setContext } from 'svelte';
+	import { setContext, getContext } from 'svelte';
 	import { browser } from '$app/environment';
 	import { BEAT_FRAME_CONTEXT_KEY, type ElementContext } from '../context/ElementContext';
 	import { editModeStore } from '$lib/state/stores/editModeStore';
 	import { sequenceContainer } from '$lib/state/stores/sequence/SequenceContainer';
+	import type { SequenceService } from '$lib/services/SequenceService.svelte';
+
+	// Get the modern sequence service from context
+	const sequenceService = getContext<SequenceService>('sequenceService');
+
+	// Debug logging for sequence service state
+	$effect(() => {
+		if (sequenceService?.state) {
+			console.log('🔧 SequenceContent: SequenceService state updated:', {
+				startPosition: sequenceService.state.startPosition?.letter || 'null',
+				beats: sequenceService.state.beats.length,
+				isEmpty: sequenceService.isEmpty,
+				isModified: sequenceService.state.isModified
+			});
+		}
+	});
 
 	// Props with callback for beat selection
 	const {
@@ -115,6 +131,20 @@
 		}
 	}
 
+	// Modern event handlers for ModernBeatGrid
+	function handleBeatClick(beatId: string) {
+		onBeatSelected(beatId);
+	}
+
+	function handleBeatDoubleClick(beatId: string) {
+		onBeatSelected(beatId);
+	}
+
+	function handleStartPosClick() {
+		// Handle start position click
+		console.log('Start position clicked');
+	}
+
 	// Define the component's custom events for TypeScript
 	// This is used to declare the events that BeatFrame can emit
 	// The actual event handling is done through the svelte-html.d.ts file
@@ -135,32 +165,15 @@
 
 			<!-- Beat frame wrapper with adjusted height to account for label -->
 			<div class="beat-frame-wrapper" class:scroll-mode-active={beatFrameShouldScroll}>
-				<!-- Pass the scrollable state to BeatFrame to let it handle scrolling -->
-				<BeatFrame
-					on:naturalheightchange={handleBeatFrameHeightChange}
-					on:beatselected={handleBeatSelected}
+				<!-- Modern BeatGrid with service injection -->
+				<ModernBeatGrid
+					{containerWidth}
+					{containerHeight}
 					isScrollable={beatFrameShouldScroll}
-					elementReceiver={function (el: HTMLElement | null) {
-						// Use a function to update the element reference
-
-						if (el) {
-							// Update our local state
-							beatFrameElement = el;
-
-							// Store in global variables for maximum compatibility
-							if (browser) {
-								(window as any).__beatFrameElementRef = el;
-								(window as any).__pendingBeatFrameElement = el;
-							}
-
-							// Dispatch a custom event for components that don't use context
-							const event = new CustomEvent('beatframe-element-available', {
-								bubbles: true,
-								detail: { element: el }
-							});
-							document.dispatchEvent(event);
-						}
-					}}
+					fullScreenMode={false}
+					onBeatClick={handleBeatClick}
+					onBeatDoubleClick={handleBeatDoubleClick}
+					onStartPosClick={handleStartPosClick}
 				/>
 			</div>
 		</div>

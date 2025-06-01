@@ -15,11 +15,13 @@
 	const {
 		selectedTab = null,
 		options = [],
-		transitionKey = 'default'
+		transitionKey = 'default',
+		onoptionselect
 	} = $props<{
 		selectedTab?: string | null;
 		options?: PictographData[];
 		transitionKey?: string | number;
+		onoptionselect?: (option: PictographData) => void;
 	}>();
 
 	let panelElement: HTMLElement | undefined = $state(); // Use $state for reactive updates
@@ -234,9 +236,9 @@
 	<div class="panel-content">
 		{#each layoutRows as row, rowIndex (transitionKey + '-row-' + rowIndex)}
 			{#if row.type === 'single'}
-				<SingleRowRenderer groups={row.groups} {transitionKey} {rowIndex} />
+				<SingleRowRenderer groups={row.groups} {transitionKey} {rowIndex} {onoptionselect} />
 			{:else if row.type === 'multi'}
-				<MultiRowRenderer groups={row.groups} {transitionKey} {rowIndex} />
+				<MultiRowRenderer groups={row.groups} {transitionKey} {rowIndex} {onoptionselect} />
 			{/if}
 		{/each}
 	</div>

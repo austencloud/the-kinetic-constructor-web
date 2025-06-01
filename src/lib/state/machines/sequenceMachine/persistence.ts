@@ -10,35 +10,52 @@ import { writable } from 'svelte/store';
 // Create a replacement for the removed isSequenceEmpty store
 export const isSequenceEmpty = writable(true);
 
+// Debounce helper to prevent reactive loops
+let updateTimeout: number | null = null;
+let lastEmptyState = true;
+
 // Set up a subscription to update isSequenceEmpty whenever the sequence changes
 if (typeof window !== 'undefined') {
-	// We need to check both the sequence beats and the start position
-	// to determine if the sequence is truly empty
 	let hasStartPosition = false;
 
 	// Subscribe to the selectedStartPos store to track if we have a start position
 	selectedStartPos.subscribe((startPos) => {
 		hasStartPosition = !!startPos;
-
-		// We'll get the current sequence state in the sequenceStore subscription
-		// Just log that the start position changed
-		console.log('Start position updated:', hasStartPosition ? 'exists' : 'null');
+		// Reduced logging
+		if (console.debug) {
+			console.debug('Start position updated:', hasStartPosition ? 'exists' : 'null');
+		}
 	});
 
-	// Also subscribe to sequence changes to update the empty state
+	// Debounced function to update empty state
+	function updateEmptyState(beatCount: number) {
+		if (updateTimeout) {
+			clearTimeout(updateTimeout);
+		}
+
+		updateTimeout = window.setTimeout(() => {
+			const isEmpty = beatCount === 0 && !hasStartPosition;
+
+			// Only update if the state actually changed
+			if (isEmpty !== lastEmptyState) {
+				lastEmptyState = isEmpty;
+				isSequenceEmpty.set(isEmpty);
+
+				// Reduced logging
+				if (console.debug) {
+					console.debug('isSequenceEmpty updated:', {
+						isEmpty,
+						beatCount,
+						hasStartPosition
+					});
+				}
+			}
+		}, 100); // 100ms debounce
+	}
+
+	// Subscribe to sequence changes with debouncing
 	sequenceStore.subscribe((state) => {
-		// A sequence is only truly empty if it has no beats AND no start position
-		const isEmpty = state.beats.length === 0 && !hasStartPosition;
-
-		// Update the isSequenceEmpty store
-		isSequenceEmpty.set(isEmpty);
-
-		// Log for debugging
-		console.log('isSequenceEmpty updated from sequence change:', {
-			isEmpty,
-			beatCount: state.beats.length,
-			hasStartPosition
-		});
+		updateEmptyState(state.beats.length);
 	});
 }
 

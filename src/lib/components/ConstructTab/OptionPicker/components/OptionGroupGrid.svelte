@@ -12,41 +12,42 @@
 	} from '../layoutContext';
 	import { uiState } from '../store';
 
-	// --- Props ---
-	export let options: PictographData[] = [];
-	export let key: string = ''; // Key for parent transitions if needed
+	const {
+		options = [],
+		key = '',
+		onoptionselect
+	} = $props<{
+		options?: PictographData[];
+		key?: string;
+		onoptionselect?: (option: PictographData) => void;
+	}>();
 
-	// --- Context ---
-	// Get the context as a Readable<LayoutContextValue>
 	const layoutContext = getContext<LayoutContext>(LAYOUT_CONTEXT_KEY);
 
-	// Properly extract the layout config values from the context store
-	$: ({
-		layoutConfig: { gridColumns: contextGridColumns, optionSize, gridGap, gridClass, aspectClass },
-		isMobile: isMobileDevice,
-		isTablet: isTabletDevice,
-		isPortrait: isPortraitMode
-	} = $layoutContext);
+	const layoutConfig = $derived($layoutContext.layoutConfig);
+	const {
+		gridColumns: contextGridColumns,
+		optionSize,
+		gridGap,
+		gridClass,
+		aspectClass
+	} = $derived(layoutConfig);
+	const isMobileDevice = $derived($layoutContext.isMobile);
+	const isTabletDevice = $derived($layoutContext.isTablet);
+	const isPortraitMode = $derived($layoutContext.isPortrait);
 
-	// --- Get Sort Method from Store ---
-	let currentSortMethod: string | null;
+	let currentSortMethod: string | null = null;
 	uiState.subscribe((state) => {
 		currentSortMethod = state.sortMethod;
 	});
 
-	// --- Layout Overrides for Single/Two Items ---
-	// Determine if special single/two item styling should apply based on sorting context
-	$: isTypeSortContext = currentSortMethod === 'type';
-	$: applySingleItemClass = options.length === 1 && isTypeSortContext;
-	$: applyTwoItemClass = options.length === 2 && isTypeSortContext;
+	const isTypeSortContext = $derived(currentSortMethod === 'type');
+	const applySingleItemClass = $derived(options.length === 1 && isTypeSortContext);
+	const applyTwoItemClass = $derived(options.length === 2 && isTypeSortContext);
 
-	// Override grid columns if only one or two items are present in this specific grid
-	$: actualGridColumns =
-		options.length === 1
-			? '1fr' // Force single column for single item
-			: options.length === 2
-				? 'repeat(2, 1fr)' // Force two columns for two items
-				: contextGridColumns; // Use the layout context's column definition otherwise
+	const actualGridColumns = $derived(
+		options.length === 1 ? '1fr' : options.length === 2 ? 'repeat(2, 1fr)' : contextGridColumns
+	);
 </script>
 
 <div
@@ -66,7 +67,7 @@
 			class:single-item={applySingleItemClass}
 			class:two-item={applyTwoItemClass}
 		>
-			<Option pictographData={option} isPartOfTwoItems={applyTwoItemClass} />
+			<Option pictographData={option} isPartOfTwoItems={applyTwoItemClass} {onoptionselect} />
 		</div>
 	{/each}
 </div>

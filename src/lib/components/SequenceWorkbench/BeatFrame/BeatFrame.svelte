@@ -102,6 +102,7 @@
 
 	// Create start position beat data
 	const startPosBeatData = $derived({
+		id: 'start-position',
 		beatNumber: 0,
 		filled: !!startPosition,
 		pictographData: startPosition || defaultPictographData

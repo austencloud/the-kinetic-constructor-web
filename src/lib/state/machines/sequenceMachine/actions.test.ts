@@ -18,7 +18,13 @@ global.document = {
 vi.mock('$lib/stores/sequence/selectionStore', () => ({
 	selectedStartPos: {
 		set: vi.fn(),
-		get: vi.fn().mockReturnValue({ id: 'start-pos-1', letter: 'α' })
+		get: vi.fn().mockReturnValue({ id: 'start-pos-1', letter: 'α' }),
+		subscribe: vi.fn((callback) => {
+			// Call the callback immediately with mock data
+			callback({ id: 'start-pos-1', letter: 'α' });
+			// Return unsubscribe function
+			return () => {};
+		})
 	}
 }));
 
@@ -68,7 +74,7 @@ describe('Sequence Machine Actions', () => {
 			expect(sequenceContainer.removeBeat).toHaveBeenCalledWith('beat-1');
 
 			// Verify that events were dispatched to preserve the start position
-			expect(mockDispatchEvent).toHaveBeenCalledTimes(3);
+			expect(mockDispatchEvent).toHaveBeenCalledTimes(4);
 
 			// Verify that the correct number of events were dispatched
 			// We don't need to check the exact content of the events since that's implementation-specific

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import OptionPicker from './OptionPicker.svelte';
+	import ModernOptionPicker from './modern/ModernOptionPicker.svelte';
 </script>
 
 <div class="option-picker-container">
-	<OptionPicker />
+	<ModernOptionPicker />
 </div>
 
 <style>
