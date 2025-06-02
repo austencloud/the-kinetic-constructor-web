@@ -106,48 +106,55 @@ export class StartPositionService implements IStartPositionService {
 		this._state.error = null;
 
 		try {
-			console.log('StartPositionService: Loading start positions');
-
-			// Load all available pictographs as potential start positions
-			// Get a sequence of multiple pictographs instead of just one random one
-			const allPictographs = await pictographDataLoader.getValidPictographSequence(
-				this.config.maxPositions * 2
+			console.log(
+				'StartPositionService: Loading preferred default start positions (alpha1, beta5, gamma11)'
 			);
 
-			// Filter to get unique start positions (based on endPos which becomes startPos for next)
-			const uniquePositions = this.getUniqueStartPositions(allPictographs);
+			// Load specific default start positions: alpha1, beta5, gamma11
+			const defaultStartPositions = await this.loadDefaultStartPositions();
 
-			// Apply max positions limit
-			const limitedPositions = uniquePositions.slice(0, this.config.maxPositions);
+			if (defaultStartPositions.length === 3) {
+				console.log('StartPositionService: Successfully loaded all 3 default start positions:', {
+					positions: defaultStartPositions.map((p: PictographData) => `${p.letter}:${p.startPos}`)
+				});
 
-			// Mark as start positions
-			const startPositions = limitedPositions.map((pos) => ({
-				...pos,
-				isStartPosition: true
-			}));
+				// Cache the results
+				if (this.config.enableCaching) {
+					this.cache = {
+						data: defaultStartPositions,
+						timestamp: Date.now()
+					};
+				}
 
-			// Cache the results
-			if (this.config.enableCaching) {
-				this.cache = {
-					data: startPositions,
-					timestamp: Date.now()
-				};
+				this.setPositionsData(defaultStartPositions);
+
+				// Validate positions if enabled
+				if (this.config.enableValidation) {
+					this.validateAllPositions();
+				}
+
+				this.emit('positions:loaded', { positions: defaultStartPositions });
+			} else {
+				// Fallback to original random generation if specific positions not found
+				console.warn(
+					'StartPositionService: Could not find all default positions, falling back to random generation'
+				);
+				await this.loadRandomStartPositions();
 			}
-
-			this.setPositionsData(startPositions);
-
-			// Validate positions if enabled
-			if (this.config.enableValidation) {
-				this.validateAllPositions();
-			}
-
-			this.emit('positions:loaded', { positions: startPositions });
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : 'Unknown error loading positions';
 			this._state.error = errorMessage;
 			this.emit('error', { error: errorMessage });
 			console.error('StartPositionService: Error loading positions:', error);
+
+			// Fallback to random generation on any error
+			try {
+				console.log('StartPositionService: Attempting fallback to random generation');
+				await this.loadRandomStartPositions();
+			} catch (fallbackError) {
+				console.error('StartPositionService: Fallback also failed:', fallbackError);
+			}
 		} finally {
 			this._state.isLoading = false;
 		}
@@ -271,16 +278,162 @@ export class StartPositionService implements IStartPositionService {
 		this._state.lastLoadTime = new Date();
 	}
 
+	/**
+	 * Load the specific default start positions: alpha1, beta5, gamma11
+	 * These are pictographs where startPos equals endPos for the target positions
+	 */
+	private async loadDefaultStartPositions(): Promise<PictographData[]> {
+		const targetPositions = [
+			{ letter: 'α', position: 'alpha1' },
+			{ letter: 'β', position: 'beta5' },
+			{ letter: 'Γ', position: 'gamma11' }
+		];
+
+		const foundPositions: PictographData[] = [];
+		const missingPositions: string[] = [];
+
+		for (const target of targetPositions) {
+			try {
+				// Get all pictographs for this letter
+				const letterPictographs = await pictographDataLoader.getPictographDataByLetter(
+					target.letter
+				);
+
+				// Find pictographs where startPos === endPos === target.position
+				const matchingPictographs = letterPictographs.filter(
+					(p: PictographData) => p.startPos === target.position && p.endPos === target.position
+				);
+
+				if (matchingPictographs.length > 0) {
+					// Take the first match and mark it as a start position
+					const startPosition = {
+						...matchingPictographs[0],
+						isStartPosition: true
+					};
+					foundPositions.push(startPosition);
+					console.log(`StartPositionService: Found ${target.letter} at ${target.position}`);
+				} else {
+					missingPositions.push(`${target.letter}:${target.position}`);
+					console.warn(
+						`StartPositionService: Could not find ${target.letter} at ${target.position}`
+					);
+				}
+			} catch (error) {
+				missingPositions.push(`${target.letter}:${target.position}`);
+				console.error(
+					`StartPositionService: Error loading ${target.letter} at ${target.position}:`,
+					error
+				);
+			}
+		}
+
+		if (missingPositions.length > 0) {
+			console.warn('StartPositionService: Missing default positions:', missingPositions);
+		}
+
+		return foundPositions;
+	}
+
+	/**
+	 * Fallback method that uses the original random generation approach
+	 */
+	private async loadRandomStartPositions(): Promise<void> {
+		console.log('StartPositionService: Loading random start positions (fallback)');
+
+		// Load all available pictographs as potential start positions
+		// Get a sequence of multiple pictographs instead of just one random one
+		const allPictographs = await pictographDataLoader.getValidPictographSequence(
+			this.config.maxPositions * 2
+		);
+
+		// Validate that we received an array
+		if (!Array.isArray(allPictographs)) {
+			throw new Error('PictographDataLoader returned invalid data (not an array)');
+		}
+
+		console.log('StartPositionService: Loaded pictographs for fallback:', {
+			count: allPictographs.length,
+			isArray: Array.isArray(allPictographs),
+			firstItem: allPictographs[0]?.letter || 'none'
+		});
+
+		// Filter to get unique start positions (based on endPos which becomes startPos for next)
+		const uniquePositions = this.getUniqueStartPositions(allPictographs);
+
+		// Apply max positions limit
+		const limitedPositions = uniquePositions.slice(0, this.config.maxPositions);
+
+		// Mark as start positions
+		const startPositions = limitedPositions.map((pos) => ({
+			...pos,
+			isStartPosition: true
+		}));
+
+		console.log('StartPositionService: Generated fallback start positions:', {
+			uniqueCount: uniquePositions.length,
+			limitedCount: limitedPositions.length,
+			finalCount: startPositions.length
+		});
+
+		// Cache the results
+		if (this.config.enableCaching) {
+			this.cache = {
+				data: startPositions,
+				timestamp: Date.now()
+			};
+		}
+
+		this.setPositionsData(startPositions);
+
+		// Validate positions if enabled
+		if (this.config.enableValidation) {
+			this.validateAllPositions();
+		}
+
+		this.emit('positions:loaded', { positions: startPositions });
+	}
+
 	private getUniqueStartPositions(allPictographs: PictographData[]): PictographData[] {
+		// Validate input is an array
+		if (!Array.isArray(allPictographs)) {
+			console.error(
+				'StartPositionService: getUniqueStartPositions received non-array:',
+				typeof allPictographs
+			);
+			return [];
+		}
+
+		console.log('StartPositionService: Processing pictographs for unique start positions:', {
+			inputCount: allPictographs.length,
+			inputType: typeof allPictographs,
+			isArray: Array.isArray(allPictographs)
+		});
+
 		const uniqueEndPositions = new Set<string>();
 		const uniquePositions: PictographData[] = [];
 
-		allPictographs.forEach((pictograph) => {
-			if (pictograph.endPos && !uniqueEndPositions.has(pictograph.endPos)) {
-				uniqueEndPositions.add(pictograph.endPos);
-				uniquePositions.push(pictograph);
-			}
-		});
+		try {
+			allPictographs.forEach((pictograph, index) => {
+				// Validate pictograph object
+				if (!pictograph || typeof pictograph !== 'object') {
+					console.warn(`StartPositionService: Invalid pictograph at index ${index}:`, pictograph);
+					return;
+				}
+
+				if (pictograph.endPos && !uniqueEndPositions.has(pictograph.endPos)) {
+					uniqueEndPositions.add(pictograph.endPos);
+					uniquePositions.push(pictograph);
+				}
+			});
+
+			console.log('StartPositionService: Generated unique positions:', {
+				uniqueEndPositions: uniqueEndPositions.size,
+				uniquePositions: uniquePositions.length
+			});
+		} catch (error) {
+			console.error('StartPositionService: Error in getUniqueStartPositions forEach:', error);
+			return [];
+		}
 
 		return uniquePositions;
 	}

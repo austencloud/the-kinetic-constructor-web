@@ -47,13 +47,24 @@
 
 	// Get SequenceService from context (should be provided by parent)
 	const sequenceServiceGetter = getContext<() => ISequenceService | null>('sequenceService');
-	const sequenceService = sequenceServiceGetter?.() || null;
 
-	if (!sequenceService) {
-		console.warn(
-			'OptionPickerContainer: SequenceService not found in context. Make sure to provide it in the parent component.'
-		);
-	}
+	// Reactive service access - will update when service becomes available
+	let sequenceService = $state<ISequenceService | null>(null);
+	let isServiceReady = $state(false);
+
+	// Effect to monitor service availability
+	$effect(() => {
+		const service = sequenceServiceGetter?.();
+		if (service && service !== sequenceService) {
+			sequenceService = service;
+			isServiceReady = true;
+			console.log('✅ OptionPickerContainer: SequenceService is now available');
+		} else if (!service && sequenceService) {
+			sequenceService = null;
+			isServiceReady = false;
+			console.warn('⚠️ OptionPickerContainer: SequenceService became unavailable');
+		}
+	});
 
 	// Container state
 	let containerElement: HTMLDivElement;
@@ -65,7 +76,6 @@
 	// Reactive state from SequenceService (with null safety)
 	const currentSequence = $derived(sequenceService?.state.beats || []);
 	const startPosition = $derived(sequenceService?.state.startPosition || null);
-	const hasSequence = $derived(currentSequence.length > 0);
 
 	// UI transition state - determines which picker to show
 	const isEmpty = $derived(sequenceService?.isEmpty ?? true);
@@ -155,8 +165,6 @@
 	// Container management
 	function handleContainerResize() {
 		if (containerElement && (containerWidth || containerHeight)) {
-			const rect = containerElement.getBoundingClientRect();
-
 			// Update container dimensions if not provided as props
 			if (!containerWidth || !containerHeight) {
 				// The layout service will handle this through the individual containers
@@ -252,7 +260,7 @@
 		</div>
 	{/if}
 
-	{#if sequenceService}
+	{#if sequenceService && isServiceReady}
 		<!-- Service Provider Wrapper -->
 		<OptionServiceProvider {sequenceService}>
 			{#snippet children()}
@@ -273,7 +281,7 @@
 					<div class="option-selection-mode" role="main" aria-label="Option Selection">
 						<OptionContainer
 							bind:this={optionContainer}
-							{sequenceService}
+							sequenceService={sequenceService!}
 							onOptionSelected={handleOptionSelected}
 							onSequenceChanged={handleSequenceChanged}
 							{enableFiltering}
@@ -305,7 +313,21 @@
 		{/if}
 	{:else}
 		<div class="service-not-available">
-			<p>SequenceService not available. Please check service initialization.</p>
+			<div class="service-status">
+				<div class="status-icon" aria-hidden="true">🔧</div>
+				<h3>Service Initialization</h3>
+				<p>
+					{#if !sequenceServiceGetter}
+						SequenceService context not found. Make sure ModernServiceProvider is wrapping this
+						component.
+					{:else if !sequenceService}
+						Waiting for SequenceService to initialize...
+					{:else}
+						Service is initializing...
+					{/if}
+				</p>
+				<div class="loading-spinner" aria-hidden="true"></div>
+			</div>
 		</div>
 	{/if}
 </div>
@@ -535,5 +557,45 @@
 		.loading-spinner {
 			animation: none;
 		}
+	}
+
+	/* Service not available styles */
+	.service-not-available {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		padding: 2rem;
+		text-align: center;
+		color: var(--text-muted);
+		background: var(--bg-secondary);
+		border-radius: 8px;
+		border: 2px dashed var(--border-color);
+	}
+
+	.service-status {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		max-width: 400px;
+	}
+
+	.status-icon {
+		font-size: 2rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.service-status h3 {
+		margin: 0;
+		font-size: 1.25rem;
+		color: var(--text-primary);
+	}
+
+	.service-status p {
+		margin: 0;
+		font-size: 0.9rem;
+		line-height: 1.4;
+		color: var(--text-muted);
 	}
 </style>

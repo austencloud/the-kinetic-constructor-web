@@ -1,5 +1,5 @@
-export type VTGTiming = 'split' | 'tog';
-export type VTGDir = 'same' | 'opp';
+export type VTGTiming = 'split' | 'tog' | 'quarter'  | 'none';
+export type VTGDir = 'same' | 'opp' | 'none';
 export type GridMode = 'diamond' | 'box';
 export type DirRelation = 's' | 'o';
 export type MotionType = 'anti' | 'pro' | 'static' | 'dash' | 'float';
