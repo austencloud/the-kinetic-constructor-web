@@ -128,6 +128,16 @@ export class PictographService {
 	createArrowData(motionData: MotionData, color: Color): ArrowData {
 		const motion = color === 'red' ? this.data.redMotion : this.data.blueMotion;
 
+		// Validate motion data first
+		if (!motionData.startLoc || !motionData.endLoc) {
+			console.warn(`Motion data missing location information for ${color} motion:`, {
+				motionId: motionData.id,
+				startLoc: motionData.startLoc,
+				endLoc: motionData.endLoc,
+				motionType: motionData.motionType
+			});
+		}
+
 		// Special handling for Type 3 motions with dash
 		const letterType = this.data.letter ? LetterType.getLetterType(this.data.letter) : null;
 		const isType3 = letterType === LetterType.Type3;
@@ -138,24 +148,32 @@ export class PictographService {
 			motion.gridMode = this.data.gridMode;
 		}
 
-		let arrowLoc;
+		let arrowLoc: Loc | undefined;
 
 		if (isType3 && isDash && motion) {
 			// For Type 3 motions with dash, calculate the location based on the shift motion
-			const locationManager = new ArrowLocationManager(this);
-
-			arrowLoc =
-				locationManager.getArrowLocation(
+			try {
+				const locationManager = new ArrowLocationManager(this);
+				arrowLoc = locationManager.getArrowLocation(
 					motion,
 					(m) => this.getOtherMotion(m),
 					() => this.getShiftMotion(),
 					this.data.letter
-				) || motionData.endLoc;
-		} else {
+				);
+			} catch (error) {
+				console.warn(`Failed to calculate Type 3 dash arrow location for ${color}:`, error);
+			}
+		} else if (motion) {
 			// For other motions, use the standard calculation
-			arrowLoc = motion
-				? this.calculateArrowLocation(motion, motionData.endLoc)
-				: motionData.endLoc;
+			arrowLoc = this.calculateArrowLocation(motion, motionData.endLoc);
+		}
+
+		// Fallback chain for arrow location
+		const finalArrowLoc = arrowLoc || motionData.endLoc || motionData.startLoc || 'n';
+
+		// Validate final location
+		if (!finalArrowLoc) {
+			console.warn(`No valid arrow location found for ${color} motion, using default 'n'`);
 		}
 
 		const arrowData: ArrowData = {
@@ -163,7 +181,7 @@ export class PictographService {
 			motionId: motionData.id,
 			color,
 			coords: { x: 0, y: 0 },
-			loc: arrowLoc,
+			loc: finalArrowLoc,
 			rotAngle: 0,
 			svgMirrored: false,
 			svgCenter: { x: 0, y: 0 },
@@ -177,20 +195,25 @@ export class PictographService {
 	}
 
 	private calculateArrowLocation(motion: Motion | null, defaultLoc: Loc): Loc {
-		if (!motion) return defaultLoc;
+		if (!motion) {
+			return defaultLoc || 'n';
+		}
+
 		try {
 			const locationManager = new ArrowLocationManager(this);
-			return (
-				locationManager.getArrowLocation(
-					motion,
-					(m) => this.getOtherMotion(m),
-					() => this.getShiftMotion(),
-					this.data.letter
-				) ?? defaultLoc
+			const calculatedLoc = locationManager.getArrowLocation(
+				motion,
+				(m) => this.getOtherMotion(m),
+				() => this.getShiftMotion(),
+				this.data.letter
 			);
+
+			// Return calculated location or fallback chain
+			return calculatedLoc || defaultLoc || motion.endLoc || motion.startLoc || 'n';
 		} catch (error) {
 			console.warn('Arrow location calculation failed:', error);
-			return defaultLoc;
+			// Return fallback chain
+			return defaultLoc || motion.endLoc || motion.startLoc || 'n';
 		}
 	}
 

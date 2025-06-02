@@ -13,6 +13,17 @@
 	// Get the actual service using $derived properly
 	const sequenceService = $derived(getSequenceService?.() || null);
 
+	// Make component resilient to service initialization delays
+	$effect(() => {
+		if (getSequenceService && getSequenceService() === null) {
+			console.log('🔧 ClearSequenceButton: Waiting for sequenceService to initialize...');
+		} else if (sequenceService) {
+			console.log('✅ ClearSequenceButton: sequenceService available');
+		} else if (!getSequenceService) {
+			console.error('❌ ClearSequenceButton: sequenceService getter not found in context');
+		}
+	});
+
 	// Debug logging - moved inside $effect to be reactive
 	$effect(() => {
 		console.log('🔧 ClearSequenceButton: sequenceService from context:', sequenceService);

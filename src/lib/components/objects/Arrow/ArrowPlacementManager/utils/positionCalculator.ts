@@ -35,12 +35,11 @@ export function getInitialPosition(arrow: ArrowData, config: ArrowPlacementConfi
 function getShiftCoordinates(arrow: ArrowData, pictographData: any, gridData: any): Coordinates {
 	// Validate arrow location
 	if (!arrow.loc) {
-		console.warn(`Arrow location is undefined. Arrow data:`, {
-			id: arrow.id,
-			motionId: arrow.motionId,
-			motionType: arrow.motionType,
-			color: arrow.color
-		});
+		// Only log once per session to reduce console noise
+		if (!getShiftCoordinates._loggedUndefinedLoc) {
+			console.warn(`Arrow location is undefined. This may indicate motion data issues.`);
+			getShiftCoordinates._loggedUndefinedLoc = true;
+		}
 		return { x: 0, y: 0 };
 	}
 
@@ -54,15 +53,23 @@ function getShiftCoordinates(arrow: ArrowData, pictographData: any, gridData: an
 	const point = gridData.allLayer2PointsNormal[pointName];
 
 	if (!point?.coordinates) {
-		console.warn(
-			`Shift coordinate for '${pointName}' not found. Available points:`,
-			Object.keys(gridData.allLayer2PointsNormal || {}).slice(0, 5)
-		);
+		// Only log detailed info once per missing point to reduce noise
+		if (!getShiftCoordinates._loggedMissingPoints) {
+			getShiftCoordinates._loggedMissingPoints = new Set();
+		}
+		if (!getShiftCoordinates._loggedMissingPoints.has(pointName)) {
+			console.warn(`Shift coordinate for '${pointName}' not found.`);
+			getShiftCoordinates._loggedMissingPoints.add(pointName);
+		}
 		return { x: 0, y: 0 };
 	}
 
 	return point.coordinates;
 }
+
+// Add static properties for logging control
+(getShiftCoordinates as any)._loggedUndefinedLoc = false;
+(getShiftCoordinates as any)._loggedMissingPoints = new Set();
 
 /**
  * Gets coordinates for static or dash motions
@@ -74,12 +81,13 @@ function getStaticDashCoordinates(
 ): Coordinates {
 	// Validate arrow location
 	if (!arrow.loc) {
-		console.warn(`Arrow location is undefined for static/dash motion. Arrow data:`, {
-			id: arrow.id,
-			motionId: arrow.motionId,
-			motionType: arrow.motionType,
-			color: arrow.color
-		});
+		// Only log once per session to reduce console noise
+		if (!getStaticDashCoordinates._loggedUndefinedLoc) {
+			console.warn(
+				`Arrow location is undefined for static/dash motion. This may indicate motion data issues.`
+			);
+			getStaticDashCoordinates._loggedUndefinedLoc = true;
+		}
 		return { x: 0, y: 0 };
 	}
 
@@ -93,12 +101,20 @@ function getStaticDashCoordinates(
 	const point = gridData.allHandPointsNormal[pointName];
 
 	if (!point?.coordinates) {
-		console.warn(
-			`Static coordinate for '${pointName}' not found. Available points:`,
-			Object.keys(gridData.allHandPointsNormal || {}).slice(0, 5)
-		);
+		// Only log detailed info once per missing point to reduce noise
+		if (!getStaticDashCoordinates._loggedMissingPoints) {
+			getStaticDashCoordinates._loggedMissingPoints = new Set();
+		}
+		if (!getStaticDashCoordinates._loggedMissingPoints.has(pointName)) {
+			console.warn(`Static coordinate for '${pointName}' not found.`);
+			getStaticDashCoordinates._loggedMissingPoints.add(pointName);
+		}
 		return { x: 0, y: 0 };
 	}
 
 	return point.coordinates;
 }
+
+// Add static properties for logging control
+(getStaticDashCoordinates as any)._loggedUndefinedLoc = false;
+(getStaticDashCoordinates as any)._loggedMissingPoints = new Set();

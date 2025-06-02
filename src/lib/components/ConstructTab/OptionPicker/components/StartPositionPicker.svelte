@@ -15,10 +15,14 @@
 	// Get the actual service using $derived properly
 	const sequenceService = $derived(getSequenceService?.() || null);
 
-	// Validate context injection
+	// Make component resilient to service initialization delays
 	$effect(() => {
-		if (!sequenceService) {
-			throw new Error('StartPositionPicker: sequenceService not found in context!');
+		if (getSequenceService() && !sequenceService) {
+			console.log('🔧 StartPositionPicker: Waiting for sequenceService to initialize...');
+		} else if (sequenceService) {
+			console.log('✅ StartPositionPicker: sequenceService available');
+		} else if (!getSequenceService()) {
+			console.error('❌ StartPositionPicker: sequenceService getter not found in context');
 		}
 	});
 

@@ -8,6 +8,7 @@ import { PRO, ANTI, FLOAT } from '$lib/types/Constants';
 
 export class BetaPropPositioner {
 	private dirCalculator: BetaPropDirectionCalculator;
+	private static _loggedDirectionWarning = false;
 
 	constructor(private pictographData: PictographData) {
 		this.dirCalculator = new BetaPropDirectionCalculator(this.pictographData);
@@ -45,7 +46,14 @@ export class BetaPropPositioner {
 				const newCoords = this.calculateNewCoords(oldCoords, direction);
 				prop.coords = JSON.parse(JSON.stringify(newCoords));
 			} else {
-				console.warn(`No direction determined for ${prop.color} prop`);
+				// Only log once per session to reduce console noise
+				if (!BetaPropPositioner._loggedDirectionWarning) {
+					console.warn(
+						`Beta prop direction calculation failed. This may indicate incomplete motion data.`
+					);
+					BetaPropPositioner._loggedDirectionWarning = true;
+				}
+				// Skip repositioning for this prop - keep original position
 			}
 		});
 

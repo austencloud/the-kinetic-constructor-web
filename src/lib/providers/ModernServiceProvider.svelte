@@ -76,10 +76,13 @@
 		lastUpdate: Date.now()
 	});
 
+	// Safe development environment detection
+	const isDev = browser && (typeof window !== 'undefined' && window.location.hostname === 'localhost');
+
 	// Set context with reactive getters that will update when services are ready
 	// This ensures context is available during component initialization
 	setContext('sequenceService', () => {
-		if (import.meta.env.DEV) {
+		if (isDev) {
 			console.log('🔧 ModernServiceProvider: Context getter called for sequenceService:', {
 				hasService: !!sequenceService,
 				serviceType: sequenceService?.constructor?.name || 'null',
@@ -89,7 +92,7 @@
 		return sequenceService;
 	});
 	setContext('workbenchService', () => {
-		if (import.meta.env.DEV) {
+		if (isDev) {
 			console.log('🔧 ModernServiceProvider: Context getter called for workbenchService:', {
 				hasService: !!workbenchService,
 				serviceType: workbenchService?.constructor?.name || 'null',
@@ -141,7 +144,7 @@
 			}
 		}, 5000);
 
-		if (import.meta.env.DEV) {
+		if (isDev) {
 			(window as any).__modernServices = {
 				sequence: sequenceService,
 				workbench: workbenchService,
@@ -203,7 +206,7 @@
 	{@render children?.()}
 {/if}
 
-{#if import.meta.env.DEV && isInitialized}
+{#if isDev && isInitialized}
 	<div class="performance-monitor">
 		<details>
 			<summary>🚀 Modern Services</summary>
