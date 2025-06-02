@@ -77,7 +77,8 @@
 	});
 
 	// Safe development environment detection
-	const isDev = browser && (typeof window !== 'undefined' && window.location.hostname === 'localhost');
+	const isDev =
+		browser && typeof window !== 'undefined' && window.location.hostname === 'localhost';
 
 	// Set context with reactive getters that will update when services are ready
 	// This ensures context is available during component initialization

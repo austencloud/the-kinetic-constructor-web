@@ -215,11 +215,19 @@
 
 			// Dispatch a custom event to notify other components
 			if (browser) {
+				console.log('📤 StartPositionPicker: Dispatching start-position-selected event:', {
+					letter: startPosCopy.letter,
+					endPos: startPosCopy.endPos,
+					isStartPosition: startPosCopy.isStartPosition
+				});
+
 				const startPosSelectedEvent = new CustomEvent('start-position-selected', {
 					bubbles: true,
 					detail: { startPosition: startPosCopy }
 				});
 				document.dispatchEvent(startPosSelectedEvent);
+
+				console.log('✅ StartPositionPicker: Event dispatched successfully');
 			}
 
 			if (browser) {

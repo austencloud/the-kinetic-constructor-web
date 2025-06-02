@@ -11,6 +11,9 @@
 	import { getSorter, determineGroupKey, getSortedGroupKeys } from '../services/OptionsService';
 	import transitionLoading from '$lib/state/stores/ui/transitionLoadingStore.svelte';
 
+	// Import integration test for development
+	import './test-integration';
+
 	// Get the modern sequence service from context
 	const sequenceService = getContext<SequenceService>('sequenceService');
 
@@ -225,8 +228,20 @@
 
 		const handleStartPositionSelected = async (event: Event) => {
 			const customEvent = event as CustomEvent;
-			if (customEvent.detail?.startPosition) {
-				await untrack(() => optionPickerState.loadOptions([customEvent.detail.startPosition]));
+			const startPosition = customEvent.detail?.startPosition;
+
+			console.log('🎯 OptionPickerMain: Received start-position-selected event:', {
+				hasStartPosition: !!startPosition,
+				letter: startPosition?.letter,
+				endPos: startPosition?.endPos,
+				isStartPosition: startPosition?.isStartPosition
+			});
+
+			if (startPosition) {
+				console.log('🔄 OptionPickerMain: Calling loadOptions with start position');
+				await untrack(() => optionPickerState.loadOptions([startPosition]));
+			} else {
+				console.warn('⚠️ OptionPickerMain: No start position in event detail');
 			}
 		};
 

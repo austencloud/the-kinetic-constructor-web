@@ -17,6 +17,7 @@ import {
 	getSorter
 } from './services/OptionsService';
 import { MotionOriCalculator } from '$lib/components/objects/Motion/MotionOriCalculator';
+import { transitionValidator } from '$lib/services/TransitionValidator';
 
 // Types
 export type SortMethodOrAll = SortMethod | 'all';
@@ -180,9 +181,39 @@ class OptionPickerStateManager {
 		});
 
 		try {
-			// Use original method for now to ensure stability
-			// TODO: Re-enable enhanced method after testing
-			const nextOptions = getNextOptions(sequence);
+			let nextOptions: PictographData[] = [];
+
+			// Check if this is a start position selection (single item with endPos)
+			if (sequence.length === 1 && sequence[0].endPos) {
+				console.log(
+					'🔄 Using TransitionValidator for start position:',
+					sequence[0].letter,
+					sequence[0].endPos
+				);
+
+				// Use the new TransitionValidator for contextual filtering
+				const validationResult = await transitionValidator.getValidTransitions(sequence[0], {
+					includeStaticMotions: true,
+					includeDashMotions: true,
+					strictValidation: false
+				});
+
+				if (validationResult.isValid) {
+					nextOptions = validationResult.validTransitions;
+					console.log('✅ TransitionValidator: Found', nextOptions.length, 'valid transitions');
+				} else {
+					console.warn(
+						'⚠️ TransitionValidator: No valid transitions found:',
+						validationResult.errors
+					);
+					// Fallback to original method
+					nextOptions = getNextOptions(sequence);
+				}
+			} else {
+				// Use original method for multi-beat sequences
+				console.log('🔄 Using original method for sequence of length:', sequence.length);
+				nextOptions = getNextOptions(sequence);
+			}
 
 			// Update state atomically using untrack
 			untrack(() => {
