@@ -409,6 +409,14 @@ export class PictographDataLoader {
 	}
 
 	/**
+	 * Get all pictograph data (for option picker usage)
+	 */
+	public async getAllPictographData(): Promise<PictographData[]> {
+		await this.loadData();
+		return this.csvData.map((entry) => this.convertToPictographData(entry));
+	}
+
+	/**
 	 * Get raw CSV entries (for advanced usage)
 	 */
 	public async getRawEntries(): Promise<DiamondPictographEntry[]> {

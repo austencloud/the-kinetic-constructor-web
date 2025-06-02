@@ -28,6 +28,7 @@ ModernBeatGrid ← sequenceService.state.startPosition ❌ (Different system)
 ```
 
 **Expected Flow:**
+
 ```
 StartPositionPicker → sequenceService.setStartPosition() ✅
                            ↓
@@ -66,22 +67,22 @@ ConstructTab
 ```typescript
 // Modern SequenceService (Single Source of Truth)
 interface SequenceState {
-  beats: BeatData[];
-  selectedBeatIds: string[];
-  currentBeatIndex: number;
-  startPosition: PictographData | null; // ✅ Added
-  metadata: SequenceMetadata;
-  isModified: boolean;
-  isPlaying: boolean;
-  playbackPosition: number;
+	beats: BeatData[];
+	selectedBeatIds: string[];
+	currentBeatIndex: number;
+	startPosition: PictographData | null; // ✅ Added
+	metadata: SequenceMetadata;
+	isModified: boolean;
+	isPlaying: boolean;
+	playbackPosition: number;
 }
 
 // Service Methods
 class SequenceService {
-  setStartPosition(startPosition: PictographData | null): void;
-  addBeats(beats: BeatData[]): void;
-  clearSequence(): void;
-  // ... other methods
+	setStartPosition(startPosition: PictographData | null): void;
+	addBeats(beats: BeatData[]): void;
+	clearSequence(): void;
+	// ... other methods
 }
 ```
 
@@ -90,6 +91,7 @@ class SequenceService {
 ### Phase 1: Fix Immediate Reactive Chain (CURRENT)
 
 **Status**: ✅ Partially Complete
+
 - [x] Added startPosition to SequenceService
 - [x] Updated StartPositionPicker to use SequenceService
 - [x] Updated OptionPickerMain to use SequenceService
@@ -97,6 +99,7 @@ class SequenceService {
 - [ ] **ISSUE**: Context provider chain broken - needs investigation
 
 **Immediate Actions Needed**:
+
 1. Debug context provider chain
 2. Verify service injection in StartPositionPicker
 3. Test reactive updates end-to-end
@@ -107,18 +110,21 @@ class SequenceService {
 **Target Components for Modernization**:
 
 1. **StartPositionPicker.svelte** → **ModernStartPositionPicker.svelte**
+
    - Pure presentation component
    - Receives start positions via props
    - Emits selection events
    - Zero state management
 
-2. **OptionPickerMain.svelte** → **ModernOptionPicker.svelte**
+2. **OptionPickerMain.svelte** → **OptionPicker.svelte**
+
    - Pure presentation component
    - Receives options via props
    - Emits selection events
    - Zero reactive loops
 
 3. **OptionDisplayArea.svelte** → **ModernOptionDisplay.svelte**
+
    - Pure presentation component
    - Grid layout management
    - Responsive design
@@ -133,36 +139,42 @@ class SequenceService {
 ### Phase 3: Service Integration
 
 **SequenceService Enhancements**:
+
 ```typescript
 // Additional methods needed
 interface ISequenceService {
-  // Start position management
-  setStartPosition(startPosition: PictographData | null): void;
-  getStartPosition(): PictographData | null;
-  
-  // Option management
-  loadOptionsForPosition(position: PictographData): Promise<PictographData[]>;
-  getNextOptions(): PictographData[];
-  
-  // Beat management (existing)
-  addBeats(beats: BeatData[]): void;
-  removeBeat(beatId: string): void;
-  
-  // Events (enhanced)
-  on(event: 'startPosition:changed', handler: (data: { startPosition: PictographData | null }) => void): void;
-  on(event: 'options:loaded', handler: (data: { options: PictographData[] }) => void): void;
+	// Start position management
+	setStartPosition(startPosition: PictographData | null): void;
+	getStartPosition(): PictographData | null;
+
+	// Option management
+	loadOptionsForPosition(position: PictographData): Promise<PictographData[]>;
+	getNextOptions(): PictographData[];
+
+	// Beat management (existing)
+	addBeats(beats: BeatData[]): void;
+	removeBeat(beatId: string): void;
+
+	// Events (enhanced)
+	on(
+		event: 'startPosition:changed',
+		handler: (data: { startPosition: PictographData | null }) => void
+	): void;
+	on(event: 'options:loaded', handler: (data: { options: PictographData[] }) => void): void;
 }
 ```
 
 ### Phase 4: Testing Strategy
 
 **Data-Driven Testing Approach**:
+
 1. Use authentic CSV data from `static/DiamondPictographDataframe.csv`
 2. Create test scenarios for common user workflows
 3. Integration tests for reactive chain
 4. Performance tests for large sequences
 
 **Test Coverage Requirements**:
+
 - [ ] Start position selection → ModernBeatGrid update
 - [ ] Option selection → Beat creation → Grid display
 - [ ] Sequence clearing → State reset
@@ -174,14 +186,17 @@ interface ISequenceService {
 ### Known Issues to Avoid
 
 1. **Infinite Reactive Loops**
+
    - **Mitigation**: Use $derived for read-only state, avoid $effect for state mutations
    - **Pattern**: `const derivedValue = $derived(service.state.property)`
 
 2. **Context Provider Gaps**
+
    - **Mitigation**: Ensure ModernServiceProvider wraps all components
    - **Verification**: Add debug logging to verify service injection
 
 3. **Mixed State Systems**
+
    - **Mitigation**: Completely eliminate legacy state imports
    - **Enforcement**: ESLint rules to prevent legacy imports
 
@@ -199,24 +214,28 @@ interface ISequenceService {
 ## 📅 Implementation Timeline
 
 ### Week 1: Debug & Fix Current Issues
+
 - [ ] Debug context provider chain
 - [ ] Fix StartPositionPicker → ModernBeatGrid reactive flow
 - [ ] Verify SequenceService integration
 - [ ] Create comprehensive test suite
 
 ### Week 2: Component Modernization
+
 - [ ] Create ModernStartPositionPicker
-- [ ] Create ModernOptionPicker
+- [ ] Create OptionPicker
 - [ ] Create OptionPickerContainer
 - [ ] Migrate existing functionality
 
 ### Week 3: Integration & Testing
+
 - [ ] Full integration testing
 - [ ] Performance optimization
 - [ ] Error handling improvements
 - [ ] Documentation updates
 
 ### Week 4: Deployment & Monitoring
+
 - [ ] Production deployment
 - [ ] Performance monitoring
 - [ ] User feedback collection
@@ -225,6 +244,7 @@ interface ISequenceService {
 ## 🎯 Success Criteria
 
 ### Functional Requirements
+
 - [x] Start position selection updates ModernBeatGrid immediately
 - [x] Option selection creates beats in sequence
 - [x] Sequence clearing resets all state
@@ -232,6 +252,7 @@ interface ISequenceService {
 - [x] Consistent state across all components
 
 ### Technical Requirements
+
 - [x] 100% Svelte 5 runes architecture
 - [x] Zero legacy reactive patterns
 - [x] Service-oriented dependency injection
@@ -239,6 +260,7 @@ interface ISequenceService {
 - [x] Performance targets met
 
 ### User Experience Requirements
+
 - [x] Seamless, responsive interactions
 - [x] No UI freezes or delays
 - [x] Consistent visual feedback

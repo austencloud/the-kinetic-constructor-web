@@ -58,7 +58,50 @@ export function setSelectedStartPosition(startPos: PictographData | null) {
 	if (browser) {
 		try {
 			if (startPos) {
-				localStorage.setItem(START_POSITION_STORAGE_KEY, JSON.stringify(startPos));
+				// Create a serializable copy without circular references
+				const serializableStartPos = {
+					letter: startPos.letter,
+					startPos: startPos.startPos,
+					endPos: startPos.endPos,
+					timing: startPos.timing,
+					direction: startPos.direction,
+					gridMode: startPos.gridMode,
+					gridData: startPos.gridData,
+					// Only include serializable motion data properties
+					redMotionData: startPos.redMotionData
+						? {
+								id: startPos.redMotionData.id,
+								motionType: startPos.redMotionData.motionType,
+								startOri: startPos.redMotionData.startOri,
+								endOri: startPos.redMotionData.endOri,
+								propRotDir: startPos.redMotionData.propRotDir,
+								startLoc: startPos.redMotionData.startLoc,
+								endLoc: startPos.redMotionData.endLoc,
+								turns: startPos.redMotionData.turns,
+								color: startPos.redMotionData.color
+							}
+						: null,
+					blueMotionData: startPos.blueMotionData
+						? {
+								id: startPos.blueMotionData.id,
+								motionType: startPos.blueMotionData.motionType,
+								startOri: startPos.blueMotionData.startOri,
+								endOri: startPos.blueMotionData.endOri,
+								propRotDir: startPos.blueMotionData.propRotDir,
+								startLoc: startPos.blueMotionData.startLoc,
+								endLoc: startPos.blueMotionData.endLoc,
+								turns: startPos.blueMotionData.turns,
+								color: startPos.blueMotionData.color
+							}
+						: null,
+					redPropData: startPos.redPropData,
+					bluePropData: startPos.bluePropData,
+					redArrowData: startPos.redArrowData,
+					blueArrowData: startPos.blueArrowData,
+					grid: startPos.grid,
+					isStartPosition: startPos.isStartPosition
+				};
+				localStorage.setItem(START_POSITION_STORAGE_KEY, JSON.stringify(serializableStartPos));
 			} else {
 				localStorage.removeItem(START_POSITION_STORAGE_KEY);
 			}
