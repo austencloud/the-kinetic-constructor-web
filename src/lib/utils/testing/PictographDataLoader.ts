@@ -61,17 +61,27 @@ export class PictographDataLoader {
 
 	private async performLoad(): Promise<void> {
 		try {
+			console.log(
+				'🔍 PictographDataLoader: Starting CSV load from /DiamondPictographDataframe.csv'
+			);
 			const response = await fetch('/DiamondPictographDataframe.csv');
 			if (!response.ok) {
 				throw new Error(`Failed to load CSV: ${response.status} ${response.statusText}`);
 			}
 
 			const csvText = await response.text();
+			console.log('🔍 PictographDataLoader: CSV text loaded, length:', csvText.length);
+
 			this.csvData = this.parseCsv(csvText);
+			console.log('🔍 PictographDataLoader: Parsed CSV entries:', this.csvData.length);
+
 			this.validateData();
+			console.log('🔍 PictographDataLoader: After validation, entries:', this.csvData.length);
+
 			this.isLoaded = true;
+			console.log('✅ PictographDataLoader: CSV data loaded successfully');
 		} catch (error) {
-			console.error('PictographDataLoader: Failed to load CSV data:', error);
+			console.error('❌ PictographDataLoader: Failed to load CSV data:', error);
 			throw error;
 		}
 	}
@@ -399,12 +409,31 @@ export class PictographDataLoader {
 	): Promise<PictographData[]> {
 		await this.loadData();
 
+		console.log('🔍 PictographDataLoader: Looking for transitions from position:', startPosition);
+		console.log('🔍 Total CSV entries loaded:', this.csvData.length);
+
+		// Debug: Show sample positions from CSV data
+		const samplePositions = this.csvData.slice(0, 5).map((entry) => ({
+			letter: entry.letter,
+			startPos: entry.startPos,
+			endPos: entry.endPos
+		}));
+		console.log('🔍 Sample CSV positions:', samplePositions);
+
 		const transitionOptions = {
 			...options,
 			filterByStartPosition: startPosition
 		};
 
 		const filteredEntries = this.filterEntries(transitionOptions);
+		console.log('🔍 Filtered entries found:', filteredEntries.length);
+
+		if (filteredEntries.length === 0) {
+			// Debug: Show all unique start positions in CSV
+			const uniqueStartPositions = [...new Set(this.csvData.map((entry) => entry.startPos))];
+			console.log('🔍 All available start positions in CSV:', uniqueStartPositions.slice(0, 10));
+		}
+
 		return filteredEntries.map((entry) => this.convertToPictographData(entry));
 	}
 
