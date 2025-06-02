@@ -5,7 +5,6 @@ import { selectedPictograph } from '$lib/stores/sequence/selectedPictographStore
 import type { SortMethod, ReversalFilter } from './config';
 import {
 	getNextOptions,
-	determineReversalCategory,
 	determineGroupKey,
 	getSortedGroupKeys,
 	getSorter

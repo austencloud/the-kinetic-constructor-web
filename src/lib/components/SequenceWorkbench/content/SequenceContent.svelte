@@ -29,7 +29,7 @@
 	const {
 		containerHeight = $bindable(0),
 		containerWidth = $bindable(0),
-		onBeatSelected = (beatId: string) => {}
+		onBeatSelected = (_beatId: string) => {}
 	} = $props<{
 		containerHeight?: number;
 		containerWidth?: number;

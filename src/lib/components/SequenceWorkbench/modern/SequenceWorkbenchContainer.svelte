@@ -33,7 +33,6 @@
 	const selectedBeatIds = $derived(sequenceService.state.selectedBeatIds);
 	const isEmpty = $derived(sequenceService.isEmpty);
 	const hasSelection = $derived(sequenceService.hasSelection);
-	const layout = $derived(workbenchService.state.layout);
 	const activePanel = $derived(workbenchService.state.activePanel);
 
 	// One-time setup only

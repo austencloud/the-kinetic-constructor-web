@@ -6,8 +6,6 @@
 -->
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import type { ISequenceService } from '$lib/services/core/ISequenceService';
-	import type { IWorkbenchService } from '$lib/services/core/IWorkbenchService';
 
 	import BeatCell from './BeatCell.svelte';
 	import StartPositionCell from './StartPositionCell.svelte';
@@ -66,7 +64,6 @@
 	const startPosition = $derived(sequenceService?.state?.startPosition || null);
 
 	// Layout management
-	let gridLayoutComponent: any;
 	let layoutData = $state({
 		rows: 1,
 		cols: 1,
@@ -209,7 +206,6 @@
 
 <!-- GridLayout component for layout calculations -->
 <GridLayout
-	bind:this={gridLayoutComponent}
 	containerWidth={props.containerWidth}
 	containerHeight={props.containerHeight}
 	isScrollable={props.isScrollable}

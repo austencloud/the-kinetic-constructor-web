@@ -70,8 +70,6 @@ export class PictographDataLoader {
 			this.csvData = this.parseCsv(csvText);
 			this.validateData();
 			this.isLoaded = true;
-
-			console.log(`PictographDataLoader: Loaded ${this.csvData.length} valid pictograph entries`);
 		} catch (error) {
 			console.error('PictographDataLoader: Failed to load CSV data:', error);
 			throw error;

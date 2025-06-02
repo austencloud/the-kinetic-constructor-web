@@ -4,7 +4,6 @@
 	import Beat from './Beat.svelte';
 	import type { BeatData } from './BeatData';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
-	import type { PictographData } from '$lib/types/PictographData';
 	import StyledBorderOverlay from '$lib/components/Pictograph/components/BeatHoverEffect.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
 	import AnimatedHighlight from './GoldSelectionBorder.svelte';

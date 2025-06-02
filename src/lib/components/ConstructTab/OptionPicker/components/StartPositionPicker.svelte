@@ -18,7 +18,7 @@
 	// Validate context injection
 	$effect(() => {
 		if (!sequenceService) {
-			console.error('❌ StartPositionPicker: sequenceService not found in context!');
+			throw new Error('StartPositionPicker: sequenceService not found in context!');
 		}
 	});
 
@@ -206,8 +206,6 @@
 				return;
 			}
 
-			console.log('🎯 StartPositionPicker: Setting start position:', startPosCopy.letter);
-
 			// Set the start position in the sequence service
 			sequenceService.setStartPosition(startPosCopy);
 
@@ -219,8 +217,6 @@
 				});
 				document.dispatchEvent(startPosSelectedEvent);
 			}
-
-			console.log('✅ StartPositionPicker: Start position set successfully');
 
 			if (browser) {
 				hapticFeedbackService.trigger('success');

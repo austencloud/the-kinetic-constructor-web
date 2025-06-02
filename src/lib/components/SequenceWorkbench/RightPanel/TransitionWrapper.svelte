@@ -150,14 +150,6 @@
 	// Watch for changes in isSequenceEmpty and handle transitions
 	$effect(() => {
 		if (isMounted && previousState !== props.isSequenceEmpty) {
-			console.log(
-				'🎯 TransitionWrapper: Triggering transition from',
-				previousState,
-				'to',
-				props.isSequenceEmpty,
-				'- Will show:',
-				props.isSequenceEmpty ? 'StartPosPicker' : 'OptionPicker'
-			);
 			handleTransition();
 			previousState = props.isSequenceEmpty;
 		}

@@ -3,12 +3,23 @@ import type { ArrowData } from './ArrowData';
 import ArrowSvgMirrorManager from './ArrowSvgMirrorManager';
 
 export function createArrowData(motion: Motion): ArrowData {
+	// Validate motion data before creating arrow
+	if (!motion.startLoc) {
+		console.warn(`Motion ${motion.id} has undefined startLoc. Motion data:`, {
+			id: motion.id,
+			color: motion.color,
+			motionType: motion.motionType,
+			startLoc: motion.startLoc,
+			endLoc: motion.endLoc
+		});
+	}
+
 	const arrowData: ArrowData = {
 		id: generateUniqueId(), // ✅ Generate unique ID
 		motionId: motion.id, // ✅ Store motion ID, not full motion object
 		color: motion.color,
 		coords: { x: 0, y: 0 },
-		loc: motion.startLoc, // ✅ Use motion start location
+		loc: motion.startLoc || 'n', // ✅ Use motion start location with fallback
 		rotAngle: 0,
 		svgMirrored: false,
 		svgCenter: { x: 0, y: 0 },
@@ -27,5 +38,7 @@ export function createArrowData(motion: Motion): ArrowData {
 	return arrowData;
 }
 export function generateUniqueId(): string {
-	return crypto.randomUUID ? crypto.randomUUID() : `id-${Math.random().toString(36).substr(2, 9)}`;
+	return crypto.randomUUID
+		? crypto.randomUUID()
+		: `id-${Math.random().toString(36).substring(2, 11)}`;
 }

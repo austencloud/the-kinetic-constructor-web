@@ -6,8 +6,6 @@
 -->
 <script lang="ts">
 	import { getContext, createEventDispatcher, untrack } from 'svelte';
-	import type { ISequenceService } from '$lib/services/core/ISequenceService';
-	import type { IWorkbenchService } from '$lib/services/core/IWorkbenchService';
 	import { autoAdjustLayout, calculateCellSize } from '../beatFrameHelpers';
 
 	// Service injection - handle getter functions from context
@@ -44,7 +42,6 @@
 
 	// Reactive state from services with null checks (NO manual subscriptions)
 	const beatCount = $derived(sequenceService?.state?.beats?.length || 0);
-	const currentLayout = $derived(workbenchService?.state?.layout || {});
 
 	// Layout calculations (pure derivations)
 	const gridDimensions = $derived.by(() => {

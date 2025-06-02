@@ -4,7 +4,6 @@
 	import SequenceWidget from './SequenceWidget.svelte';
 	import RightPanel from './RightPanel/RightPanel.svelte';
 	import ToolsPanel from './ToolsPanel/ToolsPanel.svelte';
-	import ModernServiceProvider from '$lib/providers/ModernServiceProvider.svelte';
 	import { fly } from 'svelte/transition';
 	import type { ButtonDefinition } from './ButtonPanel/types';
 

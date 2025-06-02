@@ -20,7 +20,6 @@
 	let hasSelectedBeats = $state(false);
 
 	// Modern reactive approach: Get sequence state from SequenceService
-	// Access the state directly to ensure proper reactivity
 	const isSequenceEmpty = $derived(
 		sequenceService
 			? sequenceService.state.beats.length === 0 && sequenceService.state.startPosition === null

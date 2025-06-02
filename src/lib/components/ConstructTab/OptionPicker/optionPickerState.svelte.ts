@@ -12,7 +12,6 @@ import { pictographData } from '$lib/state/pictograph/pictographDataState.svelte
 import { sequenceState } from '$lib/state/sequence/sequenceState.svelte';
 import {
 	getNextOptions,
-	getNextOptionsEnhanced,
 	determineGroupKey,
 	getSortedGroupKeys,
 	getSorter

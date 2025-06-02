@@ -11,7 +11,6 @@
 	import StyledBorderOverlay from '../SelectionBorderOverlay.svelte';
 	import AnimatedHighlight from '../GoldSelectionBorder.svelte';
 	import hapticFeedbackService from '$lib/services/HapticFeedbackService';
-	import type { PictographData } from '$lib/types/PictographData';
 	import { defaultPictographData } from '$lib/components/Pictograph/utils/defaultPictographData';
 
 	// Service injection (NO direct imports)

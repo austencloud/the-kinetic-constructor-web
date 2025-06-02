@@ -10,7 +10,6 @@ import type { Letter } from '$lib/types/Letter';
 import { LetterType } from '$lib/types/LetterType';
 import { LetterUtils } from '$lib/utils/LetterUtils';
 import { MotionOriCalculator } from '$lib/components/objects/Motion/MotionOriCalculator';
-import { getValidTransitions } from '$lib/services/TransitionValidator';
 
 // ===== Option Data Fetching =====
 
@@ -40,45 +39,6 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 	);
 
 	return options;
-}
-
-/**
- * Enhanced version that uses TransitionValidator for authentic data-driven filtering
- * This is async and should be used when possible for better validation
- */
-export async function getNextOptionsEnhanced(
-	sequence: PictographData[]
-): Promise<PictographData[]> {
-	const lastPictograph = sequence.at(-1);
-
-	// If sequence is empty, return initial options (currently none defined)
-	if (!lastPictograph) {
-		return [];
-	}
-
-	try {
-		// Use TransitionValidator for authentic data-driven filtering
-		const result = await getValidTransitions(lastPictograph, {
-			includeStaticMotions: true,
-			includeDashMotions: true,
-			strictValidation: true
-		});
-
-		if (!result.isValid) {
-			console.warn('No valid transitions found:', result.errors);
-			return [];
-		}
-
-		if (result.warnings.length > 0) {
-			console.warn('Transition warnings:', result.warnings);
-		}
-
-		return result.validTransitions;
-	} catch (error) {
-		console.error('Error getting enhanced options:', error);
-		// Fallback to original method
-		return getNextOptions(sequence);
-	}
 }
 
 /**
@@ -173,7 +133,6 @@ export function findOptionsWithMatchingPositionAndOrientation(
 			// Adjust blue motion data if needed
 			if (!blueMatches && adjustedPictograph.blueMotionData && blueEndOri) {
 				// Set the start orientation to match the required orientation
-				const originalOri = adjustedPictograph.blueMotionData.startOri;
 				adjustedPictograph.blueMotionData.startOri = blueEndOri;
 
 				// Recalculate the end orientation
@@ -189,7 +148,6 @@ export function findOptionsWithMatchingPositionAndOrientation(
 			// Adjust red motion data if needed
 			if (!redMatches && adjustedPictograph.redMotionData && redEndOri) {
 				// Set the start orientation to match the required orientation
-				const originalOri = adjustedPictograph.redMotionData.startOri;
 				adjustedPictograph.redMotionData.startOri = redEndOri;
 
 				// Recalculate the end orientation
@@ -298,7 +256,7 @@ export function determineGroupKey(
 	// Handle invalid sort methods (like 'all' which is a tab key, not a sort method)
 	const validSortMethods: SortMethod[] = ['type', 'endPosition', 'reversals'];
 	if (!validSortMethods.includes(sortMethod)) {
-		console.warn(`Unknown sort method for grouping: ${sortMethod}`);
+		// Silently handle invalid methods by returning a default group key
 		return 'All Options';
 	}
 
@@ -336,7 +294,7 @@ export function getSortedGroupKeys(keys: string[], sortMethod: SortMethod): stri
 	// Handle invalid sort methods
 	const validSortMethods: SortMethod[] = ['type', 'endPosition', 'reversals'];
 	if (!validSortMethods.includes(sortMethod)) {
-		console.warn(`Unknown sort method for key sorting: ${sortMethod}`);
+		// Silently handle invalid methods with default alphabetical sorting
 		return keys.sort((a, b) => a.localeCompare(b));
 	}
 
@@ -372,7 +330,7 @@ export function getSorter(method: SortMethod, sequence: PictographData[] = []) {
 	// Handle invalid sort methods
 	const validSortMethods: SortMethod[] = ['type', 'endPosition', 'reversals'];
 	if (!validSortMethods.includes(method)) {
-		console.warn(`Unknown sort method for sorting: ${method}`);
+		// Silently handle invalid methods with default alphabetical sorting
 		return (a: PictographData, b: PictographData) => (a.letter ?? '').localeCompare(b.letter ?? '');
 	}
 
