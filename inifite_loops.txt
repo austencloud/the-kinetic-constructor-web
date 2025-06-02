@@ -91,8 +91,8 @@ StartPositionService.svelte.ts:109 StartPositionService: Loading start positions
 chunk-73NERRIW.js?v=3ba98bce:1516 Uncaught TypeError: sequenceService.on is not a function
 
 	in $effect
-	in ModernOptionPickerContainer.svelte
-	in ModernOptionPicker.svelte
+	in OptionPickerContainer.svelte
+	in OptionPicker.svelte
 	in TransitionWrapper.svelte
 	in RightPanel.svelte
 	in ModernServiceProvider.svelte
@@ -107,12 +107,12 @@ chunk-73NERRIW.js?v=3ba98bce:1516 Uncaught TypeError: sequenceService.on is not 
 	in +layout.svelte
 	in root.svelte
 
-    at $effect (ModernOptionPickerContainer.svelte:165:50)
+    at $effect (OptionPickerContainer.svelte:165:50)
     at update_reaction (chunk-73NERRIW.js?v=3ba98bce:1636:23)
     at update_effect (chunk-73NERRIW.js?v=3ba98bce:1755:21)
     at flush_queued_effects (chunk-73NERRIW.js?v=3ba98bce:1852:11)
     at flush_queued_root_effects (chunk-73NERRIW.js?v=3ba98bce:1831:9)
-$effect @ ModernOptionPickerContainer.svelte:165
+$effect @ OptionPickerContainer.svelte:165
 update_reaction @ chunk-73NERRIW.js?v=3ba98bce:1636
 update_effect @ chunk-73NERRIW.js?v=3ba98bce:1755
 flush_queued_effects @ chunk-73NERRIW.js?v=3ba98bce:1852
@@ -152,8 +152,8 @@ await in start
 (anonymous) @ (index):7830
 Promise.then
 (anonymous) @ (index):7829Understand this error
-ModernOptionPickerContainer.svelte:189 ModernOptionPickerContainer: Initializing...
-ModernOptionPickerContainer.svelte:191 ModernOptionPickerContainer: Initialization complete
+OptionPickerContainer.svelte:189 OptionPickerContainer: Initializing...
+OptionPickerContainer.svelte:191 OptionPickerContainer: Initialization complete
 appInitializer.ts:71 Last ten effects were:  (10) [ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ, ƒ]
 log_effect_stack @ chunk-73NERRIW.js?v=3ba98bce:1783
 infinite_loop_guard @ chunk-73NERRIW.js?v=3ba98bce:1803

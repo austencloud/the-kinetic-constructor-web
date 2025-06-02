@@ -1,6 +1,6 @@
 <!--
   Debug UI Transition Test Page
-  Tests the complete UI transition flow from StartPositionPicker to ModernOptionPicker
+  Tests the complete UI transition flow from StartPositionPicker to OptionPicker
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -125,7 +125,7 @@
 <div class="debug-page">
 	<header class="debug-header">
 		<h1>🔍 UI Transition Debug Page</h1>
-		<p>Test the UI transition flow from StartPositionPicker to ModernOptionPicker</p>
+		<p>Test the UI transition flow from StartPositionPicker to OptionPicker</p>
 	</header>
 
 	<div class="debug-controls">
@@ -208,7 +208,7 @@
 					<strong>When sequence is empty:</strong> Should show StartPositionPicker
 				</li>
 				<li>
-					<strong>When start position is set:</strong> Should transition to ModernOptionPicker
+					<strong>When start position is set:</strong> Should transition to OptionPicker
 				</li>
 				<li>
 					<strong>When start position is cleared:</strong> Should transition back to StartPositionPicker

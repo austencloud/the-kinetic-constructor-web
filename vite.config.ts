@@ -87,6 +87,8 @@ export default defineConfig({
 			include: ['src/**/*.bench.ts'],
 			reporters: ['verbose'],
 			outputFile: './bench/results.json'
-		}
+		},
+		// Ensure tests have enough time for server startup and data loading
+		testTimeout: 30000
 	}
 });

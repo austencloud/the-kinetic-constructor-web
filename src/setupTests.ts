@@ -1,6 +1,87 @@
 // src/setupTests.ts
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+import { createServer } from 'http';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Test server for serving static files during tests
+let testServer: any = null;
+const TEST_PORT = 3000;
+
+// Start test server before all tests
+export async function startTestServer() {
+	if (testServer) return; // Already running
+
+	return new Promise<void>((resolve, reject) => {
+		testServer = createServer((req, res) => {
+			// Enable CORS for tests
+			res.setHeader('Access-Control-Allow-Origin', '*');
+			res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+			res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+			if (req.method === 'OPTIONS') {
+				res.writeHead(200);
+				res.end();
+				return;
+			}
+
+			try {
+				// Serve CSV files from static directory
+				if (req.url === '/DiamondPictographDataframe.csv') {
+					const csvPath = join(process.cwd(), 'static', 'DiamondPictographDataframe.csv');
+					const csvContent = readFileSync(csvPath, 'utf-8');
+					res.setHeader('Content-Type', 'text/csv');
+					res.writeHead(200);
+					res.end(csvContent);
+				} else if (req.url === '/BoxPictographDataframe.csv') {
+					const csvPath = join(process.cwd(), 'static', 'BoxPictographDataframe.csv');
+					const csvContent = readFileSync(csvPath, 'utf-8');
+					res.setHeader('Content-Type', 'text/csv');
+					res.writeHead(200);
+					res.end(csvContent);
+				} else {
+					res.writeHead(404);
+					res.end('Not Found');
+				}
+			} catch (error) {
+				console.error('Test server error:', error);
+				res.writeHead(500);
+				res.end('Internal Server Error');
+			}
+		});
+
+		testServer.listen(TEST_PORT, () => {
+			console.log(`✅ Test server running on http://localhost:${TEST_PORT}`);
+			resolve();
+		});
+
+		testServer.on('error', (error: any) => {
+			if (error.code === 'EADDRINUSE') {
+				console.log(`⚠️  Port ${TEST_PORT} already in use, assuming server is already running`);
+				resolve();
+			} else {
+				reject(error);
+			}
+		});
+	});
+}
+
+// Stop test server after all tests
+export async function stopTestServer() {
+	if (testServer) {
+		return new Promise<void>((resolve) => {
+			testServer.close(() => {
+				console.log('🛑 Test server stopped');
+				testServer = null;
+				resolve();
+			});
+		});
+	}
+}
+
+// Start the test server immediately when this module is loaded
+startTestServer().catch(console.error);
 
 // Mock browser environment for Svelte 5
 vi.stubGlobal('browser', true);

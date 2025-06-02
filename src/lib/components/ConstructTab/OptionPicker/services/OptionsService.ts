@@ -3,6 +3,7 @@ import { get } from 'svelte/store';
 import type { PictographData } from '$lib/types/PictographData';
 import type { SortMethod, ReversalFilter } from '../config';
 import pictographDataStore from '$lib/stores/pictograph/pictographStore';
+import { pictographDataLoader } from '$lib/utils/testing/PictographDataLoader';
 import { memoizeLRU } from '$lib/utils/memoizationUtils';
 import { NO_ROT } from '$lib/types/Constants';
 import type { PropRotDir, Orientation } from '$lib/types/Types';
@@ -18,13 +19,25 @@ import { MotionOriCalculator } from '$lib/components/objects/Motion/MotionOriCal
  * Returns an empty array for an empty sequence (initial state).
  * Enhanced with TransitionValidator for authentic data-driven filtering.
  */
-export function getNextOptions(sequence: PictographData[]): PictographData[] {
+export async function getNextOptions(sequence: PictographData[]): Promise<PictographData[]> {
+	console.log('🔧 DEBUG: getNextOptions called with sequence:', {
+		sequenceLength: sequence.length,
+		sequence: sequence.map((s) => ({ letter: s.letter, startPos: s.startPos, endPos: s.endPos }))
+	});
+
 	const lastPictograph = sequence.at(-1);
 
 	// If sequence is empty, return initial options (currently none defined)
 	if (!lastPictograph) {
+		console.log('🔧 DEBUG: Empty sequence, returning empty options');
 		return [];
 	}
+
+	console.log('🔧 DEBUG: Last pictograph:', {
+		letter: lastPictograph.letter,
+		startPos: lastPictograph.startPos,
+		endPos: lastPictograph.endPos
+	});
 
 	// Calculate the actual end orientations using MotionOriCalculator
 	const blueEndOri = calculateActualEndOrientation(lastPictograph.blueMotionData);
@@ -32,7 +45,7 @@ export function getNextOptions(sequence: PictographData[]): PictographData[] {
 
 	// Find options where start position matches end position of last pictograph
 	// AND start orientations match calculated end orientations of the last pictograph
-	const options = findOptionsWithMatchingPositionAndOrientation(
+	const options = await findOptionsWithMatchingPositionAndOrientation(
 		lastPictograph.endPos ?? undefined,
 		blueEndOri,
 		redEndOri
@@ -64,20 +77,55 @@ function calculateActualEndOrientation(motionData: any): Orientation | undefined
  * Finds all pictographs from the global store that match a specific position and orientations.
  * If orientations don't match, it adjusts the pictographs to have the correct orientations.
  */
-export function findOptionsWithMatchingPositionAndOrientation(
+export async function findOptionsWithMatchingPositionAndOrientation(
 	targetStartPos?: string,
 	blueEndOri?: Orientation,
 	redEndOri?: Orientation
-): PictographData[] {
+): Promise<PictographData[]> {
+	console.log('🔧 DEBUG: findOptionsWithMatchingPositionAndOrientation called with:', {
+		targetStartPos,
+		blueEndOri,
+		redEndOri
+	});
+
 	if (!targetStartPos) {
-		console.warn('Cannot find next options: Last pictograph has no end position.');
+		console.warn('🔧 DEBUG: Cannot find next options: Last pictograph has no end position.');
 		return [];
 	}
 
-	const allPictographs = get(pictographDataStore); // Use get() as this is outside a Svelte component/store context
+	// Try to get data from the legacy store first
+	let allPictographs = get(pictographDataStore);
+	console.log('🔧 DEBUG: pictographDataStore contains:', {
+		isArray: Array.isArray(allPictographs),
+		length: allPictographs?.length || 0
+	});
+
+	// If the legacy store is empty, try to get data from PictographDataLoader
+	if (!Array.isArray(allPictographs) || !allPictographs.length) {
+		console.log('🔧 DEBUG: Legacy store empty, trying PictographDataLoader...');
+		try {
+			// Get all available pictographs from the loader
+			const loaderData = await pictographDataLoader.getAllPictographData();
+			allPictographs = loaderData;
+			console.log('🔧 DEBUG: PictographDataLoader provided:', {
+				isArray: Array.isArray(allPictographs),
+				length: allPictographs?.length || 0,
+				firstFew: Array.isArray(allPictographs)
+					? allPictographs.slice(0, 3).map((p) => ({
+							letter: p?.letter,
+							startPos: p?.startPos,
+							endPos: p?.endPos
+						}))
+					: 'Not an array'
+			});
+		} catch (error) {
+			console.error('🔧 DEBUG: Failed to load data from PictographDataLoader:', error);
+			return [];
+		}
+	}
 
 	if (!Array.isArray(allPictographs) || !allPictographs.length) {
-		console.warn('No pictographs available in the global store.');
+		console.warn('🔧 DEBUG: No pictographs available from any source.');
 		return [];
 	}
 
@@ -85,9 +133,19 @@ export function findOptionsWithMatchingPositionAndOrientation(
 	const positionMatches = allPictographs.filter(
 		(pictograph) => pictograph?.startPos === targetStartPos
 	);
+	console.log('🔧 DEBUG: Position matches found:', {
+		targetStartPos,
+		matchCount: positionMatches.length,
+		matches: positionMatches.slice(0, 5).map((p) => ({
+			letter: p.letter,
+			startPos: p.startPos,
+			endPos: p.endPos
+		}))
+	});
 
 	// If no orientation constraints, return all position matches
 	if (!blueEndOri && !redEndOri) {
+		console.log('🔧 DEBUG: No orientation constraints, returning all position matches');
 		return positionMatches;
 	}
 
@@ -172,8 +230,10 @@ export function findOptionsWithMatchingPositionAndOrientation(
  * Legacy function kept for backward compatibility.
  * Now calls the enhanced function that also checks orientations.
  */
-export function findOptionsByStartPosition(targetStartPos?: string): PictographData[] {
-	return findOptionsWithMatchingPositionAndOrientation(targetStartPos);
+export async function findOptionsByStartPosition(
+	targetStartPos?: string
+): Promise<PictographData[]> {
+	return await findOptionsWithMatchingPositionAndOrientation(targetStartPos);
 }
 
 // ===== Reversal Category Functions =====
