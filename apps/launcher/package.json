@@ -1,32 +1,102 @@
 {
-	"name": "launcher",
+	"name": "tka-launcher",
 	"private": true,
-	"version": "0.0.1",
+	"version": "2.0.0",
 	"type": "module",
+	"description": "Advanced version management and development launcher for The Kinetic Constructor applications",
+	"keywords": ["launcher", "development", "version-management", "pwa", "accessibility"],
 	"scripts": {
-		"dev": "vite dev --port 5175",
+		"dev": "vite dev --port 5175 --host",
 		"build": "vite build",
-		"preview": "vite preview",
+		"preview": "vite preview --port 4173 --host",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "eslint . --ext .js,.ts,.svelte",
+		"lint:fix": "eslint . --ext .js,.ts,.svelte --fix",
+		"format": "prettier --write .",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:ui": "vitest --ui",
+		"e2e": "playwright test",
+		"e2e:headed": "playwright test --headed",
+		"a11y": "axe-core --recursive",
+		"lighthouse": "lighthouse http://localhost:5175 --output html --output-path ./reports/lighthouse.html",
+		"pwa:validate": "pwa-asset-generator validate",
+		"pwa:icons": "pwa-asset-generator icon.svg static/pwa --background '#0f172a' --theme-color '#00d4ff'",
+		"analyze": "vite-bundle-analyzer",
 		"launcher": "npm run dev"
 	},
 	"devDependencies": {
+		"@axe-core/cli": "^4.8.3",
+		"@playwright/test": "^1.41.1",
 		"@sveltejs/adapter-auto": "^6.0.0",
+		"@sveltejs/adapter-static": "^3.0.1",
 		"@sveltejs/kit": "^2.16.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
+		"@testing-library/jest-dom": "^6.2.0",
+		"@testing-library/svelte": "^4.0.5",
 		"@types/node": "^24.0.1",
+		"@typescript-eslint/eslint-plugin": "^6.19.0",
+		"@typescript-eslint/parser": "^6.19.0",
+		"@vitest/ui": "^1.2.1",
+		"eslint": "^8.56.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-svelte": "^2.35.1",
+		"eslint-plugin-accessibility": "^1.0.0",
+		"jsdom": "^24.0.0",
+		"lighthouse": "^11.4.0",
+		"prettier": "^3.2.4",
+		"prettier-plugin-svelte": "^3.1.2",
+		"pwa-asset-generator": "^6.3.1",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
 		"typescript": "^5.0.0",
-		"vite": "^6.2.6"
+		"vite": "^6.2.6",
+		"vite-bundle-analyzer": "^0.9.4",
+		"vite-plugin-pwa": "^0.17.4",
+		"vitest": "^1.2.1",
+		"workbox-build": "^7.0.0",
+		"workbox-window": "^7.0.0"
 	},
 	"dependencies": {
 		"@tailwindcss/postcss": "^4.1.10",
 		"@tailwindcss/typography": "^0.5.16",
 		"autoprefixer": "^10.4.21",
+		"fuse.js": "^7.0.0",
+		"idb": "^8.0.0",
 		"lucide-svelte": "^0.514.0",
+		"nanoid": "^5.0.4",
 		"tailwindcss": "^4.1.10"
-	}
+	},
+	"engines": {
+		"node": ">=18.0.0",
+		"npm": ">=9.0.0"
+	},
+	"browserslist": [
+		"defaults",
+		"not IE 11",
+		"not dead",
+		"supports es6-module",
+		"supports custom-elements",
+		"supports css-grid"
+	],
+	"pwa": {
+		"name": "TKA Launcher",
+		"shortName": "TKA",
+		"description": "Advanced version management launcher",
+		"themeColor": "#00d4ff",
+		"backgroundColor": "#0f172a",
+		"startUrl": "/",
+		"scope": "/",
+		"display": "standalone"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/your-org/tka-launcher.git"
+	},
+	"bugs": {
+		"url": "https://github.com/your-org/tka-launcher/issues"
+	},
+	"homepage": "https://launcher.tka.dev"
 }
