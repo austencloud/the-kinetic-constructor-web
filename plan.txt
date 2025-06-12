@@ -1,0 +1,776 @@
+# 🚀 Kinetic Constructor Web V2 - Complete Rebuild Game Plan
+
+## 📊 **Current State Analysis**
+
+### **Technical Debt Identified:**
+- ❌ XState machines mixed with Svelte stores
+- ❌ Redux/React patterns in Svelte app
+- ❌ Legacy writable stores alongside runes
+- ❌ Complex dev scripts working around issues
+- ❌ 15+ debug/test routes indicating instability
+- ❌ Multiple state management patterns competing
+- ❌ Heavy dependencies (Redux, XState, React-Redux)
+
+### **App Purpose Understanding:**
+✅ **Kinetic Constructor** - Visual pictograph/choreography creation tool
+✅ Background animations with performance monitoring
+✅ Sequence editing and pictograph manipulation
+✅ First-time setup flow and settings management
+✅ Export capabilities with image rendering
+
+---
+
+## 🎯 **V2 Vision: Born in 2025**
+
+### **Core Principles:**
+1. **Pure Svelte 5 Runes** - Zero legacy patterns
+2. **Launcher Architecture** - Hot-swappable versions
+3. **Zero Technical Debt** - Clean slate approach
+4. **Modern TypeScript** - Strict typing throughout
+5. **Performance First** - Optimized for smooth animations
+6. **Developer Experience** - Instant feedback, no restarts
+
+---
+
+## 📁 **V2 Directory Structure**
+
+```
+the-kinetic-constructor-web/
+├── v1/                                    # Existing app (preserved)
+├── v2/                                    # New clean implementation
+├── 📁 launcher/                           # Independent version launcher
+│   ├── src/
+│   │   ├── routes/
+│   │   │   ├── +page.svelte              # Launcher dashboard
+│   │   │   └── +layout.svelte            # Launcher layout
+│   │   ├── lib/
+│   │   │   ├── components/
+│   │   │   │   ├── VersionCard.svelte
+│   │   │   │   ├── VersionManager.svelte
+│   │   │   │   ├── DevServerController.svelte
+│   │   │   │   ├── VersionComparison.svelte
+│   │   │   │   └── PerformanceMonitor.svelte
+│   │   │   ├── stores/
+│   │   │   │   └── launcher.svelte.ts
+│   │   │   ├── services/
+│   │   │   │   ├── version-detector.ts
+│   │   │   │   ├── dev-server-manager.ts
+│   │   │   │   └── port-manager.ts
+│   │   │   └── types/
+│   │   │       └── launcher.types.ts
+│   │   └── app.html
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── README.md
+│
+├── 📁 v2/core/                            # Main V2 application
+│   │   ├── src/
+│   │   │   ├── 📁 app/                    # App shell & routing
+│   │   │   │   ├── routes/
+│   │   │   │   │   ├── +layout.svelte
+│   │   │   │   │   ├── +page.svelte
+│   │   │   │   │   └── (dashboard)/
+│   │   │   │   ├── app.html
+│   │   │   │   └── error.html
+│   │   │   │
+│   │   │   ├── 📁 lib/
+│   │   │   │   ├── 📁 core/               # Core business logic
+│   │   │   │   │   ├── 📁 pictograph/
+│   │   │   │   │   │   ├── engine.svelte.ts
+│   │   │   │   │   │   ├── types.ts
+│   │   │   │   │   │   └── operations.ts
+│   │   │   │   │   ├── 📁 sequence/
+│   │   │   │   │   │   ├── manager.svelte.ts
+│   │   │   │   │   │   ├── timeline.svelte.ts
+│   │   │   │   │   │   └── export.ts
+│   │   │   │   │   ├── 📁 canvas/
+│   │   │   │   │   │   ├── renderer.svelte.ts
+│   │   │   │   │   │   ├── animations.svelte.ts
+│   │   │   │   │   │   └── performance.svelte.ts
+│   │   │   │   │   └── 📁 settings/
+│   │   │   │   │       ├── app-config.svelte.ts
+│   │   │   │   │       └── user-prefs.svelte.ts
+│   │   │   │   │
+│   │   │   │   ├── 📁 ui/                 # UI Components
+│   │   │   │   │   ├── 📁 layout/
+│   │   │   │   │   │   ├── AppShell.svelte
+│   │   │   │   │   │   ├── MainLayout.svelte
+│   │   │   │   │   │   └── PanelSystem.svelte
+│   │   │   │   │   ├── 📁 workspace/
+│   │   │   │   │   │   ├── Canvas.svelte
+│   │   │   │   │   │   ├── Timeline.svelte
+│   │   │   │   │   │   ├── Toolbox.svelte
+│   │   │   │   │   │   └── Properties.svelte
+│   │   │   │   │   ├── 📁 backgrounds/
+│   │   │   │   │   │   ├── SnowfallCanvas.svelte
+│   │   │   │   │   │   ├── NightSkyCanvas.svelte
+│   │   │   │   │   │   └── BackgroundEngine.svelte
+│   │   │   │   │   ├── 📁 dialogs/
+│   │   │   │   │   │   ├── ExportDialog.svelte
+│   │   │   │   │   │   ├── SettingsDialog.svelte
+│   │   │   │   │   │   └── FirstTimeSetup.svelte
+│   │   │   │   │   └── 📁 common/
+│   │   │   │   │       ├── Button.svelte
+│   │   │   │   │       ├── Modal.svelte
+│   │   │   │   │       ├── Loading.svelte
+│   │   │   │   │       └── Toast.svelte
+│   │   │   │   │
+│   │   │   │   ├── 📁 state/              # Pure Runes State
+│   │   │   │   │   ├── app.svelte.ts      # Global app state
+│   │   │   │   │   ├── workspace.svelte.ts # Workspace state
+│   │   │   │   │   ├── canvas.svelte.ts   # Canvas state
+│   │   │   │   │   ├── timeline.svelte.ts # Timeline state
+│   │   │   │   │   └── ui.svelte.ts       # UI state
+│   │   │   │   │
+│   │   │   │   ├── 📁 services/           # External integrations
+│   │   │   │   │   ├── export-service.ts
+│   │   │   │   │   ├── persistence.ts
+│   │   │   │   │   ├── analytics.ts
+│   │   │   │   │   └── haptics.ts
+│   │   │   │   │
+│   │   │   │   ├── 📁 utils/              # Pure utilities
+│   │   │   │   │   ├── math.ts
+│   │   │   │   │   ├── color.ts
+│   │   │   │   │   ├── animation.ts
+│   │   │   │   │   ├── dom.ts
+│   │   │   │   │   └── performance.ts
+│   │   │   │   │
+│   │   │   │   └── 📁 types/              # TypeScript definitions
+│   │   │   │       ├── pictograph.ts
+│   │   │   │       ├── sequence.ts
+│   │   │   │       ├── canvas.ts
+│   │   │   │       ├── ui.ts
+│   │   │   │       └── global.d.ts
+│   │   │   │
+│   │   │   └── tests/                     # Testing
+│   │   │       ├── unit/
+│   │   │       ├── integration/
+│   │   │       └── e2e/
+│   │   │
+│   │   ├── package.json
+│   │   ├── vite.config.ts
+│   │   ├── tailwind.config.ts
+│   │   ├── tsconfig.json
+│   │   └── playwright.config.ts
+│   │
+│   ├── 📁 shared/                         # Shared utilities
+│   │   ├── types/
+│   │   ├── constants/
+│   │   └── utils/
+│   │
+│   └── 📁 docs/                           # Documentation
+│       ├── architecture.md
+│       ├── state-management.md
+│       ├── component-guide.md
+│       └── migration-guide.md
+```
+
+---
+
+## 🏗️ **Why Independent Launcher Architecture?**
+
+Your insight about launcher placement is **architecturally brilliant** for several reasons:
+
+### **🎯 Clean Separation of Concerns**
+```
+the-kinetic-constructor-web/
+├── v1/           # Legacy (preserved exactly as-is)
+├── v2/           # Modern rebuild
+├── launcher/     # Version orchestrator
+└── shared/       # Common utilities (optional)
+```
+
+### **🚀 Key Advantages:**
+
+**1. Future-Proof Scalability**
+- ✅ Add V3, V4, experimental branches easily
+- ✅ Each version is self-contained
+- ✅ Launcher evolves independently
+
+**2. Development Workflow**
+- ✅ Build launcher first (Week 1) - immediate value
+- ✅ Test launcher with existing V1 right away
+- ✅ V2 development doesn't block launcher features
+- ✅ Can compare any versions, not just V1 vs V2
+
+**3. Deployment Flexibility**
+- ✅ Deploy launcher separately from versions
+- ✅ Version-specific deployments and rollbacks
+- ✅ A/B testing between versions
+- ✅ Independent scaling and optimization
+
+**4. Team Collaboration**
+- ✅ Different teams can work on different versions
+- ✅ Launcher team can focus on developer experience
+- ✅ No cross-version dependencies or conflicts
+
+**5. Maintenance & Updates**
+- ✅ Update launcher without touching versions
+- ✅ Maintain legacy versions independently
+- ✅ Clear ownership boundaries
+
+## 🎯 **Launcher Capabilities (Independent)**
+
+```typescript
+// launcher can manage any version structure
+interface VersionConfig {
+  id: string
+  name: string
+  path: string
+  port: number
+  packageManager: 'npm' | 'pnpm' | 'yarn'
+  startCommand: string
+  buildCommand?: string
+  healthCheck: string
+}
+
+export const SUPPORTED_VERSIONS: VersionConfig[] = [
+  {
+    id: 'v1',
+    name: 'Legacy Version',
+    path: '../v1',
+    port: 5173,
+    packageManager: 'npm',
+    startCommand: 'dev',
+    healthCheck: '/api/health'
+  },
+  {
+    id: 'v2-core', 
+    name: 'Modern Rebuild',
+    path: '../v2/core',
+    port: 5174,
+    packageManager: 'npm',
+    startCommand: 'dev',
+    healthCheck: '/'
+  }
+  // Future versions just add here
+]
+```
+
+This structure transforms the launcher from a V2 feature into a **development platform** that grows with your project! 🚀
+
+---
+
+## 🏗️ **Implementation Strategy**
+
+### **Phase 1: Independent Launcher System (Week 1)**
+
+**Objective:** Create the standalone version management system
+
+**Setup:**
+```bash
+cd the-kinetic-constructor-web/launcher
+npm create svelte@latest . --template skeleton --types typescript
+npm install @tailwindcss/typography lucide-svelte
+```
+
+**Tasks:**
+1. **Build version detection system:**
+   ```typescript
+// services/version-detector.ts
+   export class VersionDetector {
+     async detectVersions(): Promise<Version[]> {
+       const versions = []
+       
+       // Check for V1
+       if (await this.pathExists('../v1/package.json')) {
+         versions.push({
+           id: 'v1',
+           name: 'Legacy Version',
+           path: '../v1',
+           port: 5173,
+           status: 'available'
+         })
+       }
+       
+       // Check for V2
+       if (await this.pathExists('../v2/core/package.json')) {
+         versions.push({
+           id: 'v2-core',
+           name: 'Modern Rebuild',
+           path: '../v2/core',
+           port: 5174,
+           status: 'available'
+         })
+       }
+       
+       return versions
+     }
+   }
+```
+
+2. **Create launcher state management:**
+   ```typescript
+// stores/launcher.svelte.ts
+   export class LauncherState {
+     versions = $state<Version[]>([])
+     runningServers = $state<Map<string, ServerInfo>>(new Map())
+     activeVersion = $state<string | null>(null)
+     
+     async startVersion(versionId: string) {
+       // Start dev server for specific version
+       const version = this.versions.find(v => v.id === versionId)
+       if (version) {
+         await this.devServerManager.start(version)
+         this.activeVersion = versionId
+       }
+     }
+     
+     async compareVersions(v1: string, v2: string) {
+       // Start both versions simultaneously
+       await Promise.all([
+         this.startVersion(v1),
+         this.startVersion(v2)
+       ])
+     }
+   }
+```
+
+3. **Build launcher UI components:**
+   - `VersionCard.svelte` - Version info with controls
+   - `DevServerController.svelte` - Server management
+   - `VersionComparison.svelte` - Side-by-side comparison view
+
+**Key Benefits of Independent Launcher:**
+- ✅ Can manage any number of versions (V1, V2, V3, experimental)
+- ✅ Works even if V2 doesn't exist yet
+- ✅ Future-proof for additional versions
+- ✅ Clean separation of concerns
+- ✅ Can be used immediately with existing V1
+
+**Deliverable:** Working launcher that detects and manages existing V1, ready for V2
+
+### **Phase 2: V2 Core Foundation (Week 2)**
+
+**Objective:** Build V2 core app with pure Svelte 5 runes
+
+**Setup:**
+```bash
+cd the-kinetic-constructor-web/v2/core
+npm create svelte@latest . --template skeleton --types typescript
+```
+
+**Tasks:**
+1. **Set up V2 core app structure**
+2. **Create base state management with runes:**
+   ```typescript
+// v2/core/src/lib/state/app.svelte.ts
+   class AppState {
+     isInitialized = $state(false)
+     currentBackground = $state<BackgroundType>('snowfall')
+     isFullscreen = $state(false)
+     
+     initialize = async () => { /* ... */ }
+     setBackground = (bg: BackgroundType) => { /* ... */ }
+     toggleFullscreen = () => { /* ... */ }
+   }
+   
+   export const appState = new AppState()
+```
+
+3. **Build core UI components:**
+   - `AppShell.svelte` - Main app container
+   - `MainLayout.svelte` - Primary layout
+   - `Loading.svelte` - Modern loading states
+
+4. **Update launcher to detect V2:**
+   - Launcher automatically detects new V2 core
+   - Can now switch between V1 and V2
+   - Compare both versions side-by-side
+
+**Deliverable:** V2 core app shell + launcher managing both versions
+
+### **Phase 3: Canvas & Rendering (Week 3)**
+
+**Objective:** Rebuild canvas system with performance focus in V2 core
+
+**Tasks:**
+1. **Create canvas engine in V2 core:**
+   ```typescript
+// v2/core/src/lib/core/canvas/renderer.svelte.ts
+   class CanvasRenderer {
+     canvas = $state<HTMLCanvasElement | null>(null)
+     ctx = $state<CanvasRenderingContext2D | null>(null)
+     frameRate = $state(60)
+     
+     render = () => { /* ... */ }
+     startAnimation = () => { /* ... */ }
+     stopAnimation = () => { /* ... */ }
+   }
+```
+
+2. **Implement background systems:**
+   - `SnowfallCanvas.svelte` - Particle system
+   - `NightSkyCanvas.svelte` - Animated sky
+   - `BackgroundEngine.svelte` - Performance monitoring
+
+3. **Add performance monitoring:**
+   ```typescript
+// v2/core/src/lib/core/canvas/performance.svelte.ts
+   class PerformanceMonitor {
+     fps = $state(0)
+     memory = $state({ used: 0, total: 0 })
+     frameTime = $state(0)
+     
+     track = () => { /* ... */ }
+   }
+```
+
+4. **Launcher integration:**
+   - Performance metrics visible in launcher
+   - Side-by-side performance comparison V1 vs V2
+   - Real-time FPS monitoring for each version
+
+**Deliverable:** Smooth background animations with monitoring + launcher showing performance differences
+
+### **Phase 4: Pictograph Engine (Week 4)**
+
+**Objective:** Core pictograph creation and editing in V2 core
+
+**Tasks:**
+1. **Build pictograph engine:**
+   ```typescript
+// v2/core/src/lib/core/pictograph/engine.svelte.ts
+   class PictographEngine {
+     pictographs = $state<Pictograph[]>([])
+     selectedPictograph = $state<Pictograph | null>(null)
+     
+     create = (type: PictographType) => { /* ... */ }
+     update = (id: string, changes: Partial<Pictograph>) => { /* ... */ }
+     delete = (id: string) => { /* ... */ }
+   }
+```
+
+2. **Create workspace components:**
+   - `Canvas.svelte` - Main editing canvas
+   - `Toolbox.svelte` - Tool selection
+   - `Properties.svelte` - Property editing
+
+3. **Implement operations:**
+   - Create, edit, delete pictographs
+   - Undo/redo system
+   - Selection and manipulation
+
+4. **Launcher features:**
+   - Feature comparison matrix V1 vs V2
+   - Live editing in both versions simultaneously
+   - Migration tools for V1 projects
+
+**Deliverable:** Working pictograph editor + launcher feature comparison
+
+### **Phase 5: Sequence System (Week 5)**
+
+**Objective:** Timeline and sequence management
+
+**Tasks:**
+1. **Build sequence manager:**
+   ```typescript
+// v2/core/src/lib/core/sequence/manager.svelte.ts
+   class SequenceManager {
+     sequences = $state<Sequence[]>([])
+     currentSequence = $state<Sequence | null>(null)
+     playhead = $state(0)
+     
+     play = () => { /* ... */ }
+     pause = () => { /* ... */ }
+     addFrame = (pictograph: Pictograph) => { /* ... */ }
+   }
+```
+
+2. **Create timeline UI:**
+   - `Timeline.svelte` - Visual timeline
+   - Keyframe editing
+   - Playback controls
+
+3. **Add export system:**
+   - Image export
+   - Video export
+   - JSON export
+
+4. **Launcher integration:**
+   - Project import/export between versions
+   - Performance benchmarking for complex sequences
+   - Export quality comparison
+
+**Deliverable:** Complete sequence editing system + cross-version project sharing
+
+### **Phase 6: Polish & Integration (Week 6)**
+
+**Objective:** Final integration and polish
+
+**Tasks:**
+1. **V2 Core completion:**
+   - Settings and preferences
+   - First-time setup flow
+   - Export/import functionality
+   - Error handling and validation
+   - Performance optimization
+   - Testing and documentation
+
+2. **Launcher enhancement:**
+   - Advanced version management
+   - Performance analytics dashboard
+   - Development workflow automation
+   - Project migration tools
+   - Documentation and user guides
+
+3. **Integration testing:**
+   - Cross-version compatibility
+   - Performance benchmarking
+   - User acceptance testing
+   - Production deployment preparation
+
+**Deliverable:** Production-ready V2 + professional launcher system
+
+---
+
+## 🎨 **Modern Patterns & Best Practices**
+
+### **1. Pure Svelte 5 Runes State Management**
+
+```typescript
+// No more writables - Pure runes approach
+class FeatureState {
+  // Reactive state
+  items = $state<Item[]>([])
+  selectedId = $state<string | null>(null)
+  
+  // Computed values
+  selectedItem = $derived(
+    this.items.find(item => item.id === this.selectedId) ?? null
+  )
+  
+  // Effects
+  constructor() {
+    $effect(() => {
+      // Auto-save when items change
+      if (this.items.length > 0) {
+        this.saveToStorage()
+      }
+    })
+  }
+  
+  // Actions
+  addItem = (item: Item) => {
+    this.items.push(item)
+  }
+  
+  selectItem = (id: string) => {
+    this.selectedId = id
+  }
+}
+
+export const featureState = new FeatureState()
+```
+
+### **2. Component Architecture**
+
+```svelte
+<!-- Modern component with runes -->
+<script lang="ts">
+  import { featureState } from '../state/feature.svelte.ts'
+  
+  interface Props {
+    title: string
+    onAction?: (item: Item) => void
+  }
+  
+  let { title, onAction }: Props = $props()
+  
+  // Local state
+  let isEditing = $state(false)
+  let editValue = $state('')
+  
+  // Derived state
+  let hasItems = $derived(featureState.items.length > 0)
+  
+  // Effects
+  $effect(() => {
+    console.log('Items changed:', featureState.items.length)
+  })
+  
+  function handleEdit() {
+    isEditing = true
+    editValue = featureState.selectedItem?.name ?? ''
+  }
+</script>
+
+<div class="modern-component">
+  <h2>{title}</h2>
+  {#if hasItems}
+    <!-- Component content -->
+  {:else}
+    <EmptyState />
+  {/if}
+</div>
+```
+
+### **3. Type Safety**
+
+```typescript
+// Strict typing throughout
+export interface Pictograph {
+  readonly id: string
+  readonly type: PictographType
+  readonly position: Point2D
+  readonly rotation: number
+  readonly scale: number
+  readonly metadata: PictographMetadata
+}
+
+export type PictographType = 
+  | 'person'
+  | 'arrow'
+  | 'formation'
+  | 'prop'
+
+export interface Point2D {
+  readonly x: number
+  readonly y: number
+}
+```
+
+### **4. Performance Optimization**
+
+```typescript
+// Canvas rendering with requestAnimationFrame
+class CanvasRenderer {
+  private animationId: number | null = null
+  
+  render = () => {
+    if (!this.ctx) return
+    
+    // Clear and draw
+    this.ctx.clearRect(0, 0, this.canvas!.width, this.canvas!.height)
+    this.drawPictographs()
+    this.drawGrid()
+    
+    // Continue animation
+    this.animationId = requestAnimationFrame(this.render)
+  }
+  
+  startAnimation = () => {
+    if (!this.animationId) {
+      this.animationId = requestAnimationFrame(this.render)
+    }
+  }
+  
+  stopAnimation = () => {
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId)
+      this.animationId = null
+    }
+  }
+}
+```
+
+---
+
+## 🚀 **Launcher Features**
+
+### **Version Management Dashboard**
+- Visual cards for each version (V1, V2, experimental branches)
+- Start/stop dev servers with one click
+- Switch between versions instantly
+- Compare versions side-by-side
+- Performance metrics for each version
+
+### **Hot Development Experience**
+- No more Ctrl+Shift+F5 - instant reloads
+- Live state inspection
+- Component hot reloading
+- Error overlay with fixes
+
+### **Development Tools**
+- Built-in performance profiler
+- State debugger
+- Component inspector
+- Network monitoring
+
+---
+
+## 📦 **Modern Dependencies (V2)**
+
+```json
+{
+  "dependencies": {
+    "lucide-svelte": "^0.486.0",
+    "motion": "^11.0.0",
+    "tailwindcss": "^3.4.17"
+  },
+  "devDependencies": {
+    "@sveltejs/kit": "^2.16.1",
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "svelte": "^5.0.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.0.0",
+    "vitest": "^3.1.1",
+    "@playwright/test": "^1.52.0"
+  }
+}
+```
+
+**Eliminated:**
+❌ XState  
+❌ Redux  
+❌ React-Redux  
+❌ Heavy animation libraries  
+❌ Complex state management libraries  
+
+---
+
+## ✅ **Success Criteria**
+
+### **Technical Excellence**
+- ✅ Zero XState or Redux patterns
+- ✅ 100% Svelte 5 runes
+- ✅ TypeScript strict mode
+- ✅ 60fps animations
+- ✅ < 2s cold start
+- ✅ Zero console errors
+
+### **Developer Experience**
+- ✅ Instant hot reloading
+- ✅ One-click version switching
+- ✅ Side-by-side comparison
+- ✅ Built-in debugging tools
+- ✅ Clean, readable code
+
+### **User Experience**
+- ✅ Smooth, responsive UI
+- ✅ Beautiful animations
+- ✅ Intuitive workflows
+- ✅ Fast performance
+- ✅ Reliable functionality
+
+---
+
+## 🎯 **Migration Strategy**
+
+1. **Build launcher first** - Independent system managing existing V1
+2. **Keep V1 untouched** - Preserved exactly as-is in v1/ folder
+3. **Build V2 in parallel** - Clean slate in v2/core/ folder
+4. **Immediate value** - Launcher provides instant dev experience improvements
+5. **Feature parity** - Match V1 functionality with modern patterns
+6. **Gradual transition** - Users choose when to adopt V2 features
+7. **Cross-version compatibility** - Projects can be migrated via launcher
+8. **Future-proof foundation** - Ready for V3, V4, experimental branches
+
+**Launch Day Experience:**
+```bash
+cd the-kinetic-constructor-web
+npm run launcher  # Start version management dashboard
+
+# Launcher automatically detects:
+# ✅ V1 - Legacy but functional
+# ✅ V2 - Modern rebuild  
+# 🚀 Side-by-side comparison available
+# 🔄 One-click switching
+# 📊 Performance metrics for both
+```
+
+This approach ensures you **always have a working version** while building the future! 🚀
+
+---
+
+*Built for 2025 and beyond* ✨# 🚀 Kinetic Constructor Web V2 - Complete Rebuild Game Plan

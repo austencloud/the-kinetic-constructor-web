@@ -1,0 +1,12 @@
+{
+	"/": [],
+	"/api/launcher/check-port": [
+		"src/routes/api/launcher/check-port/+server.ts"
+	],
+	"/api/launcher/validate-version": [
+		"src/routes/api/launcher/validate-version/+server.ts"
+	],
+	"/api/launcher/version-info": [
+		"src/routes/api/launcher/version-info/+server.ts"
+	]
+}

@@ -1,0 +1,28 @@
+{
+	"/": [
+		"src/routes/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/auth/callback/[platform]": [
+		"src/routes/auth/callback/[platform]/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/current_sequence.json": [
+		"src/routes/current_sequence.json/+server.ts"
+	],
+	"/layout-test": [
+		"src/routes/+layout.server.ts"
+	],
+	"/social-test": [
+		"src/routes/+layout.server.ts"
+	],
+	"/state-example": [
+		"src/routes/+layout.server.ts"
+	],
+	"/test/export": [
+		"src/routes/+layout.server.ts"
+	],
+	"/text-rendering-test": [
+		"src/routes/+layout.server.ts"
+	]
+}

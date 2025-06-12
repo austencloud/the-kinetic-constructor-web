@@ -1,0 +1,45 @@
+{
+	"name": "kinetic-constructor-workspace",
+	"version": "2.0.0",
+	"private": true,
+	"type": "module",
+	"description": "Multi-version workspace for Kinetic Constructor development",
+	"scripts": {
+		"launcher": "cd apps/launcher && npm run dev",
+		"v1": "cd apps/v1-legacy && npm run dev",
+		"v2": "cd apps/v2-modern && npm run dev",
+		"dev:all": "concurrently \"npm run launcher\" \"npm run v1\"",
+		"dev:compare": "concurrently \"npm run v1\" \"npm run v2\"",
+		"install:all": "npm run install:launcher && npm run install:v1",
+		"install:launcher": "cd apps/launcher && npm install",
+		"install:v1": "cd apps/v1-legacy && npm install",
+		"install:v2": "cd apps/v2-modern && npm install",
+		"build:all": "npm run build:launcher && npm run build:v1",
+		"build:launcher": "cd apps/launcher && npm run build",
+		"build:v1": "cd apps/v1-legacy && npm run build",
+		"build:v2": "cd apps/v2-modern && npm run build",
+		"clean": "rm -rf apps/*/node_modules apps/*/.svelte-kit",
+		"clean:launcher": "rm -rf apps/launcher/node_modules apps/launcher/.svelte-kit",
+		"clean:v1": "rm -rf apps/v1-legacy/node_modules apps/v1-legacy/.svelte-kit",
+		"clean:v2": "rm -rf apps/v2-modern/node_modules apps/v2-modern/.svelte-kit",
+		"check:all": "npm run check:launcher && npm run check:v1",
+		"check:launcher": "cd apps/launcher && npm run check",
+		"check:v1": "cd apps/v1-legacy && npm run check",
+		"check:v2": "cd apps/v2-modern && npm run check",
+		"test:all": "npm run test:launcher && npm run test:v1",
+		"test:launcher": "cd apps/launcher && npm run test",
+		"test:v1": "cd apps/v1-legacy && npm run test",
+		"test:v2": "cd apps/v2-modern && npm run test"
+	},
+	"devDependencies": {
+		"concurrently": "^8.2.2"
+	},
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"engines": {
+		"node": ">=18.0.0",
+		"npm": ">=8.0.0"
+	}
+}
